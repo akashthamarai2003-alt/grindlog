@@ -1,0 +1,353 @@
+@import "tailwindcss";
+
+/* ============================================
+   GrindLog Design System v1.0
+   Mobile-Only AI Habit Tracker PWA
+   ============================================ */
+
+/* --- Design Tokens --- */
+:root {
+  /* Colors — Clean Green Theme */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f4f6f8;
+  --color-bg-tertiary: #e9ecef;
+  --color-bg-elevated: #ffffff;
+
+  --color-text-primary: #111418;
+  --color-text-secondary: #636b74;
+  --color-text-tertiary: #9fa6ad;
+  --color-text-inverse: #ffffff;
+
+  --color-accent-blue: #007aff;
+  --color-accent-blue-light: #e8f2ff;
+  --color-accent-green: #34C759;
+  --color-accent-green-light: #eafff0;
+
+  --color-success: #34C759;
+  --color-warning: #ff9500;
+  --color-error: #ff3b30;
+  --color-info: #007aff;
+
+  --color-streak: #ff9500;
+  --color-xp: #34C759;
+
+  /* Shadows */
+  --shadow-card: 0px 4px 20px rgba(0, 0, 0, 0.03), 0px 0px 2px rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0px 8px 30px rgba(0, 0, 0, 0.04), 0px 0px 2px rgba(0, 0, 0, 0.06);
+  --shadow-floating: 0px -4px 24px rgba(0, 0, 0, 0.06);
+  --shadow-glow-blue: 0px 0px 20px rgba(0, 122, 255, 0.25);
+  --shadow-glow-green: 0px 0px 24px rgba(52, 199, 89, 0.3);
+  --shadow-glow-gold: 0px 0px 28px rgba(255, 215, 0, 0.3);
+
+  /* Typography */
+  --font-sans: "Inter", -apple-system, "SF Pro Display", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", monospace;
+
+  /* Spacing */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Animation */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark Theme */
+.dark {
+  --color-bg-primary: #0d0d0f;
+  --color-bg-secondary: #1a1a1e;
+  --color-bg-tertiary: #24242a;
+  --color-bg-elevated: #1e1e23;
+
+  --color-text-primary: #f5f5f7;
+  --color-text-secondary: #a1a1aa;
+  --color-text-tertiary: #6b6b76;
+  --color-text-inverse: #1a1d23;
+
+  --shadow-card: 0px 2px 8px rgba(0, 0, 0, 0.2), 0px 0px 1px rgba(255, 255, 255, 0.04);
+  --shadow-elevated: 0px 8px 32px rgba(0, 0, 0, 0.3), 0px 0px 1px rgba(255, 255, 255, 0.06);
+  --shadow-floating: 0px 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Base --- */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  overscroll-behavior: none;
+}
+
+body {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background-color: var(--color-bg-primary);
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+/* --- Safe Area --- */
+.safe-top {
+  padding-top: var(--safe-area-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+/* --- Animations --- */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-left {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-right {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(52, 199, 89, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(52, 199, 89, 0.35);
+  }
+}
+
+@keyframes tree-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(1.5deg);
+  }
+  75% {
+    transform: rotate(-1.5deg);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes ring-fill {
+  from {
+    stroke-dashoffset: var(--ring-circumference);
+  }
+}
+
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100%) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* --- Utility Classes --- */
+.animate-fade-up {
+  animation: fade-up 0.6s var(--ease-spring) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.4s var(--ease-spring) both;
+}
+
+.animate-tree-sway {
+  animation: tree-sway 6s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* --- Staggered Children --- */
+.stagger > * {
+  opacity: 0;
+}
+
+.stagger > *:nth-child(1) {
+  animation: fade-up 0.5s var(--ease-spring) 0.05s forwards;
+}
+.stagger > *:nth-child(2) {
+  animation: fade-up 0.5s var(--ease-spring) 0.1s forwards;
+}
+.stagger > *:nth-child(3) {
+  animation: fade-up 0.5s var(--ease-spring) 0.15s forwards;
+}
+.stagger > *:nth-child(4) {
+  animation: fade-up 0.5s var(--ease-spring) 0.2s forwards;
+}
+.stagger > *:nth-child(5) {
+  animation: fade-up 0.5s var(--ease-spring) 0.25s forwards;
+}
+.stagger > *:nth-child(6) {
+  animation: fade-up 0.5s var(--ease-spring) 0.3s forwards;
+}
+.stagger > *:nth-child(7) {
+  animation: fade-up 0.5s var(--ease-spring) 0.35s forwards;
+}
+.stagger > *:nth-child(8) {
+  animation: fade-up 0.5s var(--ease-spring) 0.4s forwards;
+}
+
+/* --- Habit Card Swipe States --- */
+.habit-card {
+  touch-action: pan-y;
+}
+
+/* --- Progress Ring --- */
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.8s var(--ease-out-expo);
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* --- Modal / Bottom Sheet Backdrop --- */
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* --- PWA Safe Areas --- */
+@supports (padding: max(0px)) {
+  .pwa-bottom {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .pwa-top {
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "GrindLog — Personal Growth OS",
+  "short_name": "GrindLog",
+  "description": "Transform your habits into a living, breathing tree. AI-powered habit tracking, beautifully designed.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#34C759",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-1.png",
+      "sizes": "390x844",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshots/screenshot-2.png",
+      "sizes": "390x844",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["health", "productivity", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false
+}
