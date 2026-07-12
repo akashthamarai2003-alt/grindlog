@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { generateAIResponse } from "@/services/groq/client";
-import { createServerSupabase } from "@/services/supabase/server";
+import { generateAIResponse } from "@/lib/services/groq/client";
+import { createServerSupabase } from "@/lib/services/supabase/server";
 
 const COACH_PROMPT = `You are a compassionate, expert habit coach named "GrindLog Coach". 
 You speak warmly but professionally. Use emojis sparingly. 

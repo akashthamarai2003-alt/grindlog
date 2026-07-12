@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { generateAIResponse } from "@/services/groq/client";
-import { createServerSupabase } from "@/services/supabase/server";
+import { generateAIResponse } from "@/lib/services/groq/client";
+import { createServerSupabase } from "@/lib/services/supabase/server";
 
 const MOTIVATION_PROMPT = `You are a motivational habit coach. Generate ONE short, punchy motivational message (max 2 sentences). 
 Be specific to the user's current situation. Use warm, energetic language. Include exactly 1 relevant emoji. 

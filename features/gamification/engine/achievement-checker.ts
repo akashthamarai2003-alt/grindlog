@@ -1,4 +1,4 @@
-import { createClient } from "@/services/supabase/client";
+import { createClient } from "@/lib/services/supabase/client";
 
 interface AchievementCheck {
   key: string;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { generateAIResponseJSON } from "@/services/groq/client";
-import { createServerSupabase } from "@/services/supabase/server";
+import { generateAIResponseJSON } from "@/lib/services/groq/client";
+import { createServerSupabase } from "@/lib/services/supabase/server";
 import type { AIHabitPlan } from "@/types";
 
 const SYSTEM_PROMPT = `You are a world-class habit formation coach. Based on the user's preferences, create a personalized habit plan.

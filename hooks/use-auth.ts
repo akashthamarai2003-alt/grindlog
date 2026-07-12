@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/services/supabase/client";
+import { createClient } from "@/lib/services/supabase/client";
 import { useAuthStore } from "@/store/auth-store";
 import type { Profile } from "@/types";
 
