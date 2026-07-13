@@ -74,17 +74,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   };
 
   return (
-    <>
-      <div 
-        className="fixed inset-0 z-0 bg-cover bg-center bg-[#28a745]"
-        style={{ backgroundImage: "url('/greebpg.jpg')" }}
-      />
-      <div className="fixed inset-0 z-0 bg-black/60" />
-      
-      <div className="relative z-10 flex flex-col gap-6 px-5 pb-8 pt-4 safe-top min-h-dvh">
-        <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
+    <div className="flex flex-col gap-6 px-5 pb-8 pt-4 safe-top">
+      <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
 
-        {/* Header */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <button className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">
           <div className="h-[2px] w-[18px] rounded-full bg-current" />
@@ -102,8 +95,8 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       {/* Greeting */}
       <div className="flex items-center justify-between mt-2">
         <div>
-          <p className="text-sm font-medium text-white/80">Good Morning,</p>
-          <h1 className="text-2xl font-extrabold text-white mt-0.5">
+          <p className="text-sm font-medium text-[var(--color-text-secondary)]">Good Morning,</p>
+          <h1 className="text-2xl font-extrabold text-[var(--color-text-primary)] mt-0.5">
             {profile.display_name?.split(' ')[0] || "There"} 👋
           </h1>
         </div>
@@ -113,7 +106,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       </div>
 
       {/* Hero Card */}
-      <div className="flex flex-col gap-4 rounded-3xl bg-[var(--color-bg-secondary)]/80 backdrop-blur-md border border-white/10 p-5 shadow-lg text-white">
+      <div className="flex flex-col gap-4 rounded-3xl bg-gradient-to-br from-[#34c759] to-[#28a745] p-5 shadow-[var(--shadow-glow-green)] text-white">
         <div className="flex items-center justify-between px-1">
           <div>
             <h3 className="text-[40px] font-extrabold tracking-tight leading-none">{completedCount}</h3>
@@ -167,10 +160,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         className="flex flex-col gap-3 mt-4"
       >
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-bold text-white">
+          <h2 className="text-sm font-bold text-[var(--color-text-primary)]">
             Today's Habits
           </h2>
-          <Link href="/habits" className="text-[11px] font-bold text-white/80 hover:text-white">
+          <Link href="/habits" className="text-[11px] font-bold text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]">
             See All
           </Link>
         </div>
@@ -198,14 +191,14 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Today's Quote */}
       <div className="flex flex-col gap-3 mt-6">
-        <h2 className="text-sm font-bold text-white">Today's Quote</h2>
-        <div className="relative flex min-h-[130px] items-center rounded-2xl bg-[var(--color-bg-secondary)]/80 backdrop-blur-md border border-white/10 p-5 shadow-lg">
+        <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Today's Quote</h2>
+        <div className="relative flex min-h-[130px] items-center rounded-2xl bg-[var(--color-bg-elevated)] p-5 shadow-[var(--shadow-card)]">
           <div className="pr-16 relative z-10">
-            <Quote className="mb-2 h-6 w-6 text-[var(--color-accent-green)]/80 fill-[var(--color-accent-green)]/30" />
-            <p className="text-[12px] font-semibold leading-relaxed text-white/90 italic">
+            <Quote className="mb-2 h-6 w-6 text-[var(--color-accent-green)]/30 fill-[var(--color-accent-green)]/10" />
+            <p className="text-[12px] font-semibold leading-relaxed text-[var(--color-text-secondary)] italic">
               "Discipline is doing what needs to be done, even when you don't feel like it."
             </p>
-            <p className="mt-3 text-[10px] font-bold text-white/70">- Unknown</p>
+            <p className="mt-3 text-[10px] font-bold text-[var(--color-text-tertiary)]">- Unknown</p>
           </div>
           <div className="absolute bottom-2 right-4 text-7xl opacity-90 drop-shadow-sm select-none">
             🪴
@@ -215,6 +208,5 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       <div className="h-6" />
     </div>
-    </>
   );
 }
