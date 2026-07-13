@@ -160,10 +160,16 @@ export default function ProfilePage() {
 
       {/* Sign Out */}
       <motion.button
+        onClick={async () => {
+          const { createClient } = await import("@/lib/services/supabase/client");
+          const supabase = createClient();
+          await supabase.auth.signOut();
+          window.location.href = "/auth/signin";
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-error)]/20 py-3.5 text-sm font-semibold text-[var(--color-error)]"
+        className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-error)]/20 py-3.5 text-sm font-semibold text-[var(--color-error)] w-full"
       >
         <LogOut className="h-4 w-4" />
         Sign Out
