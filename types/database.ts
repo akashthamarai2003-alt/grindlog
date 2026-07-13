@@ -105,6 +105,40 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["journal_entries"]["Insert"]>;
         Relationships: [];
       };
+      fitness_logs: {
+        Row: {
+          id: string; user_id: string; date: string;
+          workout_type: string; duration_minutes: number;
+          calories_burned: number | null; intensity: number | null;
+          notes: string | null; created_at: string; updated_at: string;
+        };
+        Insert: {
+          id?: string; user_id: string; date?: string;
+          workout_type: string; duration_minutes: number;
+          calories_burned?: number | null; intensity?: number | null;
+          notes?: string | null; created_at?: string; updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fitness_logs"]["Insert"]>;
+        Relationships: [];
+      };
+      goals: {
+        Row: {
+          id: string; user_id: string; title: string;
+          description: string | null; target_value: number;
+          current_value: number; unit: string;
+          deadline: string | null; status: string;
+          created_at: string; updated_at: string;
+        };
+        Insert: {
+          id?: string; user_id: string; title: string;
+          description?: string | null; target_value: number;
+          current_value?: number; unit: string;
+          deadline?: string | null; status?: string;
+          created_at?: string; updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["goals"]["Insert"]>;
+        Relationships: [];
+      };
       achievements: {
         Row: {
           id: string; key: string; name: string; description: string;

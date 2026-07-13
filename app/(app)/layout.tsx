@@ -7,17 +7,17 @@ import {
   Home,
   BarChart3,
   Calendar,
-  User,
-  Plus
+  LayoutGrid,
+  Brain
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { springs } from "@/animations/springs";
 
 const tabs = [
   { id: "dashboard", label: "Home", icon: Home, path: "/dashboard" },
-  { id: "calendar", label: "Calendar", icon: Calendar, path: "/calendar" },
+  { id: "calendar", label: "Planner", icon: Calendar, path: "/calendar" },
   { id: "analytics", label: "Analytics", icon: BarChart3, path: "/analytics" },
-  { id: "profile", label: "Profile", icon: User, path: "/profile" },
+  { id: "hub", label: "Hub", icon: LayoutGrid, path: "/hub" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -46,12 +46,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Floating Center Button (Perfectly seated in the notch) */}
         <div className="absolute bottom-[46px] left-1/2 z-50 flex -translate-x-1/2 items-center justify-center">
-          <Link href="/habits/new">
+          <Link href="/coach">
             <motion.div
               whileTap={{ scale: 0.9 }}
-              className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[var(--color-accent-green)] shadow-[0_8px_20px_rgba(52,199,89,0.4)] text-white"
+              className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-accent-blue)] to-[#5856D6] shadow-[0_8px_20px_rgba(0,122,255,0.4)] text-white"
             >
-              <Plus className="h-8 w-8" strokeWidth={2.5} />
+              <Brain className="h-7 w-7" strokeWidth={2.5} />
             </motion.div>
           </Link>
         </div>
