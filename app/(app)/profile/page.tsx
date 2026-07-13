@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Moon,
   Sun,
+  Edit2
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { useUIStore } from "@/store/ui-store";
@@ -73,8 +74,14 @@ export default function ProfilePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...springs.default, delay: 0.1 }}
-        className="flex items-center gap-4 rounded-2xl bg-[var(--color-bg-secondary)] p-5"
+        className="flex items-center gap-4 rounded-2xl bg-[var(--color-bg-secondary)] p-5 relative"
       >
+        <Link 
+          href="/profile/edit" 
+          className="absolute right-4 top-4 rounded-full p-2 text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+        >
+          <Edit2 className="h-4 w-4" />
+        </Link>
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-accent-green-light)] to-[var(--color-accent-green)] text-2xl shadow-lg shadow-[var(--color-accent-green)]/20">
           {user?.avatar_url ? (
             <img src={user.avatar_url} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
@@ -82,7 +89,7 @@ export default function ProfilePage() {
             "👤"
           )}
         </div>
-        <div className="flex-1">
+        <div className="flex-1 pr-6">
           <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
             {user?.display_name || "User"}
           </h3>
