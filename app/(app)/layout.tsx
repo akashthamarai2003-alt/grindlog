@@ -25,36 +25,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const activeTab = tabs.find((t) => pathname.startsWith(t.path))?.id || "dashboard";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--color-bg-secondary)] relative">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-[var(--color-bg-secondary)] relative shadow-[0_0_50px_rgba(0,0,0,0.05)] ring-1 ring-gray-200 dark:ring-gray-900 overflow-x-hidden">
       {/* Main content */}
       <main className="flex-1 pb-32">{children}</main>
 
-      {/* Floating Pill Tab Bar */}
-      <div className="fixed bottom-6 left-1/2 z-50 w-full max-w-[400px] -translate-x-1/2 px-4 safe-bottom">
-        <nav className="relative flex h-[72px] w-full items-center justify-between rounded-[36px] bg-[var(--color-bg-elevated)]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-gray-200/50 dark:border-gray-800/50 px-2">
-          
-          {/* Floating Center Button */}
-          <div className="absolute -top-5 left-1/2 z-50 flex -translate-x-1/2 items-center justify-center">
-            <Link href="/habits/new">
-              <motion.div
-                whileTap={{ scale: 0.9 }}
-                className="flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[var(--color-accent-green)] shadow-[var(--shadow-glow-green)] text-white border-[4px] border-[var(--color-bg-secondary)]"
-              >
-                <Plus className="h-7 w-7" strokeWidth={2.5} />
-              </motion.div>
-            </Link>
-          </div>
+      {/* Tab Bar Container */}
+      <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2">
+        
+        {/* Floating Center Button (Detached) */}
+        <div className="absolute -top-7 left-1/2 z-50 flex -translate-x-1/2 items-center justify-center">
+          <Link href="/habits/new">
+            <motion.div
+              whileTap={{ scale: 0.9 }}
+              className="flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[var(--color-accent-green)] shadow-[0_8px_30px_rgba(52,199,89,0.4)] text-white"
+            >
+              <Plus className="h-8 w-8" strokeWidth={2.5} />
+            </motion.div>
+          </Link>
+        </div>
 
+        {/* Solid Nav Bar with Rounded Top */}
+        <nav className="relative flex h-[85px] w-full items-center justify-between rounded-t-[32px] bg-[var(--color-bg-elevated)] shadow-[0_-10px_40px_rgba(0,0,0,0.08)] px-8 safe-bottom">
+          
           {/* Left side tabs */}
-          <div className="flex flex-1 items-center justify-around pr-6">
+          <div className="flex w-[40%] justify-between pb-2">
             {tabs.slice(0, 2).map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
-                <Link href={tab.path} key={tab.id} className="relative flex flex-col items-center justify-center gap-1 p-2 w-14">
+                <Link href={tab.path} key={tab.id} className="relative flex flex-col items-center justify-center gap-1.5 p-2 w-12">
                   <Icon
                     className={cn(
-                      "h-[22px] w-[22px] transition-colors",
+                      "h-[24px] w-[24px] transition-colors",
                       isActive
                         ? "text-[var(--color-accent-green)]"
                         : "text-[var(--color-text-tertiary)]"
@@ -63,7 +65,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   />
                   <span
                     className={cn(
-                      "text-[10px] font-semibold transition-colors",
+                      "text-[10px] font-bold transition-colors",
                       isActive
                         ? "text-[var(--color-accent-green)]"
                         : "text-[var(--color-text-tertiary)]"
@@ -76,19 +78,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             })}
           </div>
 
-          {/* Spacer for FAB */}
-          <div className="w-12 shrink-0" />
-
           {/* Right side tabs */}
-          <div className="flex flex-1 items-center justify-around pl-6">
+          <div className="flex w-[40%] justify-between pb-2">
             {tabs.slice(2, 4).map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
-                <Link href={tab.path} key={tab.id} className="relative flex flex-col items-center justify-center gap-1 p-2 w-14">
+                <Link href={tab.path} key={tab.id} className="relative flex flex-col items-center justify-center gap-1.5 p-2 w-12">
                   <Icon
                     className={cn(
-                      "h-[22px] w-[22px] transition-colors",
+                      "h-[24px] w-[24px] transition-colors",
                       isActive
                         ? "text-[var(--color-accent-green)]"
                         : "text-[var(--color-text-tertiary)]"
@@ -97,7 +96,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   />
                   <span
                     className={cn(
-                      "text-[10px] font-semibold transition-colors",
+                      "text-[10px] font-bold transition-colors",
                       isActive
                         ? "text-[var(--color-accent-green)]"
                         : "text-[var(--color-text-tertiary)]"
