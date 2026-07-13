@@ -491,7 +491,7 @@ export default function CalendarClient({ initialHabits = [], initialLogs = [], t
       } else {
         await supabase
           .from("habit_logs")
-          .upsert({ habit_id: habitId, date, status, user_id: userId }, { onConflict: "habit_id,date" });
+          .upsert({ habit_id: habitId, date, status, user_id: userId } as any, { onConflict: "habit_id,date" });
       }
     },
     [supabase]
@@ -539,8 +539,9 @@ export default function CalendarClient({ initialHabits = [], initialLogs = [], t
           onSelect={(d) => d && setSelected(d)}
           showOutsideDays
           components={{
-            Day: ({ date, displayMonth }: DayProps) => {
-              const isOutside = date.getMonth() !== displayMonth.getMonth();
+            Day: ({ day }: any) => {
+              const date = day.date;
+              const isOutside = day.outside;
               return (
                 <DayCell
                   date={date}
