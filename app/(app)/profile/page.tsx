@@ -56,7 +56,7 @@ export default function ProfilePage() {
   const { user } = useAuth();
 
   return (
-    <div className="flex flex-col gap-5 px-5 pb-8 pt-4 safe-top">
+    <div className="flex flex-col gap-5 px-5 pb-40 pt-4 safe-top">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -76,7 +76,11 @@ export default function ProfilePage() {
         className="flex items-center gap-4 rounded-2xl bg-[var(--color-bg-secondary)] p-5"
       >
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-accent-green-light)] to-[var(--color-accent-green)] text-2xl shadow-lg shadow-[var(--color-accent-green)]/20">
-          👤
+          {user?.avatar_url ? (
+            <img src={user.avatar_url} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
+          ) : (
+            "👤"
+          )}
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
@@ -111,7 +115,8 @@ export default function ProfilePage() {
               <button
                 onClick={() => {
                   if (item.action === "theme") toggleTheme();
-                  if (item.action === "premium") window.location.href = "/premium";
+                  else if (item.action === "premium") window.location.href = "/premium";
+                  else alert("This feature is coming soon!");
                 }}
                 className="flex w-full items-center gap-3 px-5 py-3.5 text-left"
               >
@@ -177,7 +182,6 @@ export default function ProfilePage() {
         Sign Out
       </motion.button>
 
-      <div className="h-32" />
     </div>
   );
 }
