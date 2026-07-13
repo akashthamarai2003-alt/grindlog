@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Check, Sparkles } from "lucide-react";
+import { ChevronLeft, Check, Sparkles, Loader2 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { HABIT_CATEGORIES, TIME_OF_DAY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";
+import { suggestHabitAction } from "./actions";
+import { createClient } from "@/lib/services/supabase/client";
+import { useAuthStore } from "@/store/auth-store";
 
 const FREQUENCIES: { value: HabitFrequency; label: string }[] = [
   { value: "daily", label: "Daily" },
@@ -19,6 +22,7 @@ const FREQUENCIES: { value: HabitFrequency; label: string }[] = [
 
 export default function NewHabitPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<HabitCategory | null>(null);
@@ -27,11 +31,52 @@ export default function NewHabitPage() {
   const [targetCount, setTargetCount] = useState(1);
   const [emoji, setEmoji] = useState("🌱");
 
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const quickEmojis = ["🏃", "📚", "💧", "🧘", "💻", "💰", "🎨", "🚶", "🍎", "✍️"];
 
-  const handleSave = () => {
-    // Save habit logic will go here
-    router.back();
+  const handleSuggest = async () => {
+    setIsAiLoading(true);
+    try {
+      const suggestion = await suggestHabitAction();
+      if (suggestion.name) setName(suggestion.name);
+      if (suggestion.category) setCategory(suggestion.category as HabitCategory);
+      if (suggestion.emoji) setEmoji(suggestion.emoji);
+      if (suggestion.targetCount) setTargetCount(suggestion.targetCount);
+    } catch (err) {
+      console.error("AI Error:", err);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user || !name || !category) return;
+    setIsSaving(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("habits").insert({
+        user_id: user.id,
+        name: name.trim(),
+        emoji,
+        category,
+        frequency,
+        preferred_time: preferredTime,
+        target_count: targetCount,
+        target_unit: "times",
+        color: "#34c759",
+      } as any);
+      
+      if (error) throw error;
+      
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleNext = () => {
@@ -147,9 +192,15 @@ export default function NewHabitPage() {
               {/* AI Suggestion Button */}
               <motion.button
                 whileTap={{ scale: 0.97 }}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-white border border-[#E5E7EB] py-4 text-sm font-bold text-[var(--color-text-primary)] shadow-sm mt-2"
+                onClick={handleSuggest}
+                disabled={isAiLoading}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-white border border-[#E5E7EB] py-4 text-sm font-bold text-[var(--color-text-primary)] shadow-sm mt-2 disabled:opacity-50"
               >
-                <Sparkles className="h-[18px] w-[18px] text-[var(--color-streak)]" />
+                {isAiLoading ? (
+                  <Loader2 className="h-[18px] w-[18px] text-[var(--color-streak)] animate-spin" />
+                ) : (
+                  <Sparkles className="h-[18px] w-[18px] text-[var(--color-streak)]" />
+                )}
                 Suggest with AI
               </motion.button>
 
@@ -242,9 +293,14 @@ export default function NewHabitPage() {
               {/* Save Button */}
               <button
                 onClick={handleSave}
-                className="mt-4 flex w-full items-center justify-center rounded-2xl bg-[var(--color-accent-green)] py-4 text-[15px] font-bold text-white transition-all shadow-[var(--shadow-glow-green)] active:scale-[0.98]"
+                disabled={isSaving}
+                className="mt-4 flex w-full items-center justify-center rounded-2xl bg-[var(--color-accent-green)] py-4 text-[15px] font-bold text-white transition-all shadow-[var(--shadow-glow-green)] active:scale-[0.98] disabled:opacity-50"
               >
-                <Check className="h-5 w-5 mr-2" strokeWidth={2.5} />
+                {isSaving ? (
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                ) : (
+                  <Check className="h-5 w-5 mr-2" strokeWidth={2.5} />
+                )}
                 Save Habit
               </button>
             </>
