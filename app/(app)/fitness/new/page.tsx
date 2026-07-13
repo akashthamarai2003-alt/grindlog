@@ -7,6 +7,8 @@ import { ArrowLeft, Dumbbell, Activity, Timer, Flame, Save } from "lucide-react"
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 
+import { createClient } from "@/lib/services/supabase/client";
+
 const WORKOUT_TYPES = [
   { id: "strength", label: "Strength", icon: Dumbbell, color: "text-[#007AFF]", bg: "bg-[#007AFF]/10", activeBg: "bg-[#007AFF]" },
   { id: "cardio", label: "Cardio", icon: Activity, color: "text-[#FF2D55]", bg: "bg-[#FF2D55]/10", activeBg: "bg-[#FF2D55]" },
@@ -15,18 +17,34 @@ const WORKOUT_TYPES = [
 
 export default function LogWorkoutPage() {
   const router = useRouter();
+  const supabase = createClient();
   const [selectedType, setSelectedType] = useState("strength");
   const [duration, setDuration] = useState("45");
   const [calories, setCalories] = useState("300");
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    // Mock save delay
-    setTimeout(() => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       setIsSaving(false);
+      return;
+    }
+
+    const { error } = await supabase.from("fitness_logs").insert({
+      user_id: user.id,
+      workout_type: selectedType,
+      duration_minutes: Number(duration) || 0,
+      calories_burned: Number(calories) || 0
+    } as any);
+
+    setIsSaving(false);
+    if (!error) {
       router.back();
-    }, 800);
+      router.refresh();
+    } else {
+      console.error(error);
+    }
   };
 
   return (

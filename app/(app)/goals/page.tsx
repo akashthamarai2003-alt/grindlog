@@ -7,20 +7,43 @@ import { Target, Plus, CheckCircle2, TrendingUp, Calendar as CalendarIcon } from
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 
-// Mock Data
-const MOCK_GOALS = [
-  { id: "1", title: "Read 50 Books", current: 12, target: 50, unit: "books", deadline: "Dec 31, 2026", color: "from-[#FFD60A] to-[#FF9500]", icon: Target },
-  { id: "2", title: "Save $10k", current: 4500, target: 10000, unit: "$", deadline: "Jun 1, 2026", color: "from-[#34C759] to-[#30B0C7]", icon: TrendingUp },
+import { createClient } from "@/lib/services/supabase/client";
+
+// Colors for goals
+const GOAL_COLORS = [
+  "from-[#FFD60A] to-[#FF9500]",
+  "from-[#34C759] to-[#30B0C7]",
+  "from-[#007AFF] to-[#5856D6]",
+  "from-[#FF2D55] to-[#FF3B30]",
+  "from-[#AF52DE] to-[#3A3A3C]"
 ];
 
 export default function GoalsPage() {
+  const supabase = createClient();
   const [isLoading, setIsLoading] = useState(true);
+  const [goals, setGoals] = useState<any[]>([]);
 
   useEffect(() => {
-    // Simulate network fetch
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
+    async function fetchGoals() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+        
+      if (data) {
+        setGoals(data);
+      }
+      setIsLoading(false);
+    }
+    fetchGoals();
   }, []);
+
+  const activeCount = goals.filter(g => g.status === 'active').length;
+  const completedCount = goals.filter(g => g.status === 'completed').length;
 
   return (
     <div className="flex flex-col min-h-dvh px-5 pb-8 pt-4 safe-top bg-[var(--color-bg-primary)]">
@@ -62,7 +85,7 @@ export default function GoalsPage() {
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Active</span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight">2</span>
+            <span className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight">{activeCount}</span>
             <span className="text-sm font-bold text-[var(--color-text-tertiary)]">goals</span>
           </div>
         </div>
@@ -75,7 +98,7 @@ export default function GoalsPage() {
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Done</span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight">5</span>
+            <span className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight">{completedCount}</span>
             <span className="text-sm font-bold text-[var(--color-text-tertiary)]">goals</span>
           </div>
         </div>
@@ -98,11 +121,16 @@ export default function GoalsPage() {
               <div key={i} className="h-32 animate-pulse rounded-[24px] bg-[var(--color-bg-secondary)]" />
             ))}
           </div>
+        ) : goals.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-sm text-[var(--color-text-secondary)]">No goals yet. Set your first objective!</p>
+          </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {MOCK_GOALS.map((goal, i) => {
-              const Icon = goal.icon;
-              const progressPct = Math.min(Math.round((goal.current / goal.target) * 100), 100);
+            {goals.map((goal, i) => {
+              const Icon = Target;
+              const color = GOAL_COLORS[i % GOAL_COLORS.length];
+              const progressPct = goal.target_value > 0 ? Math.min(Math.round((goal.current_value / goal.target_value) * 100), 100) : 0;
               
               return (
                 <motion.div
@@ -114,7 +142,7 @@ export default function GoalsPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={cn("flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br shadow-sm", goal.color)}>
+                      <div className={cn("flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br shadow-sm", color)}>
                         <Icon className="h-5 w-5 text-white" />
                       </div>
                       <h3 className="text-[17px] font-bold text-[var(--color-text-primary)]">{goal.title}</h3>
@@ -123,8 +151,8 @@ export default function GoalsPage() {
                   </div>
                   
                   <div className="flex items-center justify-between text-xs font-semibold text-[var(--color-text-secondary)]">
-                    <span>{goal.current} / {goal.target} {goal.unit}</span>
-                    <span className="flex items-center gap-1"><CalendarIcon className="h-3 w-3" /> {goal.deadline}</span>
+                    <span>{goal.current_value} / {goal.target_value} {goal.unit}</span>
+                    {goal.deadline && <span className="flex items-center gap-1"><CalendarIcon className="h-3 w-3" /> {goal.deadline}</span>}
                   </div>
 
                   {/* Progress Bar Track */}
@@ -134,7 +162,7 @@ export default function GoalsPage() {
                       initial={{ width: 0 }}
                       animate={{ width: `${progressPct}%` }}
                       transition={{ duration: 1.5, type: "spring", bounce: 0.2 }}
-                      className={cn("h-full rounded-full bg-gradient-to-r", goal.color)}
+                      className={cn("h-full rounded-full bg-gradient-to-r", color)}
                     />
                   </div>
                 </motion.div>

@@ -6,22 +6,44 @@ import { motion } from "motion/react";
 import { ArrowLeft, Target, Calendar, Save, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { createClient } from "@/lib/services/supabase/client";
+
 export default function NewGoalPage() {
   const router = useRouter();
+  const supabase = createClient();
   const [title, setTitle] = useState("");
   const [target, setTarget] = useState("");
   const [unit, setUnit] = useState("");
   const [deadline, setDeadline] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    if (!title || !target) return;
+  const handleSave = async () => {
+    if (!title || !target || !unit) return;
     setIsSaving(true);
-    // Mock save delay
-    setTimeout(() => {
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       setIsSaving(false);
+      return;
+    }
+
+    const { error } = await supabase.from("goals").insert({
+      user_id: user.id,
+      title: title,
+      target_value: Number(target),
+      current_value: 0,
+      unit: unit,
+      deadline: deadline ? deadline : null,
+      status: "active"
+    } as any);
+
+    setIsSaving(false);
+    if (!error) {
       router.back();
-    }, 800);
+      router.refresh();
+    } else {
+      console.error(error);
+    }
   };
 
   return (
