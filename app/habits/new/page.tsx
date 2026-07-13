@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";
 import { suggestHabitAction } from "./actions";
 import { createClient } from "@/lib/services/supabase/client";
-import { useAuthStore } from "@/store/auth-store";
+import { useAuth } from "@/hooks/use-auth";
 
 const FREQUENCIES: { value: HabitFrequency; label: string }[] = [
   { value: "daily", label: "Daily" },
@@ -22,7 +22,7 @@ const FREQUENCIES: { value: HabitFrequency; label: string }[] = [
 
 export default function NewHabitPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<HabitCategory | null>(null);
