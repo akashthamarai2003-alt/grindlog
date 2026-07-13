@@ -33,27 +33,39 @@ export default function NewHabitPage() {
 
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const quickEmojis = ["🏃", "📚", "💧", "🧘", "💻", "💰", "🎨", "🚶", "🍎", "✍️"];
 
   const handleSuggest = async () => {
     setIsAiLoading(true);
+    setErrorMsg(null);
     try {
       const suggestion = await suggestHabitAction();
       if (suggestion.name) setName(suggestion.name);
       if (suggestion.category) setCategory(suggestion.category as HabitCategory);
       if (suggestion.emoji) setEmoji(suggestion.emoji);
       if (suggestion.targetCount) setTargetCount(suggestion.targetCount);
-    } catch (err) {
+    } catch (err: any) {
       console.error("AI Error:", err);
+      setErrorMsg(err.message || "Failed to suggest habit");
     } finally {
       setIsAiLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!user || !name || !category) return;
+    if (!user) {
+      setErrorMsg("User not found. Please log in again.");
+      return;
+    }
+    if (!name || !category) {
+      setErrorMsg("Please fill out the name and category.");
+      return;
+    }
+    
     setIsSaving(true);
+    setErrorMsg(null);
     try {
       const supabase = createClient();
       const { error } = await supabase.from("habits").insert({
@@ -68,12 +80,16 @@ export default function NewHabitPage() {
         color: "#34c759",
       } as any);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Error:", error);
+        throw error;
+      }
       
       router.push("/dashboard");
       router.refresh();
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Save Error:", err);
+      setErrorMsg(err.message || JSON.stringify(err) || "Failed to save habit");
     } finally {
       setIsSaving(false);
     }
@@ -123,6 +139,12 @@ export default function NewHabitPage() {
           transition={springs.default}
           className="flex flex-col gap-6 mt-2"
         >
+          {errorMsg && (
+            <div className="rounded-xl bg-red-500/10 p-4 text-sm font-semibold text-red-500 border border-red-500/20">
+              {errorMsg}
+            </div>
+          )}
+
           {step === 0 ? (
             <>
               {/* Emoji Picker */}
