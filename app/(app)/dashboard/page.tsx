@@ -36,6 +36,36 @@ export default async function DashboardPage() {
       .eq("date", todayDateStr)
   ]);
 
+  let finalProfile = profile;
+
+  if (!finalProfile) {
+    // Self-heal: If profile trigger failed or doesn't exist, create it now
+    const { data: newProfile } = await supabase
+      .from("profiles")
+      .insert({
+        id: user.id,
+        display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Grinder",
+        xp: 0,
+        level: 1,
+        coins: 0,
+        tree_stage: 1,
+        theme: "light",
+      } as any)
+      .select("display_name, xp, level")
+      .single();
+      
+    finalProfile = newProfile;
+  }
+
+  // If STILL missing (e.g., db error), show a fallback so it doesn't crash
+  if (!finalProfile) {
+    return (
+      <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-center">
+        <p className="text-[var(--color-text-secondary)]">Error loading profile. Please refresh.</p>
+      </div>
+    );
+  }
+
   const logsMap = new Map((logs || []).map(l => [l.habit_id, l.status]));
 
   // Format data for client
@@ -52,7 +82,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient 
-      profile={profile as any} 
+      profile={finalProfile as any} 
       initialHabits={formattedHabits} 
       todayDateStr={todayDateStr} 
     />
