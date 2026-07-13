@@ -106,11 +106,11 @@ body {
 
 /* --- Safe Area --- */
 .safe-top {
-  padding-top: var(--safe-area-top);
+  padding-top: max(2.5rem, env(safe-area-inset-top, 2.5rem));
 }
 
 .safe-bottom {
-  padding-bottom: var(--safe-area-bottom);
+  padding-bottom: max(2rem, env(safe-area-inset-bottom, 2rem));
 }
 
 /* --- Animations --- */
