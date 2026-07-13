@@ -47,7 +47,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Link href="/habits/new">
             <motion.div
               whileTap={{ scale: 0.9 }}
-              className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#4E6BFF] shadow-[0_8px_20px_rgba(78,107,255,0.4)] text-white"
+              className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[var(--color-accent-green)] shadow-[0_8px_20px_rgba(52,199,89,0.4)] text-white"
             >
               <Plus className="h-8 w-8" strokeWidth={2.5} />
             </motion.div>
@@ -68,7 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     className={cn(
                       "h-[24px] w-[24px] transition-colors",
                       isActive
-                        ? "text-[#4E6BFF]"
+                        ? "text-[var(--color-accent-green)]"
                         : "text-[var(--color-text-tertiary)]"
                     )}
                     strokeWidth={isActive ? 2.5 : 2}
@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     className={cn(
                       "text-[10px] font-bold transition-colors whitespace-nowrap",
                       isActive
-                        ? "text-[#4E6BFF]"
+                        ? "text-[var(--color-accent-green)]"
                         : "text-[var(--color-text-tertiary)]"
                     )}
                   >
@@ -99,7 +99,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     className={cn(
                       "h-[24px] w-[24px] transition-colors",
                       isActive
-                        ? "text-[#4E6BFF]"
+                        ? "text-[var(--color-accent-green)]"
                         : "text-[var(--color-text-tertiary)]"
                     )}
                     strokeWidth={isActive ? 2.5 : 2}
@@ -108,7 +108,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     className={cn(
                       "text-[10px] font-bold transition-colors whitespace-nowrap",
                       isActive
-                        ? "text-[#4E6BFF]"
+                        ? "text-[var(--color-accent-green)]"
                         : "text-[var(--color-text-tertiary)]"
                     )}
                   >
