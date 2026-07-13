@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { motion, useInView, useMotionValue, useSpring, animate } from "motion/react";
 import {
   ArrowLeft, TrendingUp, Flame, Trophy, AlertCircle,
@@ -479,7 +479,7 @@ function Heatmap() {
       {/* Grid: 7 rows × 4 cols */}
       <div className="grid gap-1" style={{ gridTemplateColumns: "auto repeat(4, 1fr)" }}>
         {Array.from({ length: rows }).map((_, row) => (
-          <>
+          <Fragment key={row}>
             <span key={`label-${row}`} className="text-[8px] font-bold text-[var(--color-text-tertiary)] flex items-center justify-center pr-0.5">
               {DAYS[row]}
             </span>
@@ -506,7 +506,7 @@ function Heatmap() {
                 />
               );
             })}
-          </>
+          </Fragment>
         ))}
       </div>
 
