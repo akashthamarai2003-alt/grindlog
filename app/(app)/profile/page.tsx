@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { useUIStore } from "@/store/ui-store";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SettingItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -52,6 +53,7 @@ const settingsGroups: { items: SettingItem[] }[] = [
 
 export default function ProfilePage() {
   const { theme, toggleTheme } = useUIStore();
+  const { user } = useAuth();
 
   return (
     <div className="flex flex-col gap-5 px-5 pb-8 pt-4 safe-top">
@@ -78,17 +80,17 @@ export default function ProfilePage() {
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
-            Priya Sharma
+            {user?.display_name || "User"}
           </h3>
           <p className="text-sm text-[var(--color-text-secondary)]">
-            priya@email.com
+            {user?.email || ""}
           </p>
           <div className="mt-1.5 flex items-center gap-2">
             <span className="rounded-full bg-[var(--color-accent-green)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-accent-green)]">
-              Level 12 Gardener
+              Level {user?.level || 1} Gardener
             </span>
             <span className="rounded-full bg-[var(--color-xp)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-xp)]">
-              Free
+              {user?.is_premium ? "Premium" : "Free"}
             </span>
           </div>
         </div>
