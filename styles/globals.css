@@ -31,6 +31,9 @@
   --color-streak: #ff9500;
   --color-xp: #34C759;
 
+  --color-primary: var(--color-accent-blue);
+  --color-primary-light: var(--color-accent-blue-light);
+
   /* Shadows */
   --shadow-card: 0px 4px 20px rgba(0, 0, 0, 0.03), 0px 0px 2px rgba(0, 0, 0, 0.05);
   --shadow-elevated: 0px 8px 30px rgba(0, 0, 0, 0.04), 0px 0px 2px rgba(0, 0, 0, 0.06);
@@ -67,6 +70,9 @@
   --shadow-card: 0px 2px 8px rgba(0, 0, 0, 0.2), 0px 0px 1px rgba(255, 255, 255, 0.04);
   --shadow-elevated: 0px 8px 32px rgba(0, 0, 0, 0.3), 0px 0px 1px rgba(255, 255, 255, 0.06);
   --shadow-floating: 0px 4px 16px rgba(0, 0, 0, 0.4);
+
+  --color-primary: #0a84ff;
+  --color-primary-light: rgba(10, 132, 255, 0.15);
 }
 
 /* --- Base --- */
