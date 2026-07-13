@@ -27,7 +27,7 @@ export default function EditProfilePage() {
 
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ display_name: name })
+      .update({ display_name: name } as any)
       .eq("id", user.id);
 
     if (updateError) {

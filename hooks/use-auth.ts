@@ -83,5 +83,6 @@ export function useAuth() {
     signUp,
     signInWithGoogle,
     signOut: signOutUser,
+    setUser,
   };
 }
