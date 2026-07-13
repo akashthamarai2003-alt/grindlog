@@ -93,8 +93,6 @@ html {
 }
 
 body {
-  max-width: 430px;
-  margin: 0 auto;
   min-height: 100dvh;
   overflow-x: hidden;
   background-color: var(--color-bg-primary);
