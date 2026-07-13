@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { createBrowserSupabase } from "@/lib/services/supabase/client";
+import { createClient } from "@/lib/services/supabase/client";
 import "react-day-picker/dist/style.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -427,8 +427,8 @@ function MonthStats({ logs, habits, year, month }: {
 
 // ─── Main Client ──────────────────────────────────────────────────────────────
 
-export function CalendarClient({ initialHabits, initialLogs, todayDateStr }: Props) {
-  const supabase = createBrowserSupabase();
+export default function CalendarClient({ initialHabits = [], initialLogs = [], todayDateStr = new Date().toISOString().split('T')[0] }: any) {
+  const supabase = createClient();
   const today = new Date(todayDateStr + "T12:00:00");
 
   const [habits] = useState<Habit[]>(initialHabits);
