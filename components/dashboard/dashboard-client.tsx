@@ -106,8 +106,17 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       </div>
 
       {/* Hero Card */}
-      <div className="flex flex-col gap-4 rounded-3xl bg-gradient-to-br from-[#34c759] to-[#28a745] p-5 shadow-[var(--shadow-glow-green)] text-white">
-        <div className="flex items-center justify-between px-1">
+      <div 
+        className="flex flex-col gap-4 rounded-3xl p-5 shadow-[var(--shadow-glow-green)] text-white relative overflow-hidden"
+      >
+        <div 
+          className="absolute inset-0 z-0 bg-cover bg-center opacity-90"
+          style={{ backgroundImage: "url('/greebpg.jpg')" }}
+        />
+        {/* Dark overlay to ensure text remains readable over the grass texture */}
+        <div className="absolute inset-0 z-0 bg-black/20" />
+        
+        <div className="relative z-10 flex items-center justify-between px-1">
           <div>
             <h3 className="text-[40px] font-extrabold tracking-tight leading-none">{completedCount}</h3>
             <p className="text-[13px] font-semibold text-white mt-1">Done Today ✨</p>
@@ -134,7 +143,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           </div>
         </div>
         
-        <div className="mt-3 flex flex-col gap-2">
+        <div className="relative z-10 mt-3 flex flex-col gap-2">
           <div className="flex items-center justify-between text-[11px] font-bold">
             <span className="text-white">Level {profile.level}</span>
             <span className="text-white/90">Next Level</span>
