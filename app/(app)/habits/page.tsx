@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
 import { HabitCard } from "@/components/habits/habit-card";
+import { HabitsListClient } from "@/components/habits/habits-list-client";
 
 export const dynamic = "force-dynamic";
 
@@ -84,11 +85,7 @@ export default async function HabitsPage() {
             </Link>
           </div>
         ) : (
-          habitsWithLogs.map((habit: any) => (
-            <div key={habit.id} className="pointer-events-none opacity-80">
-              <HabitCard habit={habit} />
-            </div>
-          ))
+          <HabitsListClient initialHabits={habitsWithLogs} todayDateStr={todayDateStr} />
         )}
       </div>
     </div>
