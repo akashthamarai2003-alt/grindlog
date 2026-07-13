@@ -76,12 +76,12 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   return (
     <>
       <div 
-        className="fixed inset-0 z-[-2] bg-cover bg-center"
+        className="fixed inset-0 z-0 bg-cover bg-center bg-[#28a745]"
         style={{ backgroundImage: "url('/greebpg.jpg')" }}
       />
-      <div className="fixed inset-0 z-[-1] bg-black/60" />
+      <div className="fixed inset-0 z-0 bg-black/60" />
       
-      <div className="flex flex-col gap-6 px-5 pb-8 pt-4 safe-top min-h-dvh">
+      <div className="relative z-10 flex flex-col gap-6 px-5 pb-8 pt-4 safe-top min-h-dvh">
         <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
 
         {/* Header */}
