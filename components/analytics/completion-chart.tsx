@@ -14,6 +14,7 @@ import { springs } from "@/animations/springs";
 
 interface CompletionChartProps {
   data: { day: string; rate: number }[];
+  period?: "Week" | "Month" | "Year";
 }
 
 const CustomTooltip = ({
