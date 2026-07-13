@@ -175,7 +175,7 @@ export default function ProfilePage() {
         Sign Out
       </motion.button>
 
-      <div className="h-4" />
+      <div className="h-32" />
     </div>
   );
 }

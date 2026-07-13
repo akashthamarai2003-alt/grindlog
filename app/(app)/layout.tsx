@@ -35,6 +35,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Perfect SVG Background with Smooth Notch */}
         <div className="absolute bottom-0 left-0 h-[85px] w-full">
           <svg width="100%" height="100%" viewBox="0 0 430 85" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Solid mask to hide scrolling content behind the notch */}
+            <rect width="430" height="85" fill="var(--color-bg-secondary)" />
             <path 
               d="M 0,32 C 0,14.3 14.3,0 32,0 H 145 C 160,0 168,10 175,20 C 185,35 198,42 215,42 C 232,42 245,35 255,20 C 262,10 270,0 285,0 H 398 C 415.7,0 430,14.3 430,32 V 85 H 0 Z" 
               fill="var(--color-bg-elevated)"
