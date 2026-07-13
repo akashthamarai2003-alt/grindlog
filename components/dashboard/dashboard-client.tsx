@@ -79,17 +79,19 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <button className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">
-          <div className="h-[2px] w-[18px] rounded-full bg-current" />
-          <div className="h-[2px] w-[18px] rounded-full bg-current" />
-          <div className="h-[2px] w-[18px] rounded-full bg-current" />
-        </button>
-        <div className="relative">
-          <button className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-text-primary)]">
+        <Link href="/profile">
+          <button className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors">
+            <div className="h-[2px] w-[18px] rounded-full bg-current" />
+            <div className="h-[2px] w-[18px] rounded-full bg-current" />
+            <div className="h-[2px] w-[18px] rounded-full bg-current" />
+          </button>
+        </Link>
+        <Link href="/notifications" className="relative">
+          <button className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors">
             <Bell className="h-[22px] w-[22px]" strokeWidth={2.5} />
           </button>
           <div className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-[var(--color-bg-primary)] bg-[var(--color-error)]" />
-        </div>
+        </Link>
       </div>
 
       {/* Greeting */}
