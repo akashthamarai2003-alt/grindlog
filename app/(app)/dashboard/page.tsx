@@ -10,36 +10,31 @@ export default async function DashboardPage() {
     redirect("/auth/signin");
   }
 
-  // Fetch profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, xp, level")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile) {
-    // Edge case if profile isn't created yet
-    return <div>Loading profile...</div>;
-  }
-
-  // We need today's date string in YYYY-MM-DD format based on user's timezone ideally,
-  // but for now we will use a basic UTC or server date approach.
   const todayDateStr = new Date().toISOString().split("T")[0];
 
-  // Fetch habits
-  const { data: habits } = await supabase
-    .from("habits")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("is_active", true)
-    .order("created_at", { ascending: true });
-
-  // Fetch today's logs
-  const { data: logs } = await supabase
-    .from("habit_logs")
-    .select("habit_id, status")
-    .eq("user_id", user.id)
-    .eq("date", todayDateStr);
+  // Run all database fetches in parallel
+  const [
+    { data: profile },
+    { data: habits },
+    { data: logs }
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name, xp, level")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("habits")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("habit_logs")
+      .select("habit_id, status")
+      .eq("user_id", user.id)
+      .eq("date", todayDateStr)
+  ]);
 
   const logsMap = new Map((logs || []).map(l => [l.habit_id, l.status]));
 
