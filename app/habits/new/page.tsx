@@ -820,61 +820,66 @@ export default function NewHabitPage() {
                           transition={{ type: "spring", stiffness: 450, damping: 35 }}
                           className="flex flex-col gap-2 py-2 w-full min-w-0"
                         >
-                          <div className="flex flex-col gap-2 w-full">
-                            <div className="flex items-center gap-2 w-full min-w-0">
-                              {/* Habit Name Input */}
-                              <div className="flex-1 min-w-0 flex items-center gap-3 rounded-2xl bg-[var(--color-bg-elevated)] px-4 shadow-sm border border-[var(--color-bg-tertiary)]/10 h-[56px] focus-within:ring-2 focus-within:ring-[var(--color-accent-green)]/35 transition-all">
-                                <span className="text-xl select-none flex-shrink-0">
-                                  {getBulkEmojiAndCategory(item.name).emoji}
-                                </span>
-                                <input
-                                  type="text"
-                                  value={item.name}
-                                  onChange={(e) => handleUpdateBulkRow(item.id, "name", e.target.value)}
-                                  placeholder={
-                                    index === 0
-                                      ? "e.g., Running"
-                                      : index === 1
-                                        ? "e.g., Gym"
-                                        : "e.g., Wake up at 05:00"
-                                  }
-                                  className="flex-1 min-w-0 bg-transparent text-[14px] font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] placeholder:font-medium outline-none"
-                                />
-                              </div>
-
-                              {/* Frequency Dropdown */}
-                              <select
-                                value={item.frequency}
-                                onChange={(e) => handleUpdateBulkRow(item.id, "frequency", e.target.value as HabitFrequency)}
-                                className="rounded-2xl bg-[var(--color-bg-elevated)] px-2 h-[56px] text-sm font-bold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 shadow-sm transition-all cursor-pointer flex-shrink-0"
-                              >
-                                {FREQUENCIES.map(f => (
-                                  <option key={f.value} value={f.value}>{f.label}</option>
-                                ))}
-                              </select>
-
-                              {/* Time Selector */}
+                          <div className="flex flex-col gap-3 rounded-[20px] bg-[var(--color-bg-elevated)] p-3.5 shadow-sm border border-[var(--color-bg-tertiary)]/10 w-full">
+                            {/* Top Row: Name & Trash */}
+                            <div className="flex items-center gap-3 px-1">
+                              <span className="text-[22px] select-none flex-shrink-0">
+                                {getBulkEmojiAndCategory(item.name).emoji}
+                              </span>
                               <input
-                                type="time"
-                                value={item.time}
-                                onChange={(e) => handleUpdateBulkRow(item.id, "time", e.target.value)}
-                                className="rounded-2xl bg-[var(--color-bg-elevated)] px-3 h-[56px] text-sm font-extrabold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 shadow-sm transition-all cursor-pointer flex-shrink-0"
+                                type="text"
+                                value={item.name}
+                                onChange={(e) => handleUpdateBulkRow(item.id, "name", e.target.value)}
+                                placeholder={
+                                  index === 0
+                                    ? "e.g., Morning Run"
+                                    : index === 1
+                                      ? "e.g., Read 10 Pages"
+                                      : "e.g., Drink Water"
+                                }
+                                className="flex-1 min-w-0 bg-transparent text-[16px] font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] placeholder:font-medium outline-none"
                               />
-
-                              {/* Remove Button */}
                               <button
                                 type="button"
                                 onClick={() => handleRemoveBulkRow(item.id)}
                                 disabled={bulkHabits.length <= 1}
-                                className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500/20 disabled:opacity-30 disabled:hover:bg-red-500/10 transition-colors"
+                                className="flex h-[32px] w-[32px] flex-shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-tertiary)]/10 text-[var(--color-text-tertiary)] hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30 disabled:hover:bg-[var(--color-bg-tertiary)]/10 disabled:hover:text-[var(--color-text-tertiary)] transition-colors"
                               >
-                                <Trash2 className="h-5 w-5" strokeWidth={2.5} />
+                                <Trash2 className="h-[15px] w-[15px]" strokeWidth={2.5} />
                               </button>
+                            </div>
+
+                            {/* Divider */}
+                            <div className="h-[1px] w-full bg-[var(--color-bg-tertiary)]/10 rounded-full" />
+
+                            {/* Bottom Row: Settings */}
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <select
+                                  value={item.frequency}
+                                  onChange={(e) => handleUpdateBulkRow(item.id, "frequency", e.target.value as HabitFrequency)}
+                                  className="w-full appearance-none rounded-xl bg-[var(--color-bg-primary)] px-3.5 h-[46px] text-[13px] font-bold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 transition-all cursor-pointer shadow-sm"
+                                >
+                                  {FREQUENCIES.map(f => (
+                                    <option key={f.value} value={f.value}>{f.label}</option>
+                                  ))}
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                                  <ChevronLeft className="h-4 w-4 -rotate-90 text-[var(--color-text-tertiary)]" />
+                                </div>
+                              </div>
+
+                              <input
+                                type="time"
+                                value={item.time}
+                                onChange={(e) => handleUpdateBulkRow(item.id, "time", e.target.value)}
+                                className="w-[115px] rounded-xl bg-[var(--color-bg-primary)] px-3.5 h-[46px] text-[13px] font-extrabold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 transition-all cursor-pointer shadow-sm"
+                              />
                             </div>
                             
                             {/* Inline Custom Days Selector */}
                             {item.frequency === "custom" && (
-                              <div className="flex gap-2 pl-2">
+                              <div className="flex gap-1.5 pt-1 justify-center w-full">
                                 {["M", "T", "W", "T", "F", "S", "S"].map((dayName, dayIndex) => {
                                   const realDayIndex = dayIndex === 6 ? 0 : dayIndex + 1;
                                   const isSelected = item.customDays.includes(realDayIndex);
@@ -889,10 +894,10 @@ export default function NewHabitPage() {
                                         handleUpdateBulkRow(item.id, "customDays", newDays);
                                       }}
                                       className={cn(
-                                        "flex h-[32px] w-[32px] items-center justify-center rounded-lg text-xs font-bold transition-all shadow-sm",
+                                        "flex h-[38px] flex-1 items-center justify-center rounded-xl text-[13px] font-bold transition-all",
                                         isSelected
-                                          ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]"
-                                          : "bg-[var(--color-bg-elevated)] text-[var(--color-text-tertiary)]"
+                                          ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] shadow-sm"
+                                          : "bg-[var(--color-bg-primary)] text-[var(--color-text-tertiary)] border border-[var(--color-bg-tertiary)]/10"
                                       )}
                                     >
                                       {dayName}
