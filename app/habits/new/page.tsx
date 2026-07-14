@@ -285,8 +285,9 @@ export default function NewHabitPage() {
           name: h.name.trim().slice(0, MAX_NAME_LENGTH),
           emoji,
           category,
-          frequency: "daily",
-          preferred_time: preferredTime,
+          frequency: form.frequency,
+          custom_days: form.frequency === "custom" ? form.customDays : null,
+          preferred_time: form.preferredTime,
           reminder_time: h.time,
           target_count: 1,
           target_unit: "times",
@@ -344,6 +345,134 @@ export default function NewHabitPage() {
     center: { x: 0, opacity: 1, scale: 1 },
     exit: (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0, scale: 0.97 }),
   };
+
+  const renderSchedulingSettings = () => (
+    <div className="flex flex-col gap-6 w-full">
+      {/* Frequency */}
+      <div>
+        <SectionLabel>Frequency</SectionLabel>
+        <div className="grid grid-cols-3 gap-2">
+          {FREQUENCIES.map((f, i) => {
+            const active = form.frequency === f.value;
+            return (
+              <motion.button
+                key={f.value}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05, type: "spring", stiffness: 400, damping: 28 }}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => set("frequency", f.value)}
+                className={cn(
+                  "relative flex flex-col items-center gap-1 rounded-2xl py-3.5 px-2 text-center overflow-hidden",
+                  active
+                    ? "text-white"
+                    : "bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] shadow-sm"
+                )}
+              >
+                {active && (
+                  <motion.div
+                    layoutId={`freqBg-${mode}`}
+                    className="absolute inset-0"
+                    style={{ background: color, borderRadius: 16 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 34 }}
+                  />
+                )}
+                <span className="relative z-10 text-[18px]">{f.icon}</span>
+                <span className="relative z-10 text-[11px] font-bold leading-tight">
+                  {f.label}
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Custom Days Weekday Selector */}
+      <AnimatePresence>
+        {form.frequency === "custom" && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, y: -10 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -10 }}
+            transition={{ type: "spring", stiffness: 350, damping: 28 }}
+            className="flex flex-col gap-2 overflow-hidden"
+          >
+            <SectionLabel>Active Days</SectionLabel>
+            <div className="flex justify-between gap-1.5 py-1">
+              {[
+                { label: "M", value: 1 },
+                { label: "T", value: 2 },
+                { label: "W", value: 3 },
+                { label: "T", value: 4 },
+                { label: "F", value: 5 },
+                { label: "S", value: 6 },
+                { label: "S", value: 0 },
+              ].map((day) => {
+                const active = form.customDays.includes(day.value);
+                return (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => {
+                      const next = active
+                        ? form.customDays.filter((d) => d !== day.value)
+                        : [...form.customDays, day.value];
+                      set("customDays", next);
+                    }}
+                    className={cn(
+                      "flex h-11 w-11 flex-1 items-center justify-center rounded-2xl text-[13px] font-black transition-all border active:scale-90",
+                      active
+                        ? "bg-[var(--color-bg-elevated)] border-[var(--color-text-primary)] text-[var(--color-text-primary)] shadow-sm ring-1 ring-[var(--color-text-primary)]"
+                        : "bg-[var(--color-bg-secondary)] border-transparent text-[var(--color-text-secondary)]"
+                    )}
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Time of Day */}
+      <div>
+        <SectionLabel>Best time</SectionLabel>
+        <div className="flex gap-2 flex-wrap">
+          {TIME_OF_DAY.map((t, i) => {
+            const active = form.preferredTime === t.value;
+            return (
+              <motion.button
+                key={t.value}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.06, type: "spring", stiffness: 400, damping: 28 }}
+                whileTap={{ scale: 0.93 }}
+                onClick={() => set("preferredTime", t.value)}
+                className={cn(
+                  "relative flex items-center gap-2 rounded-2xl px-4 py-3 text-[13px] font-bold overflow-hidden",
+                  active
+                    ? "text-white"
+                    : "bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] shadow-sm"
+                )}
+              >
+                {active && (
+                  <motion.div
+                    layoutId={`timeBg-${mode}`}
+                    className="absolute inset-0"
+                    style={{ background: color, borderRadius: 16 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 34 }}
+                  />
+                )}
+                <span className="relative z-10 text-[15px]">{t.emoji}</span>
+                <span className="relative z-10">{t.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 
   if (!mounted) {
     return (
@@ -679,6 +808,14 @@ export default function NewHabitPage() {
                 className="flex flex-col gap-6"
               >
                 <div>
+                  <SectionLabel>Global Schedule Settings</SectionLabel>
+                  <p className="text-[12px] font-medium text-[var(--color-text-tertiary)] mb-4 pl-1">
+                    These settings apply to all habits created below.
+                  </p>
+                  {renderSchedulingSettings()}
+                </div>
+
+                <div>
                   <SectionLabel>Your Habits & Timings</SectionLabel>
                   <div className="flex flex-col gap-3 max-h-[340px] overflow-y-auto pr-1 mb-4">
                     <AnimatePresence initial={false}>
@@ -808,129 +945,7 @@ export default function NewHabitPage() {
                     </motion.div>
                   </motion.div>
 
-                  {/* Frequency */}
-                  <div>
-                    <SectionLabel>Frequency</SectionLabel>
-                    <div className="grid grid-cols-3 gap-2">
-                      {FREQUENCIES.map((f, i) => {
-                        const active = form.frequency === f.value;
-                        return (
-                          <motion.button
-                            key={f.value}
-                            initial={{ opacity: 0, scale: 0.85 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: i * 0.05, type: "spring", stiffness: 400, damping: 28 }}
-                            whileTap={{ scale: 0.92 }}
-                            onClick={() => set("frequency", f.value)}
-                            className={cn(
-                              "relative flex flex-col items-center gap-1 rounded-2xl py-3.5 px-2 text-center overflow-hidden",
-                              active
-                                ? "text-white"
-                                : "bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] shadow-sm"
-                            )}
-                          >
-                            {active && (
-                              <motion.div
-                                layoutId="freqBg"
-                                className="absolute inset-0"
-                                style={{ background: color, borderRadius: 16 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 34 }}
-                              />
-                            )}
-                            <span className="relative z-10 text-[18px]">{f.icon}</span>
-                            <span className="relative z-10 text-[11px] font-bold leading-tight">
-                              {f.label}
-                            </span>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Custom Days Weekday Selector */}
-                  <AnimatePresence>
-                    {form.frequency === "custom" && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0, y: -10 }}
-                        animate={{ opacity: 1, height: "auto", y: 0 }}
-                        exit={{ opacity: 0, height: 0, y: -10 }}
-                        transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                        className="flex flex-col gap-2 overflow-hidden"
-                      >
-                        <SectionLabel>Active Days</SectionLabel>
-                        <div className="flex justify-between gap-1.5 py-1">
-                          {[
-                            { label: "M", value: 1 },
-                            { label: "T", value: 2 },
-                            { label: "W", value: 3 },
-                            { label: "T", value: 4 },
-                            { label: "F", value: 5 },
-                            { label: "S", value: 6 },
-                            { label: "S", value: 0 },
-                          ].map((day) => {
-                            const active = form.customDays.includes(day.value);
-                            return (
-                              <button
-                                key={day.value}
-                                type="button"
-                                onClick={() => {
-                                  const next = active
-                                    ? form.customDays.filter((d) => d !== day.value)
-                                    : [...form.customDays, day.value];
-                                  set("customDays", next);
-                                }}
-                                className={cn(
-                                  "flex h-11 w-11 flex-1 items-center justify-center rounded-2xl text-[13px] font-black transition-all border active:scale-90",
-                                  active
-                                    ? "bg-[var(--color-bg-elevated)] border-[var(--color-text-primary)] text-[var(--color-text-primary)] shadow-sm ring-1 ring-[var(--color-text-primary)]"
-                                    : "bg-[var(--color-bg-secondary)] border-transparent text-[var(--color-text-secondary)]"
-                                )}
-                              >
-                                {day.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Time of Day */}
-                  <div>
-                    <SectionLabel>Best time</SectionLabel>
-                    <div className="flex gap-2 flex-wrap">
-                      {TIME_OF_DAY.map((t, i) => {
-                        const active = form.preferredTime === t.value;
-                        return (
-                          <motion.button
-                            key={t.value}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.06, type: "spring", stiffness: 400, damping: 28 }}
-                            whileTap={{ scale: 0.93 }}
-                            onClick={() => set("preferredTime", t.value)}
-                            className={cn(
-                              "relative flex items-center gap-2 rounded-2xl px-4 py-3 text-[13px] font-bold overflow-hidden",
-                              active
-                                ? "text-white"
-                                : "bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] shadow-sm"
-                            )}
-                          >
-                            {active && (
-                              <motion.div
-                                layoutId="timeBg"
-                                className="absolute inset-0"
-                                style={{ background: color, borderRadius: 16 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 34 }}
-                              />
-                            )}
-                            <span className="relative z-10 text-[15px]">{t.emoji}</span>
-                            <span className="relative z-10">{t.label}</span>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  {renderSchedulingSettings()}
 
                   {/* Specific Time Picker */}
                   <div className="flex flex-col gap-2 mt-2">
