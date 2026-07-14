@@ -197,15 +197,20 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         {weekDays.map((day, i) => (
           <div key={i} className="flex flex-col items-center gap-2">
             <span className="text-[11px] font-bold text-[var(--color-text-tertiary)]">{day.dayStr}</span>
-            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
+            <div 
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
               day.isToday 
                 ? isPerfectDay
                   ? "bg-[var(--color-accent-green)] text-white shadow-[var(--shadow-glow-green)]"
                   : "ring-2 ring-[var(--color-accent-green)] ring-offset-2 ring-offset-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]"
-                : day.dateObj < today
-                  ? "bg-[var(--color-accent-green)]/20 text-[var(--color-accent-green)]" // Mock past days as completed
-                  : "bg-[var(--color-bg-secondary)] text-[var(--color-text-tertiary)]"
-            }`}>
+                : "bg-[var(--color-bg-secondary)] text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] cursor-pointer"
+            }`}
+              onClick={() => {
+                if (!day.isToday) {
+                  alert("Viewing past/future habits is coming soon!");
+                }
+              }}
+            >
               {day.dateObj.getDate()}
             </div>
           </div>
