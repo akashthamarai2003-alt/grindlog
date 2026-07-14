@@ -537,23 +537,27 @@ export default function NewHabitPage() {
 
         {/* ── Step Title ── */}
         <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={mode === "bulk" ? "bulk-title" : `title-${step}`}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ type: "spring", stiffness: 380, damping: 36 }}
-            className="mb-7"
-          >
-            <h1 className="text-[28px] font-black text-[var(--color-text-primary)] leading-tight">
-              {mode === "bulk" ? "Create All Habits" : STEP_TITLES[step].title}
-            </h1>
-            <p className="text-[15px] text-[var(--color-text-secondary)] font-medium mt-1">
-              {mode === "bulk" ? "Set up multiple habits at once" : STEP_TITLES[step].subtitle}
-            </p>
-          </motion.div>
+        {/* ── Step Title ── */}
+        <AnimatePresence mode="wait" custom={direction}>
+          {step !== 2 && (
+            <motion.div
+              key={mode === "bulk" ? "bulk-title" : `title-${step}`}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "spring", stiffness: 380, damping: 36 }}
+              className="mb-7"
+            >
+              <h1 className="text-[28px] font-black text-[var(--color-text-primary)] leading-tight">
+                {mode === "bulk" ? "Create All Habits" : STEP_TITLES[step].title}
+              </h1>
+              <p className="text-[15px] text-[var(--color-text-secondary)] font-medium mt-1">
+                {mode === "bulk" ? "Set up multiple habits at once" : STEP_TITLES[step].subtitle}
+              </p>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* ── Mode Switcher ── */}
@@ -1010,40 +1014,61 @@ export default function NewHabitPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-1 flex-col items-center justify-center text-center gap-6"
+                className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center px-6 bg-[var(--color-bg-secondary)]"
               >
-                <motion.div
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                  className="relative flex items-center justify-center h-64 w-64 -my-8"
-                >
-                  <img
-                    src="/Done.svg"
-                    className="h-full w-full object-contain"
-                    alt="Success"
+                <div className="relative mb-12 mt-[-10vh]">
+                  {/* Glowing backdrop */}
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: [0, 1.2, 1], opacity: [0, 0.4, 0.2] }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                    className="absolute inset-0 rounded-full blur-3xl"
+                    style={{ background: color, transform: "scale(1.8)" }}
                   />
-                </motion.div>
+
+                  {/* Icon container */}
+                  <motion.div
+                    initial={{ scale: 0, rotate: -15 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+                    className="relative flex h-[120px] w-[120px] items-center justify-center rounded-[32px] shadow-xl z-10"
+                    style={{ background: `${color}15`, border: `2px solid ${color}30` }}
+                  >
+                    <span className="text-[64px] drop-shadow-md">{form.emoji}</span>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20, delay: 0.6 }}
+                      className="absolute -bottom-3 -right-3 flex h-[42px] w-[42px] items-center justify-center rounded-full border-[4px] border-[var(--color-bg-secondary)]"
+                      style={{ background: color }}
+                    >
+                      <Check className="h-5 w-5 text-white" strokeWidth={4} />
+                    </motion.div>
+                  </motion.div>
+                </div>
+
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 400, damping: 30 }}
+                  className="relative z-10"
                 >
-                  <h2 className="text-[24px] font-black text-[var(--color-text-primary)]">
-                    Habit Created!
+                  <h2 className="text-[32px] font-black text-[var(--color-text-primary)] tracking-tight">
+                    You're All Set!
                   </h2>
-                  <p className="text-[15px] font-medium text-[var(--color-text-secondary)] mt-1">
-                    "{form.name}" is ready to build momentum.
+                  <p className="text-[16px] font-semibold text-[var(--color-text-secondary)] mt-3">
+                    <span className="text-[var(--color-text-primary)] font-bold">"{form.name}"</span> is ready. <br/>Time to build momentum.
                   </p>
                 </motion.div>
+
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="flex items-center gap-2 text-[13px] font-semibold text-[var(--color-text-tertiary)]"
+                  transition={{ delay: 1 }}
+                  className="absolute bottom-12 flex flex-col items-center gap-3 text-[14px] font-bold text-[var(--color-text-tertiary)]"
                 >
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Taking you to your dashboard…
+                  <Loader2 className="h-5 w-5 animate-spin" style={{ color }} />
+                  Taking you to the dashboard…
                 </motion.div>
               </motion.div>
             )}
