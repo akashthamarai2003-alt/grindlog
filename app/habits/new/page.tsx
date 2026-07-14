@@ -537,8 +537,6 @@ export default function NewHabitPage() {
 
         {/* ── Step Title ── */}
         <AnimatePresence mode="wait" custom={direction}>
-        {/* ── Step Title ── */}
-        <AnimatePresence mode="wait" custom={direction}>
           {step !== 2 && (
             <motion.div
               key={mode === "bulk" ? "bulk-title" : `title-${step}`}
