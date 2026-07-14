@@ -389,7 +389,7 @@ export default function NewHabitPage() {
 
         {/* ── Step Content ── */}
         <div className="flex-1 relative">
-          <AnimatePresence mode="wait" custom={direction}>
+          <AnimatePresence mode="popLayout" custom={direction}>
             {step === 0 && (
               <motion.div
                 key="step-0"
