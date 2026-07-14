@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,6 +27,7 @@ interface HabitWithLog {
   isCompleted: boolean;
   preferredTime?: string;
   reminderTime?: string | null;
+  createdAt?: string;
 }
 
 interface DashboardClientProps {
@@ -73,8 +74,16 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
     setQuoteIdx(Math.floor(Math.random() * QUOTES.length));
   }, []);
 
-  const completedCount = optimisticHabits.filter((h) => h.isCompleted).length;
-  const totalCount = optimisticHabits.length;
+  const visibleHabits = useMemo(() => {
+    return optimisticHabits.filter(h => {
+      if (!h.createdAt) return true;
+      const createdDateStr = h.createdAt.split("T")[0];
+      return createdDateStr <= selectedDateStr;
+    });
+  }, [optimisticHabits, selectedDateStr]);
+
+  const completedCount = visibleHabits.filter((h) => h.isCompleted).length;
+  const totalCount = visibleHabits.length;
   const progressPct = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
   const isPerfectDay = totalCount > 0 && completedCount === totalCount;
 
@@ -173,7 +182,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             {/* Streak Badge inside Hero */}
             <div className="mt-2 flex items-center gap-1.5 w-max rounded-full bg-[var(--color-streak)]/10 px-2.5 py-1 text-xs font-bold text-[#ff9500] ring-1 ring-[#ff9500]/20">
               <Flame className="h-3.5 w-3.5 fill-[#ff9500]" />
-              {optimisticHabits.reduce((acc, h) => Math.max(acc, h.currentStreak), 0)} Day Streak
+              {visibleHabits.reduce((acc, h) => Math.max(acc, h.currentStreak), 0)} Day Streak
             </div>
           </div>
           
@@ -288,7 +297,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         </div>
 
         <div className="flex flex-col gap-3">
-          {optimisticHabits.length === 0 ? (
+          {visibleHabits.length === 0 ? (
             <div className="text-center p-6 bg-[var(--color-bg-elevated)] rounded-2xl border border-dashed border-[var(--color-bg-tertiary)]">
               <p className="text-sm font-semibold text-[var(--color-text-secondary)]">No active habits today.</p>
               <Link href="/habits/new" className="mt-2 inline-block rounded-full bg-[var(--color-accent-green)]/10 px-4 py-2 text-xs font-bold text-[var(--color-accent-green)]">
@@ -297,7 +306,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             </div>
           ) : (
             <>
-              {optimisticHabits.map((habit) => (
+              {visibleHabits.map((habit) => (
                 <motion.div key={habit.id} variants={staggerItem}>
                   <HabitCard 
                     habit={habit} 

@@ -80,6 +80,7 @@ export default async function DashboardPage() {
     isCompleted: logsMap.get(h.id) === "completed",
     preferredTime: h.preferred_time || "anytime",
     reminderTime: h.reminder_time || null,
+    createdAt: h.created_at,
   }));
 
   return (

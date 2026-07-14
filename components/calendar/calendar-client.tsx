@@ -32,6 +32,7 @@ type Habit = {
   current_streak: number;
   preferred_time?: string;
   reminder_time?: string | null;
+  created_at?: string;
 };
 
 type HabitLog = {
@@ -139,8 +140,9 @@ function DayCell({
 }: DayCellProps) {
   const dateStr = toDateStr(date);
   const dayLogs = logs.filter((l) => l.date === dateStr);
+  const dayHabits = habits.filter(h => !h.created_at || h.created_at.split("T")[0] <= dateStr);
   const completed = dayLogs.filter((l) => l.status === "completed").length;
-  const total = habits.length;
+  const total = dayHabits.length;
   const pct = total > 0 ? completed / total : 0;
   const hasLogs = dayLogs.length > 0;
   const isPerfect = completed === total && total > 0;
@@ -417,9 +419,10 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, isPending }: 
   const isFuture = date > todayDate;
   const isEditable = !isFuture;
 
+  const dayHabits = habits.filter(h => !h.created_at || h.created_at.split("T")[0] <= dateStr);
   const dayLogs = logs.filter((l) => l.date === dateStr);
   const completedCount = dayLogs.filter((l) => l.status === "completed").length;
-  const totalHabits = habits.length;
+  const totalHabits = dayHabits.length;
   const pct = totalHabits > 0 ? completedCount / totalHabits : 0;
   const isPerfect = completedCount === totalHabits && totalHabits > 0;
 
@@ -545,7 +548,7 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, isPending }: 
       ) : (
         <AnimatePresence>
           <div className="flex flex-col divide-y divide-[var(--color-bg-tertiary)]/60 mt-1">
-            {habits.map((habit, idx) => {
+            {dayHabits.map((habit, idx) => {
               const log = dayLogs.find((l) => l.habit_id === habit.id);
               const status = log?.status ?? null;
               return (
@@ -580,21 +583,24 @@ function MonthStats({
   month: number;
 }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const totalPossible = daysInMonth * habits.length;
+  
+  let totalPossible = 0;
+  let perfectDays = 0;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const dayHabits = habits.filter(h => !h.created_at || h.created_at.split("T")[0] <= ds);
+    totalPossible += dayHabits.length;
+
+    const dl = logs.filter((l) => l.date === ds);
+    if (dayHabits.length > 0 && dl.filter((l) => l.status === "completed").length === dayHabits.length) {
+      perfectDays++;
+    }
+  }
+
   const completed = logs.filter((l) => l.status === "completed").length;
   const skipped = logs.filter((l) => l.status === "skipped").length;
   const rate = totalPossible > 0 ? Math.round((completed / totalPossible) * 100) : 0;
-
-  const perfectDays = (() => {
-    let count = 0;
-    for (let d = 1; d <= daysInMonth; d++) {
-      const ds = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const dl = logs.filter((l) => l.date === ds);
-      if (habits.length > 0 && dl.filter((l) => l.status === "completed").length === habits.length)
-        count++;
-    }
-    return count;
-  })();
 
   const stats = [
     { icon: CheckCircle2, label: "Done",    value: completed,   color: "#34C759", numeral: true },
