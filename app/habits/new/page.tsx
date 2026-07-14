@@ -18,7 +18,6 @@ import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   Check,
-  Sparkles,
   Loader2,
   Plus,
   Minus,
@@ -29,7 +28,7 @@ import {
 import { HABIT_CATEGORIES, TIME_OF_DAY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";
-import { suggestHabitAction } from "./actions";
+
 import { createClient } from "@/lib/services/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -149,7 +148,7 @@ export default function NewHabitPage() {
     setMounted(true);
   }, []);
   const [direction, setDirection] = useState(1);
-  const [isAiLoading, setIsAiLoading] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -181,27 +180,7 @@ export default function NewHabitPage() {
     });
   }, [nameShakeControls]);
 
-  const handleSuggest = async () => {
-    setIsAiLoading(true);
-    setErrorMsg(null);
-    try {
-      const suggestion = await suggestHabitAction();
-      dispatch({
-        type: "SUGGEST",
-        payload: {
-          ...(suggestion.name && { name: suggestion.name }),
-          ...(suggestion.category && { category: suggestion.category as HabitCategory }),
-          ...(suggestion.emoji && { emoji: suggestion.emoji }),
-          ...(suggestion.targetCount && { targetCount: suggestion.targetCount }),
-        },
-      });
-      triggerHaptic(15);
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to suggest habit");
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
+
 
   const handleShuffleEmoji = () => {
     const options = QUICK_EMOJIS.filter((e) => e !== form.emoji);
@@ -755,31 +734,6 @@ export default function NewHabitPage() {
                     </div>
                   </div>
 
-                  {/* AI Button */}
-                  <motion.button
-                    whileTap={{ scale: 0.96 }}
-                    onClick={handleSuggest}
-                    disabled={isAiLoading}
-                    className="relative flex items-center justify-center gap-2.5 rounded-2xl overflow-hidden py-4 text-[14px] font-bold text-[var(--color-text-primary)] shadow-sm border border-[var(--color-bg-elevated)] bg-[var(--color-bg-elevated)] disabled:opacity-60"
-                  >
-                    <motion.div
-                      animate={isAiLoading ? { opacity: [0.5, 1, 0.5] } : {}}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                      className="flex items-center gap-2.5"
-                    >
-                      {isAiLoading ? (
-                        <Loader2 className="h-[18px] w-[18px] text-[var(--color-streak)] animate-spin" />
-                      ) : (
-                        <motion.div
-                          animate={{ rotate: [0, 15, -15, 0] }}
-                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                        >
-                          <Sparkles className="h-[18px] w-[18px] text-[var(--color-streak)]" />
-                        </motion.div>
-                      )}
-                      <span>{isAiLoading ? "Finding the perfect habit…" : "Suggest with AI"}</span>
-                    </motion.div>
-                  </motion.button>
 
                   {/* Next CTA */}
                   <motion.button
