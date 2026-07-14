@@ -230,9 +230,20 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         className="flex flex-col gap-4"
       >
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)]">
-            Today's Habits
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)]">
+              Today's Habits
+            </h2>
+            <Link href="/habits/new" className="inline-flex">
+              <button 
+                type="button"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent-green)]/15 text-[var(--color-accent-green)] hover:bg-[var(--color-accent-green)]/25 hover:scale-105 active:scale-95 transition-all shadow-sm"
+                title="Add Habit"
+              >
+                <Plus className="h-4 w-4" strokeWidth={3.5} />
+              </button>
+            </Link>
+          </div>
           <Link href="/habits" className="rounded-full bg-[var(--color-bg-secondary)] px-3 py-1 text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
             See All
           </Link>
