@@ -132,6 +132,11 @@ export default function NewHabitPage() {
 
   const [form, dispatch] = useReducer(formReducer, initialFormState);
   const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [direction, setDirection] = useState(1);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -262,6 +267,14 @@ export default function NewHabitPage() {
     exit: (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0, scale: 0.97 }),
   };
 
+  if (!mounted) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-[var(--color-bg-secondary)] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-[var(--color-text-secondary)]" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-bg-secondary)] overflow-hidden">
       {/* Ambient background blobs */}
@@ -386,15 +399,8 @@ export default function NewHabitPage() {
                 animate="center"
                 exit="exit"
                 transition={{ type: "spring", stiffness: 380, damping: 36 }}
+                className="flex flex-col gap-6"
               >
-                <motion.div
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.12}
-                  dragMomentum={false}
-                  onDragEnd={handleDragEnd}
-                  className="flex flex-col gap-6"
-                >
                   {/* Emoji Row */}
                   <div>
                     <div className="flex items-center justify-between mb-3 pl-1 pr-1">
@@ -556,7 +562,6 @@ export default function NewHabitPage() {
                       <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                     </motion.div>
                   </motion.button>
-                </motion.div>
               </motion.div>
             )}
 
@@ -569,15 +574,8 @@ export default function NewHabitPage() {
                 animate="center"
                 exit="exit"
                 transition={{ type: "spring", stiffness: 380, damping: 36 }}
+                className="flex flex-col gap-6"
               >
-                <motion.div
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.12}
-                  dragMomentum={false}
-                  onDragEnd={handleDragEnd}
-                  className="flex flex-col gap-6"
-                >
                   {/* Habit Preview Card */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.92 }}
@@ -754,7 +752,6 @@ export default function NewHabitPage() {
                       )}
                     </div>
                   </motion.button>
-                </motion.div>
               </motion.div>
             )}
 
