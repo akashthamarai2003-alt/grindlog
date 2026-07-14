@@ -30,6 +30,8 @@ type Habit = {
   target_unit: string;
   color: string;
   current_streak: number;
+  preferred_time?: string;
+  reminder_time?: string | null;
 };
 
 type HabitLog = {
@@ -45,6 +47,15 @@ type Props = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatTime12h(time24: string) {
+  if (!time24) return "";
+  const [hours, minutes] = time24.split(":");
+  const h = parseInt(hours, 10);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${minutes} ${ampm}`;
+}
 
 function toDateStr(date: Date) {
   const y = date.getFullYear();
@@ -317,14 +328,26 @@ function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: Habit
           <span className="text-[10px] font-bold text-[var(--color-text-tertiary)]">
             {habit.current_streak}d streak
           </span>
-          {habit.target_count > 0 && (
-            <>
-              <span className="text-[var(--color-text-tertiary)] opacity-40 text-[10px]">·</span>
-              <span className="text-[10px] font-bold text-[var(--color-text-tertiary)]">
-                {habit.target_count} {habit.target_unit}
-              </span>
-            </>
-          )}
+          {(() => {
+            let timeLabel = "Anytime";
+            if (habit.target_count === 1 && habit.target_unit === "times") {
+              if (habit.reminder_time) {
+                timeLabel = formatTime12h(habit.reminder_time);
+              } else if (habit.preferred_time && habit.preferred_time !== "anytime") {
+                timeLabel = habit.preferred_time.charAt(0).toUpperCase() + habit.preferred_time.slice(1);
+              }
+            } else {
+              timeLabel = `${habit.target_count} ${habit.target_unit}`;
+            }
+            return (
+              <>
+                <span className="text-[var(--color-text-tertiary)] opacity-40 text-[10px]">·</span>
+                <span className="text-[10px] font-bold text-[var(--color-text-tertiary)]">
+                  {timeLabel}
+                </span>
+              </>
+            );
+          })()}
         </div>
       </div>
 
