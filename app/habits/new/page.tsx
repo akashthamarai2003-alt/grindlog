@@ -139,9 +139,9 @@ export default function NewHabitPage() {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"single" | "bulk">("single");
-  const [bulkHabits, setBulkHabits] = useState<{ id: string; name: string; time: string }[]>([
-    { id: "1", name: "", time: "06:00" },
-    { id: "2", name: "", time: "17:00" },
+  const [bulkHabits, setBulkHabits] = useState<{ id: string; name: string; time: string; frequency: HabitFrequency; customDays: number[] }[]>([
+    { id: "1", name: "", time: "06:00", frequency: "daily", customDays: [1, 2, 3, 4, 5] },
+    { id: "2", name: "", time: "17:00", frequency: "weekdays", customDays: [1, 2, 3, 4, 5] },
   ]);
 
   useEffect(() => {
@@ -247,7 +247,7 @@ export default function NewHabitPage() {
   const handleAddBulkRow = () => {
     setBulkHabits((prev) => [
       ...prev,
-      { id: Math.random().toString(), name: "", time: "08:00" },
+      { id: Math.random().toString(), name: "", time: "08:00", frequency: "daily", customDays: [1, 2, 3, 4, 5] },
     ]);
   };
 
@@ -256,7 +256,7 @@ export default function NewHabitPage() {
     setBulkHabits((prev) => prev.filter((h) => h.id !== id));
   };
 
-  const handleUpdateBulkRow = (id: string, field: "name" | "time", value: string) => {
+  const handleUpdateBulkRow = (id: string, field: "name" | "time" | "frequency" | "customDays", value: any) => {
     setBulkHabits((prev) =>
       prev.map((h) => (h.id === id ? { ...h, [field]: value } : h))
     );
@@ -285,9 +285,9 @@ export default function NewHabitPage() {
           name: h.name.trim().slice(0, MAX_NAME_LENGTH),
           emoji,
           category,
-          frequency: form.frequency,
-          custom_days: form.frequency === "custom" ? form.customDays : null,
-          preferred_time: form.preferredTime,
+          frequency: h.frequency,
+          custom_days: h.frequency === "custom" ? h.customDays : null,
+          preferred_time: "anytime",
           reminder_time: h.time,
           target_count: 1,
           target_unit: "times",
@@ -808,14 +808,6 @@ export default function NewHabitPage() {
                 className="flex flex-col gap-6"
               >
                 <div>
-                  <SectionLabel>Global Schedule Settings</SectionLabel>
-                  <p className="text-[12px] font-medium text-[var(--color-text-tertiary)] mb-4 pl-1">
-                    These settings apply to all habits created below.
-                  </p>
-                  {renderSchedulingSettings()}
-                </div>
-
-                <div>
                   <SectionLabel>Your Habits & Timings</SectionLabel>
                   <div className="flex flex-col gap-3 max-h-[340px] overflow-y-auto pr-1 mb-4">
                     <AnimatePresence initial={false}>
@@ -826,45 +818,90 @@ export default function NewHabitPage() {
                           animate={{ opacity: 1, height: "auto", y: 0 }}
                           exit={{ opacity: 0, height: 0, y: -15 }}
                           transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                          className="flex items-center gap-2 py-1 w-full min-w-0"
+                          className="flex flex-col gap-2 py-2 w-full min-w-0"
                         >
-                          {/* Habit Name Input */}
-                          <div className="flex-1 min-w-0 flex items-center gap-3 rounded-2xl bg-[var(--color-bg-elevated)] px-4 shadow-sm border border-[var(--color-bg-tertiary)]/10 h-[56px] focus-within:ring-2 focus-within:ring-[var(--color-accent-green)]/35 transition-all">
-                            <span className="text-xl select-none flex-shrink-0">
-                              {getBulkEmojiAndCategory(item.name).emoji}
-                            </span>
-                            <input
-                              type="text"
-                              value={item.name}
-                              onChange={(e) => handleUpdateBulkRow(item.id, "name", e.target.value)}
-                              placeholder={
-                                index === 0
-                                  ? "e.g., Running"
-                                  : index === 1
-                                    ? "e.g., Gym"
-                                    : "e.g., Wake up at 05:00"
-                              }
-                              className="flex-1 min-w-0 bg-transparent text-[14px] font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] placeholder:font-medium outline-none"
-                            />
+                          <div className="flex flex-col gap-2 w-full">
+                            <div className="flex items-center gap-2 w-full min-w-0">
+                              {/* Habit Name Input */}
+                              <div className="flex-1 min-w-0 flex items-center gap-3 rounded-2xl bg-[var(--color-bg-elevated)] px-4 shadow-sm border border-[var(--color-bg-tertiary)]/10 h-[56px] focus-within:ring-2 focus-within:ring-[var(--color-accent-green)]/35 transition-all">
+                                <span className="text-xl select-none flex-shrink-0">
+                                  {getBulkEmojiAndCategory(item.name).emoji}
+                                </span>
+                                <input
+                                  type="text"
+                                  value={item.name}
+                                  onChange={(e) => handleUpdateBulkRow(item.id, "name", e.target.value)}
+                                  placeholder={
+                                    index === 0
+                                      ? "e.g., Running"
+                                      : index === 1
+                                        ? "e.g., Gym"
+                                        : "e.g., Wake up at 05:00"
+                                  }
+                                  className="flex-1 min-w-0 bg-transparent text-[14px] font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] placeholder:font-medium outline-none"
+                                />
+                              </div>
+
+                              {/* Frequency Dropdown */}
+                              <select
+                                value={item.frequency}
+                                onChange={(e) => handleUpdateBulkRow(item.id, "frequency", e.target.value as HabitFrequency)}
+                                className="rounded-2xl bg-[var(--color-bg-elevated)] px-2 h-[56px] text-sm font-bold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 shadow-sm transition-all cursor-pointer flex-shrink-0"
+                              >
+                                {FREQUENCIES.map(f => (
+                                  <option key={f.value} value={f.value}>{f.label}</option>
+                                ))}
+                              </select>
+
+                              {/* Time Selector */}
+                              <input
+                                type="time"
+                                value={item.time}
+                                onChange={(e) => handleUpdateBulkRow(item.id, "time", e.target.value)}
+                                className="rounded-2xl bg-[var(--color-bg-elevated)] px-3 h-[56px] text-sm font-extrabold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 shadow-sm transition-all cursor-pointer flex-shrink-0"
+                              />
+
+                              {/* Remove Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveBulkRow(item.id)}
+                                disabled={bulkHabits.length <= 1}
+                                className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500/20 disabled:opacity-30 disabled:hover:bg-red-500/10 transition-colors"
+                              >
+                                <Trash2 className="h-5 w-5" strokeWidth={2.5} />
+                              </button>
+                            </div>
+                            
+                            {/* Inline Custom Days Selector */}
+                            {item.frequency === "custom" && (
+                              <div className="flex gap-2 pl-2">
+                                {["M", "T", "W", "T", "F", "S", "S"].map((dayName, dayIndex) => {
+                                  const realDayIndex = dayIndex === 6 ? 0 : dayIndex + 1;
+                                  const isSelected = item.customDays.includes(realDayIndex);
+                                  return (
+                                    <button
+                                      key={dayIndex}
+                                      type="button"
+                                      onClick={() => {
+                                        const newDays = isSelected
+                                          ? item.customDays.filter((d) => d !== realDayIndex)
+                                          : [...item.customDays, realDayIndex].sort();
+                                        handleUpdateBulkRow(item.id, "customDays", newDays);
+                                      }}
+                                      className={cn(
+                                        "flex h-[32px] w-[32px] items-center justify-center rounded-lg text-xs font-bold transition-all shadow-sm",
+                                        isSelected
+                                          ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]"
+                                          : "bg-[var(--color-bg-elevated)] text-[var(--color-text-tertiary)]"
+                                      )}
+                                    >
+                                      {dayName}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
-
-                          {/* Time Selector */}
-                          <input
-                            type="time"
-                            value={item.time}
-                            onChange={(e) => handleUpdateBulkRow(item.id, "time", e.target.value)}
-                            className="rounded-2xl bg-[var(--color-bg-elevated)] px-3 h-[56px] text-sm font-extrabold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 shadow-sm transition-all cursor-pointer flex-shrink-0"
-                          />
-
-                          {/* Remove Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveBulkRow(item.id)}
-                            disabled={bulkHabits.length <= 1}
-                            className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500/20 disabled:opacity-30 disabled:hover:bg-red-500/10 transition-colors"
-                          >
-                            <Trash2 className="h-5 w-5" strokeWidth={2.5} />
-                          </button>
                         </motion.div>
                       ))}
                     </AnimatePresence>
