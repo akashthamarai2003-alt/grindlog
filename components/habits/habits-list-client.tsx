@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { HabitCard } from "./habit-card";
-import { toggleHabitCompletion } from "@/app/actions/habits";
+import { toggleHabitCompletion, deleteHabit } from "@/app/actions/habits";
 
 interface HabitWithLog {
   id: string;
@@ -41,6 +41,24 @@ export function HabitsListClient({ initialHabits, todayDateStr }: HabitsListClie
     }
   };
 
+  const handleHabitDelete = async (habitId: string) => {
+    if (!confirm("Are you sure you want to delete this habit?")) return;
+
+    const previousHabits = optimisticHabits;
+    setOptimisticHabits((prev) => prev.filter((h) => h.id !== habitId));
+
+    try {
+      const res = await deleteHabit(habitId);
+      if (!res.success) {
+        throw new Error(res.error || "Failed to delete");
+      }
+    } catch (e) {
+      setOptimisticHabits(previousHabits);
+      console.error(e);
+      alert("Failed to delete habit. Please try again.");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2.5">
       {optimisticHabits.map((habit) => (
@@ -48,6 +66,7 @@ export function HabitsListClient({ initialHabits, todayDateStr }: HabitsListClie
           key={habit.id}
           habit={habit} 
           onComplete={() => handleHabitComplete(habit.id, habit.isCompleted, habit.currentStreak)} 
+          onDelete={() => handleHabitDelete(habit.id)}
         />
       ))}
     </div>

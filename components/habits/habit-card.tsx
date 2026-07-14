@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Check, Flame } from "lucide-react";
+import { Check, Flame, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HabitCardProps {
@@ -16,13 +16,14 @@ interface HabitCardProps {
     currentStreak: number;
   };
   onComplete?: () => void;
+  onDelete?: () => void;
 }
 
-export function HabitCard({ habit, onComplete }: HabitCardProps) {
+export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
   return (
     <motion.div
       whileTap={{ scale: 0.98 }}
-      className="relative flex items-center justify-between overflow-hidden rounded-[20px] bg-[var(--color-bg-elevated)] p-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-shadow hover:shadow-md"
+      className="group relative flex items-center justify-between overflow-hidden rounded-[20px] bg-[var(--color-bg-elevated)] p-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-all hover:shadow-md"
     >
       {/* Left Color Accent Strip */}
       <div 
@@ -58,24 +59,43 @@ export function HabitCard({ habit, onComplete }: HabitCardProps) {
         </div>
       </div>
 
-      {/* Checkmark */}
-      <button
-        onClick={() => onComplete?.()}
-        className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300",
-          habit.isCompleted
-            ? "bg-[var(--color-accent-green)] text-white shadow-[var(--shadow-glow-green)] scale-110"
-            : "border-2 border-[var(--color-bg-tertiary)] bg-transparent text-transparent hover:border-[var(--color-text-tertiary)]"
+      {/* Actions */}
+      <div className="flex items-center gap-2.5">
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+            title="Delete Habit"
+          >
+            <Trash2 className="h-4 w-4" strokeWidth={2.5} />
+          </button>
         )}
-      >
-        <motion.div
-          initial={false}
-          animate={{ scale: habit.isCompleted ? 1 : 0 }}
-          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+
+        {/* Checkmark */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onComplete?.();
+          }}
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300",
+            habit.isCompleted
+              ? "bg-[var(--color-accent-green)] text-white shadow-[var(--shadow-glow-green)] scale-110"
+              : "border-2 border-[var(--color-bg-tertiary)] bg-transparent text-transparent hover:border-[var(--color-text-tertiary)]"
+          )}
         >
-          <Check className="h-5 w-5" strokeWidth={3} />
-        </motion.div>
-      </button>
+          <motion.div
+            initial={false}
+            animate={{ scale: habit.isCompleted ? 1 : 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          >
+            <Check className="h-5 w-5" strokeWidth={3} />
+          </motion.div>
+        </button>
+      </div>
     </motion.div>
   );
 }

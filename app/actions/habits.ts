@@ -86,3 +86,24 @@ export async function toggleHabitCompletion(
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+export async function deleteHabit(habitId: string) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase
+    .from("habits")
+    .delete()
+    .eq("id", habitId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error deleting habit:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/habits");
+  return { success: true };
+}
