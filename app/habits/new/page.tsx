@@ -133,6 +133,8 @@ export default function NewHabitPage() {
   const [form, dispatch] = useReducer(formReducer, initialFormState);
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [mounted, setMounted] = useState(false);
+  const [mode, setMode] = useState<"single" | "bulk">("single");
+  const [bulkInput, setBulkInput] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -232,6 +234,52 @@ export default function NewHabitPage() {
     }
   };
 
+  const handleBulkSave = async () => {
+    if (!user) return setErrorMsg("Please log in again.");
+    const lines = bulkInput
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    if (lines.length === 0) return setErrorMsg("Please enter at least one habit.");
+    
+    setIsSaving(true);
+    setErrorMsg(null);
+    try {
+      const supabase = createClient();
+      
+      const habitsToInsert = lines.map((name) => {
+        const { emoji, category } = getBulkEmojiAndCategory(name);
+        const catColor = colorForCategory(category);
+        return {
+          user_id: user.id,
+          name: name.slice(0, MAX_NAME_LENGTH),
+          emoji,
+          category,
+          frequency: "daily",
+          preferred_time: "anytime",
+          target_count: 1,
+          target_unit: "times",
+          color: catColor,
+        };
+      });
+
+      const { error } = await supabase.from("habits").insert(habitsToInsert as any);
+      if (error) throw error;
+
+      triggerHaptic([0, 20, 40, 60]);
+      setDirection(1);
+      setStep(2);
+      setTimeout(() => {
+        router.push("/dashboard");
+        router.refresh();
+      }, 4200);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to save habits");
+      setIsSaving(false);
+    }
+  };
+
   const handleNext = () => {
     if (!canProceed) {
       shakeInvalid();
@@ -311,7 +359,7 @@ export default function NewHabitPage() {
 
           {/* Step Indicator Pills */}
           <div className="flex items-center gap-2">
-            {step < 2 &&
+            {mode === "single" && step < 2 &&
               [0, 1].map((s) => (
                 <motion.div
                   key={s}
@@ -326,7 +374,7 @@ export default function NewHabitPage() {
               ))}
           </div>
 
-          {step !== 2 ? (
+          {step !== 2 && mode === "single" ? (
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={step === 0 ? handleNext : handleSave}
@@ -342,19 +390,21 @@ export default function NewHabitPage() {
         </div>
 
         {/* ── Progress bar ── */}
-        <div className="h-1 w-full rounded-full bg-[var(--color-bg-elevated)] overflow-hidden mb-6">
-          <motion.div
-            className="h-full rounded-full"
-            style={{ background: color }}
-            animate={{ width: `${progressPct}%` }}
-            transition={{ type: "spring", stiffness: 300, damping: 32 }}
-          />
-        </div>
+        {mode === "single" && (
+          <div className="h-1 w-full rounded-full bg-[var(--color-bg-elevated)] overflow-hidden mb-6">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ background: color }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ type: "spring", stiffness: 300, damping: 32 }}
+            />
+          </div>
+        )}
 
         {/* ── Step Title ── */}
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
-            key={`title-${step}`}
+            key={mode === "bulk" ? "bulk-title" : `title-${step}`}
             custom={direction}
             variants={slideVariants}
             initial="enter"
@@ -364,13 +414,37 @@ export default function NewHabitPage() {
             className="mb-7"
           >
             <h1 className="text-[28px] font-black text-[var(--color-text-primary)] leading-tight">
-              {STEP_TITLES[step].title}
+              {mode === "bulk" ? "Create All Habits" : STEP_TITLES[step].title}
             </h1>
             <p className="text-[15px] text-[var(--color-text-secondary)] font-medium mt-1">
-              {STEP_TITLES[step].subtitle}
+              {mode === "bulk" ? "Set up multiple habits at once" : STEP_TITLES[step].subtitle}
             </p>
           </motion.div>
         </AnimatePresence>
+
+        {/* ── Mode Switcher ── */}
+        {step === 0 && (
+          <div className="flex rounded-2xl bg-[var(--color-bg-elevated)] p-1 mb-6 shadow-sm border border-[var(--color-bg-tertiary)]/10">
+            {(["single", "bulk"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setMode(m);
+                  setErrorMsg(null);
+                }}
+                className={cn(
+                  "relative flex-1 py-2.5 text-center text-xs font-bold transition-all rounded-xl",
+                  mode === m
+                    ? "bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] shadow-sm border border-[var(--color-bg-tertiary)]/10"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                {m === "single" ? "Single Habit" : "Create Multiple"}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* ── Error Banner ── */}
         <AnimatePresence>
@@ -390,7 +464,7 @@ export default function NewHabitPage() {
         {/* ── Step Content ── */}
         <div className="flex-1 relative">
           <AnimatePresence mode="popLayout" custom={direction}>
-            {step === 0 && (
+            {mode === "single" && step === 0 && (
               <motion.div
                 key="step-0"
                 custom={direction}
@@ -565,7 +639,47 @@ export default function NewHabitPage() {
               </motion.div>
             )}
 
-            {step === 1 && (
+            {mode === "bulk" && step === 0 && (
+              <motion.div
+                key="step-bulk"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 380, damping: 36 }}
+                className="flex flex-col gap-6"
+              >
+                <div>
+                  <SectionLabel>Your Habit List (one per line)</SectionLabel>
+                  <textarea
+                    value={bulkInput}
+                    onChange={(e) => setBulkInput(e.target.value)}
+                    placeholder="e.g.&#10;Drink 3L Water&#10;Read 10 pages&#10;Evening Walk&#10;Meditation"
+                    className="w-full h-48 rounded-2xl bg-[var(--color-bg-elevated)] p-4 text-[15px] font-semibold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] outline-none border border-[var(--color-bg-tertiary)]/20 focus:border-[var(--color-accent-green)]/60 resize-none shadow-sm transition-all"
+                  />
+                  <p className="text-[11px] font-semibold text-[var(--color-text-tertiary)] mt-2 pl-1 leading-normal">
+                    💡 Emojis, colors, and categories will be automatically set based on what you write. E.g., &quot;Read&quot; maps to Learning 📚, &quot;Gym&quot; to Fitness 🏃.
+                  </p>
+                </div>
+
+                <motion.button
+                  onClick={handleBulkSave}
+                  disabled={isSaving || !bulkInput.trim()}
+                  whileTap={{ scale: 0.97 }}
+                  className="relative flex w-full items-center justify-center gap-2.5 rounded-2xl py-[1.125rem] text-[15px] font-bold text-white overflow-hidden disabled:opacity-50 shadow-md"
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-[var(--color-accent-green)] to-[var(--color-accent-gold)]"
+                    animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  />
+                  <span className="relative z-10">
+                    {isSaving ? "Saving Habits…" : "Create Habits"}
+                  </span>
+                </motion.button>
+              </motion.div>
+            )}
+
+            {mode === "single" && step === 1 && (
               <motion.div
                 key="step-1"
                 custom={direction}
@@ -839,4 +953,105 @@ function CounterButton({
       {children}
     </motion.button>
   );
+}
+
+/* ─── Bulk Creation Utility ─── */
+
+function getBulkEmojiAndCategory(name: string): { emoji: string; category: HabitCategory } {
+  const lower = name.toLowerCase();
+  if (
+    lower.includes("run") ||
+    lower.includes("gym") ||
+    lower.includes("walk") ||
+    lower.includes("workout") ||
+    lower.includes("exercise") ||
+    lower.includes("fit") ||
+    lower.includes("stretch") ||
+    lower.includes("yoga") ||
+    lower.includes("sport")
+  ) {
+    return { emoji: "🏃", category: "fitness" };
+  }
+  if (
+    lower.includes("read") ||
+    lower.includes("book") ||
+    lower.includes("study") ||
+    lower.includes("learn") ||
+    lower.includes("course") ||
+    lower.includes("code") ||
+    lower.includes("write") ||
+    lower.includes("journal")
+  ) {
+    return { emoji: "📚", category: "learning" };
+  }
+  if (
+    lower.includes("water") ||
+    lower.includes("drink") ||
+    lower.includes("eat") ||
+    lower.includes("diet") ||
+    lower.includes("sleep") ||
+    lower.includes("bed") ||
+    lower.includes("wake") ||
+    lower.includes("health") ||
+    lower.includes("fruit")
+  ) {
+    return { emoji: "💧", category: "health" };
+  }
+  if (
+    lower.includes("meditate") ||
+    lower.includes("breath") ||
+    lower.includes("relax") ||
+    lower.includes("pray") ||
+    lower.includes("journal") ||
+    lower.includes("reflect") ||
+    lower.includes("zen")
+  ) {
+    return { emoji: "🧘", category: "mindfulness" };
+  }
+  if (
+    lower.includes("money") ||
+    lower.includes("save") ||
+    lower.includes("budget") ||
+    lower.includes("invest") ||
+    lower.includes("spend") ||
+    lower.includes("expense") ||
+    lower.includes("finance")
+  ) {
+    return { emoji: "💰", category: "finance" };
+  }
+  if (
+    lower.includes("friend") ||
+    lower.includes("family") ||
+    lower.includes("call") ||
+    lower.includes("meet") ||
+    lower.includes("social") ||
+    lower.includes("talk") ||
+    lower.includes("message")
+  ) {
+    return { emoji: "💬", category: "social" };
+  }
+  if (
+    lower.includes("work") ||
+    lower.includes("job") ||
+    lower.includes("focus") ||
+    lower.includes("project") ||
+    lower.includes("task") ||
+    lower.includes("email") ||
+    lower.includes("meeting")
+  ) {
+    return { emoji: "💼", category: "work" };
+  }
+  if (
+    lower.includes("draw") ||
+    lower.includes("paint") ||
+    lower.includes("music") ||
+    lower.includes("guitar") ||
+    lower.includes("piano") ||
+    lower.includes("art") ||
+    lower.includes("creative") ||
+    lower.includes("design")
+  ) {
+    return { emoji: "🎨", category: "creative" };
+  }
+  return { emoji: "✨", category: "other" };
 }
