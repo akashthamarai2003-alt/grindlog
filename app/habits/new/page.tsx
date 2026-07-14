@@ -763,33 +763,18 @@ export default function NewHabitPage() {
                 exit={{ opacity: 0 }}
                 className="flex flex-1 flex-col items-center justify-center text-center gap-6"
               >
-                <div className="relative flex items-center justify-center h-24 w-24">
-                  {!shouldReduceMotion &&
-                    PARTICLE_ANGLES.map((angle, i) => (
-                      <motion.span
-                        key={i}
-                        className="absolute h-2 w-2 rounded-full"
-                        style={{ background: color }}
-                        initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-                        animate={{
-                          x: Math.cos(angle) * 90,
-                          y: Math.sin(angle) * 90,
-                          opacity: 0,
-                          scale: 0,
-                        }}
-                        transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
-                      />
-                    ))}
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: [0, 1.15, 1] }}
-                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                    className="flex h-24 w-24 items-center justify-center rounded-full text-white shadow-lg"
-                    style={{ background: color }}
-                  >
-                    <Check className="h-10 w-10" strokeWidth={3} />
-                  </motion.div>
-                </div>
+                <motion.div
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                  className="relative flex items-center justify-center h-48 w-48 -my-6"
+                >
+                  <img
+                    src="/Done.svg"
+                    className="h-full w-full object-contain"
+                    alt="Success"
+                  />
+                </motion.div>
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
