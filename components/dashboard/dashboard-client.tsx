@@ -8,7 +8,7 @@ import { Bell, Quote, Trophy, Flame, Plus, Sparkles } from "lucide-react";
 import { staggerContainer, staggerItem } from "@/animations/springs";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
-import { toggleHabitCompletion } from "@/app/actions/habits";
+import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
 
 interface Profile {
   display_name: string;
@@ -47,6 +47,27 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [optimisticHabits, setOptimisticHabits] = useState(initialHabits);
   const [optimisticXp, setOptimisticXp] = useState(profile.xp);
   const [quoteIdx, setQuoteIdx] = useState(0);
+  const [selectedDateStr, setSelectedDateStr] = useState(todayDateStr);
+  const [isFetchingLogs, setIsFetchingLogs] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    if (!hasMounted) {
+      setHasMounted(true);
+      return;
+    }
+    async function loadLogs() {
+      setIsFetchingLogs(true);
+      const logs = await getHabitLogsForDate(selectedDateStr);
+      const logsMap = new Map(logs.map((l: any) => [l.habit_id, l.status]));
+      setOptimisticHabits(prev => prev.map(h => ({
+        ...h,
+        isCompleted: logsMap.get(h.id) === "completed"
+      })));
+      setIsFetchingLogs(false);
+    }
+    loadLogs();
+  }, [selectedDateStr, hasMounted]);
 
   useEffect(() => {
     setQuoteIdx(Math.floor(Math.random() * QUOTES.length));
@@ -66,11 +87,15 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const today = new Date();
   const weekDays = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(today);
-    d.setDate(today.getDate() - today.getDay() + 1 + i); // Start from Monday
+    const dayOfWeek = today.getDay() || 7; 
+    d.setDate(today.getDate() - dayOfWeek + 1 + i); // Start from Monday
+    const dateStr = d.toISOString().split("T")[0];
     return {
       dayStr: ["S", "M", "T", "W", "T", "F", "S"][d.getDay()],
-      isToday: d.toDateString() === today.toDateString(),
+      isToday: dateStr === todayDateStr,
+      isSelected: dateStr === selectedDateStr,
       dateObj: d,
+      dateStr: dateStr,
     };
   });
 
@@ -91,7 +116,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
     // Call server action
     try {
-      await toggleHabitCompletion(habitId, todayDateStr, newStatus, streak, 10);
+      await toggleHabitCompletion(habitId, selectedDateStr, newStatus, streak, 10);
     } catch (e) {
       // Revert on failure
       setOptimisticHabits(initialHabits);
@@ -199,17 +224,15 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             <span className="text-[11px] font-bold text-[var(--color-text-tertiary)]">{day.dayStr}</span>
             <div 
               className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
-              day.isToday 
+              day.isSelected
                 ? isPerfectDay
                   ? "bg-[var(--color-accent-green)] text-white shadow-[var(--shadow-glow-green)]"
                   : "ring-2 ring-[var(--color-accent-green)] ring-offset-2 ring-offset-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]"
-                : "bg-[var(--color-bg-secondary)] text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] cursor-pointer"
+                : day.isToday
+                  ? "ring-1 ring-[var(--color-accent-green)]/50 text-[var(--color-accent-green)] hover:bg-[var(--color-bg-tertiary)] cursor-pointer"
+                  : "bg-[var(--color-bg-secondary)] text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] cursor-pointer"
             }`}
-              onClick={() => {
-                if (!day.isToday) {
-                  alert("Viewing past/future habits is coming soon!");
-                }
-              }}
+              onClick={() => setSelectedDateStr(day.dateStr)}
             >
               {day.dateObj.getDate()}
             </div>
@@ -238,12 +261,12 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         variants={staggerContainer}
         initial="initial"
         animate="animate"
-        className="flex flex-col gap-4"
+        className={`flex flex-col gap-4 transition-opacity duration-300 ${isFetchingLogs ? "opacity-50 pointer-events-none" : "opacity-100"}`}
       >
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)]">
-              Today's Habits
+              {selectedDateStr === todayDateStr ? "Today's Habits" : new Date(selectedDateStr).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
             </h2>
             <Link href="/habits/new" className="inline-flex">
               <button 

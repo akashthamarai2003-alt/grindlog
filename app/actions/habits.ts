@@ -107,3 +107,21 @@ export async function deleteHabit(habitId: string) {
   revalidatePath("/habits");
   return { success: true };
 }
+
+export async function getHabitLogsForDate(dateStr: string) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: logs, error } = await supabase
+    .from("habit_logs")
+    .select("habit_id, status")
+    .eq("user_id", user.id)
+    .eq("date", dateStr);
+
+  if (error) {
+    console.error("Error fetching logs for date:", error);
+    return [];
+  }
+  return logs || [];
+}
