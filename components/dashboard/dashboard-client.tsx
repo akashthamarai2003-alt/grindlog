@@ -276,15 +276,15 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
               <motion.div variants={staggerItem}>
                 <Link 
                   href="/habits/new" 
-                  className="group relative overflow-hidden flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-bg-tertiary)] py-4 text-sm font-semibold text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-accent-gold)]/50 hover:text-[var(--color-accent-gold)] bg-[var(--color-bg-elevated)]"
+                  className="group relative overflow-hidden flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#FACC15]/40 py-4 text-sm font-bold text-[#FACC15] transition-all hover:border-[#FACC15] hover:bg-[#FACC15]/10 bg-[var(--color-bg-elevated)]"
                   style={{ boxShadow: 'var(--shadow-card)' }}
                 >
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[var(--color-accent-gold)]/10 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-                  <Sparkles className="h-4 w-4 text-[var(--color-accent-gold)] opacity-40 group-hover:opacity-100 group-hover:animate-pulse transition-all duration-300" />
-                  <span className="relative z-10 transition-colors duration-300 group-hover:text-[var(--color-accent-gold)]">
+                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#FACC15]/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+                  <Sparkles className="h-5 w-5 text-[#FACC15] fill-[#FACC15] animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+                  <span className="relative z-10 drop-shadow-sm">
                     Add a Habit
                   </span>
-                  <Sparkles className="h-4 w-4 text-[var(--color-accent-gold)] opacity-40 group-hover:opacity-100 group-hover:animate-pulse transition-all duration-300" style={{ animationDelay: '150ms' }} />
+                  <Sparkles className="h-5 w-5 text-[#FACC15] fill-[#FACC15] animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" style={{ animationDelay: '300ms' }} />
                 </Link>
               </motion.div>
             </>
