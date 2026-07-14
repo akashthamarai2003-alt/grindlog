@@ -14,9 +14,9 @@ export function getGroqClient(): Groq {
 }
 
 export const GROQ_MODELS = {
-  primary: "meta-llama/llama-4-maverick-17b-128e-instruct",
-  reasoning: "deepseek-r1-distill-qwen-32b",
-  fast: "qwen-2.5-32b",
+  primary: "llama-3.3-70b-versatile",
+  reasoning: "deepseek-r1-distill-llama-70b",
+  fast: "llama-3.1-8b-instant",
 } as const;
 
 export async function generateAIResponse({

@@ -1,7 +1,7 @@
 "use server";
 
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { generateAIResponse, generateAIResponseJSON } from "@/lib/services/groq/client";
+import { generateAIResponse, generateAIResponseJSON, GROQ_MODELS } from "@/lib/services/groq/client";
 import { revalidatePath } from "next/cache";
 
 // Helper to get user context
@@ -143,7 +143,7 @@ Use this context to address the user's query. Be concise, empathetic, and always
 
     const groq = getGroqClientFromImport();
     const completion = await groq.chat.completions.create({
-      model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+      model: GROQ_MODELS.primary,
       messages: [
         { role: "system", content: systemPrompt },
         ...chatHistory.map(m => ({ role: m.role as "user" | "assistant", content: m.content }))
