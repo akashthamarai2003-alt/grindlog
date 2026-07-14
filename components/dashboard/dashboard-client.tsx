@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, Quote, Trophy, Flame, Plus } from "lucide-react";
+import { Bell, Quote, Trophy, Flame, Plus, Sparkles } from "lucide-react";
 import { staggerContainer, staggerItem } from "@/animations/springs";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
@@ -276,11 +276,15 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
               <motion.div variants={staggerItem}>
                 <Link 
                   href="/habits/new" 
-                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-bg-tertiary)] py-4 text-sm font-semibold text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-accent-gold)]/40 hover:text-[var(--color-accent-gold)] bg-[var(--color-bg-elevated)]"
+                  className="group relative overflow-hidden flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-bg-tertiary)] py-4 text-sm font-semibold text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-accent-gold)]/50 hover:text-[var(--color-accent-gold)] bg-[var(--color-bg-elevated)]"
                   style={{ boxShadow: 'var(--shadow-card)' }}
                 >
-                  <Plus className="h-4 w-4" />
-                  Add a Habit
+                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[var(--color-accent-gold)]/10 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+                  <Sparkles className="h-4 w-4 text-[var(--color-accent-gold)] opacity-40 group-hover:opacity-100 group-hover:animate-pulse transition-all duration-300" />
+                  <span className="relative z-10 transition-colors duration-300 group-hover:text-[var(--color-accent-gold)]">
+                    Add a Habit
+                  </span>
+                  <Sparkles className="h-4 w-4 text-[var(--color-accent-gold)] opacity-40 group-hover:opacity-100 group-hover:animate-pulse transition-all duration-300" style={{ animationDelay: '150ms' }} />
                 </Link>
               </motion.div>
             </>
