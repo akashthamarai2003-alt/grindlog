@@ -24,6 +24,7 @@ import {
   Minus,
   ArrowRight,
   Shuffle,
+  Trash2,
 } from "lucide-react";
 import { HABIT_CATEGORIES, TIME_OF_DAY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -682,10 +683,10 @@ export default function NewHabitPage() {
                           animate={{ opacity: 1, height: "auto", y: 0 }}
                           exit={{ opacity: 0, height: 0, y: -15 }}
                           transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                          className="flex items-center gap-2 overflow-hidden py-1"
+                          className="flex items-center gap-2 py-1 w-full min-w-0"
                         >
                           {/* Habit Name Input */}
-                          <div className="flex-1 flex items-center gap-3 rounded-2xl bg-[var(--color-bg-elevated)] px-4 shadow-sm border border-[var(--color-bg-tertiary)]/10 h-[56px] focus-within:ring-2 focus-within:ring-[var(--color-accent-green)]/35 transition-all">
+                          <div className="flex-1 min-w-0 flex items-center gap-3 rounded-2xl bg-[var(--color-bg-elevated)] px-4 shadow-sm border border-[var(--color-bg-tertiary)]/10 h-[56px] focus-within:ring-2 focus-within:ring-[var(--color-accent-green)]/35 transition-all">
                             <span className="text-xl select-none flex-shrink-0">
                               {getBulkEmojiAndCategory(item.name).emoji}
                             </span>
@@ -700,7 +701,7 @@ export default function NewHabitPage() {
                                     ? "e.g., Gym"
                                     : "e.g., Wake up at 05:00"
                               }
-                              className="flex-1 bg-transparent text-[14px] font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] placeholder:font-medium outline-none"
+                              className="flex-1 min-w-0 bg-transparent text-[14px] font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] placeholder:font-medium outline-none"
                             />
                           </div>
 
@@ -709,7 +710,7 @@ export default function NewHabitPage() {
                             type="time"
                             value={item.time}
                             onChange={(e) => handleUpdateBulkRow(item.id, "time", e.target.value)}
-                            className="rounded-2xl bg-[var(--color-bg-elevated)] px-3 h-[56px] text-sm font-extrabold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 shadow-sm transition-all cursor-pointer"
+                            className="rounded-2xl bg-[var(--color-bg-elevated)] px-3 h-[56px] text-sm font-extrabold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 shadow-sm transition-all cursor-pointer flex-shrink-0"
                           />
 
                           {/* Remove Button */}
@@ -719,7 +720,7 @@ export default function NewHabitPage() {
                             disabled={bulkHabits.length <= 1}
                             className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500/20 disabled:opacity-30 disabled:hover:bg-red-500/10 transition-colors"
                           >
-                            <Minus className="h-5 w-5" strokeWidth={2.5} />
+                            <Trash2 className="h-5 w-5" strokeWidth={2.5} />
                           </button>
                         </motion.div>
                       ))}
