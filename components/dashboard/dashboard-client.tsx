@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import { Bell, Quote, Trophy, Flame } from "lucide-react";
+import { Bell, Quote, Trophy, Flame, Plus } from "lucide-react";
 import { staggerContainer, staggerItem } from "@/animations/springs";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
@@ -242,19 +242,31 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           {optimisticHabits.length === 0 ? (
             <div className="text-center p-6 bg-[var(--color-bg-elevated)] rounded-2xl border border-dashed border-[var(--color-bg-tertiary)]">
               <p className="text-sm font-semibold text-[var(--color-text-secondary)]">No active habits today.</p>
-              <Link href="/habits" className="mt-2 inline-block rounded-full bg-[var(--color-accent-green)]/10 px-4 py-2 text-xs font-bold text-[var(--color-accent-green)]">
+              <Link href="/habits/new" className="mt-2 inline-block rounded-full bg-[var(--color-accent-green)]/10 px-4 py-2 text-xs font-bold text-[var(--color-accent-green)]">
                 + Add a new habit
               </Link>
             </div>
           ) : (
-            optimisticHabits.map((habit) => (
-              <motion.div key={habit.id} variants={staggerItem}>
-                <HabitCard 
-                  habit={habit} 
-                  onComplete={() => handleHabitComplete(habit.id, habit.isCompleted, habit.currentStreak)} 
-                />
+            <>
+              {optimisticHabits.map((habit) => (
+                <motion.div key={habit.id} variants={staggerItem}>
+                  <HabitCard 
+                    habit={habit} 
+                    onComplete={() => handleHabitComplete(habit.id, habit.isCompleted, habit.currentStreak)} 
+                  />
+                </motion.div>
+              ))}
+              <motion.div variants={staggerItem}>
+                <Link 
+                  href="/habits/new" 
+                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-bg-tertiary)] py-4 text-sm font-semibold text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-accent-gold)]/40 hover:text-[var(--color-accent-gold)] bg-[var(--color-bg-elevated)]"
+                  style={{ boxShadow: 'var(--shadow-card)' }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add a Habit
+                </Link>
               </motion.div>
-            ))
+            </>
           )}
         </div>
       </motion.div>
