@@ -225,7 +225,7 @@ export default function NewHabitPage() {
       setTimeout(() => {
         router.push("/dashboard");
         router.refresh();
-      }, 1600);
+      }, 4200);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to save habit");
       setIsSaving(false);
@@ -767,7 +767,7 @@ export default function NewHabitPage() {
                   initial={{ scale: 0.6, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                  className="relative flex items-center justify-center h-48 w-48 -my-6"
+                  className="relative flex items-center justify-center h-64 w-64 -my-8"
                 >
                   <img
                     src="/Done.svg"
