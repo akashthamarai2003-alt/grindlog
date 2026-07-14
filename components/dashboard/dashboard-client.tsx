@@ -115,8 +115,8 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/tree" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#34C759] transition-colors shadow-sm ring-1 ring-[#34C759]/20">
-            <Image src="/tree-in-the-wind.svg" width={24} height={24} alt="Tree" className="drop-shadow-sm" />
+          <Link href="/tree" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#34C759] transition-colors shadow-sm ring-1 ring-[#34C759]/20 overflow-hidden">
+            <Image src="/tree-in-the-wind.svg" width={32} height={32} alt="Tree" className="drop-shadow-sm scale-[1.15]" />
           </Link>
           <Link href="/notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
             <Bell className="h-5 w-5 text-[var(--color-text-secondary)]" />
