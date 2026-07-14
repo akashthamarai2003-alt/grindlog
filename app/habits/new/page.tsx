@@ -465,21 +465,16 @@ export default function NewHabitPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-bg-secondary)] overflow-hidden">
       {/* Ambient background blobs */}
-      {!shouldReduceMotion && (
-        <div className="pointer-events-none fixed inset-0 overflow-hidden">
-          <motion.div
-            animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-32 -right-32 h-80 w-80 rounded-full blur-3xl"
-            style={{ background: `${color}22` }}
-          />
-          <motion.div
-            animate={{ scale: [1.1, 1, 1.1], opacity: [0.2, 0.4, 0.2] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-[var(--color-streak)]/10 blur-3xl"
-          />
-        </div>
-      )}
+      {/* Ambient background blobs - Static to prevent typing lag */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div
+          className="absolute -top-32 -right-32 h-80 w-80 rounded-full blur-3xl opacity-30"
+          style={{ background: `${color}22` }}
+        />
+        <div
+          className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-[var(--color-streak)]/10 blur-3xl opacity-30"
+        />
+      </div>
 
       <div className="relative flex flex-col flex-1 px-5 pb-8 pt-6 safe-top gap-0">
         {/* ── Header ── */}
@@ -629,25 +624,26 @@ export default function NewHabitPage() {
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       {QUICK_EMOJIS.map((e, i) => (
-                        <motion.button
+                        <button
                           key={e}
-                          initial={{ opacity: 0, scale: 0.6 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 28, delay: i * 0.03 }}
-                          whileTap={{ scale: 0.85 }}
+                          type="button"
                           onClick={() => set("emoji", e)}
-                          className="relative flex h-[48px] w-[48px] items-center justify-center rounded-[14px] text-[22px] transition-shadow"
-                          style={
-                            form.emoji === e
+                          className={cn(
+                            "relative flex h-[48px] w-[48px] items-center justify-center rounded-[14px] text-[22px] transition-all active:scale-95 animate-scale-in"
+                          )}
+                          style={{
+                            ...(form.emoji === e
                               ? { background: `${color}1a`, boxShadow: `0 0 0 2.5px ${color}` }
-                              : undefined
-                          }
+                              : {}),
+                            animationDelay: `${i * 15}ms`,
+                            animationFillMode: "both"
+                          }}
                         >
                           {form.emoji !== e && (
                             <span className="absolute inset-0 rounded-[14px] bg-[var(--color-bg-elevated)] shadow-sm -z-10" />
                           )}
                           {e}
-                        </motion.button>
+                        </button>
                       ))}
                     </div>
                   </div>
