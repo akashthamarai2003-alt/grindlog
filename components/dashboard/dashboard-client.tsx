@@ -114,6 +114,9 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/tree" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#34C759] transition-colors shadow-sm ring-1 ring-[#34C759]/20">
+            <span className="text-xl">🌳</span>
+          </Link>
           <Link href="/notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
             <Bell className="h-5 w-5 text-[var(--color-text-secondary)]" />
             <div className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-[var(--color-bg-secondary)] bg-[var(--color-error)]" />
