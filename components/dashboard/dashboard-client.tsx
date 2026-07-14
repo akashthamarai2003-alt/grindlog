@@ -276,15 +276,15 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
               <motion.div variants={staggerItem}>
                 <Link 
                   href="/habits/new" 
-                  className="group relative overflow-hidden flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#FACC15]/40 py-4 text-sm font-bold text-[#FACC15] transition-all hover:border-[#FACC15] hover:bg-[#FACC15]/10 bg-[var(--color-bg-elevated)]"
+                  className="group relative overflow-hidden flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#34C759]/40 py-4 text-sm font-bold text-[#34C759] transition-all hover:border-[#34C759] hover:bg-[#34C759]/10 bg-[var(--color-bg-elevated)]"
                   style={{ boxShadow: 'var(--shadow-card)' }}
                 >
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#FACC15]/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-                  <Sparkles className="h-5 w-5 text-[#FACC15] fill-[#FACC15] animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#34C759]/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+                  <Sparkles className="h-5 w-5 text-[#34C759] fill-[#34C759] animate-pulse drop-shadow-[0_0_8px_rgba(52,199,89,0.6)]" />
                   <span className="relative z-10 drop-shadow-sm">
                     Add a Habit
                   </span>
-                  <Sparkles className="h-5 w-5 text-[#FACC15] fill-[#FACC15] animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" style={{ animationDelay: '300ms' }} />
+                  <Sparkles className="h-5 w-5 text-[#34C759] fill-[#34C759] animate-pulse drop-shadow-[0_0_8px_rgba(52,199,89,0.6)]" style={{ animationDelay: '300ms' }} />
                 </Link>
               </motion.div>
             </>
