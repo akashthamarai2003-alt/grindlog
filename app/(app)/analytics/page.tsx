@@ -270,30 +270,70 @@ function LineChart() {
 
 // ─── WEEKLY BARS ──────────────────────────────────────────────────────────────
 
-function WeeklyBars() {
+const WEEK_DATA = [
+  { label: "Mon", habits: 5 },
+  { label: "Tue", habits: 6 },
+  { label: "Wed", habits: 4 },
+  { label: "Thu", habits: 7 },
+  { label: "Fri", habits: 8 },
+  { label: "Sat", habits: 6 },
+  { label: "Sun", habits: 5 },
+];
+
+const MONTH_DATA = [
+  { label: "W1", habits: 38 },
+  { label: "W2", habits: 42 },
+  { label: "W3", habits: 35 },
+  { label: "W4", habits: 45 },
+];
+
+const YEAR_DATA = [
+  { label: "Jan", habits: 150 },
+  { label: "Feb", habits: 165 },
+  { label: "Mar", habits: 142 },
+  { label: "Apr", habits: 178 },
+  { label: "May", habits: 190 },
+  { label: "Jun", habits: 155 },
+  { label: "Jul", habits: 160 },
+  { label: "Aug", habits: 148 },
+  { label: "Sep", habits: 172 },
+  { label: "Oct", habits: 185 },
+  { label: "Nov", habits: 168 },
+  { label: "Dec", habits: 195 },
+];
+
+function WeeklyBars({ view }: { view: "week" | "month" | "year" }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
   const [active, setActive] = useState<number | null>(null);
-  const max = Math.max(...WEEKLY_DATA.map(d => d.habits));
+
+  const activeData = 
+    view === "week" 
+      ? WEEK_DATA 
+      : view === "month" 
+        ? MONTH_DATA 
+        : YEAR_DATA;
+
+  const max = Math.max(...activeData.map(d => d.habits), 1);
 
   return (
-    <div ref={ref} className="flex items-end justify-between h-[130px] px-1 gap-2">
-      {WEEKLY_DATA.map((d, i) => {
+    <div ref={ref} className="flex items-end justify-between h-[130px] px-1 gap-1.5 w-full">
+      {activeData.map((d, i) => {
         const pct = (d.habits / max) * 100;
         const isActive = active === i;
         return (
           <motion.div
-            key={i}
-            className="flex flex-col items-center gap-1.5 flex-1 h-full"
+            key={`${view}-${i}`}
+            className="flex flex-col items-center gap-1.5 flex-1 h-full min-w-0"
             onTapStart={() => setActive(i)}
             onTap={() => setActive(null)}
           >
             {/* Count label */}
             <motion.span
-              className="text-[10px] font-black text-[var(--color-text-secondary)]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: inView ? 1 : 0 }}
-              transition={{ delay: 1.4 + i * 0.08 }}
+              className="text-[9px] font-black text-[var(--color-text-secondary)] whitespace-nowrap"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: inView ? 1 : 0, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.03 }}
             >
               {d.habits}
             </motion.span>
@@ -304,7 +344,7 @@ function WeeklyBars() {
                 <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${pct}%` }}
-                  transition={{ type: "spring", stiffness: 80, damping: 18, delay: 1.0 + i * 0.09 }}
+                  transition={{ type: "spring", stiffness: 85, damping: 15, delay: i * 0.035 }}
                   className={cn(
                     "w-full rounded-full transition-all duration-200",
                     isActive
@@ -319,16 +359,16 @@ function WeeklyBars() {
                   className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 1.5 + i * 0.09 }}
+                  transition={{ delay: i * 0.035 }}
                 />
               )}
             </div>
 
             <span className={cn(
-              "text-[10px] font-bold transition-colors",
+              "text-[9px] font-black transition-colors whitespace-nowrap overflow-hidden text-ellipsis max-w-full",
               isActive ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-tertiary)]"
             )}>
-              {d.day.slice(0, 1)}
+              {view === "week" ? d.label.slice(0, 1) : view === "month" ? d.label : d.label.slice(0, 3)}
             </span>
           </motion.div>
         );
@@ -606,6 +646,7 @@ function HighlightCard({
 export default function AnalyticsPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [barView, setBarView] = useState<"week" | "month" | "year">("week");
 
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
@@ -751,17 +792,33 @@ export default function AnalyticsPage() {
           transition={{ type: "spring", stiffness: 200, damping: 28, delay: 0.50 }}
           className="rounded-[28px] bg-[var(--color-bg-secondary)] p-5 ring-1 ring-[var(--color-bg-tertiary)] shadow-sm"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-sm font-black text-[var(--color-text-primary)]">Habits Completed</h2>
-              <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] mt-0.5">Daily count this week</p>
+              <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] mt-0.5">
+                {barView === "week" ? "Daily count this week" : barView === "month" ? "Weekly count this month" : "Monthly count this year"}
+              </p>
             </div>
-            <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 bg-[#34C759]/15">
-              <TrendingUp className="h-3.5 w-3.5 text-[#34C759]" />
-              <span className="text-[10px] font-black text-[#34C759]">+12%</span>
+            
+            {/* Pill Toggle Control */}
+            <div className="flex gap-0.5 bg-[var(--color-bg-primary)] p-0.5 rounded-full border border-[var(--color-bg-tertiary)] shadow-inner">
+              {(["week", "month", "year"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setBarView(v)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider transition-all duration-200",
+                    barView === v
+                      ? "bg-[#34C759] text-white shadow-sm"
+                      : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                  )}
+                >
+                  {v}
+                </button>
+              ))}
             </div>
           </div>
-          <WeeklyBars />
+          <WeeklyBars view={barView} />
         </motion.section>
 
         {/* ── 4. SCREEN TIME + HEATMAP ── */}
