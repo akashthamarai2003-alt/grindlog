@@ -134,7 +134,10 @@ export default function NewHabitPage() {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"single" | "bulk">("single");
-  const [bulkInput, setBulkInput] = useState("");
+  const [bulkHabits, setBulkHabits] = useState<{ id: string; name: string; time: string }[]>([
+    { id: "1", name: "", time: "06:00" },
+    { id: "2", name: "", time: "17:00" },
+  ]);
 
   useEffect(() => {
     setMounted(true);
@@ -234,30 +237,50 @@ export default function NewHabitPage() {
     }
   };
 
+  const handleAddBulkRow = () => {
+    setBulkHabits((prev) => [
+      ...prev,
+      { id: Math.random().toString(), name: "", time: "08:00" },
+    ]);
+  };
+
+  const handleRemoveBulkRow = (id: string) => {
+    if (bulkHabits.length <= 1) return;
+    setBulkHabits((prev) => prev.filter((h) => h.id !== id));
+  };
+
+  const handleUpdateBulkRow = (id: string, field: "name" | "time", value: string) => {
+    setBulkHabits((prev) =>
+      prev.map((h) => (h.id === id ? { ...h, [field]: value } : h))
+    );
+  };
+
   const handleBulkSave = async () => {
     if (!user) return setErrorMsg("Please log in again.");
-    const lines = bulkInput
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+    const habitsToCreate = bulkHabits.filter((h) => h.name.trim().length > 0);
 
-    if (lines.length === 0) return setErrorMsg("Please enter at least one habit.");
+    if (habitsToCreate.length === 0) {
+      return setErrorMsg("Please enter a name for at least one habit.");
+    }
     
     setIsSaving(true);
     setErrorMsg(null);
     try {
       const supabase = createClient();
       
-      const habitsToInsert = lines.map((name) => {
-        const { emoji, category } = getBulkEmojiAndCategory(name);
+      const habitsToInsert = habitsToCreate.map((h) => {
+        const { emoji, category } = getBulkEmojiAndCategory(h.name);
         const catColor = colorForCategory(category);
+        const preferredTime = timeToTimeOfDay(h.time);
+        
         return {
           user_id: user.id,
-          name: name.slice(0, MAX_NAME_LENGTH),
+          name: h.name.trim().slice(0, MAX_NAME_LENGTH),
           emoji,
           category,
           frequency: "daily",
-          preferred_time: "anytime",
+          preferred_time: preferredTime,
+          reminder_time: h.time,
           target_count: 1,
           target_unit: "times",
           color: catColor,
@@ -649,21 +672,77 @@ export default function NewHabitPage() {
                 className="flex flex-col gap-6"
               >
                 <div>
-                  <SectionLabel>Your Habit List (one per line)</SectionLabel>
-                  <textarea
-                    value={bulkInput}
-                    onChange={(e) => setBulkInput(e.target.value)}
-                    placeholder="e.g.&#10;Drink 3L Water&#10;Read 10 pages&#10;Evening Walk&#10;Meditation"
-                    className="w-full h-48 rounded-2xl bg-[var(--color-bg-elevated)] p-4 text-[15px] font-semibold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] outline-none border border-[var(--color-bg-tertiary)]/20 focus:border-[var(--color-accent-green)]/60 resize-none shadow-sm transition-all"
-                  />
-                  <p className="text-[11px] font-semibold text-[var(--color-text-tertiary)] mt-2 pl-1 leading-normal">
-                    💡 Emojis, colors, and categories will be automatically set based on what you write. E.g., &quot;Read&quot; maps to Learning 📚, &quot;Gym&quot; to Fitness 🏃.
+                  <SectionLabel>Your Habits & Timings</SectionLabel>
+                  <div className="flex flex-col gap-3 max-h-[340px] overflow-y-auto pr-1 mb-4">
+                    <AnimatePresence initial={false}>
+                      {bulkHabits.map((item, index) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, height: 0, y: 15 }}
+                          animate={{ opacity: 1, height: "auto", y: 0 }}
+                          exit={{ opacity: 0, height: 0, y: -15 }}
+                          transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                          className="flex items-center gap-2 overflow-hidden py-1"
+                        >
+                          {/* Habit Name Input */}
+                          <div className="flex-1 flex items-center gap-3 rounded-2xl bg-[var(--color-bg-elevated)] px-4 shadow-sm border border-[var(--color-bg-tertiary)]/10 h-[56px] focus-within:ring-2 focus-within:ring-[var(--color-accent-green)]/35 transition-all">
+                            <span className="text-xl select-none flex-shrink-0">
+                              {getBulkEmojiAndCategory(item.name).emoji}
+                            </span>
+                            <input
+                              type="text"
+                              value={item.name}
+                              onChange={(e) => handleUpdateBulkRow(item.id, "name", e.target.value)}
+                              placeholder={
+                                index === 0
+                                  ? "e.g., Running"
+                                  : index === 1
+                                    ? "e.g., Gym"
+                                    : "e.g., Wake up at 05:00"
+                              }
+                              className="flex-1 bg-transparent text-[14px] font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] placeholder:font-medium outline-none"
+                            />
+                          </div>
+
+                          {/* Time Selector */}
+                          <input
+                            type="time"
+                            value={item.time}
+                            onChange={(e) => handleUpdateBulkRow(item.id, "time", e.target.value)}
+                            className="rounded-2xl bg-[var(--color-bg-elevated)] px-3 h-[56px] text-sm font-extrabold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 shadow-sm transition-all cursor-pointer"
+                          />
+
+                          {/* Remove Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBulkRow(item.id)}
+                            disabled={bulkHabits.length <= 1}
+                            className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500/20 disabled:opacity-30 disabled:hover:bg-red-500/10 transition-colors"
+                          >
+                            <Minus className="h-5 w-5" strokeWidth={2.5} />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAddBulkRow}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-bg-tertiary)]/60 py-3.5 text-sm font-bold text-[var(--color-text-secondary)] hover:border-[var(--color-accent-green)]/40 hover:text-[var(--color-accent-green)] transition-all bg-[var(--color-bg-elevated)]/40 hover:bg-[var(--color-bg-elevated)]"
+                  >
+                    <Plus className="h-4 w-4" strokeWidth={2.5} />
+                    <span>Add Another Habit</span>
+                  </button>
+
+                  <p className="text-[11px] font-semibold text-[var(--color-text-tertiary)] mt-3 pl-1 leading-normal">
+                    💡 Emojis, colors, and categories will be automatically set based on what you write. Timing reminders will be set to the exact times you choose.
                   </p>
                 </div>
 
                 <motion.button
                   onClick={handleBulkSave}
-                  disabled={isSaving || !bulkInput.trim()}
+                  disabled={isSaving || bulkHabits.filter((h) => h.name.trim()).length === 0}
                   whileTap={{ scale: 0.97 }}
                   className="relative flex w-full items-center justify-center gap-2.5 rounded-2xl py-[1.125rem] text-[15px] font-bold text-white overflow-hidden disabled:opacity-50 shadow-md"
                 >
@@ -673,7 +752,7 @@ export default function NewHabitPage() {
                     transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                   />
                   <span className="relative z-10">
-                    {isSaving ? "Saving Habits…" : "Create Habits"}
+                    {isSaving ? "Creating Habits…" : `Create ${bulkHabits.filter((h) => h.name.trim()).length} Habits`}
                   </span>
                 </motion.button>
               </motion.div>
@@ -1054,4 +1133,15 @@ function getBulkEmojiAndCategory(name: string): { emoji: string; category: Habit
     return { emoji: "🎨", category: "creative" };
   }
   return { emoji: "✨", category: "other" };
+}
+
+function timeToTimeOfDay(timeStr: string): TimeOfDay {
+  if (!timeStr) return "anytime";
+  const [hoursStr] = timeStr.split(":");
+  const hours = parseInt(hoursStr, 10);
+  if (isNaN(hours)) return "anytime";
+  if (hours >= 5 && hours < 12) return "morning";
+  if (hours >= 12 && hours < 17) return "afternoon";
+  if (hours >= 17 && hours < 21) return "evening";
+  return "night";
 }
