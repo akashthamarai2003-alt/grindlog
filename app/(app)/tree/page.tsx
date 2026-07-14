@@ -18,8 +18,8 @@ export default function TreePage() {
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center text-center gap-6 pb-20">
-        <div className="relative flex h-48 w-48 items-center justify-center rounded-full bg-[#34C759]/10 ring-4 ring-[#34C759]/20">
-          <Image src="/tree-in-the-wind.svg" width={100} height={100} alt="Tree" className="animate-tree-sway origin-bottom inline-block drop-shadow-md" />
+        <div className="relative flex h-48 w-48 items-center justify-center rounded-full bg-[#34C759]/10 ring-4 ring-[#34C759]/20 overflow-hidden">
+          <Image src="/tree-in-the-wind.svg" width={200} height={200} alt="Tree" className="animate-tree-sway origin-bottom inline-block drop-shadow-md scale-[1.6]" />
         </div>
         
         <div className="flex flex-col gap-2 max-w-[280px]">
