@@ -99,7 +99,7 @@ export default function CoachPage() {
     if (res.success && res.content) {
       setChatMessages(prev => [...prev, { role: "assistant", content: res.content }]);
     } else {
-      setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I had trouble communicating with the server. Let's try again!" }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: res.error || "Sorry, I had trouble communicating with the server. Let's try again!" }]);
     }
     setChatLoading(false);
   };
@@ -242,7 +242,7 @@ export default function CoachPage() {
               className="flex flex-col flex-1"
             >
               {/* Chat Log */}
-              <div className="flex-1 flex flex-col gap-3 min-h-[300px] max-h-[480px] overflow-y-auto pb-24 scrollbar-none pr-1">
+              <div className="flex-1 flex flex-col gap-3 min-h-[300px] max-h-[480px] overflow-y-auto pb-36 scrollbar-none pr-1">
                 {chatMessages.map((msg, i) => (
                   <motion.div
                     key={i}
@@ -267,7 +267,7 @@ export default function CoachPage() {
               </div>
 
               {/* Chat Input */}
-              <div className="fixed bottom-[80px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pt-4 bg-gradient-to-t from-[var(--color-bg-primary)] via-[var(--color-bg-primary)]/90 to-transparent">
+              <div className="fixed bottom-[114px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pt-4 bg-gradient-to-t from-[var(--color-bg-primary)] via-[var(--color-bg-primary)]/90 to-transparent">
                 <div className="flex items-center gap-2 rounded-full bg-[var(--color-bg-secondary)] p-1.5 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]">
                   <button className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
                     <Mic className="h-5 w-5" />
