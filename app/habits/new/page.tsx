@@ -809,7 +809,7 @@ export default function NewHabitPage() {
               >
                 <div>
                   <SectionLabel>Your Habits & Timings</SectionLabel>
-                  <div className="flex flex-col gap-3 max-h-[340px] overflow-y-auto pr-1 mb-4">
+                  <div className="flex flex-col gap-3 mb-6">
                     <AnimatePresence initial={false}>
                       {bulkHabits.map((item, index) => (
                         <motion.div
