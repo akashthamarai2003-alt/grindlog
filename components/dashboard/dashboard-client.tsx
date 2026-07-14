@@ -219,7 +219,9 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Mini Week Calendar Strip */}
       <div className="flex justify-between rounded-[20px] bg-[var(--color-bg-elevated)] p-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50">
-        {weekDays.map((day, i) => (
+        {weekDays.map((day, i) => {
+          const isFuture = day.dateStr > todayDateStr;
+          return (
           <div key={i} className="flex flex-col items-center gap-2">
             <span className="text-[11px] font-bold text-[var(--color-text-tertiary)]">{day.dayStr}</span>
             <div 
@@ -230,14 +232,16 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                   : "ring-2 ring-[var(--color-accent-green)] ring-offset-2 ring-offset-[var(--color-bg-elevated)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]"
                 : day.isToday
                   ? "ring-1 ring-[var(--color-accent-green)]/50 text-[var(--color-accent-green)] hover:bg-[var(--color-bg-tertiary)] cursor-pointer"
-                  : "bg-[var(--color-bg-secondary)] text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] cursor-pointer"
+                  : `bg-[var(--color-bg-secondary)] text-[var(--color-text-tertiary)] ${isFuture ? "opacity-30 cursor-not-allowed" : "hover:bg-[var(--color-bg-tertiary)] cursor-pointer"}`
             }`}
-              onClick={() => setSelectedDateStr(day.dateStr)}
+              onClick={() => {
+                if (!isFuture) setSelectedDateStr(day.dateStr);
+              }}
             >
               {day.dateObj.getDate()}
             </div>
           </div>
-        ))}
+        )})}
       </div>
 
       {/* Perfect Day Banner */}
