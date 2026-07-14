@@ -93,7 +93,9 @@ interface FormState {
   name: string;
   category: HabitCategory | null;
   frequency: HabitFrequency;
+  customDays: number[];
   preferredTime: TimeOfDay;
+  reminderTime: string | null;
   targetCount: number;
   emoji: string;
 }
@@ -106,7 +108,9 @@ const initialFormState: FormState = {
   name: "",
   category: null,
   frequency: "daily",
+  customDays: [1, 2, 3, 4, 5],
   preferredTime: "anytime",
+  reminderTime: null,
   targetCount: 1,
   emoji: "🌱",
 };
@@ -218,7 +222,9 @@ export default function NewHabitPage() {
         emoji: form.emoji,
         category: form.category,
         frequency: form.frequency,
+        custom_days: form.frequency === "custom" ? form.customDays : null,
         preferred_time: form.preferredTime,
+        reminder_time: form.reminderTime,
         target_count: form.targetCount,
         target_unit: "times",
         color,
@@ -841,6 +847,54 @@ export default function NewHabitPage() {
                     </div>
                   </div>
 
+                  {/* Custom Days Weekday Selector */}
+                  <AnimatePresence>
+                    {form.frequency === "custom" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0, y: -10 }}
+                        animate={{ opacity: 1, height: "auto", y: 0 }}
+                        exit={{ opacity: 0, height: 0, y: -10 }}
+                        transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                        className="flex flex-col gap-2 overflow-hidden"
+                      >
+                        <SectionLabel>Active Days</SectionLabel>
+                        <div className="flex justify-between gap-1.5 py-1">
+                          {[
+                            { label: "M", value: 1 },
+                            { label: "T", value: 2 },
+                            { label: "W", value: 3 },
+                            { label: "T", value: 4 },
+                            { label: "F", value: 5 },
+                            { label: "S", value: 6 },
+                            { label: "S", value: 0 },
+                          ].map((day) => {
+                            const active = form.customDays.includes(day.value);
+                            return (
+                              <button
+                                key={day.value}
+                                type="button"
+                                onClick={() => {
+                                  const next = active
+                                    ? form.customDays.filter((d) => d !== day.value)
+                                    : [...form.customDays, day.value];
+                                  set("customDays", next);
+                                }}
+                                className={cn(
+                                  "flex h-11 w-11 flex-1 items-center justify-center rounded-2xl text-[13px] font-black transition-all border active:scale-90",
+                                  active
+                                    ? "bg-[var(--color-bg-elevated)] border-[var(--color-text-primary)] text-[var(--color-text-primary)] shadow-sm ring-1 ring-[var(--color-text-primary)]"
+                                    : "bg-[var(--color-bg-secondary)] border-transparent text-[var(--color-text-secondary)]"
+                                )}
+                              >
+                                {day.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Time of Day */}
                   <div>
                     <SectionLabel>Best time</SectionLabel>
@@ -875,6 +929,31 @@ export default function NewHabitPage() {
                           </motion.button>
                         );
                       })}
+                    </div>
+                  </div>
+
+                  {/* Specific Time Picker */}
+                  <div className="flex flex-col gap-2 mt-2">
+                    <SectionLabel>Specific Time Reminder (Optional)</SectionLabel>
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative flex-1 flex items-center h-[56px] rounded-2xl bg-[var(--color-bg-elevated)] px-4 border border-[var(--color-bg-tertiary)]/20 shadow-sm focus-within:ring-2 focus-within:ring-[var(--color-accent-green)]/35 transition-all">
+                        <input
+                          type="time"
+                          value={form.reminderTime || ""}
+                          onChange={(e) => set("reminderTime", e.target.value || null)}
+                          className="w-full bg-transparent text-sm font-extrabold text-[var(--color-text-primary)] outline-none cursor-pointer"
+                        />
+                      </div>
+                      {form.reminderTime && (
+                        <button
+                          type="button"
+                          onClick={() => set("reminderTime", null)}
+                          className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all border border-red-500/20 active:scale-95"
+                          title="Clear time"
+                        >
+                          <Trash2 className="h-5 w-5" strokeWidth={2.5} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
