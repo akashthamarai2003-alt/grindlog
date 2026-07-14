@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronLeft } from "lucide-react";
 
 export default function TreePage() {
@@ -18,7 +19,7 @@ export default function TreePage() {
 
       <div className="flex flex-1 flex-col items-center justify-center text-center gap-6 pb-20">
         <div className="relative flex h-48 w-48 items-center justify-center rounded-full bg-[#34C759]/10 ring-4 ring-[#34C759]/20">
-          <span className="text-[100px] animate-tree-sway origin-bottom inline-block">🌳</span>
+          <Image src="/tree-in-the-wind.svg" width={100} height={100} alt="Tree" className="animate-tree-sway origin-bottom inline-block drop-shadow-md" />
         </div>
         
         <div className="flex flex-col gap-2 max-w-[280px]">
