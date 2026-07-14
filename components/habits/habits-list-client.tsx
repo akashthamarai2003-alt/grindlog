@@ -13,6 +13,8 @@ interface HabitWithLog {
   color: string;
   currentStreak: number;
   isCompleted: boolean;
+  preferredTime?: string;
+  reminderTime?: string | null;
 }
 
 interface HabitsListClientProps {

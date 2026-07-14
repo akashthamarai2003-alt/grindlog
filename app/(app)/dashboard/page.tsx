@@ -78,6 +78,8 @@ export default async function DashboardPage() {
     color: h.color || "#34C759",
     currentStreak: h.current_streak || 0,
     isCompleted: logsMap.get(h.id) === "completed",
+    preferredTime: h.preferred_time || "anytime",
+    reminderTime: h.reminder_time || null,
   }));
 
   return (

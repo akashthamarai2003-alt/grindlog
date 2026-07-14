@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "motion/react";
-import { Check, Flame, Trash2 } from "lucide-react";
+import { Check, Flame, Trash2, Pencil } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 interface HabitCardProps {
@@ -14,12 +16,27 @@ interface HabitCardProps {
     color: string;
     isCompleted: boolean;
     currentStreak: number;
+    preferredTime?: string;
+    reminderTime?: string | null;
   };
   onComplete?: () => void;
   onDelete?: () => void;
 }
 
 export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
+  const targetLabel = useMemo(() => {
+    if (habit.targetCount === 1 && habit.targetUnit === "times") {
+      if (habit.reminderTime) {
+        return formatTime12h(habit.reminderTime);
+      }
+      if (habit.preferredTime && habit.preferredTime !== "anytime") {
+        return habit.preferredTime.charAt(0).toUpperCase() + habit.preferredTime.slice(1);
+      }
+      return "Anytime";
+    }
+    return `${habit.targetCount} ${habit.targetUnit}`;
+  }, [habit.targetCount, habit.targetUnit, habit.reminderTime, habit.preferredTime]);
+
   return (
     <motion.div
       whileTap={{ scale: 0.98 }}
@@ -54,13 +71,22 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
             )}
           </div>
           <span className="mt-0.5 text-[13px] font-semibold text-[var(--color-text-tertiary)]">
-            {habit.targetCount} {habit.targetUnit}
+            {targetLabel}
           </span>
         </div>
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2.5">
+        <Link
+          href={`/habits/${habit.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-all sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-sm"
+          title="Edit Habit"
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </Link>
+
         {onDelete && (
           <button
             onClick={(e) => {
@@ -98,4 +124,16 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
       </div>
     </motion.div>
   );
+}
+
+function formatTime12h(time24: string): string {
+  if (!time24) return "";
+  const parts = time24.split(":");
+  if (parts.length < 2) return time24;
+  const hours = parseInt(parts[0], 10);
+  const minutes = parts[1];
+  if (isNaN(hours)) return time24;
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 === 0 ? 12 : hours % 12;
+  return `${displayHours}:${minutes} ${ampm}`;
 }

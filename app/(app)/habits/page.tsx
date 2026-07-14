@@ -49,6 +49,8 @@ export default async function HabitsPage() {
       color: habit.color || "#34c759",
       currentStreak: habit.current_streak || 0,
       isCompleted: log?.status === "completed",
+      preferredTime: habit.preferred_time || "anytime",
+      reminderTime: habit.reminder_time || null,
     };
   });
 
