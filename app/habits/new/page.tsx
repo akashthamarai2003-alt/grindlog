@@ -965,38 +965,6 @@ export default function NewHabitPage() {
                     </div>
                   </div>
 
-                  {/* Target Count */}
-                  <div>
-                    <SectionLabel>Daily goal</SectionLabel>
-                    <div className="flex items-center gap-3 rounded-2xl bg-[var(--color-bg-elevated)] p-2 shadow-sm">
-                      <CounterButton
-                        onClick={() => set("targetCount", Math.max(1, form.targetCount - 1))}
-                        disabled={form.targetCount <= 1}
-                      >
-                        <Minus className="h-4 w-4" strokeWidth={2.5} />
-                      </CounterButton>
-                      <div className="flex-1 flex flex-col items-center">
-                        <AnimatePresence mode="wait">
-                          <motion.span
-                            key={form.targetCount}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                            className="text-[26px] font-black text-[var(--color-text-primary)] leading-none"
-                          >
-                            {form.targetCount}
-                          </motion.span>
-                        </AnimatePresence>
-                        <span className="text-[12px] font-semibold text-[var(--color-text-secondary)] mt-0.5">
-                          {form.targetCount === 1 ? "time per day" : "times per day"}
-                        </span>
-                      </div>
-                      <CounterButton onClick={() => set("targetCount", form.targetCount + 1)}>
-                        <Plus className="h-4 w-4" strokeWidth={2.5} />
-                      </CounterButton>
-                    </div>
-                  </div>
 
                   {/* Save CTA */}
                   <motion.button
