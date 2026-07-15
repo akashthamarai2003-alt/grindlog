@@ -152,7 +152,6 @@ export async function GET(req: Request) {
              });
           }
         }
-        }
       }
     } else {
       return NextResponse.json({ error: "Invalid reminder type" }, { status: 400 });
