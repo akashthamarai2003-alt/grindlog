@@ -14,6 +14,7 @@ import {
 
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 import { LucideProps } from "lucide-react";
+import { NotificationPrompt } from "@/components/notifications/notification-prompt";
 
 type Module = {
   id: string;
@@ -76,6 +77,9 @@ export default function HubPage() {
           );
         })}
       </div>
+      
+      <NotificationPrompt />
+      
       <div className="h-8" />
     </div>
   );
