@@ -55,87 +55,108 @@ export async function GET(req: Request) {
 
     if (type === "morning") {
       for (const userId of userIds) {
-        notificationsToSend.push({
-          userId,
-          tokens: usersTokens.get(userId),
-          title: "Rise and Grind! 🌅",
-          body: "Good morning! Check your planner to see your targets for today."
-        });
+        notificationsToSend.push({ userId, tokens: usersTokens.get(userId), title: "Rise and Grind! 🌅", body: "Good morning! Check your planner to see your targets for today." });
       }
-    } 
-    else if (type === "afternoon") {
-      for (const userId of userIds) {
-        notificationsToSend.push({
-          userId,
-          tokens: usersTokens.get(userId),
-          title: "Halfway There! ⚡",
-          body: "Afternoon check-in. Keep your momentum going and knock out those habits!"
-        });
-      }
-    } 
-    else if (type === "night") {
-      for (const userId of userIds) {
-        notificationsToSend.push({
-          userId,
-          tokens: usersTokens.get(userId),
-          title: "Time to wrap up! 🌙",
-          body: "Did you forget to log your habits? Review your day before midnight."
-        });
-      }
-    } 
-    else if (type === "tree") {
-      for (const userId of userIds) {
-        notificationsToSend.push({
-          userId,
-          tokens: usersTokens.get(userId),
-          title: "Your Tree is Thirsty! 🌱",
-          body: "Water your tree by completing a habit today. Don't let it wither!"
-        });
-      }
-    }
-    else if (type === "ai") {
-      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    } else if (type === "dynamic") {
+      // DYNAMIC SMART REMINDERS (Runs every 15 minutes)
+      // 1. Convert current UTC time to IST (UTC + 5:30)
+      const now = new Date();
       
-      for (const userId of userIds) {
-        try {
-          const chatCompletion = await groq.chat.completions.create({
-            messages: [
-              {
-                role: "system",
-                content: "You are a tough-love AI habit coach. Generate a single, short (max 15 words) push notification message to motivate the user to complete their habits today. Be punchy, intense, and modern. No emojis, just raw motivation."
-              }
-            ],
-            model: "llama3-8b-8192",
-            temperature: 0.9,
-          });
-
-          const aiMessage = chatCompletion.choices[0]?.message?.content || "No excuses. Execute your habits today.";
-
-          notificationsToSend.push({
-            userId,
-            tokens: usersTokens.get(userId),
-            title: "AI Coach 🧠",
-            body: aiMessage.replace(/["']/g, "")
-          });
-        } catch (aiError) {
-          console.error("Groq error", aiError);
+      const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const currentHour = istTime.getUTCHours();
+      const currentMinute = istTime.getUTCMinutes();
+      
+      // Calculate a 15-minute window for habits (e.g. 07:15 to 07:29)
+      const startMinutes = currentHour * 60 + currentMinute;
+      const endMinutes = startMinutes + 14; 
+      
+      // Fetch all active habits
+      const { data: habits, error: habitsError } = await supabase
+        .from('habits')
+        .select('id, user_id, name, reminder_time')
+        .eq('is_active', true)
+        .eq('is_archived', false)
+        .not('reminder_time', 'is', null);
+        
+      if (!habitsError && habits) {
+        for (const habit of habits) {
+          if (!habit.reminder_time) continue;
+          
+          const [hStr, mStr] = habit.reminder_time.split(':');
+          const habitMinutes = parseInt(hStr) * 60 + parseInt(mStr);
+          
+          // If habit falls in the current 15-min window
+          if (habitMinutes >= startMinutes && habitMinutes <= endMinutes) {
+             const userTokens = usersTokens.get(habit.user_id);
+             if (userTokens) {
+               notificationsToSend.push({
+                 userId: habit.user_id,
+                 tokens: userTokens,
+                 title: `Time for ${habit.name}! ⏰`,
+                 body: `Your habit is scheduled for ${habit.reminder_time}. Let's get it done!`
+               });
+             }
+          }
         }
       }
-    }
-    else if (type === "streak") {
-      for (const userId of userIds) {
-        notificationsToSend.push({
-          userId,
-          tokens: usersTokens.get(userId),
-          title: "Protect Your Streak! 🔥",
-          body: "You've worked hard for this momentum. Don't break the chain today!"
-        });
+      
+      // 2. DAILY 9:00 AM CHECKS (Inactivity & Streaks)
+      if (currentHour === 9 && currentMinute < 15) {
+        
+        // Fetch users to check activity
+        for (const userId of userIds) {
+          const userTokens = usersTokens.get(userId);
+          if (!userTokens) continue;
+          
+          // Check if they broke a streak yesterday
+          // Fetch yesterday's logs
+          const yesterday = new Date(istTime);
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          
+          const { data: logs } = await supabase
+            .from('habit_logs')
+            .select('status, streak_after')
+            .eq('user_id', userId)
+            .eq('date', yesterdayStr)
+            .eq('status', 'missed');
+            
+          if (logs && logs.length > 0) {
+             notificationsToSend.push({
+               userId: userId,
+               tokens: userTokens,
+               title: "Don't Give Up! ❤️‍🩹",
+               body: "You missed a habit yesterday, but today is a fresh start. Rebuild that streak!"
+             });
+             continue; // Skip inactivity check if we already sent a streak reminder
+          }
+          
+          // Check for 48-hour inactivity
+          const twoDaysAgo = new Date(istTime);
+          twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+          const twoDaysAgoStr = twoDaysAgo.toISOString();
+          
+          const { data: recentLogs } = await supabase
+            .from('habit_logs')
+            .select('id')
+            .eq('user_id', userId)
+            .gte('created_at', twoDaysAgoStr)
+            .limit(1);
+            
+          if (!recentLogs || recentLogs.length === 0) {
+            notificationsToSend.push({
+               userId: userId,
+               tokens: userTokens,
+               title: "We miss you! 🌱",
+               body: "You haven't logged any habits in 2 days. Come back and water your tree!"
+             });
+          }
+        }
+        }
       }
-    } 
-    else {
+    } else {
       return NextResponse.json({ error: "Invalid reminder type" }, { status: 400 });
     }
-
     // 4. Save to In-App Notifications Database
     if (notificationsToSend.length > 0) {
       const dbInserts = notificationsToSend.map(notif => ({
