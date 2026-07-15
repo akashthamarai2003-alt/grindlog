@@ -265,22 +265,10 @@ export async function GET(req: Request) {
       if (!notif.tokens || notif.tokens.length === 0) continue;
 
       const message = {
-        notification: {
-          title: notif.title,
-          body: notif.body,
-        },
         webpush: {
           headers: {
-            TTL: "86400",
             Urgency: "high",
             Topic: hashTag(notif.tag),
-          },
-          notification: {
-            title: String(notif.title),
-            body: String(notif.body),
-            icon: APP_ICON,
-            badge: NOTIFICATION_BADGE,
-            vibrate: [200, 100, 200],
           },
           fcmOptions: {
             link: notif.url || NOTIFICATION_URL,
@@ -290,8 +278,10 @@ export async function GET(req: Request) {
           title: String(notif.title),
           body: String(notif.body),
           type: String(type || 'general'),
-          tag: notif.tag,
-          url: notif.url || NOTIFICATION_URL,
+          tag: String(notif.tag || 'grindlog-reminder'),
+          url: String(notif.url || NOTIFICATION_URL),
+          icon: APP_ICON,
+          badge: NOTIFICATION_BADGE,
         },
         tokens: Array.from(new Set(notif.tokens)),
       };
