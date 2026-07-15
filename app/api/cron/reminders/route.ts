@@ -160,17 +160,12 @@ export async function GET(req: Request) {
       if (!notif.tokens || notif.tokens.length === 0) continue;
       
       const message = {
-        notification: {
+        data: {
           title: notif.title,
           body: notif.body,
+          type: type
         },
-        webpush: {
-          notification: {
-            icon: "https://grindlog-lake.vercel.app/icons/icon-192.png",
-            badge: "https://grindlog-lake.vercel.app/icons/icon-192.png",
-          }
-        },
-        tokens: notif.tokens, // Multicast to all devices of the user
+        tokens: Array.from(new Set(notif.tokens)), // Deduplicate tokens just in case
       };
 
       try {
