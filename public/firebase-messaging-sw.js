@@ -15,7 +15,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const APP_ICON = 'https://grindlog-lake.vercel.app/icons/icon-192.png';
-const NOTIFICATION_BADGE = 'https://grindlog-lake.vercel.app/icons/icon-192.png';
+const NOTIFICATION_BADGE = 'https://grindlog-lake.vercel.app/icons/notification-badge.png';
 const DEFAULT_URL = '/dashboard';
 
 // Force the service worker to update immediately

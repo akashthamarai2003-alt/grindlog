@@ -3,7 +3,7 @@ import { adminMessaging } from "@/lib/firebase/server";
 import { NextResponse } from "next/server";
 
 const APP_ICON = "https://grindlog-lake.vercel.app/icons/icon-192.png";
-const NOTIFICATION_BADGE = "https://grindlog-lake.vercel.app/icons/icon-192.png";
+const NOTIFICATION_BADGE = "https://grindlog-lake.vercel.app/icons/notification-badge.png";
 const NOTIFICATION_URL = "/dashboard";
 
 type ReminderNotification = {
