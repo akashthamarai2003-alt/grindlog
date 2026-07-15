@@ -40,7 +40,15 @@ messaging.onBackgroundMessage((payload) => {
     return;
   }
 
-  const data = payload.data || {};
+  let data = payload.data || {};
+  if (typeof data === 'string') {
+    try { data = JSON.parse(data); } catch (e) {}
+  }
+  // Check if it was double-nested for some reason
+  if (data.data && data.data.title) {
+    data = data.data;
+  }
+  
   const notificationTitle = data.title || 'GrindLog Reminder';
   const notificationOptions = {
     body: data.body || '',
