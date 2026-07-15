@@ -285,11 +285,19 @@ function WeeklyBars({ data }: { data: AnalyticsData["weeklyData"] }) {
           const isActive = active === i;
           
           let baseColor = "#E5E5EA"; // Grey for 0
-          if (d.totalHabits > 0) {
-            if (d.habits >= d.totalHabits) baseColor = "#34C759"; // Green
-            else if (d.habits > 0) baseColor = "#60A5FA"; // Blue
-          } else if (d.habits > 0) {
-            baseColor = "#60A5FA";
+          
+          if (d.habits > 0) {
+            const completionPct = d.totalHabits > 0 ? (d.habits / d.totalHabits) * 100 : 200; // 200 for overachiever if 0 target
+
+            if (completionPct < 50) {
+              baseColor = "#FF9500"; // Orange (1 to 49%)
+            } else if (completionPct >= 50 && completionPct < 100) {
+              baseColor = "#60A5FA"; // Blue (50 to 99%)
+            } else if (completionPct === 100) {
+              baseColor = "#34C759"; // Green (Exactly 100%)
+            } else if (completionPct > 100) {
+              baseColor = "#BF5AF2"; // Purple (Overachiever - completed more than scheduled)
+            }
           }
 
           return (
