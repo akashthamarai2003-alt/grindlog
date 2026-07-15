@@ -66,12 +66,8 @@ export async function GET(req: Request) {
       const currentHour = istTime.getUTCHours();
       const currentMinute = istTime.getUTCMinutes();
       
-      // Snap to the current 15-minute block (0, 15, 30, 45) to handle cron delays gracefully
-      const roundedMinute = Math.floor(currentMinute / 15) * 15;
-      
-      // Calculate a 15-minute window for habits (e.g. 17:30 to 17:44)
-      const startMinutes = currentHour * 60 + roundedMinute;
-      const endMinutes = startMinutes + 14;
+      // Exact minute check for perfect precision
+      const currentTotalMinutes = currentHour * 60 + currentMinute;
       
       // Fetch all active habits
       const { data: habits, error: habitsError } = await supabase
@@ -88,8 +84,8 @@ export async function GET(req: Request) {
           const [hStr, mStr] = habit.reminder_time.split(':');
           const habitMinutes = parseInt(hStr) * 60 + parseInt(mStr);
           
-          // If habit falls in the current 15-min window
-          if (habitMinutes >= startMinutes && habitMinutes <= endMinutes) {
+          // If habit exactly matches the current minute
+          if (habitMinutes === currentTotalMinutes) {
              const userTokens = usersTokens.get(habit.user_id);
              if (userTokens) {
                notificationsToSend.push({
@@ -104,7 +100,7 @@ export async function GET(req: Request) {
       }
       
       // 2. DAILY 9:00 AM CHECKS (Inactivity & Streaks)
-      if (currentHour === 9 && currentMinute < 15) {
+      if (currentHour === 9 && currentMinute === 0) {
         
         // Fetch users to check activity
         for (const userId of userIds) {
