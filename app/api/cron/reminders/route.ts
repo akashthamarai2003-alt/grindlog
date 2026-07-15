@@ -66,9 +66,12 @@ export async function GET(req: Request) {
       const currentHour = istTime.getUTCHours();
       const currentMinute = istTime.getUTCMinutes();
       
-      // Calculate a 15-minute window for habits (e.g. 07:15 to 07:29)
-      const startMinutes = currentHour * 60 + currentMinute;
-      const endMinutes = startMinutes + 14; 
+      // Snap to the current 15-minute block (0, 15, 30, 45) to handle cron delays gracefully
+      const roundedMinute = Math.floor(currentMinute / 15) * 15;
+      
+      // Calculate a 15-minute window for habits (e.g. 17:30 to 17:44)
+      const startMinutes = currentHour * 60 + roundedMinute;
+      const endMinutes = startMinutes + 14;
       
       // Fetch all active habits
       const { data: habits, error: habitsError } = await supabase
