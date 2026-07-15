@@ -51,6 +51,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [selectedDateStr, setSelectedDateStr] = useState(todayDateStr);
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
+  const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, currentCompletedStatus: boolean, streak: number} | null>(null);
 
   useEffect(() => {
     if (!hasMounted) {
@@ -310,7 +311,13 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                 <motion.div key={habit.id} variants={staggerItem}>
                   <HabitCard 
                     habit={habit} 
-                    onComplete={() => handleHabitComplete(habit.id, habit.isCompleted, habit.currentStreak)} 
+                    onComplete={() => {
+                      if (!habit.isCompleted && selectedDateStr < todayDateStr) {
+                        setCheatConfirm({ habitId: habit.id, currentCompletedStatus: habit.isCompleted, streak: habit.currentStreak });
+                        return;
+                      }
+                      handleHabitComplete(habit.id, habit.isCompleted, habit.currentStreak);
+                    }} 
                   />
                 </motion.div>
               ))}
@@ -356,6 +363,55 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       </motion.div>
 
       <div className="h-6" />
+
+      {/* ── Anti-Cheat Modal ── */}
+      <AnimatePresence>
+        {cheatConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col items-center text-center gap-4 border-2 border-[#FF3B30]/20"
+            >
+              <div className="w-14 h-14 rounded-full bg-[#FF3B30]/10 flex items-center justify-center mb-1">
+                <span className="text-3xl">🛑</span>
+              </div>
+              <h2 className="text-lg font-black text-[var(--color-text-primary)] tracking-tight">Don't cheat yourself!</h2>
+              <p className="text-[13px] font-bold text-[var(--color-text-secondary)] leading-relaxed">
+                If you really completed this habit on this day, then only check in. Did you actually do it?
+              </p>
+              
+              <div className="flex gap-2 w-full mt-3">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCheatConfirm(null)}
+                  className="flex-1 py-3.5 rounded-[18px] font-black text-[13px] uppercase tracking-wide bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)]"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    handleHabitComplete(cheatConfirm.habitId, cheatConfirm.currentCompletedStatus, cheatConfirm.streak);
+                    setCheatConfirm(null);
+                  }}
+                  className="flex-1 py-3.5 rounded-[18px] font-black text-[13px] uppercase tracking-wide bg-[#34C759] text-white shadow-[0_0_20px_rgba(52,199,89,0.4)]"
+                >
+                  Yes, I did it
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
