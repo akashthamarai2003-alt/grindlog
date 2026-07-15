@@ -27,7 +27,7 @@ export default async function CalendarPage() {
   // Fetch active habits
   const { data: habits } = await supabase
     .from("habits")
-    .select("id, name, emoji, target_count, target_unit, color, current_streak, preferred_time, reminder_time, created_at")
+    .select("id, name, emoji, frequency, custom_days, target_count, target_unit, color, current_streak, preferred_time, reminder_time, created_at")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .order("created_at", { ascending: true });

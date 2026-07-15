@@ -78,6 +78,8 @@ export default async function DashboardPage() {
     id: h.id,
     name: h.name,
     emoji: h.emoji || "✨",
+    frequency: h.frequency,
+    customDays: h.custom_days,
     targetCount: h.target_count || 1,
     targetUnit: h.target_unit || "times",
     color: h.color || "#34C759",
