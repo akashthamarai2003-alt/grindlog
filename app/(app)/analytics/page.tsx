@@ -58,10 +58,21 @@ export default async function AnalyticsPage() {
     completionAvg = Math.round(totalRate / allHabits.length);
   }
 
-  const donutData = Object.keys(donutCategories).map(label => ({
+  const CHART_COLORS = [
+    "#FF2D55", // Pink
+    "#007AFF", // Blue
+    "#34C759", // Green
+    "#FF9500", // Orange
+    "#5856D6", // Purple
+    "#FFCC00", // Yellow
+    "#5AC8FA", // Light Blue
+    "#FF3B30", // Red
+  ];
+
+  const donutData = Object.keys(donutCategories).map((label, index) => ({
     label,
     value: donutCategories[label].count,
-    color: donutCategories[label].color
+    color: CHART_COLORS[index % CHART_COLORS.length]
   }));
 
   // 2. Dates for the last 30 days (for trend, heatmap, weekly)
