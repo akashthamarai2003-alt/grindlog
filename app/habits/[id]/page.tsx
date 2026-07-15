@@ -19,7 +19,14 @@ import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
 import { deleteHabit, toggleHabitCompletion } from "@/app/actions/habits";
-import type { HabitCategory, TimeOfDay } from "@/types";
+import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";
+
+const FREQUENCIES: { value: HabitFrequency; label: string; icon: string }[] = [
+  { value: "daily", label: "Every day", icon: "🔥" },
+  { value: "weekdays", label: "Weekdays", icon: "💼" },
+  { value: "weekends", label: "Weekends", icon: "🍹" },
+  { value: "custom", label: "Custom", icon: "⚙️" },
+];
 
 const CATEGORIES: { id: HabitCategory; label: string; icon: string }[] = [
   { id: "fitness", label: "Fitness", icon: "🏃" },
@@ -54,7 +61,8 @@ export default function HabitDetailPage({
   const [editEmoji, setEditEmoji] = useState("✨");
   const [editCategory, setEditCategory] = useState<HabitCategory>("other");
   const [editTime, setEditTime] = useState("08:00");
-  const [editTargetCount, setEditTargetCount] = useState(1);
+  const [editFrequency, setEditFrequency] = useState<HabitFrequency>("daily");
+  const [editCustomDays, setEditCustomDays] = useState<number[]>([1, 2, 3, 4, 5]);
 
   // Today log completion status
   const [isCompleted, setIsCompleted] = useState(false);
@@ -87,7 +95,8 @@ export default function HabitDetailPage({
       setEditEmoji(habitData.emoji || "✨");
       setEditCategory(habitData.category as HabitCategory);
       setEditTime(habitData.reminder_time || "08:00");
-      setEditTargetCount(habitData.target_count || 1);
+      setEditFrequency(habitData.frequency || "daily");
+      setEditCustomDays(habitData.custom_days || [1, 2, 3, 4, 5]);
       setCurrentStreak(habitData.current_streak || 0);
 
       // Fetch today's completion log
@@ -151,7 +160,8 @@ export default function HabitDetailPage({
           color: catColor,
           reminder_time: editTime,
           preferred_time: preferredTime,
-          target_count: editTargetCount,
+          frequency: editFrequency,
+          custom_days: editFrequency === "custom" ? editCustomDays : null,
         })
         .eq("id", id);
 
@@ -406,33 +416,83 @@ export default function HabitDetailPage({
               </div>
             </div>
 
-            {/* Target Select */}
+            {/* Frequency Select */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-black uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                Target per day
+                Frequency
               </label>
-              <div className="flex items-center justify-between rounded-2xl bg-[var(--color-bg-elevated)] px-4 py-3 border border-[var(--color-bg-tertiary)]/20">
-                <span className="text-sm font-bold text-[var(--color-text-primary)]">
-                  {editTargetCount} times / day
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditTargetCount(prev => Math.max(1, prev - 1))}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] text-lg font-bold"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditTargetCount(prev => prev + 1)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] text-lg font-bold"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {FREQUENCIES.map((f) => {
+                  const active = editFrequency === f.value;
+                  return (
+                    <button
+                      key={f.value}
+                      type="button"
+                      onClick={() => setEditFrequency(f.value)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-2xl py-3.5 px-4 border transition-all active:scale-95",
+                        active
+                          ? "bg-[var(--color-bg-elevated)] border-[var(--color-text-primary)] shadow-sm ring-1 ring-[var(--color-text-primary)] text-[var(--color-text-primary)]"
+                          : "bg-[var(--color-bg-secondary)]/50 border-transparent text-[var(--color-text-secondary)]"
+                      )}
+                    >
+                      <span className="text-lg">{f.icon}</span>
+                      <span className="text-sm font-bold">{f.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Custom Days Weekday Selector */}
+            <AnimatePresence>
+              {editFrequency === "custom" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-col gap-2 overflow-hidden"
+                >
+                  <label className="text-xs font-black uppercase tracking-wider text-[var(--color-text-tertiary)] mt-2">
+                    Active Days
+                  </label>
+                  <div className="flex justify-between gap-1.5 py-1">
+                    {[
+                      { label: "M", value: 1 },
+                      { label: "T", value: 2 },
+                      { label: "W", value: 3 },
+                      { label: "T", value: 4 },
+                      { label: "F", value: 5 },
+                      { label: "S", value: 6 },
+                      { label: "S", value: 0 },
+                    ].map((day) => {
+                      const active = editCustomDays.includes(day.value);
+                      return (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => {
+                            const next = active
+                              ? editCustomDays.filter((d) => d !== day.value)
+                              : [...editCustomDays, day.value];
+                            setEditCustomDays(next);
+                          }}
+                          className={cn(
+                            "flex h-[44px] flex-1 items-center justify-center rounded-2xl text-[13px] font-black transition-all border active:scale-90",
+                            active
+                              ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] shadow-sm border-[var(--color-text-primary)]"
+                              : "bg-[var(--color-bg-elevated)] border-[var(--color-bg-tertiary)]/20 text-[var(--color-text-secondary)]"
+                          )}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
 
             {/* Save / Cancel buttons */}
             <div className="flex gap-3 mt-4">
