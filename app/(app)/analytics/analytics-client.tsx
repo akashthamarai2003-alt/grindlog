@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Fragment } from "react";
-import { motion, useInView, useMotionValue, useSpring, animate } from "motion/react";
+import { motion, useInView, useMotionValue, useSpring, animate, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, TrendingUp, Flame, Trophy, AlertCircle,
   Activity, Smartphone, Calendar, BatteryCharging, Smile, Sparkles
@@ -255,62 +255,77 @@ function WeeklyBars({ data }: { data: AnalyticsData["weeklyData"] }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
   const [active, setActive] = useState<number | null>(null);
-  const max = Math.max(...data.map(d => d.habits), 1); // Avoid div by zero
+  
+  const rawMax = Math.max(...data.map(d => d.habits), 1);
+  const max = Math.ceil(rawMax / 4) * 4;
+  const gridLines = [max, max * 0.75, max * 0.5, max * 0.25, 0];
 
   return (
-    <div ref={ref} className="flex items-end justify-between h-[130px] px-1 gap-2">
-      {data.map((d, i) => {
-        const pct = (d.habits / max) * 100;
-        const isActive = active === i;
-        return (
-          <motion.div
-            key={i}
-            className="flex flex-col items-center gap-1.5 flex-1 h-full"
-            onTapStart={() => setActive(i)}
-            onTap={() => setActive(null)}
-          >
-            <motion.span
-              className="text-[10px] font-black text-[var(--color-text-secondary)]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: inView ? 1 : 0 }}
-              transition={{ delay: 1.4 + i * 0.08 }}
-            >
-              {d.habits}
-            </motion.span>
-
-            <div className="w-full flex-1 rounded-full bg-[var(--color-bg-tertiary)] flex items-end overflow-hidden relative">
-              {inView && (
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: `${pct}%` }}
-                  transition={{ type: "spring", stiffness: 80, damping: 18, delay: 1.0 + i * 0.09 }}
-                  className={cn(
-                    "w-full rounded-full transition-all duration-200",
-                    isActive
-                      ? "bg-gradient-to-t from-[#30B0C7] to-[#007AFF]"
-                      : "bg-gradient-to-t from-[#34C759]/90 to-[#30D158]"
-                  )}
-                />
-              )}
-              {inView && (
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.5 + i * 0.09 }}
-                />
-              )}
-            </div>
-
-            <span className={cn(
-              "text-[10px] font-bold transition-colors",
-              isActive ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-tertiary)]"
-            )}>
-              {d.day.slice(0, 1)}
+    <div ref={ref} className="relative h-[180px] w-full pt-4 pb-6 pl-4 pr-1">
+      {/* Grid Lines */}
+      <div className="absolute inset-0 pt-4 pb-6 pl-4 pr-1 flex flex-col justify-between pointer-events-none">
+        {gridLines.map((val, i) => (
+          <div key={i} className="flex items-center w-full h-0">
+            <span className="absolute left-0 text-[10px] font-bold text-[var(--color-text-tertiary)] w-3 text-right -translate-y-1/2">
+              {val}
             </span>
-          </motion.div>
-        );
-      })}
+            <div className="w-full border-t border-dashed border-[var(--color-bg-tertiary)]/50 ml-5" />
+          </div>
+        ))}
+      </div>
+
+      {/* Bars */}
+      <div className="relative h-full flex items-end justify-between gap-1.5 sm:gap-3 z-10 ml-5">
+        {data.map((d, i) => {
+          const pct = (d.habits / max) * 100;
+          const isActive = active === i;
+          return (
+            <motion.div
+              key={i}
+              className="flex flex-col items-center flex-1 h-full justify-end group cursor-pointer relative"
+              onHoverStart={() => setActive(i)}
+              onHoverEnd={() => setActive(null)}
+              onTapStart={() => setActive(i)}
+              onTap={() => setActive(null)}
+            >
+              <div className="w-full relative flex items-end justify-center h-full">
+                {inView && (
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${pct}%` }}
+                    transition={{ type: "spring", stiffness: 80, damping: 18, delay: 0.2 + i * 0.05 }}
+                    className={cn(
+                      "w-full rounded-t-[6px] transition-all duration-200",
+                      isActive
+                        ? "bg-[#60A5FA] opacity-100" // Light blue
+                        : "bg-[#60A5FA] opacity-80"
+                    )}
+                  />
+                )}
+                {/* Tooltip */}
+                <AnimatePresence>
+                  {isActive && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: -4 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      className="absolute -top-7 text-[10px] font-black text-white bg-[var(--color-text-primary)] px-2 py-0.5 rounded-md pointer-events-none shadow-sm z-20"
+                    >
+                      {d.habits}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <span className={cn(
+                "absolute -bottom-5 text-[10px] font-bold transition-colors whitespace-nowrap",
+                isActive ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-tertiary)]"
+              )}>
+                {d.day.substring(0, 3)}
+              </span>
+            </motion.div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -708,11 +723,31 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
           </div>
         </section>
 
-        {/* ── 2. MOOD & ENERGY ── */}
+        {/* ── 2. WEEKLY BARS (HABITS COMPLETED) ── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 200, damping: 28, delay: 0.42 }}
+          className="rounded-[28px] bg-[var(--color-bg-secondary)] p-5 ring-1 ring-[var(--color-bg-tertiary)] shadow-sm"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-black text-[var(--color-text-primary)]">Habits Completed</h2>
+              <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] mt-0.5">Daily count this week</p>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 bg-[#34C759]/15">
+              <TrendingUp className="h-3.5 w-3.5 text-[#34C759]" />
+              <span className="text-[10px] font-black text-[#34C759]">{currentWeekCount} total</span>
+            </div>
+          </div>
+          <WeeklyBars data={data.weeklyData} />
+        </motion.section>
+
+        {/* ── 3. MOOD & ENERGY ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 200, damping: 28, delay: 0.50 }}
           className="rounded-[28px] bg-[var(--color-bg-secondary)] p-5 ring-1 ring-[var(--color-bg-tertiary)] shadow-sm"
         >
           <div className="flex items-center justify-between mb-5">
@@ -732,26 +767,6 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
             </div>
           </div>
           <LineChart data={data.weeklyData} />
-        </motion.section>
-
-        {/* ── 3. WEEKLY BARS ── */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 200, damping: 28, delay: 0.50 }}
-          className="rounded-[28px] bg-[var(--color-bg-secondary)] p-5 ring-1 ring-[var(--color-bg-tertiary)] shadow-sm"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-black text-[var(--color-text-primary)]">Habits Completed</h2>
-              <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] mt-0.5">Daily count this week</p>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 bg-[#34C759]/15">
-              <TrendingUp className="h-3.5 w-3.5 text-[#34C759]" />
-              <span className="text-[10px] font-black text-[#34C759]">{currentWeekCount} total</span>
-            </div>
-          </div>
-          <WeeklyBars data={data.weeklyData} />
         </motion.section>
 
         {/* ── 4. CATEGORIES & HEATMAP ── */}
