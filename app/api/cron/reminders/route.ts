@@ -201,6 +201,18 @@ export async function GET(req: Request) {
           }
         }
       }
+    } else if (type === "test") {
+      // Bypass time checks and send a direct test notification to everyone
+      for (const userId of userIds) {
+        notificationsToSend.push({
+          userId,
+          tokens: usersTokens.get(userId),
+          title: "Test Notification! \uD83D\uDE80",
+          body: "This is a test to verify the background service worker.",
+          tag: `test:${userId}:${Date.now()}`, // Unique tag every time to bypass deduplication
+          url: NOTIFICATION_URL,
+        });
+      }
     } else {
       return NextResponse.json({ error: "Invalid reminder type" }, { status: 400 });
     }
