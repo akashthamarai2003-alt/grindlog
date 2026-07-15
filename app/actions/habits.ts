@@ -30,23 +30,25 @@ export async function toggleHabitCompletion(
         coins_earned: 5
       });
       
-    if (logError && logError.code !== '23505') { // Ignore unique constraint violation if they somehow double clicked
+    if (logError) {
+      if (logError.code === '23505') {
+        // Already logged, just return without awarding double XP
+        return { success: true };
+      }
       console.error("Error logging habit:", logError);
       return { success: false, error: logError.message };
     }
 
-    // 2. Update habit stats (increment streak and completions)
-    // Supabase RPC would be best here, but we can do a simple update since we have the streak value
+    // 2. Update habit stats
     await supabase
       .from("habits")
       .update({ 
         current_streak: currentStreak + 1,
-        total_completions: currentStreak + 1 // Simplified: assuming total completions increases too
+        total_completions: currentStreak + 1
       })
       .eq("id", habitId);
 
     // 3. Award XP to user profile
-    // We fetch current XP first, then add. (Again, RPC is better for atomic operations, but this is fine for MVP)
     const { data: profile } = await supabase
       .from("profiles")
       .select("xp, level, coins")
@@ -56,7 +58,7 @@ export async function toggleHabitCompletion(
     if (profile) {
       const newXp = (profile.xp || 0) + xpReward;
       const newCoins = (profile.coins || 0) + 5;
-      const newLevel = Math.floor(newXp / 1000) + 1; // Simplified level formula: 1000 XP per level
+      const newLevel = Math.floor(newXp / 1000) + 1;
       
       await supabase
         .from("profiles")
@@ -66,12 +68,23 @@ export async function toggleHabitCompletion(
   } else {
     // Un-check the habit
     // 1. Delete the log
-    await supabase
+    const { data: deletedLogs, error: deleteError } = await supabase
       .from("habit_logs")
       .delete()
       .eq("habit_id", habitId)
-      .eq("date", dateStr);
+      .eq("date", dateStr)
+      .select();
       
+    if (deleteError) {
+      console.error("Error un-logging habit:", deleteError);
+      return { success: false, error: deleteError.message };
+    }
+
+    // If nothing was deleted (e.g. rapid double clicks), do not deduct XP
+    if (!deletedLogs || deletedLogs.length === 0) {
+      return { success: true };
+    }
+
     // 2. Decrement streak
     await supabase
       .from("habits")
@@ -80,7 +93,23 @@ export async function toggleHabitCompletion(
       })
       .eq("id", habitId);
       
-    // Note: We don't deduct XP to keep it positive reinforcement, but we could!
+    // 3. Deduct XP
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("xp, level, coins")
+      .eq("id", user.id)
+      .single();
+      
+    if (profile) {
+      const newXp = Math.max(0, (profile.xp || 0) - xpReward);
+      const newCoins = Math.max(0, (profile.coins || 0) - 5);
+      const newLevel = Math.max(1, Math.floor(newXp / 1000) + 1);
+      
+      await supabase
+        .from("profiles")
+        .update({ xp: newXp, coins: newCoins, level: newLevel })
+        .eq("id", user.id);
+    }
   }
 
   revalidatePath("/dashboard");
