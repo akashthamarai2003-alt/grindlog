@@ -631,6 +631,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function TrendChart({ data }: { data: AnalyticsData["trendData"] }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
+  const [active, setActive] = useState<number | null>(null);
   const max = Math.max(...data.map(d => d.completions), 1);
   const W = 300, H = 100;
   
@@ -674,6 +675,29 @@ function TrendChart({ data }: { data: AnalyticsData["trendData"] }) {
             transition={{ duration: 1.5, ease: "easeOut" }}
           />
         )}
+        {inView && data.map((d, i) => (
+          <motion.circle
+            key={i}
+            cx={xs[i]}
+            cy={ys[i]}
+            r={15}
+            fill="transparent"
+            style={{ cursor: "pointer", pointerEvents: "all" }}
+            onHoverStart={() => setActive(i)}
+            onHoverEnd={() => setActive(null)}
+            onTapStart={() => setActive(i)}
+            onTap={() => setActive(null)}
+          />
+        ))}
+        {inView && active !== null && (
+          <g>
+            <circle cx={xs[active]} cy={ys[active]} r={5} fill="#AF52DE" stroke="var(--color-bg-primary)" strokeWidth={2} />
+            <rect x={xs[active] - 20} y={ys[active] - 35} width={40} height={22} rx={6} fill="var(--color-text-primary)" />
+            <text x={xs[active]} y={ys[active] - 20} textAnchor="middle" fontSize={12} fontWeight="bold" fill="var(--color-bg-primary)">
+              {data[active].completions}
+            </text>
+          </g>
+        )}
       </svg>
     </div>
   );
@@ -683,6 +707,8 @@ function TrendChart({ data }: { data: AnalyticsData["trendData"] }) {
 function RadarChart({ data }: { data: AnalyticsData["radarData"] }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
+  const [active, setActive] = useState<number | null>(null);
+  
   if (!data || data.length < 3) {
       return <div className="h-[200px] flex items-center justify-center text-[10px] font-bold text-[var(--color-text-tertiary)] text-center px-4">Add at least 3 habits in different categories to see balance.</div>;
   }
@@ -695,6 +721,7 @@ function RadarChart({ data }: { data: AnalyticsData["radarData"] }) {
     const dist = (d.value / max) * radius;
     return {
       label: d.category,
+      val: d.value,
       x: center + Math.cos(angle) * dist,
       y: center + Math.sin(angle) * dist,
       lx: center + Math.cos(angle) * (radius + 15),
@@ -729,20 +756,43 @@ function RadarChart({ data }: { data: AnalyticsData["radarData"] }) {
           />
         )}
         
-        {/* Labels */}
+        {/* Labels and Hitboxes */}
         {inView && points.map((p, i) => (
-          <motion.text
-            key={i}
-            x={p.lx} y={p.ly}
-            textAnchor="middle" alignmentBaseline="middle"
-            className="text-[8px] font-black fill-[var(--color-text-secondary)] uppercase tracking-wider"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 + i * 0.1 }}
-          >
-            {p.label.substring(0, 10)}{p.label.length > 10 ? "..." : ""}
-          </motion.text>
+          <g key={i}>
+            <motion.text
+              x={p.lx} y={p.ly}
+              textAnchor="middle" alignmentBaseline="middle"
+              className={cn(
+                "text-[8px] font-black uppercase tracking-wider transition-colors",
+                active === i ? "fill-[#34C759]" : "fill-[var(--color-text-secondary)]"
+              )}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 + i * 0.1 }}
+            >
+              {p.label.substring(0, 10)}{p.label.length > 10 ? "..." : ""}
+            </motion.text>
+            
+            <motion.circle
+              cx={p.lx} cy={p.ly} r={20} fill="transparent"
+              style={{ cursor: "pointer", pointerEvents: "all" }}
+              onHoverStart={() => setActive(i)}
+              onHoverEnd={() => setActive(null)}
+              onTapStart={() => setActive(i)}
+              onTap={() => setActive(null)}
+            />
+          </g>
         ))}
+
+        {inView && active !== null && (
+          <g>
+            <circle cx={points[active].x} cy={points[active].y} r={4} fill="#34C759" stroke="var(--color-bg-primary)" strokeWidth={2} />
+            <rect x={center - 25} y={center - 12} width={50} height={24} rx={6} fill="var(--color-text-primary)" />
+            <text x={center} y={center + 4} textAnchor="middle" fontSize={12} fontWeight="bold" fill="var(--color-bg-primary)">
+              {points[active].val}
+            </text>
+          </g>
+        )}
       </svg>
     </div>
   );
@@ -752,6 +802,7 @@ function RadarChart({ data }: { data: AnalyticsData["radarData"] }) {
 function TimeOfDayChart({ data }: { data: AnalyticsData["timeOfDayData"] }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
+  const [active, setActive] = useState<number | null>(null);
   const maxCount = Math.max(...data.map(d => d.count), 1);
   
   return (
@@ -768,22 +819,48 @@ function TimeOfDayChart({ data }: { data: AnalyticsData["timeOfDayData"] }) {
             const label = h === 0 ? "12A" : h === 12 ? "12P" : h > 12 ? `${h-12}P` : `${h}A`;
             
             return (
-              <div key={h} className="relative flex flex-col items-center justify-center flex-1 h-full">
+              <motion.div 
+                key={h} 
+                className="relative flex flex-col items-center justify-center flex-1 h-full cursor-pointer"
+                onHoverStart={() => setActive(h)}
+                onHoverEnd={() => setActive(null)}
+                onTapStart={() => setActive(h)}
+                onTap={() => setActive(null)}
+              >
                   {inView && count > 0 && (
                     <motion.div
-                      className="absolute rounded-full bg-[#FF9500] shadow-sm opacity-90"
-                      style={{ width: r * 2, height: r * 2, top: `calc(50% - ${r}px)` }}
+                      className="absolute rounded-full shadow-sm"
+                      style={{ 
+                        width: r * 2, height: r * 2, top: `calc(50% - ${r}px)`,
+                        backgroundColor: active === h ? "#FFB340" : "#FF9500",
+                        opacity: active !== null && active !== h ? 0.4 : 0.9,
+                        zIndex: active === h ? 10 : 1
+                      }}
                       initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
+                      animate={{ scale: active === h ? 1.2 : 1 }}
                       transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 + (h * 0.03) }}
                     />
                   )}
+                  
+                  <AnimatePresence>
+                    {active === h && count > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: -4 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        className="absolute -top-7 text-[10px] font-black text-white bg-[var(--color-text-primary)] px-2 py-0.5 rounded-md pointer-events-none shadow-sm z-20 whitespace-nowrap"
+                      >
+                        {count}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {showLabel && (
                     <span className="absolute bottom-2 text-[8px] font-bold text-[var(--color-text-tertiary)] text-center">
                       {label}
                     </span>
                   )}
-              </div>
+              </motion.div>
             );
           })}
         </div>
