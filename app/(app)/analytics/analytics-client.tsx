@@ -14,7 +14,9 @@ export interface AnalyticsData {
     completion: number;
     longestStreak: number;
     bestHabit: string;
+    bestHabitEmoji: string;
     worstHabit: string;
+    worstHabitEmoji: string;
     worstHabitRate: number;
   };
   weeklyData: { day: string; habits: number; mood: number; energy: number }[];
@@ -605,7 +607,7 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
   const currentWeekCount = data.weeklyData.reduce((acc, curr) => acc + curr.habits, 0);
 
   return (
-    <div className="flex flex-col min-h-dvh px-4 pb-12 pt-4 safe-top bg-[var(--color-bg-primary)]">
+    <div className="flex flex-col min-h-dvh px-4 pb-32 pt-4 safe-top bg-[var(--color-bg-primary)]">
       {/* ── Header ── */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -669,24 +671,28 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
               <span className="text-[14px] font-black text-[var(--color-text-primary)] leading-tight truncate">
                 {highlights.bestHabit || "None Yet"}
               </span>
-              <div className="flex items-center gap-1 mt-2">
-                {["🔥","✅","💪"].map((e, i) => (
+              <div className="flex items-center gap-1 mt-2 min-h-[24px]">
+                {highlights.bestHabitEmoji ? (
                   <motion.span
-                    key={i}
-                    className="text-base"
+                    className="text-xl"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 15, delay: 1.0 + i * 0.1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15, delay: 1.0 }}
                   >
-                    {e}
+                    {highlights.bestHabitEmoji}
                   </motion.span>
-                ))}
+                ) : null}
               </div>
             </HighlightCard>
             <HighlightCard icon={AlertCircle} label="Needs Work" color="#FF3B30" delay={0.34}>
-              <span className="text-[14px] font-black text-[var(--color-text-primary)] leading-tight truncate">
-                {highlights.worstHabit || "None"}
-              </span>
+              <div className="flex items-center gap-2">
+                {highlights.worstHabitEmoji && (
+                  <span className="text-base">{highlights.worstHabitEmoji}</span>
+                )}
+                <span className="text-[14px] font-black text-[var(--color-text-primary)] leading-tight truncate">
+                  {highlights.worstHabit || "None"}
+                </span>
+              </div>
               <div className="mt-2 h-1.5 w-full rounded-full bg-[var(--color-bg-tertiary)] overflow-hidden">
                 <motion.div
                   className="h-full rounded-full bg-gradient-to-r from-[#FF3B30] to-[#FF6B6B]"
