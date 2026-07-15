@@ -559,7 +559,13 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, isPending }: 
                   isEditable={isEditable}
                   isPending={isPending}
                   idx={idx}
-                  onToggle={(s) => onLogChange(habit.id, dateStr, s)}
+                  onToggle={(s) => {
+                    if (s === "completed" && dateStr < todayDateStr) {
+                      const isHonest = window.confirm("Don't cheat yourself! 🛑\n\nIf you really completed this habit on this day, then only check in. Did you actually do it?");
+                      if (!isHonest) return;
+                    }
+                    onLogChange(habit.id, dateStr, s);
+                  }}
                 />
               );
             })}
