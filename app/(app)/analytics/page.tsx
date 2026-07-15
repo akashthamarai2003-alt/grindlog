@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { redirect } from "next/navigation";
 import AnalyticsClient, { AnalyticsData } from "./analytics-client";
+import { isHabitScheduled } from "@/lib/habit-utils";
 
 export default async function AnalyticsPage() {
   const supabase = await createServerSupabase();
@@ -151,9 +152,14 @@ export default async function AnalyticsPage() {
   const weeklyData = dates28.slice(21).map(dString => {
     const dObj = new Date(dString);
     
-    // Determine how many habits were active on this specific day
+    // Determine how many habits were scheduled for this specific day
     const endOfDay = new Date(dString + "T23:59:59Z");
-    const activeHabitsOnDate = allHabits.filter((h: any) => new Date(h.created_at) <= endOfDay).length;
+    const checkDate = new Date(dString + "T12:00:00Z"); // Use noon to avoid timezone shift
+
+    const activeHabitsOnDate = allHabits.filter((h: any) => {
+      if (new Date(h.created_at) > endOfDay) return false;
+      return isHabitScheduled(h.frequency, h.custom_days, checkDate);
+    }).length;
 
     return {
       day: dayNames[dObj.getDay()],
