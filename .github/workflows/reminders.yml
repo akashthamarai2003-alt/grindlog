@@ -1,0 +1,72 @@
+name: Auto Push Notifications
+
+on:
+  schedule:
+    # Schedule uses UTC time. 
+    # Adjusting for IST (UTC+5:30)
+    
+    # Morning Reminder (8:00 AM IST -> 02:30 UTC)
+    - cron: '30 2 * * *'
+    
+    # Tree Reminder (11:30 AM IST -> 06:00 UTC)
+    - cron: '0 6 * * *'
+    
+    # Afternoon Reminder (1:00 PM IST -> 07:30 UTC)
+    - cron: '30 7 * * *'
+    
+    # AI Coach Reminder (4:00 PM IST -> 10:30 UTC)
+    - cron: '30 10 * * *'
+    
+    # Streak Reminder (6:00 PM IST -> 12:30 UTC)
+    - cron: '30 12 * * *'
+    
+    # Night Reminder (9:00 PM IST -> 15:30 UTC)
+    - cron: '30 15 * * *'
+
+  # Allow running manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Type of reminder to trigger'
+        required: true
+        default: 'morning'
+        type: choice
+        options:
+          - morning
+          - afternoon
+          - night
+          - ai
+          - streak
+          - tree
+
+jobs:
+  trigger-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Manual Dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: curl -X GET "https://grindlog-lake.vercel.app/api/cron/reminders?type=${{ github.event.inputs.type }}"
+        
+      - name: Trigger Morning Reminder
+        if: github.event.schedule == '30 2 * * *'
+        run: curl -X GET "https://grindlog-lake.vercel.app/api/cron/reminders?type=morning"
+        
+      - name: Trigger Tree Reminder
+        if: github.event.schedule == '0 6 * * *'
+        run: curl -X GET "https://grindlog-lake.vercel.app/api/cron/reminders?type=tree"
+        
+      - name: Trigger Afternoon Reminder
+        if: github.event.schedule == '30 7 * * *'
+        run: curl -X GET "https://grindlog-lake.vercel.app/api/cron/reminders?type=afternoon"
+        
+      - name: Trigger AI Coach Reminder
+        if: github.event.schedule == '30 10 * * *'
+        run: curl -X GET "https://grindlog-lake.vercel.app/api/cron/reminders?type=ai"
+        
+      - name: Trigger Streak Reminder
+        if: github.event.schedule == '30 12 * * *'
+        run: curl -X GET "https://grindlog-lake.vercel.app/api/cron/reminders?type=streak"
+        
+      - name: Trigger Night Reminder
+        if: github.event.schedule == '30 15 * * *'
+        run: curl -X GET "https://grindlog-lake.vercel.app/api/cron/reminders?type=night"
