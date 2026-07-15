@@ -28,6 +28,8 @@ type Habit = {
   id: string;
   name: string;
   emoji: string;
+  frequency?: string;
+  custom_days?: number[] | null;
   target_count: number;
   target_unit: string;
   color: string;

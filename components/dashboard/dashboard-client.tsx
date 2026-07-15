@@ -21,6 +21,8 @@ interface HabitWithLog {
   id: string;
   name: string;
   emoji: string;
+  frequency?: string;
+  customDays?: number[] | null;
   targetCount: number;
   targetUnit: string;
   color: string;
