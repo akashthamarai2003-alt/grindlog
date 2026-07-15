@@ -740,7 +740,7 @@ function TimeOfDayChart({ data }: { data: AnalyticsData["timeOfDayData"] }) {
   
   return (
     <div ref={ref} className="relative w-full h-[120px] pt-6 pb-2">
-        <div className="absolute top-[40%] left-4 right-4 h-px bg-[var(--color-bg-tertiary)] -translate-y-1/2 rounded-full" />
+        <div className="absolute top-[50%] left-4 right-4 h-px bg-[var(--color-bg-tertiary)] -translate-y-1/2 rounded-full" />
         <div className="relative w-full h-full flex items-center justify-between px-4">
           {Array.from({ length: 24 }).map((_, h) => {
             const item = data.find(d => d.hour === h);
@@ -752,18 +752,18 @@ function TimeOfDayChart({ data }: { data: AnalyticsData["timeOfDayData"] }) {
             const label = h === 0 ? "12A" : h === 12 ? "12P" : h > 12 ? `${h-12}P` : `${h}A`;
             
             return (
-              <div key={h} className="relative flex flex-col items-center justify-start flex-1 h-full">
+              <div key={h} className="relative flex flex-col items-center justify-center flex-1 h-full">
                   {inView && count > 0 && (
                     <motion.div
-                      className="absolute rounded-full bg-[#FF9500] shadow-sm mix-blend-screen opacity-80"
-                      style={{ width: r * 2, height: r * 2, top: `calc(40% - ${r}px)` }}
+                      className="absolute rounded-full bg-[#FF9500] shadow-sm opacity-90"
+                      style={{ width: r * 2, height: r * 2, top: `calc(50% - ${r}px)` }}
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 + (h * 0.03) }}
                     />
                   )}
                   {showLabel && (
-                    <span className="absolute bottom-0 text-[8px] font-bold text-[var(--color-text-tertiary)] text-center">
+                    <span className="absolute bottom-2 text-[8px] font-bold text-[var(--color-text-tertiary)] text-center">
                       {label}
                     </span>
                   )}
