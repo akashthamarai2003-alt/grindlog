@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Fragment } from "react";
 import { motion, useInView, useMotionValue, useSpring, animate, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, TrendingUp, Flame, Trophy, AlertCircle,
-  Activity, Smartphone, Calendar, BatteryCharging, Smile, Sparkles
+  Activity, Smartphone, Calendar, BatteryCharging, Smile, Sparkles, Clock, Target
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,9 @@ export interface AnalyticsData {
   weeklyData: { day: string; habits: number; mood: number; energy: number }[];
   donutData: { label: string; value: number; color: string }[];
   heatmapData: number[]; // 28 days (4 weeks)
+  trendData: { date: string; completions: number }[];
+  timeOfDayData: { hour: number; count: number }[];
+  radarData: { category: string; value: number }[];
 }
 
 // ─── ANIMATED COUNTER ────────────────────────────────────────────────────────
@@ -608,6 +611,170 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ─── TREND CHART ──────────────────────────────────────────────────────────────
+function TrendChart({ data }: { data: AnalyticsData["trendData"] }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  const max = Math.max(...data.map(d => d.completions), 1);
+  const W = 300, H = 100;
+  
+  const xs = data.map((_, i) => (i / Math.max(1, data.length - 1)) * W);
+  const ys = data.map(d => H - (d.completions / max) * H);
+  
+  let path = `M ${xs[0]} ${ys[0]}`;
+  for (let i = 1; i < xs.length; i++) {
+    const cx = (xs[i - 1] + xs[i]) / 2;
+    path += ` C ${cx} ${ys[i - 1]}, ${cx} ${ys[i]}, ${xs[i]} ${ys[i]}`;
+  }
+  const area = `${path} L ${W} ${H} L 0 ${H} Z`;
+  
+  return (
+    <div ref={ref} className="relative w-full h-[140px] pt-4">
+      <svg viewBox={`0 -10 ${W} ${H + 20}`} className="w-full h-full overflow-visible preserve-3d" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#AF52DE" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {inView && (
+          <motion.path
+            d={area}
+            fill="url(#trendGrad)"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.2 }}
+          />
+        )}
+        {inView && (
+          <motion.path
+            d={path}
+            fill="none"
+            stroke="#AF52DE"
+            strokeWidth="3"
+            strokeLinecap="round"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+          />
+        )}
+      </svg>
+    </div>
+  );
+}
+
+// ─── RADAR CHART ──────────────────────────────────────────────────────────────
+function RadarChart({ data }: { data: AnalyticsData["radarData"] }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  if (!data || data.length < 3) {
+      return <div className="h-[200px] flex items-center justify-center text-[10px] font-bold text-[var(--color-text-tertiary)] text-center px-4">Add at least 3 habits in different categories to see balance.</div>;
+  }
+  
+  const size = 200, center = size / 2, radius = size / 2 - 20;
+  const max = Math.max(...data.map(d => d.value), 1);
+  
+  const points = data.map((d, i) => {
+    const angle = (Math.PI * 2 * i) / data.length - Math.PI / 2;
+    const dist = (d.value / max) * radius;
+    return {
+      label: d.category,
+      x: center + Math.cos(angle) * dist,
+      y: center + Math.sin(angle) * dist,
+      lx: center + Math.cos(angle) * (radius + 15),
+      ly: center + Math.sin(angle) * (radius + 15),
+      px: center + Math.cos(angle) * radius,
+      py: center + Math.sin(angle) * radius,
+    };
+  });
+  
+  const polygonPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(" ") + " Z";
+  const bgPolygon = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.px} ${p.py}`).join(" ") + " Z";
+  
+  return (
+    <div ref={ref} className="relative w-full h-[220px] flex items-center justify-center">
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full max-w-[220px] overflow-visible">
+        {/* Background Grid */}
+        <path d={bgPolygon} fill="none" stroke="var(--color-bg-tertiary)" strokeWidth="1" strokeDasharray="3 3" />
+        {points.map((p, i) => (
+            <line key={i} x1={center} y1={center} x2={p.px} y2={p.py} stroke="var(--color-bg-tertiary)" strokeWidth="1" strokeDasharray="3 3" />
+        ))}
+        
+        {/* Data Polygon */}
+        {inView && (
+          <motion.path
+            d={polygonPath}
+            fill="#34C759" fillOpacity="0.2"
+            stroke="#34C759" strokeWidth="2" strokeLinejoin="round"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 100, damping: 15, delay: 0.2 }}
+            style={{ transformOrigin: "center" }}
+          />
+        )}
+        
+        {/* Labels */}
+        {inView && points.map((p, i) => (
+          <motion.text
+            key={i}
+            x={p.lx} y={p.ly}
+            textAnchor="middle" alignmentBaseline="middle"
+            className="text-[8px] font-black fill-[var(--color-text-secondary)] uppercase tracking-wider"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 + i * 0.1 }}
+          >
+            {p.label.substring(0, 10)}{p.label.length > 10 ? "..." : ""}
+          </motion.text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+// ─── TIME OF DAY CHART ────────────────────────────────────────────────────────
+function TimeOfDayChart({ data }: { data: AnalyticsData["timeOfDayData"] }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  const maxCount = Math.max(...data.map(d => d.count), 1);
+  
+  return (
+    <div ref={ref} className="relative w-full h-[120px] pt-6 pb-2">
+        <div className="absolute top-[40%] left-4 right-4 h-px bg-[var(--color-bg-tertiary)] -translate-y-1/2 rounded-full" />
+        <div className="relative w-full h-full flex items-center justify-between px-4">
+          {Array.from({ length: 24 }).map((_, h) => {
+            const item = data.find(d => d.hour === h);
+            const count = item ? item.count : 0;
+            const r = count > 0 ? Math.max(4, (count / maxCount) * 16) : 0;
+            
+            // Only label a few hours to not clutter
+            const showLabel = h % 6 === 0 || h === 23;
+            const label = h === 0 ? "12A" : h === 12 ? "12P" : h > 12 ? `${h-12}P` : `${h}A`;
+            
+            return (
+              <div key={h} className="relative flex flex-col items-center justify-start flex-1 h-full">
+                  {inView && count > 0 && (
+                    <motion.div
+                      className="absolute rounded-full bg-[#FF9500] shadow-sm mix-blend-screen opacity-80"
+                      style={{ width: r * 2, height: r * 2, top: `calc(40% - ${r}px)` }}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.2 + (h * 0.03) }}
+                    />
+                  )}
+                  {showLabel && (
+                    <span className="absolute bottom-0 text-[8px] font-bold text-[var(--color-text-tertiary)] text-center">
+                      {label}
+                    </span>
+                  )}
+              </div>
+            );
+          })}
+        </div>
+    </div>
+  );
+}
+
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
@@ -723,6 +890,25 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
           </div>
         </section>
 
+        {/* ── 1.5 30-DAY TREND ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 200, damping: 28, delay: 0.38 }}
+          className="rounded-[28px] bg-[var(--color-bg-secondary)] p-5 ring-1 ring-[var(--color-bg-tertiary)] shadow-sm"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-sm font-black text-[var(--color-text-primary)]">30-Day Trend</h2>
+              <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] mt-0.5">Your momentum over the last month</p>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 bg-[#AF52DE]/15">
+              <Activity className="h-3.5 w-3.5 text-[#AF52DE]" />
+            </div>
+          </div>
+          <TrendChart data={data.trendData} />
+        </motion.section>
+
         {/* ── 2. WEEKLY BARS (HABITS COMPLETED) ── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -741,6 +927,25 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
             </div>
           </div>
           <WeeklyBars data={data.weeklyData} />
+        </motion.section>
+
+        {/* ── TIME OF DAY ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 200, damping: 28, delay: 0.46 }}
+          className="rounded-[28px] bg-[var(--color-bg-secondary)] p-5 ring-1 ring-[var(--color-bg-tertiary)] shadow-sm"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-black text-[var(--color-text-primary)]">Time of Day</h2>
+              <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] mt-0.5">When you are most active</p>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 bg-[#FF9500]/15">
+              <Clock className="h-3.5 w-3.5 text-[#FF9500]" />
+            </div>
+          </div>
+          <TimeOfDayChart data={data.timeOfDayData} />
         </motion.section>
 
         {/* ── 3. MOOD & ENERGY ── */}
@@ -771,6 +976,25 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
 
         {/* ── 4. CATEGORIES & HEATMAP ── */}
         <div className="grid grid-cols-2 gap-3">
+          {/* ── LIFE BALANCE ── */}
+          <motion.section
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 28, delay: 0.65 }}
+            className="col-span-2 rounded-[28px] bg-[var(--color-bg-secondary)] p-5 ring-1 ring-[var(--color-bg-tertiary)] shadow-sm"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-sm font-black text-[var(--color-text-primary)]">Life Balance</h2>
+                <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] mt-0.5">Your most active categories</p>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 bg-[#34C759]/15">
+                <Target className="h-3.5 w-3.5 text-[#34C759]" />
+              </div>
+            </div>
+            <RadarChart data={data.radarData} />
+          </motion.section>
+
           <motion.section
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}

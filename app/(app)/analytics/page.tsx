@@ -64,38 +64,60 @@ export default async function AnalyticsPage() {
     color: donutCategories[label].color
   }));
 
-  // 2. Dates for the last 28 days (for heatmap and weekly data)
+  // 2. Dates for the last 30 days (for trend, heatmap, weekly)
   const today = new Date();
-  const dates28: string[] = [];
-  for (let i = 27; i >= 0; i--) {
+  const dates30: string[] = [];
+  for (let i = 29; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    // YYYY-MM-DD local format roughly
-    dates28.push(d.toISOString().split('T')[0]);
+    dates30.push(d.toISOString().split('T')[0]);
   }
 
-  const twentyEightDaysAgoStr = dates28[0];
-  const sevenDaysAgoStr = dates28[21]; // index 21 is 7 days ago
+  const thirtyDaysAgoStr = dates30[0];
+  const sevenDaysAgoStr = dates30[23]; // index 23 is 7 days ago
+  const dates28 = dates30.slice(2); // Last 28 days for heatmap
 
   // 3. Fetch habit logs
   const { data: logs } = await supabase
     .from("habit_logs")
-    .select("date, status")
+    .select("date, status, completed_at, created_at")
     .eq("user_id", user.id)
     .eq("status", "completed")
-    .gte("date", twentyEightDaysAgoStr);
+    .gte("date", thirtyDaysAgoStr);
 
   const completedLogs = logs || [];
   
   // Aggregate completions per date
   const completionsPerDate: Record<string, number> = {};
+  
+  // Aggregate time of day (0-23)
+  const timeOfDayMap: Record<number, number> = {};
+  for(let i=0; i<24; i++) timeOfDayMap[i] = 0;
+
   completedLogs.forEach((log: any) => {
     if (!completionsPerDate[log.date]) completionsPerDate[log.date] = 0;
     completionsPerDate[log.date]++;
+
+    const ts = log.completed_at || log.created_at;
+    if (ts) {
+      const h = new Date(ts).getHours();
+      if (!isNaN(h)) timeOfDayMap[h]++;
+    }
   });
+
+  const timeOfDayData = Object.keys(timeOfDayMap).map(h => ({
+    hour: parseInt(h),
+    count: timeOfDayMap[parseInt(h)]
+  }));
 
   // Heatmap Data (array of 28 numbers, chronological)
   const heatmapData = dates28.map(d => completionsPerDate[d] || 0);
+  
+  // Trend Data (30 days)
+  const trendData = dates30.map(d => ({
+    date: d,
+    completions: completionsPerDate[d] || 0
+  }));
 
   // 4. Fetch journal entries for Mood/Energy (last 7 days)
   const { data: journals } = await supabase
@@ -125,6 +147,11 @@ export default async function AnalyticsPage() {
     };
   });
 
+  const radarData = Object.keys(donutCategories).map(label => ({
+    category: label,
+    value: donutCategories[label].count,
+  })).sort((a, b) => b.value - a.value).slice(0, 6); // Top 6 categories
+
   const analyticsData: AnalyticsData = {
     highlights: {
       completion: completionAvg,
@@ -138,6 +165,9 @@ export default async function AnalyticsPage() {
     weeklyData,
     donutData,
     heatmapData,
+    trendData,
+    timeOfDayData,
+    radarData,
   };
 
   return <AnalyticsClient data={analyticsData} />;
