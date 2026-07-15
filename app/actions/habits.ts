@@ -39,14 +39,8 @@ export async function toggleHabitCompletion(
       return { success: false, error: logError.message };
     }
 
-    // 2. Update habit stats
-    await supabase
-      .from("habits")
-      .update({ 
-        current_streak: currentStreak + 1,
-        total_completions: currentStreak + 1
-      })
-      .eq("id", habitId);
+    // 2. Update habit stats via perfect historical recalculation
+    await recalculateStreak(habitId, user.id);
 
     // 3. Award XP to user profile
     const { data: profile } = await supabase
@@ -85,13 +79,8 @@ export async function toggleHabitCompletion(
       return { success: true };
     }
 
-    // 2. Decrement streak
-    await supabase
-      .from("habits")
-      .update({ 
-        current_streak: Math.max(0, currentStreak - 1)
-      })
-      .eq("id", habitId);
+    // 2. Decrement streak via perfect historical recalculation
+    await recalculateStreak(habitId, user.id);
       
     // 3. Deduct XP
     const { data: profile } = await supabase
@@ -225,4 +214,50 @@ export async function syncMissedHabits(todayDateStr: string) {
   for (const habitId of habitsToResetStreak) {
     await supabase.from("habits").update({ current_streak: 0 }).eq("id", habitId);
   }
+}
+
+async function recalculateStreak(habitId: string, userId: string) {
+  const supabase = await createServerSupabase();
+  
+  const { data: logs } = await supabase
+    .from("habit_logs")
+    .select("date")
+    .eq("habit_id", habitId)
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .order("date", { ascending: false });
+
+  if (!logs || logs.length === 0) {
+    await supabase.from("habits").update({ current_streak: 0, total_completions: 0 }).eq("id", habitId);
+    return;
+  }
+
+  const completedDates = new Set(logs.map(l => l.date));
+  
+  const todayDate = new Date();
+  const todayStr = todayDate.toISOString().split("T")[0];
+  
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
+
+  let currentStr = "";
+  if (completedDates.has(todayStr)) {
+    currentStr = todayStr;
+  } else if (completedDates.has(yesterdayStr)) {
+    currentStr = yesterdayStr;
+  } else {
+    await supabase.from("habits").update({ current_streak: 0, total_completions: logs.length }).eq("id", habitId);
+    return;
+  }
+
+  let streak = 0;
+  while (completedDates.has(currentStr)) {
+    streak++;
+    const d = new Date(currentStr + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - 1);
+    currentStr = d.toISOString().split("T")[0];
+  }
+
+  await supabase.from("habits").update({ current_streak: streak, total_completions: logs.length }).eq("id", habitId);
 }
