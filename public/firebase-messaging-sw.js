@@ -24,8 +24,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || 'GrindLog Reminder';
   const notificationOptions = {
     body: payload.notification?.body,
-    icon: '/icon-192x192.png',
-    badge: '/badge-72x72.png',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     data: payload.data || {}
   };
 
