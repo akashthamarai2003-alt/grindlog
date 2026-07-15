@@ -2,8 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { adminMessaging } from "@/lib/firebase/server";
 import { NextResponse } from "next/server";
 
-const APP_ICON = "/icons/icon-192.png";
-const NOTIFICATION_BADGE = "/icons/notification-badge.svg";
+const APP_ICON = "https://grindlog-lake.vercel.app/icons/icon-192.png";
+const NOTIFICATION_BADGE = "https://grindlog-lake.vercel.app/icons/icon-192.png";
 const NOTIFICATION_URL = "/dashboard";
 
 type ReminderNotification = {
@@ -265,14 +265,9 @@ export async function GET(req: Request) {
       if (!notif.tokens || notif.tokens.length === 0) continue;
 
       const message = {
-        data: {
+        notification: {
           title: notif.title,
           body: notif.body,
-          type: type || "general",
-          tag: notif.tag,
-          url: notif.url || NOTIFICATION_URL,
-          icon: APP_ICON,
-          badge: NOTIFICATION_BADGE,
         },
         webpush: {
           headers: {
@@ -280,9 +275,23 @@ export async function GET(req: Request) {
             Urgency: "high",
             Topic: hashTag(notif.tag),
           },
+          notification: {
+            title: String(notif.title),
+            body: String(notif.body),
+            icon: APP_ICON,
+            badge: NOTIFICATION_BADGE,
+            vibrate: [200, 100, 200],
+          },
           fcmOptions: {
             link: notif.url || NOTIFICATION_URL,
           },
+        },
+        data: {
+          title: String(notif.title),
+          body: String(notif.body),
+          type: String(type || 'general'),
+          tag: notif.tag,
+          url: notif.url || NOTIFICATION_URL,
         },
         tokens: Array.from(new Set(notif.tokens)),
       };
