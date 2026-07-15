@@ -4,9 +4,19 @@ import { getMessaging } from 'firebase-admin/messaging';
 // Initialize Firebase Admin if it hasn't been initialized already
 if (getApps().length === 0) {
   try {
-    // We require the JSON directly, which is safe on the server environment
-    // and since it's added to .gitignore, it won't be pushed to the repository.
-    const serviceAccount = require('./admin-config.json');
+    let serviceAccount;
+    
+    try {
+      // For local development
+      serviceAccount = require('./admin-config.json');
+    } catch (err) {
+      // For production (Vercel) since the JSON is gitignored
+      serviceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      };
+    }
 
     initializeApp({
       credential: cert(serviceAccount),
