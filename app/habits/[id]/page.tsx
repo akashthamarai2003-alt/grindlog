@@ -396,23 +396,39 @@ export default function HabitDetailPage({
               <label className="text-xs font-black uppercase tracking-wider text-[var(--color-text-tertiary)]">
                 Category
               </label>
-              <div className="grid grid-cols-4 gap-2.5">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setEditCategory(cat.id)}
-                    className={cn(
-                      "flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 border transition-all active:scale-95",
-                      editCategory === cat.id
-                        ? "bg-[var(--color-bg-elevated)] border-[var(--color-text-primary)] shadow-sm ring-1 ring-[var(--color-text-primary)]"
-                        : "bg-[var(--color-bg-secondary)]/50 border-transparent text-[var(--color-text-secondary)]"
-                    )}
-                  >
-                    <span className="text-lg">{cat.icon}</span>
-                    <span className="text-[10px] font-bold">{cat.label}</span>
-                  </button>
-                ))}
+              <div className="flex gap-2 flex-wrap">
+                {CATEGORIES.map((cat, i) => {
+                  const active = editCategory === cat.id;
+                  const catColor = colorForCategory(cat.id);
+                  return (
+                    <motion.button
+                      key={cat.id}
+                      type="button"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04, type: "spring", stiffness: 400, damping: 30 }}
+                      whileTap={{ scale: 0.93 }}
+                      onClick={() => setEditCategory(cat.id)}
+                      className={cn(
+                        "relative flex items-center gap-1.5 rounded-[14px] px-3.5 py-2.5 text-[13px] font-bold overflow-hidden border",
+                        active
+                          ? "text-white border-transparent"
+                          : "bg-[var(--color-bg-elevated)] border-[var(--color-bg-tertiary)]/20 text-[var(--color-text-secondary)] shadow-sm"
+                      )}
+                    >
+                      {active && (
+                        <motion.div
+                          layoutId="editCategoryBg"
+                          className="absolute inset-0"
+                          style={{ background: catColor, borderRadius: 14 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 34 }}
+                        />
+                      )}
+                      <span className="relative z-10 text-[14px]">{cat.icon}</span>
+                      <span className="relative z-10">{cat.label}</span>
+                    </motion.button>
+                  );
+                })}
               </div>
             </div>
 
