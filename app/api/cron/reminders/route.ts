@@ -163,7 +163,12 @@ export async function GET(req: Request) {
         notification: {
           title: notif.title,
           body: notif.body,
-          imageUrl: "https://grindlog-lake.vercel.app/icons/icon-192.png"
+        },
+        webpush: {
+          notification: {
+            icon: "https://grindlog-lake.vercel.app/icons/icon-192.png",
+            badge: "https://grindlog-lake.vercel.app/icons/icon-192.png",
+          }
         },
         tokens: notif.tokens, // Multicast to all devices of the user
       };
