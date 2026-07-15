@@ -19,6 +19,7 @@ export interface AnalyticsData {
     worstHabitEmoji: string;
     worstHabitRate: number;
   };
+  totalActiveHabits: number;
   weeklyData: { day: string; habits: number; mood: number; energy: number }[];
   donutData: { label: string; value: number; color: string }[];
   heatmapData: number[]; // 28 days (4 weeks)
@@ -254,13 +255,13 @@ function LineChart({ data }: { data: AnalyticsData["weeklyData"] }) {
 
 // ─── WEEKLY BARS ──────────────────────────────────────────────────────────────
 
-function WeeklyBars({ data }: { data: AnalyticsData["weeklyData"] }) {
+function WeeklyBars({ data, totalHabits }: { data: AnalyticsData["weeklyData"], totalHabits: number }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
   const [active, setActive] = useState<number | null>(null);
   
-  const rawMax = Math.max(...data.map(d => d.habits), 1);
-  const max = Math.ceil(rawMax / 4) * 4;
+  const rawMax = Math.max(...data.map(d => d.habits), totalHabits > 0 ? totalHabits : 1);
+  const max = Math.max(Math.ceil(rawMax / 4) * 4, 4);
   const gridLines = [max, max * 0.75, max * 0.5, max * 0.25, 0];
 
   return (
@@ -282,6 +283,15 @@ function WeeklyBars({ data }: { data: AnalyticsData["weeklyData"] }) {
         {data.map((d, i) => {
           const pct = (d.habits / max) * 100;
           const isActive = active === i;
+          
+          let baseColor = "#E5E5EA"; // Grey for 0
+          if (totalHabits > 0) {
+            if (d.habits >= totalHabits) baseColor = "#34C759"; // Green
+            else if (d.habits > 0) baseColor = "#60A5FA"; // Blue
+          } else if (d.habits > 0) {
+            baseColor = "#60A5FA";
+          }
+
           return (
             <motion.div
               key={i}
@@ -294,14 +304,12 @@ function WeeklyBars({ data }: { data: AnalyticsData["weeklyData"] }) {
               <div className="w-full relative flex items-end justify-center h-full">
                 {inView && (
                   <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: `${pct}%` }}
+                    initial={{ height: 0, backgroundColor: "#E5E5EA" }}
+                    animate={{ height: `${pct}%`, backgroundColor: baseColor }}
                     transition={{ type: "spring", stiffness: 80, damping: 18, delay: 0.2 + i * 0.05 }}
                     className={cn(
                       "w-full rounded-t-[6px] transition-all duration-200",
-                      isActive
-                        ? "bg-[#60A5FA] opacity-100" // Light blue
-                        : "bg-[#60A5FA] opacity-80"
+                      isActive ? "opacity-100 shadow-md" : "opacity-80"
                     )}
                   />
                 )}
@@ -926,7 +934,7 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
               <span className="text-[10px] font-black text-[#34C759]">{currentWeekCount} total</span>
             </div>
           </div>
-          <WeeklyBars data={data.weeklyData} />
+          <WeeklyBars data={data.weeklyData} totalHabits={data.totalActiveHabits} />
         </motion.section>
 
         {/* ── TIME OF DAY ── */}

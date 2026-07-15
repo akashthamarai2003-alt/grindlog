@@ -173,6 +173,7 @@ export default async function AnalyticsPage() {
       worstHabitEmoji: worstHabitEmoji,
       worstHabitRate: worstHabitRate === 100 && allHabits.length === 0 ? 0 : worstHabitRate,
     },
+    totalActiveHabits: allHabits.length,
     weeklyData,
     donutData,
     heatmapData,
