@@ -14,6 +14,11 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
+// Force the service worker to update immediately
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
 // Retrieve firebase messaging
 const messaging = firebase.messaging();
 
@@ -21,11 +26,12 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-  const notificationTitle = payload.data?.title || 'GrindLog Reminder';
+  // The old service worker looked for payload.notification. This robustly checks both so it never fails.
+  const notificationTitle = payload.data?.title || payload.notification?.title || 'GrindLog Reminder';
   const notificationOptions = {
-    body: payload.data?.body,
+    body: payload.data?.body || payload.notification?.body || '',
     icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png', // Note: Android may render full-color badges as a solid white square.
     data: payload.data || {}
   };
 
