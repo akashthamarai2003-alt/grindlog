@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { ArrowLeft, BellOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { NotificationPrompt } from "@/components/notifications/notification-prompt";
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -41,6 +42,10 @@ export default function NotificationsPage() {
             Back to Dashboard
           </button>
         </Link>
+        
+        <div className="mt-12 w-full max-w-sm">
+          <NotificationPrompt />
+        </div>
       </div>
     </div>
   );
