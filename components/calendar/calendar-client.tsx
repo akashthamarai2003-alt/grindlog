@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
+import { setHabitLogStatus } from "@/app/actions/habits";
 import "react-day-picker/dist/style.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -672,7 +673,7 @@ export function CalendarClient({
   const supabase = createClient();
   const today = new Date(todayDateStr + "T12:00:00");
 
-  const [habits] = useState<Habit[]>(initialHabits);
+  const habits = initialHabits;
   const [logs, setLogs] = useState<HabitLog[]>(initialLogs);
   const [month, setMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<Date>(today);
@@ -714,31 +715,18 @@ export function CalendarClient({
 
   const handleLogChange = useCallback(
     async (habitId: string, date: string, status: HabitLog["status"] | null) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       setLogs((prev) => {
         const without = prev.filter((l) => !(l.habit_id === habitId && l.date === date));
         return status ? [...without, { habit_id: habitId, date, status }] : without;
       });
 
-      if (status === null) {
-        await supabase
-          .from("habit_logs")
-          .delete()
-          .eq("habit_id", habitId)
-          .eq("date", date)
-          .eq("user_id", user.id);
-      } else {
-        await supabase
-          .from("habit_logs")
-          .upsert(
-            { habit_id: habitId, date, status, user_id: user.id } as any,
-            { onConflict: "habit_id,date" }
-          );
+      try {
+        await setHabitLogStatus(habitId, date, status);
+      } catch (e) {
+        console.error("Failed to set log status:", e);
       }
     },
-    [supabase]
+    []
   );
 
   const handleToday = () => {

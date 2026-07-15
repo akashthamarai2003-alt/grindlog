@@ -144,6 +144,25 @@ export async function getHabitLogsForDate(dateStr: string) {
   return logs || [];
 }
 
+export async function setHabitLogStatus(habitId: string, dateStr: string, status: "completed" | "skipped" | "failed" | null) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  if (status === null) {
+    await supabase.from("habit_logs").delete().eq("habit_id", habitId).eq("date", dateStr).eq("user_id", user.id);
+  } else {
+    await supabase.from("habit_logs").upsert({ habit_id: habitId, date: dateStr, status, user_id: user.id }, { onConflict: "habit_id,date" });
+  }
+
+  // Recalculate streak immediately for this habit
+  await recalculateStreak(habitId, user.id);
+  
+  revalidatePath("/calendar");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
 export async function syncMissedHabits(todayDateStr: string) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
