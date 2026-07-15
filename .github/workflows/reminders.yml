@@ -1,9 +1,8 @@
 name: Auto Push Notifications
 
 on:
-  schedule:
-    # Runs every 15 minutes (e.g. 00, 15, 30, 45) to check for scheduled habits
-    - cron: '*/15 * * * *'
+  # schedule:
+  #   - cron: '*/15 * * * *'
 
   # Allow running manually from the Actions tab
   workflow_dispatch:
