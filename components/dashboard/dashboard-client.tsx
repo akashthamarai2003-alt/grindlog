@@ -9,6 +9,7 @@ import { staggerContainer, staggerItem } from "@/animations/springs";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
 import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
+import { isHabitScheduled } from "@/lib/habit-utils";
 
 interface Profile {
   display_name: string;
@@ -77,9 +78,15 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
   const visibleHabits = useMemo(() => {
     return optimisticHabits.filter(h => {
-      if (!h.createdAt) return true;
-      const createdDateStr = h.createdAt.split("T")[0];
-      return createdDateStr <= selectedDateStr;
+      // 1. Must be created on or before the selected date
+      if (h.createdAt) {
+        const createdDateStr = h.createdAt.split("T")[0];
+        if (createdDateStr > selectedDateStr) return false;
+      }
+      
+      // 2. Must be scheduled for this day of the week
+      const dateObj = new Date(selectedDateStr + "T12:00:00Z");
+      return isHabitScheduled(h.frequency, h.customDays, dateObj);
     });
   }, [optimisticHabits, selectedDateStr]);
 

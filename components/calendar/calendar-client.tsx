@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
 import { setHabitLogStatus } from "@/app/actions/habits";
+import { isHabitScheduled } from "@/lib/habit-utils";
 import "react-day-picker/dist/style.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -141,7 +142,10 @@ function DayCell({
 }: DayCellProps) {
   const dateStr = toDateStr(date);
   const dayLogs = logs.filter((l) => l.date === dateStr);
-  const dayHabits = habits.filter(h => !h.created_at || h.created_at.split("T")[0] <= dateStr);
+  const dayHabits = habits.filter(h => {
+    if (h.created_at && h.created_at.split("T")[0] > dateStr) return false;
+    return isHabitScheduled(h.frequency, h.custom_days, date);
+  });
   const completed = dayLogs.filter((l) => l.status === "completed").length;
   const total = dayHabits.length;
   const pct = total > 0 ? completed / total : 0;
@@ -421,7 +425,10 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
   const isFuture = date > todayDate;
   const isEditable = !isFuture;
 
-  const dayHabits = habits.filter(h => !h.created_at || h.created_at.split("T")[0] <= dateStr);
+  const dayHabits = habits.filter(h => {
+    if (h.created_at && h.created_at.split("T")[0] > dateStr) return false;
+    return isHabitScheduled(h.frequency, h.custom_days, new Date(dateStr + "T12:00:00Z"));
+  });
   const dayLogs = logs.filter((l) => l.date === dateStr);
   const completedCount = dayLogs.filter((l) => l.status === "completed").length;
   const totalHabits = dayHabits.length;
@@ -597,7 +604,10 @@ function MonthStats({
 
   for (let d = 1; d <= daysInMonth; d++) {
     const ds = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    const dayHabits = habits.filter(h => !h.created_at || h.created_at.split("T")[0] <= ds);
+    const dayHabits = habits.filter(h => {
+      if (h.created_at && h.created_at.split("T")[0] > ds) return false;
+      return isHabitScheduled(h.frequency, h.custom_days, new Date(ds + "T12:00:00Z"));
+    });
     totalPossible += dayHabits.length;
 
     const dl = logs.filter((l) => l.date === ds);

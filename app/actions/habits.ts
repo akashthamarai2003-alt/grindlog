@@ -2,6 +2,9 @@
 
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { revalidatePath } from "next/cache";
+import { isHabitScheduled } from "@/lib/habit-utils";
+import { HabitFrequency } from "@/types";
+
 
 export async function toggleHabitCompletion(
   habitId: string,
@@ -170,7 +173,7 @@ export async function syncMissedHabits(todayDateStr: string) {
 
   const { data: habits } = await supabase
     .from("habits")
-    .select("id, created_at, current_streak")
+    .select("id, created_at, current_streak, frequency, custom_days")
     .eq("user_id", user.id)
     .eq("is_active", true);
 
@@ -200,6 +203,11 @@ export async function syncMissedHabits(todayDateStr: string) {
     let missedYesterday = false;
 
     while (curr <= yDate) {
+      const isScheduled = isHabitScheduled(habit.frequency, habit.custom_days, curr);
+      if (!isScheduled) {
+        curr.setDate(curr.getDate() + 1);
+        continue;
+      }
       const dStr = curr.toISOString().split("T")[0];
       const key = `${habit.id}_${dStr}`;
       
@@ -238,13 +246,20 @@ export async function syncMissedHabits(todayDateStr: string) {
 async function recalculateStreak(habitId: string, userId: string) {
   const supabase = await createServerSupabase();
   
+  const { data: habit } = await supabase
+    .from("habits")
+    .select("frequency, custom_days, created_at")
+    .eq("id", habitId)
+    .single();
+
+  if (!habit) return;
+
   const { data: logs } = await supabase
     .from("habit_logs")
     .select("date")
     .eq("habit_id", habitId)
     .eq("user_id", userId)
-    .eq("status", "completed")
-    .order("date", { ascending: false });
+    .eq("status", "completed");
 
   if (!logs || logs.length === 0) {
     await supabase.from("habits").update({ current_streak: 0, total_completions: 0 }).eq("id", habitId);
@@ -252,30 +267,29 @@ async function recalculateStreak(habitId: string, userId: string) {
   }
 
   const completedDates = new Set(logs.map(l => l.date));
-  
   const todayDate = new Date();
   const todayStr = todayDate.toISOString().split("T")[0];
+  const createdStr = habit.created_at ? habit.created_at.split("T")[0] : "2000-01-01";
   
-  const yesterdayDate = new Date();
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
-
-  let currentStr = "";
-  if (completedDates.has(todayStr)) {
-    currentStr = todayStr;
-  } else if (completedDates.has(yesterdayStr)) {
-    currentStr = yesterdayStr;
-  } else {
-    await supabase.from("habits").update({ current_streak: 0, total_completions: logs.length }).eq("id", habitId);
-    return;
-  }
-
+  let d = new Date(todayStr + "T12:00:00Z");
   let streak = 0;
-  while (completedDates.has(currentStr)) {
-    streak++;
-    const d = new Date(currentStr + "T12:00:00Z");
+
+  while (true) {
+    const dStr = d.toISOString().split("T")[0];
+    if (dStr < createdStr) break;
+
+    const isScheduled = isHabitScheduled(habit.frequency, habit.custom_days, d);
+    const isCompleted = completedDates.has(dStr);
+
+    if (isCompleted) {
+      streak++;
+    } else {
+      if (isScheduled && dStr !== todayStr) {
+        break; // Streak broken on a past scheduled day
+      }
+    }
+    
     d.setUTCDate(d.getUTCDate() - 1);
-    currentStr = d.toISOString().split("T")[0];
   }
 
   await supabase.from("habits").update({ current_streak: streak, total_completions: logs.length }).eq("id", habitId);
