@@ -26,10 +26,15 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-  // The old service worker looked for payload.notification. This robustly checks both so it never fails.
-  const notificationTitle = payload.data?.title || payload.notification?.title || 'GrindLog Reminder';
+  // If the payload already has a notification object, Firebase will automatically display it.
+  // We only manually show the notification if it's a data-only message.
+  if (payload.notification) {
+    return;
+  }
+
+  const notificationTitle = payload.data?.title || 'GrindLog Reminder';
   const notificationOptions = {
-    body: payload.data?.body || payload.notification?.body || '',
+    body: payload.data?.body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png', // Note: Android may render full-color badges as a solid white square.
     data: payload.data || {}

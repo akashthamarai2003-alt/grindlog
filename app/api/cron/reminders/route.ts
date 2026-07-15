@@ -179,10 +179,19 @@ export async function GET(req: Request) {
       if (!notif.tokens || notif.tokens.length === 0) continue;
       
       const message = {
-        data: {
+        notification: {
           title: notif.title,
           body: notif.body,
-          type: type
+        },
+        webpush: {
+          notification: {
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            vibrate: [200, 100, 200],
+          }
+        },
+        data: {
+          type: type || 'general'
         },
         tokens: Array.from(new Set(notif.tokens)), // Deduplicate tokens just in case
       };
