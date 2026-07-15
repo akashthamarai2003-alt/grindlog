@@ -2,6 +2,8 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { CalendarClient } from "@/components/calendar/calendar-client";
 import { redirect } from "next/navigation";
 
+import { syncMissedHabits } from "@/app/actions/habits";
+
 export default async function CalendarPage() {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -12,6 +14,9 @@ export default async function CalendarPage() {
 
   const today = new Date();
   const todayDateStr = today.toISOString().split("T")[0];
+
+  // Auto-fail any past habits that were missed and sync streaks
+  await syncMissedHabits(todayDateStr);
 
   // We fetch initial logs for the current month
   const currentYear = today.getFullYear();

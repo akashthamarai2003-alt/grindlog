@@ -2,6 +2,8 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import { redirect } from "next/navigation";
 
+import { syncMissedHabits } from "@/app/actions/habits";
+
 export default async function DashboardPage() {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -11,6 +13,9 @@ export default async function DashboardPage() {
   }
 
   const todayDateStr = new Date().toISOString().split("T")[0];
+
+  // Auto-fail any past habits that were missed and sync streaks
+  await syncMissedHabits(todayDateStr);
 
   // Run all database fetches in parallel
   const [

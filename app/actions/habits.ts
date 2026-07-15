@@ -125,3 +125,75 @@ export async function getHabitLogsForDate(dateStr: string) {
   }
   return logs || [];
 }
+
+export async function syncMissedHabits(todayDateStr: string) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data: habits } = await supabase
+    .from("habits")
+    .select("id, created_at, current_streak")
+    .eq("user_id", user.id)
+    .eq("is_active", true);
+
+  if (!habits || habits.length === 0) return;
+
+  const yesterday = new Date(todayDateStr + "T12:00:00");
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+  const { data: logs } = await supabase
+    .from("habit_logs")
+    .select("habit_id, date")
+    .eq("user_id", user.id)
+    .lte("date", yesterdayStr);
+
+  const logsMap = new Set(logs?.map((l: any) => `${l.habit_id}_${l.date}`) || []);
+  const logsToInsert: any[] = [];
+  const habitsToResetStreak = new Set<string>();
+
+  for (const habit of habits) {
+    if (!habit.created_at) continue;
+    const createdDate = new Date(habit.created_at);
+    const createdStr = createdDate.toISOString().split("T")[0];
+
+    let curr = new Date(createdStr + "T12:00:00");
+    let yDate = new Date(yesterdayStr + "T12:00:00");
+    let missedYesterday = false;
+
+    while (curr <= yDate) {
+      const dStr = curr.toISOString().split("T")[0];
+      const key = `${habit.id}_${dStr}`;
+      
+      if (!logsMap.has(key)) {
+        logsToInsert.push({
+          habit_id: habit.id,
+          user_id: user.id,
+          date: dStr,
+          status: "failed",
+          streak_before: 0,
+          streak_after: 0,
+          xp_earned: 0,
+          coins_earned: 0
+        });
+        if (dStr === yesterdayStr) {
+          missedYesterday = true;
+        }
+      }
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    if (missedYesterday && habit.current_streak > 0) {
+      habitsToResetStreak.add(habit.id);
+    }
+  }
+
+  if (logsToInsert.length > 0) {
+    await supabase.from("habit_logs").insert(logsToInsert);
+  }
+
+  for (const habitId of habitsToResetStreak) {
+    await supabase.from("habits").update({ current_streak: 0 }).eq("id", habitId);
+  }
+}
