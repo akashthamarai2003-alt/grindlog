@@ -9,6 +9,7 @@ import { staggerContainer, staggerItem } from "@/animations/springs";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
 import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
+import { cn } from "@/lib/utils";
 
 interface Profile {
   display_name: string;
