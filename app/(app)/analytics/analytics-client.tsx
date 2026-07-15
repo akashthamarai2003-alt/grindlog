@@ -20,7 +20,7 @@ export interface AnalyticsData {
     worstHabitRate: number;
   };
   totalActiveHabits: number;
-  weeklyData: { day: string; habits: number; mood: number; energy: number }[];
+  weeklyData: { day: string; habits: number; totalHabits: number; mood: number; energy: number }[];
   donutData: { label: string; value: number; color: string }[];
   heatmapData: number[]; // 28 days (4 weeks)
   trendData: { date: string; completions: number }[];
@@ -255,12 +255,12 @@ function LineChart({ data }: { data: AnalyticsData["weeklyData"] }) {
 
 // ─── WEEKLY BARS ──────────────────────────────────────────────────────────────
 
-function WeeklyBars({ data, totalHabits }: { data: AnalyticsData["weeklyData"], totalHabits: number }) {
+function WeeklyBars({ data }: { data: AnalyticsData["weeklyData"] }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
   const [active, setActive] = useState<number | null>(null);
   
-  const rawMax = Math.max(...data.map(d => d.habits), totalHabits > 0 ? totalHabits : 1);
+  const rawMax = Math.max(...data.map(d => Math.max(d.habits, d.totalHabits)), 1);
   const max = Math.max(Math.ceil(rawMax / 4) * 4, 4);
   const gridLines = [max, max * 0.75, max * 0.5, max * 0.25, 0];
 
@@ -285,8 +285,8 @@ function WeeklyBars({ data, totalHabits }: { data: AnalyticsData["weeklyData"], 
           const isActive = active === i;
           
           let baseColor = "#E5E5EA"; // Grey for 0
-          if (totalHabits > 0) {
-            if (d.habits >= totalHabits) baseColor = "#34C759"; // Green
+          if (d.totalHabits > 0) {
+            if (d.habits >= d.totalHabits) baseColor = "#34C759"; // Green
             else if (d.habits > 0) baseColor = "#60A5FA"; // Blue
           } else if (d.habits > 0) {
             baseColor = "#60A5FA";
@@ -934,7 +934,7 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
               <span className="text-[10px] font-black text-[#34C759]">{currentWeekCount} total</span>
             </div>
           </div>
-          <WeeklyBars data={data.weeklyData} totalHabits={data.totalActiveHabits} />
+          <WeeklyBars data={data.weeklyData} />
         </motion.section>
 
         {/* ── TIME OF DAY ── */}

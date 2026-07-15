@@ -150,9 +150,15 @@ export default async function AnalyticsPage() {
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const weeklyData = dates28.slice(21).map(dString => {
     const dObj = new Date(dString);
+    
+    // Determine how many habits were active on this specific day
+    const endOfDay = new Date(dString + "T23:59:59Z");
+    const activeHabitsOnDate = allHabits.filter((h: any) => new Date(h.created_at) <= endOfDay).length;
+
     return {
       day: dayNames[dObj.getDay()],
       habits: completionsPerDate[dString] || 0,
+      totalHabits: activeHabitsOnDate,
       mood: journalByDate[dString]?.mood || 0,
       energy: journalByDate[dString]?.energy || 0,
     };
