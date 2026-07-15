@@ -56,6 +56,7 @@ export async function GET(req: Request) {
     if (type === "morning") {
       for (const userId of userIds) {
         notificationsToSend.push({
+          userId,
           tokens: usersTokens.get(userId),
           title: "Rise and Grind! 🌅",
           body: "Good morning! Check your planner to see your targets for today."
@@ -65,6 +66,7 @@ export async function GET(req: Request) {
     else if (type === "afternoon") {
       for (const userId of userIds) {
         notificationsToSend.push({
+          userId,
           tokens: usersTokens.get(userId),
           title: "Halfway There! ⚡",
           body: "Afternoon check-in. Keep your momentum going and knock out those habits!"
@@ -74,6 +76,7 @@ export async function GET(req: Request) {
     else if (type === "night") {
       for (const userId of userIds) {
         notificationsToSend.push({
+          userId,
           tokens: usersTokens.get(userId),
           title: "Time to wrap up! 🌙",
           body: "Did you forget to log your habits? Review your day before midnight."
@@ -83,6 +86,7 @@ export async function GET(req: Request) {
     else if (type === "tree") {
       for (const userId of userIds) {
         notificationsToSend.push({
+          userId,
           tokens: usersTokens.get(userId),
           title: "Your Tree is Thirsty! 🌱",
           body: "Water your tree by completing a habit today. Don't let it wither!"
@@ -108,6 +112,7 @@ export async function GET(req: Request) {
           const aiMessage = chatCompletion.choices[0]?.message?.content || "No excuses. Execute your habits today.";
 
           notificationsToSend.push({
+            userId,
             tokens: usersTokens.get(userId),
             title: "AI Coach 🧠",
             body: aiMessage.replace(/["']/g, "")
@@ -120,6 +125,7 @@ export async function GET(req: Request) {
     else if (type === "streak") {
       for (const userId of userIds) {
         notificationsToSend.push({
+          userId,
           tokens: usersTokens.get(userId),
           title: "Protect Your Streak! 🔥",
           body: "You've worked hard for this momentum. Don't break the chain today!"
@@ -130,7 +136,23 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Invalid reminder type" }, { status: 400 });
     }
 
-    // 4. Send Notifications via Firebase Admin
+    // 4. Save to In-App Notifications Database
+    if (notificationsToSend.length > 0) {
+      const dbInserts = notificationsToSend.map(notif => ({
+        user_id: notif.userId,
+        title: notif.title,
+        body: notif.body,
+        type: type,
+        read: false
+      }));
+
+      const { error: insertError } = await supabase.from('in_app_notifications').insert(dbInserts);
+      if (insertError) {
+        console.error("Error saving in-app notifications:", insertError);
+      }
+    }
+
+    // 5. Send Notifications via Firebase Admin
     let successCount = 0;
     let failureCount = 0;
 
