@@ -50,7 +50,19 @@ export function NotificationPrompt() {
   };
 
   if (permission === "granted" && registered) {
-    return null; // Hide if perfectly setup
+    return (
+      <div className="mt-6 flex flex-col items-center justify-center rounded-[24px] bg-[var(--color-bg-elevated)] p-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#34C759]/10 text-[#34C759] mb-4">
+          <Bell className="h-6 w-6" />
+        </div>
+        <h3 className="text-base font-black text-[var(--color-text-primary)] mb-1">
+          Notifications Enabled
+        </h3>
+        <p className="text-xs font-semibold text-[var(--color-text-secondary)]">
+          You will receive AI and Gamification reminders.
+        </p>
+      </div>
+    );
   }
 
   return (
