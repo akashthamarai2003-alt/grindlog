@@ -167,115 +167,62 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Hero Card */}
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 10 }} 
-        animate={{ opacity: 1, scale: 1, y: 0 }} 
-        transition={{ type: "spring", stiffness: 300, damping: 25, delay: 0.1 }}
-        className="relative overflow-hidden rounded-[32px] bg-gradient-to-b from-[var(--color-bg-elevated)] to-[var(--color-bg-primary)] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-[var(--color-bg-tertiary)]/80 backdrop-blur-xl"
+        initial={{ opacity: 0, scale: 0.95 }} 
+        animate={{ opacity: 1, scale: 1 }} 
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        className="relative overflow-hidden rounded-[28px] bg-[var(--color-bg-elevated)] p-6 shadow-xl ring-1 ring-[var(--color-bg-tertiary)]/50"
       >
         {/* Subtle background glow effect */}
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-[#34C759]/20 to-[#00C7BE]/10 blur-3xl animate-pulse" />
-        <div className="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-gradient-to-tr from-[#007AFF]/10 to-transparent blur-2xl" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[var(--color-accent-green)]/10 blur-3xl" />
         
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex flex-col gap-1.5">
-            <h3 className="text-[42px] font-black tracking-tighter">
-              <span className={cn(
-                "transition-colors duration-700",
-                isPerfectDay ? "text-transparent bg-clip-text bg-gradient-to-r from-[#34C759] to-[#00C7BE]" : "text-[var(--color-text-primary)]"
-              )}>
-                {completedCount}
-              </span>
-              <span className="text-[var(--color-text-tertiary)] text-3xl font-bold ml-0.5">/{totalCount}</span>
-            </h3>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <p className="text-sm font-extrabold text-[var(--color-text-secondary)] tracking-tight">Done Today</p>
-              <motion.div
-                animate={isPerfectDay ? { rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.2, 1] } : {}}
-                transition={{ duration: 0.6, delay: 0.3 }}
-              >
-                ✨
-              </motion.div>
-            </div>
+            <h3 className="text-4xl font-black tracking-tight text-[var(--color-text-primary)]">{completedCount}<span className="text-[var(--color-text-tertiary)]">/{totalCount}</span></h3>
+            <p className="text-sm font-bold text-[var(--color-text-secondary)]">Done Today ✨</p>
             
             {/* Streak Badge inside Hero */}
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="mt-3 flex items-center gap-1.5 w-max rounded-full bg-gradient-to-r from-[#ff9500]/10 to-[#ff9500]/5 px-3 py-1.5 text-xs font-black text-[#ff9500] ring-1 ring-[#ff9500]/20 shadow-[0_0_15px_rgba(255,149,0,0.1)]"
-            >
-              <Flame className="h-4 w-4 fill-[#ff9500] animate-pulse drop-shadow-[0_0_5px_rgba(255,149,0,0.5)]" />
+            <div className="mt-2 flex items-center gap-1.5 w-max rounded-full bg-[var(--color-streak)]/10 px-2.5 py-1 text-xs font-bold text-[#ff9500] ring-1 ring-[#ff9500]/20">
+              <Flame className="h-3.5 w-3.5 fill-[#ff9500]" />
               {visibleHabits.reduce((acc, h) => Math.max(acc, h.currentStreak), 0)} Day Streak
-            </motion.div>
+            </div>
           </div>
           
           {/* Progress Ring */}
-          <div className="relative flex h-[100px] w-[100px] items-center justify-center">
-            <AnimatePresence>
-              {isPerfectDay && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="absolute inset-0 rounded-full bg-[#34C759] blur-[24px] opacity-25 animate-pulse"
-                />
-              )}
-            </AnimatePresence>
-            <svg className="relative z-10 h-full w-full rotate-[-90deg] drop-shadow-lg" viewBox="0 0 100 100">
-              <defs>
-                <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#34C759" />
-                  <stop offset="100%" stopColor="#00C7BE" />
-                </linearGradient>
-              </defs>
-              <circle cx="50" cy="50" r="42" className="fill-none stroke-[var(--color-bg-secondary)] stroke-[10]" />
-              <motion.circle
+          <div className="relative flex h-[90px] w-[90px] items-center justify-center">
+            <svg className="h-full w-full rotate-[-90deg] drop-shadow-md" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="42" className="fill-none stroke-[var(--color-bg-secondary)] stroke-[8]" />
+              <circle
                 cx="50"
                 cy="50"
                 r="42"
-                className="fill-none stroke-[10]"
-                stroke="url(#ringGrad)"
+                className="fill-none stroke-[var(--color-accent-green)] stroke-[8]"
                 strokeLinecap="round"
                 strokeDasharray="263.89"
-                initial={{ strokeDashoffset: 263.89 }}
-                animate={{ strokeDashoffset: 263.89 - (263.89 * Math.max(progressPct, 1)) / 100 }}
-                transition={{ duration: 1.5, type: "spring", bounce: 0.2 }}
+                strokeDashoffset={263.89 - (263.89 * Math.max(progressPct, 1)) / 100}
+                style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)" }}
               />
             </svg>
-            <div className="absolute inset-0 z-20 flex items-center justify-center">
-              <motion.span 
-                key={progressPct}
-                initial={{ scale: 0.5, opacity: 0, y: 5 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="text-[22px] font-black text-[var(--color-text-primary)] tracking-tighter"
-              >
-                {progressPct}<span className="text-sm text-[var(--color-text-tertiary)] ml-0.5">%</span>
-              </motion.span>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xl font-black text-[var(--color-text-primary)]">{progressPct}%</span>
             </div>
           </div>
         </div>
         
         {/* Level & XP Bar */}
-        <div className="relative z-10 mt-7 flex flex-col gap-2.5 rounded-[20px] bg-white/5 p-4 ring-1 ring-[var(--color-bg-tertiary)] backdrop-blur-md">
-          <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-[#34C759] shadow-[0_0_8px_#34C759] animate-pulse" />
-              <span className="text-[var(--color-text-primary)]">Level {profile.level}</span>
-            </div>
+        <div className="relative z-10 mt-6 flex flex-col gap-2 rounded-2xl bg-[var(--color-bg-secondary)]/50 p-3 ring-1 ring-[var(--color-bg-tertiary)]">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span className="text-[var(--color-text-primary)]">Level {profile.level}</span>
             <span className="text-[var(--color-text-tertiary)]">Next Level</span>
           </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-tertiary)]/50 shadow-inner">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${levelProgressPct * 100}%` }}
-              transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-              className="relative h-full rounded-full bg-gradient-to-r from-[#34C759] to-[#00C7BE]"
-            >
-              <div className="h-full w-full bg-white/20 animate-pulse rounded-full" />
-            </motion.div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-bg-tertiary)]">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#34C759] to-[#00C7BE] transition-all duration-1000 ease-out"
+              style={{ width: `${levelProgressPct * 100}%` }}
+            />
           </div>
-          <div className="flex items-center justify-between text-[11px] font-bold text-[var(--color-text-secondary)]">
-            <span className="flex items-center gap-1 text-[#00C7BE]">{optimisticXp.toLocaleString()} <span className="text-[var(--color-text-tertiary)]">XP</span></span>
-            <span>{nextLevelTotalXp.toLocaleString()} <span className="text-[var(--color-text-tertiary)]">XP</span></span>
+          <div className="flex items-center justify-between text-[10px] font-bold text-[var(--color-text-secondary)]">
+            <span>{optimisticXp.toLocaleString()} XP</span>
+            <span>{nextLevelTotalXp.toLocaleString()} XP</span>
           </div>
         </div>
       </motion.div>
