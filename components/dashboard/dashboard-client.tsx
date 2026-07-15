@@ -10,6 +10,7 @@ import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
 import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
 import { isHabitScheduled } from "@/lib/habit-utils";
+import { createClient } from "@/lib/services/supabase/client";
 
 interface Profile {
   display_name: string;
@@ -47,6 +48,7 @@ const QUOTES = [
 ];
 
 export function DashboardClient({ profile, initialHabits, todayDateStr }: DashboardClientProps) {
+  const supabase = createClient();
   const [showConfetti, setShowConfetti] = useState(false);
   const [optimisticHabits, setOptimisticHabits] = useState(initialHabits);
   const [optimisticXp, setOptimisticXp] = useState(profile.xp);
@@ -55,6 +57,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, currentCompletedStatus: boolean, streak: number} | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (!hasMounted) {
@@ -75,6 +78,16 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   }, [selectedDateStr, hasMounted]);
 
   useEffect(() => {
+    async function loadUnreadCount() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { count } = await supabase
+        .from("in_app_notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("read", false);
+      setUnreadCount(count || 0);
+    }
+    loadUnreadCount();
     setQuoteIdx(Math.floor(Math.random() * QUOTES.length));
   }, []);
 
@@ -164,7 +177,11 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           </Link>
           <Link href="/notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
             <Bell className="h-5 w-5 text-[var(--color-text-secondary)]" />
-            <div className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-[var(--color-bg-secondary)] bg-[var(--color-error)]" />
+            {unreadCount > 0 && (
+              <div className="absolute top-0 right-0 -mr-1 -mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[var(--color-bg-primary)] bg-[var(--color-error)] text-[10px] font-bold text-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </div>
+            )}
           </Link>
           <Link href="/profile">
             <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#34C759] to-[#28a745] text-white shadow-sm ring-2 ring-[var(--color-bg-primary)] ring-offset-1">
