@@ -409,10 +409,11 @@ type PanelProps = {
   logs: HabitLog[];
   todayDateStr: string;
   onLogChange: (habitId: string, date: string, status: HabitLog["status"] | null) => void;
+  onAntiCheat: (habitId: string, date: string, status: HabitLog["status"] | null) => void;
   isPending: boolean;
 };
 
-function DayPanel({ date, habits, logs, todayDateStr, onLogChange, isPending }: PanelProps) {
+function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, isPending }: PanelProps) {
   const dateStr = toDateStr(date);
   const isToday = dateStr === todayDateStr;
   const todayDate = new Date(todayDateStr + "T12:00:00");
@@ -561,8 +562,8 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, isPending }: 
                   idx={idx}
                   onToggle={(s) => {
                     if (s === "completed" && dateStr < todayDateStr) {
-                      const isHonest = window.confirm("Don't cheat yourself! 🛑\n\nIf you really completed this habit on this day, then only check in. Did you actually do it?");
-                      if (!isHonest) return;
+                      onAntiCheat(habit.id, dateStr, s);
+                      return;
                     }
                     onLogChange(habit.id, dateStr, s);
                   }}
@@ -677,6 +678,7 @@ export function CalendarClient({
   const [selected, setSelected] = useState<Date>(today);
   const [isPending, startTransition] = useTransition();
   const [slideDir, setSlideDir] = useState<number>(0);
+  const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, dateStr: string, status: HabitLog["status"] | null} | null>(null);
 
   const currentYear = month.getFullYear();
   const currentMonth = month.getMonth();
@@ -929,6 +931,7 @@ export function CalendarClient({
             logs={logs}
             todayDateStr={todayDateStr}
             onLogChange={handleLogChange}
+            onAntiCheat={(habitId, date, status) => setCheatConfirm({ habitId, dateStr: date, status })}
             isPending={isPending}
           />
         )}
@@ -953,6 +956,54 @@ export function CalendarClient({
             <span className="text-[11px] font-black text-[var(--color-text-secondary)]">
               Syncing…
             </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Anti-Cheat Modal ── */}
+      <AnimatePresence>
+        {cheatConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col items-center text-center gap-4 border-2 border-[#FF3B30]/20"
+            >
+              <div className="w-14 h-14 rounded-full bg-[#FF3B30]/10 flex items-center justify-center mb-1">
+                <span className="text-3xl">🛑</span>
+              </div>
+              <h2 className="text-lg font-black text-[var(--color-text-primary)] tracking-tight">Don't cheat yourself!</h2>
+              <p className="text-[13px] font-bold text-[var(--color-text-secondary)] leading-relaxed">
+                If you really completed this habit on this day, then only check in. Did you actually do it?
+              </p>
+              
+              <div className="flex gap-2 w-full mt-3">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCheatConfirm(null)}
+                  className="flex-1 py-3.5 rounded-[18px] font-black text-[13px] uppercase tracking-wide bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)]"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    handleLogChange(cheatConfirm.habitId, cheatConfirm.dateStr, cheatConfirm.status);
+                    setCheatConfirm(null);
+                  }}
+                  className="flex-1 py-3.5 rounded-[18px] font-black text-[13px] uppercase tracking-wide bg-[#34C759] text-white shadow-[0_0_20px_rgba(52,199,89,0.4)]"
+                >
+                  Yes, I did it
+                </motion.button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
