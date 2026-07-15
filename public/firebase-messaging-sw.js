@@ -14,9 +14,17 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
+const APP_ICON = '/icons/icon-192.png';
+const NOTIFICATION_BADGE = '/icons/notification-badge.svg';
+const DEFAULT_URL = '/dashboard';
+
 // Force the service worker to update immediately
 self.addEventListener('install', (event) => {
   self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
 });
 
 // Retrieve firebase messaging
@@ -26,18 +34,26 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-  // If the payload already has a notification object, Firebase will automatically display it.
-  // We only manually show the notification if it's a data-only message.
+  // Firebase auto-displays notification payloads. GrindLog sends data-only
+  // messages so this worker owns the final Android banner shape.
   if (payload.notification) {
     return;
   }
 
-  const notificationTitle = payload.data?.title || 'GrindLog Reminder';
+  const data = payload.data || {};
+  const notificationTitle = data.title || 'GrindLog Reminder';
   const notificationOptions = {
-    body: payload.data?.body || '',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png', // Note: Android may render full-color badges as a solid white square.
-    data: payload.data || {}
+    body: data.body || '',
+    icon: data.icon || APP_ICON,
+    badge: data.badge || NOTIFICATION_BADGE,
+    tag: data.tag || 'grindlog-reminder',
+    renotify: false,
+    vibrate: [200, 100, 200],
+    timestamp: Date.now(),
+    data: {
+      ...data,
+      url: data.url || DEFAULT_URL
+    }
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
@@ -45,18 +61,24 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
+
+  const targetUrl = new URL(event.notification.data?.url || DEFAULT_URL, self.location.origin).href;
+
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(windowClients => {
-      // Check if there is already a window/tab open with the target URL
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
       for (let i = 0; i < windowClients.length; i++) {
-        let client = windowClients[i];
-        if (client.url.includes('/') && 'focus' in client) {
+        const client = windowClients[i];
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          if ('navigate' in client) {
+            return client.navigate(targetUrl).then(navigatedClient => (navigatedClient || client).focus());
+          }
+
           return client.focus();
         }
       }
-      // If not, open a new window
+
       if (clients.openWindow) {
-        return clients.openWindow('/');
+        return clients.openWindow(targetUrl);
       }
     })
   );

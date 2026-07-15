@@ -17,7 +17,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "GrindLog — Personal Growth OS",
+  applicationName: "GrindLog",
+  title: "GrindLog",
   description:
     "Transform your habits into a living, breathing tree. The most beautiful mobile AI habit tracker. Grow with every action.",
   manifest: "/manifest.json",
@@ -30,9 +31,10 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icons/icon-192.png",
     apple: "/icons/apple-touch-icon.png",
+    other: [{ rel: "mask-icon", url: "/icons/notification-badge.svg", color: "#34C759" }],
   },
   openGraph: {
-    title: "GrindLog — Personal Growth OS",
+    title: "GrindLog",
     description:
       "Transform your habits into a living, breathing tree. AI-powered, beautifully designed.",
     type: "website",

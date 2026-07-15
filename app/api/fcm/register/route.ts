@@ -10,24 +10,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { token } = await req.json();
+    const { token, oldToken } = await req.json();
 
     if (!token) {
       return NextResponse.json({ error: "Token is required" }, { status: 400 });
     }
 
-    // Insert or update the token. 
-    // Using an upsert on the user_id would be best, but we'll use a direct insert 
-    // with ON CONFLICT if the token is unique. Since a user can have multiple devices,
-    // we want to store multiple tokens, but our SQL made token UNIQUE.
+    if (oldToken && oldToken !== token) {
+      const { error: deleteError } = await supabase
+        .from("fcm_tokens")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("token", oldToken);
+
+      if (deleteError) {
+        console.error("Error removing old FCM token:", deleteError);
+      }
+    }
+
     const { error } = await supabase
       .from("fcm_tokens")
-      .insert({ user_id: user.id, token: token })
-      .select()
-      .single();
+      .upsert({ user_id: user.id, token }, { onConflict: "token" });
 
-    // If it violates unique constraint, it means the token is already registered (which is fine)
-    if (error && error.code !== '23505') { 
+    if (error) {
       console.error("Error inserting FCM token:", error);
       return NextResponse.json({ error: "Failed to store token" }, { status: 500 });
     }

@@ -14,6 +14,18 @@ const firebaseConfig = {
 // Initialize Firebase only once
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
+const FIREBASE_MESSAGING_SW_SCOPE = "/firebase-cloud-messaging-push-scope";
+
+async function getFirebaseServiceWorkerRegistration() {
+  if (!("serviceWorker" in navigator)) {
+    return null;
+  }
+
+  return navigator.serviceWorker.register("/firebase-messaging-sw.js", {
+    scope: FIREBASE_MESSAGING_SW_SCOPE,
+  });
+}
+
 // Initialize Cloud Messaging and get a reference to the service
 export const requestFirebaseNotificationPermission = async () => {
   try {
@@ -22,6 +34,11 @@ export const requestFirebaseNotificationPermission = async () => {
     const messagingSupported = await isSupported();
     if (!messagingSupported) {
       console.warn("Firebase Messaging is not supported in this browser.");
+      return null;
+    }
+
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      console.warn("Notifications are not supported in this browser.");
       return null;
     }
 
@@ -34,10 +51,14 @@ export const requestFirebaseNotificationPermission = async () => {
       return null;
     }
 
+    const serviceWorkerRegistration = await getFirebaseServiceWorkerRegistration();
+    if (!serviceWorkerRegistration) {
+      return null;
+    }
+
     const token = await getToken(messaging, {
-      // It is highly recommended to generate a VAPID key in the Firebase Console 
-      // (Project Settings -> Cloud Messaging -> Web configuration -> Generate Key Pair).
-      // For now, it will attempt without it or fallback to defaults.
+      vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration,
     });
 
     if (token) {

@@ -1,33 +1,86 @@
 import { createClient } from "@supabase/supabase-js";
 import { adminMessaging } from "@/lib/firebase/server";
 import { NextResponse } from "next/server";
-import Groq from "groq-sdk";
-import { isHabitScheduled } from "@/lib/habit-utils";
 
-// Initialize a generic server-side Supabase client with Service Role to bypass RLS for cron jobs
-// Ensure you have NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your env
+const APP_ICON = "/icons/icon-192.png";
+const NOTIFICATION_BADGE = "/icons/notification-badge.svg";
+const NOTIFICATION_URL = "/dashboard";
+
+type ReminderNotification = {
+  userId: string;
+  tokens?: string[];
+  title: string;
+  body: string;
+  tag: string;
+  url?: string;
+};
+
+function getIstDate() {
+  return new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+}
+
+function hashTag(value: string) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return `gl-${Math.abs(hash).toString(36)}`;
+}
+
+function getIstDayBoundsUtc(istTime: Date) {
+  const startOfIstDayUtc =
+    Date.UTC(istTime.getUTCFullYear(), istTime.getUTCMonth(), istTime.getUTCDate()) -
+    5.5 * 60 * 60 * 1000;
+
+  return {
+    start: new Date(startOfIstDayUtc),
+    end: new Date(startOfIstDayUtc + 24 * 60 * 60 * 1000),
+  };
+}
+
+function notificationKey(
+  notification: Pick<ReminderNotification, "userId" | "title" | "body">,
+  type: string | null
+) {
+  return JSON.stringify([
+    notification.userId,
+    type,
+    notification.title,
+    notification.body,
+  ]);
+}
+
+function uniqueByTag(notifications: ReminderNotification[]) {
+  const byTag = new Map<string, ReminderNotification>();
+  for (const notification of notifications) {
+    if (!byTag.has(notification.tag)) {
+      byTag.set(notification.tag, notification);
+    }
+  }
+  return Array.from(byTag.values());
+}
+
+// Initialize a generic server-side Supabase client with Service Role to bypass RLS for cron jobs.
 const getServiceSupabase = () => {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY! // Use service role for cron jobs
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 };
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get("type"); // morning, afternoon, night, ai, tree, streak
+    const type = searchParams.get("type"); // morning, dynamic
 
-    // Optional: Add an authorization header check here to ensure only your cron job can hit this
     const authHeader = req.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       // return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      // Skipping strict auth for local testing, but recommend uncommenting in production
+      // Skipping strict auth for local testing, but recommend uncommenting in production.
     }
 
     const supabase = getServiceSupabase();
 
-    // 1. Fetch all tokens
     const { data: tokensData, error: tokensError } = await supabase
       .from("fcm_tokens")
       .select("user_id, token");
@@ -40,160 +93,198 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: "No devices registered for notifications." });
     }
 
-    // Map users to their tokens
     const usersTokens = new Map<string, string[]>();
     for (const row of tokensData) {
       if (!usersTokens.has(row.user_id)) usersTokens.set(row.user_id, []);
       usersTokens.get(row.user_id)!.push(row.token);
     }
 
-    // 2. Fetch all users who have tokens
     const userIds = Array.from(usersTokens.keys());
-
-    // 3. Process Reminders based on type
-    const notificationsToSend: any[] = [];
+    const istTime = getIstDate();
+    const istDateKey = istTime.toISOString().split("T")[0];
+    const notificationsToSend: ReminderNotification[] = [];
 
     if (type === "morning") {
       for (const userId of userIds) {
-        notificationsToSend.push({ userId, tokens: usersTokens.get(userId), title: "Rise and Grind! 🌅", body: "Good morning! Check your planner to see your targets for today." });
+        notificationsToSend.push({
+          userId,
+          tokens: usersTokens.get(userId),
+          title: "Rise and Grind! \u{1F305}",
+          body: "Good morning! Check your planner to see your targets for today.",
+          tag: `morning:${userId}:${istDateKey}`,
+          url: NOTIFICATION_URL,
+        });
       }
     } else if (type === "dynamic") {
-      // DYNAMIC SMART REMINDERS (Runs every 15 minutes)
-      // 1. Convert current UTC time to IST (UTC + 5:30)
-      const now = new Date();
-      
-      const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
       const currentHour = istTime.getUTCHours();
       const currentMinute = istTime.getUTCMinutes();
-      
-      // Exact minute check for perfect precision
       const currentTotalMinutes = currentHour * 60 + currentMinute;
-      
-      // Fetch all active habits
+
       const { data: habits, error: habitsError } = await supabase
-        .from('habits')
-        .select('id, user_id, name, reminder_time')
-        .eq('is_active', true)
-        .eq('is_archived', false)
-        .not('reminder_time', 'is', null);
-        
+        .from("habits")
+        .select("id, user_id, name, reminder_time")
+        .eq("is_active", true)
+        .eq("is_archived", false)
+        .not("reminder_time", "is", null);
+
       if (!habitsError && habits) {
         for (const habit of habits) {
           if (!habit.reminder_time) continue;
-          
-          const [hStr, mStr] = habit.reminder_time.split(':');
-          const habitMinutes = parseInt(hStr) * 60 + parseInt(mStr);
-          
-          // If habit exactly matches the current minute
+
+          const [hStr, mStr] = habit.reminder_time.split(":");
+          const habitMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+
           if (habitMinutes === currentTotalMinutes) {
-             const userTokens = usersTokens.get(habit.user_id);
-             if (userTokens) {
-               notificationsToSend.push({
-                 userId: habit.user_id,
-                 tokens: userTokens,
-                 title: `Time for ${habit.name}! ⏰`,
-                 body: `Your habit is scheduled for ${habit.reminder_time}. Let's get it done!`
-               });
-             }
+            const userTokens = usersTokens.get(habit.user_id);
+            if (userTokens) {
+              notificationsToSend.push({
+                userId: habit.user_id,
+                tokens: userTokens,
+                title: `Time for ${habit.name}! \u23F0`,
+                body: `Your habit is scheduled for ${habit.reminder_time}. Let's get it done!`,
+                tag: `habit:${habit.id}:${istDateKey}:${habit.reminder_time}`,
+                url: NOTIFICATION_URL,
+              });
+            }
           }
         }
       }
-      
-      // 2. DAILY 9:00 AM CHECKS (Inactivity & Streaks)
+
       if (currentHour === 9 && currentMinute === 0) {
-        
-        // Fetch users to check activity
         for (const userId of userIds) {
           const userTokens = usersTokens.get(userId);
           if (!userTokens) continue;
-          
-          // Check if they broke a streak yesterday
-          // Fetch yesterday's logs
+
           const yesterday = new Date(istTime);
           yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
-          
+          const yesterdayStr = yesterday.toISOString().split("T")[0];
+
           const { data: logs } = await supabase
-            .from('habit_logs')
-            .select('status, streak_after')
-            .eq('user_id', userId)
-            .eq('date', yesterdayStr)
-            .eq('status', 'missed');
-            
+            .from("habit_logs")
+            .select("status, streak_after")
+            .eq("user_id", userId)
+            .eq("date", yesterdayStr)
+            .eq("status", "missed");
+
           if (logs && logs.length > 0) {
-             notificationsToSend.push({
-               userId: userId,
-               tokens: userTokens,
-               title: "Don't Give Up! ❤️‍🩹",
-               body: "You missed a habit yesterday, but today is a fresh start. Rebuild that streak!"
-             });
-             continue; // Skip inactivity check if we already sent a streak reminder
+            notificationsToSend.push({
+              userId,
+              tokens: userTokens,
+              title: "Don't Give Up! \u2764\uFE0F\u200D\u{1FA79}",
+              body: "You missed a habit yesterday, but today is a fresh start. Rebuild that streak!",
+              tag: `streak:${userId}:${istDateKey}`,
+              url: NOTIFICATION_URL,
+            });
+            continue;
           }
-          
-          // Check for 48-hour inactivity
+
           const twoDaysAgo = new Date(istTime);
           twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
           const twoDaysAgoStr = twoDaysAgo.toISOString();
-          
+
           const { data: recentLogs } = await supabase
-            .from('habit_logs')
-            .select('id')
-            .eq('user_id', userId)
-            .gte('created_at', twoDaysAgoStr)
+            .from("habit_logs")
+            .select("id")
+            .eq("user_id", userId)
+            .gte("created_at", twoDaysAgoStr)
             .limit(1);
-            
+
           if (!recentLogs || recentLogs.length === 0) {
             notificationsToSend.push({
-               userId: userId,
-               tokens: userTokens,
-               title: "We miss you! 🌱",
-               body: "You haven't logged any habits in 2 days. Come back and water your tree!"
-             });
+              userId,
+              tokens: userTokens,
+              title: "We miss you! \u{1F331}",
+              body: "You haven't logged any habits in 2 days. Come back and water your tree!",
+              tag: `inactive:${userId}:${istDateKey}`,
+              url: NOTIFICATION_URL,
+            });
           }
         }
       }
     } else {
       return NextResponse.json({ error: "Invalid reminder type" }, { status: 400 });
     }
-    // 4. Save to In-App Notifications Database
-    if (notificationsToSend.length > 0) {
-      const dbInserts = notificationsToSend.map(notif => ({
+
+    let pendingNotifications = uniqueByTag(notificationsToSend);
+    let skippedDuplicateCount = 0;
+
+    if (pendingNotifications.length > 0) {
+      const { start, end } = getIstDayBoundsUtc(istTime);
+      const pendingUserIds = Array.from(new Set(pendingNotifications.map((notif) => notif.userId)));
+      const { data: existingNotifications, error: existingError } = await supabase
+        .from("in_app_notifications")
+        .select("user_id, title, body, type")
+        .in("user_id", pendingUserIds)
+        .eq("type", type)
+        .gte("created_at", start.toISOString())
+        .lt("created_at", end.toISOString());
+
+      if (existingError) {
+        console.error("Error checking existing notifications:", existingError);
+      } else if (existingNotifications) {
+        const existingKeys = new Set(
+          existingNotifications.map((notif) =>
+            notificationKey(
+              {
+                userId: notif.user_id,
+                title: notif.title,
+                body: notif.body || "",
+              },
+              notif.type
+            )
+          )
+        );
+
+        const beforeFilterCount = pendingNotifications.length;
+        pendingNotifications = pendingNotifications.filter(
+          (notif) => !existingKeys.has(notificationKey(notif, type))
+        );
+        skippedDuplicateCount = beforeFilterCount - pendingNotifications.length;
+      }
+    }
+
+    if (pendingNotifications.length > 0) {
+      const dbInserts = pendingNotifications.map((notif) => ({
         user_id: notif.userId,
         title: notif.title,
         body: notif.body,
-        type: type,
-        read: false
+        type,
+        read: false,
       }));
 
-      const { error: insertError } = await supabase.from('in_app_notifications').insert(dbInserts);
+      const { error: insertError } = await supabase.from("in_app_notifications").insert(dbInserts);
       if (insertError) {
         console.error("Error saving in-app notifications:", insertError);
       }
     }
 
-    // 5. Send Notifications via Firebase Admin
     let successCount = 0;
     let failureCount = 0;
 
-    for (const notif of notificationsToSend) {
+    for (const notif of pendingNotifications) {
       if (!notif.tokens || notif.tokens.length === 0) continue;
-      
+
       const message = {
-        notification: {
+        data: {
           title: notif.title,
           body: notif.body,
+          type: type || "general",
+          tag: notif.tag,
+          url: notif.url || NOTIFICATION_URL,
+          icon: APP_ICON,
+          badge: NOTIFICATION_BADGE,
         },
         webpush: {
-          notification: {
-            icon: '/icons/icon-192.png',
-            badge: '/icons/icon-192.png',
-            vibrate: [200, 100, 200],
-          }
+          headers: {
+            TTL: "86400",
+            Urgency: "high",
+            Topic: hashTag(notif.tag),
+          },
+          fcmOptions: {
+            link: notif.url || NOTIFICATION_URL,
+          },
         },
-        data: {
-          type: type || 'general'
-        },
-        tokens: Array.from(new Set(notif.tokens)), // Deduplicate tokens just in case
+        tokens: Array.from(new Set(notif.tokens)),
       };
 
       try {
@@ -205,13 +296,13 @@ export async function GET(req: Request) {
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      type, 
-      sent: successCount, 
-      failed: failureCount 
+    return NextResponse.json({
+      success: true,
+      type,
+      sent: successCount,
+      failed: failureCount,
+      skippedDuplicates: skippedDuplicateCount,
     });
-
   } catch (err: any) {
     console.error("Cron Reminder Error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

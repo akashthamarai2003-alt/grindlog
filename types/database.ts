@@ -200,6 +200,47 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["subscriptions"]["Insert"]>;
         Relationships: [];
       };
+      in_app_notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          body: string | null;
+          type: string | null;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          body?: string | null;
+          type?: string | null;
+          read?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["in_app_notifications"]["Insert"]>;
+        Relationships: [];
+      };
+      fcm_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          token: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          token: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fcm_tokens"]["Insert"]>;
+        Relationships: [];
+      };
+    };
+    Views: {
+      [_ in never]: never;
     };
     Functions: {
       add_xp: { Args: { xp_amount: number }; Returns: void };

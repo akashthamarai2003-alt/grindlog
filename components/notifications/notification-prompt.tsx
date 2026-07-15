@@ -4,17 +4,55 @@ import { useState, useEffect } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { requestFirebaseNotificationPermission } from "@/lib/firebase/client";
 
+const FCM_REGISTRATION_VERSION = "2";
+
 export function NotificationPrompt() {
   const [permission, setPermission] = useState<NotificationPermission | "default">("default");
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
 
+  const registerDevice = async () => {
+    const oldToken = localStorage.getItem("fcm_token");
+    const token = await requestFirebaseNotificationPermission();
+
+    if (!token) {
+      if (Notification.permission === "denied") {
+        setPermission("denied");
+      }
+      return false;
+    }
+
+    const res = await fetch("/api/fcm/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, oldToken }),
+    });
+
+    if (!res.ok) {
+      return false;
+    }
+
+    setRegistered(true);
+    setPermission("granted");
+    localStorage.setItem("fcm_registered", "true");
+    localStorage.setItem("fcm_token", token);
+    localStorage.setItem("fcm_registration_version", FCM_REGISTRATION_VERSION);
+    return true;
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setPermission(Notification.permission);
-      // Check if already registered in local storage to prevent spamming backend
-      if (localStorage.getItem("fcm_registered") === "true") {
+      const hasCurrentRegistration =
+        localStorage.getItem("fcm_registered") === "true" &&
+        localStorage.getItem("fcm_registration_version") === FCM_REGISTRATION_VERSION;
+
+      if (hasCurrentRegistration) {
         setRegistered(true);
+      } else if (Notification.permission === "granted") {
+        registerDevice().catch((error) => {
+          console.error("Failed to refresh notification registration", error);
+        });
       }
     }
   }, []);
@@ -22,26 +60,7 @@ export function NotificationPrompt() {
   const handleRequestPermission = async () => {
     setLoading(true);
     try {
-      const token = await requestFirebaseNotificationPermission();
-      
-      if (token) {
-        // Send token to our backend
-        const res = await fetch("/api/fcm/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token })
-        });
-        
-        if (res.ok) {
-          setRegistered(true);
-          setPermission("granted");
-          localStorage.setItem("fcm_registered", "true");
-        }
-      } else {
-        if (Notification.permission === "denied") {
-          setPermission("denied");
-        }
-      }
+      await registerDevice();
     } catch (error) {
       console.error("Failed to enable notifications", error);
     } finally {

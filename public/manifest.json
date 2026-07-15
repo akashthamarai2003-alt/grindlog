@@ -1,5 +1,5 @@
 {
-  "name": "GrindLog — Personal Growth OS",
+  "name": "GrindLog",
   "short_name": "GrindLog",
   "description": "Transform your habits into a living, breathing tree. AI-powered habit tracking, beautifully designed.",
   "start_url": "/dashboard",
@@ -24,6 +24,12 @@
       "src": "/icons/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
+    },
+    {
+      "src": "/icons/notification-badge.svg",
+      "sizes": "96x96",
+      "type": "image/svg+xml",
+      "purpose": "monochrome"
     }
   ],
   "screenshots": [
