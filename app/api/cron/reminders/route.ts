@@ -277,6 +277,11 @@ export async function GET(req: Request) {
       if (!notif.tokens || notif.tokens.length === 0) continue;
 
       const message = {
+        webpush: {
+          headers: {
+            Urgency: "high",
+          },
+        },
         data: {
           title: String(notif.title),
           body: String(notif.body),
