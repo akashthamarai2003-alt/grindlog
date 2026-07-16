@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import bgImage from "../../public/onboarding.png";
+import bgImage from "../../public/onboarding1.png";
 import {
   Sprout,
   Dumbbell,
