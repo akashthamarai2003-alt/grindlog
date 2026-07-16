@@ -62,6 +62,14 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [hasMounted, setHasMounted] = useState(false);
   const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, currentCompletedStatus: boolean, streak: number} | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [greeting, setGreeting] = useState("Hello,");
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good Morning,");
+    else if (hour < 18) setGreeting("Good Afternoon,");
+    else setGreeting("Good Evening,");
+  }, []);
 
   useEffect(() => {
     if (!hasMounted) {
@@ -169,19 +177,13 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
         <div>
           <p className="text-sm font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">
-            Good Morning,
+            {greeting}
           </p>
           <h1 className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight">
             {profile.display_name?.split(' ')[0] || "There"} <span className="inline-block origin-bottom-right animate-tree-sway">👋</span>
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/store" prefetch={true} className="flex flex-col items-center justify-center -mr-1 transition-transform hover:scale-105 active:scale-95">
-            <div className="flex items-center gap-1.5 rounded-full bg-[#FFD60A]/15 px-3 py-1 shadow-sm ring-1 ring-[#FFD60A]/30">
-              <CircleDollarSign className="h-4 w-4 text-[#d48806]" />
-              <span className="text-sm font-black text-[#d48806]">{profile.coins || 0}</span>
-            </div>
-          </Link>
           <Link href="/tree" prefetch={true} className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#34C759] transition-colors shadow-sm ring-1 ring-[#34C759]/20 overflow-hidden">
             <Image src="/tree-in-the-wind.svg" width={32} height={32} alt="Tree" className="drop-shadow-sm scale-[1.15]" />
           </Link>
@@ -330,7 +332,11 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)]">
               {selectedDateStr === todayDateStr ? "Today's Habits" : new Date(selectedDateStr).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
             </h2>
-            <Link href="/habits/new" prefetch={true} className="inline-flex">
+            <Link href="/store" prefetch={true} className="flex items-center gap-1 rounded-full bg-[#FFD60A]/15 px-2.5 py-1 shadow-sm ring-1 ring-[#FFD60A]/30 transition-transform hover:scale-105 active:scale-95 ml-1">
+              <CircleDollarSign className="h-3.5 w-3.5 text-[#d48806]" />
+              <span className="text-xs font-black text-[#d48806]">{profile.coins || 0}</span>
+            </Link>
+            <Link href="/habits/new" prefetch={true} className="inline-flex ml-1">
               <button 
                 type="button"
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent-green)]/15 text-[var(--color-accent-green)] hover:bg-[var(--color-accent-green)]/25 hover:scale-105 active:scale-95 transition-all shadow-sm"
