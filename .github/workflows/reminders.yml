@@ -1,8 +1,8 @@
 name: Auto Push Notifications
 
 on:
-  # schedule:
-  #   - cron: '*/15 * * * *'
+  schedule:
+    - cron: '*/15 * * * *'
 
   # Allow running manually from the Actions tab
   workflow_dispatch:
@@ -28,6 +28,10 @@ jobs:
       - name: Trigger Manual Dispatch
         if: github.event_name == 'workflow_dispatch'
         run: curl -X GET "https://grindlog-lake.vercel.app/api/cron/reminders?type=${{ github.event.inputs.type }}"
+        
+      - name: Trigger Dynamic Reminders
+        if: github.event_name == 'schedule'
+        run: curl -X GET "https://grindlog-lake.vercel.app/api/cron/reminders?type=dynamic"
         
       - name: Trigger Morning Reminder
         if: github.event.schedule == '30 2 * * *'

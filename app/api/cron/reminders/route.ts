@@ -133,8 +133,10 @@ export async function GET(req: Request) {
 
           const [hStr, mStr] = habit.reminder_time.split(":");
           const habitMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
-
-          if (habitMinutes === currentTotalMinutes) {
+          
+          const timeDiff = currentTotalMinutes - habitMinutes;
+          // Check if habit time is within the last 15 minutes
+          if (timeDiff >= 0 && timeDiff < 15) {
             const userTokens = usersTokens.get(habit.user_id);
             if (userTokens) {
               notificationsToSend.push({
