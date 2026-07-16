@@ -180,7 +180,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       {/* Header */}
       <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
         <div>
-          <p className="text-sm font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">
+          <p className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">
             {greeting}
           </p>
           <h1 className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight">
