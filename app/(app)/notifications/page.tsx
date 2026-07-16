@@ -131,17 +131,19 @@ export default function NotificationsPage() {
             <Loader2 className="h-8 w-8 animate-spin text-[var(--color-text-tertiary)]" />
           </div>
         ) : notifications.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center pt-20">
+          <div className="flex-1 flex flex-col items-center pt-[15vh]">
             <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="h-20 w-20 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center mb-6 text-[var(--color-text-tertiary)]"
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-bg-secondary)] to-[var(--color-bg-elevated)] mb-6 shadow-inner ring-1 ring-[var(--color-bg-tertiary)]"
             >
-              <BellOff className="h-8 w-8" strokeWidth={2} />
+              <div className="absolute inset-0 rounded-full border-2 border-dashed border-[var(--color-text-tertiary)]/30 animate-[spin_20s_linear_infinite]" />
+              <BellOff className="h-10 w-10 text-[var(--color-text-tertiary)]/50 relative z-10" strokeWidth={1.5} />
             </motion.div>
-            <h2 className="text-lg font-bold text-[var(--color-text-primary)]">No new notifications</h2>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)] text-center max-w-[250px]">
-              You're all caught up! Check back later for updates on your habits and achievements.
+            <h2 className="text-2xl font-black tracking-tight text-[var(--color-text-primary)]">All Caught Up!</h2>
+            <p className="mt-3 text-[15px] font-semibold leading-relaxed text-[var(--color-text-secondary)] text-center max-w-[280px]">
+              You have no new notifications. Keep grinding and check back later!
             </p>
           </div>
         ) : (

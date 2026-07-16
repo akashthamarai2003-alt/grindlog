@@ -69,44 +69,33 @@ export function NotificationPrompt() {
   };
 
   if (permission === "granted" && registered) {
-    return (
-      <div className="mt-6 flex flex-col items-center justify-center rounded-[24px] bg-[var(--color-bg-elevated)] p-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#34C759]/10 text-[#34C759] mb-4">
-          <Bell className="h-6 w-6" />
-        </div>
-        <h3 className="text-base font-black text-[var(--color-text-primary)] mb-1">
-          Notifications Enabled
-        </h3>
-        <p className="text-xs font-semibold text-[var(--color-text-secondary)]">
-          You will receive AI and Gamification reminders.
-        </p>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="mt-6 flex flex-col items-center justify-center rounded-[24px] bg-[var(--color-bg-elevated)] p-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#007AFF]/10 text-[#007AFF] mb-4">
-        {permission === "denied" ? <BellOff className="h-6 w-6" /> : <Bell className="h-6 w-6" />}
+    <div className="mt-8 flex flex-col items-center justify-center rounded-[32px] bg-[var(--color-bg-elevated)]/60 backdrop-blur-xl p-8 shadow-2xl ring-1 ring-[var(--color-bg-tertiary)]/50 relative overflow-hidden text-center max-w-sm mx-auto">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#007AFF]/5 to-transparent" />
+      <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] text-white mb-5 shadow-[0_0_24px_rgba(0,122,255,0.4)]">
+        {permission === "denied" ? <BellOff className="h-8 w-8" /> : <Bell className="h-8 w-8" />}
       </div>
       
-      <h3 className="text-base font-black text-[var(--color-text-primary)] mb-1">
+      <h3 className="relative z-10 text-xl font-black text-[var(--color-text-primary)] tracking-tight mb-2">
         {permission === "denied" ? "Notifications Blocked" : "Enable Reminders"}
       </h3>
       
-      <p className="text-xs font-semibold text-[var(--color-text-secondary)] mb-5 max-w-[250px]">
+      <p className="relative z-10 text-[13px] font-bold text-[var(--color-text-secondary)] mb-6 leading-relaxed">
         {permission === "denied" 
           ? "You need to allow notifications in your browser settings to receive AI and Tree reminders."
-          : "Get personalized AI reminders, streak alerts, and tree watering notifications!"}
+          : "Never miss a habit. Get personalized AI reminders, streak alerts, and tree watering notifications directly to your device!"}
       </p>
 
       {permission !== "denied" && (
         <button
           onClick={handleRequestPermission}
           disabled={loading}
-          className="flex items-center gap-2 rounded-full bg-[#007AFF] px-6 py-2.5 text-sm font-bold text-white shadow-md active:scale-95 transition-transform"
+          className="relative z-10 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#007AFF] to-[#5856D6] py-3.5 text-[15px] font-black tracking-wide text-white shadow-[0_4px_14px_0_rgba(0,122,255,0.39)] active:scale-95 transition-transform"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Allow Notifications"}
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Allow Notifications"}
         </button>
       )}
     </div>
