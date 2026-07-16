@@ -64,9 +64,8 @@ export async function toggleHabitCompletion(
         .eq("id", user.id);
     }
     
-    // 4. Trigger gamification logic in the background
-    // We don't await these so they don't block the UI response
-    Promise.all([
+    // 4. Trigger gamification logic
+    await Promise.all([
       updateQuestProgress(user.id, "habit_completed"),
       checkAndUnlockAchievements(user.id)
     ]).catch(console.error);
