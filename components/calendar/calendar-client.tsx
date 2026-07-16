@@ -827,7 +827,7 @@ function WeeklyChecklist({
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)]">
                 <div className="flex flex-col">
-                  <h2 className="text-lg font-black text-[var(--color-text-primary)] tracking-tight">Weekly Checklist</h2>
+                  <h2 className="text-base font-black text-[var(--color-text-primary)] tracking-tight">Weekly Checklist</h2>
                   <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
                     {startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </span>
