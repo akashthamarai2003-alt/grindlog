@@ -19,6 +19,7 @@ interface Profile {
   display_name: string;
   xp: number;
   level: number;
+  coins?: number;
 }
 
 interface HabitWithLog {
@@ -175,6 +176,12 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/store" prefetch={true} className="flex flex-col items-center justify-center -mr-1 transition-transform hover:scale-105 active:scale-95">
+            <div className="flex items-center gap-1.5 rounded-full bg-[#FFD60A]/15 px-3 py-1 shadow-sm ring-1 ring-[#FFD60A]/30">
+              <span className="text-sm">🪙</span>
+              <span className="text-sm font-black text-[#d48806]">{profile.coins || 0}</span>
+            </div>
+          </Link>
           <Link href="/tree" prefetch={true} className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#34C759] transition-colors shadow-sm ring-1 ring-[#34C759]/20 overflow-hidden">
             <Image src="/tree-in-the-wind.svg" width={32} height={32} alt="Tree" className="drop-shadow-sm scale-[1.15]" />
           </Link>
