@@ -76,11 +76,21 @@ export function useAuth() {
 
   const resetPassword = async (email: string) => {
     setError(null);
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${location.origin}/auth/callback?next=/auth/reset-password`,
-    });
-    if (err) setError(err.message);
-    return { success: !err, error: err?.message };
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send reset email");
+      }
+      return { success: true, error: undefined };
+    } catch (err: any) {
+      setError(err.message);
+      return { success: false, error: err.message };
+    }
   };
 
   const updatePassword = async (password: string) => {
