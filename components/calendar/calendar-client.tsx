@@ -718,7 +718,13 @@ function WeeklyChecklist({
                   const createdStr = habit.created_at ? habit.created_at.split("T")[0] : null;
                   const valid = isScheduled && (!createdStr || createdStr <= day.dateStr);
                   const isFuture = day.dateStr > todayDateStr;
-                  const status = log?.status;
+                  const isPast = day.dateStr < todayDateStr;
+                  const actualStatus = log?.status;
+                  let status = actualStatus;
+
+                  if (valid && isPast && !status) {
+                    status = "failed";
+                  }
 
                   let borderClass = "border-2 border-[var(--color-bg-tertiary)]";
                   let bgClass = "bg-transparent";
@@ -754,8 +760,8 @@ function WeeklyChecklist({
                         onClick={() => {
                           if (!valid || isFuture) return;
                           let nextStatus: HabitLog["status"] | null = "completed";
-                          if (status === "completed") nextStatus = "failed";
-                          else if (status === "failed") nextStatus = null;
+                          if (actualStatus === "completed") nextStatus = "failed";
+                          else if (actualStatus === "failed") nextStatus = null;
                           onLogChange(habit.id, day.dateStr, nextStatus);
                         }}
                         disabled={!valid || isFuture}
@@ -763,7 +769,7 @@ function WeeklyChecklist({
                           "flex items-center justify-center w-5 h-5 rounded-[6px] transition-transform active:scale-90",
                           bgClass,
                           borderClass,
-                          valid && !isFuture && !status ? "hover:border-[var(--color-text-tertiary)]" : ""
+                          valid && !isFuture && !actualStatus ? "hover:border-[var(--color-text-tertiary)]" : ""
                         )}
                       >
                         {icon}
