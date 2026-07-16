@@ -39,7 +39,7 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
 
   return (
     <div
-      className="group relative flex items-center justify-between overflow-hidden rounded-[20px] bg-[var(--color-bg-elevated)] p-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-all hover:shadow-md active:scale-[0.98]"
+      className="group relative flex items-center justify-between overflow-hidden rounded-[24px] bg-[var(--color-bg-elevated)] p-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform transition-shadow hover:shadow-md active:scale-[0.98]"
     >
       {/* Left Color Accent Strip */}
       <div 
@@ -48,10 +48,10 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
       />
 
       <div className="ml-2 flex items-center gap-4">
-        {/* Emoji Circle */}
+        {/* Emoji Box */}
         <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-2xl shadow-sm"
-          style={{ backgroundColor: habit.color + "15", color: habit.color }}
+          className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] text-2xl shadow-sm"
+          style={{ backgroundColor: habit.color + "25", color: habit.color }}
         >
           {habit.emoji}
         </div>
@@ -76,14 +76,14 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
         <Link
           href={`/habits/${habit.id}`}
           onClick={(e) => e.stopPropagation()}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-all sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-sm"
+          className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-sm"
           title="Edit Habit"
         >
-          <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
+          <Pencil className="h-4 w-4" strokeWidth={2.5} />
         </Link>
 
         {onDelete && (
@@ -92,7 +92,7 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
               e.stopPropagation();
               onDelete();
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+            className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-sm"
             title="Delete Habit"
           >
             <Trash2 className="h-4 w-4" strokeWidth={2.5} />
@@ -106,10 +106,10 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
             onComplete?.();
           }}
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300",
+            "flex h-[42px] w-[42px] items-center justify-center rounded-[14px] transition-all duration-200",
             habit.isCompleted
-              ? "bg-[var(--color-accent-green)] text-white shadow-[var(--shadow-glow-green)] scale-110"
-              : "border-2 border-[var(--color-bg-tertiary)] bg-transparent text-transparent hover:border-[var(--color-text-tertiary)]"
+              ? "bg-[var(--color-accent-green)]/15 border-2 border-[var(--color-accent-green)] text-[var(--color-accent-green)] shadow-[0_0_12px_rgba(52,199,89,0.4)] scale-105"
+              : "bg-[var(--color-bg-secondary)] text-transparent hover:bg-[var(--color-bg-tertiary)] border-2 border-transparent"
           )}
         >
           <div
