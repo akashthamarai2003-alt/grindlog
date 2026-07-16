@@ -679,7 +679,7 @@ function WeeklyChecklist({
   });
 
   return (
-    <div className="flex flex-col gap-4 rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)] p-4 shadow-sm border-t-2 border-[var(--color-primary)]/15">
+    <div className="flex flex-col gap-3 rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)] p-4 shadow-sm border-t-2 border-[var(--color-primary)]/15">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-[17px] font-black tracking-tight text-[var(--color-text-primary)]">
           Weekly Checklist
@@ -692,14 +692,36 @@ function WeeklyChecklist({
       {habits.length === 0 ? (
         <p className="text-sm font-bold text-[var(--color-text-tertiary)] text-center py-4">No habits yet.</p>
       ) : (
-        <div className="flex flex-col gap-2.5">
-          {habits.map((habit) => (
-            <div key={habit.id} className="flex items-center justify-between rounded-[20px] bg-[var(--color-bg-elevated)] p-2.5 shadow-sm">
-              <div className="flex items-center gap-2 max-w-[30%] overflow-hidden shrink-0">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-lg" style={{ backgroundColor: habit.color + "20" }}>{habit.emoji}</span>
+        <div className="flex flex-col border border-[var(--color-bg-tertiary)] rounded-[20px] overflow-hidden mt-1 shadow-sm">
+          {/* Header Row */}
+          <div className="flex items-center bg-[var(--color-bg-elevated)] border-b border-[var(--color-bg-tertiary)] py-2">
+            <div className="flex-1 px-3 text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">
+              My Habits
+            </div>
+            <div className="flex items-center pr-2">
+              {weekDays.map(day => (
+                <div key={day.dateStr} className="w-[32px] flex flex-col items-center justify-center gap-0.5">
+                  <span className="text-[10px] font-bold text-[var(--color-text-primary)]">{day.label}</span>
+                  <span className="text-[9px] font-bold text-[var(--color-text-tertiary)]">{day.date.getDate()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Habit Rows */}
+          {habits.map((habit, i) => (
+            <div key={habit.id} className="flex items-stretch border-b border-[var(--color-bg-tertiary)] last:border-0 bg-[var(--color-bg-secondary)]">
+              {/* Habit Name / Left Side */}
+              <div 
+                className="flex-1 flex items-center gap-2 px-3 py-2.5 min-w-0" 
+                style={{ backgroundColor: `${habit.color}15` }}
+              >
+                <span className="text-[14px] flex-shrink-0">{habit.emoji}</span>
+                <span className="text-[12px] font-bold text-[var(--color-text-primary)] truncate">{habit.name}</span>
               </div>
               
-              <div className="flex items-center gap-1.5 flex-1 justify-end ml-2">
+              {/* Checkboxes / Right Side */}
+              <div className="flex items-center pr-2 bg-[var(--color-bg-secondary)]">
                 {weekDays.map((day) => {
                   const log = logs.find((l) => l.habit_id === habit.id && l.date === day.dateStr);
                   const isScheduled = isHabitScheduled(habit.frequency, habit.custom_days, new Date(day.dateStr + "T12:00:00Z"));
@@ -709,38 +731,47 @@ function WeeklyChecklist({
                   const isFuture = day.dateStr > todayDateStr;
                   const status = log?.status;
 
-                  let bgColor = "bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-tertiary)]/80";
-                  if (!valid) bgColor = "bg-transparent ring-1 ring-[var(--color-bg-tertiary)] opacity-30";
-                  else if (status === "completed") bgColor = "bg-[#34C759] shadow-md shadow-[#34C759]/30";
-                  else if (status === "skipped") bgColor = "bg-[#FF9500] shadow-md shadow-[#FF9500]/30";
-                  else if (status === "failed") bgColor = "bg-[#FF3B30] shadow-md shadow-[#FF3B30]/30";
-                  else if (day.dateStr === todayDateStr) bgColor = "bg-[var(--color-bg-tertiary)] ring-2 ring-[#007AFF] ring-offset-1 ring-offset-[var(--color-bg-elevated)]";
+                  let borderClass = "border-2 border-[var(--color-bg-tertiary)]";
+                  let bgClass = "bg-transparent";
+                  let icon = null;
+
+                  if (!valid) {
+                    borderClass = "border-2 border-[var(--color-bg-tertiary)] opacity-30";
+                  } else if (status === "completed") {
+                    bgClass = "bg-[#34C759]";
+                    borderClass = "border-[#34C759]";
+                    icon = <CheckCircle2 className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
+                  } else if (status === "skipped") {
+                    bgClass = "bg-[#FF9500]";
+                    borderClass = "border-[#FF9500]";
+                    icon = <MinusCircle className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
+                  } else if (status === "failed") {
+                    bgClass = "bg-[#FF3B30]";
+                    borderClass = "border-[#FF3B30]";
+                    icon = <XCircle className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
+                  } else if (day.dateStr === todayDateStr) {
+                    borderClass = "border-2 border-[#007AFF]/50 ring-2 ring-[#007AFF]/20 ring-offset-1 ring-offset-[var(--color-bg-secondary)]";
+                  }
 
                   return (
-                    <button
-                      key={day.dateStr}
-                      onClick={() => {
-                        if (!valid || isFuture) return;
-                        const nextStatus = status === "completed" ? null : "completed";
-                        onLogChange(habit.id, day.dateStr, nextStatus);
-                      }}
-                      disabled={!valid || isFuture}
-                      className={cn(
-                        "flex items-center justify-center w-7 h-7 rounded-full transition-transform active:scale-[0.85] shrink-0",
-                        bgColor,
-                        status && valid ? "text-white" : (valid && !isFuture ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-tertiary)]")
-                      )}
-                    >
-                      {status === "completed" ? (
-                        <CheckCircle2 className="w-[14px] h-[14px]" strokeWidth={3} />
-                      ) : status === "skipped" ? (
-                        <MinusCircle className="w-[14px] h-[14px]" strokeWidth={3} />
-                      ) : status === "failed" ? (
-                        <XCircle className="w-[14px] h-[14px]" strokeWidth={3} />
-                      ) : (
-                        <span className="text-[10px] font-black">{day.label}</span>
-                      )}
-                    </button>
+                    <div key={day.dateStr} className="w-[32px] flex items-center justify-center">
+                      <button
+                        onClick={() => {
+                          if (!valid || isFuture) return;
+                          const nextStatus = status === "completed" ? null : "completed";
+                          onLogChange(habit.id, day.dateStr, nextStatus);
+                        }}
+                        disabled={!valid || isFuture}
+                        className={cn(
+                          "flex items-center justify-center w-5 h-5 rounded-[6px] transition-transform active:scale-90",
+                          bgClass,
+                          borderClass,
+                          valid && !isFuture && !status ? "hover:border-[var(--color-text-tertiary)]" : ""
+                        )}
+                      >
+                        {icon}
+                      </button>
+                    </div>
                   );
                 })}
               </div>
