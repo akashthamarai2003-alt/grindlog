@@ -44,7 +44,7 @@ export function useAuth() {
   const signIn = async (email: string, password: string) => {
     setError(null);
     const { error: err } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
     if (err) setError(err.message);
@@ -54,9 +54,9 @@ export function useAuth() {
   const signUp = async (email: string, password: string, name: string) => {
     setError(null);
     const { error: err } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
-      options: { data: { name } },
+      options: { data: { name: name.trim() } },
     });
     if (err) setError(err.message);
     return { success: !err, error: err?.message };
@@ -76,7 +76,7 @@ export function useAuth() {
 
   const resetPassword = async (email: string) => {
     setError(null);
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${location.origin}/auth/reset-password`,
     });
     if (err) setError(err.message);
