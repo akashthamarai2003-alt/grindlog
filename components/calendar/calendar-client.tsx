@@ -656,6 +656,108 @@ function MonthStats({
   );
 }
 
+// ─── Weekly Checklist ─────────────────────────────────────────────────────────
+
+function WeeklyChecklist({
+  habits,
+  logs,
+  selectedDate,
+  todayDateStr,
+  onLogChange,
+}: {
+  habits: Habit[];
+  logs: HabitLog[];
+  selectedDate: Date;
+  todayDateStr: string;
+  onLogChange: (habitId: string, dateStr: string, status: HabitLog["status"] | null) => void;
+}) {
+  const startOfWeek = new Date(selectedDate);
+  startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
+
+  const weekDays = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    return {
+      date: d,
+      dateStr: toDateStr(d),
+      label: ["S", "M", "T", "W", "T", "F", "S"][i],
+    };
+  });
+
+  return (
+    <div className="flex flex-col gap-4 rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)] p-4 shadow-sm border-t-2 border-[var(--color-primary)]/15">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-[17px] font-black tracking-tight text-[var(--color-text-primary)]">
+          Weekly Checklist
+        </h2>
+        <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
+          {startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+        </span>
+      </div>
+      
+      {habits.length === 0 ? (
+        <p className="text-sm font-bold text-[var(--color-text-tertiary)] text-center py-4">No habits yet.</p>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {habits.map((habit) => (
+            <div key={habit.id} className="flex items-center justify-between rounded-[20px] bg-[var(--color-bg-elevated)] p-2.5 shadow-sm">
+              <div className="flex items-center gap-2 max-w-[30%] overflow-hidden shrink-0">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-lg" style={{ backgroundColor: habit.color + "20" }}>{habit.emoji}</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5 flex-1 justify-end ml-2">
+                {weekDays.map((day) => {
+                  const log = logs.find((l) => l.habit_id === habit.id && l.date === day.dateStr);
+                  const isScheduled = isHabitScheduled(habit.frequency, habit.custom_days, new Date(day.dateStr + "T12:00:00Z"));
+                  
+                  const createdStr = habit.created_at ? habit.created_at.split("T")[0] : null;
+                  const valid = isScheduled && (!createdStr || createdStr <= day.dateStr);
+                  const isFuture = day.dateStr > todayDateStr;
+                  const status = log?.status;
+
+                  let bgColor = "bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-tertiary)]/80";
+                  if (!valid) bgColor = "bg-transparent ring-1 ring-[var(--color-bg-tertiary)] opacity-30";
+                  else if (status === "completed") bgColor = "bg-[#34C759] shadow-md shadow-[#34C759]/30";
+                  else if (status === "skipped") bgColor = "bg-[#FF9500] shadow-md shadow-[#FF9500]/30";
+                  else if (status === "failed") bgColor = "bg-[#FF3B30] shadow-md shadow-[#FF3B30]/30";
+                  else if (day.dateStr === todayDateStr) bgColor = "bg-[var(--color-bg-tertiary)] ring-2 ring-[#007AFF] ring-offset-1 ring-offset-[var(--color-bg-elevated)]";
+
+                  return (
+                    <button
+                      key={day.dateStr}
+                      onClick={() => {
+                        if (!valid || isFuture) return;
+                        const nextStatus = status === "completed" ? null : "completed";
+                        onLogChange(habit.id, day.dateStr, nextStatus);
+                      }}
+                      disabled={!valid || isFuture}
+                      className={cn(
+                        "flex items-center justify-center w-7 h-7 rounded-full transition-transform active:scale-[0.85] shrink-0",
+                        bgColor,
+                        status && valid ? "text-white" : (valid && !isFuture ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-tertiary)]")
+                      )}
+                    >
+                      {status === "completed" ? (
+                        <CheckCircle2 className="w-[14px] h-[14px]" strokeWidth={3} />
+                      ) : status === "skipped" ? (
+                        <MinusCircle className="w-[14px] h-[14px]" strokeWidth={3} />
+                      ) : status === "failed" ? (
+                        <XCircle className="w-[14px] h-[14px]" strokeWidth={3} />
+                      ) : (
+                        <span className="text-[10px] font-black">{day.label}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Client ──────────────────────────────────────────────────────────────
 
 export function CalendarClient({
@@ -915,6 +1017,25 @@ export function CalendarClient({
             onAntiCheat={(habitId, date, status) => setCheatConfirm({ habitId, dateStr: date, status })}
             isPending={isPending}
           />
+        )}
+      </AnimatePresence>
+
+      {/* ── Weekly Checklist ── */}
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <WeeklyChecklist 
+              habits={habits}
+              logs={logs}
+              selectedDate={selected}
+              todayDateStr={todayDateStr}
+              onLogChange={handleLogChange}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
 
