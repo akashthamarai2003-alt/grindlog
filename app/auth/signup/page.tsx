@@ -141,11 +141,14 @@ export default function SignUpPage() {
             className="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-[#34C759] text-lg font-bold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 disabled:opacity-50 border border-white/20"
           >
             {isLoading ? (
-              <motion.div
-                className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-              />
+              <div className="flex items-center gap-3">
+                <motion.div
+                  className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                />
+                <span>Signing up...</span>
+              </div>
             ) : (
               "Sign Up"
             )}
