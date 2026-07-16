@@ -15,6 +15,7 @@ import {
   Sparkles,
   CalendarDays,
   Lock,
+  Maximize,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
@@ -665,6 +666,7 @@ function WeeklyChecklist({
   todayDateStr: string;
   onLogChange: (habitId: string, dateStr: string, status: HabitLog["status"] | null) => void;
 }) {
+  const [isPreview, setIsPreview] = useState(false);
   const startOfWeek = new Date(selectedDate);
   startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
 
@@ -678,22 +680,9 @@ function WeeklyChecklist({
     };
   });
 
-  return (
-    <div className="flex flex-col gap-3 rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)] p-4 shadow-sm border-t-2 border-[var(--color-primary)]/15">
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-[17px] font-black tracking-tight text-[var(--color-text-primary)]">
-          Weekly Checklist
-        </h2>
-        <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
-          {startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-        </span>
-      </div>
-      
-      {habits.length === 0 ? (
-        <p className="text-sm font-bold text-[var(--color-text-tertiary)] text-center py-4">No habits yet.</p>
-      ) : (
-        <div className="flex flex-col border border-[var(--color-bg-tertiary)] rounded-[20px] overflow-hidden mt-1 shadow-sm">
-          {/* Header Row */}
+  const gridContent = (
+    <div className="flex flex-col border border-[var(--color-bg-tertiary)] rounded-[20px] overflow-hidden mt-1 shadow-sm">
+      {/* Header Row */}
           <div className="flex items-center bg-[var(--color-bg-elevated)] border-b border-[var(--color-bg-tertiary)] py-2">
             <div className="flex-1 px-3 text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">
               My Habits
@@ -778,8 +767,72 @@ function WeeklyChecklist({
             </div>
           ))}
         </div>
-      )}
-    </div>
+  );
+
+  return (
+    <>
+      <div className="flex flex-col gap-3 rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)] p-4 shadow-sm border-t-2 border-[var(--color-primary)]/15">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex flex-col">
+            <h2 className="text-[17px] font-black tracking-tight text-[var(--color-text-primary)]">
+              Weekly Checklist
+            </h2>
+            <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
+              {startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+          <button 
+            onClick={() => setIsPreview(true)}
+            className="w-9 h-9 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-primary)] transition-transform active:scale-90 shadow-sm"
+          >
+            <Maximize className="w-4 h-4" strokeWidth={2.5} />
+          </button>
+        </div>
+        
+        {habits.length === 0 ? (
+          <p className="text-sm font-bold text-[var(--color-text-tertiary)] text-center py-4">No habits yet.</p>
+        ) : (
+          gridContent
+        )}
+      </div>
+
+      <AnimatePresence>
+        {isPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-[var(--color-bg-primary)] flex items-center justify-center overflow-hidden touch-none"
+          >
+            <div 
+              className="relative flex flex-col p-6 w-[100dvh] h-[100dvw]"
+              style={{
+                transform: 'rotate(90deg)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col">
+                  <h2 className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">Weekly Checklist</h2>
+                  <span className="text-sm font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
+                    {startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => setIsPreview(false)}
+                  className="w-12 h-12 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-primary)] transition-transform active:scale-90 shadow-sm"
+                >
+                  <XCircle className="w-7 h-7 text-[var(--color-text-tertiary)]" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto bg-[var(--color-bg-secondary)] rounded-[24px] shadow-xl ring-1 ring-[var(--color-bg-tertiary)] p-4">
+                {gridContent}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
