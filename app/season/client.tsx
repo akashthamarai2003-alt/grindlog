@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Gift, Lock, Coins, Crown } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
-import { createClientSupabase } from "@/lib/services/supabase/client";
+import { createClient } from "@/lib/services/supabase/client";
 import { useState } from "react";
 
 export function SeasonClient({ seasonData, progress }: { seasonData: any; progress: any }) {
   const router = useRouter();
-  const supabase = createClientSupabase();
+  const supabase = createClient();
   const [claimedTiers, setClaimedTiers] = useState<number[]>(progress?.claimed_tiers || []);
   const [isClaiming, setIsClaiming] = useState(false);
 
