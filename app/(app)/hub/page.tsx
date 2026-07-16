@@ -9,10 +9,7 @@ import {
   Moon, 
   GraduationCap, 
   Calendar, 
-  LineChart,
-  Trophy,
-  Medal,
-  Gift
+  LineChart
 } from "lucide-react";
 
 import { ForwardRefExoticComponent, RefAttributes } from "react";
@@ -39,10 +36,6 @@ const MODULES: Module[] = [
   { id: "finance", name: "Finance", icon: Wallet, path: "/finance", color: "from-[#30B0C7] to-[#007AFF]" },
   { id: "sleep", name: "Sleep", icon: Moon, path: "/sleep", color: "from-[#5856D6] to-[#3A3A3C]" },
   { id: "learning", name: "Learning", icon: GraduationCap, path: "/learning", color: "from-[#FF9500] to-[#FF2D55]" },
-  { id: "achievements", name: "Achievements", icon: Trophy, path: "/achievements", color: "from-[#FFD60A] to-[#FF9500]" },
-  { id: "quests", name: "Quests", icon: Target, path: "/quests", color: "from-[#FF2D55] to-[#AF52DE]" },
-  { id: "leaderboard", name: "Leaderboard", icon: Medal, path: "/leaderboard", color: "from-[#007AFF] to-[#32ADE6]" },
-  { id: "season", name: "Season Rewards", icon: Gift, path: "/season", color: "from-[#34C759] to-[#00C7BE]" },
 ];
 
 export default function HubPage() {

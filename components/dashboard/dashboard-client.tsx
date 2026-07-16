@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from 'next/dynamic';
-import { Bell, Quote, Trophy, Flame, Plus, Sparkles } from "lucide-react";
+import { Bell, Quote, Trophy, Flame, Plus, Sparkles, Target, Medal, Gift } from "lucide-react";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
 import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
@@ -251,6 +251,29 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             <span>{nextLevelTotalXp.toLocaleString()} XP</span>
           </div>
         </div>
+      </div>
+
+      {/* Gamification Quick Links */}
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 snap-x hide-scrollbar">
+        {[
+          { name: "Quests", icon: Target, path: "/quests", color: "from-[#FF2D55] to-[#AF52DE]" },
+          { name: "Leaderboard", icon: Medal, path: "/leaderboard", color: "from-[#007AFF] to-[#32ADE6]" },
+          { name: "Achievements", icon: Trophy, path: "/achievements", color: "from-[#FFD60A] to-[#FF9500]" },
+          { name: "Season", icon: Gift, path: "/season", color: "from-[#34C759] to-[#00C7BE]" },
+        ].map((item) => (
+          <Link 
+            key={item.name} 
+            href={item.path}
+            className="snap-start shrink-0 flex items-center gap-2 rounded-[20px] bg-[var(--color-bg-elevated)] p-3 pr-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform active:scale-95"
+          >
+            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br ${item.color} shadow-sm`}>
+              <item.icon className="h-5 w-5 text-white" strokeWidth={2.5} />
+            </div>
+            <span className="text-[13px] font-bold text-[var(--color-text-primary)]">
+              {item.name}
+            </span>
+          </Link>
+        ))}
       </div>
 
       {/* Mini Week Calendar Strip */}
