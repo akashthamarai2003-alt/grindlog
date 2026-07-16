@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from 'next/dynamic';
-import { Bell, Quote, Trophy, Flame, Plus, Sparkles, Target, Medal, Gift } from "lucide-react";
+import { Bell, Quote, Trophy, Flame, Plus, Sparkles, Target, Medal, Gift, Coins } from "lucide-react";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
 import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
@@ -178,7 +178,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         <div className="flex items-center gap-3">
           <Link href="/store" prefetch={true} className="flex flex-col items-center justify-center -mr-1 transition-transform hover:scale-105 active:scale-95">
             <div className="flex items-center gap-1.5 rounded-full bg-[#FFD60A]/15 px-3 py-1 shadow-sm ring-1 ring-[#FFD60A]/30">
-              <span className="text-sm">🪙</span>
+              <Coins className="h-4 w-4 text-[#d48806]" />
               <span className="text-sm font-black text-[#d48806]">{profile.coins || 0}</span>
             </div>
           </Link>
