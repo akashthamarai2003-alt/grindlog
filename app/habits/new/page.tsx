@@ -363,12 +363,8 @@ export default function NewHabitPage() {
       {/* Custom Days Weekday Selector */}
       <AnimatePresence>
         {form.frequency === "custom" && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, y: -10 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -10 }}
-            transition={{ type: "spring", stiffness: 350, damping: 28 }}
-            className="flex flex-col gap-2 overflow-hidden"
+          <div
+            className="flex flex-col gap-2 overflow-hidden animate-in fade-in zoom-in-95 duration-300"
           >
             <SectionLabel>Active Days</SectionLabel>
             <div className="flex justify-between gap-1.5 py-1">
@@ -404,7 +400,7 @@ export default function NewHabitPage() {
                 );
               })}
             </div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -585,17 +581,11 @@ export default function NewHabitPage() {
 
         {/* ── Step Content ── */}
         <div className="flex-1 relative">
-          <AnimatePresence mode="popLayout" custom={direction}>
+          <AnimatePresence mode="wait" custom={direction}>
             {mode === "single" && step === 0 && (
-              <motion.div
+              <div
                 key="step-0"
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ type: "spring", stiffness: 380, damping: 36 }}
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300"
               >
                   {/* Emoji Row */}
                   <div>
@@ -728,30 +718,23 @@ export default function NewHabitPage() {
                       <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                     </motion.div>
                   </motion.button>
-              </motion.div>
+              </div>
             )}
 
             {mode === "bulk" && step === 0 && (
-              <motion.div
+              <div
                 key="step-bulk"
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ type: "spring", stiffness: 380, damping: 36 }}
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300"
               >
                 <div>
                   <SectionLabel>Your Habits & Timings</SectionLabel>
                   <div className="flex flex-col gap-3 mb-6">
                     <AnimatePresence initial={false}>
                       {bulkHabits.map((item, index) => (
-                        <motion.div
+                        <div
                           key={item.id}
-                          initial={{ opacity: 0, height: 0, y: 15 }}
-                          animate={{ opacity: 1, height: "auto", y: 0 }}
-                          exit={{ opacity: 0, height: 0, y: -15 }}
-                          transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                          className="flex flex-col gap-2 py-2 w-full min-w-0"
+                          className="flex flex-col gap-2 py-2 w-full min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-300 fill-mode-both"
+                          style={{ animationDelay: `${index * 50}ms` }}
                         >
                           <div className="flex flex-col gap-3 rounded-[20px] bg-[var(--color-bg-elevated)] p-3.5 shadow-sm border border-[var(--color-bg-tertiary)]/10 w-full">
                             {/* Top Row: Name & Trash */}
@@ -840,7 +823,7 @@ export default function NewHabitPage() {
                               </div>
                             )}
                           </div>
-                        </motion.div>
+                        </div>
                       ))}
                     </AnimatePresence>
                   </div>
@@ -874,26 +857,17 @@ export default function NewHabitPage() {
                     {isSaving ? "Creating Habits…" : `Create ${bulkHabits.filter((h) => h.name.trim()).length} Habits`}
                   </span>
                 </motion.button>
-              </motion.div>
+              </div>
             )}
 
             {mode === "single" && step === 1 && (
-              <motion.div
+              <div
                 key="step-1"
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ type: "spring", stiffness: 380, damping: 36 }}
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300"
               >
                   {/* Habit Preview Card */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.92 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    className="flex items-center gap-4 rounded-2xl bg-[var(--color-bg-elevated)] p-4 shadow-sm border border-[var(--color-bg-elevated)]"
+                  <div
+                    className="flex items-center gap-4 rounded-2xl bg-[var(--color-bg-elevated)] p-4 shadow-sm border border-[var(--color-bg-elevated)] animate-in fade-in zoom-in-95 duration-300"
                   >
                     <div
                       className="h-14 w-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-sm"
@@ -909,16 +883,13 @@ export default function NewHabitPage() {
                         {form.category}
                       </p>
                     </div>
-                    <motion.div
-                      className="ml-auto h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0"
+                    <div
+                      className="ml-auto h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 animate-in zoom-in duration-300 delay-150 fill-mode-both"
                       style={{ background: color }}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 22, delay: 0.15 }}
                     >
                       <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                    </motion.div>
-                  </motion.div>
+                    </div>
+                  </div>
 
                   {renderSchedulingSettings()}
 
@@ -949,21 +920,15 @@ export default function NewHabitPage() {
 
 
                   {/* Save CTA */}
-                  <motion.button
+                  <button
+                    type="button"
                     onClick={handleSave}
                     disabled={isSaving}
-                    whileTap={{ scale: 0.97 }}
-                    className="relative flex w-full items-center justify-center gap-2.5 rounded-2xl py-[1.125rem] text-[15px] font-bold text-white overflow-hidden disabled:opacity-60"
+                    className="relative flex w-full items-center justify-center gap-2.5 rounded-2xl py-[1.125rem] text-[15px] font-bold text-white overflow-hidden disabled:opacity-60 transition-transform active:scale-95 shadow-md"
+                    style={{
+                      background: `linear-gradient(90deg, ${color}, #34d399)`,
+                    }}
                   >
-                    <motion.div
-                      className="absolute inset-0"
-                      style={{
-                        backgroundImage: `linear-gradient(90deg, ${color}, #34d399, ${color})`,
-                        backgroundSize: "200% 200%",
-                      }}
-                      animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                    />
                     <div className="relative z-10 flex items-center gap-2.5">
                       {isSaving ? (
                         <>
@@ -972,18 +937,13 @@ export default function NewHabitPage() {
                         </>
                       ) : (
                         <>
-                          <motion.div
-                            animate={{ rotate: [0, 10, -10, 0] }}
-                            transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
-                          >
-                            <Check className="h-5 w-5" strokeWidth={2.5} />
-                          </motion.div>
+                          <Check className="h-5 w-5" strokeWidth={2.5} />
                           <span>Save Habit</span>
                         </>
                       )}
                     </div>
-                  </motion.button>
-              </motion.div>
+                  </button>
+              </div>
             )}
 
             {step === 2 && (
