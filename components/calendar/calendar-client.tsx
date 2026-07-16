@@ -684,12 +684,12 @@ function WeeklyChecklist({
     <div className="flex flex-col border border-[var(--color-bg-tertiary)] rounded-[20px] overflow-hidden mt-1 shadow-sm">
       {/* Header Row */}
           <div className="flex items-center bg-[var(--color-bg-elevated)] border-b border-[var(--color-bg-tertiary)] py-2">
-            <div className="flex-1 px-3 text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">
+            <div className="flex-[1.5] min-w-[100px] px-3 text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">
               My Habits
             </div>
-            <div className="flex items-center pr-2">
+            <div className="flex-[2] flex items-center pr-2">
               {weekDays.map(day => (
-                <div key={day.dateStr} className="w-[32px] flex flex-col items-center justify-center gap-0.5">
+                <div key={day.dateStr} className="flex-1 flex flex-col items-center justify-center gap-0.5">
                   <span className="text-[10px] font-bold text-[var(--color-text-primary)]">{day.label}</span>
                   <span className="text-[9px] font-bold text-[var(--color-text-tertiary)]">{day.date.getDate()}</span>
                 </div>
@@ -702,7 +702,7 @@ function WeeklyChecklist({
             <div key={habit.id} className="flex items-stretch border-b border-[var(--color-bg-tertiary)] last:border-0 bg-[var(--color-bg-secondary)]">
               {/* Habit Name / Left Side */}
               <div 
-                className="flex-1 flex items-center gap-2 px-3 py-2.5 min-w-0" 
+                className="flex-[1.5] min-w-[100px] flex items-center gap-2 px-3 py-2.5 overflow-hidden" 
                 style={{ backgroundColor: `${habit.color}15` }}
               >
                 <span className="text-[14px] flex-shrink-0">{habit.emoji}</span>
@@ -710,7 +710,7 @@ function WeeklyChecklist({
               </div>
               
               {/* Checkboxes / Right Side */}
-              <div className="flex items-center pr-2 bg-[var(--color-bg-secondary)]">
+              <div className="flex-[2] flex items-center pr-2 bg-[var(--color-bg-secondary)]">
                 {weekDays.map((day) => {
                   const log = logs.find((l) => l.habit_id === habit.id && l.date === day.dateStr);
                   const isScheduled = isHabitScheduled(habit.frequency, habit.custom_days, new Date(day.dateStr + "T12:00:00Z"));
@@ -743,7 +743,7 @@ function WeeklyChecklist({
                   }
 
                   return (
-                    <div key={day.dateStr} className="w-[32px] flex items-center justify-center">
+                    <div key={day.dateStr} className="flex-1 flex items-center justify-center">
                       <button
                         onClick={() => {
                           if (!valid || isFuture) return;
@@ -805,12 +805,13 @@ function WeeklyChecklist({
             className="fixed inset-0 z-[100] bg-[var(--color-bg-primary)] flex items-center justify-center overflow-hidden touch-none"
           >
             <div 
-              className="relative flex flex-col p-6 w-[100dvh] h-[100dvw]"
+              className="relative flex flex-col w-[100dvh] h-[100dvw] bg-[var(--color-bg-primary)] shadow-2xl"
               style={{
                 transform: 'rotate(90deg)',
               }}
             >
-              <div className="flex items-center justify-between mb-4">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)]">
                 <div className="flex flex-col">
                   <h2 className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">Weekly Checklist</h2>
                   <span className="text-sm font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
@@ -825,7 +826,8 @@ function WeeklyChecklist({
                 </button>
               </div>
               
-              <div className="flex-1 overflow-y-auto bg-[var(--color-bg-secondary)] rounded-[24px] shadow-xl ring-1 ring-[var(--color-bg-tertiary)] p-4">
+              {/* Grid content wrapping */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[var(--color-bg-primary)]">
                 {gridContent}
               </div>
             </div>
