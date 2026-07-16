@@ -620,17 +620,19 @@ function MonthStats({
 
   const completed = logs.filter((l) => l.status === "completed").length;
   const skipped = logs.filter((l) => l.status === "skipped").length;
+  const missed = logs.filter((l) => l.status === "failed").length;
   const rate = totalPossible > 0 ? Math.round((completed / totalPossible) * 100) : 0;
 
   const stats = [
-    { icon: CheckCircle2, label: "Done",    value: completed,   color: "#34C759", numeral: true },
-    { icon: MinusCircle,  label: "Skipped", value: skipped,     color: "#FF9500", numeral: true },
-    { icon: Target,       label: "Perfect", value: perfectDays, color: "#007AFF", numeral: true },
+    { icon: CheckCircle2, label: "Done",    value: completed,   color: "#34C759" },
+    { icon: MinusCircle,  label: "Skipped", value: skipped,     color: "#FF9500" },
+    { icon: XCircle,      label: "Missed",  value: missed,      color: "#FF3B30" },
+    { icon: Target,       label: "Perfect", value: perfectDays, color: "#007AFF" },
     { icon: BarChart2,    label: "Rate",    value: rate,        color: "#AF52DE", suffix: "%" },
   ] as const;
 
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="flex overflow-x-auto gap-2.5 pb-2 pt-1 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">
       {stats.map((s, i) => {
         const Icon = s.icon;
         return (
@@ -638,13 +640,14 @@ function MonthStats({
             key={s.label}
             initial={{ opacity: 0, y: 12, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
+            whileHover={{ scale: 1.05, y: -2 }}
             transition={{
               type: "spring", stiffness: 320, damping: 26,
               delay: 0.08 + i * 0.07,
             }}
-            className="flex flex-col items-center gap-1.5 rounded-[20px] py-3.5 px-1
+            className="flex-shrink-0 w-[84px] snap-start flex flex-col items-center gap-1.5 rounded-[20px] py-4 px-1
                        bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)]
-                       relative overflow-hidden"
+                       relative overflow-hidden shadow-sm"
           >
             {/* Subtle color bg */}
             <div
@@ -652,20 +655,22 @@ function MonthStats({
               style={{ backgroundColor: s.color }}
             />
 
-            <div
-              className="w-7 h-7 rounded-[10px] flex items-center justify-center relative"
+            <motion.div
+              initial={{ scale: 0.8, rotate: -10 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.15 + i * 0.07 }}
+              className="w-8 h-8 rounded-[12px] flex items-center justify-center relative mb-1"
               style={{ backgroundColor: `${s.color}2C` }}
             >
-              <Icon className="h-3.5 w-3.5" style={{ color: s.color }} />
-            </div>
+              <Icon className="h-4 w-4" style={{ color: s.color }} />
+            </motion.div>
 
-            <span className="text-[15px] font-black text-[var(--color-text-primary)] leading-none relative">
-              {"suffix" in s
-                ? `${s.value}%`
-                : s.value}
+            <span className="text-[17px] font-black text-[var(--color-text-primary)] leading-none relative flex items-baseline">
+              <AnimatedNumber value={s.value} />
+              {"suffix" in s && <span className="text-[12px] ml-[1px]">{s.suffix}</span>}
             </span>
 
-            <span className="text-[8px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wide text-center leading-none">
+            <span className="text-[9px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wide text-center leading-none mt-0.5">
               {s.label}
             </span>
           </motion.div>
