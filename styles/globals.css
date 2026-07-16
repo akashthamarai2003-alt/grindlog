@@ -20,16 +20,16 @@
 
   --color-accent-blue: #007aff;
   --color-accent-blue-light: #e8f2ff;
-  --color-accent-green: #34C759;
-  --color-accent-green-light: #eafff0;
+  --color-accent-green: #166534;
+  --color-accent-green-light: #dcfce7;
 
-  --color-success: #34C759;
+  --color-success: #166534;
   --color-warning: #ff9500;
   --color-error: #ff3b30;
   --color-info: #007aff;
 
   --color-streak: #ff9500;
-  --color-xp: #34C759;
+  --color-xp: #166534;
 
   --color-primary: var(--color-accent-blue);
   --color-primary-light: var(--color-accent-blue-light);
@@ -39,7 +39,7 @@
   --shadow-elevated: 0px 8px 30px rgba(0, 0, 0, 0.04), 0px 0px 2px rgba(0, 0, 0, 0.06);
   --shadow-floating: 0px -4px 24px rgba(0, 0, 0, 0.06);
   --shadow-glow-blue: 0px 0px 20px rgba(0, 122, 255, 0.25);
-  --shadow-glow-green: 0px 0px 24px rgba(52, 199, 89, 0.3);
+  --shadow-glow-green: 0px 0px 24px rgba(22, 101, 52, 0.3);
   --shadow-glow-gold: 0px 0px 28px rgba(255, 215, 0, 0.3);
 
   /* Typography */
@@ -190,10 +190,10 @@ body {
 @keyframes glow-pulse {
   0%,
   100% {
-    box-shadow: 0 0 20px rgba(52, 199, 89, 0.15);
+    box-shadow: 0 0 20px rgba(22, 101, 52, 0.15);
   }
   50% {
-    box-shadow: 0 0 40px rgba(52, 199, 89, 0.35);
+    box-shadow: 0 0 40px rgba(22, 101, 52, 0.35);
   }
 }
 
