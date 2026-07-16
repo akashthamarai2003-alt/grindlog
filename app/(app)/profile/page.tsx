@@ -13,7 +13,9 @@ import {
   ChevronRight,
   Moon,
   Sun,
-  Edit2
+  Edit2,
+  Sparkles,
+  Award
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { useUIStore } from "@/store/ui-store";
@@ -29,6 +31,7 @@ interface SettingItem {
   hasChevron?: boolean;
   danger?: boolean;
   action?: string;
+  highlight?: boolean;
 }
 
 const settingsGroups: { items: SettingItem[] }[] = [
@@ -42,12 +45,12 @@ const settingsGroups: { items: SettingItem[] }[] = [
   {
     items: [
       { icon: Download, label: "Export Data", hasChevron: true },
-      { icon: Star, label: "Premium", hasValue: true, value: "Free", action: "premium" },
+      { icon: Star, label: "GrindLog Premium", hasValue: true, value: "Free", action: "premium", highlight: true },
     ],
   },
   {
     items: [
-      { icon: Settings, label: "About", hasChevron: true },
+      { icon: Settings, label: "About & Support", hasChevron: true },
       { icon: Trash2, label: "Delete Account", danger: true },
     ],
   },
@@ -57,126 +60,185 @@ export default function ProfilePage() {
   const { theme, toggleTheme } = useUIStore();
   const { user } = useAuth();
 
+  const xp = user?.xp || 0;
+  const level = user?.level || 1;
+  const currentLevelXp = xp % 1000;
+  const progressPct = Math.round((currentLevelXp / 1000) * 100);
+
   return (
-    <div className="flex flex-col gap-5 px-5 pb-40 pt-4 safe-top">
+    <div className="relative flex flex-col gap-6 px-5 pb-40 pt-6 safe-top min-h-dvh overflow-hidden bg-[var(--color-bg-primary)]">
+      
+      {/* Dynamic Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-[300px] overflow-hidden pointer-events-none">
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-20 -right-20 w-64 h-64 bg-[var(--color-accent-green)]/20 blur-[60px] rounded-full" 
+        />
+        <motion.div 
+          animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute top-20 -left-10 w-48 h-48 bg-[#007AFF]/15 blur-[50px] rounded-full" 
+        />
+      </div>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={springs.default}
+        className="relative z-10 flex items-center justify-between"
       >
-        <h1 className="text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
+        <h1 className="text-3xl font-black tracking-tight text-[var(--color-text-primary)]">
           Profile
         </h1>
+        <Link href="/profile/edit">
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] shadow-sm hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+          >
+            <Edit2 className="h-4.5 w-4.5" />
+          </motion.button>
+        </Link>
       </motion.div>
 
-      {/* Profile Card */}
+      {/* Premium Profile Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...springs.default, delay: 0.1 }}
-        className="flex items-center gap-4 rounded-2xl bg-[var(--color-bg-secondary)] p-5 relative"
+        className="relative z-10 overflow-hidden rounded-[28px] bg-[var(--color-bg-elevated)] p-6 shadow-xl ring-1 ring-[var(--color-bg-tertiary)]/50"
       >
-        <Link 
-          href="/profile/edit" 
-          className="absolute right-4 top-4 rounded-full p-2 text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
-        >
-          <Edit2 className="h-4 w-4" />
-        </Link>
-        <div 
-          className={cn(
-            "flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-accent-green-light)] to-[var(--color-accent-green)] text-2xl shadow-lg shadow-[var(--color-accent-green)]/20",
-            user?.equipped_frame && user.equipped_frame !== "none" ? `frame-${user.equipped_frame.replace('_frame', '')}` : ""
-          )}
-        >
-          {user?.avatar_url ? (
-            <img src={user.avatar_url} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
-          ) : (
-            "👤"
-          )}
+        <div className="flex items-center gap-5">
+          <div 
+            className={cn(
+              "relative flex h-20 w-20 shrink-0 items-center justify-center rounded-[20px] bg-gradient-to-br from-[var(--color-accent-green-light)] to-[var(--color-accent-green)] text-3xl shadow-lg shadow-[var(--color-accent-green)]/25 ring-4 ring-[var(--color-bg-primary)] z-10",
+              user?.equipped_frame && user.equipped_frame !== "none" ? `frame-${user.equipped_frame.replace('_frame', '')}` : ""
+            )}
+          >
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="Avatar" className="h-full w-full rounded-[20px] object-cover" />
+            ) : (
+              "👤"
+            )}
+            
+            {/* Level Badge Overlay */}
+            <div className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#FFD700] text-[10px] font-black text-[#8B6508] ring-2 ring-[var(--color-bg-elevated)] shadow-sm">
+              {level}
+            </div>
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <h3 className="truncate text-xl font-black text-[var(--color-text-primary)]">
+              {user?.display_name || "User"}
+            </h3>
+            <p className="truncate text-sm font-medium text-[var(--color-text-tertiary)]">
+              {user?.email || ""}
+            </p>
+            <div className="mt-2.5 flex items-center gap-2">
+              <span className="flex items-center gap-1 rounded-full bg-[var(--color-accent-green)]/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--color-accent-green)]">
+                <Award className="h-3 w-3" />
+                Gardener
+              </span>
+              {user?.is_premium && (
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FF9500]/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#d48806] ring-1 ring-[#FFD700]/30">
+                  <Sparkles className="h-3 w-3" />
+                  Premium
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex-1 pr-6">
-          <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
-            {user?.display_name || "User"}
-          </h3>
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            {user?.email || ""}
-          </p>
-          <div className="mt-1.5 flex items-center gap-2">
-            <span className="rounded-full bg-[var(--color-accent-green)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-accent-green)]">
-              Level {user?.level || 1} Gardener
-            </span>
-            <span className="rounded-full bg-[var(--color-xp)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-xp)]">
-              {user?.is_premium ? "Premium" : "Free"}
-            </span>
+
+        {/* XP Progress Bar */}
+        <div className="mt-6 flex flex-col gap-2 rounded-2xl bg-[var(--color-bg-secondary)] p-3.5">
+          <div className="flex items-center justify-between px-1 text-xs font-bold">
+            <span className="text-[var(--color-text-secondary)]">Level {level}</span>
+            <span className="text-[var(--color-text-primary)]">{currentLevelXp} <span className="text-[var(--color-text-tertiary)]">/ 1000 XP</span></span>
+          </div>
+          <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-tertiary)]">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+              className="absolute h-full rounded-full bg-gradient-to-r from-[var(--color-accent-green-light)] to-[var(--color-accent-green)] shadow-[0_0_10px_rgba(52,199,89,0.5)]"
+            />
           </div>
         </div>
       </motion.div>
 
       {/* Settings Groups */}
-      {settingsGroups.map((group, gi) => (
-        <motion.div
-          key={gi}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...springs.default, delay: 0.15 + gi * 0.05 }}
-          className="overflow-hidden rounded-2xl bg-[var(--color-bg-secondary)]"
-        >
-          {group.items.map((item, ii) => (
-            <div key={ii}>
-              {ii > 0 && <div className="mx-4 h-px bg-[var(--color-bg-tertiary)]" />}
-              <button
-                onClick={() => {
-                  if (item.action === "theme") toggleTheme();
-                  else if (item.action === "premium") window.location.href = "/premium";
-                  else alert("This feature is coming soon!");
-                }}
-                className="flex w-full items-center gap-3 px-5 py-3.5 text-left"
-              >
-                <item.icon
-                  className={`h-5 w-5 ${
-                    item.danger
-                      ? "text-[var(--color-error)]"
-                      : "text-[var(--color-text-secondary)]"
-                  }`}
-                />
-                <span
-                  className={`flex-1 text-sm font-medium ${
-                    item.danger
-                      ? "text-[var(--color-error)]"
-                      : "text-[var(--color-text-primary)]"
-                  }`}
+      <div className="relative z-10 flex flex-col gap-4 mt-2">
+        {settingsGroups.map((group, gi) => (
+          <motion.div
+            key={gi}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springs.default, delay: 0.15 + gi * 0.05 }}
+            className="overflow-hidden rounded-[24px] bg-[var(--color-bg-secondary)] shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50"
+          >
+            {group.items.map((item, ii) => (
+              <div key={ii}>
+                {ii > 0 && <div className="mx-5 h-px bg-[var(--color-bg-tertiary)]/60" />}
+                <button
+                  onClick={() => {
+                    if (item.action === "theme") toggleTheme();
+                    else if (item.action === "premium") window.location.href = "/premium";
+                    else alert("This feature is coming soon!");
+                  }}
+                  className="group relative flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]/30 active:bg-[var(--color-bg-tertiary)]/50"
                 >
-                  {item.label}
-                </span>
-                {item.toggle && (
-                  <div
-                    className={`h-6 w-11 rounded-full p-0.5 transition-colors ${
-                      theme === "dark"
-                        ? "bg-[var(--color-accent-green)]"
-                        : "bg-[var(--color-bg-tertiary)]"
-                    }`}
-                  >
-                    <motion.div
-                      className="h-5 w-5 rounded-full bg-white shadow-sm"
-                      animate={{ x: theme === "dark" ? 20 : 0 }}
-                      transition={springs.snappy}
+                  <div className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
+                    item.danger ? "bg-red-500/10" : item.highlight ? "bg-[#FFD700]/15" : "bg-[var(--color-bg-tertiary)]"
+                  )}>
+                    <item.icon
+                      className={cn(
+                        "h-4.5 w-4.5 transition-transform group-active:scale-90",
+                        item.danger ? "text-red-500" : item.highlight ? "text-[#d48806] fill-[#d48806]/20" : "text-[var(--color-text-secondary)]"
+                      )}
                     />
                   </div>
-                )}
-                {item.hasValue && (
-                  <span className="text-sm text-[var(--color-text-tertiary)]">
-                    {item.value}
+                  
+                  <span
+                    className={cn(
+                      "flex-1 text-[15px] font-bold tracking-tight",
+                      item.danger ? "text-red-500" : item.highlight ? "text-[#d48806]" : "text-[var(--color-text-primary)]"
+                    )}
+                  >
+                    {item.label}
                   </span>
-                )}
-                {item.hasChevron && (
-                  <ChevronRight className="h-4 w-4 text-[var(--color-text-tertiary)]" />
-                )}
-              </button>
-            </div>
-          ))}
-        </motion.div>
-      ))}
+
+                  {item.toggle && (
+                    <div
+                      className={cn(
+                        "flex h-[26px] w-[46px] items-center rounded-full p-1 transition-colors duration-300",
+                        theme === "dark" ? "bg-[var(--color-accent-green)]" : "bg-[var(--color-text-tertiary)]/30"
+                      )}
+                    >
+                      <motion.div
+                        className="h-4.5 w-4.5 rounded-full bg-white shadow-sm"
+                        animate={{ x: theme === "dark" ? 20 : 0 }}
+                        transition={springs.snappy}
+                      />
+                    </div>
+                  )}
+
+                  {item.hasValue && !item.toggle && (
+                    <span className="text-[13px] font-bold text-[var(--color-text-tertiary)]">
+                      {item.value}
+                    </span>
+                  )}
+
+                  {item.hasChevron && (
+                    <ChevronRight className="h-5 w-5 text-[var(--color-text-tertiary)] transition-transform group-active:translate-x-1" strokeWidth={2.5} />
+                  )}
+                </button>
+              </div>
+            ))}
+          </motion.div>
+        ))}
+      </div>
 
       {/* Sign Out */}
       <motion.button
@@ -189,12 +251,13 @@ export default function ProfilePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-error)]/20 py-3.5 text-sm font-semibold text-[var(--color-error)] w-full"
+        className="relative z-10 mt-2 flex items-center justify-center gap-2 rounded-[24px] bg-red-500/10 py-4 text-[15px] font-black tracking-tight text-red-500 transition-all hover:bg-red-500/15 active:scale-[0.98]"
       >
-        <LogOut className="h-4 w-4" />
+        <LogOut className="h-5 w-5" strokeWidth={2.5} />
         Sign Out
       </motion.button>
 
     </div>
   );
 }
+
