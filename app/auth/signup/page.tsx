@@ -160,8 +160,10 @@ export default function SignUpPage() {
         <p className="mt-6 text-center text-xs text-white/70">
           By signing up, you agree to our{" "}
           <Link href="/terms" className="underline hover:text-white">Terms</Link>
-          {" "}and{" "}
-          <Link href="/privacy" className="underline hover:text-white">Privacy Policy</Link>.
+          {", "}
+          <Link href="/privacy" className="underline hover:text-white">Privacy Policy</Link>
+          {", and "}
+          <Link href="/refund" className="underline hover:text-white">Refund Policy</Link>.
         </p>
 
         <div className="mt-6 text-center">
