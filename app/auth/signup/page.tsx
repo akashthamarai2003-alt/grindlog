@@ -170,11 +170,11 @@ export default function SignUpPage() {
           </div>
           <label htmlFor="terms" className="text-xs leading-relaxed text-white/80">
             By signing up, you agree to our{" "}
-            <Link href="/terms" target="_blank" className="font-bold underline hover:text-white transition-colors">Terms</Link>
+            <a href="/GrindLog_Legal.pdf" target="_blank" rel="noopener noreferrer" className="font-bold underline hover:text-white transition-colors">Terms</a>
             {", "}
-            <Link href="/privacy" target="_blank" className="font-bold underline hover:text-white transition-colors">Privacy Policy</Link>
+            <a href="/GrindLog_Legal.pdf" target="_blank" rel="noopener noreferrer" className="font-bold underline hover:text-white transition-colors">Privacy Policy</a>
             {", and "}
-            <Link href="/refund" target="_blank" className="font-bold underline hover:text-white transition-colors">Refund Policy</Link>.
+            <a href="/GrindLog_Legal.pdf" target="_blank" rel="noopener noreferrer" className="font-bold underline hover:text-white transition-colors">Refund Policy</a>.
           </label>
         </div>
 
