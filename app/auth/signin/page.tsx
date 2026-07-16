@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Eye, EyeOff, Check } from "lucide-react";
-import bgImage from "../../../public/login-page.jpg";
+import bgImage from "../../../public/login-page.png";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function SignInPage() {
