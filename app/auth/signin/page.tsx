@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Eye, EyeOff, Check } from "lucide-react";
+import bgImage from "../../../public/login-page.jpg";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function SignInPage() {
@@ -33,7 +34,7 @@ export default function SignInPage() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center relative px-4 overflow-hidden">
       <Image 
-        src="/login-page.jpg"
+        src={bgImage}
         alt="Background Landscape"
         fill
         className="object-cover object-center z-0"
