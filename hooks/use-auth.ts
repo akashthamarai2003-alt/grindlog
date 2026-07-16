@@ -48,7 +48,7 @@ export function useAuth() {
       password,
     });
     if (err) setError(err.message);
-    return !err;
+    return { success: !err, error: err?.message };
   };
 
   const signUp = async (email: string, password: string, name: string) => {
@@ -59,7 +59,7 @@ export function useAuth() {
       options: { data: { name } },
     });
     if (err) setError(err.message);
-    return !err;
+    return { success: !err, error: err?.message };
   };
 
   const signInWithGoogle = async () => {
@@ -80,7 +80,7 @@ export function useAuth() {
       redirectTo: `${location.origin}/auth/reset-password`,
     });
     if (err) setError(err.message);
-    return !err;
+    return { success: !err, error: err?.message };
   };
 
   return {

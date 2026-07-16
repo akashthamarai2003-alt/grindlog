@@ -21,12 +21,12 @@ export default function SignUpPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    const success = await signUp(form.email, form.password, form.name);
+    const result = await signUp(form.email, form.password, form.name);
     setIsLoading(false);
-    if (success) {
+    if (result.success) {
       router.push("/onboarding/ai-plan");
     } else {
-      setError(authError || "Failed to create account");
+      setError(result.error || "Failed to create account");
     }
   };
 

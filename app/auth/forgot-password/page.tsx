@@ -20,13 +20,13 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     setError(null);
     
-    const success = await resetPassword(email);
+    const result = await resetPassword(email);
     setIsLoading(false);
     
-    if (success) {
+    if (result.success) {
       setIsSuccess(true);
     } else {
-      setError(authError || "Failed to send reset link");
+      setError(result.error || "Failed to send reset link");
     }
   };
 

@@ -22,12 +22,12 @@ export default function SignInPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    const success = await signIn(form.email, form.password);
+    const result = await signIn(form.email, form.password);
     setIsLoading(false);
-    if (success) {
+    if (result.success) {
       router.push("/dashboard");
     } else {
-      setError(authError || "Invalid username or password");
+      setError(result.error || "Invalid username or password");
     }
   };
 
