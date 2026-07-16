@@ -29,6 +29,10 @@ export function AchievementsClient({ initialAchievements }: { initialAchievement
   
   const achievements = initialAchievements.length > 0 ? initialAchievements : FALLBACK_ACHIEVEMENTS;
   const unlocked = achievements.filter((a) => a.unlocked).length;
+  
+  const filteredAchievements = achievements.filter(
+    (a) => activeCategory === "all" || a.category === activeCategory
+  );
 
   return (
     <div className="flex flex-col gap-5 px-5 pb-8 pt-4 safe-top">
@@ -97,11 +101,20 @@ export function AchievementsClient({ initialAchievements }: { initialAchievement
       </motion.div>
 
       {/* Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {achievements
-          .filter(a => activeCategory === "all" || a.category === activeCategory)
-          .map((achievement, i) => (
-          <motion.div
+      {filteredAchievements.length === 0 ? (
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          className="flex flex-col items-center justify-center p-10 text-center mt-4"
+        >
+          <Trophy className="w-12 h-12 text-[var(--color-text-tertiary)] mb-3 opacity-30" />
+          <p className="text-[var(--color-text-secondary)] font-bold">No achievements yet</p>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Check back later for new challenges in this category!</p>
+        </motion.div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {filteredAchievements.map((achievement, i) => (
+            <motion.div
             key={achievement.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -162,8 +175,9 @@ export function AchievementsClient({ initialAchievements }: { initialAchievement
               </div>
             )}
           </motion.div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="h-4" />
     </div>
