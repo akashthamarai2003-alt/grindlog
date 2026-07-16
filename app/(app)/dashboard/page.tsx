@@ -15,7 +15,8 @@ export default async function DashboardPage() {
   const todayDateStr = new Date().toISOString().split("T")[0];
 
   // Auto-fail any past habits that were missed and sync streaks
-  await syncMissedHabits(todayDateStr);
+  // Temporarily disabled to prevent dashboard blocking
+  // await syncMissedHabits(todayDateStr);
 
   // Run all database fetches in parallel
   const [
