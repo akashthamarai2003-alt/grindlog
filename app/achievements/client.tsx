@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Trophy, Lock, Flame, Target, TreeDeciduous, Sparkles, Crown } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 // Hardcoded fallback if no database achievements are found
 const FALLBACK_ACHIEVEMENTS = [
@@ -24,6 +25,7 @@ const CATEGORIES = [
 
 export function AchievementsClient({ initialAchievements }: { initialAchievements: any[] }) {
   const router = useRouter();
+  const [activeCategory, setActiveCategory] = useState("all");
   
   const achievements = initialAchievements.length > 0 ? initialAchievements : FALLBACK_ACHIEVEMENTS;
   const unlocked = achievements.filter((a) => a.unlocked).length;
@@ -80,9 +82,10 @@ export function AchievementsClient({ initialAchievements }: { initialAchievement
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
             className={cn(
               "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap",
-              cat.id === "all"
+              cat.id === activeCategory
                 ? "bg-[var(--color-accent-green)] text-white"
                 : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
             )}
@@ -95,7 +98,9 @@ export function AchievementsClient({ initialAchievements }: { initialAchievement
 
       {/* Grid */}
       <div className="grid grid-cols-2 gap-3">
-        {achievements.map((achievement, i) => (
+        {achievements
+          .filter(a => activeCategory === "all" || a.category === activeCategory)
+          .map((achievement, i) => (
           <motion.div
             key={achievement.id}
             initial={{ opacity: 0, y: 20 }}
