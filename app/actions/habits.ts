@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { revalidatePath } from "next/cache";
 import { isHabitScheduled } from "@/lib/habit-utils";
 import { HabitFrequency } from "@/types";
+import { updateQuestProgress, checkAndUnlockAchievements } from "./gamification";
 
 
 export async function toggleHabitCompletion(
@@ -62,6 +63,13 @@ export async function toggleHabitCompletion(
         .update({ xp: newXp, coins: newCoins, level: newLevel })
         .eq("id", user.id);
     }
+    
+    // 4. Trigger gamification logic in the background
+    // We don't await these so they don't block the UI response
+    Promise.all([
+      updateQuestProgress(user.id, "habit_completed"),
+      checkAndUnlockAchievements(user.id)
+    ]).catch(console.error);
   } else {
     // Un-check the habit
     // 1. Delete the log
