@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 import { Providers } from "./providers";
+import { createServerSupabase } from "@/lib/services/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -42,11 +43,28 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let equippedTheme = "default";
+  
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("equipped_theme")
+      .eq("id", user.id)
+      .single();
+      
+    if (profile?.equipped_theme) {
+      equippedTheme = profile.equipped_theme;
+    }
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -62,7 +80,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <Providers initialTheme={equippedTheme}>{children}</Providers>
       </body>
     </html>
   );

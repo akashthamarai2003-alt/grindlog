@@ -18,6 +18,7 @@ import {
 import { springs } from "@/animations/springs";
 import { useUIStore } from "@/store/ui-store";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 
 interface SettingItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -82,7 +83,12 @@ export default function ProfilePage() {
         >
           <Edit2 className="h-4 w-4" />
         </Link>
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-accent-green-light)] to-[var(--color-accent-green)] text-2xl shadow-lg shadow-[var(--color-accent-green)]/20">
+        <div 
+          className={cn(
+            "flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-accent-green-light)] to-[var(--color-accent-green)] text-2xl shadow-lg shadow-[var(--color-accent-green)]/20",
+            user?.equipped_frame && user.equipped_frame !== "none" ? `frame-${user.equipped_frame.replace('_frame', '')}` : ""
+          )}
+        >
           {user?.avatar_url ? (
             <img src={user.avatar_url} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
           ) : (

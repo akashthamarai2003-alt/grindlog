@@ -75,6 +75,65 @@
   --color-primary-light: rgba(10, 132, 255, 0.15);
 }
 
+/* Cosmetic Themes */
+.theme-neon {
+  --color-bg-primary: #09090b;
+  --color-bg-secondary: #121214;
+  --color-bg-tertiary: #18181b;
+  --color-bg-elevated: #111113;
+  --color-text-primary: #ecfeff;
+  --color-text-secondary: #a5b4fc;
+  --color-accent-green: #34d399;
+  --color-primary: #818cf8;
+  --color-primary-light: rgba(129, 140, 248, 0.15);
+}
+
+.theme-ocean {
+  --color-bg-primary: #f0f9ff;
+  --color-bg-secondary: #e0f2fe;
+  --color-bg-tertiary: #bae6fd;
+  --color-bg-elevated: #ffffff;
+  --color-text-primary: #082f49;
+  --color-text-secondary: #0369a1;
+  --color-accent-green: #0ea5e9;
+  --color-primary: #0284c7;
+  --color-primary-light: rgba(2, 132, 199, 0.15);
+}
+
+.theme-sunset {
+  --color-bg-primary: #fff7ed;
+  --color-bg-secondary: #ffedd5;
+  --color-bg-tertiary: #fed7aa;
+  --color-bg-elevated: #ffffff;
+  --color-text-primary: #431407;
+  --color-text-secondary: #9a3412;
+  --color-accent-green: #f97316;
+  --color-primary: #ea580c;
+  --color-primary-light: rgba(234, 88, 12, 0.15);
+}
+
+/* Avatar Frames */
+.frame-gold {
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.3);
+  border: 2px solid #ffd700;
+}
+
+.frame-diamond {
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.6), inset 0 0 10px rgba(0, 255, 255, 0.3);
+  border: 2px solid #00ffff;
+}
+
+.frame-fire {
+  box-shadow: 0 0 20px rgba(255, 69, 0, 0.6), inset 0 0 10px rgba(255, 69, 0, 0.3);
+  border: 2px solid #ff4500;
+  animation: glow-pulse-fire 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse-fire {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 69, 0, 0.6), inset 0 0 10px rgba(255, 69, 0, 0.3); }
+  50% { box-shadow: 0 0 35px rgba(255, 69, 0, 0.8), inset 0 0 15px rgba(255, 69, 0, 0.5); }
+}
+
 /* --- Base --- */
 * {
   -webkit-tap-highlight-color: transparent;

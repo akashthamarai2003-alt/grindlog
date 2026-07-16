@@ -27,6 +27,9 @@ export interface Profile {
   evening_reminder: string;
   onboarding_completed: boolean;
   ai_plan_created: boolean;
+  unlocked_items: string[];
+  equipped_theme: string;
+  equipped_frame: string;
 }
 
 export type TreeStage = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;

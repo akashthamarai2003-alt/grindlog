@@ -5,19 +5,25 @@ import { usePathname } from "next/navigation";
 import { useUIStore } from "@/store/ui-store";
 import { cn } from "@/lib/utils";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, initialTheme = "default" }: { children: React.ReactNode, initialTheme?: string }) {
   const theme = useUIStore((s) => s.theme);
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
 
   useEffect(() => {
     const root = document.documentElement;
+    
+    // Clear old theme classes
+    root.classList.remove("theme-neon", "theme-ocean", "theme-sunset", "dark");
+    
     if (theme === "dark") {
       root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
     }
-  }, [theme]);
+    
+    if (initialTheme && initialTheme !== "default") {
+      root.classList.add(`theme-${initialTheme.replace('_theme', '')}`);
+    }
+  }, [theme, initialTheme]);
 
   return (
     <div
