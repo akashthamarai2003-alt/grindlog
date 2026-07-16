@@ -9,6 +9,7 @@ import { Confetti } from "@/components/gamification/confetti";
 import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
 import { isHabitScheduled } from "@/lib/habit-utils";
 import { createClient } from "@/lib/services/supabase/client";
+import { NotificationPrompt } from "@/components/notifications/notification-prompt";
 
 interface Profile {
   display_name: string;
@@ -371,6 +372,9 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           </div>
         </div>
       </div>
+      
+      {/* Notification Prompt (only shows if not enabled) */}
+      <NotificationPrompt />
 
       <div className="h-6" />
 
