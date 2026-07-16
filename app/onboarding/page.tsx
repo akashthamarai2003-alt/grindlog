@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import bgImage from "../../public/onboarding1.png";
+import treeImage from "../../public/tree-transparent.png";
 import {
   Sprout,
   Dumbbell,
@@ -22,7 +23,7 @@ import { cn } from "@/lib/utils";
 const slides = [
   {
     id: "welcome",
-    image: "/tree.jpg",
+    image: treeImage,
     title: "Grow Into Your\nBest Self",
     description:
       "Every habit is a drop of water. Your tree grows with you, one action at a time.",
