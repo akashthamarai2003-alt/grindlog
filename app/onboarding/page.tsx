@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import bgImage from "../../public/onboarding1.png";
+import bgImage from "../../public/onboarding.png";
 import {
   Sprout,
   Dumbbell,
@@ -154,7 +154,7 @@ export default function OnboardingPage() {
                       }}
                       className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md"
                     >
-                      <Icon className="h-8 w-8 text-[#166534]" />
+                      <Icon className="h-8 w-8 text-[#8eb544]" />
                     </motion.div>
                   ))}
                 </div>
@@ -206,7 +206,7 @@ export default function OnboardingPage() {
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300",
                 i === current
-                  ? "w-6 bg-[#166534]"
+                  ? "w-6 bg-[#8eb544]"
                   : "w-1.5 bg-white/30"
               )}
             />
@@ -217,7 +217,7 @@ export default function OnboardingPage() {
         <motion.button
           whileTap={{ scale: 0.96 }}
           onClick={goNext}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-[#166534] to-[#14532d] text-base font-semibold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 border border-white/20"
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-[#8eb544] to-[#6a8731] text-base font-semibold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 border border-white/20"
         >
           {current === slides.length - 1 ? "Get Started" : "Continue"}
           <ArrowRight className="h-5 w-5" />
