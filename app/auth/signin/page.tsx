@@ -122,17 +122,23 @@ export default function SignInPage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 mt-1">
-            <button
-              type="button"
-              onClick={() => setRememberMe(!rememberMe)}
-              className={`flex h-[18px] w-[18px] items-center justify-center rounded bg-white/30 border ${
-                rememberMe ? "border-transparent" : "border-white/50"
-              } transition-colors`}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <div 
+                className={`flex h-4 w-4 items-center justify-center rounded ${rememberMe ? 'bg-[#8eb544]' : 'border border-white/50 bg-transparent'}`}
+                onClick={() => setRememberMe(!rememberMe)}
+              >
+                {rememberMe && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+              </div>
+              <span className="text-sm font-medium text-white/80 select-none">Remember me</span>
+            </label>
+
+            <Link 
+              href="/auth/forgot-password" 
+              className="text-sm font-bold text-white hover:underline"
             >
-              {rememberMe && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-            </button>
-            <span className="text-sm font-medium text-white">Remember me</span>
+              Forgot password?
+            </Link>
           </div>
 
           <motion.button
