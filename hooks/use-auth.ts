@@ -77,8 +77,15 @@ export function useAuth() {
   const resetPassword = async (email: string) => {
     setError(null);
     const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${location.origin}/auth/reset-password`,
+      redirectTo: `${location.origin}/auth/callback?next=/auth/reset-password`,
     });
+    if (err) setError(err.message);
+    return { success: !err, error: err?.message };
+  };
+
+  const updatePassword = async (password: string) => {
+    setError(null);
+    const { error: err } = await supabase.auth.updateUser({ password });
     if (err) setError(err.message);
     return { success: !err, error: err?.message };
   };
@@ -93,6 +100,7 @@ export function useAuth() {
     signInWithGoogle,
     signOut: signOutUser,
     resetPassword,
+    updatePassword,
     setUser,
   };
 }
