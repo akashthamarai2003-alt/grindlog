@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       type: "recovery",
       email,
       options: {
-        redirectTo: `${new URL(request.url).origin}/auth/callback?next=/auth/reset-password`,
+        redirectTo: `${new URL(request.url).origin}/auth/reset-password`,
       },
     });
 
