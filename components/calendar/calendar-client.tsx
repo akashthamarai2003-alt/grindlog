@@ -725,8 +725,14 @@ function WeeklyChecklist({
                   let icon = null;
 
                   if (!valid) {
-                    borderClass = "border-2 border-[var(--color-bg-tertiary)] opacity-30";
-                  } else if (status === "completed") {
+                    return (
+                      <div key={day.dateStr} className="flex-1 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-tertiary)] opacity-30" />
+                      </div>
+                    );
+                  }
+
+                  if (status === "completed") {
                     bgClass = "bg-[#34C759]";
                     borderClass = "border-[#34C759]";
                     icon = <CheckCircle2 className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
@@ -747,7 +753,9 @@ function WeeklyChecklist({
                       <button
                         onClick={() => {
                           if (!valid || isFuture) return;
-                          const nextStatus = status === "completed" ? null : "completed";
+                          let nextStatus: HabitLog["status"] | null = "completed";
+                          if (status === "completed") nextStatus = "failed";
+                          else if (status === "failed") nextStatus = null;
                           onLogChange(habit.id, day.dateStr, nextStatus);
                         }}
                         disabled={!valid || isFuture}
@@ -813,8 +821,8 @@ function WeeklyChecklist({
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)]">
                 <div className="flex flex-col">
-                  <h2 className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">Weekly Checklist</h2>
-                  <span className="text-sm font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
+                  <h2 className="text-lg font-black text-[var(--color-text-primary)] tracking-tight">Weekly Checklist</h2>
+                  <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
                     {startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
