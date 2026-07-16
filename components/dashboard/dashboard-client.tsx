@@ -161,8 +161,23 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   };
 
   return (
-    <div className="flex flex-col gap-7 px-5 pb-8 pt-4 safe-top bg-[var(--color-bg-primary)]">
-      <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
+    <div className="flex flex-col relative min-h-dvh">
+      {/* Background Image */}
+      <div className="fixed inset-0 z-0">
+        <Image 
+          src="/dashpg.png"
+          alt="Dashboard Background"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        {/* Subtle overlay for text readability based on theme */}
+        <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-[2px]" />
+      </div>
+
+      {/* Main Content Wrapper */}
+      <div className="relative z-10 flex flex-col gap-7 px-5 pb-8 pt-4 safe-top">
+        <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
 
       {/* Header */}
       <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
@@ -406,7 +421,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       <div className="h-6" />
 
-      {/* ── Anti-Cheat Modal ── */}
+      {/* Anti-Cheat Modal */}
       {cheatConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col items-center text-center gap-4 border-2 border-[#FF3B30]/20 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
@@ -439,6 +454,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         </div>
       )}
 
+      </div>
     </div>
   );
 }
