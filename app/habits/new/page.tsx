@@ -335,33 +335,26 @@ export default function NewHabitPage() {
           {FREQUENCIES.map((f, i) => {
             const active = form.frequency === f.value;
             return (
-              <motion.button
+              <button
                 key={f.value}
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.05, type: "spring", stiffness: 400, damping: 28 }}
-                whileTap={{ scale: 0.92 }}
                 onClick={() => set("frequency", f.value)}
                 className={cn(
                   "relative flex flex-col items-center gap-1 rounded-2xl py-3.5 px-2 text-center overflow-hidden",
+                  "transition-all duration-200 active:scale-[0.92] animate-in fade-in slide-in-from-bottom-2 fill-mode-both",
                   active
                     ? "text-white"
                     : "bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] shadow-sm"
                 )}
+                style={{
+                  animationDelay: `${i * 30}ms`,
+                  background: active ? color : undefined,
+                }}
               >
-                {active && (
-                  <motion.div
-                    layoutId={`freqBg-${mode}`}
-                    className="absolute inset-0"
-                    style={{ background: color, borderRadius: 16 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 34 }}
-                  />
-                )}
                 <span className="relative z-10 text-[18px]">{f.icon}</span>
                 <span className="relative z-10 text-[11px] font-bold leading-tight">
                   {f.label}
                 </span>
-              </motion.button>
+              </button>
             );
           })}
         </div>
@@ -422,31 +415,24 @@ export default function NewHabitPage() {
           {TIME_OF_DAY.map((t, i) => {
             const active = form.preferredTime === t.value;
             return (
-              <motion.button
+              <button
                 key={t.value}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06, type: "spring", stiffness: 400, damping: 28 }}
-                whileTap={{ scale: 0.93 }}
                 onClick={() => set("preferredTime", t.value)}
                 className={cn(
                   "relative flex items-center gap-2 rounded-2xl px-4 py-3 text-[13px] font-bold overflow-hidden",
+                  "transition-all duration-200 active:scale-[0.93] animate-in fade-in slide-in-from-left-2 fill-mode-both",
                   active
                     ? "text-white"
                     : "bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] shadow-sm"
                 )}
+                style={{
+                  animationDelay: `${i * 30}ms`,
+                  background: active ? color : undefined,
+                }}
               >
-                {active && (
-                  <motion.div
-                    layoutId={`timeBg-${mode}`}
-                    className="absolute inset-0"
-                    style={{ background: color, borderRadius: 16 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 34 }}
-                  />
-                )}
                 <span className="relative z-10 text-[15px]">{t.emoji}</span>
                 <span className="relative z-10">{t.label}</span>
-              </motion.button>
+              </button>
             );
           })}
         </div>
@@ -702,31 +688,25 @@ export default function NewHabitPage() {
                         const active = form.category === cat.value;
                         const catColor = colorForCategory(cat.value);
                         return (
-                          <motion.button
+                          <button
                             key={cat.value}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.04, type: "spring", stiffness: 400, damping: 30 }}
-                            whileTap={{ scale: 0.93 }}
+                            type="button"
                             onClick={() => set("category", cat.value)}
                             className={cn(
                               "relative flex items-center gap-1.5 rounded-[14px] px-3.5 py-2.5 text-[13px] font-bold overflow-hidden",
+                              "transition-all duration-200 active:scale-[0.93] animate-in fade-in slide-in-from-bottom-2 fill-mode-both",
                               active
                                 ? "text-white"
                                 : "bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] shadow-sm"
                             )}
+                            style={{
+                              animationDelay: `${i * 20}ms`,
+                              background: active ? catColor : undefined,
+                            }}
                           >
-                            {active && (
-                              <motion.div
-                                layoutId="categoryBg"
-                                className="absolute inset-0"
-                                style={{ background: catColor, borderRadius: 14 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 34 }}
-                              />
-                            )}
                             <span className="relative z-10 text-[14px]">{cat.emoji}</span>
                             <span className="relative z-10">{cat.label}</span>
-                          </motion.button>
+                          </button>
                         );
                       })}
                     </div>
