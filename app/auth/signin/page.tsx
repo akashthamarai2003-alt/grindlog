@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { User, Eye, EyeOff, Check } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -30,11 +31,15 @@ export default function SignInPage() {
   };
 
   return (
-    <div 
-      className="flex min-h-dvh flex-col items-center justify-center bg-cover bg-center bg-no-repeat relative px-4"
-      style={{ backgroundImage: "url('/login-page.jpg')" }}
-    >
-      <div className="absolute inset-0 bg-black/10" /> {/* Slight dark overlay for readability */}
+    <div className="flex min-h-dvh flex-col items-center justify-center relative px-4 overflow-hidden">
+      <Image 
+        src="/login-page.jpg"
+        alt="Background Landscape"
+        fill
+        className="object-cover object-center z-0"
+        priority
+      />
+      <div className="absolute inset-0 bg-black/20 z-0" /> {/* Slight dark overlay for readability */}
       
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
