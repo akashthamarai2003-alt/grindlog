@@ -56,6 +56,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [showConfetti, setShowConfetti] = useState(false);
   const [optimisticHabits, setOptimisticHabits] = useState(initialHabits);
   const [optimisticXp, setOptimisticXp] = useState(profile.xp);
+  const [optimisticCoins, setOptimisticCoins] = useState(profile.coins || 0);
   const [quoteIdx, setQuoteIdx] = useState(0);
   const [selectedDateStr, setSelectedDateStr] = useState(todayDateStr);
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
@@ -150,8 +151,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
     if (newStatus) {
       setShowConfetti(true);
       setOptimisticXp(prev => prev + 10);
+      setOptimisticCoins(prev => prev + 5);
     } else {
       setOptimisticXp(prev => Math.max(0, prev - 10)); // Revert if un-checked
+      setOptimisticCoins(prev => Math.max(0, prev - 5));
     }
 
     setOptimisticHabits(prev => 
@@ -165,6 +168,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       // Revert on failure
       setOptimisticHabits(initialHabits);
       setOptimisticXp(profile.xp);
+      setOptimisticCoins(profile.coins || 0);
       console.error(e);
     }
   };
@@ -334,7 +338,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             </h2>
             <Link href="/store" prefetch={true} className="flex items-center gap-1 rounded-full bg-[#FFD60A]/15 px-2.5 py-1 shadow-sm ring-1 ring-[#FFD60A]/30 transition-transform hover:scale-105 active:scale-95 ml-1">
               <CircleDollarSign className="h-3.5 w-3.5 text-[#d48806]" />
-              <span className="text-xs font-black text-[#d48806]">{profile.coins || 0}</span>
+              <span className="text-xs font-black text-[#d48806]">{optimisticCoins}</span>
             </Link>
             <Link href="/habits/new" prefetch={true} className="inline-flex ml-1">
               <button 
