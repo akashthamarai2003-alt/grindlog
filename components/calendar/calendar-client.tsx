@@ -805,7 +805,7 @@ function WeeklyChecklist({
             className="fixed inset-0 z-[100] bg-[var(--color-bg-primary)] flex items-center justify-center overflow-hidden touch-none"
           >
             <div 
-              className="relative flex flex-col w-[100dvh] h-[100dvw] bg-[var(--color-bg-primary)] shadow-2xl"
+              className="relative flex flex-col shrink-0 w-[100dvh] h-[100dvw] bg-[var(--color-bg-primary)] shadow-2xl"
               style={{
                 transform: 'rotate(90deg)',
               }}
