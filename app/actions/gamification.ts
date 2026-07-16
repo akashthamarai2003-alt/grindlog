@@ -171,6 +171,7 @@ export async function checkAndUnlockAchievements(userId: string) {
     weekly_warrior: maxStreak >= 7,
     habit_formed: maxStreak >= 21,
     monthly_master: maxStreak >= 30,
+    year_streak: maxStreak >= 365,
     first_leaf: profile.tree_leaves_count > 0,
     butterfly_effect: profile.tree_butterflies_count > 0,
   };
