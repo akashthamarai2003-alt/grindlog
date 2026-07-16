@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center text-center py-4"
           >
-            <CheckCircle2 className="h-16 w-16 text-[#8eb544] mb-4" />
+            <CheckCircle2 className="h-16 w-16 text-[#166534] mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">Check your email</h3>
             <p className="text-sm text-white/80 mb-6">
               We've sent a password reset link to <br/>
@@ -78,7 +78,7 @@ export default function ForgotPasswordPage() {
             </p>
             <Link 
               href="/auth/signin"
-              className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-b from-[#8eb544] to-[#6a8731] text-lg font-bold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 border border-white/20"
+              className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] text-lg font-bold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 border border-white/20"
             >
               Back to Login
             </Link>
@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
               type="submit"
               whileTap={{ scale: 0.96 }}
               disabled={isLoading || !email}
-              className="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-b from-[#8eb544] to-[#6a8731] text-lg font-bold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 disabled:opacity-50 border border-white/20"
+              className="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-b from-[#166534] to-[#14532d] text-lg font-bold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 disabled:opacity-50 border border-white/20"
             >
               {isLoading ? (
                 <motion.div
