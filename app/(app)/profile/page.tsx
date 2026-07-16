@@ -15,7 +15,9 @@ import {
   Sun,
   Edit2,
   Sparkles,
-  Award
+  Award,
+  FileText,
+  RefreshCcw
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { useUIStore } from "@/store/ui-store";
@@ -39,7 +41,13 @@ const settingsGroups: { items: SettingItem[] }[] = [
     items: [
       { icon: Moon, label: "Dark Theme", toggle: true, action: "theme" },
       { icon: Bell, label: "Notifications", hasValue: true, value: "On" },
-      { icon: Shield, label: "Privacy", hasChevron: true },
+      { icon: Shield, label: "Privacy Policy", hasChevron: true, action: "privacy" },
+    ],
+  },
+  {
+    items: [
+      { icon: FileText, label: "Terms & Conditions", hasChevron: true, action: "terms" },
+      { icon: RefreshCcw, label: "Refund Policy", hasChevron: true, action: "refund" },
     ],
   },
   {
@@ -184,6 +192,9 @@ export default function ProfilePage() {
                   onClick={() => {
                     if (item.action === "theme") toggleTheme();
                     else if (item.action === "premium") window.location.href = "/premium";
+                    else if (item.action === "privacy") window.location.href = "/privacy";
+                    else if (item.action === "terms") window.location.href = "/terms";
+                    else if (item.action === "refund") window.location.href = "/refund";
                     else alert("This feature is coming soon!");
                   }}
                   className="group relative flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]/30 active:bg-[var(--color-bg-tertiary)]/50"
