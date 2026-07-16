@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 const slides = [
   {
     id: "welcome",
-    emoji: "🌳",
+    image: "/tree.jpg",
     title: "Grow Into Your\nBest Self",
     description:
       "Every habit is a drop of water. Your tree grows with you, one action at a time.",
@@ -138,6 +138,20 @@ export default function OnboardingPage() {
                   }}
                 >
                   {slide.emoji}
+                </motion.div>
+              )}
+
+              {slide.image && (
+                <motion.div
+                  animate={{ y: [0, -12, 0] }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="relative h-40 w-40 overflow-hidden rounded-3xl border-4 border-white/20 shadow-2xl"
+                >
+                  <Image src={slide.image} alt="Tree" fill className="object-cover" />
                 </motion.div>
               )}
 
