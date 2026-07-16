@@ -82,28 +82,25 @@ const STATUS_META = {
     icon: CheckCircle2,
     label: "Done",
     color: "#34C759",
-    darkColor: "#30D158",
     bg: "bg-[#34C759]/15",
-    ring: "ring-[#34C759]/50",
-    glow: "shadow-[0_0_12px_rgba(52,199,89,0.4)]",
+    border: "border-[#34C759]",
+    glow: "shadow-md shadow-[#34C759]/30",
   },
   skipped: {
     icon: MinusCircle,
     label: "Skip",
     color: "#FF9500",
-    darkColor: "#FF9F0A",
     bg: "bg-[#FF9500]/15",
-    ring: "ring-[#FF9500]/50",
-    glow: "shadow-[0_0_12px_rgba(255,149,0,0.4)]",
+    border: "border-[#FF9500]",
+    glow: "shadow-md shadow-[#FF9500]/30",
   },
   failed: {
     icon: XCircle,
     label: "Miss",
     color: "#FF3B30",
-    darkColor: "#FF453A",
     bg: "bg-[#FF3B30]/15",
-    ring: "ring-[#FF3B30]/50",
-    glow: "shadow-[0_0_12px_rgba(255,59,48,0.4)]",
+    border: "border-[#FF3B30]",
+    glow: "shadow-md shadow-[#FF3B30]/30",
   },
 } as const;
 
@@ -286,18 +283,15 @@ type HabitRowProps = {
 function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: HabitRowProps) {
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 animate-in fade-in slide-in-from-left-4 duration-300 fill-mode-both"
+      className="flex items-center gap-3.5 px-4 py-3.5 animate-in fade-in slide-in-from-left-4 duration-300 fill-mode-both"
       style={{ animationDelay: `${50 + idx * 50}ms` }}
     >
       {/* Emoji bubble */}
       <div
-        className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl flex-shrink-0 border transition-transform duration-200 active:scale-[0.88] active:-rotate-6"
+        className="w-[46px] h-[46px] rounded-[16px] flex items-center justify-center text-[22px] flex-shrink-0 shadow-sm"
         style={{
-          backgroundColor: `${habit.color}22`,
-          borderColor: `${habit.color}44`,
-          boxShadow: status === "completed"
-            ? `0 0 0 2px ${habit.color}55`
-            : "none",
+          backgroundColor: `${habit.color}25`,
+          color: habit.color,
         }}
       >
         {habit.emoji}
@@ -338,7 +332,7 @@ function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: Habit
 
       {/* Action buttons or lock */}
       {isEditable ? (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {(["completed", "skipped", "failed"] as const).map((s) => {
             const meta = STATUS_META[s];
             const Icon = meta.icon;
@@ -351,22 +345,22 @@ function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: Habit
                 onClick={() => onToggle(isActive ? null : s)}
                 title={meta.label}
                 className={cn(
-                  "w-8 h-8 rounded-[10px] flex items-center justify-center",
-                  "transition-all duration-200 ring-1 active:scale-90",
+                  "w-[38px] h-[38px] rounded-[14px] flex items-center justify-center border-2",
+                  "transition-transform duration-200 active:scale-90",
                   isActive
-                    ? `${meta.bg} ${meta.ring} ${meta.glow}`
-                    : "bg-[var(--color-bg-tertiary)] ring-transparent",
+                    ? `${meta.bg} ${meta.border} ${meta.glow} scale-[1.03]`
+                    : "bg-[var(--color-bg-secondary)] border-transparent hover:bg-[var(--color-bg-tertiary)]",
                   isPending && "opacity-40 cursor-not-allowed",
                 )}
               >
                 <div
                   className={cn(
-                    "transition-transform duration-300",
-                    isActive ? "scale-110" : "scale-100"
+                    "transition-transform duration-200",
+                    isActive ? "scale-105" : "scale-100"
                   )}
                 >
                   <Icon
-                    className="h-[15px] w-[15px] transition-colors duration-200"
+                    className="h-5 w-5 transition-colors duration-200"
                     style={{ color: isActive ? meta.color : "var(--color-text-tertiary)" }}
                   />
                 </div>
