@@ -38,9 +38,8 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
   }, [habit.targetCount, habit.targetUnit, habit.reminderTime, habit.preferredTime]);
 
   return (
-    <motion.div
-      whileTap={{ scale: 0.98 }}
-      className="group relative flex items-center justify-between overflow-hidden rounded-[20px] bg-[var(--color-bg-elevated)] p-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-all hover:shadow-md"
+    <div
+      className="group relative flex items-center justify-between overflow-hidden rounded-[20px] bg-[var(--color-bg-elevated)] p-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-all hover:shadow-md active:scale-[0.98]"
     >
       {/* Left Color Accent Strip */}
       <div 
@@ -113,16 +112,17 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
               : "border-2 border-[var(--color-bg-tertiary)] bg-transparent text-transparent hover:border-[var(--color-text-tertiary)]"
           )}
         >
-          <motion.div
-            initial={false}
-            animate={{ scale: habit.isCompleted ? 1 : 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          <div
+            className={cn(
+              "transition-transform duration-300 ease-out",
+              habit.isCompleted ? "scale-100" : "scale-0"
+            )}
           >
             <Check className="h-5 w-5" strokeWidth={3} />
-          </motion.div>
+          </div>
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

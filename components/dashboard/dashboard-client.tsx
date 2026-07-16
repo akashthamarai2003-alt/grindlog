@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import Image from "next/image";
 import { Bell, Quote, Trophy, Flame, Plus, Sparkles } from "lucide-react";
-import { staggerContainer, staggerItem } from "@/animations/springs";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
 import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
@@ -162,7 +160,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
 
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
         <div>
           <p className="text-sm font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">
             Good Morning,
@@ -189,14 +187,11 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             </div>
           </Link>
         </div>
-      </motion.div>
+      </div>
 
       {/* Hero Card */}
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }} 
-        animate={{ opacity: 1, scale: 1 }} 
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="relative overflow-hidden rounded-[28px] bg-[var(--color-bg-elevated)] p-6 shadow-xl ring-1 ring-[var(--color-bg-tertiary)]/50"
+      <div 
+        className="relative overflow-hidden rounded-[28px] bg-[var(--color-bg-elevated)] p-6 shadow-xl ring-1 ring-[var(--color-bg-tertiary)]/50 animate-in fade-in zoom-in-95 duration-500"
       >
         {/* Subtle background glow effect */}
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[var(--color-accent-green)]/10 blur-3xl" />
@@ -251,7 +246,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             <span>{nextLevelTotalXp.toLocaleString()} XP</span>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Mini Week Calendar Strip */}
       <div className="flex justify-between rounded-[20px] bg-[var(--color-bg-elevated)] p-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50">
@@ -281,27 +276,19 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       </div>
 
       {/* Perfect Day Banner */}
-      <AnimatePresence>
-        {isPerfectDay && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, scale: 0.9 }}
-            animate={{ opacity: 1, height: "auto", scale: 1 }}
-            exit={{ opacity: 0, height: 0, scale: 0.9 }}
-            className="flex items-center justify-center gap-2 rounded-[20px] bg-gradient-to-r from-[#FFD700]/20 via-[#FF9500]/20 to-[#FFD700]/20 py-3 text-sm font-extrabold text-[#d48806] ring-1 ring-[#FFD700]/30 shadow-sm"
+      {isPerfectDay && (
+          <div
+            className="flex items-center justify-center gap-2 rounded-[20px] bg-gradient-to-r from-[#FFD700]/20 via-[#FF9500]/20 to-[#FFD700]/20 py-3 text-sm font-extrabold text-[#d48806] ring-1 ring-[#FFD700]/30 shadow-sm animate-in fade-in zoom-in-95 duration-300"
           >
             <Trophy className="h-4 w-4" />
             Perfect Day Achieved!
             <Trophy className="h-4 w-4" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
 
       {/* Today's Habits */}
-      <motion.div
-        variants={staggerContainer}
-        initial="initial"
-        animate="animate"
-        className={`flex flex-col gap-4 transition-opacity duration-300 ${isFetchingLogs ? "opacity-50 pointer-events-none" : "opacity-100"}`}
+      <div
+        className={`flex flex-col gap-4 transition-opacity duration-300 ${isFetchingLogs ? "opacity-50 pointer-events-none" : "opacity-100"} animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both`}
       >
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
@@ -334,7 +321,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           ) : (
             <>
               {visibleHabits.map((habit) => (
-                <motion.div key={habit.id} variants={staggerItem}>
+                <div key={habit.id}>
                   <HabitCard 
                     habit={habit} 
                     onComplete={() => {
@@ -345,9 +332,9 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                       handleHabitComplete(habit.id, habit.isCompleted, habit.currentStreak);
                     }} 
                   />
-                </motion.div>
+                </div>
               ))}
-              <motion.div variants={staggerItem}>
+              <div>
                 <Link 
                   href="/habits/new" 
                   className="group relative overflow-hidden flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#34C759]/40 py-4 text-sm font-bold text-[#34C759] transition-all hover:border-[#34C759] hover:bg-[#34C759]/10 bg-[var(--color-bg-elevated)]"
@@ -360,18 +347,15 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                   </span>
                   <Sparkles className="h-5 w-5 text-[#34C759] fill-[#34C759] animate-pulse drop-shadow-[0_0_8px_rgba(52,199,89,0.6)]" style={{ animationDelay: '300ms' }} />
                 </Link>
-              </motion.div>
+              </div>
             </>
           )}
         </div>
-      </motion.div>
+      </div>
 
       {/* Today's Quote */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="flex flex-col gap-3"
+      <div 
+        className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both"
       >
         <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)] px-1">Inspiration</h2>
         <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#007AFF] to-[#5856D6] p-6 shadow-lg">
@@ -386,57 +370,42 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       <div className="h-6" />
 
       {/* ── Anti-Cheat Modal ── */}
-      <AnimatePresence>
-        {cheatConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col items-center text-center gap-4 border-2 border-[#FF3B30]/20"
-            >
-              <div className="w-14 h-14 rounded-full bg-[#FF3B30]/10 flex items-center justify-center mb-1">
-                <span className="text-3xl">🛑</span>
-              </div>
-              <h2 className="text-lg font-black text-[var(--color-text-primary)] tracking-tight">Don't cheat yourself!</h2>
-              <p className="text-[13px] font-bold text-[var(--color-text-secondary)] leading-relaxed">
-                If you really completed this habit on this day, then only check in. Did you actually do it?
-              </p>
-              
-              <div className="flex gap-2 w-full mt-3">
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCheatConfirm(null)}
-                  className="flex-1 py-3.5 rounded-[18px] font-black text-[13px] uppercase tracking-wide bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)]"
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    handleHabitComplete(cheatConfirm.habitId, cheatConfirm.currentCompletedStatus, cheatConfirm.streak);
-                    setCheatConfirm(null);
-                  }}
-                  className="flex-1 py-3.5 rounded-[18px] font-black text-[13px] uppercase tracking-wide bg-[#34C759] text-white shadow-[0_0_20px_rgba(52,199,89,0.4)]"
-                >
-                  Yes, I did it
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {cheatConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col items-center text-center gap-4 border-2 border-[#FF3B30]/20 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className="w-14 h-14 rounded-full bg-[#FF3B30]/10 flex items-center justify-center mb-1">
+              <span className="text-3xl">🛑</span>
+            </div>
+            <h2 className="text-lg font-black text-[var(--color-text-primary)] tracking-tight">Don't cheat yourself!</h2>
+            <p className="text-[13px] font-bold text-[var(--color-text-secondary)] leading-relaxed">
+              If you really completed this habit on this day, then only check in. Did you actually do it?
+            </p>
+            
+            <div className="flex gap-2 w-full mt-3">
+              <button
+                onClick={() => setCheatConfirm(null)}
+                className="flex-1 py-3.5 rounded-[18px] font-black text-[13px] uppercase tracking-wide bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] active:scale-95 transition-transform"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleHabitComplete(cheatConfirm.habitId, cheatConfirm.currentCompletedStatus, cheatConfirm.streak);
+                  setCheatConfirm(null);
+                }}
+                className="flex-1 py-3.5 rounded-[18px] font-black text-[13px] uppercase tracking-wide bg-[#34C759] text-white shadow-[0_0_20px_rgba(52,199,89,0.4)] active:scale-95 transition-transform"
+              >
+                Yes, I did it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
