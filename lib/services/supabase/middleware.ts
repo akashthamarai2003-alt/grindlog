@@ -68,7 +68,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath && pathname !== "/onboarding/ai-plan") {
+  if (user && isPublicPath && pathname !== "/onboarding/ai-plan" && pathname !== "/auth/reset-password") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
