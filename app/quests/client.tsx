@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Target, Calendar, CalendarDays, Coins, Sparkles } from "lucide-react";
+import { ChevronLeft, Target, Calendar, CalendarDays, CircleDollarSign, Sparkles } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -137,7 +137,7 @@ export function QuestsClient({ initialQuests }: { initialQuests: any[] }) {
                   +{quest.xp_reward} XP
                 </div>
                 <div className="flex items-center gap-1 text-[var(--color-text-secondary)] text-xs font-bold bg-[var(--color-bg-secondary)] px-2 py-1 rounded-md">
-                  <Coins className="w-3 h-3 text-[#FFD60A]" />
+                  <CircleDollarSign className="w-3 h-3 text-[#FFD60A]" />
                   +{quest.coins_reward} Coins
                 </div>
               </div>

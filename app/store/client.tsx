@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Coins, Palette, Crown, Check, Lock } from "lucide-react";
+import { ChevronLeft, CircleDollarSign, Palette, Crown, Check, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { purchaseItem, equipItem } from "@/app/actions/store";
 
@@ -119,7 +119,7 @@ export function StoreClient({ coins, unlockedItems, equippedTheme, equippedFrame
           </h1>
         </div>
         <div className="flex items-center gap-2 bg-[var(--color-bg-secondary)] px-3 py-1.5 rounded-full shadow-sm">
-          <Coins className="w-4 h-4 text-[#FFD60A]" />
+          <CircleDollarSign className="w-4 h-4 text-[#FFD60A]" />
           <span className="font-bold text-[var(--color-text-primary)]">{coins}</span>
         </div>
       </div>

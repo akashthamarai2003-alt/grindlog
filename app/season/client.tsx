@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Gift, Lock, Coins, Crown } from "lucide-react";
+import { ChevronLeft, Gift, Lock, CircleDollarSign, Crown } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
@@ -141,7 +141,7 @@ export function SeasonClient({ seasonData, progress }: { seasonData: any; progre
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-sm",
                     isMajor ? "bg-[#FFD60A]/20 text-[#D4AF37]" : "bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]"
                   )}>
-                    <Coins className="w-4 h-4" />
+                    <CircleDollarSign className="w-4 h-4" />
                     {t.rewardCoins} Coins
                   </div>
                 </div>
