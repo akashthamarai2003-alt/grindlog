@@ -12,9 +12,19 @@ export function QuestsClient({ initialQuests }: { initialQuests: any[] }) {
   const [activeTab, setActiveTab] = useState<"daily" | "weekly" | "monthly">("daily");
 
   const dailyQuests = initialQuests.filter(q => q.quest_type === "daily");
+  const weeklyQuests = initialQuests.filter(q => q.quest_type === "weekly");
+  const monthlyQuests = initialQuests.filter(q => q.quest_type === "monthly");
   
-  // For UI demo purposes if missing (since we only generated daily quests right now)
-  const questsToShow = activeTab === "daily" ? dailyQuests : [];
+  const questsToShow = activeTab === "daily" ? dailyQuests : activeTab === "weekly" ? weeklyQuests : monthlyQuests;
+
+  const questDetails: Record<string, { title: string, desc: string }> = {
+    "daily_1_habit": { title: "Warm Up", desc: "Complete 1 habit today" },
+    "daily_3_habits": { title: "Grind Session", desc: "Complete 3 habits today" },
+    "weekly_10_habits": { title: "Weekly Warrior", desc: "Complete 10 habits this week" },
+    "weekly_20_habits": { title: "Consistency is Key", desc: "Complete 20 habits this week" },
+    "monthly_50_habits": { title: "Monthly Master", desc: "Complete 50 habits this month" },
+    "monthly_100_habits": { title: "Unstoppable", desc: "Complete 100 habits this month" },
+  };
 
   return (
     <div className="flex flex-col gap-5 px-5 pb-8 pt-4 safe-top bg-[var(--color-bg-primary)] min-h-dvh">
@@ -73,7 +83,7 @@ export function QuestsClient({ initialQuests }: { initialQuests: any[] }) {
             </div>
             <h3 className="text-[var(--color-text-primary)] font-bold text-lg mb-1">Coming Soon</h3>
             <p className="text-[var(--color-text-secondary)] text-sm px-4">
-              {activeTab === "weekly" ? "Weekly" : "Monthly"} quests will be available in a future update!
+              {activeTab === "daily" ? "Daily" : activeTab === "weekly" ? "Weekly" : "Monthly"} quests are not available yet!
             </p>
           </div>
         ) : (
@@ -88,10 +98,10 @@ export function QuestsClient({ initialQuests }: { initialQuests: any[] }) {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="text-[var(--color-text-primary)] font-bold mb-1">
-                    {quest.quest_key === "daily_1_habit" ? "Warm Up" : "Grind Session"}
+                    {questDetails[quest.quest_key]?.title || "Quest"}
                   </h3>
                   <p className="text-[var(--color-text-secondary)] text-xs font-medium">
-                    {quest.quest_key === "daily_1_habit" ? "Complete 1 habit today" : "Complete 3 habits today"}
+                    {questDetails[quest.quest_key]?.desc || "Complete this quest"}
                   </p>
                 </div>
                 

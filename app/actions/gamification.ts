@@ -23,126 +23,159 @@ export async function getGlobalLeaderboard(limit = 50) {
   return topUsers || [];
 }
 
+
+// ----------------------------------------------------------------------
+// QUEST PERIOD HELPERS
+// ----------------------------------------------------------------------
+function getQuestPeriods() {
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  
+  const currentDay = now.getUTCDay();
+  const diffToMonday = now.getUTCDate() - currentDay + (currentDay === 0 ? -6 : 1);
+  
+  const monday = new Date(now);
+  monday.setUTCDate(diffToMonday);
+  const weekStartStr = monday.toISOString().split("T")[0];
+  
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  const weekEndStr = sunday.toISOString().split("T")[0];
+  const weekKey = `W_${weekStartStr}`;
+  
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const monthStartStr = monthStart.toISOString().split("T")[0];
+  
+  const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
+  const monthEndStr = monthEnd.toISOString().split("T")[0];
+  
+  const monthKey = `M_${now.getUTCFullYear()}_${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+  
+  return { todayStr, weekKey, weekStartStr, weekEndStr, monthKey, monthStartStr, monthEndStr };
+}
+
 // ----------------------------------------------------------------------
 // QUESTS
 // ----------------------------------------------------------------------
-export async function getOrCreateDailyQuests() {
+export async function getOrCreateAllQuests() {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const { todayStr, weekKey, weekStartStr, weekEndStr, monthKey, monthStartStr, monthEndStr } = getQuestPeriods();
 
-  // 1. Check if quests exist for today
-  const { data: existingQuests } = await supabase
+  // 1. Fetch all quests for this user
+  const { data: allQuests } = await supabase
     .from("user_quests")
     .select("*")
     .eq("user_id", user.id)
-    .eq("quest_type", "daily")
-    .eq("date_key", todayStr);
+    .in("date_key", [todayStr, weekKey, monthKey]);
 
-  // 2. Count actual completed habits for today to ensure accurate progress
-  const { count: completedCount } = await supabase
+  // 2. Count actual completed habits for today, this week, this month
+  const { count: dailyCount } = await supabase
     .from("habit_logs")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
     .eq("date", todayStr)
     .eq("status", "completed");
 
-  const actualProgress = completedCount || 0;
+  const { count: weeklyCount } = await supabase
+    .from("habit_logs")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("date", weekStartStr)
+    .lte("date", weekEndStr)
+    .eq("status", "completed");
 
-  if (existingQuests && existingQuests.length > 0) {
-    // Self-heal: ensure progress is accurate for today
-    for (const quest of existingQuests) {
-      const expectedProgress = Math.min(actualProgress, quest.progress_target);
-      const expectedCompleted = expectedProgress >= quest.progress_target;
-      
-      if (quest.progress_current !== expectedProgress || quest.is_completed !== expectedCompleted) {
-        // Sync this quest
+  const { count: monthlyCount } = await supabase
+    .from("habit_logs")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("date", monthStartStr)
+    .lte("date", monthEndStr)
+    .eq("status", "completed");
+
+  const progress = {
+    daily: dailyCount || 0,
+    weekly: weeklyCount || 0,
+    monthly: monthlyCount || 0,
+  };
+
+  const existingQuests = allQuests || [];
+  const existingKeys = new Set(existingQuests.map(q => q.quest_key));
+
+  const questsToInsert: any[] = [];
+  
+  // Define default quests
+  const defaultQuestsTemplate = [
+    { type: "daily", key: "daily_1_habit", target: 1, xp: 20, coins: 10, dateKey: todayStr },
+    { type: "daily", key: "daily_3_habits", target: 3, xp: 50, coins: 25, dateKey: todayStr },
+    { type: "weekly", key: "weekly_10_habits", target: 10, xp: 150, coins: 75, dateKey: weekKey },
+    { type: "weekly", key: "weekly_20_habits", target: 20, xp: 300, coins: 150, dateKey: weekKey },
+    { type: "monthly", key: "monthly_50_habits", target: 50, xp: 1000, coins: 500, dateKey: monthKey },
+    { type: "monthly", key: "monthly_100_habits", target: 100, xp: 2500, coins: 1000, dateKey: monthKey },
+  ];
+
+  let totalXpToAward = 0;
+  let totalCoinsToAward = 0;
+
+  for (const tpl of defaultQuestsTemplate) {
+    const actProg = progress[tpl.type as keyof typeof progress];
+    const expectedProg = Math.min(actProg, tpl.target);
+    const expectedComp = expectedProg >= tpl.target;
+
+    if (!existingKeys.has(tpl.key)) {
+      // Create new quest
+      questsToInsert.push({
+        user_id: user.id,
+        quest_type: tpl.type,
+        quest_key: tpl.key,
+        date_key: tpl.dateKey,
+        progress_current: expectedProg,
+        progress_target: tpl.target,
+        is_completed: expectedComp,
+        xp_reward: tpl.xp,
+        coins_reward: tpl.coins,
+      });
+
+      if (expectedComp) {
+        totalXpToAward += tpl.xp;
+        totalCoinsToAward += tpl.coins;
+      }
+    } else {
+      // Sync existing quest
+      const q = existingQuests.find(q => q.quest_key === tpl.key);
+      if (q && (q.progress_current !== expectedProg || q.is_completed !== expectedComp)) {
         await supabase
           .from("user_quests")
           .update({
-            progress_current: expectedProgress,
-            is_completed: expectedCompleted,
+            progress_current: expectedProg,
+            is_completed: expectedComp,
           })
-          .eq("id", quest.id);
-          
-        // Award XP if it just became completed due to the sync
-        if (!quest.is_completed && expectedCompleted) {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("xp, coins, level")
-              .eq("id", user.id)
-              .single();
-              
-            if (profile) {
-              const newXp = (profile.xp || 0) + quest.xp_reward;
-              const newCoins = (profile.coins || 0) + quest.coins_reward;
-              const newLevel = Math.floor(newXp / 1000) + 1;
+          .eq("id", q.id);
 
-              await supabase
-                .from("profiles")
-                .update({ xp: newXp, coins: newCoins, level: newLevel })
-                .eq("id", user.id);
-            }
+        if (!q.is_completed && expectedComp) {
+          totalXpToAward += tpl.xp;
+          totalCoinsToAward += tpl.coins;
         }
-        
-        // Update local object to reflect the fix
-        quest.progress_current = expectedProgress;
-        quest.is_completed = expectedCompleted;
+
+        q.progress_current = expectedProg;
+        q.is_completed = expectedComp;
       }
     }
-    return existingQuests;
   }
 
-  // Define default daily quests
-  const defaultQuests = [
-    {
-      user_id: user.id,
-      quest_type: "daily",
-      quest_key: "daily_1_habit",
-      date_key: todayStr,
-      progress_current: Math.min(actualProgress, 1),
-      progress_target: 1,
-      is_completed: actualProgress >= 1,
-      xp_reward: 20,
-      coins_reward: 10,
-    },
-    {
-      user_id: user.id,
-      quest_type: "daily",
-      quest_key: "daily_3_habits",
-      date_key: todayStr,
-      progress_current: Math.min(actualProgress, 3),
-      progress_target: 3,
-      is_completed: actualProgress >= 3,
-      xp_reward: 50,
-      coins_reward: 25,
-    },
-  ];
+  let finalQuests = [...existingQuests];
 
-  // Insert them
-  const { data: newQuests, error } = await supabase
-    .from("user_quests")
-    .insert(defaultQuests)
-    .select("*");
-
-  if (error) {
-    console.error("Error creating daily quests:", error);
-    return [];
-  }
-
-  // If the user already met the criteria, award XP/Coins immediately upon creation!
-  let totalXpToAward = 0;
-  let totalCoinsToAward = 0;
-  
-  if (actualProgress >= 1) {
-    totalXpToAward += 20;
-    totalCoinsToAward += 10;
-  }
-  if (actualProgress >= 3) {
-    totalXpToAward += 50;
-    totalCoinsToAward += 25;
+  if (questsToInsert.length > 0) {
+    const { data: insertedQuests } = await supabase
+      .from("user_quests")
+      .insert(questsToInsert)
+      .select("*");
+    
+    if (insertedQuests) {
+      finalQuests = [...finalQuests, ...insertedQuests];
+    }
   }
 
   if (totalXpToAward > 0) {
@@ -164,69 +197,96 @@ export async function getOrCreateDailyQuests() {
     }
   }
 
-  return newQuests || [];
+  return finalQuests;
 }
 
 export async function updateQuestProgress(userId: string, eventType: "habit_completed") {
   const supabase = await createServerSupabase();
-  const todayStr = new Date().toISOString().split("T")[0];
+  const { todayStr, weekKey, weekStartStr, weekEndStr, monthKey, monthStartStr, monthEndStr } = getQuestPeriods();
 
   if (eventType === "habit_completed") {
-    // 1. Fetch ALL daily quests for today (so we can self-heal un-completed ones too)
+    // 1. Fetch ALL active quests for today's periods
     const { data: activeQuests } = await supabase
       .from("user_quests")
       .select("*")
       .eq("user_id", userId)
-      .eq("date_key", todayStr);
+      .in("date_key", [todayStr, weekKey, monthKey]);
 
     if (!activeQuests) return;
 
-    // 2. Count actual completed habits for today
-    const { count: completedCount } = await supabase
+    // 2. Count actual completed habits for all periods
+    const { count: dailyCount } = await supabase
       .from("habit_logs")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("date", todayStr)
       .eq("status", "completed");
 
-    const actualProgress = completedCount || 0;
+    const { count: weeklyCount } = await supabase
+      .from("habit_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("date", weekStartStr)
+      .lte("date", weekEndStr)
+      .eq("status", "completed");
+
+    const { count: monthlyCount } = await supabase
+      .from("habit_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("date", monthStartStr)
+      .lte("date", monthEndStr)
+      .eq("status", "completed");
+
+    const progress = {
+      daily: dailyCount || 0,
+      weekly: weeklyCount || 0,
+      monthly: monthlyCount || 0,
+    };
+
+    let totalXpToAward = 0;
+    let totalCoinsToAward = 0;
 
     for (const quest of activeQuests) {
-      if (quest.quest_key.startsWith("daily_")) {
-        const wasCompleted = quest.is_completed;
-        const newProgress = Math.min(actualProgress, quest.progress_target);
-        const isCompletedNow = newProgress >= quest.progress_target;
+      const actProg = progress[quest.quest_type as keyof typeof progress];
+      if (actProg === undefined) continue;
 
-        // Only update if something changed
-        if (quest.progress_current !== newProgress || wasCompleted !== isCompletedNow) {
-          await supabase
-            .from("user_quests")
-            .update({
-              progress_current: newProgress,
-              is_completed: isCompletedNow,
-            })
-            .eq("id", quest.id);
+      const wasCompleted = quest.is_completed;
+      const newProgress = Math.min(actProg, quest.progress_target);
+      const isCompletedNow = newProgress >= quest.progress_target;
 
-          if (!wasCompleted && isCompletedNow) {
-            // Award XP and Coins!
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("xp, coins, level")
-              .eq("id", userId)
-              .single();
+      if (quest.progress_current !== newProgress || wasCompleted !== isCompletedNow) {
+        await supabase
+          .from("user_quests")
+          .update({
+            progress_current: newProgress,
+            is_completed: isCompletedNow,
+          })
+          .eq("id", quest.id);
 
-            if (profile) {
-              const newXp = (profile.xp || 0) + quest.xp_reward;
-              const newCoins = (profile.coins || 0) + quest.coins_reward;
-              const newLevel = Math.floor(newXp / 1000) + 1;
-
-              await supabase
-                .from("profiles")
-                .update({ xp: newXp, coins: newCoins, level: newLevel })
-                .eq("id", userId);
-            }
-          }
+        if (!wasCompleted && isCompletedNow) {
+          totalXpToAward += quest.xp_reward;
+          totalCoinsToAward += quest.coins_reward;
         }
+      }
+    }
+
+    if (totalXpToAward > 0) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("xp, coins, level")
+        .eq("id", userId)
+        .single();
+
+      if (profile) {
+        const newXp = (profile.xp || 0) + totalXpToAward;
+        const newCoins = (profile.coins || 0) + totalCoinsToAward;
+        const newLevel = Math.floor(newXp / 1000) + 1;
+
+        await supabase
+          .from("profiles")
+          .update({ xp: newXp, coins: newCoins, level: newLevel })
+          .eq("id", userId);
       }
     }
   }

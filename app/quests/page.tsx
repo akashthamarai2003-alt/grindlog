@@ -1,5 +1,5 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { getOrCreateDailyQuests } from "@/app/actions/gamification";
+import { getOrCreateAllQuests } from "@/app/actions/gamification";
 import { redirect } from "next/navigation";
 import { QuestsClient } from "./client";
 
@@ -11,7 +11,7 @@ export default async function QuestsPage() {
     redirect("/auth/signin");
   }
 
-  const dailyQuests = await getOrCreateDailyQuests();
+  const allQuests = await getOrCreateAllQuests();
 
-  return <QuestsClient initialQuests={dailyQuests} />;
+  return <QuestsClient initialQuests={allQuests} />;
 }
