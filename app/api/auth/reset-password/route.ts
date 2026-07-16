@@ -46,12 +46,15 @@ export async function POST(request: Request) {
       subject: "Reset your GrindLog password",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #34C759; margin-bottom: 20px;">Reset Your Password</h2>
-          <p style="font-size: 16px; color: #333; line-height: 1.5;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <img src="https://grindlog-lake.vercel.app/icons/icon-512.png" alt="GrindLog Logo" style="width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+          </div>
+          <h2 style="color: #34C759; margin-bottom: 20px; text-align: center;">Reset Your Password</h2>
+          <p style="font-size: 16px; color: #333; line-height: 1.5; text-align: center;">
             We received a request to reset the password for your GrindLog account.
             If you didn't make this request, you can safely ignore this email.
           </p>
-          <div style="margin: 30px 0;">
+          <div style="margin: 30px 0; text-align: center;">
             <a href="${resetLink}" style="background-color: #34C759; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
               Reset Password
             </a>
