@@ -161,14 +161,12 @@ function DayCell({
 
   return (
     <td role="gridcell" className="p-0 text-center focus-within:relative focus-within:z-20">
-      <motion.button
+      <button
       onClick={onClick}
-      whileTap={{ scale: 0.82 }}
-      transition={{ type: "spring", stiffness: 500, damping: 22 }}
       className={cn(
         "relative flex flex-col items-center justify-start w-full aspect-square",
         "rounded-[14px] pt-1.5 pb-1 select-none outline-none",
-        "transition-all duration-200",
+        "transition-all duration-200 active:scale-[0.82]",
         isOutside && "opacity-20 pointer-events-none",
         isSelected && !isOutside && [
           "bg-[var(--color-primary)]/15",
@@ -198,33 +196,33 @@ function DayCell({
             strokeWidth="2"
           />
           {/* Progress */}
-          <motion.circle
+          <circle
             cx="16" cy="16" r={r}
             fill="none"
             stroke={ringColor}
             strokeWidth="2.5"
             strokeLinecap="round"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: pct, opacity: 1 }}
-            transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1], delay: 0.1 }}
+            style={{
+              strokeDasharray: circ,
+              strokeDashoffset: circ - pct * circ,
+              transition: "stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            }}
           />
         </svg>
       )}
 
       {/* Perfect-day glow backdrop */}
       {isPerfect && !isOutside && (
-        <motion.div
-          className="absolute inset-0 rounded-[14px] bg-[#34C759]/8 pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
+        <div
+          className="absolute inset-0 rounded-[14px] bg-[#34C759]/8 pointer-events-none transition-opacity duration-300"
         />
       )}
 
       {/* Day number */}
-      <motion.span
+      <span
         className={cn(
-          "relative z-10 text-[11px] font-black leading-none",
+          "relative z-10 text-[11px] font-black leading-none transition-transform duration-300",
+          isSelected ? "scale-110" : "scale-100",
           isToday ? "text-[#007AFF]" :
           isSelected ? "text-[var(--color-text-primary)]" :
           isOutside ? "text-[var(--color-text-tertiary)]/40" :
@@ -234,39 +232,27 @@ function DayCell({
           pct === 0 && dayLogs.some(l => l.status === "failed") ? "text-[#D1231B] dark:text-[#FF453A]" :
           "text-[var(--color-text-secondary)]",
         )}
-        animate={isSelected ? { scale: 1.1 } : { scale: 1 }}
-        transition={{ type: "spring", stiffness: 400, damping: 20 }}
       >
         {date.getDate()}
-      </motion.span>
+      </span>
 
       {/* Today dot */}
       {isToday && (
-        <motion.div
-          className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#007AFF]"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 500, damping: 20 }}
-        />
+        <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#007AFF] animate-in zoom-in duration-300" />
       )}
 
       {/* Status dots */}
       {hasLogs && !isToday && !isOutside && (
         <div className="flex gap-[2px] mt-auto mb-0.5">
           {dayLogs.slice(0, 3).map((log, i) => (
-            <motion.div
+            <div
               key={i}
-              className="w-[3px] h-[3px] rounded-full"
+              className="w-[3px] h-[3px] rounded-full animate-in zoom-in duration-300"
               style={{
                 backgroundColor:
                   log.status === "completed" ? "#34C759" :
                   log.status === "skipped"   ? "#FF9500" : "#FF3B30",
-              }}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{
-                type: "spring", stiffness: 600, damping: 20,
-                delay: 0.05 + i * 0.04,
+                animationDelay: `${i * 50}ms`,
               }}
             />
           ))}
@@ -275,16 +261,13 @@ function DayCell({
 
       {/* Perfect ⭐ */}
       {isPerfect && !isOutside && (
-        <motion.span
-          className="absolute -top-1.5 -right-1 text-[9px] z-20 leading-none"
-          initial={{ scale: 0, rotate: -30, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 600, damping: 15, delay: 0.2 }}
+        <span
+          className="absolute -top-1.5 -right-1 text-[9px] z-20 leading-none animate-in zoom-in duration-500"
         >
           ⭐
-        </motion.span>
+        </span>
       )}
-    </motion.button>
+    </button>
     </td>
   );
 }
@@ -302,20 +285,13 @@ type HabitRowProps = {
 
 function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: HabitRowProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -14 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 14 }}
-      transition={{
-        type: "spring", stiffness: 300, damping: 28,
-        delay: 0.05 + idx * 0.055,
-      }}
-      className="flex items-center gap-3 px-4 py-3"
+    <div
+      className="flex items-center gap-3 px-4 py-3 animate-in fade-in slide-in-from-left-4 duration-300 fill-mode-both"
+      style={{ animationDelay: `${50 + idx * 50}ms` }}
     >
       {/* Emoji bubble */}
-      <motion.div
-        whileTap={{ scale: 0.88, rotate: -8 }}
-        className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl flex-shrink-0 border"
+      <div
+        className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl flex-shrink-0 border transition-transform duration-200 active:scale-[0.88] active:-rotate-6"
         style={{
           backgroundColor: `${habit.color}22`,
           borderColor: `${habit.color}44`,
@@ -325,7 +301,7 @@ function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: Habit
         }}
       >
         {habit.emoji}
-      </motion.div>
+      </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
@@ -369,32 +345,32 @@ function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: Habit
             const isActive = status === s;
 
             return (
-              <motion.button
+              <button
                 key={s}
-                whileTap={{ scale: 0.78 }}
-                transition={{ type: "spring", stiffness: 600, damping: 20 }}
                 disabled={isPending}
                 onClick={() => onToggle(isActive ? null : s)}
                 title={meta.label}
                 className={cn(
                   "w-8 h-8 rounded-[10px] flex items-center justify-center",
-                  "transition-all duration-200 ring-1",
+                  "transition-all duration-200 ring-1 active:scale-90",
                   isActive
                     ? `${meta.bg} ${meta.ring} ${meta.glow}`
                     : "bg-[var(--color-bg-tertiary)] ring-transparent",
                   isPending && "opacity-40 cursor-not-allowed",
                 )}
               >
-                <motion.div
-                  animate={isActive ? { scale: [1, 1.3, 1], rotate: [0, -10, 0] } : { scale: 1 }}
-                  transition={{ duration: 0.3 }}
+                <div
+                  className={cn(
+                    "transition-transform duration-300",
+                    isActive ? "scale-110" : "scale-100"
+                  )}
                 >
                   <Icon
-                    className="h-[15px] w-[15px]"
+                    className="h-[15px] w-[15px] transition-colors duration-200"
                     style={{ color: isActive ? meta.color : "var(--color-text-tertiary)" }}
                   />
-                </motion.div>
-              </motion.button>
+                </div>
+              </button>
             );
           })}
         </div>
