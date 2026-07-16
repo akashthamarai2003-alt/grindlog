@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import bgImage from "../../public/onboarding.png";
 import {
   Sprout,
   Dumbbell,
@@ -75,13 +77,24 @@ export default function OnboardingPage() {
   const slide = slides[current];
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--color-bg-primary)] safe-top">
-      {/* Skip */}
+    <div className="flex min-h-dvh flex-col relative px-4 overflow-hidden safe-top">
+      {/* Background Image */}
+      <Image 
+        src={bgImage}
+        alt="Background Landscape"
+        fill
+        className="object-cover object-center z-0"
+        priority
+      />
+      <div className="absolute inset-0 bg-black/40 z-0" /> {/* Dark overlay for text readability */}
+
+      <div className="flex flex-col flex-1 relative z-10">
+        {/* Skip */}
       {current < slides.length - 1 && (
         <div className="flex items-center justify-end px-6 pt-4">
           <button
             onClick={() => router.push("/auth/signup")}
-            className="text-sm font-medium text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
+            className="text-sm font-medium text-white/70 transition-colors hover:text-white"
           >
             Skip
           </button>
@@ -93,9 +106,9 @@ export default function OnboardingPage() {
         <div className="px-4 pt-2">
           <button
             onClick={goBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] transition-colors hover:bg-[var(--color-bg-tertiary)]"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-md transition-colors hover:bg-white/30"
           >
-            <ChevronLeft className="h-5 w-5 text-[var(--color-text-secondary)]" />
+            <ChevronLeft className="h-5 w-5 text-white" />
           </button>
         </div>
       )}
@@ -139,9 +152,9 @@ export default function OnboardingPage() {
                         ...springs.bouncy,
                         delay: i * 0.1,
                       }}
-                      className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--color-bg-secondary)]"
+                      className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md"
                     >
-                      <Icon className="h-8 w-8 text-[var(--color-accent-green)]" />
+                      <Icon className="h-8 w-8 text-[#8eb544]" />
                     </motion.div>
                   ))}
                 </div>
@@ -168,10 +181,10 @@ export default function OnboardingPage() {
 
             {/* Text */}
             <div className="flex flex-col items-center gap-3 text-center">
-              <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-[var(--color-text-primary)] whitespace-pre-line">
+              <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-white whitespace-pre-line drop-shadow-md">
                 {slide.title}
               </h2>
-              <p className="text-base leading-relaxed text-[var(--color-text-secondary)] max-w-sm">
+              <p className="text-base leading-relaxed text-white/90 max-w-sm drop-shadow">
                 {slide.description}
               </p>
             </div>
@@ -193,8 +206,8 @@ export default function OnboardingPage() {
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300",
                 i === current
-                  ? "w-6 bg-[var(--color-accent-green)]"
-                  : "w-1.5 bg-[var(--color-bg-tertiary)]"
+                  ? "w-6 bg-[#8eb544]"
+                  : "w-1.5 bg-white/30"
               )}
             />
           ))}
@@ -204,7 +217,7 @@ export default function OnboardingPage() {
         <motion.button
           whileTap={{ scale: 0.96 }}
           onClick={goNext}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-accent-green)] text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-green)]/25 transition-all hover:brightness-105"
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-[#8eb544] to-[#6a8731] text-base font-semibold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 border border-white/20"
         >
           {current === slides.length - 1 ? "Get Started" : "Continue"}
           <ArrowRight className="h-5 w-5" />
@@ -213,11 +226,13 @@ export default function OnboardingPage() {
         {current === slides.length - 1 && (
           <button
             onClick={() => router.push("/auth/signin")}
-            className="text-sm font-medium text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
+            className="text-sm font-medium text-white/80 transition-colors hover:text-white"
           >
             Already have an account? Sign in
           </button>
         )}
+      </div>
+      
       </div>
     </div>
   );
