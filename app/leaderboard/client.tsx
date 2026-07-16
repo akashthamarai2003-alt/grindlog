@@ -40,11 +40,27 @@ export function LeaderboardClient({ topUsers, currentUserId }: { topUsers: any[]
       {/* Podium */}
       <div className="flex justify-center items-end gap-2 mt-4 mb-6 h-48">
         {podium.map((user, i) => {
-          if (!user) return <div key={i} className="w-24" />;
-          
           const isFirst = i === 1;
           const isSecond = i === 0;
           const isThird = i === 2;
+
+          if (!user) {
+            return (
+              <div key={i} className="flex flex-col items-center opacity-40">
+                <div className={cn(
+                  "rounded-full border-4 flex items-center justify-center border-dashed border-[var(--color-text-tertiary)] bg-[var(--color-bg-secondary)] mb-[38px]",
+                  isFirst ? "w-20 h-20" : "w-16 h-16"
+                )}>
+                  <span className="text-xl font-bold text-[var(--color-text-tertiary)]">?</span>
+                </div>
+                {/* Pillar */}
+                <div className={cn(
+                  "w-20 rounded-t-xl mt-2 bg-[var(--color-bg-tertiary)]",
+                  isFirst ? "h-20" : isSecond ? "h-14" : "h-10"
+                )} />
+              </div>
+            );
+          }
           
           return (
             <motion.div 

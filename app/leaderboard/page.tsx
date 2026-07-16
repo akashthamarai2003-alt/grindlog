@@ -15,5 +15,26 @@ export default async function LeaderboardPage() {
 
   const topUsers = await getGlobalLeaderboard(50);
 
-  return <LeaderboardClient topUsers={topUsers} currentUserId={user.id} />;
+  // Add dummy users if leaderboard is too empty to make it fun!
+  const bots = [
+    { id: "bot1", display_name: "Alex (Bot)", avatar_url: null, xp: 2500, level: 3 },
+    { id: "bot2", display_name: "Sarah (Bot)", avatar_url: null, xp: 1800, level: 2 },
+    { id: "bot3", display_name: "Mike (Bot)", avatar_url: null, xp: 1200, level: 2 },
+    { id: "bot4", display_name: "Emma (Bot)", avatar_url: null, xp: 900, level: 1 },
+    { id: "bot5", display_name: "John (Bot)", avatar_url: null, xp: 500, level: 1 },
+  ];
+
+  const combined = [...(topUsers || [])];
+  
+  if (combined.length < 5) {
+    bots.forEach(bot => {
+      if (!combined.find(u => u.id === bot.id)) {
+        combined.push(bot);
+      }
+    });
+    // Re-sort by XP since we added bots
+    combined.sort((a, b) => b.xp - a.xp);
+  }
+
+  return <LeaderboardClient topUsers={combined} currentUserId={user.id} />;
 }
