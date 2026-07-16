@@ -4,17 +4,43 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Lock, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import bgImage from "../../../public/login-page.png";
 import { useAuth } from "@/hooks/use-auth";
+import { createClient } from "@/lib/services/supabase/client";
+import { useEffect } from "react";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const { updatePassword } = useAuth();
+  const supabase = createClient();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Supabase SSR uses PKCE by default and ignores implicit flow (hash) tokens.
+    // Since our custom Resend reset link uses generateLink (implicit flow),
+    // we need to manually extract the tokens from the URL hash and set the session.
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token=")) {
+      const params = new URLSearchParams(hash.substring(1));
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+      if (access_token && refresh_token) {
+        supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+          if (error) {
+            console.error("Failed to set session from hash:", error);
+            setError("Session expired or invalid. Please request a new link.");
+          } else {
+            // Clean up the URL hash so it's not visible/copied
+            window.history.replaceState(null, "", window.location.pathname);
+          }
+        });
+      }
+    }
+  }, [supabase.auth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
