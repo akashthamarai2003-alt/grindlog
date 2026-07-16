@@ -112,6 +112,42 @@
   --color-primary-light: rgba(234, 88, 12, 0.15);
 }
 
+.theme-sakura {
+  --color-bg-primary: #fff0f5;
+  --color-bg-secondary: #ffe4e1;
+  --color-bg-tertiary: #ffb6c1;
+  --color-bg-elevated: #ffffff;
+  --color-text-primary: #4a0e1c;
+  --color-text-secondary: #c71585;
+  --color-accent-green: #ff69b4;
+  --color-primary: #db7093;
+  --color-primary-light: rgba(219, 112, 147, 0.15);
+}
+
+.theme-midnight {
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #0a0a0c;
+  --color-bg-tertiary: #141419;
+  --color-bg-elevated: #050505;
+  --color-text-primary: #f3e8ff;
+  --color-text-secondary: #a855f7;
+  --color-accent-green: #c084fc;
+  --color-primary: #9333ea;
+  --color-primary-light: rgba(147, 51, 234, 0.2);
+}
+
+.theme-forest {
+  --color-bg-primary: #f0fdf4;
+  --color-bg-secondary: #dcfce7;
+  --color-bg-tertiary: #bbf7d0;
+  --color-bg-elevated: #ffffff;
+  --color-text-primary: #064e3b;
+  --color-text-secondary: #047857;
+  --color-accent-green: #10b981;
+  --color-primary: #059669;
+  --color-primary-light: rgba(5, 150, 105, 0.15);
+}
+
 /* Avatar Frames */
 .frame-gold {
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.3);
@@ -132,6 +168,16 @@
 @keyframes glow-pulse-fire {
   0%, 100% { box-shadow: 0 0 20px rgba(255, 69, 0, 0.6), inset 0 0 10px rgba(255, 69, 0, 0.3); }
   50% { box-shadow: 0 0 35px rgba(255, 69, 0, 0.8), inset 0 0 15px rgba(255, 69, 0, 0.5); }
+}
+
+.frame-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), inset 0 0 10px rgba(16, 185, 129, 0.3);
+  border: 2px solid #10b981;
+}
+
+.frame-amethyst {
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.5), inset 0 0 12px rgba(168, 85, 247, 0.4);
+  border: 2px solid #a855f7;
 }
 
 /* --- Base --- */

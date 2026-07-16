@@ -13,8 +13,14 @@ export function Providers({ children, initialTheme = "default" }: { children: Re
   useEffect(() => {
     const root = document.documentElement;
     
-    // Clear old theme classes
-    root.classList.remove("theme-neon", "theme-ocean", "theme-sunset", "dark");
+    // Clear old theme classes dynamically
+    const classes = Array.from(root.classList);
+    classes.forEach(c => {
+      if (c.startsWith("theme-")) {
+        root.classList.remove(c);
+      }
+    });
+    root.classList.remove("dark");
     
     if (theme === "dark") {
       root.classList.add("dark");
