@@ -31,15 +31,17 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center relative px-4 overflow-hidden py-10">
-      <Image 
-        src={bgImage}
-        alt="Background Landscape"
-        fill
-        className="object-cover object-center z-0"
-        priority
-      />
-      <div className="absolute inset-0 bg-black/20 z-0" /> {/* Slight dark overlay for readability */}
+    <div className="flex min-h-dvh flex-col items-center justify-center relative px-4 py-12 overflow-y-auto overflow-x-hidden">
+      <div className="fixed inset-0 z-0">
+        <Image 
+          src={bgImage}
+          alt="Background Landscape"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        <div className="absolute inset-0 bg-black/20" /> {/* Slight dark overlay for readability */}
+      </div>
       
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}

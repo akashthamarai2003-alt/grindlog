@@ -78,16 +78,18 @@ export default function OnboardingPage() {
   const slide = slides[current];
 
   return (
-    <div className="flex min-h-dvh flex-col relative px-4 overflow-hidden safe-top">
+    <div className="flex min-h-dvh flex-col relative px-4 overflow-y-auto overflow-x-hidden safe-top">
       {/* Background Image */}
-      <Image 
-        src={bgImage}
-        alt="Background Landscape"
-        fill
-        className="object-cover object-center z-0"
-        priority
-      />
-      <div className="absolute inset-0 bg-black/40 z-0" /> {/* Dark overlay for text readability */}
+      <div className="fixed inset-0 z-0">
+        <Image 
+          src={bgImage}
+          alt="Background Landscape"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        <div className="absolute inset-0 bg-black/40" /> {/* Dark overlay for text readability */}
+      </div>
 
       <div className="flex flex-col flex-1 relative z-10">
         {/* Skip */}
