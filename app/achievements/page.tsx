@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { AchievementsClient } from "./client";
 import { redirect } from "next/navigation";
+import { checkAndUnlockAchievements } from "@/app/actions/gamification";
 
 export default async function AchievementsPage() {
   const supabase = await createServerSupabase();
@@ -9,6 +10,10 @@ export default async function AchievementsPage() {
   if (!user) {
     redirect("/auth/signin");
   }
+
+  // Retroactively check and unlock any pending achievements 
+  // based on the user's real historical data before fetching
+  await checkAndUnlockAchievements(user.id);
 
   // Fetch all achievements
   const { data: achievements } = await supabase
