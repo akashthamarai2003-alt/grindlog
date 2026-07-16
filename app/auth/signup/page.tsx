@@ -16,6 +16,7 @@ export default function SignUpPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,8 +139,8 @@ export default function SignUpPage() {
 
           <motion.button
             type="submit"
-            whileTap={{ scale: 0.96 }}
-            disabled={isLoading}
+            whileTap={agreed ? { scale: 0.96 } : {}}
+            disabled={isLoading || !agreed}
             className="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-[#34C759] text-lg font-bold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 disabled:opacity-50 border border-white/20"
           >
             {isLoading ? (
@@ -157,14 +158,25 @@ export default function SignUpPage() {
           </motion.button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-white/70">
-          By signing up, you agree to our{" "}
-          <Link href="/terms" className="underline hover:text-white">Terms</Link>
-          {", "}
-          <Link href="/privacy" className="underline hover:text-white">Privacy Policy</Link>
-          {", and "}
-          <Link href="/refund" className="underline hover:text-white">Refund Policy</Link>.
-        </p>
+        <div className="mt-6 flex items-start gap-3">
+          <div className="flex h-5 items-center">
+            <input
+              id="terms"
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="h-4 w-4 rounded border-white/50 bg-white/10 text-[#34C759] focus:ring-[#34C759] focus:ring-offset-0 transition-colors"
+            />
+          </div>
+          <label htmlFor="terms" className="text-xs leading-relaxed text-white/80">
+            By signing up, you agree to our{" "}
+            <Link href="/terms" target="_blank" className="font-bold underline hover:text-white transition-colors">Terms</Link>
+            {", "}
+            <Link href="/privacy" target="_blank" className="font-bold underline hover:text-white transition-colors">Privacy Policy</Link>
+            {", and "}
+            <Link href="/refund" target="_blank" className="font-bold underline hover:text-white transition-colors">Refund Policy</Link>.
+          </label>
+        </div>
 
         <div className="mt-6 text-center">
           <p className="text-[13px] font-medium text-white/90">
