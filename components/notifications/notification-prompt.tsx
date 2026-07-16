@@ -6,10 +6,15 @@ import { requestFirebaseNotificationPermission } from "@/lib/firebase/client";
 
 const FCM_REGISTRATION_VERSION = "2";
 
-export function NotificationPrompt() {
+interface NotificationPromptProps {
+  variant?: "card" | "modal";
+}
+
+export function NotificationPrompt({ variant = "card" }: NotificationPromptProps = {}) {
   const [permission, setPermission] = useState<NotificationPermission | "default">("default");
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const registerDevice = async () => {
     const oldToken = localStorage.getItem("fcm_token");
@@ -54,8 +59,12 @@ export function NotificationPrompt() {
           console.error("Failed to refresh notification registration", error);
         });
       }
+      
+      if (variant === "modal") {
+        setDismissed(localStorage.getItem("fcm_modal_dismissed") === "true");
+      }
     }
-  }, []);
+  }, [variant]);
 
   const handleRequestPermission = async () => {
     setLoading(true);
@@ -72,8 +81,25 @@ export function NotificationPrompt() {
     return null;
   }
 
-  return (
-    <div className="mt-8 flex flex-col items-center justify-center rounded-[32px] bg-[var(--color-bg-elevated)]/60 backdrop-blur-xl p-8 shadow-2xl ring-1 ring-[var(--color-bg-tertiary)]/50 relative overflow-hidden text-center max-w-sm mx-auto">
+  if (variant === "modal" && dismissed) {
+    return null;
+  }
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem("fcm_modal_dismissed", "true");
+  };
+
+  const cardContent = (
+    <div className={`flex flex-col items-center justify-center rounded-[32px] bg-[var(--color-bg-elevated)]/60 backdrop-blur-xl p-8 shadow-2xl ring-1 ring-[var(--color-bg-tertiary)]/50 relative overflow-hidden text-center max-w-sm mx-auto ${variant === 'card' ? 'mt-8' : 'w-full'}`}>
+      {variant === "modal" && (
+        <button 
+          onClick={handleDismiss}
+          className="absolute top-4 right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary-hover)] transition-colors"
+        >
+          <span className="text-sm font-bold">✕</span>
+        </button>
+      )}
       <div className="absolute inset-0 bg-gradient-to-br from-[#007AFF]/5 to-transparent" />
       <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#007AFF] to-[#5856D6] text-white mb-5 shadow-[0_0_24px_rgba(0,122,255,0.4)]">
         {permission === "denied" ? <BellOff className="h-8 w-8" /> : <Bell className="h-8 w-8" />}
@@ -100,4 +126,16 @@ export function NotificationPrompt() {
       )}
     </div>
   );
+
+  if (variant === "modal") {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="animate-in zoom-in-95 slide-in-from-bottom-4 duration-500 max-w-sm w-full">
+          {cardContent}
+        </div>
+      </div>
+    );
+  }
+
+  return cardContent;
 }

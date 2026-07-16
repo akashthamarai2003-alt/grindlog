@@ -402,7 +402,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       </div>
       
       {/* Notification Prompt (only shows if not enabled) */}
-      <NotificationPrompt />
+      <NotificationPrompt variant="modal" />
 
       <div className="h-6" />
 
