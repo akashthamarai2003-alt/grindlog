@@ -58,7 +58,6 @@ messaging.onBackgroundMessage((payload) => {
     renotify: false,
     vibrate: [200, 100, 200],
     timestamp: Date.now(),
-    color: "#007AFF",
     data: {
       ...data,
       url: data.url || DEFAULT_URL
