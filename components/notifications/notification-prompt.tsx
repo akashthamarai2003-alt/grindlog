@@ -15,6 +15,7 @@ export function NotificationPrompt({ variant = "card" }: NotificationPromptProps
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   const registerDevice = async () => {
     const oldToken = localStorage.getItem("fcm_token");
@@ -63,7 +64,11 @@ export function NotificationPrompt({ variant = "card" }: NotificationPromptProps
       if (variant === "modal") {
         setDismissed(localStorage.getItem("fcm_modal_dismissed") === "true");
       }
+    } else {
+      // Notifications not supported
+      setPermission("denied");
     }
+    setIsChecking(false);
   }, [variant]);
 
   const handleRequestPermission = async () => {
@@ -76,6 +81,10 @@ export function NotificationPrompt({ variant = "card" }: NotificationPromptProps
       setLoading(false);
     }
   };
+
+  if (isChecking) {
+    return null;
+  }
 
   if (permission === "granted" && registered) {
     return null;
