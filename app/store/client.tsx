@@ -230,13 +230,13 @@ export function StoreClient({ coins, unlockedItems, equippedTheme, equippedFrame
                 transition={{ duration: 0.2, delay: index * 0.05 }}
                 className={cn(
                   "relative p-5 rounded-3xl overflow-hidden shadow-lg border border-[var(--color-bg-tertiary)] flex flex-col gap-4",
-                  "bg-gradient-to-br from-[var(--color-bg-elevated)] to-[var(--color-bg-secondary)] backdrop-blur-xl"
+                  "bg-gradient-to-br from-[var(--color-bg-elevated)] to-[var(--color-bg-secondary)]"
                 )}
               >
-                {/* Subtle Background Glow based on item color */}
+                {/* Subtle Background Glow based on item color - using radial gradient instead of CSS blur for much better performance */}
                 <div 
-                  className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-20 pointer-events-none"
-                  style={{ backgroundColor: item.color }}
+                  className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-20 pointer-events-none"
+                  style={{ background: `radial-gradient(circle, ${item.color} 0%, transparent 70%)` }}
                 />
 
                 <div className="flex items-start gap-4 relative z-10">
