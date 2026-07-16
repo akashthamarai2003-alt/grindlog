@@ -26,7 +26,7 @@ export function LeaderboardClient({ topUsers, currentUserId }: { topUsers: any[]
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-md h-64 bg-gradient-to-b from-[#FFD700]/10 to-transparent blur-3xl pointer-events-none" />
       
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 relative z-20">
         <button
           onClick={() => router.back()}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-bg-secondary)]"
@@ -41,7 +41,7 @@ export function LeaderboardClient({ topUsers, currentUserId }: { topUsers: any[]
       </div>
 
       {/* Podium */}
-      <div className="flex justify-center items-end gap-3 mt-6 mb-8 h-56 relative z-10">
+      <div className="flex justify-center items-end gap-3 mt-10 mb-8 h-56 relative z-10">
         {podium.map((user, i) => {
           const isFirst = i === 1;
           const isSecond = i === 0;
