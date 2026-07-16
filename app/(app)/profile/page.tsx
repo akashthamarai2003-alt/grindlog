@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "motion/react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import {
   Settings,
@@ -67,6 +68,9 @@ const settingsGroups: { items: SettingItem[] }[] = [
 export default function ProfilePage() {
   const { theme, toggleTheme } = useUIStore();
   const { user } = useAuth();
+  
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const xp = user?.xp || 0;
   const level = user?.level || 1;
@@ -251,14 +255,9 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* Sign Out */}
+      {/* Sign Out Trigger */}
       <motion.button
-        onClick={async () => {
-          const { createClient } = await import("@/lib/services/supabase/client");
-          const supabase = createClient();
-          await supabase.auth.signOut();
-          window.location.href = "/auth/signin";
-        }}
+        onClick={() => setShowSignOutModal(true)}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -268,7 +267,72 @@ export default function ProfilePage() {
         Sign Out
       </motion.button>
 
+      {/* Sign Out Modal */}
+      <AnimatePresence>
+        {showSignOutModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => !isSigningOut && setShowSignOutModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-xs overflow-hidden rounded-[28px] bg-[var(--color-bg-elevated)] p-6 shadow-2xl ring-1 ring-white/10"
+            >
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/15 text-red-500 mx-auto">
+                <LogOut className="h-7 w-7" strokeWidth={2.5} />
+              </div>
+              <h2 className="mb-2 text-center text-xl font-black text-[var(--color-text-primary)]">
+                Sign Out
+              </h2>
+              <p className="mb-6 text-center text-sm font-medium text-[var(--color-text-secondary)] leading-relaxed">
+                Are you sure you want to sign out of your GrindLog account?
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={async () => {
+                    setIsSigningOut(true);
+                    const { createClient } = await import("@/lib/services/supabase/client");
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                    window.location.href = "/auth/signin";
+                  }}
+                  disabled={isSigningOut}
+                  className="flex w-full items-center justify-center h-12 rounded-xl bg-red-500 font-bold text-white transition-all hover:bg-red-600 active:scale-[0.98] disabled:opacity-50"
+                >
+                  {isSigningOut ? (
+                    <div className="flex items-center gap-2">
+                      <motion.div
+                        className="h-4 w-4 rounded-full border-2 border-white border-t-transparent"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                      />
+                      Signing out...
+                    </div>
+                  ) : (
+                    "Yes, sign me out"
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => setShowSignOutModal(false)}
+                  disabled={isSigningOut}
+                  className="flex w-full items-center justify-center h-12 rounded-xl bg-[var(--color-bg-secondary)] font-bold text-[var(--color-text-primary)] transition-all hover:bg-[var(--color-bg-tertiary)] active:scale-[0.98] disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
-
