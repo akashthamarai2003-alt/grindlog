@@ -65,7 +65,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
-                <Link href={tab.path} key={tab.id} className="relative flex flex-1 flex-col items-center justify-center gap-1.5 p-1">
+                <Link href={tab.path} key={tab.id} prefetch={true} className="relative flex flex-1 flex-col items-center justify-center gap-1.5 p-1">
                   <Icon
                     className={cn(
                       "h-[24px] w-[24px] transition-colors",
@@ -96,7 +96,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
-                <Link href={tab.path} key={tab.id} className="relative flex flex-1 flex-col items-center justify-center gap-1.5 p-1">
+                <Link href={tab.path} key={tab.id} prefetch={true} className="relative flex flex-1 flex-col items-center justify-center gap-1.5 p-1">
                   <Icon
                     className={cn(
                       "h-[24px] w-[24px] transition-colors",

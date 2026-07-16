@@ -3,13 +3,17 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from 'next/dynamic';
 import { Bell, Quote, Trophy, Flame, Plus, Sparkles } from "lucide-react";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
 import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
 import { isHabitScheduled } from "@/lib/habit-utils";
 import { createClient } from "@/lib/services/supabase/client";
-import { NotificationPrompt } from "@/components/notifications/notification-prompt";
+
+const NotificationPrompt = dynamic(() => import('@/components/notifications/notification-prompt').then(mod => mod.NotificationPrompt), {
+  ssr: false,
+});
 
 interface Profile {
   display_name: string;
@@ -171,10 +175,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/tree" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#34C759] transition-colors shadow-sm ring-1 ring-[#34C759]/20 overflow-hidden">
+          <Link href="/tree" prefetch={true} className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#34C759] transition-colors shadow-sm ring-1 ring-[#34C759]/20 overflow-hidden">
             <Image src="/tree-in-the-wind.svg" width={32} height={32} alt="Tree" className="drop-shadow-sm scale-[1.15]" />
           </Link>
-          <Link href="/notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
+          <Link href="/notifications" prefetch={true} className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
             <Bell className="h-5 w-5 text-[var(--color-text-secondary)]" />
             {unreadCount > 0 && (
               <div className="absolute top-0 right-0 -mr-1 -mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[var(--color-bg-primary)] bg-[var(--color-error)] text-[10px] font-bold text-white">
@@ -182,7 +186,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
               </div>
             )}
           </Link>
-          <Link href="/profile">
+          <Link href="/profile" prefetch={true}>
             <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#34C759] to-[#28a745] text-white shadow-sm ring-2 ring-[var(--color-bg-primary)] ring-offset-1">
               <span className="font-bold text-lg">{profile.display_name?.charAt(0).toUpperCase() || "?"}</span>
             </div>
@@ -296,7 +300,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)]">
               {selectedDateStr === todayDateStr ? "Today's Habits" : new Date(selectedDateStr).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
             </h2>
-            <Link href="/habits/new" className="inline-flex">
+            <Link href="/habits/new" prefetch={true} className="inline-flex">
               <button 
                 type="button"
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent-green)]/15 text-[var(--color-accent-green)] hover:bg-[var(--color-accent-green)]/25 hover:scale-105 active:scale-95 transition-all shadow-sm"
@@ -338,6 +342,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
               <div>
                 <Link 
                   href="/habits/new" 
+                  prefetch={true}
                   className="group relative overflow-hidden flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#34C759]/40 py-4 text-sm font-bold text-[#34C759] transition-all hover:border-[#34C759] hover:bg-[#34C759]/10 bg-[var(--color-bg-elevated)]"
                   style={{ boxShadow: 'var(--shadow-card)' }}
                 >
