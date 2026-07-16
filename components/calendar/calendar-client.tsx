@@ -380,7 +380,7 @@ function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: Habit
           <span className="text-[10px] font-bold">Future</span>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
