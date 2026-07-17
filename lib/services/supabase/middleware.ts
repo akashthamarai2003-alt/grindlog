@@ -50,7 +50,6 @@ export async function updateSession(request: NextRequest) {
 
   const publicPaths = [
     "/",
-    "/onboarding",
     "/auth/signup",
     "/auth/signin",
     "/auth/callback",
@@ -68,7 +67,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath && pathname !== "/onboarding/ai-plan" && pathname !== "/auth/reset-password") {
+  if (user && isPublicPath && pathname !== "/auth/reset-password") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
