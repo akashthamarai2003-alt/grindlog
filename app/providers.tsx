@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useUIStore } from "@/store/ui-store";
 import { cn } from "@/lib/utils";
+import { Toaster } from "sonner";
 
 export function Providers({ children, initialTheme = "default" }: { children: React.ReactNode, initialTheme?: string }) {
   const theme = useUIStore((s) => s.theme);
@@ -41,6 +42,7 @@ export function Providers({ children, initialTheme = "default" }: { children: Re
       )}
     >
       {children}
+      <Toaster position="bottom-center" richColors />
     </div>
   );
 }
