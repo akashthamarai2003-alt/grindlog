@@ -1,13 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Star, Zap, Crown, ArrowRight } from "lucide-react";
+import { Check, Star, Zap, Crown, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { processMockPayment } from "@/app/actions/payment";
 
 export default function PaymentPage() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const plans = [
     {
@@ -18,7 +20,7 @@ export default function PaymentPage() {
       icon: <Star className="w-5 h-5 text-blue-400" />,
       features: [
         "Unlimited Habits",
-        "Basic Core Features",
+        "Only Core Features",
         "Daily Progress Tracking",
         "Standard Reminders",
       ],
@@ -34,7 +36,7 @@ export default function PaymentPage() {
       period: "every 6 months",
       icon: <Zap className="w-5 h-5 text-yellow-400" />,
       features: [
-        "Everything in Monthly",
+        "Everything in Core",
         "Advanced AI Features",
         "AI Personalized Habit Plans",
         "Smart Analytics & Insights",
@@ -51,7 +53,7 @@ export default function PaymentPage() {
       period: "one-time payment",
       icon: <Crown className="w-5 h-5 text-purple-400" />,
       features: [
-        "Everything in 6 Months",
+        "All Premium Features",
         "Lifetime Access",
         "Exclusive VIP Themes",
         "Priority Support",
@@ -62,6 +64,17 @@ export default function PaymentPage() {
       badge: "Best Value",
     },
   ];
+
+  const handleContinue = async () => {
+    setIsProcessing(true);
+    const result = await processMockPayment(selectedPlan);
+    if (result.success) {
+      router.push("/dashboard");
+    } else {
+      setIsProcessing(false);
+      alert("Payment failed: " + result.error);
+    }
+  };
 
   return (
     <div className="min-h-dvh bg-[#0f172a] text-white flex flex-col relative overflow-hidden">
@@ -167,19 +180,26 @@ export default function PaymentPage() {
           className="w-full max-w-md flex flex-col gap-4"
         >
           <button 
-            onClick={() => router.push("/dashboard")}
-            className="group relative w-full flex items-center justify-center gap-2 h-14 rounded-2xl bg-white text-black font-semibold text-lg overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            onClick={handleContinue}
+            disabled={isProcessing}
+            className="group relative w-full flex items-center justify-center gap-2 h-14 rounded-2xl bg-white text-black font-semibold text-lg overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            <span className="relative z-10">Continue with {plans.find(p => p.id === selectedPlan)?.name}</span>
-            <ArrowRight className="relative z-10 w-5 h-5 transition-transform group-hover:translate-x-1" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:animate-shimmer" />
-          </button>
-          
-          <button 
-            onClick={() => router.push("/dashboard")}
-            className="text-white/50 hover:text-white transition-colors text-sm font-medium py-2"
-          >
-            Skip for now, I'll upgrade later
+            <span className="relative z-10 flex items-center gap-2">
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Continue with {plans.find(p => p.id === selectedPlan)?.name}
+                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
+            </span>
+            {!isProcessing && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:animate-shimmer" />
+            )}
           </button>
         </motion.div>
 
