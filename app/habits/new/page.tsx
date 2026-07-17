@@ -785,12 +785,13 @@ export default function NewHabitPage() {
                                 </div>
                               </div>
 
-                              <input
-                                type="time"
-                                value={item.time}
-                                onChange={(e) => handleUpdateBulkRow(item.id, "time", e.target.value)}
-                                className="w-[115px] rounded-xl bg-[var(--color-bg-primary)] px-3.5 h-[46px] text-[13px] font-extrabold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/10 focus:border-[var(--color-accent-green)]/60 transition-all cursor-pointer shadow-sm"
-                              />
+                              <div className="w-[145px] rounded-xl bg-[var(--color-bg-primary)] px-3.5 h-[46px] border border-[var(--color-bg-tertiary)]/10 focus-within:border-[var(--color-accent-green)]/60 transition-all shadow-sm flex items-center">
+                                <TimePicker12h
+                                  value={item.time}
+                                  onChange={(val) => handleUpdateBulkRow(item.id, "time", val || "")}
+                                  className="w-full justify-center"
+                                />
+                              </div>
                             </div>
                             
                             {/* Inline Custom Days Selector */}
@@ -898,11 +899,10 @@ export default function NewHabitPage() {
                     <SectionLabel>Specific Time Reminder (Optional)</SectionLabel>
                     <div className="flex items-center gap-2.5">
                       <div className="relative flex-1 flex items-center h-[56px] rounded-2xl bg-[var(--color-bg-elevated)] px-4 border border-[var(--color-bg-tertiary)]/20 shadow-sm focus-within:ring-2 focus-within:ring-[var(--color-accent-green)]/35 transition-all">
-                        <input
-                          type="time"
-                          value={form.reminderTime || ""}
-                          onChange={(e) => set("reminderTime", e.target.value || null)}
-                          className="w-full bg-transparent text-sm font-extrabold text-[var(--color-text-primary)] outline-none cursor-pointer"
+                        <TimePicker12h
+                          value={form.reminderTime || null}
+                          onChange={(val) => set("reminderTime", val)}
+                          className="w-full"
                         />
                       </div>
                       {form.reminderTime && (

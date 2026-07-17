@@ -4,6 +4,7 @@ import { use, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { TimePicker12h } from "@/components/ui/time-picker-12h";
 import {
   ChevronLeft,
   Flame,
@@ -383,12 +384,13 @@ export default function HabitDetailPage({
               <label className="text-xs font-black uppercase tracking-wider text-[var(--color-text-tertiary)]">
                 Daily Timing
               </label>
-              <input
-                type="time"
-                value={editTime}
-                onChange={(e) => setEditTime(e.target.value)}
-                className="w-full rounded-2xl bg-[var(--color-bg-elevated)] px-4 h-[56px] text-sm font-bold text-[var(--color-text-primary)] outline-none border border-[var(--color-bg-tertiary)]/20 focus:border-[var(--color-accent-green)]/60 shadow-sm transition-all"
-              />
+              <div className="flex-1 flex items-center h-[56px] rounded-2xl bg-[var(--color-bg-elevated)] px-4 border border-[var(--color-bg-tertiary)]/20 shadow-sm focus-within:border-[var(--color-accent-green)]/60 transition-all">
+                <TimePicker12h
+                  value={editTime || null}
+                  onChange={(val) => setEditTime(val || "")}
+                  className="w-full"
+                />
+              </div>
             </div>
 
             {/* Category Select */}

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { TimePicker12h } from "@/components/ui/time-picker-12h";
 import {
   generateHabitsAction,
   addHabitFromAIAction,
@@ -637,21 +638,23 @@ export default function CoachPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">Wake Up</label>
-                    <input
-                      type="time"
-                      value={wakeTime}
-                      onChange={e => setWakeTime(e.target.value)}
-                      className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
-                    />
+                    <div className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] flex items-center h-[38px]">
+                      <TimePicker12h
+                        value={wakeTime}
+                        onChange={val => setWakeTime(val || "07:00")}
+                        className="w-full"
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">Bedtime</label>
-                    <input
-                      type="time"
-                      value={sleepTime}
-                      onChange={e => setSleepTime(e.target.value)}
-                      className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
-                    />
+                    <div className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] flex items-center h-[38px]">
+                      <TimePicker12h
+                        value={sleepTime}
+                        onChange={val => setSleepTime(val || "23:00")}
+                        className="w-full"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
