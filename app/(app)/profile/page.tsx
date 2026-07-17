@@ -196,9 +196,9 @@ export default function ProfilePage() {
                   onClick={() => {
                     if (item.action === "theme") toggleTheme();
                     else if (item.action === "premium") window.location.href = "/premium";
-                    else if (item.action === "privacy" || item.action === "terms" || item.action === "refund") {
-                      window.open("/GrindLog_Legal.pdf", "_blank");
-                    }
+                    else if (item.action === "privacy") window.location.href = "/privacy";
+                    else if (item.action === "terms") window.location.href = "/terms";
+                    else if (item.action === "refund") window.location.href = "/refund";
                     else alert("This feature is coming soon!");
                   }}
                   className="group relative flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]/30 active:bg-[var(--color-bg-tertiary)]/50"

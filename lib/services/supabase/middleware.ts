@@ -55,6 +55,9 @@ export async function updateSession(request: NextRequest) {
     "/auth/callback",
     "/auth/forgot-password",
     "/auth/reset-password",
+    "/terms",
+    "/privacy",
+    "/refund",
   ];
 
   const isPublicPath = publicPaths.some(
@@ -67,7 +70,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath && pathname !== "/auth/reset-password") {
+  if (user && isPublicPath && !["/auth/reset-password", "/terms", "/privacy", "/refund"].includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -78,6 +81,6 @@ export async function updateSession(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|icons|screenshots|manifest.json|sw.js|GrindLog_Legal.pdf).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|icons|screenshots|manifest.json|sw.js).*)",
   ],
 };
