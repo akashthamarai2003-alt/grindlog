@@ -705,15 +705,21 @@ function HabitChecklist({
 
   const gridContent = (
     <div className="border border-[var(--color-bg-tertiary)] rounded-[20px] mt-1 shadow-sm overflow-x-auto hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-      <div className="flex flex-col min-w-max">
+      <div className={cn("flex flex-col", viewMode === "monthly" ? "min-w-max" : "w-full")}>
         {/* Header Row */}
         <div className="flex items-center bg-[var(--color-bg-elevated)] border-b border-[var(--color-bg-tertiary)] py-2">
-          <div className="flex-[1.5] w-[120px] shrink-0 px-3 text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider sticky left-0 z-20 bg-[var(--color-bg-elevated)] border-r border-[var(--color-bg-tertiary)]/30">
+          <div className={cn(
+            "flex-[1.5] px-3 text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider sticky left-0 z-20 bg-[var(--color-bg-elevated)] border-r border-[var(--color-bg-tertiary)]/30",
+            viewMode === "weekly" ? "min-w-[100px]" : "w-[120px] shrink-0"
+          )}>
             My Habits
           </div>
           <div className="flex-[2] flex items-center pr-2">
             {displayDays.map(day => (
-              <div key={day.dateStr} className="w-[40px] shrink-0 flex flex-col items-center justify-center gap-0.5">
+              <div key={day.dateStr} className={cn(
+                "flex flex-col items-center justify-center gap-0.5",
+                viewMode === "weekly" ? "flex-1" : "w-[40px] shrink-0"
+              )}>
                 <span className="text-[10px] font-bold text-[var(--color-text-primary)]">{day.label}</span>
                 <span className="text-[9px] font-bold text-[var(--color-text-tertiary)]">{day.date.getDate()}</span>
               </div>
@@ -726,7 +732,10 @@ function HabitChecklist({
           <div key={habit.id} className="flex items-stretch border-b border-[var(--color-bg-tertiary)] last:border-0 bg-[var(--color-bg-secondary)]">
             {/* Habit Name / Left Side */}
             <div 
-              className="flex-[1.5] w-[120px] shrink-0 flex items-center gap-2 px-3 py-2.5 overflow-hidden sticky left-0 z-10 bg-[var(--color-bg-secondary)] border-r border-[var(--color-bg-tertiary)]/50" 
+              className={cn(
+                "flex-[1.5] flex items-center gap-2 px-3 py-2.5 overflow-hidden sticky left-0 z-10 bg-[var(--color-bg-secondary)] border-r border-[var(--color-bg-tertiary)]/50",
+                viewMode === "weekly" ? "min-w-[100px]" : "w-[120px] shrink-0"
+              )}
             >
               <div className="absolute inset-0 opacity-15" style={{ backgroundColor: habit.color }} />
               <span className="text-[14px] flex-shrink-0 relative z-10">{habit.emoji}</span>
@@ -756,7 +765,10 @@ function HabitChecklist({
 
                 if (!valid) {
                   return (
-                    <div key={day.dateStr} className="w-[40px] shrink-0 flex items-center justify-center">
+                    <div key={day.dateStr} className={cn(
+                      "flex items-center justify-center",
+                      viewMode === "weekly" ? "flex-1" : "w-[40px] shrink-0"
+                    )}>
                       <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-tertiary)] opacity-30" />
                     </div>
                   );
@@ -779,7 +791,10 @@ function HabitChecklist({
                 }
 
                 return (
-                  <div key={day.dateStr} className="w-[40px] shrink-0 flex items-center justify-center">
+                  <div key={day.dateStr} className={cn(
+                    "flex items-center justify-center",
+                    viewMode === "weekly" ? "flex-1" : "w-[40px] shrink-0"
+                  )}>
                     <button
                       onClick={() => {
                         if (!valid || isFuture) return;
