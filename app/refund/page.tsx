@@ -43,7 +43,7 @@ export default function RefundPolicyPage() {
 
         <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">3. Subscription Cancellations</h2>
         <p className="mt-4 leading-relaxed">
-          You can cancel your subscription at any time to prevent future billing. Cancellation will take effect at the end of your current billing cycle. You will retain access to premium features until that cycle concludes. We do not provide prorated refunds for mid-cycle cancellations.
+          Subscriptions cannot be cancelled once processed. We do not provide any refunds for subscriptions. If you encounter any issues with your subscription or the app, we will fix it shortly.
         </p>
 
         <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">4. Exceptions</h2>
