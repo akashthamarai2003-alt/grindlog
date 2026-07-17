@@ -2,123 +2,222 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sprout, TreeDeciduous, Brain, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import {
+  Sprout,
+  Dumbbell,
+  Brain,
+  BookOpen,
+  Palette,
+  DollarSign,
+  Sparkles,
+  ArrowRight,
+  ChevronLeft,
+} from "lucide-react";
+import { springs } from "@/animations/springs";
+import { cn } from "@/lib/utils";
 
 const slides = [
   {
-    id: "plant",
-    title: "Start Your Journey",
-    description: "Every great achievement starts with a single habit. Plant your seed today and commit to growth.",
-    icon: <Sprout className="w-24 h-24 text-green-500" strokeWidth={1.5} />,
-    color: "bg-green-50",
+    id: "welcome",
+    emoji: "🌳",
+    title: "Grow Into Your\nBest Self",
+    description:
+      "Every habit is a drop of water. Your tree grows with you, one action at a time.",
+    icon: Sprout,
   },
   {
-    id: "grow",
-    title: "Grow Your Tree",
-    description: "As you complete daily habits, your tree grows. Build streaks to unlock beautiful new environments.",
-    icon: <TreeDeciduous className="w-24 h-24 text-emerald-600" strokeWidth={1.5} />,
-    color: "bg-emerald-50",
+    id: "track",
+    emoji: null,
+    title: "Track What\nMatters",
+    description:
+      "Fitness, reading, meditation, finance — any habit, tracked beautifully.",
+    icons: [Dumbbell, Brain, BookOpen, Palette, DollarSign],
   },
   {
     id: "ai",
-    title: "AI Habit Coaching",
-    description: "Get personalized insights, smart reminders, and tailored habit plans from your very own AI Coach.",
-    icon: <Brain className="w-24 h-24 text-blue-500" strokeWidth={1.5} />,
-    color: "bg-blue-50",
-  }
+    emoji: "🤖",
+    title: "Your Personal\nAI Coach",
+    description:
+      "Get personalized habit plans, predictions, and encouragement — available 24/7, powered by AI.",
+    icon: Sparkles,
+  },
+  {
+    id: "ready",
+    emoji: null,
+    title: "Your Journey\nBegins Now",
+    description: "Let's build habits that transform your life.",
+    showStages: true,
+  },
 ];
 
 export default function OnboardingPage() {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
   const router = useRouter();
 
-  const nextSlide = () => {
-    if (currentSlide === slides.length - 1) {
-      router.push("/auth/signup");
+  const goNext = () => {
+    if (current < slides.length - 1) {
+      setDirection(1);
+      setCurrent(current + 1);
     } else {
-      setCurrentSlide((prev) => prev + 1);
+      router.push("/auth/signup");
     }
   };
 
-  const skipOnboarding = () => {
-    router.push("/auth/signup");
+  const goBack = () => {
+    if (current > 0) {
+      setDirection(-1);
+      setCurrent(current - 1);
+    }
   };
 
+  const slide = slides[current];
+
   return (
-    <div className={`min-h-dvh flex flex-col transition-colors duration-500 ${slides[currentSlide].color} overflow-hidden relative`}>
-      
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-white/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/40 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-
-      {/* Skip Button */}
-      <div className="flex justify-end p-6 relative z-10">
-        <button 
-          onClick={skipOnboarding}
-          className="text-gray-500 font-medium text-sm hover:text-gray-800 transition-colors"
-        >
-          Skip
-        </button>
-      </div>
-
-      {/* Carousel */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-md mx-auto px-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0, x: 20, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -20, scale: 0.95 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="flex flex-col items-center text-center w-full"
+    <div className="flex min-h-dvh flex-col bg-[var(--color-bg-primary)] safe-top">
+      {/* Skip */}
+      {current < slides.length - 1 && (
+        <div className="flex items-center justify-end px-6 pt-4">
+          <button
+            onClick={() => router.push("/auth/signup")}
+            className="text-sm font-medium text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
           >
-            <div className="w-48 h-48 mb-12 rounded-full bg-white shadow-xl flex items-center justify-center relative">
-              <div className="absolute inset-0 rounded-full border-4 border-white/50 scale-110" />
-              {slides[currentSlide].icon}
+            Skip
+          </button>
+        </div>
+      )}
+
+      {/* Back button */}
+      {current > 0 && (
+        <div className="px-4 pt-2">
+          <button
+            onClick={goBack}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] transition-colors hover:bg-[var(--color-bg-tertiary)]"
+          >
+            <ChevronLeft className="h-5 w-5 text-[var(--color-text-secondary)]" />
+          </button>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex flex-1 flex-col items-center justify-center px-8 pb-12">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={slide.id}
+            custom={direction}
+            initial={{ opacity: 0, x: direction * 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction * -60 }}
+            transition={springs.default}
+            className="flex w-full flex-col items-center gap-8"
+          >
+            {/* Visual */}
+            <div className="flex h-48 items-center justify-center">
+              {slide.emoji && (
+                <motion.div
+                  className="text-8xl"
+                  animate={{ y: [0, -12, 0] }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  {slide.emoji}
+                </motion.div>
+              )}
+
+              {slide.icons && (
+                <div className="flex flex-wrap justify-center gap-3">
+                  {slide.icons.map((Icon, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        ...springs.bouncy,
+                        delay: i * 0.1,
+                      }}
+                      className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--color-bg-secondary)]"
+                    >
+                      <Icon className="h-8 w-8 text-[var(--color-accent-green)]" />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {slide.showStages && (
+                <div className="flex items-center gap-2 text-5xl">
+                  {["🌱", "🌿", "🌳", "✨"].map((e, i) => (
+                    <motion.span
+                      key={e}
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{
+                        ...springs.bouncy,
+                        delay: i * 0.15,
+                      }}
+                    >
+                      {e}
+                    </motion.span>
+                  ))}
+                </div>
+              )}
             </div>
-            
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              {slides[currentSlide].title}
-            </h1>
-            
-            <p className="text-lg text-gray-600 leading-relaxed max-w-[280px]">
-              {slides[currentSlide].description}
-            </p>
+
+            {/* Text */}
+            <div className="flex flex-col items-center gap-3 text-center">
+              <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-[var(--color-text-primary)] whitespace-pre-line">
+                {slide.title}
+              </h2>
+              <p className="text-base leading-relaxed text-[var(--color-text-secondary)] max-w-sm">
+                {slide.description}
+              </p>
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Footer Controls */}
-      <div className="p-8 pb-12 w-full max-w-md mx-auto relative z-10 flex flex-col items-center gap-8">
-        
-        {/* Indicators */}
-        <div className="flex items-center gap-2">
-          {slides.map((_, index) => (
-            <div 
-              key={index}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                currentSlide === index ? "w-8 bg-gray-800" : "w-2 bg-gray-300"
-              }`}
+      {/* Bottom */}
+      <div className="flex flex-col items-center gap-6 px-8 pb-10 safe-bottom">
+        {/* Dots */}
+        <div className="flex gap-2">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setDirection(i > current ? 1 : -1);
+                setCurrent(i);
+              }}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300",
+                i === current
+                  ? "w-6 bg-[var(--color-accent-green)]"
+                  : "w-1.5 bg-[var(--color-bg-tertiary)]"
+              )}
             />
           ))}
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={nextSlide}
-          className="w-full h-14 rounded-2xl bg-gray-900 text-white font-semibold text-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-[0.98]"
+        {/* CTA */}
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={goNext}
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-accent-green)] text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-green)]/25 transition-all hover:brightness-105"
         >
-          {currentSlide === slides.length - 1 ? (
-            <>
-              Get Started
-              <ArrowRight className="w-5 h-5" />
-            </>
-          ) : (
-            "Continue"
-          )}
-        </button>
+          {current === slides.length - 1 ? "Get Started" : "Continue"}
+          <ArrowRight className="h-5 w-5" />
+        </motion.button>
+
+        {current === slides.length - 1 && (
+          <button
+            onClick={() => router.push("/auth/signin")}
+            className="text-sm font-medium text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
+          >
+            Already have an account? Sign in
+          </button>
+        )}
       </div>
     </div>
   );
