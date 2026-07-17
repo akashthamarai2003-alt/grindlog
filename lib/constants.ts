@@ -2,7 +2,7 @@ import type { HabitCategory, TimeOfDay } from "@/types";
 
 export const APP_NAME = "GrindLog";
 export const APP_DESCRIPTION = "The Personal Growth Operating System";
-export const APP_URL = "https://grindlog.vercel.app";
+export const APP_URL = "https://www.grindlog.in";
 
 export const MAX_FREE_HABITS = 5;
 export const MAX_VIEWPORT_WIDTH = 430;

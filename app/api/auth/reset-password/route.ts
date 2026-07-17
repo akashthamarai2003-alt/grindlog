@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <img src="https://grindlog-lake.vercel.app/icons/icon-512.png" alt="GrindLog Logo" style="width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+            <img src="https://www.grindlog.in/icons/icon-512.png" alt="GrindLog Logo" style="width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
           </div>
           <h2 style="color: #34C759; margin-bottom: 20px; text-align: center;">Reset Your Password</h2>
           <p style="font-size: 16px; color: #333; line-height: 1.5; text-align: center;">
