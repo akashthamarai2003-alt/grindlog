@@ -56,6 +56,8 @@ export async function addHabitFromAIAction(habit: {
         target_count: habit.target_count,
         target_unit: habit.target_unit,
         color: habit.color,
+        category: "other",
+        frequency: "daily",
         is_active: true,
         current_streak: 0,
         total_completions: 0
