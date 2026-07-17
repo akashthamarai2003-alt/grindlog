@@ -179,11 +179,11 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Header */}
       <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
-        <div>
-          <p className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">
+        <div className="flex flex-col">
+          <p className="text-[13px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
             {greeting}
           </p>
-          <h1 className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight">
+          <h1 className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight flex items-center gap-2 mt-0.5">
             {profile.display_name?.split(' ')[0] || "There"} <span className="inline-block origin-bottom-right animate-tree-sway">👋</span>
           </h1>
         </div>
@@ -209,57 +209,78 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Hero Card */}
       <div 
-        className="relative overflow-hidden rounded-[28px] bg-[var(--color-bg-elevated)] p-6 shadow-xl ring-1 ring-[var(--color-bg-tertiary)]/50 animate-in fade-in zoom-in-95 duration-500"
+        className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[#00C7BE]/10 via-[var(--color-bg-elevated)] to-[#34C759]/10 p-6 shadow-2xl shadow-[#34C759]/5 ring-1 ring-[var(--color-bg-tertiary)] animate-in fade-in zoom-in-95 duration-500"
       >
-        {/* Subtle background glow effect */}
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[var(--color-accent-green)]/10 blur-3xl" />
+        {/* Abstract Mesh Background Elements */}
+        <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-gradient-to-br from-[#00C7BE]/20 to-[#32ADE6]/20 blur-[40px]" />
+        <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-gradient-to-br from-[#34C759]/20 to-[#32ADE6]/20 blur-[40px]" />
+        <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-3xl" />
         
         <div className="relative z-10 flex items-center justify-between">
-          <div className="flex flex-col gap-1.5">
-            <h3 className="text-4xl font-black tracking-tight text-[var(--color-text-primary)]">{completedCount}<span className="text-[var(--color-text-tertiary)]">/{totalCount}</span></h3>
-            <p className="text-sm font-bold text-[var(--color-text-secondary)]">Done Today ✨</p>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-5xl font-black tracking-tighter text-[var(--color-text-primary)] drop-shadow-sm">
+              {completedCount}
+              <span className="text-2xl text-[var(--color-text-tertiary)]">/{totalCount}</span>
+            </h3>
+            <p className="text-[15px] font-bold text-[var(--color-text-secondary)]">Done Today ✨</p>
             
-            {/* Streak Badge inside Hero */}
-            <div className="mt-2 flex items-center gap-1.5 w-max rounded-full bg-[var(--color-streak)]/10 px-2.5 py-1 text-xs font-bold text-[#ff9500] ring-1 ring-[#ff9500]/20">
-              <Flame className="h-3.5 w-3.5 fill-[#ff9500]" />
-              {visibleHabits.reduce((acc, h) => Math.max(acc, h.currentStreak), 0)} Day Streak
+            {/* Streak Badge */}
+            <div className="mt-2 flex items-center gap-1.5 w-max rounded-[12px] bg-gradient-to-r from-[#FF9500] to-[#FFD60A] px-3 py-1.5 shadow-lg shadow-[#FF9500]/20">
+              <Flame className="h-4 w-4 fill-white text-white" />
+              <span className="text-xs font-black text-white drop-shadow-sm">
+                {visibleHabits.reduce((acc, h) => Math.max(acc, h.currentStreak), 0)} Day Streak
+              </span>
             </div>
           </div>
           
           {/* Progress Ring */}
-          <div className="relative flex h-[90px] w-[90px] items-center justify-center">
-            <svg className="h-full w-full rotate-[-90deg] drop-shadow-md" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="42" className="fill-none stroke-[var(--color-bg-secondary)] stroke-[8]" />
+          <div className="relative flex h-[100px] w-[100px] items-center justify-center">
+            {/* Outer Glow */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#34C759] to-[#00C7BE] opacity-20 blur-xl" />
+            
+            <svg className="h-full w-full rotate-[-90deg] drop-shadow-xl" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="42" className="fill-none stroke-[var(--color-bg-tertiary)] stroke-[10]" />
               <circle
                 cx="50"
                 cy="50"
                 r="42"
-                className="fill-none stroke-[var(--color-accent-green)] stroke-[8]"
+                className="fill-none stroke-[url(#progressGradient)] stroke-[10]"
                 strokeLinecap="round"
                 strokeDasharray="263.89"
                 strokeDashoffset={263.89 - (263.89 * Math.max(progressPct, 1)) / 100}
                 style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)" }}
               />
+              <defs>
+                <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#34C759" />
+                  <stop offset="100%" stopColor="#00C7BE" />
+                </linearGradient>
+              </defs>
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xl font-black text-[var(--color-text-primary)]">{progressPct}%</span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-black text-[var(--color-text-primary)] tracking-tighter">{progressPct}%</span>
             </div>
           </div>
         </div>
         
         {/* Level & XP Bar */}
-        <div className="relative z-10 mt-6 flex flex-col gap-2 rounded-2xl bg-[var(--color-bg-secondary)]/50 p-3 ring-1 ring-[var(--color-bg-tertiary)]">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-[var(--color-text-primary)]">Level {profile.level}</span>
+        <div className="relative z-10 mt-8 flex flex-col gap-2.5 rounded-[20px] bg-[var(--color-bg-primary)]/60 dark:bg-[var(--color-bg-secondary)]/60 p-4 shadow-sm ring-1 ring-white/20 dark:ring-white/5 backdrop-blur-md">
+          <div className="flex items-center justify-between text-[13px] font-black">
+            <span className="text-[var(--color-text-primary)] flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4 text-[#00C7BE]" />
+              Level {profile.level}
+            </span>
             <span className="text-[var(--color-text-tertiary)]">Next Level</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-bg-tertiary)]">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--color-bg-tertiary)] shadow-inner">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#34C759] to-[#00C7BE] transition-all duration-1000 ease-out"
-              style={{ width: `${levelProgressPct * 100}%` }}
-            />
+              className="relative h-full rounded-full bg-gradient-to-r from-[#34C759] via-[#00C7BE] to-[#32ADE6] transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,199,190,0.5)]"
+              style={{ width: `${Math.max(levelProgressPct * 100, 2)}%` }}
+            >
+              <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
+            </div>
           </div>
-          <div className="flex items-center justify-between text-[10px] font-bold text-[var(--color-text-secondary)]">
+          <div className="flex items-center justify-between text-[11px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
             <span>{optimisticXp.toLocaleString()} XP</span>
             <span>{nextLevelTotalXp.toLocaleString()} XP</span>
           </div>
