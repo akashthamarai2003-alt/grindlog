@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { toast } from "sonner";
 import { 
   Sprout, 
   Brain, 
@@ -27,12 +30,12 @@ type Module = {
 };
 
 const MODULES: Module[] = [
-  { id: "fitness", name: "Fitness", icon: Dumbbell, path: "/fitness", color: "from-[#FF2D55] to-[#FF3B30]" },
+  { id: "fitness", name: "Fitness", icon: Dumbbell, path: "/fitness", color: "from-[#FF2D55] to-[#FF3B30]", comingSoon: true },
   { id: "journal", name: "Journal", icon: BookOpen, path: "/journal", color: "from-[#00C7BE] to-[#32ADE6]" },
-  { id: "goals", name: "Goals", icon: Target, path: "/goals", color: "from-[#FFD60A] to-[#FF9500]" },
-  { id: "finance", name: "Finance", icon: Wallet, path: "/finance", color: "from-[#30B0C7] to-[#007AFF]" },
-  { id: "sleep", name: "Sleep", icon: Moon, path: "/sleep", color: "from-[#5856D6] to-[#3A3A3C]" },
-  { id: "learning", name: "Learning", icon: GraduationCap, path: "/learning", color: "from-[#FF9500] to-[#FF2D55]" },
+  { id: "goals", name: "Goals", icon: Target, path: "/goals", color: "from-[#FFD60A] to-[#FF9500]", comingSoon: true },
+  { id: "finance", name: "Finance", icon: Wallet, path: "/finance", color: "from-[#30B0C7] to-[#007AFF]", comingSoon: true },
+  { id: "sleep", name: "Sleep", icon: Moon, path: "/sleep", color: "from-[#5856D6] to-[#3A3A3C]", comingSoon: true },
+  { id: "learning", name: "Learning", icon: GraduationCap, path: "/learning", color: "from-[#FF9500] to-[#FF2D55]", comingSoon: true },
 ];
 
 export default function HubPage() {
@@ -50,12 +53,8 @@ export default function HubPage() {
       <div className="grid grid-cols-2 gap-4">
         {MODULES.map((mod) => {
           const Icon = mod.icon;
-          return (
-            <Link 
-              key={mod.id} 
-              href={mod.path}
-              className="relative flex flex-col items-center justify-center gap-3 overflow-hidden rounded-[24px] bg-[var(--color-bg-elevated)] p-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform hover:scale-95 active:scale-90"
-            >
+          const content = (
+            <>
               <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${mod.color} shadow-sm`}>
                 <Icon className="h-7 w-7 text-white" strokeWidth={2.5} />
               </div>
@@ -70,6 +69,30 @@ export default function HubPage() {
                   </span>
                 </div>
               )}
+            </>
+          );
+          
+          const className = "w-full relative flex flex-col items-center justify-center gap-3 overflow-hidden rounded-[24px] bg-[var(--color-bg-elevated)] p-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform hover:scale-95 active:scale-90";
+
+          if (mod.comingSoon) {
+            return (
+              <button
+                key={mod.id}
+                onClick={() => toast.info(`${mod.name} is coming soon!`)}
+                className={className}
+              >
+                {content}
+              </button>
+            );
+          }
+
+          return (
+            <Link 
+              key={mod.id} 
+              href={mod.path}
+              className={className}
+            >
+              {content}
             </Link>
           );
         })}
