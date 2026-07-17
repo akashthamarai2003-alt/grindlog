@@ -64,9 +64,9 @@ export default function HubPage() {
               </span>
               
               {mod.comingSoon && (
-                <div className="absolute right-0 top-0 flex h-full w-full items-center justify-center bg-[var(--color-bg-elevated)]/80 backdrop-blur-sm">
-                  <div className="rounded-full bg-[var(--color-bg-tertiary)] p-2 text-[var(--color-text-secondary)] shadow-sm">
-                    <Lock className="h-4 w-4" strokeWidth={2.5} />
+                <div className="absolute right-3 top-3">
+                  <div className="rounded-full bg-[var(--color-bg-tertiary)] p-1.5 text-[var(--color-text-secondary)] shadow-sm">
+                    <Lock className="h-3.5 w-3.5" strokeWidth={2.5} />
                   </div>
                 </div>
               )}
