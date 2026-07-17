@@ -707,14 +707,14 @@ function HabitChecklist({
     <div className="border border-[var(--color-bg-tertiary)] rounded-[20px] mt-1 shadow-sm overflow-x-auto hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
       <div className={cn("flex flex-col", viewMode === "monthly" ? "min-w-max" : "w-full")}>
         {/* Header Row */}
-        <div className="flex items-center bg-[var(--color-bg-elevated)] border-b border-[var(--color-bg-tertiary)] py-2">
+        <div className="flex items-stretch bg-[var(--color-bg-elevated)] border-b border-[var(--color-bg-tertiary)]">
           <div className={cn(
-            "flex-[1.5] px-3 text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider sticky left-0 z-20 bg-[var(--color-bg-elevated)] border-r border-[var(--color-bg-tertiary)]/30",
-            viewMode === "weekly" ? "min-w-[100px]" : "w-[120px] shrink-0"
+            "flex items-center px-2 sm:px-3 py-2 text-[10px] sm:text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider sticky left-0 z-20 bg-[var(--color-bg-elevated)] border-r border-[var(--color-bg-tertiary)]/30",
+            viewMode === "weekly" ? "w-[90px] shrink-0" : "w-[120px] shrink-0"
           )}>
             My Habits
           </div>
-          <div className="flex-[2] flex items-center pr-2">
+          <div className="flex-1 flex items-stretch pr-2 py-2">
             {displayDays.map(day => (
               <div key={day.dateStr} className={cn(
                 "flex flex-col items-center justify-center gap-0.5",
@@ -733,8 +733,8 @@ function HabitChecklist({
             {/* Habit Name / Left Side */}
             <div 
               className={cn(
-                "flex-[1.5] flex items-center gap-2 px-3 py-2.5 overflow-hidden sticky left-0 z-10 bg-[var(--color-bg-secondary)] border-r border-[var(--color-bg-tertiary)]/50",
-                viewMode === "weekly" ? "min-w-[100px]" : "w-[120px] shrink-0"
+                "flex items-center gap-2 px-2 sm:px-3 py-2.5 overflow-hidden sticky left-0 z-10 bg-[var(--color-bg-secondary)] border-r border-[var(--color-bg-tertiary)]/50",
+                viewMode === "weekly" ? "w-[90px] shrink-0" : "w-[120px] shrink-0"
               )}
             >
               <div className="absolute inset-0 opacity-15" style={{ backgroundColor: habit.color }} />
@@ -743,7 +743,7 @@ function HabitChecklist({
             </div>
             
             {/* Checkboxes / Right Side */}
-            <div className="flex-[2] flex items-center pr-2 bg-[var(--color-bg-secondary)]">
+            <div className="flex-1 flex items-center pr-2 bg-[var(--color-bg-secondary)]">
               {displayDays.map((day) => {
                 const log = logs.find((l) => l.habit_id === habit.id && l.date === day.dateStr);
                 const isScheduled = isHabitScheduled(habit.frequency, habit.custom_days, new Date(day.dateStr + "T12:00:00Z"));
