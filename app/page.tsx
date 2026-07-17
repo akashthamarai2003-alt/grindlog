@@ -25,7 +25,7 @@ export default function SplashPage() {
   useEffect(() => {
     if (stage === "done") {
       const timer = setTimeout(() => {
-        window.location.href = "/onboarding";
+        window.location.href = "/auth/signup";
       }, 100);
       return () => clearTimeout(timer);
     }
