@@ -7,6 +7,21 @@ import { HabitFrequency } from "@/types";
 import { updateQuestProgress, checkAndUnlockAchievements } from "./gamification";
 
 
+export async function getMaxUserStreak() {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const { data: habits } = await supabase
+    .from("habits")
+    .select("current_streak")
+    .eq("user_id", user.id);
+
+  if (!habits || habits.length === 0) return 0;
+  
+  return Math.max(...habits.map((h: any) => h.current_streak || 0));
+}
+
 export async function toggleHabitCompletion(
   habitId: string,
   dateStr: string, // YYYY-MM-DD format

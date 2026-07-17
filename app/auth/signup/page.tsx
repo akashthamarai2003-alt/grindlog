@@ -25,7 +25,7 @@ export default function SignUpPage() {
     const result = await signUp(form.email, form.password, form.name);
     setIsLoading(false);
     if (result.success) {
-      router.push("/dashboard");
+      router.push("/payment");
     } else {
       setError(result.error || "Failed to create account");
     }
