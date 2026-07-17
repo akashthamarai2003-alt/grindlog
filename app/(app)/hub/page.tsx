@@ -13,7 +13,8 @@ import {
   GraduationCap, 
   Calendar, 
   LineChart,
-  Store
+  Store,
+  Lock
 } from "lucide-react";
 
 import { ForwardRefExoticComponent, RefAttributes } from "react";
@@ -64,9 +65,9 @@ export default function HubPage() {
               
               {mod.comingSoon && (
                 <div className="absolute right-0 top-0 flex h-full w-full items-center justify-center bg-[var(--color-bg-elevated)]/80 backdrop-blur-sm">
-                  <span className="rounded-full bg-[var(--color-bg-tertiary)] px-2 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">
-                    Soon
-                  </span>
+                  <div className="rounded-full bg-[var(--color-bg-tertiary)] p-2 text-[var(--color-text-secondary)] shadow-sm">
+                    <Lock className="h-4 w-4" strokeWidth={2.5} />
+                  </div>
                 </div>
               )}
             </>
