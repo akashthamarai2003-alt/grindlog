@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { Plus, Mic, Image as ImageIcon } from "lucide-react";
+import { Plus, Mic, Image as ImageIcon, BookOpen } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { formatDate } from "@/lib/utils";
 import { useJournal } from "@/features/journal/hooks/use-journal";
@@ -40,7 +40,7 @@ export default function JournalPage() {
         </div>
         <button
           onClick={() => router.push("/journal/new")}
-          className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent-green)] text-white shadow-lg shadow-[var(--color-accent-green)]/25"
+          className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00C7BE] to-[#32ADE6] text-white shadow-lg shadow-[#00C7BE]/25 active:scale-90 transition-transform"
         >
           <Plus className="h-5 w-5" />
         </button>
@@ -61,17 +61,20 @@ export default function JournalPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center justify-center py-20 text-center"
         >
-          <span className="text-6xl">📖</span>
-          <h3 className="mt-4 text-lg font-bold text-[var(--color-text-primary)]">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[32px] bg-gradient-to-br from-[#00C7BE] to-[#32ADE6] shadow-xl shadow-[#00C7BE]/20">
+            <BookOpen className="h-10 w-10 text-white" strokeWidth={2.5} />
+          </div>
+          <h3 className="text-xl font-black tracking-tight text-[var(--color-text-primary)]">
             No entries yet
           </h3>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+          <p className="mt-2 text-[13px] font-bold text-[var(--color-text-secondary)]">
             Start journaling to track your journey
           </p>
           <button
             onClick={() => router.push("/journal/new")}
-            className="mt-6 rounded-2xl bg-[var(--color-accent-green)] px-6 py-3 text-sm font-semibold text-white"
+            className="mt-8 flex items-center gap-2 rounded-[20px] bg-gradient-to-br from-[#00C7BE] to-[#32ADE6] px-8 py-3.5 text-[13px] font-black text-white shadow-lg shadow-[#00C7BE]/25 transition-transform active:scale-95"
           >
+            <Plus className="h-4 w-4" strokeWidth={3} />
             Write First Entry
           </button>
         </motion.div>
