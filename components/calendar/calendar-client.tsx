@@ -653,7 +653,7 @@ function MonthStats({
 
 // ─── Weekly Checklist ─────────────────────────────────────────────────────────
 
-function WeeklyChecklist({
+function HabitChecklist({
   habits,
   logs,
   selectedDate,
@@ -667,9 +667,12 @@ function WeeklyChecklist({
   onLogChange: (habitId: string, dateStr: string, status: HabitLog["status"] | null) => void;
 }) {
   const [isPreview, setIsPreview] = useState(false);
+  const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
+
+  // Weekly setup
   const startOfWeek = new Date(selectedDate);
   startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
-
+  
   const weekDays = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
@@ -680,107 +683,129 @@ function WeeklyChecklist({
     };
   });
 
+  // Monthly setup
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  const monthDays = Array.from({ length: daysInMonth }).map((_, i) => {
+    const d = new Date(year, month, i + 1);
+    return {
+      date: d,
+      dateStr: toDateStr(d),
+      label: ["S", "M", "T", "W", "T", "F", "S"][d.getDay()],
+    };
+  });
+
+  const displayDays = viewMode === "weekly" ? weekDays : monthDays;
+  const title = "Habit Checklist";
+  const dateRangeStr = viewMode === "weekly" 
+    ? `${startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+    : `${selectedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}`;
+
   const gridContent = (
-    <div className="flex flex-col border border-[var(--color-bg-tertiary)] rounded-[20px] overflow-hidden mt-1 shadow-sm">
-      {/* Header Row */}
-          <div className="flex items-center bg-[var(--color-bg-elevated)] border-b border-[var(--color-bg-tertiary)] py-2">
-            <div className="flex-[1.5] min-w-[100px] px-3 text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">
-              My Habits
-            </div>
-            <div className="flex-[2] flex items-center pr-2">
-              {weekDays.map(day => (
-                <div key={day.dateStr} className="flex-1 flex flex-col items-center justify-center gap-0.5">
-                  <span className="text-[10px] font-bold text-[var(--color-text-primary)]">{day.label}</span>
-                  <span className="text-[9px] font-bold text-[var(--color-text-tertiary)]">{day.date.getDate()}</span>
-                </div>
-              ))}
-            </div>
+    <div className="border border-[var(--color-bg-tertiary)] rounded-[20px] mt-1 shadow-sm overflow-x-auto hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+      <div className="flex flex-col min-w-max">
+        {/* Header Row */}
+        <div className="flex items-center bg-[var(--color-bg-elevated)] border-b border-[var(--color-bg-tertiary)] py-2">
+          <div className="flex-[1.5] w-[120px] shrink-0 px-3 text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider sticky left-0 z-20 bg-[var(--color-bg-elevated)] border-r border-[var(--color-bg-tertiary)]/30">
+            My Habits
           </div>
-
-          {/* Habit Rows */}
-          {habits.map((habit, i) => (
-            <div key={habit.id} className="flex items-stretch border-b border-[var(--color-bg-tertiary)] last:border-0 bg-[var(--color-bg-secondary)]">
-              {/* Habit Name / Left Side */}
-              <div 
-                className="flex-[1.5] min-w-[100px] flex items-center gap-2 px-3 py-2.5 overflow-hidden" 
-                style={{ backgroundColor: `${habit.color}15` }}
-              >
-                <span className="text-[14px] flex-shrink-0">{habit.emoji}</span>
-                <span className="text-[12px] font-bold text-[var(--color-text-primary)] truncate">{habit.name}</span>
+          <div className="flex-[2] flex items-center pr-2">
+            {displayDays.map(day => (
+              <div key={day.dateStr} className="w-[40px] shrink-0 flex flex-col items-center justify-center gap-0.5">
+                <span className="text-[10px] font-bold text-[var(--color-text-primary)]">{day.label}</span>
+                <span className="text-[9px] font-bold text-[var(--color-text-tertiary)]">{day.date.getDate()}</span>
               </div>
-              
-              {/* Checkboxes / Right Side */}
-              <div className="flex-[2] flex items-center pr-2 bg-[var(--color-bg-secondary)]">
-                {weekDays.map((day) => {
-                  const log = logs.find((l) => l.habit_id === habit.id && l.date === day.dateStr);
-                  const isScheduled = isHabitScheduled(habit.frequency, habit.custom_days, new Date(day.dateStr + "T12:00:00Z"));
-                  
-                  const createdStr = habit.created_at ? habit.created_at.split("T")[0] : null;
-                  const valid = isScheduled && (!createdStr || createdStr <= day.dateStr);
-                  const isFuture = day.dateStr > todayDateStr;
-                  const isPast = day.dateStr < todayDateStr;
-                  const actualStatus = log?.status;
-                  let status = actualStatus;
+            ))}
+          </div>
+        </div>
 
-                  if (valid && isPast && !status) {
-                    status = "failed";
-                  }
+        {/* Habit Rows */}
+        {habits.map((habit, i) => (
+          <div key={habit.id} className="flex items-stretch border-b border-[var(--color-bg-tertiary)] last:border-0 bg-[var(--color-bg-secondary)]">
+            {/* Habit Name / Left Side */}
+            <div 
+              className="flex-[1.5] w-[120px] shrink-0 flex items-center gap-2 px-3 py-2.5 overflow-hidden sticky left-0 z-10 bg-[var(--color-bg-secondary)] border-r border-[var(--color-bg-tertiary)]/50" 
+            >
+              <div className="absolute inset-0 opacity-15" style={{ backgroundColor: habit.color }} />
+              <span className="text-[14px] flex-shrink-0 relative z-10">{habit.emoji}</span>
+              <span className="text-[12px] font-bold text-[var(--color-text-primary)] truncate relative z-10">{habit.name}</span>
+            </div>
+            
+            {/* Checkboxes / Right Side */}
+            <div className="flex-[2] flex items-center pr-2 bg-[var(--color-bg-secondary)]">
+              {displayDays.map((day) => {
+                const log = logs.find((l) => l.habit_id === habit.id && l.date === day.dateStr);
+                const isScheduled = isHabitScheduled(habit.frequency, habit.custom_days, new Date(day.dateStr + "T12:00:00Z"));
+                
+                const createdStr = habit.created_at ? habit.created_at.split("T")[0] : null;
+                const valid = isScheduled && (!createdStr || createdStr <= day.dateStr);
+                const isFuture = day.dateStr > todayDateStr;
+                const isPast = day.dateStr < todayDateStr;
+                const actualStatus = log?.status;
+                let status = actualStatus;
 
-                  let borderClass = "border-2 border-[var(--color-bg-tertiary)]";
-                  let bgClass = "bg-transparent";
-                  let icon = null;
+                if (valid && isPast && !status) {
+                  status = "failed";
+                }
 
-                  if (!valid) {
-                    return (
-                      <div key={day.dateStr} className="flex-1 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-tertiary)] opacity-30" />
-                      </div>
-                    );
-                  }
+                let borderClass = "border-2 border-[var(--color-bg-tertiary)]";
+                let bgClass = "bg-transparent";
+                let icon = null;
 
-                  if (status === "completed") {
-                    bgClass = "bg-[#34C759]";
-                    borderClass = "border-[#34C759]";
-                    icon = <CheckCircle2 className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
-                  } else if (status === "skipped") {
-                    bgClass = "bg-[#FF9500]";
-                    borderClass = "border-[#FF9500]";
-                    icon = <MinusCircle className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
-                  } else if (status === "failed") {
-                    bgClass = "bg-[#FF3B30]";
-                    borderClass = "border-[#FF3B30]";
-                    icon = <XCircle className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
-                  } else if (day.dateStr === todayDateStr) {
-                    borderClass = "border-2 border-[#007AFF]/50 ring-2 ring-[#007AFF]/20 ring-offset-1 ring-offset-[var(--color-bg-secondary)]";
-                  }
-
+                if (!valid) {
                   return (
-                    <div key={day.dateStr} className="flex-1 flex items-center justify-center">
-                      <button
-                        onClick={() => {
-                          if (!valid || isFuture) return;
-                          let nextStatus: HabitLog["status"] | null = "completed";
-                          if (actualStatus === "completed") nextStatus = "failed";
-                          else if (actualStatus === "failed") nextStatus = null;
-                          onLogChange(habit.id, day.dateStr, nextStatus);
-                        }}
-                        disabled={!valid || isFuture}
-                        className={cn(
-                          "flex items-center justify-center w-5 h-5 rounded-[6px] transition-transform active:scale-90",
-                          bgClass,
-                          borderClass,
-                          valid && !isFuture && !actualStatus ? "hover:border-[var(--color-text-tertiary)]" : ""
-                        )}
-                      >
-                        {icon}
-                      </button>
+                    <div key={day.dateStr} className="w-[40px] shrink-0 flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-tertiary)] opacity-30" />
                     </div>
                   );
-                })}
-              </div>
+                }
+
+                if (status === "completed") {
+                  bgClass = "bg-[#34C759]";
+                  borderClass = "border-[#34C759]";
+                  icon = <CheckCircle2 className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
+                } else if (status === "skipped") {
+                  bgClass = "bg-[#FF9500]";
+                  borderClass = "border-[#FF9500]";
+                  icon = <MinusCircle className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
+                } else if (status === "failed") {
+                  bgClass = "bg-[#FF3B30]";
+                  borderClass = "border-[#FF3B30]";
+                  icon = <XCircle className="w-3.5 h-3.5 text-white" strokeWidth={3} />;
+                } else if (day.dateStr === todayDateStr) {
+                  borderClass = "border-2 border-[#007AFF]/50 ring-2 ring-[#007AFF]/20 ring-offset-1 ring-offset-[var(--color-bg-secondary)]";
+                }
+
+                return (
+                  <div key={day.dateStr} className="w-[40px] shrink-0 flex items-center justify-center">
+                    <button
+                      onClick={() => {
+                        if (!valid || isFuture) return;
+                        let nextStatus: HabitLog["status"] | null = "completed";
+                        if (actualStatus === "completed") nextStatus = "failed";
+                        else if (actualStatus === "failed") nextStatus = null;
+                        onLogChange(habit.id, day.dateStr, nextStatus);
+                      }}
+                      disabled={!valid || isFuture}
+                      className={cn(
+                        "flex items-center justify-center w-5 h-5 rounded-[6px] transition-transform active:scale-90",
+                        bgClass,
+                        borderClass,
+                        valid && !isFuture && !actualStatus ? "hover:border-[var(--color-text-tertiary)]" : ""
+                      )}
+                    >
+                      {icon}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 
   return (
@@ -789,18 +814,45 @@ function WeeklyChecklist({
         <div className="flex items-center justify-between px-1">
           <div className="flex flex-col">
             <h2 className="text-[17px] font-black tracking-tight text-[var(--color-text-primary)]">
-              Weekly Checklist
+              {title}
             </h2>
             <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
-              {startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              {dateRangeStr}
             </span>
           </div>
-          <button 
-            onClick={() => setIsPreview(true)}
-            className="w-9 h-9 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-primary)] transition-transform active:scale-90 shadow-sm"
-          >
-            <Maximize className="w-4 h-4" strokeWidth={2.5} />
-          </button>
+          
+          <div className="flex items-center gap-2">
+            <div className="flex p-0.5 bg-[var(--color-bg-tertiary)] rounded-xl">
+              <button
+                onClick={() => setViewMode("weekly")}
+                className={cn(
+                  "px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors",
+                  viewMode === "weekly" 
+                    ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] shadow-sm" 
+                    : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                )}
+              >
+                Week
+              </button>
+              <button
+                onClick={() => setViewMode("monthly")}
+                className={cn(
+                  "px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors",
+                  viewMode === "monthly" 
+                    ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] shadow-sm" 
+                    : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                )}
+              >
+                Month
+              </button>
+            </div>
+            <button 
+              onClick={() => setIsPreview(true)}
+              className="w-9 h-9 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-primary)] transition-transform active:scale-90 shadow-sm"
+            >
+              <Maximize className="w-4 h-4" strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
         
         {habits.length === 0 ? (
@@ -827,17 +879,43 @@ function WeeklyChecklist({
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)]">
                 <div className="flex flex-col">
-                  <h2 className="text-base font-black text-[var(--color-text-primary)] tracking-tight">Weekly Checklist</h2>
+                  <h2 className="text-base font-black text-[var(--color-text-primary)] tracking-tight">{title}</h2>
                   <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
-                    {startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    {dateRangeStr}
                   </span>
                 </div>
-                <button 
-                  onClick={() => setIsPreview(false)}
-                  className="w-12 h-12 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-primary)] transition-transform active:scale-90 shadow-sm"
-                >
-                  <XCircle className="w-7 h-7 text-[var(--color-text-tertiary)]" />
-                </button>
+                <div className="flex items-center gap-4">
+                  <div className="flex p-0.5 bg-[var(--color-bg-tertiary)] rounded-xl">
+                    <button
+                      onClick={() => setViewMode("weekly")}
+                      className={cn(
+                        "px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors",
+                        viewMode === "weekly" 
+                          ? "bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] shadow-sm" 
+                          : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                      )}
+                    >
+                      Week
+                    </button>
+                    <button
+                      onClick={() => setViewMode("monthly")}
+                      className={cn(
+                        "px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors",
+                        viewMode === "monthly" 
+                          ? "bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] shadow-sm" 
+                          : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                      )}
+                    >
+                      Month
+                    </button>
+                  </div>
+                  <button 
+                    onClick={() => setIsPreview(false)}
+                    className="w-12 h-12 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-primary)] transition-transform active:scale-90 shadow-sm"
+                  >
+                    <XCircle className="w-7 h-7 text-[var(--color-text-tertiary)]" />
+                  </button>
+                </div>
               </div>
               
               {/* Grid content wrapping */}
@@ -1122,7 +1200,7 @@ export function CalendarClient({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <WeeklyChecklist 
+            <HabitChecklist 
               habits={habits}
               logs={logs}
               selectedDate={selected}
