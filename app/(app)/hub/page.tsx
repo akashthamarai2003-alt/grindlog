@@ -27,10 +27,6 @@ type Module = {
 };
 
 const MODULES: Module[] = [
-  { id: "habits", name: "Habits", icon: Sprout, path: "/dashboard", color: "from-[#34C759] to-[#28a745]" },
-  { id: "coach", name: "AI Coach", icon: Brain, path: "/coach", color: "from-[#007AFF] to-[#5856D6]" },
-  { id: "planner", name: "Planner", icon: Calendar, path: "/calendar", color: "from-[#FF9500] to-[#FF3B30]" },
-  { id: "analytics", name: "Analytics", icon: LineChart, path: "/analytics", color: "from-[#5856D6] to-[#AF52DE]" },
   { id: "fitness", name: "Fitness", icon: Dumbbell, path: "/fitness", color: "from-[#FF2D55] to-[#FF3B30]" },
   { id: "journal", name: "Journal", icon: BookOpen, path: "/journal", color: "from-[#00C7BE] to-[#32ADE6]" },
   { id: "goals", name: "Goals", icon: Target, path: "/goals", color: "from-[#FFD60A] to-[#FF9500]" },
