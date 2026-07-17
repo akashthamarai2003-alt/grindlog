@@ -36,9 +36,9 @@ export default function RefundPolicyPage() {
           GrindLog offers digital subscriptions and in-app premium features. Due to the nature of digital goods and immediate access to premium features upon purchase, our products are generally non-refundable unless required by law.
         </p>
 
-        <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">2. 7-Day Money Back Guarantee</h2>
+        <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">2. No Refunds</h2>
         <p className="mt-4 leading-relaxed">
-          We want you to be completely satisfied with GrindLog Premium. We offer a 7-day money-back guarantee for first-time subscribers. If you decide the premium features aren't right for you within the first 7 days of your initial purchase, you may request a full refund.
+          The amount is strictly non-refundable. We do not offer a money-back guarantee. If any issues come up with the app or your account, please reach out to us and we will fix it shortly.
         </p>
 
         <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">3. Subscription Cancellations</h2>
@@ -46,14 +46,14 @@ export default function RefundPolicyPage() {
           You can cancel your subscription at any time to prevent future billing. Cancellation will take effect at the end of your current billing cycle. You will retain access to premium features until that cycle concludes. We do not provide prorated refunds for mid-cycle cancellations.
         </p>
 
-        <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">4. Processing Refunds</h2>
+        <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">4. Exceptions</h2>
         <p className="mt-4 leading-relaxed">
-          Approved refunds will be processed and credited back to your original payment method. Depending on your financial institution, it may take 5 to 10 business days for the funds to appear on your statement.
+          Refunds will only be issued in rare cases where required by law or in the event of an accidental duplicate charge. Approved refunds will be processed and credited back to your original payment method within 5 to 10 business days.
         </p>
 
-        <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">5. How to Request a Refund</h2>
+        <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">5. How to Report an Issue</h2>
         <p className="mt-4 leading-relaxed">
-          To request a refund within the eligible 7-day window, or if you believe you were charged in error, please contact us at support@grindlog.app with your account email and purchase receipt.
+          If you are experiencing any technical issues, or if you believe you were charged in error, please contact us at support@grindlog.in with your account email and purchase receipt. Our team will work to resolve the issue as quickly as possible.
         </p>
       </motion.div>
     </div>
