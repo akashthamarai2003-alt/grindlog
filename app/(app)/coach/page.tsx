@@ -8,6 +8,7 @@ import {
   BookOpen, CheckCircle2, AlertCircle, HelpCircle, ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   generateHabitsAction,
   addHabitFromAIAction,
@@ -125,6 +126,9 @@ export default function CoachPage() {
       } else {
         setAddedHabits(prev => ({ ...prev, [index]: true }));
       }
+      toast.success("Habit added!");
+    } else {
+      toast.error(res.error || "Failed to add habit");
     }
   };
 
