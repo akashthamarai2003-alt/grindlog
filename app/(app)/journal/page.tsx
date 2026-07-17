@@ -26,7 +26,7 @@ export default function JournalPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={springs.default}
-        className="flex items-center justify-between"
+        className="flex w-full items-center justify-between"
       >
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
