@@ -576,9 +576,15 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both"
       >
         <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)] px-1">Inspiration</h2>
-        <div className="relative overflow-hidden rounded-[24px] bg-[#1C1C1E] p-6 shadow-xl ring-1 ring-white/10">
-          <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-transparent" />
-          <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
+        <div className="relative overflow-hidden rounded-[24px] p-6 shadow-xl ring-1 ring-white/10">
+          <Image 
+            src="/inspiration.png" 
+            alt="Inspiration Background" 
+            fill 
+            className="object-cover absolute inset-0 z-0 brightness-[0.4]" 
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/60 to-black/30 z-0" />
           <Quote className="absolute -right-4 -top-4 h-32 w-32 text-white/5 rotate-12" />
           
           <div className="relative z-10 flex flex-col gap-5">
