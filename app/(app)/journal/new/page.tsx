@@ -179,7 +179,7 @@ export default function NewJournalPage() {
       </motion.div>
 
       {/* Save button */}
-      <div className="px-5 pb-8 safe-bottom pt-4">
+      <div className="px-5 pb-32 safe-bottom pt-4 mt-auto">
         <motion.button
           whileTap={{ scale: 0.96 }}
           onClick={handleSave}
