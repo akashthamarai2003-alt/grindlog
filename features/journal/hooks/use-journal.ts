@@ -77,7 +77,7 @@ export function useJournal() {
     if (err) {
       console.error("Supabase upsert error in createEntry:", err);
       setError(err.message);
-      return null;
+      throw new Error(err.message || "Failed to save entry");
     }
 
     await fetchEntries();

@@ -28,13 +28,18 @@ export default function NewJournalPage() {
   const handleSave = async () => {
     if (!content.trim()) return;
     setIsSaving(true);
-    const entry = await createEntry({ content: content.trim(), mood, energy, focus });
-    setIsSaving(false);
-    if (!entry) {
-      alert("Failed to save journal entry. Please check the browser console for details.");
-      return;
+    try {
+      const entry = await createEntry({ content: content.trim(), mood, energy, focus });
+      setIsSaving(false);
+      if (!entry) {
+        alert("Failed to save journal entry. (No entry returned - possibly an error was logged)");
+        return;
+      }
+      router.push("/journal");
+    } catch (err: any) {
+      setIsSaving(false);
+      alert(`Error saving entry: ${err?.message || "Unknown error"}`);
     }
-    router.push("/journal");
   };
 
   return (
