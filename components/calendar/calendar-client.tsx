@@ -157,6 +157,9 @@ function DayCell({
   const circ = 2 * Math.PI * r;
   const ringColor = isPerfect ? "#34C759" : "#007AFF";
 
+  // Cap the progress ring so the rounded linecaps don't collide when almost complete (e.g., 95%)
+  const visualPct = isPerfect ? 1 : Math.min(pct, (circ - 4.5) / circ);
+
   return (
     <td role="gridcell" className="p-0 text-center focus-within:relative focus-within:z-20">
       <button
@@ -166,7 +169,7 @@ function DayCell({
         "rounded-[14px] pt-1.5 pb-1 select-none outline-none",
         "transition-all duration-200 active:scale-[0.82]",
         isOutside && "opacity-20 pointer-events-none",
-        isSelected && !isOutside && [
+        isSelected && [
           "bg-[var(--color-primary)]/15",
           "ring-2 ring-[var(--color-primary)] ring-offset-1",
           "ring-offset-[var(--color-bg-secondary)]",
@@ -202,7 +205,7 @@ function DayCell({
             strokeLinecap="round"
             style={{
               strokeDasharray: circ,
-              strokeDashoffset: circ - pct * circ,
+              strokeDashoffset: circ - visualPct * circ,
               transition: "stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
             }}
           />
@@ -260,7 +263,7 @@ function DayCell({
       {/* Perfect ⭐ */}
       {isPerfect && !isOutside && (
         <span
-          className="absolute -top-1.5 -right-1 text-[9px] z-20 leading-none animate-in zoom-in duration-500"
+          className="absolute -top-2 -right-1.5 text-[9px] z-20 leading-none animate-in zoom-in duration-500"
         >
           ⭐
         </span>
