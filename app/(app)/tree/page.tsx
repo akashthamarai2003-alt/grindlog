@@ -416,8 +416,8 @@ class TreeOfLife {
 
   private updateEnvironment(dt: number): void {
     // Day/Night cycle (24 hour = 120 seconds for demo, can be adjusted)
-    this.lighting.timeOfDay += dt * 0.008; // Slow cycle
-    if (this.lighting.timeOfDay > 1) this.lighting.timeOfDay -= 1;
+    const now = new Date();
+    this.lighting.timeOfDay = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
 
     this.lighting.sunAngle = this.lighting.timeOfDay * Math.PI * 2;
     this.lighting.ambient = 0.3 + Math.max(0, Math.sin(this.lighting.sunAngle)) * 0.7;
@@ -4247,6 +4247,7 @@ export default function TreePage() {
   const treeRef = useRef<TreeOfLife | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDevTools, setShowDevTools] = useState(false);
 
   useEffect(() => {
     getMaxUserStreak().then(max => {
@@ -4291,6 +4292,12 @@ export default function TreePage() {
         </div>
       )}
 
+      {/* Secret Dev Tools Toggle */}
+      <button 
+        className="absolute top-0 left-0 w-20 h-20 z-50 opacity-0 cursor-default"
+        onClick={() => setShowDevTools(!showDevTools)}
+      />
+
       <canvas 
         ref={canvasRef} 
         className="absolute inset-0 w-full h-full block touch-none cursor-pointer"
@@ -4300,16 +4307,16 @@ export default function TreePage() {
       {/* Interactive hint */}
       {!isLoading && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-          <div className="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 animate-pulse">
+          {/* <div className="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 animate-pulse">
             <p className="text-white/80 text-sm font-medium">
               ✨ Tap or click the tree to interact
             </p>
-          </div>
+          </div> */}
         </div>
       )}
 
       {/* Development Controls */}
-      {process.env.NODE_ENV === 'development' && !isLoading && (
+      {(process.env.NODE_ENV === 'development' || showDevTools) && !isLoading && (
         <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 bg-black/60 backdrop-blur-lg p-4 rounded-xl border border-white/10 max-h-[80vh] overflow-y-auto">
           <div className="text-xs text-white/70 font-bold mb-2 uppercase tracking-wider border-b border-white/20 pb-2">
             🌳 Developer Tools
