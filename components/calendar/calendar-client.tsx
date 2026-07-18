@@ -302,14 +302,28 @@ function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle,
       style={{ animationDelay: `${50 + idx * 50}ms` }}
     >
       {/* Emoji bubble */}
-      <div
-        className="w-[46px] h-[46px] rounded-[16px] flex items-center justify-center text-[22px] flex-shrink-0 shadow-sm"
-        style={{
-          backgroundColor: `${habit.color}25`,
-          color: habit.color,
-        }}
-      >
-        {habit.emoji}
+      <div className="relative flex-shrink-0">
+        <div
+          className="w-[46px] h-[46px] rounded-[16px] flex items-center justify-center text-[22px] flex-shrink-0 shadow-sm"
+          style={{
+            backgroundColor: `${habit.color}25`,
+            color: habit.color,
+          }}
+        >
+          {habit.emoji}
+        </div>
+        {remark && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewRemark();
+            }}
+            className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center bg-[var(--color-accent-blue)] text-white shadow-sm ring-2 ring-[var(--color-bg-primary)] hover:scale-110 transition-transform"
+            title="View Remark"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Info */}
@@ -382,18 +396,6 @@ function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle,
               </button>
             );
           })}
-          {remark && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewRemark();
-              }}
-              className="ml-1 w-8 h-8 rounded-full flex items-center justify-center bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/20 transition-colors"
-              title="View Remark"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </button>
-          )}
         </div>
       ) : (
         <div className="flex items-center gap-1 text-[var(--color-text-tertiary)]">
