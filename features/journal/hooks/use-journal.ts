@@ -41,6 +41,24 @@ export function useJournal() {
     if (!userId) return null;
     const today = new Date().toISOString().split("T")[0];
 
+    // Generate AI summary
+    let ai_summary = null;
+    let ai_sentiment = null;
+    try {
+      const res = await fetch("/api/ai/journal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry),
+      });
+      if (res.ok) {
+        const aiData = await res.json();
+        ai_summary = aiData.summary;
+        ai_sentiment = aiData.sentiment;
+      }
+    } catch (e) {
+      console.error("Failed to generate AI summary", e);
+    }
+
     const { data, error: err } = await supabase
       .from("journal_entries")
       .upsert({
@@ -50,6 +68,8 @@ export function useJournal() {
         mood: entry.mood,
         energy: entry.energy,
         focus: entry.focus,
+        ai_summary,
+        ai_sentiment,
       } as any)
       .select()
       .single();

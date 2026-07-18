@@ -28,8 +28,12 @@ export default function NewJournalPage() {
   const handleSave = async () => {
     if (!content.trim()) return;
     setIsSaving(true);
-    await createEntry({ content: content.trim(), mood, energy, focus });
+    const entry = await createEntry({ content: content.trim(), mood, energy, focus });
     setIsSaving(false);
+    if (!entry) {
+      alert("Failed to save journal entry. Is the database table 'journal_entries' created?");
+      return;
+    }
     router.push("/journal");
   };
 
@@ -154,15 +158,7 @@ export default function NewJournalPage() {
           />
         </div>
 
-        {/* Media buttons */}
-        <div className="flex gap-3">
-          <button className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--color-bg-secondary)] py-3.5 text-sm font-semibold text-[var(--color-text-secondary)]">
-            <ImageIcon className="h-4 w-4" /> Add Photo
-          </button>
-          <button className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--color-bg-secondary)] py-3.5 text-sm font-semibold text-[var(--color-text-secondary)]">
-            <Mic className="h-4 w-4" /> Record Voice
-          </button>
-        </div>
+
 
         {/* AI Summary hint */}
         <div className="rounded-2xl border border-[var(--color-accent-blue)]/10 bg-gradient-to-br from-[var(--color-accent-blue-light)] to-[var(--color-bg-secondary)] p-4">
