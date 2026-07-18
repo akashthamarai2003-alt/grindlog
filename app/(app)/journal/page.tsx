@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Plus, Mic, Image as ImageIcon, BookOpen } from "lucide-react";
@@ -19,7 +20,7 @@ const MOOD_EMOJIS: Record<number, string> = {
 export default function JournalPage() {
   const router = useRouter();
   const { entries, isLoading } = useJournal();
-  const [expandedId, setExpandedId] = React.useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
