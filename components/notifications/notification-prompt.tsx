@@ -16,13 +16,14 @@ export function NotificationPrompt({ variant = "card" }: NotificationPromptProps
   const [registered, setRegistered] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const registerDevice = async () => {
     const oldToken = localStorage.getItem("fcm_token");
     const token = await requestFirebaseNotificationPermission();
 
     if (!token) {
-      if (Notification.permission === "denied") {
+      if (typeof Notification !== "undefined" && Notification.permission === "denied") {
         setPermission("denied");
       }
       return false;
@@ -73,10 +74,21 @@ export function NotificationPrompt({ variant = "card" }: NotificationPromptProps
 
   const handleRequestPermission = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
-      await registerDevice();
-    } catch (error) {
+      const success = await registerDevice();
+      if (!success) {
+        if (typeof Notification === "undefined") {
+          setErrorMsg("Your browser doesn't support notifications. On iOS, tap Share > Add to Home Screen first.");
+        } else if (Notification.permission === "denied") {
+          setErrorMsg("Notifications are blocked in your browser settings.");
+        } else {
+          setErrorMsg("Failed to setup notifications. Ensure you have a secure connection.");
+        }
+      }
+    } catch (error: any) {
       console.error("Failed to enable notifications", error);
+      setErrorMsg(error.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -123,6 +135,12 @@ export function NotificationPrompt({ variant = "card" }: NotificationPromptProps
           ? "You need to allow notifications in your browser settings to receive AI and Tree reminders."
           : "Never miss a habit. Get personalized AI reminders, streak alerts, and tree watering notifications directly to your device!"}
       </p>
+
+      {errorMsg && (
+        <div className="relative z-10 mb-4 rounded-xl bg-red-500/10 p-3 text-[12px] font-bold text-red-500 border border-red-500/20">
+          {errorMsg}
+        </div>
+      )}
 
       {permission !== "denied" && (
         <button
