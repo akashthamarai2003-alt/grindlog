@@ -174,7 +174,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   };
 
   return (
-    <div className="flex flex-col gap-7 px-5 pb-8 pt-4 safe-top bg-[var(--color-bg-primary)]">
+    <div className="flex flex-col gap-7 px-5 pb-8 pt-4 safe-top min-h-dvh">
       <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
 
       {/* Header */}
