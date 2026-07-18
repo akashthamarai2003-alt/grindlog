@@ -895,6 +895,35 @@ export default function NewHabitPage() {
 
                   {renderSchedulingSettings()}
 
+                  {/* Target Count */}
+                  <div className="flex flex-col gap-2 mt-2 animate-in fade-in slide-in-from-bottom-4 duration-300 delay-75 fill-mode-both">
+                    <SectionLabel>Target Count (Optional)</SectionLabel>
+                    <div className="flex items-center justify-between rounded-2xl bg-[var(--color-bg-elevated)] p-2 shadow-sm border border-[var(--color-bg-tertiary)]/10">
+                      <CounterButton
+                        onClick={() => form.targetCount > 1 && set("targetCount", form.targetCount - 1)}
+                        disabled={form.targetCount <= 1}
+                      >
+                        <Minus className="h-5 w-5" strokeWidth={2.5} />
+                      </CounterButton>
+                      
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-[22px] font-black text-[var(--color-text-primary)] leading-none">
+                          {form.targetCount}
+                        </span>
+                        <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mt-1.5">
+                          {form.targetCount === 1 ? 'Time' : 'Times'} / Day
+                        </span>
+                      </div>
+
+                      <CounterButton
+                        onClick={() => set("targetCount", form.targetCount + 1)}
+                        disabled={form.targetCount >= 99}
+                      >
+                        <Plus className="h-5 w-5" strokeWidth={2.5} />
+                      </CounterButton>
+                    </div>
+                  </div>
+
                   {/* Specific Time Picker */}
                   <div className="flex flex-col gap-2 mt-2">
                     <SectionLabel>Specific Time Reminder (Optional)</SectionLabel>
