@@ -684,7 +684,7 @@ function MonthStats({
   ] as const;
 
   return (
-    <div className="flex overflow-x-auto gap-2.5 pb-2 pt-1 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">
+    <div className="flex overflow-x-auto gap-3 pb-2 pt-1 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">
       {stats.map((s, i) => {
         const Icon = s.icon;
         return (
@@ -697,7 +697,7 @@ function MonthStats({
               type: "spring", stiffness: 320, damping: 26,
               delay: 0.08 + i * 0.07,
             }}
-            className="flex-shrink-0 w-[84px] snap-start flex flex-col items-center gap-1.5 rounded-[20px] py-4 px-1
+            className="flex-shrink-0 min-w-[92px] snap-start flex flex-col items-center gap-1.5 rounded-[20px] py-4 px-2
                        bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)]
                        relative overflow-hidden shadow-sm"
           >

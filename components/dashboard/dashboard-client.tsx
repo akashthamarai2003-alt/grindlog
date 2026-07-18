@@ -338,7 +338,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           <Link 
             key={item.name} 
             href={item.path}
-            className="snap-start shrink-0 flex items-center gap-2 rounded-[20px] bg-[var(--color-bg-elevated)] p-3 pr-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform active:scale-95"
+            className="snap-start shrink-0 flex items-center gap-3 rounded-[20px] bg-[var(--color-bg-elevated)] p-3 pr-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform active:scale-95"
           >
             <div className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br ${item.color} shadow-sm`}>
               <item.icon className="h-5 w-5 text-white" strokeWidth={2.5} />
