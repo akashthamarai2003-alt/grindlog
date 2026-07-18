@@ -25,7 +25,16 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
   const activeTab = tabs.find((t) => pathname.startsWith(t.path))?.id || "dashboard";
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-[var(--color-bg-secondary)] relative shadow-[0_0_50px_rgba(0,0,0,0.05)] ring-1 ring-gray-200 dark:ring-gray-900 overflow-x-hidden">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.05)] ring-1 ring-gray-200 dark:ring-gray-900 overflow-x-hidden">
+      
+      {/* App-Wide Background Picture */}
+      <div 
+        className="fixed inset-0 z-[-2] bg-cover bg-center bg-no-repeat bg-fixed"
+        style={{ backgroundImage: 'url("/background.png")' }}
+      />
+      {/* Subtle glass overlay to ensure app content is readable over the bright sky, no blur to avoid mobile glitch */}
+      <div className="fixed inset-0 z-[-1] bg-white/50 dark:bg-black/70" />
+
       {/* Main content */}
       <main className="flex-1 pb-32">{children}</main>
 
