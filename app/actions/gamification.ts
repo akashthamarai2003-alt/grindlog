@@ -25,6 +25,40 @@ export async function getGlobalLeaderboard(limit = 50) {
 
 
 // ----------------------------------------------------------------------
+// SEASON XP
+// ----------------------------------------------------------------------
+export async function awardSeasonXp(userId: string, xpAmount: number) {
+  if (xpAmount === 0) return;
+  
+  const supabase = await createServerSupabase();
+  const seasonId = "summer_2026";
+  
+  const { data: progress } = await supabase
+    .from("season_progress")
+    .select("id, current_xp")
+    .eq("user_id", userId)
+    .eq("season_id", seasonId)
+    .single();
+    
+  if (progress) {
+    const newXp = Math.max(0, (progress.current_xp || 0) + xpAmount);
+    await supabase
+      .from("season_progress")
+      .update({ current_xp: newXp })
+      .eq("id", progress.id);
+  } else if (xpAmount > 0) {
+    await supabase
+      .from("season_progress")
+      .insert({
+        user_id: userId,
+        season_id: seasonId,
+        current_xp: xpAmount,
+        claimed_tiers: []
+      });
+  }
+}
+
+// ----------------------------------------------------------------------
 // QUEST PERIOD HELPERS
 // ----------------------------------------------------------------------
 function getQuestPeriods() {
@@ -194,6 +228,8 @@ export async function getOrCreateAllQuests() {
         .from("profiles")
         .update({ xp: newXp, coins: newCoins, level: newLevel })
         .eq("id", user.id);
+        
+      await awardSeasonXp(user.id, totalXpToAward);
     }
   }
 
@@ -287,6 +323,8 @@ export async function updateQuestProgress(userId: string, eventType: "habit_comp
           .from("profiles")
           .update({ xp: newXp, coins: newCoins, level: newLevel })
           .eq("id", userId);
+          
+        await awardSeasonXp(userId, totalXpToAward);
       }
     }
   }
@@ -406,6 +444,8 @@ export async function checkAndUnlockAchievements(userId: string) {
             .from("profiles")
             .update({ xp: newXp, coins: newCoins, level: newLevel })
             .eq("id", userId);
+            
+          await awardSeasonXp(userId, achievement.xp_reward || 0);
         }
       }
     }

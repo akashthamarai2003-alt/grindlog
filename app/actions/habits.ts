@@ -4,7 +4,7 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { revalidatePath } from "next/cache";
 import { isHabitScheduled } from "@/lib/habit-utils";
 import { HabitFrequency } from "@/types";
-import { updateQuestProgress, checkAndUnlockAchievements } from "./gamification";
+import { updateQuestProgress, checkAndUnlockAchievements, awardSeasonXp } from "./gamification";
 
 
 export async function getMaxUserStreak() {
@@ -77,6 +77,8 @@ export async function toggleHabitCompletion(
         .from("profiles")
         .update({ xp: newXp, coins: newCoins, level: newLevel })
         .eq("id", user.id);
+        
+      await awardSeasonXp(user.id, xpReward);
     }
     
     // 4. Trigger gamification logic
@@ -123,6 +125,8 @@ export async function toggleHabitCompletion(
         .from("profiles")
         .update({ xp: newXp, coins: newCoins, level: newLevel })
         .eq("id", user.id);
+        
+      await awardSeasonXp(user.id, -xpReward);
     }
   }
 
