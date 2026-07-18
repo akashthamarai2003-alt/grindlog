@@ -663,6 +663,15 @@ function MonthStats({
 
 // ─── Weekly Checklist ─────────────────────────────────────────────────────────
 
+function getWeekOfMonth(date: Date) {
+  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  const w = Math.ceil((date.getDate() + firstDay) / 7);
+  if (w === 1) return "1st Week";
+  if (w === 2) return "2nd Week";
+  if (w === 3) return "3rd Week";
+  return w + "th Week";
+}
+
 function HabitChecklist({
   habits,
   logs,
@@ -680,10 +689,38 @@ function HabitChecklist({
 }) {
   const [isPreview, setIsPreview] = useState(false);
   const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
+  const [baseDate, setBaseDate] = useState<Date>(selectedDate);
+
+  useEffect(() => {
+    setBaseDate(selectedDate);
+  }, [selectedDate]);
+  const handlePrev = () => {
+    setBaseDate(prev => {
+      const d = new Date(prev);
+      if (viewMode === "weekly") {
+        d.setDate(d.getDate() - 7);
+      } else {
+        d.setMonth(d.getMonth() - 1);
+      }
+      return d;
+    });
+  };
+
+  const handleNext = () => {
+    setBaseDate(prev => {
+      const d = new Date(prev);
+      if (viewMode === "weekly") {
+        d.setDate(d.getDate() + 7);
+      } else {
+        d.setMonth(d.getMonth() + 1);
+      }
+      return d;
+    });
+  };
 
   // Weekly setup
-  const startOfWeek = new Date(selectedDate);
-  startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
+  const startOfWeek = new Date(baseDate);
+  startOfWeek.setDate(baseDate.getDate() - baseDate.getDay());
   
   const weekDays = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(startOfWeek);
@@ -696,8 +733,8 @@ function HabitChecklist({
   });
 
   // Monthly setup
-  const year = selectedDate.getFullYear();
-  const month = selectedDate.getMonth();
+  const year = baseDate.getFullYear();
+  const month = baseDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   
   const monthDays = Array.from({ length: daysInMonth }).map((_, i) => {
@@ -712,8 +749,8 @@ function HabitChecklist({
   const displayDays = viewMode === "weekly" ? weekDays : monthDays;
   const title = "Habit Checklist";
   const dateRangeStr = viewMode === "weekly" 
-    ? `${startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
-    : `${selectedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}`;
+    ? `${getWeekOfMonth(baseDate)} • ${startOfWeek.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${weekDays[6].date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+    : `${baseDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}`;
 
   const gridContent = (
     <div className="border border-[var(--color-bg-tertiary)] rounded-[20px] mt-1 shadow-sm overflow-x-auto hide-scrollbar" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
@@ -741,21 +778,28 @@ function HabitChecklist({
 
         {/* Habit Rows */}
         {habits.map((habit, i) => (
-          <div key={habit.id} className="flex items-stretch border-b border-[var(--color-bg-tertiary)] last:border-0 bg-[var(--color-bg-secondary)]">
+          <div key={habit.id} className={cn(
+            "flex items-stretch border-b border-[var(--color-bg-tertiary)]/50 last:border-0",
+            i % 2 === 0 ? "bg-[var(--color-bg-secondary)]" : "bg-[var(--color-bg-primary)]/30"
+          )}>
             {/* Habit Name / Left Side */}
             <div 
               className={cn(
-                "flex items-center gap-2 px-2 sm:px-3 py-2.5 overflow-hidden sticky left-0 z-10 bg-[var(--color-bg-secondary)] border-r border-[var(--color-bg-tertiary)]/50",
+                "flex items-center px-2 sm:px-3 py-2 sticky left-0 z-20 border-r border-[var(--color-bg-tertiary)]/30 backdrop-blur-md",
+                i % 2 === 0 ? "bg-[var(--color-bg-secondary)]" : "bg-[var(--color-bg-primary)]/80",
                 viewMode === "weekly" ? "w-[90px] shrink-0" : "w-[120px] shrink-0"
               )}
             >
-              <div className="absolute inset-0 opacity-15" style={{ backgroundColor: habit.color }} />
-              <span className="text-[14px] flex-shrink-0 relative z-10">{habit.emoji}</span>
-              <span className="text-[12px] font-bold text-[var(--color-text-primary)] truncate relative z-10">{habit.name}</span>
+              <div className="flex items-center gap-1.5 overflow-hidden">
+                <span className="text-[12px] shrink-0">{habit.emoji}</span>
+                <span className="text-[11px] font-bold text-[var(--color-text-primary)] truncate" title={habit.name}>
+                  {habit.name}
+                </span>
+              </div>
             </div>
             
             {/* Checkboxes / Right Side */}
-            <div className="flex-1 flex items-center pr-2 bg-[var(--color-bg-secondary)]">
+            <div className="flex-1 flex items-stretch pr-2 py-2">
               {displayDays.map((day) => {
                 const log = logs.find((l) => l.habit_id === habit.id && l.date === day.dateStr);
                 const isScheduled = isHabitScheduled(habit.frequency, habit.custom_days, new Date(day.dateStr + "T12:00:00Z"));
@@ -771,8 +815,8 @@ function HabitChecklist({
                   status = "failed";
                 }
 
-                let borderClass = "border-2 border-[var(--color-bg-tertiary)]";
-                let bgClass = "bg-transparent";
+                let borderClass = "border border-[var(--color-bg-tertiary)]";
+                let bgClass = "bg-[var(--color-bg-tertiary)]/30";
                 let icon = null;
 
                 if (!valid) {
@@ -781,7 +825,7 @@ function HabitChecklist({
                       "flex items-center justify-center",
                       viewMode === "weekly" ? "flex-1" : "w-[40px] shrink-0"
                     )}>
-                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-tertiary)] opacity-30" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-bg-tertiary)] opacity-30" />
                     </div>
                   );
                 }
@@ -848,13 +892,27 @@ function HabitChecklist({
     <>
       <div className="flex flex-col gap-3 rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)] p-4 shadow-sm border-t-2 border-[var(--color-primary)]/15">
         <div className="flex items-center justify-between px-1">
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-0.5">
             <h2 className="text-[17px] font-black tracking-tight text-[var(--color-text-primary)]">
               {title}
             </h2>
-            <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
-              {dateRangeStr}
-            </span>
+            <div className="flex items-center gap-1.5 -ml-1">
+              <button 
+                onClick={handlePrev} 
+                className="p-1 rounded-full text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/50 transition-colors"
+              >
+                <ChevronLeft size={14} strokeWidth={3} />
+              </button>
+              <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest min-w-[120px] text-center">
+                {dateRangeStr}
+              </span>
+              <button 
+                onClick={handleNext} 
+                className="p-1 rounded-full text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/50 transition-colors"
+              >
+                <ChevronRight size={14} strokeWidth={3} />
+              </button>
+            </div>
           </div>
           
           <div className="flex items-center gap-2">
