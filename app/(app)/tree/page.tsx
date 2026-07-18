@@ -4247,7 +4247,6 @@ export default function TreePage() {
   const treeRef = useRef<TreeOfLife | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showDevTools, setShowDevTools] = useState(false);
 
   useEffect(() => {
     getMaxUserStreak().then(max => {
@@ -4292,125 +4291,11 @@ export default function TreePage() {
         </div>
       )}
 
-      {/* Secret Dev Tools Toggle */}
-      <button 
-        className="absolute top-0 left-0 w-20 h-20 z-50 opacity-0 cursor-default"
-        onClick={() => setShowDevTools(!showDevTools)}
-      />
-
       <canvas 
         ref={canvasRef} 
         className="absolute inset-0 w-full h-full block touch-none cursor-pointer"
         style={{ imageRendering: 'auto' }}
       />
-
-      {/* Interactive hint */}
-      {!isLoading && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-          {/* <div className="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 animate-pulse">
-            <p className="text-white/80 text-sm font-medium">
-              ✨ Tap or click the tree to interact
-            </p>
-          </div> */}
-        </div>
-      )}
-
-      {/* Development Controls */}
-      {(process.env.NODE_ENV === 'development' || showDevTools) && !isLoading && (
-        <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 bg-black/60 backdrop-blur-lg p-4 rounded-xl border border-white/10 max-h-[80vh] overflow-y-auto">
-          <div className="text-xs text-white/70 font-bold mb-2 uppercase tracking-wider border-b border-white/20 pb-2">
-            🌳 Developer Tools
-          </div>
-
-          <button 
-            onClick={() => treeRef.current?.setDay(1)}
-            className="px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            🌰 Seed (Day 1)
-          </button>
-
-          <button 
-            onClick={() => treeRef.current?.setDay(7)}
-            className="px-3 py-2 bg-lime-500/20 hover:bg-lime-500/30 text-lime-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            🌱 Sprout (Day 7)
-          </button>
-
-          <button 
-            onClick={() => treeRef.current?.setDay(25)}
-            className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            🌿 Sapling (Day 25)
-          </button>
-
-          <button 
-            onClick={() => treeRef.current?.setDay(60)}
-            className="px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            🌳 Young Tree (Day 60)
-          </button>
-
-          <button 
-            onClick={() => treeRef.current?.setDay(120)}
-            className="px-3 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            🌲 Mature Tree (Day 120)
-          </button>
-
-          <button 
-            onClick={() => treeRef.current?.setDay(250)}
-            className="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            🎋 Ancient Tree (Day 250)
-          </button>
-
-          <button 
-            onClick={() => treeRef.current?.setDay(500)}
-            className="px-3 py-2 bg-gradient-to-r from-purple-500/30 to-pink-500/30 hover:from-purple-500/40 hover:to-pink-500/40 text-purple-200 rounded-lg text-xs font-medium transition-all hover:scale-105 shadow-lg shadow-purple-500/20"
-          >
-            ✨ Mystic Tree (Day 500)
-          </button>
-
-          <div className="border-t border-white/20 my-2"></div>
-
-          <button 
-            onClick={() => treeRef.current?.waterTree()}
-            className="px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            💧 Water Tree
-          </button>
-
-          <button 
-            onClick={() => treeRef.current?.addBird()}
-            className="px-3 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            🐦 Add Bird
-          </button>
-
-          <button 
-            onClick={() => treeRef.current?.addButterfly()}
-            className="px-3 py-2 bg-pink-500/20 hover:bg-pink-500/30 text-pink-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            🦋 Add Butterfly
-          </button>
-
-          <div className="border-t border-white/20 my-2"></div>
-
-          <button 
-            onClick={() => treeRef.current?.setWeather('rain', 0.7)}
-            className="px-3 py-2 bg-slate-500/20 hover:bg-slate-500/30 text-slate-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            🌧️ Rain
-          </button>
-
-          <button 
-            onClick={() => treeRef.current?.setWeather('clear', 0)}
-            className="px-3 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 rounded-lg text-xs font-medium transition-all hover:scale-105"
-          >
-            ☀️ Clear
-          </button>
-        </div>
-      )}
     </div>
   );
 }
