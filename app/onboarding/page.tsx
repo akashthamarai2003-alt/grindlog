@@ -75,51 +75,69 @@ export default function OnboardingPage() {
   const slide = slides[current];
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--color-bg-primary)] safe-top">
-      {/* Skip */}
-      {current < slides.length - 1 && (
-        <div className="flex items-center justify-end px-6 pt-4">
-          <button
-            onClick={() => router.push("/auth/signup")}
-            className="text-sm font-medium text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
-          >
-            Skip
-          </button>
-        </div>
-      )}
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[var(--color-bg-primary)]">
+      {/* Header Navigation */}
+      <div className="relative z-10 flex h-16 items-center justify-between px-5 pt-safe">
+        {/* Back button */}
+        <AnimatePresence mode="wait">
+          {current > 0 ? (
+            <motion.button
+              key="back"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={springs.default}
+              onClick={goBack}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] transition-all active:scale-95 active:bg-[var(--color-bg-tertiary)]"
+            >
+              <ChevronLeft className="h-5 w-5 text-[var(--color-text-secondary)]" />
+            </motion.button>
+          ) : (
+            <div className="h-11 w-11" />
+          )}
+        </AnimatePresence>
 
-      {/* Back button */}
-      {current > 0 && (
-        <div className="px-4 pt-2">
-          <button
-            onClick={goBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] transition-colors hover:bg-[var(--color-bg-tertiary)]"
-          >
-            <ChevronLeft className="h-5 w-5 text-[var(--color-text-secondary)]" />
-          </button>
-        </div>
-      )}
+        {/* Skip button */}
+        <AnimatePresence mode="wait">
+          {current < slides.length - 1 && (
+            <motion.button
+              key="skip"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={springs.default}
+              onClick={() => router.push("/auth/signup")}
+              className="px-4 py-2 text-sm font-semibold text-[var(--color-text-tertiary)] transition-colors active:text-[var(--color-text-primary)]"
+            >
+              Skip
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
 
-      {/* Content */}
-      <div className="flex flex-1 flex-col items-center justify-center px-8 pb-12">
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-8">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={slide.id}
             custom={direction}
-            initial={{ opacity: 0, x: direction * 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction * -60 }}
+            initial={{ opacity: 0, x: direction * 80, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: direction * -80, scale: 0.95 }}
             transition={springs.default}
-            className="flex w-full flex-col items-center gap-8"
+            className="flex w-full max-w-md flex-col items-center"
           >
-            {/* Visual */}
-            <div className="flex h-48 items-center justify-center">
+            {/* Visual Section */}
+            <div className="mb-10 flex min-h-[200px] items-center justify-center sm:min-h-[240px]">
               {slide.emoji && (
                 <motion.div
-                  className="text-8xl"
-                  animate={{ y: [0, -12, 0] }}
+                  className="text-[100px] leading-none sm:text-[120px]"
+                  animate={{ 
+                    y: [0, -15, 0],
+                    rotate: [0, 5, 0, -5, 0]
+                  }}
                   transition={{
-                    duration: 4,
+                    duration: 5,
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
@@ -129,35 +147,49 @@ export default function OnboardingPage() {
               )}
 
               {slide.icons && (
-                <div className="flex flex-wrap justify-center gap-3">
+                <div className="grid grid-cols-3 gap-3 sm:gap-4">
                   {slide.icons.map((Icon, i) => (
                     <motion.div
                       key={i}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, y: 30, scale: 0.5 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{
                         ...springs.bouncy,
-                        delay: i * 0.1,
+                        delay: i * 0.08,
                       }}
-                      className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--color-bg-secondary)]"
+                      whileHover={{ scale: 1.05 }}
+                      className={cn(
+                        "flex items-center justify-center rounded-2xl bg-[var(--color-bg-secondary)] shadow-sm",
+                        i === 2 ? "col-span-3 h-20 w-20 mx-auto" : "h-20 w-20"
+                      )}
                     >
-                      <Icon className="h-8 w-8 text-[var(--color-accent-green)]" />
+                      <Icon className="h-9 w-9 text-[var(--color-accent-green)]" />
                     </motion.div>
                   ))}
                 </div>
               )}
 
               {slide.showStages && (
-                <div className="flex items-center gap-2 text-5xl">
+                <div className="flex items-center gap-3 text-6xl sm:text-7xl">
                   {["🌱", "🌿", "🌳", "✨"].map((e, i) => (
                     <motion.span
                       key={e}
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
+                      initial={{ opacity: 0, scale: 0.3, y: 20 }}
+                      animate={{ 
+                        opacity: 1, 
+                        scale: 1, 
+                        y: 0,
+                        rotate: [0, 10, -10, 0]
+                      }}
                       transition={{
                         ...springs.bouncy,
-                        delay: i * 0.15,
+                        delay: i * 0.12,
+                        rotate: {
+                          delay: i * 0.12 + 0.3,
+                          duration: 0.5
+                        }
                       }}
+                      className="inline-block"
                     >
                       {e}
                     </motion.span>
@@ -166,58 +198,90 @@ export default function OnboardingPage() {
               )}
             </div>
 
-            {/* Text */}
-            <div className="flex flex-col items-center gap-3 text-center">
-              <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-[var(--color-text-primary)] whitespace-pre-line">
+            {/* Text Content */}
+            <div className="flex flex-col items-center gap-4 text-center">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...springs.default, delay: 0.1 }}
+                className="whitespace-pre-line text-4xl font-extrabold leading-[1.15] tracking-tight text-[var(--color-text-primary)] sm:text-5xl"
+              >
                 {slide.title}
-              </h2>
-              <p className="text-base leading-relaxed text-[var(--color-text-secondary)] max-w-sm">
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...springs.default, delay: 0.2 }}
+                className="max-w-[340px] text-base leading-relaxed text-[var(--color-text-secondary)] sm:text-lg"
+              >
                 {slide.description}
-              </p>
+              </motion.p>
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Bottom */}
-      <div className="flex flex-col items-center gap-6 px-8 pb-10 safe-bottom">
-        {/* Dots */}
+      {/* Bottom Section */}
+      <div className="relative z-10 flex flex-col items-center gap-8 px-6 pb-8 pb-safe">
+        {/* Progress Dots */}
         <div className="flex gap-2">
           {slides.map((_, i) => (
-            <button
+            <motion.button
               key={i}
               onClick={() => {
                 setDirection(i > current ? 1 : -1);
                 setCurrent(i);
               }}
+              whileTap={{ scale: 0.9 }}
               className={cn(
-                "h-1.5 rounded-full transition-all duration-300",
+                "h-2 rounded-full transition-all duration-500 ease-out",
                 i === current
-                  ? "w-6 bg-[var(--color-accent-green)]"
-                  : "w-1.5 bg-[var(--color-bg-tertiary)]"
+                  ? "w-8 bg-[var(--color-accent-green)]"
+                  : "w-2 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-tertiary)]/80"
               )}
+              aria-label={`Go to slide ${i + 1}`}
             />
           ))}
         </div>
 
-        {/* CTA */}
+        {/* CTA Button */}
         <motion.button
-          whileTap={{ scale: 0.96 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileTap={{ scale: 0.97 }}
           onClick={goNext}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-accent-green)] text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-green)]/25 transition-all hover:brightness-105"
+          className="group relative h-14 w-full max-w-md overflow-hidden rounded-2xl bg-[var(--color-accent-green)] text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-green)]/20 transition-all active:shadow-md"
         >
-          {current === slides.length - 1 ? "Get Started" : "Continue"}
-          <ArrowRight className="h-5 w-5" />
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            {current === slides.length - 1 ? "Get Started" : "Continue"}
+            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+          </span>
+          <motion.div
+            className="absolute inset-0 bg-white/10"
+            initial={false}
+            whileHover={{ scale: 1.5, opacity: 0 }}
+            transition={{ duration: 0.6 }}
+          />
         </motion.button>
 
-        {current === slides.length - 1 && (
-          <button
-            onClick={() => router.push("/auth/signin")}
-            className="text-sm font-medium text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
-          >
-            Already have an account? Sign in
-          </button>
-        )}
+        {/* Sign In Link */}
+        <AnimatePresence mode="wait">
+          {current === slides.length - 1 && (
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={springs.default}
+              onClick={() => router.push("/auth/signin")}
+              className="px-4 py-2 text-sm font-medium text-[var(--color-text-tertiary)] transition-colors active:text-[var(--color-text-primary)]"
+            >
+              Already have an account?{" "}
+              <span className="font-semibold text-[var(--color-text-primary)]">
+                Sign in
+              </span>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
