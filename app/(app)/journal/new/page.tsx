@@ -34,7 +34,7 @@ export default function NewJournalPage() {
   };
 
   return (
-  <div className="flex min-h-dvh flex-col safe-top">
+    <div className="flex min-h-dvh flex-col bg-[var(--color-bg-primary)] safe-top">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-3">
         <button

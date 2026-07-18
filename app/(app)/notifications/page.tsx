@@ -88,7 +88,7 @@ export default function NotificationsPage() {
   };
 
   return (
-  <div className="flex flex-col min-h-dvh px-5 pb-8 pt-4 safe-top ">
+    <div className="flex flex-col min-h-dvh px-5 pb-8 pt-4 safe-top bg-[var(--color-bg-primary)]">
       {/* Header */}
       <div className="flex items-center justify-between py-2 mb-4">
         <div className="flex items-center gap-4">

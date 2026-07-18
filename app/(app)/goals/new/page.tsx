@@ -47,7 +47,7 @@ export default function NewGoalPage() {
   };
 
   return (
-  <div className="flex flex-col min-h-dvh ">
+    <div className="flex flex-col min-h-dvh bg-[var(--color-bg-primary)]">
       {/* Header */}
       <div className="safe-top px-5 pb-4 pt-4 flex items-center justify-between sticky top-0 z-10 bg-[var(--color-bg-primary)]/80 backdrop-blur-md">
         <button 

@@ -1,6 +1,6 @@
 export default function SleepPage() {
   return (
-  <div className="flex flex-col min-h-dvh px-5 pb-8 pt-4 safe-top ">
+    <div className="flex flex-col min-h-dvh px-5 pb-8 pt-4 safe-top bg-[var(--color-bg-primary)]">
       <div className="mb-6">
         <h1 className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight">
           Sleep

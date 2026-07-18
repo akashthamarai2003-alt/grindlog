@@ -1025,8 +1025,9 @@ export function CalendarClient({
   const dayLogs = logs.filter((l) => l.date === toDateStr(selected));
 
   return (
-    <div className="flex flex-col min-h-dvh px-4 pt-4 pb-14 safe-top gap-5">
-      <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
+    <div className="flex flex-col min-h-dvh bg-[var(--color-bg-primary)] px-4 pt-4 pb-14 safe-top gap-5">
+
+      {/* ── Header ── */}
       <motion.div
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}

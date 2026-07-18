@@ -208,7 +208,7 @@ export default function FitnessPage() {
   }, []);
 
   return (
-  <div className="flex flex-col min-h-dvh px-5 pb-8 pt-4 safe-top ">
+    <div className="flex flex-col min-h-dvh px-5 pb-8 pt-4 safe-top bg-[var(--color-bg-primary)]">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}

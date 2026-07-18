@@ -882,7 +882,7 @@ export default function AnalyticsClient({ data }: { data: AnalyticsData }) {
   const currentWeekCount = data.weeklyData.reduce((acc, curr) => acc + curr.habits, 0);
 
   return (
-  <div className="flex flex-col min-h-dvh px-4 pb-32 pt-4 safe-top ">
+    <div className="flex flex-col min-h-dvh px-4 pb-32 pt-4 safe-top bg-[var(--color-bg-primary)]">
       {/* ── Header ── */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}

@@ -26,12 +26,6 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="isolate">
-      {/* App-Wide Background Picture - Full Screen */}
-      <div 
-        className="fixed inset-0 z-[-2] bg-cover bg-center bg-no-repeat bg-fixed"
-        style={{ backgroundImage: 'url("/background.png")' }}
-      />
-      {/* No overlay - let the raw background image shine through */}
 
       <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.05)] ring-1 ring-gray-200 dark:ring-gray-900 overflow-x-hidden">
         {/* Main content */}
