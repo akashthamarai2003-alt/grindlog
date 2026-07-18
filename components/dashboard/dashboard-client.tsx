@@ -217,26 +217,24 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           style={{ backgroundImage: 'url("/modal-card-bg.png")' }}
         />
         
-        {/* Reliable dark gradient overlay for perfect white text contrast on any device (no blur to prevent mobile glitches) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-black/20" /> {/* Baseline darkening for the whole image */}
+        {/* Adaptive overlay: completely transparent in light mode (so the bright meadow is visible), dark in dark mode for white text contrast */}
+        <div className="absolute inset-0 bg-white/10 dark:bg-black/70" />
         
         {/* Inner ring */}
-        <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-[32px]" />
+        <div className="absolute inset-0 ring-1 ring-inset ring-black/5 dark:ring-white/10 rounded-[32px]" />
         
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex flex-col gap-2">
-            <h3 className="text-5xl font-black tracking-tighter text-white drop-shadow-md">
+            <h3 className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white drop-shadow-sm">
               {completedCount}
-              <span className="text-2xl text-white/70">/{totalCount}</span>
+              <span className="text-2xl text-slate-700 dark:text-white/70">/{totalCount}</span>
             </h3>
-            <p className="text-[15px] font-bold text-white/90 drop-shadow-sm">Done Today ✨</p>
+            <p className="text-[15px] font-bold text-slate-700 dark:text-white/90 drop-shadow-sm">Done Today ✨</p>
             
             {/* Streak Badge */}
-            <div className="mt-2 flex items-center gap-1.5 w-max rounded-[12px] bg-white/20 backdrop-blur-md px-3 py-1.5 shadow-lg ring-1 ring-white/30">
-              <Flame className="h-4 w-4 fill-[#FFD60A] text-[#FFD60A]" />
-              <span className="text-xs font-black text-white drop-shadow-sm">
+            <div className="mt-2 flex items-center gap-1.5 w-max rounded-[12px] bg-white/60 dark:bg-white/10 backdrop-blur-md px-3 py-1.5 shadow-sm ring-1 ring-black/5 dark:ring-white/20">
+              <Flame className="h-4 w-4 fill-[#FF9500] text-[#FF9500] dark:fill-[#FFD60A] dark:text-[#FFD60A]" />
+              <span className="text-xs font-black text-slate-900 dark:text-white drop-shadow-sm">
                 {visibleHabits.reduce((acc, h) => Math.max(acc, h.currentStreak), 0)} Day Streak
               </span>
             </div>
@@ -245,10 +243,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           {/* Progress Ring */}
           <div className="relative flex h-[100px] w-[100px] items-center justify-center">
             {/* Outer Glow */}
-            <div className="absolute inset-0 rounded-full bg-[#34C759] opacity-30 blur-xl" />
+            <div className="absolute inset-0 rounded-full bg-[#34C759] opacity-20 blur-xl" />
             
-            <svg className="h-full w-full rotate-[-90deg] drop-shadow-xl" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="42" className="fill-none stroke-white/20 stroke-[10]" />
+            <svg className="h-full w-full rotate-[-90deg] drop-shadow-sm" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="42" className="fill-none stroke-black/5 dark:stroke-white/10 stroke-[10]" />
               <circle
                 cx="50"
                 cy="50"
@@ -267,21 +265,21 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
               </defs>
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xl font-black text-white drop-shadow-md">{Math.round(progressPct)}%</span>
+              <span className="text-xl font-black text-slate-900 dark:text-white drop-shadow-sm">{Math.round(progressPct)}%</span>
             </div>
           </div>
         </div>
         
         {/* Level & XP Bar */}
-        <div className="relative z-10 mt-6 flex flex-col gap-2.5 rounded-[20px] bg-black/30 p-4 shadow-lg ring-1 ring-white/20 backdrop-blur-md">
+        <div className="relative z-10 mt-6 flex flex-col gap-2.5 rounded-[20px] bg-white/50 dark:bg-black/40 p-4 shadow-sm ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-md">
           <div className="flex items-center justify-between text-[13px] font-black">
-            <span className="text-white flex items-center gap-1.5 drop-shadow-sm">
-              <Sparkles className="h-4 w-4 text-[#FFD60A]" />
+            <span className="text-slate-900 dark:text-white flex items-center gap-1.5 drop-shadow-sm">
+              <Sparkles className="h-4 w-4 text-[#FF9500] dark:text-[#FFD60A]" />
               Level {profile.level}
             </span>
-            <span className="text-white/70 drop-shadow-sm">Next Level</span>
+            <span className="text-slate-700 dark:text-white/70 drop-shadow-sm">Next Level</span>
           </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-black/40 shadow-inner ring-1 ring-inset ring-white/10">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-black/10 dark:bg-black/40 shadow-inner ring-1 ring-inset ring-black/5 dark:ring-white/10">
             <div
               className="relative h-full rounded-full bg-gradient-to-r from-[#34C759] via-[#00C7BE] to-[#32ADE6] transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,199,190,0.5)]"
               style={{ width: `${Math.max(levelProgressPct * 100, 2)}%` }}
@@ -289,7 +287,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
               <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
             </div>
           </div>
-          <div className="flex items-center justify-between text-[11px] font-bold text-white/80 uppercase tracking-wider drop-shadow-sm">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-white/80 uppercase tracking-wider drop-shadow-sm">
             <span>{optimisticXp.toLocaleString()} XP</span>
             <span>{nextLevelTotalXp.toLocaleString()} XP</span>
           </div>
