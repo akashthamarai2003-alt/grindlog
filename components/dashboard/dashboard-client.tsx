@@ -209,24 +209,32 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Hero Card */}
       <div 
-        className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[#00C7BE]/10 via-[var(--color-bg-elevated)] to-[#34C759]/10 p-6 shadow-2xl shadow-[#34C759]/5 ring-1 ring-[var(--color-bg-tertiary)] animate-in fade-in zoom-in-95 duration-500"
+        className="relative overflow-hidden rounded-[32px] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-500 group border-0"
       >
-        {/* Abstract Mesh Background Elements */}
-        <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-gradient-to-br from-[#00C7BE]/20 to-[#32ADE6]/20 blur-[40px]" />
-        <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-gradient-to-br from-[#34C759]/20 to-[#32ADE6]/20 blur-[40px]" />
-        <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-3xl" />
+        {/* Premium Background Picture */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-105"
+          style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=1200&auto=format&fit=crop")' }}
+        />
+        
+        {/* Gradient overlays for perfect text contrast (dark left/bottom) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        
+        {/* Inner ring for premium 3D feel */}
+        <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-[32px]" />
         
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex flex-col gap-2">
-            <h3 className="text-5xl font-black tracking-tighter text-[var(--color-text-primary)] drop-shadow-sm">
+            <h3 className="text-5xl font-black tracking-tighter text-white drop-shadow-md">
               {completedCount}
-              <span className="text-2xl text-[var(--color-text-tertiary)]">/{totalCount}</span>
+              <span className="text-2xl text-white/70">/{totalCount}</span>
             </h3>
-            <p className="text-[15px] font-bold text-[var(--color-text-secondary)]">Done Today ✨</p>
+            <p className="text-[15px] font-bold text-white/90 drop-shadow-sm">Done Today ✨</p>
             
             {/* Streak Badge */}
-            <div className="mt-2 flex items-center gap-1.5 w-max rounded-[12px] bg-gradient-to-r from-[#FF9500] to-[#FFD60A] px-3 py-1.5 shadow-lg shadow-[#FF9500]/20">
-              <Flame className="h-4 w-4 fill-white text-white" />
+            <div className="mt-2 flex items-center gap-1.5 w-max rounded-[12px] bg-white/20 backdrop-blur-md px-3 py-1.5 shadow-lg ring-1 ring-white/30">
+              <Flame className="h-4 w-4 fill-[#FFD60A] text-[#FFD60A]" />
               <span className="text-xs font-black text-white drop-shadow-sm">
                 {visibleHabits.reduce((acc, h) => Math.max(acc, h.currentStreak), 0)} Day Streak
               </span>
@@ -236,10 +244,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           {/* Progress Ring */}
           <div className="relative flex h-[100px] w-[100px] items-center justify-center">
             {/* Outer Glow */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#34C759] to-[#00C7BE] opacity-20 blur-xl" />
+            <div className="absolute inset-0 rounded-full bg-[#34C759] opacity-30 blur-xl" />
             
             <svg className="h-full w-full rotate-[-90deg] drop-shadow-xl" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="42" className="fill-none stroke-[var(--color-bg-tertiary)] stroke-[10]" />
+              <circle cx="50" cy="50" r="42" className="fill-none stroke-white/20 stroke-[10]" />
               <circle
                 cx="50"
                 cy="50"
@@ -248,31 +256,31 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                 strokeLinecap="round"
                 strokeDasharray="263.89"
                 strokeDashoffset={263.89 - (263.89 * Math.max(progressPct, 1)) / 100}
-                style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+                style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)" }}
               />
               <defs>
                 <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#34C759" />
-                  <stop offset="100%" stopColor="#00C7BE" />
+                  <stop offset="100%" stopColor="#32ADE6" />
                 </linearGradient>
               </defs>
             </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-black text-[var(--color-text-primary)] tracking-tighter">{progressPct}%</span>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xl font-black text-white drop-shadow-md">{Math.round(progressPct)}%</span>
             </div>
           </div>
         </div>
         
         {/* Level & XP Bar */}
-        <div className="relative z-10 mt-8 flex flex-col gap-2.5 rounded-[20px] bg-[var(--color-bg-primary)]/60 dark:bg-[var(--color-bg-secondary)]/60 p-4 shadow-sm ring-1 ring-white/20 dark:ring-white/5 backdrop-blur-md">
+        <div className="relative z-10 mt-8 flex flex-col gap-2.5 rounded-[20px] bg-white/10 dark:bg-black/20 p-4 shadow-lg ring-1 ring-white/20 backdrop-blur-md">
           <div className="flex items-center justify-between text-[13px] font-black">
-            <span className="text-[var(--color-text-primary)] flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-[#00C7BE]" />
+            <span className="text-white flex items-center gap-1.5 drop-shadow-sm">
+              <Sparkles className="h-4 w-4 text-[#FFD60A]" />
               Level {profile.level}
             </span>
-            <span className="text-[var(--color-text-tertiary)]">Next Level</span>
+            <span className="text-white/60 drop-shadow-sm">Next Level</span>
           </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--color-bg-tertiary)] shadow-inner">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-black/40 shadow-inner ring-1 ring-inset ring-white/10">
             <div
               className="relative h-full rounded-full bg-gradient-to-r from-[#34C759] via-[#00C7BE] to-[#32ADE6] transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,199,190,0.5)]"
               style={{ width: `${Math.max(levelProgressPct * 100, 2)}%` }}
@@ -280,7 +288,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
               <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
             </div>
           </div>
-          <div className="flex items-center justify-between text-[11px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
+          <div className="flex items-center justify-between text-[11px] font-bold text-white/80 uppercase tracking-wider drop-shadow-sm">
             <span>{optimisticXp.toLocaleString()} XP</span>
             <span>{nextLevelTotalXp.toLocaleString()} XP</span>
           </div>
