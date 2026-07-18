@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { Bell, Quote, Trophy, Flame, Plus, Sparkles, Target, Medal, Gift, CircleDollarSign } from "lucide-react";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
-import { toggleHabitCompletion, getHabitLogsForDate } from "@/app/actions/habits";
+import { toggleHabitCompletion, getHabitLogsForDate, updateHabitRemark } from "@/app/actions/habits";
 import { isHabitScheduled } from "@/lib/habit-utils";
 import { createClient } from "@/lib/services/supabase/client";
 
@@ -62,6 +62,9 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, currentCompletedStatus: boolean, streak: number} | null>(null);
+  const [remarkPrompt, setRemarkPrompt] = useState<{ habitId: string; dateStr: string; } | null>(null);
+  const [remarkText, setRemarkText] = useState("");
+  const [isSavingRemark, setIsSavingRemark] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [greeting, setGreeting] = useState("Hello,");
 
@@ -152,6 +155,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       setShowConfetti(true);
       setOptimisticXp(prev => prev + 10);
       setOptimisticCoins(prev => prev + 5);
+      
+      // Prompt for remark
+      setRemarkPrompt({ habitId, dateStr: selectedDateStr });
+      setRemarkText("");
     } else {
       setOptimisticXp(prev => Math.max(0, prev - 10)); // Revert if un-checked
       setOptimisticCoins(prev => Math.max(0, prev - 5));
@@ -456,7 +463,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       <div className="h-6" />
 
-      {/* ── Anti-Cheat Modal ── */}
+    {/* ── Anti-Cheat Modal ── */}
       {cheatConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col items-center text-center gap-4 border-2 border-[#FF3B30]/20 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
@@ -483,6 +490,56 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                 className="flex-1 py-3.5 rounded-[18px] font-black text-[13px] uppercase tracking-wide bg-[#34C759] text-white shadow-[0_0_20px_rgba(52,199,89,0.4)] active:scale-95 transition-transform"
               >
                 Yes, I did it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Remark Prompt Modal ── */}
+      {remarkPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col gap-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)]">
+                <Quote className="h-5 w-5" />
+              </div>
+              <h2 className="text-lg font-black text-[var(--color-text-primary)] tracking-tight">Add a Remark</h2>
+            </div>
+            <p className="text-[13px] font-medium text-[var(--color-text-secondary)]">
+              How did it go? You can add a small note (optional).
+            </p>
+            
+            <textarea
+              value={remarkText}
+              onChange={(e) => setRemarkText(e.target.value)}
+              placeholder="e.g., I did leg day..."
+              className="w-full resize-none rounded-xl bg-[var(--color-bg-secondary)] p-3 text-[14px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
+              rows={3}
+            />
+            
+            <div className="flex gap-2 w-full mt-2">
+              <button
+                onClick={() => setRemarkPrompt(null)}
+                disabled={isSavingRemark}
+                className="flex-1 py-3 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors disabled:opacity-50"
+              >
+                Skip
+              </button>
+              <button
+                disabled={isSavingRemark || !remarkText.trim()}
+                onClick={async () => {
+                  setIsSavingRemark(true);
+                  try {
+                    await updateHabitRemark(remarkPrompt.habitId, remarkPrompt.dateStr, remarkText.trim());
+                  } finally {
+                    setIsSavingRemark(false);
+                    setRemarkPrompt(null);
+                  }
+                }}
+                className="flex-1 py-3 rounded-[16px] font-bold text-[13px] bg-[var(--color-accent-blue)] text-white hover:bg-[var(--color-accent-blue)]/90 transition-colors disabled:opacity-50"
+              >
+                {isSavingRemark ? "Saving..." : "Save"}
               </button>
             </div>
           </div>

@@ -16,6 +16,7 @@ import {
   CalendarDays,
   Lock,
   Maximize,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
@@ -44,6 +45,7 @@ type HabitLog = {
   habit_id: string;
   date: string;
   status: "completed" | "skipped" | "failed";
+  remarks?: string | null;
 };
 
 type Props = {
@@ -686,6 +688,7 @@ function HabitChecklist({
 }) {
   const [isPreview, setIsPreview] = useState(false);
   const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
+  const [viewRemark, setViewRemark] = useState<{habitName: string, dateStr: string, text: string} | null>(null);
   const [baseDate, setBaseDate] = useState<Date>(selectedDate);
 
   useEffect(() => {
@@ -845,7 +848,7 @@ function HabitChecklist({
 
                 return (
                   <div key={day.dateStr} className={cn(
-                    "flex items-center justify-center",
+                    "relative flex items-center justify-center",
                     viewMode === "weekly" ? "flex-1" : "w-[40px] shrink-0"
                   )}>
                     <button
@@ -875,6 +878,17 @@ function HabitChecklist({
                     >
                       {icon}
                     </button>
+                    {log?.remarks && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewRemark({ habitName: habit.name, dateStr: day.dateStr, text: log.remarks! });
+                        }}
+                        className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-[var(--color-bg-primary)] rounded-full shadow-sm hover:scale-110 transition-transform"
+                      >
+                        <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--color-accent-blue)] fill-[var(--color-accent-blue)]/20" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -1028,6 +1042,52 @@ function HabitChecklist({
                 {gridContent}
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── View Remark Modal ── */}
+      <AnimatePresence>
+        {viewRemark && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm touch-none"
+            onClick={() => setViewRemark(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col gap-4 border border-[var(--color-bg-tertiary)]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)] shrink-0">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <h2 className="text-base font-black text-[var(--color-text-primary)] tracking-tight truncate">
+                    {viewRemark.habitName}
+                  </h2>
+                  <p className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider">
+                    {new Date(viewRemark.dateStr + "T12:00:00Z").toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4 text-[14px] text-[var(--color-text-primary)] leading-relaxed italic">
+                "{viewRemark.text}"
+              </div>
+              
+              <button
+                onClick={() => setViewRemark(null)}
+                className="w-full mt-2 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+              >
+                Close
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

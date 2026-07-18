@@ -158,7 +158,7 @@ export async function getHabitLogsForDate(dateStr: string) {
 
   const { data: logs, error } = await supabase
     .from("habit_logs")
-    .select("habit_id, status")
+    .select("habit_id, status, remarks")
     .eq("user_id", user.id)
     .eq("date", dateStr);
 
@@ -185,6 +185,28 @@ export async function setHabitLogStatus(habitId: string, dateStr: string, status
   
   revalidatePath("/calendar");
   revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function updateHabitRemark(habitId: string, dateStr: string, remarks: string | null) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase
+    .from("habit_logs")
+    .update({ remarks })
+    .eq("habit_id", habitId)
+    .eq("date", dateStr)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error updating remark:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/calendar");
   return { success: true };
 }
 
