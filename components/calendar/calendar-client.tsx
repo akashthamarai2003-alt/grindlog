@@ -669,12 +669,14 @@ function HabitChecklist({
   selectedDate,
   todayDateStr,
   onLogChange,
+  onAntiCheat,
 }: {
   habits: Habit[];
   logs: HabitLog[];
   selectedDate: Date;
   todayDateStr: string;
   onLogChange: (habitId: string, dateStr: string, status: HabitLog["status"] | null) => void;
+  onAntiCheat?: (habitId: string, dateStr: string, status: HabitLog["status"] | null) => void;
 }) {
   const [isPreview, setIsPreview] = useState(false);
   const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
@@ -811,7 +813,16 @@ function HabitChecklist({
                         let nextStatus: HabitLog["status"] | null = "completed";
                         if (actualStatus === "completed") nextStatus = "failed";
                         else if (actualStatus === "failed") nextStatus = null;
-                        onLogChange(habit.id, day.dateStr, nextStatus);
+                        
+                        if (day.dateStr < todayDateStr && nextStatus === "completed") {
+                          if (onAntiCheat) {
+                            onAntiCheat(habit.id, day.dateStr, nextStatus);
+                          } else {
+                            onLogChange(habit.id, day.dateStr, nextStatus);
+                          }
+                        } else {
+                          onLogChange(habit.id, day.dateStr, nextStatus);
+                        }
                       }}
                       disabled={!valid || isFuture}
                       className={cn(
@@ -1247,6 +1258,7 @@ export function CalendarClient({
               selectedDate={selected}
               todayDateStr={todayDateStr}
               onLogChange={handleLogChange}
+              onAntiCheat={(habitId, date, status) => setCheatConfirm({ habitId, dateStr: date, status })}
             />
           </motion.div>
         )}
