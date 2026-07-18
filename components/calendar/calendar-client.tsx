@@ -1082,9 +1082,9 @@ export function CalendarClient({
           <AnimatePresence mode="wait">
             <motion.span
               key={monthName}
-              initial={{ opacity: 0, y: slideDir * 10, filter: "blur(4px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: slideDir * -10, filter: "blur(4px)" }}
+              initial={{ opacity: 0, y: slideDir * 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: slideDir * -10 }}
               transition={{ type: "spring", stiffness: 360, damping: 30 }}
               className="text-[14px] font-black text-[var(--color-text-primary)]"
             >
@@ -1119,9 +1119,9 @@ export function CalendarClient({
         <AnimatePresence mode="wait">
           <motion.div
             key={monthName}
-            initial={{ opacity: 0, x: slideDir * 30, filter: "blur(6px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: slideDir * -30, filter: "blur(6px)" }}
+            initial={{ opacity: 0, x: slideDir * 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: slideDir * -30 }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
           >
             <DayPicker
