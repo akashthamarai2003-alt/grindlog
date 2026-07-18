@@ -684,7 +684,7 @@ function MonthStats({
   ] as const;
 
   return (
-    <div className="flex overflow-x-auto gap-3 pb-2 pt-1 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">
+    <div className="flex overflow-x-auto gap-3 pb-2 pt-1 -mx-4 px-4 scroll-pl-4 scroll-pr-4 scrollbar-hide snap-x snap-mandatory">
       {stats.map((s, i) => {
         const Icon = s.icon;
         return (

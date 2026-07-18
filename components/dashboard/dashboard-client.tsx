@@ -328,7 +328,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       </div>
 
       {/* Gamification Quick Links */}
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 snap-x hide-scrollbar">
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scroll-pl-5 scroll-pr-5 snap-x hide-scrollbar">
         {[
           { name: "Quests", icon: Target, path: "/quests", color: "from-[#FF2D55] to-[#AF52DE]" },
           { name: "Leaderboard", icon: Medal, path: "/leaderboard", color: "from-[#007AFF] to-[#32ADE6]" },
