@@ -35,7 +35,7 @@ export default async function CalendarPage() {
   // Fetch current month's logs
   const { data: logs } = await supabase
     .from("habit_logs")
-    .select("habit_id, date, status")
+    .select("habit_id, date, status, remarks")
     .eq("user_id", user.id)
     .gte("date", startOfMonth.toISOString().split("T")[0])
     .lte("date", endOfMonth.toISOString().split("T")[0]);

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
-import { setHabitLogStatus } from "@/app/actions/habits";
+import { setHabitLogStatus, updateHabitRemark } from "@/app/actions/habits";
 import { isHabitScheduled } from "@/lib/habit-utils";
 import "react-day-picker/dist/style.css";
 
@@ -1205,6 +1205,9 @@ export function CalendarClient({
   const [isPending, startTransition] = useTransition();
   const [slideDir, setSlideDir] = useState<number>(0);
   const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, dateStr: string, status: HabitLog["status"] | null} | null>(null);
+  const [remarkPrompt, setRemarkPrompt] = useState<{ habitId: string; dateStr: string } | null>(null);
+  const [remarkText, setRemarkText] = useState("");
+  const [isSubmittingRemark, setIsSubmittingRemark] = useState(false);
 
   const currentYear = month.getFullYear();
   const currentMonth = month.getMonth();
@@ -1217,7 +1220,7 @@ export function CalendarClient({
       const { startStr, endStr } = getMonthBounds(y, m);
       const { data } = await supabase
         .from("habit_logs")
-        .select("habit_id, date, status")
+        .select("habit_id, date, status, remarks")
         .eq("user_id", (await supabase.auth.getUser()).data.user?.id ?? "")
         .gte("date", startStr)
         .lte("date", endStr);
@@ -1244,6 +1247,11 @@ export function CalendarClient({
         const without = prev.filter((l) => !(l.habit_id === habitId && l.date === date));
         return status ? [...without, { habit_id: habitId, date, status }] : without;
       });
+
+      if (status === "completed") {
+        setRemarkPrompt({ habitId, dateStr: date });
+        setRemarkText("");
+      }
 
       try {
         await setHabitLogStatus(habitId, date, status);
@@ -1525,6 +1533,85 @@ export function CalendarClient({
                 >
                   Yes, I did it
                 </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Remark Prompt Modal ── */}
+      <AnimatePresence>
+        {remarkPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm touch-none"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col gap-5 border border-[var(--color-bg-tertiary)]"
+            >
+              <div className="flex flex-col items-center text-center gap-1.5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)] mb-1">
+                  <MessageCircle className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-black text-[var(--color-text-primary)] tracking-tight">Add a Remark?</h3>
+                <p className="text-[13px] font-bold text-[var(--color-text-tertiary)] leading-snug">
+                  Optionally leave a small note for this completion.
+                </p>
+              </div>
+              
+              <textarea
+                value={remarkText}
+                onChange={(e) => setRemarkText(e.target.value)}
+                placeholder="e.g. I did leg day..."
+                className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] rounded-2xl p-4 text-[14px] font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] resize-none h-24 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/50 transition-all"
+                autoFocus
+                disabled={isSubmittingRemark}
+              />
+              
+              <div className="flex items-center gap-3 w-full">
+                <button
+                  onClick={() => setRemarkPrompt(null)}
+                  disabled={isSubmittingRemark}
+                  className="flex-1 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors disabled:opacity-50"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!remarkText.trim()) {
+                      setRemarkPrompt(null);
+                      return;
+                    }
+                    setIsSubmittingRemark(true);
+                    try {
+                      await updateHabitRemark(remarkPrompt.habitId, remarkPrompt.dateStr, remarkText.trim());
+                      
+                      // Optimistically update the logs state with the remark
+                      setLogs(prev => prev.map(l => 
+                        (l.habit_id === remarkPrompt.habitId && l.date === remarkPrompt.dateStr)
+                          ? { ...l, remarks: remarkText.trim() }
+                          : l
+                      ));
+                    } catch (e) {
+                      console.error(e);
+                    }
+                    setIsSubmittingRemark(false);
+                    setRemarkPrompt(null);
+                  }}
+                  disabled={isSubmittingRemark || !remarkText.trim()}
+                  className="flex-1 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-accent-blue)] text-white shadow-sm ring-1 ring-inset ring-white/20 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                >
+                  {isSubmittingRemark ? (
+                    <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  ) : (
+                    "Save"
+                  )}
+                </button>
               </div>
             </motion.div>
           </motion.div>
