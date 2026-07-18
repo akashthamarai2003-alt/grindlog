@@ -971,60 +971,60 @@ function HabitChecklist({
   return (
     <>
       <div className="flex flex-col gap-3 rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)] p-4 shadow-sm border-t-2 border-[var(--color-primary)]/15">
-        <div className="flex items-center justify-between px-1">
-          <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-3 px-1">
+          <div className="flex items-center justify-between">
             <h2 className="text-[17px] font-black tracking-tight text-[var(--color-text-primary)]">
               {title}
             </h2>
-            <div className="flex items-center gap-1.5 -ml-1">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="flex p-0.5 bg-[var(--color-bg-tertiary)] rounded-xl">
+                <button
+                  onClick={() => setViewMode("weekly")}
+                  className={cn(
+                    "px-2.5 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors",
+                    viewMode === "weekly" 
+                      ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] shadow-sm" 
+                      : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                  )}
+                >
+                  Week
+                </button>
+                <button
+                  onClick={() => setViewMode("monthly")}
+                  className={cn(
+                    "px-2.5 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors",
+                    viewMode === "monthly" 
+                      ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] shadow-sm" 
+                      : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                  )}
+                >
+                  Month
+                </button>
+              </div>
               <button 
-                onClick={handlePrev} 
-                className="p-1 rounded-full text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/50 transition-colors"
+                onClick={() => setIsPreview(true)}
+                className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-primary)] transition-transform active:scale-90 shadow-sm shrink-0"
               >
-                <ChevronLeft size={14} strokeWidth={3} />
-              </button>
-              <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest min-w-[110px] text-center whitespace-nowrap">
-                {dateRangeStr}
-              </span>
-              <button 
-                onClick={handleNext} 
-                className="p-1 rounded-full text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/50 transition-colors"
-              >
-                <ChevronRight size={14} strokeWidth={3} />
+                <Maximize className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2.5} />
               </button>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="flex p-0.5 bg-[var(--color-bg-tertiary)] rounded-xl">
-              <button
-                onClick={() => setViewMode("weekly")}
-                className={cn(
-                  "px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors",
-                  viewMode === "weekly" 
-                    ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] shadow-sm" 
-                    : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
-                )}
-              >
-                Week
-              </button>
-              <button
-                onClick={() => setViewMode("monthly")}
-                className={cn(
-                  "px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors",
-                  viewMode === "monthly" 
-                    ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] shadow-sm" 
-                    : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
-                )}
-              >
-                Month
-              </button>
-            </div>
+          <div className="flex items-center gap-1.5">
             <button 
-              onClick={() => setIsPreview(true)}
-              className="w-9 h-9 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-primary)] transition-transform active:scale-90 shadow-sm"
+              onClick={handlePrev} 
+              className="p-1 rounded-full text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/50 transition-colors"
             >
-              <Maximize className="w-4 h-4" strokeWidth={2.5} />
+              <ChevronLeft size={14} strokeWidth={3} />
+            </button>
+            <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest text-center whitespace-nowrap">
+              {dateRangeStr}
+            </span>
+            <button 
+              onClick={handleNext} 
+              className="p-1 rounded-full text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/50 transition-colors"
+            >
+              <ChevronRight size={14} strokeWidth={3} />
             </button>
           </div>
         </div>

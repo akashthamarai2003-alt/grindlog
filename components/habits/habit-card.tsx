@@ -39,7 +39,7 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
 
   return (
     <div
-      className="group relative flex items-center justify-between overflow-hidden rounded-[24px] bg-[var(--color-bg-elevated)] p-4 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform transition-shadow hover:shadow-md active:scale-[0.98]"
+      className="group relative flex items-center justify-between overflow-hidden rounded-[20px] bg-[var(--color-bg-elevated)] p-3 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform transition-shadow hover:shadow-md active:scale-[0.98]"
     >
       {/* Left Color Accent Strip */}
       <div 
@@ -50,7 +50,7 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
       <div className="ml-2 flex items-center gap-4">
         {/* Emoji Box */}
         <div
-          className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] text-2xl shadow-sm"
+          className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] text-[20px] shadow-sm"
           style={{ backgroundColor: habit.color + "25", color: habit.color }}
         >
           {habit.emoji}
@@ -59,7 +59,7 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
         {/* Info */}
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <span className="text-[16px] font-extrabold text-[var(--color-text-primary)]">
+            <span className="text-[15px] font-extrabold text-[var(--color-text-primary)]">
               {habit.name}
             </span>
             {habit.currentStreak > 0 && (
@@ -69,7 +69,7 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
               </span>
             )}
           </div>
-          <span className="mt-0.5 text-[13px] font-semibold text-[var(--color-text-tertiary)]">
+          <span className="mt-0.5 text-[12px] font-bold text-[var(--color-text-tertiary)]">
             {targetLabel}
           </span>
         </div>
