@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useTransition, useRef } from "react";
+import { useState, useEffect, useCallback, useTransition, useRef } from "react";
 import { DayPicker } from "react-day-picker";
 import { motion, AnimatePresence, useMotionValue, animate } from "motion/react";
 import {
@@ -160,6 +160,13 @@ function DayCell({
   // Cap the progress ring so the rounded linecaps don't collide when almost complete (e.g., 95%)
   const visualPct = isPerfect ? 1 : Math.min(pct, (circ - 4.5) / circ);
 
+  // Animation state
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <td role="gridcell" className="p-0 text-center focus-within:relative focus-within:z-20">
       <button
@@ -205,7 +212,7 @@ function DayCell({
             strokeLinecap="round"
             style={{
               strokeDasharray: circ,
-              strokeDashoffset: circ - visualPct * circ,
+              strokeDashoffset: mounted ? circ - visualPct * circ : circ,
               transition: "stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
             }}
           />
