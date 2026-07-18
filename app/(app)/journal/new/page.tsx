@@ -25,6 +25,15 @@ export default function NewJournalPage() {
   const [content, setContent] = useState(todayEntry?.content ?? "");
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (todayEntry) {
+      if (!content) setContent(todayEntry.content || "");
+      if (mood === null) setMood(todayEntry.mood ?? null);
+      if (energy === null) setEnergy(todayEntry.energy ?? null);
+      if (focus === null) setFocus(todayEntry.focus ?? null);
+    }
+  }, [todayEntry]);
+
   const handleSave = async () => {
     if (!content.trim()) return;
     setIsSaving(true);
