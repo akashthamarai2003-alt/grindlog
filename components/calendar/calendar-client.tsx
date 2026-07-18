@@ -666,10 +666,7 @@ function MonthStats({
 function getWeekOfMonth(date: Date) {
   const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   const w = Math.ceil((date.getDate() + firstDay) / 7);
-  if (w === 1) return "1st Week";
-  if (w === 2) return "2nd Week";
-  if (w === 3) return "3rd Week";
-  return w + "th Week";
+  return `Week ${w}`;
 }
 
 function HabitChecklist({
@@ -903,7 +900,7 @@ function HabitChecklist({
               >
                 <ChevronLeft size={14} strokeWidth={3} />
               </button>
-              <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest min-w-[120px] text-center">
+              <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest min-w-[110px] text-center whitespace-nowrap">
                 {dateRangeStr}
               </span>
               <button 
@@ -974,9 +971,23 @@ function HabitChecklist({
               <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)]">
                 <div className="flex flex-col">
                   <h2 className="text-base font-black text-[var(--color-text-primary)] tracking-tight">{title}</h2>
-                  <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">
-                    {dateRangeStr}
-                  </span>
+                  <div className="flex items-center gap-1.5 -ml-1 mt-0.5">
+                    <button 
+                      onClick={handlePrev} 
+                      className="p-1 rounded-full text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/50 transition-colors"
+                    >
+                      <ChevronLeft size={14} strokeWidth={3} />
+                    </button>
+                    <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest min-w-[110px] text-center whitespace-nowrap">
+                      {dateRangeStr}
+                    </span>
+                    <button 
+                      onClick={handleNext} 
+                      className="p-1 rounded-full text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/50 transition-colors"
+                    >
+                      <ChevronRight size={14} strokeWidth={3} />
+                    </button>
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex p-0.5 bg-[var(--color-bg-tertiary)] rounded-xl">
