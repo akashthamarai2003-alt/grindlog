@@ -581,10 +581,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             src="/inspiration.png" 
             alt="Inspiration Background" 
             fill 
-            className="object-cover absolute inset-0 z-0 brightness-[0.4]" 
+            className="object-cover absolute inset-0 z-0" 
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-black/60 to-black/30 z-0" />
+          <div className="absolute inset-0 bg-black/50 z-0" />
           <Quote className="absolute -right-4 -top-4 h-32 w-32 text-white/5 rotate-12" />
           
           <div className="relative z-10 flex flex-col gap-5">
