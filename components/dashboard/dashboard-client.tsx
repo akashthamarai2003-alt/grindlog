@@ -62,6 +62,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [selectedDateStr, setSelectedDateStr] = useState(todayDateStr);
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, currentCompletedStatus: boolean, streak: number} | null>(null);
   const [remarkPrompt, setRemarkPrompt] = useState<{ habitId: string; dateStr: string; } | null>(null);
   const [remarkText, setRemarkText] = useState("");
@@ -338,14 +339,22 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           <Link 
             key={item.name} 
             href={item.path}
-            className="snap-start shrink-0 flex items-center gap-3 rounded-[20px] bg-[var(--color-bg-elevated)] p-3 pr-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform active:scale-95"
+            onClick={() => setNavigatingTo(item.name)}
+            className="snap-start shrink-0 flex items-center gap-3 rounded-[20px] bg-[var(--color-bg-elevated)] p-3 pr-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 transition-transform active:scale-95 relative overflow-hidden"
           >
-            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br ${item.color} shadow-sm`}>
-              <item.icon className="h-5 w-5 text-white" strokeWidth={2.5} />
+            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br ${item.color} shadow-sm relative z-10`}>
+              {navigatingTo === item.name ? (
+                <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              ) : (
+                <item.icon className="h-5 w-5 text-white" strokeWidth={2.5} />
+              )}
             </div>
-            <span className="text-[13px] font-bold text-[var(--color-text-primary)]">
+            <span className="text-[13px] font-bold text-[var(--color-text-primary)] relative z-10">
               {item.name}
             </span>
+            {navigatingTo === item.name && (
+              <div className="absolute inset-0 bg-white/40 dark:bg-black/20 z-0 animate-pulse" />
+            )}
           </Link>
         ))}
       </div>
