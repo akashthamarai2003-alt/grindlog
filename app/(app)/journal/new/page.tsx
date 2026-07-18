@@ -31,7 +31,7 @@ export default function NewJournalPage() {
     const entry = await createEntry({ content: content.trim(), mood, energy, focus });
     setIsSaving(false);
     if (!entry) {
-      alert("Failed to save journal entry. Is the database table 'journal_entries' created?");
+      alert("Failed to save journal entry. Please check the browser console for details.");
       return;
     }
     router.push("/journal");

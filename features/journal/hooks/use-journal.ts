@@ -70,11 +70,12 @@ export function useJournal() {
         focus: entry.focus,
         ai_summary,
         ai_sentiment,
-      } as any)
+      } as any, { onConflict: "user_id,date" })
       .select()
       .single();
 
     if (err) {
+      console.error("Supabase upsert error in createEntry:", err);
       setError(err.message);
       return null;
     }
