@@ -908,10 +908,10 @@ export default function NewHabitPage() {
                       
                       <div className="flex flex-col items-center justify-center">
                         <span className="text-[22px] font-black text-[var(--color-text-primary)] leading-none">
-                          {form.targetCount}
+                          {form.targetCount === 1 ? '0' : form.targetCount}
                         </span>
                         <span className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mt-1.5">
-                          {form.targetCount === 1 ? 'Time' : 'Times'} / Day
+                          {form.targetCount === 1 ? 'Off' : 'Times / Day'}
                         </span>
                       </div>
 
