@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition, useRef } from "react";
+import { useState, useEffect, useCallback, useTransition, useRef, createContext, useContext, useMemo } from "react";
 import { DayPicker } from "react-day-picker";
 import { motion, AnimatePresence, useMotionValue, animate } from "motion/react";
 import {
@@ -957,6 +957,32 @@ function HabitChecklist({
 
 // ─── Main Client ──────────────────────────────────────────────────────────────
 
+const CalendarContext = createContext<{
+  logs: HabitLog[];
+  habits: Habit[];
+  selected: Date | null;
+  todayDateStr: string;
+  setSelected: (d: Date) => void;
+} | null>(null);
+
+function CustomDay({ day }: any) {
+  const ctx = useContext(CalendarContext);
+  if (!ctx) return null;
+  return (
+    <DayCell
+      date={day.date}
+      logs={ctx.logs}
+      habits={ctx.habits}
+      isToday={toDateStr(day.date) === ctx.todayDateStr}
+      isSelected={ctx.selected ? toDateStr(day.date) === toDateStr(ctx.selected) : false}
+      isOutside={day.outside ?? false}
+      onClick={() => {
+        if (!day.outside) ctx.setSelected(day.date);
+      }}
+    />
+  );
+}
+
 export function CalendarClient({
   initialHabits = [],
   initialLogs = [],
@@ -1134,31 +1160,20 @@ export function CalendarClient({
             exit={{ opacity: 0, x: slideDir * -30 }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
           >
-            <DayPicker
-              mode="single"
-              month={month}
-              selected={selected}
-              onMonthChange={(m) => {
-                const dir = m > month ? 1 : -1;
-                setSlideDir(dir);
-                handleMonthChange(dir);
-              }}
-              onSelect={(d) => d && setSelected(d)}
-              showOutsideDays
-              hideNavigation
-              components={{
-                Day: ({ day }: any) => (
-                  <DayCell
-                    date={day.date}
-                    logs={logs}
-                    habits={habits}
-                    isToday={toDateStr(day.date) === todayDateStr}
-                    isSelected={selected ? toDateStr(day.date) === toDateStr(selected) : false}
-                    isOutside={day.outside ?? false}
-                    onClick={() => setSelected(day.date)}
-                  />
-                ),
-              }}
+            <CalendarContext.Provider value={{ logs, habits, selected, todayDateStr, setSelected }}>
+              <DayPicker
+                mode="single"
+                month={month}
+                selected={selected}
+                onMonthChange={(m) => {
+                  const dir = m > month ? 1 : -1;
+                  setSlideDir(dir);
+                  handleMonthChange(dir);
+                }}
+                onSelect={(d) => d && setSelected(d)}
+                showOutsideDays
+                hideNavigation
+                components={{ Day: CustomDay }}
               classNames={{
                 root:          "w-full",
                 months:        "w-full",
@@ -1176,6 +1191,7 @@ export function CalendarClient({
                 outside:       "",
               }}
             />
+            </CalendarContext.Provider>
           </motion.div>
         </AnimatePresence>
 
