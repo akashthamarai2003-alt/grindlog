@@ -106,7 +106,7 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
             onComplete?.();
           }}
           className={cn(
-            "flex h-[42px] w-[42px] items-center justify-center rounded-[14px] transition-all duration-200",
+            "flex h-[42px] w-[42px] items-center justify-center rounded-[14px] transition-all duration-200 overflow-hidden [-webkit-tap-highlight-color:transparent]",
             habit.isCompleted
               ? "bg-[var(--color-accent-green)]/15 border-2 border-[var(--color-accent-green)] text-[var(--color-accent-green)] shadow-[0_0_12px_rgba(52,199,89,0.4)] scale-105"
               : "bg-[var(--color-bg-secondary)] text-transparent hover:bg-[var(--color-bg-tertiary)] border-2 border-transparent"

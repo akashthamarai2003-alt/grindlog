@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from 'next/dynamic';
+import confetti from "canvas-confetti";
 import { Bell, Quote, Trophy, Flame, Plus, Sparkles, Target, Medal, Gift, CircleDollarSign } from "lucide-react";
 import { HabitCard } from "@/components/habits/habit-card";
 import { Confetti } from "@/components/gamification/confetti";
@@ -152,13 +153,27 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
     
     // Optimistic UI update
     if (newStatus) {
-      setShowConfetti(true);
       setOptimisticXp(prev => prev + 10);
       setOptimisticCoins(prev => prev + 5);
       
       // Prompt for remark
       setRemarkPrompt({ habitId, dateStr: selectedDateStr });
       setRemarkText("");
+      
+      const newCompletedCount = completedCount + 1;
+      if (newCompletedCount === totalCount && totalCount > 0 && !isPerfectDay) {
+        // Trigger large poppers blast for Perfect Day
+        const duration = 3000;
+        const end = Date.now() + duration;
+        const frame = () => {
+          confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0, y: 1 }, colors: ['#FFD700', '#FF9500', '#34C759'] });
+          confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 1 }, colors: ['#FFD700', '#FF9500', '#34C759'] });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        };
+        frame();
+      } else {
+        setShowConfetti(true);
+      }
     } else {
       setOptimisticXp(prev => Math.max(0, prev - 10)); // Revert if un-checked
       setOptimisticCoins(prev => Math.max(0, prev - 5));
