@@ -647,7 +647,7 @@ function TrendChart({ data }: { data: AnalyticsData["trendData"] }) {
   
   return (
     <div ref={ref} className="relative w-full h-[140px] pt-4">
-      <svg viewBox={`0 -10 ${W} ${H + 20}`} className="w-full h-full overflow-visible preserve-3d" preserveAspectRatio="none">
+      <svg viewBox={`0 -10 ${W} ${H + 20}`} className="w-full h-full overflow-visible preserve-3d outline-none" preserveAspectRatio="none" style={{ WebkitTapHighlightColor: 'transparent' }}>
         <defs>
           <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#AF52DE" stopOpacity="0.3" />
@@ -736,7 +736,7 @@ function RadarChart({ data }: { data: AnalyticsData["radarData"] }) {
   
   return (
     <div ref={ref} className="relative w-full h-[220px] flex items-center justify-center">
-      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full max-w-[220px] overflow-visible">
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full max-w-[220px] overflow-visible outline-none" style={{ WebkitTapHighlightColor: 'transparent' }}>
         {/* Background Grid */}
         <path d={bgPolygon} fill="none" stroke="var(--color-bg-tertiary)" strokeWidth="1" strokeDasharray="3 3" />
         {points.map((p, i) => (
