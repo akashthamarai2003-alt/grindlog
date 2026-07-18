@@ -38,7 +38,9 @@ export function useJournal() {
     energy: number | null;
     focus: number | null;
   }) => {
-    if (!userId) return null;
+    if (!userId) {
+      throw new Error("You must be logged in to save a journal entry.");
+    }
     const today = new Date().toISOString().split("T")[0];
 
     // Generate AI summary
