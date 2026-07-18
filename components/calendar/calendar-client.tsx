@@ -1168,7 +1168,7 @@ const CalendarContext = createContext<{
 
 function CustomDay({ day }: any) {
   const ctx = useContext(CalendarContext);
-  if (!ctx) return null;
+  if (!ctx) return <></>;
   return (
     <DayCell
       date={day.date}

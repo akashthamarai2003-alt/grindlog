@@ -65,6 +65,7 @@ export interface Database {
           date: string; status: "completed" | "skipped" | "missed";
           completed_at: string | null; value: number | null;
           note: string | null; mood: string | null;
+          remarks: string | null;
           streak_before: number; streak_after: number;
           xp_earned: number; coins_earned: number;
           created_at: string;
@@ -74,6 +75,7 @@ export interface Database {
           date?: string; status: "completed" | "skipped" | "missed";
           completed_at?: string | null; value?: number | null;
           note?: string | null; mood?: string | null;
+          remarks?: string | null;
           streak_before?: number; streak_after?: number;
           xp_earned?: number; coins_earned?: number;
           created_at?: string;
@@ -236,6 +238,56 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["fcm_tokens"]["Insert"]>;
+        Relationships: [];
+      };
+      user_quests: {
+        Row: {
+          id: string;
+          user_id: string;
+          quest_type: string;
+          quest_key: string;
+          date_key: string;
+          progress_current: number;
+          progress_target: number;
+          is_completed: boolean;
+          xp_reward: number;
+          coins_reward: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          quest_type: string;
+          quest_key: string;
+          date_key: string;
+          progress_current?: number;
+          progress_target: number;
+          is_completed?: boolean;
+          xp_reward?: number;
+          coins_reward?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["user_quests"]["Insert"]>;
+        Relationships: [];
+      };
+      season_progress: {
+        Row: {
+          id: string;
+          user_id: string;
+          season_id: string;
+          current_xp: number;
+          claimed_tiers: any;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          season_id: string;
+          current_xp?: number;
+          claimed_tiers?: any;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["season_progress"]["Insert"]>;
         Relationships: [];
       };
     };
