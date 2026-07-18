@@ -907,47 +907,49 @@ function HabitChecklist({
 
                 return (
                   <div key={day.dateStr} className={cn(
-                    "relative flex items-center justify-center",
+                    "flex items-center justify-center",
                     viewMode === "weekly" ? "flex-1" : "w-[40px] shrink-0"
                   )}>
-                    <button
-                      onClick={() => {
-                        if (!valid || isFuture) return;
-                        let nextStatus: HabitLog["status"] | null = "completed";
-                        if (actualStatus === "completed") nextStatus = "failed";
-                        else if (actualStatus === "failed") nextStatus = null;
-                        
-                        if (day.dateStr < todayDateStr && nextStatus === "completed") {
-                          if (onAntiCheat) {
-                            onAntiCheat(habit.id, day.dateStr, nextStatus);
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          if (!valid || isFuture) return;
+                          let nextStatus: HabitLog["status"] | null = "completed";
+                          if (actualStatus === "completed") nextStatus = "failed";
+                          else if (actualStatus === "failed") nextStatus = null;
+                          
+                          if (day.dateStr < todayDateStr && nextStatus === "completed") {
+                            if (onAntiCheat) {
+                              onAntiCheat(habit.id, day.dateStr, nextStatus);
+                            } else {
+                              onLogChange(habit.id, day.dateStr, nextStatus);
+                            }
                           } else {
                             onLogChange(habit.id, day.dateStr, nextStatus);
                           }
-                        } else {
-                          onLogChange(habit.id, day.dateStr, nextStatus);
-                        }
-                      }}
-                      disabled={!valid || isFuture}
-                      className={cn(
-                        "flex items-center justify-center w-5 h-5 rounded-[6px] transition-transform active:scale-90",
-                        bgClass,
-                        borderClass,
-                        valid && !isFuture && !actualStatus ? "hover:border-[var(--color-text-tertiary)]" : ""
-                      )}
-                    >
-                      {icon}
-                    </button>
-                    {log?.remarks && (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setViewRemark({ habitName: habit.name, dateStr: day.dateStr, text: log.remarks! });
                         }}
-                        className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-[var(--color-bg-primary)] rounded-full shadow-sm hover:scale-110 transition-transform"
+                        disabled={!valid || isFuture}
+                        className={cn(
+                          "flex items-center justify-center w-5 h-5 rounded-[6px] transition-transform active:scale-90",
+                          bgClass,
+                          borderClass,
+                          valid && !isFuture && !actualStatus ? "hover:border-[var(--color-text-tertiary)]" : ""
+                        )}
                       >
-                        <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--color-accent-blue)] fill-[var(--color-accent-blue)]/20" />
+                        {icon}
                       </button>
-                    )}
+                      {log?.remarks && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setViewRemark({ habitName: habit.name, dateStr: day.dateStr, text: log.remarks! });
+                          }}
+                          className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-[var(--color-bg-primary)] rounded-full shadow-sm hover:scale-110 transition-transform"
+                        >
+                          <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--color-accent-blue)] fill-[var(--color-accent-blue)]/20" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
