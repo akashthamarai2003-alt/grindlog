@@ -183,7 +183,7 @@ export default function LogWorkoutPage() {
   };
 
   return (
-    <div className="relative flex flex-col min-h-dvh bg-[var(--color-bg-primary)]">
+  <div className="relative flex flex-col min-h-dvh ">
       {/* Ambient color wash based on selected type */}
       <motion.div
         animate={{ background: `radial-gradient(circle at 50% 0%, ${activeType.hex}22, transparent 60%)` }}

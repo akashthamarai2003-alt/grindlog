@@ -194,7 +194,7 @@ export default function CoachPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh bg-[var(--color-bg-primary)] px-4 pb-40 pt-4 safe-top gap-5">
+  <div className="flex flex-col min-h-dvh px-4 pb-40 pt-4 safe-top gap-5">
       {/* ── Header ── */}
       <div className="flex items-center gap-3 border-b border-[var(--color-bg-tertiary)] pb-3.5">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#007AFF] to-[#AF52DE] shadow-sm">

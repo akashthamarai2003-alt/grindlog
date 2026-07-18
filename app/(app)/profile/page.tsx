@@ -78,7 +78,7 @@ export default function ProfilePage() {
   const progressPct = Math.round((currentLevelXp / 1000) * 100);
 
   return (
-    <div className="relative flex flex-col gap-6 px-5 pb-40 pt-6 safe-top min-h-dvh overflow-hidden bg-[var(--color-bg-primary)]">
+  <div className="relative flex flex-col gap-6 px-5 pb-40 pt-6 safe-top min-h-dvh overflow-hidden ">
       
       {/* Dynamic Background Orbs */}
       <div className="absolute top-0 left-0 w-full h-[300px] overflow-hidden pointer-events-none">

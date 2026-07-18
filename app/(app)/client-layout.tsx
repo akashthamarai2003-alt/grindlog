@@ -31,8 +31,7 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
         className="fixed inset-0 z-[-2] bg-cover bg-center bg-no-repeat bg-fixed"
         style={{ backgroundImage: 'url("/background.png")' }}
       />
-      {/* Subtle glass overlay to ensure app content is readable over the bright sky, no blur to avoid mobile glitch */}
-      <div className="fixed inset-0 z-[-1] bg-white/50 dark:bg-black/70" />
+      {/* No overlay - let the raw background image shine through */}
 
       <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.05)] ring-1 ring-gray-200 dark:ring-gray-900 overflow-x-hidden">
         {/* Main content */}
