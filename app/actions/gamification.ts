@@ -311,16 +311,45 @@ export async function checkAndUnlockAchievements(userId: string) {
     .eq("id", userId)
     .single();
 
-  if (!habits || !profile) return;
+  // 3. Get habit logs for early bird / night owl
+  const { data: logs } = await supabase
+    .from("habit_logs")
+    .select("completed_at")
+    .eq("user_id", userId)
+    .eq("status", "completed");
 
-  // 3. Evaluate milestones
+  let earlyBirdCount = 0;
+  let nightOwlCount = 0;
+
+  if (logs) {
+    logs.forEach((log: any) => {
+      if (!log.completed_at) return;
+      const date = new Date(log.completed_at);
+      const hours = date.getHours(); // Local time of the server, assuming UTC but good enough for now
+      if (hours < 9) earlyBirdCount++;
+      if (hours >= 21) nightOwlCount++;
+    });
+  }
+
+  // 4. Evaluate milestones
   let maxStreak = 0;
   let totalCompletions = 0;
   
-  habits.forEach((h: any) => {
-    if (h.current_streak > maxStreak) maxStreak = h.current_streak;
-    totalCompletions += h.total_completions;
-  });
+  if (habits) {
+    habits.forEach((h: any) => {
+      if (h.current_streak > maxStreak) maxStreak = h.current_streak;
+      totalCompletions += h.total_completions;
+    });
+  }
+
+  const stats = {
+    maxStreak,
+    totalCompletions,
+    earlyBirdCount,
+    nightOwlCount,
+    treeLeaves: profile?.tree_leaves_count || 0,
+    treeButterflies: profile?.tree_butterflies_count || 0
+  };
 
   const conditions = {
     first_steps: totalCompletions >= 1,
@@ -328,54 +357,59 @@ export async function checkAndUnlockAchievements(userId: string) {
     habit_formed: maxStreak >= 21,
     monthly_master: maxStreak >= 30,
     year_streak: maxStreak >= 365,
-    first_leaf: profile.tree_leaves_count > 0,
-    butterfly_effect: profile.tree_butterflies_count > 0,
+    first_leaf: stats.treeLeaves > 0,
+    butterfly_effect: stats.treeButterflies > 0,
+    early_bird: earlyBirdCount >= 1,
+    night_owl: nightOwlCount >= 1,
   };
 
-  // 4. Get all available achievements
+  // 5. Get all available achievements
   const { data: allAchievements } = await supabase.from("achievements").select("*");
-  if (!allAchievements) return;
+  
+  if (allAchievements) {
+    // 6. Get user's already unlocked achievements
+    const { data: unlocked } = await supabase
+      .from("user_achievements")
+      .select("achievement_id")
+      .eq("user_id", userId);
 
-  // 5. Get user's already unlocked achievements
-  const { data: unlocked } = await supabase
-    .from("user_achievements")
-    .select("achievement_id")
-    .eq("user_id", userId);
+    const unlockedIds = new Set(unlocked?.map((u: any) => u.achievement_id) || []);
 
-  const unlockedIds = new Set(unlocked?.map((u: any) => u.achievement_id) || []);
+    // 7. Check and unlock
+    for (const achievement of allAchievements) {
+      if (unlockedIds.has(achievement.id)) continue; // Already unlocked
 
-  // 6. Check and unlock
-  for (const achievement of allAchievements) {
-    if (unlockedIds.has(achievement.id)) continue; // Already unlocked
+      const isMet = (conditions as any)[achievement.key];
+      
+      if (isMet) {
+        // Unlock it
+        await supabase.from("user_achievements").insert({
+          user_id: userId,
+          achievement_id: achievement.id,
+          progress_current: 1,
+          progress_target: 1,
+        });
 
-    const isMet = (conditions as any)[achievement.key];
-    
-    if (isMet) {
-      // Unlock it
-      await supabase.from("user_achievements").insert({
-        user_id: userId,
-        achievement_id: achievement.id,
-        progress_current: 1,
-        progress_target: 1,
-      });
-
-      // Award XP & Coins
-      const { data: currentProfile } = await supabase
-        .from("profiles")
-        .select("xp, coins")
-        .eq("id", userId)
-        .single();
-
-      if (currentProfile) {
-        const newXp = (currentProfile.xp || 0) + (achievement.xp_reward || 0);
-        const newCoins = (currentProfile.coins || 0) + (achievement.coins_reward || 0);
-        const newLevel = Math.floor(newXp / 1000) + 1;
-
-        await supabase
+        // Award XP & Coins
+        const { data: currentProfile } = await supabase
           .from("profiles")
-          .update({ xp: newXp, coins: newCoins, level: newLevel })
-          .eq("id", userId);
+          .select("xp, coins")
+          .eq("id", userId)
+          .single();
+
+        if (currentProfile) {
+          const newXp = (currentProfile.xp || 0) + (achievement.xp_reward || 0);
+          const newCoins = (currentProfile.coins || 0) + (achievement.coins_reward || 0);
+          const newLevel = Math.floor(newXp / 1000) + 1;
+
+          await supabase
+            .from("profiles")
+            .update({ xp: newXp, coins: newCoins, level: newLevel })
+            .eq("id", userId);
+        }
       }
     }
   }
+  
+  return stats;
 }
