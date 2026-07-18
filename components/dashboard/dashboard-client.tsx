@@ -49,7 +49,14 @@ const QUOTES = [
   { text: "Discipline is doing what needs to be done, even when you don't feel like it.", author: "Unknown" },
   { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
   { text: "Success is the product of daily habits—not once-in-a-lifetime transformations.", author: "James Clear" },
-  { text: "You do not rise to the level of your goals. You fall to the level of your systems.", author: "James Clear" }
+  { text: "You do not rise to the level of your goals. You fall to the level of your systems.", author: "James Clear" },
+  { text: "He who conquers himself is the mightiest warrior.", author: "Confucius" },
+  { text: "It is not that we have a short time to live, but that we waste a lot of it.", author: "Seneca" },
+  { text: "Amateurs sit and wait for inspiration, the rest of us just get up and go to work.", author: "Stephen King" },
+  { text: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Ryun" },
+  { text: "The secret of your future is hidden in your daily routine.", author: "Mike Murdock" },
+  { text: "Don't count the days, make the days count.", author: "Muhammad Ali" },
+  { text: "Waste no more time arguing what a good man should be. Be one.", author: "Marcus Aurelius" }
 ];
 
 export function DashboardClient({ profile, initialHabits, todayDateStr }: DashboardClientProps) {
@@ -474,15 +481,18 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both"
       >
         <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)] px-1">Inspiration</h2>
-        <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#007AFF] to-[#5856D6] p-6 shadow-lg">
-          <Quote className="absolute -right-4 -top-4 h-24 w-24 text-white/10" />
-          <div className="relative z-10 flex flex-col gap-4">
-            <p className="text-[15px] font-bold leading-relaxed text-white">
+        <div className="relative overflow-hidden rounded-[24px] bg-[#1C1C1E] p-6 shadow-xl ring-1 ring-white/10">
+          <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-transparent" />
+          <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
+          <Quote className="absolute -right-4 -top-4 h-32 w-32 text-white/5 rotate-12" />
+          
+          <div className="relative z-10 flex flex-col gap-5">
+            <p className="text-[15px] font-medium italic leading-relaxed text-slate-200">
               "{QUOTES[quoteIdx].text}"
             </p>
-            <div className="flex items-center gap-2">
-              <div className="h-[1px] w-6 bg-white/50" />
-              <p className="text-xs font-black text-white/80 uppercase tracking-wider">{QUOTES[quoteIdx].author}</p>
+            <div className="flex items-center gap-3">
+              <div className="h-[1px] w-8 bg-amber-500/50" />
+              <p className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em]">{QUOTES[quoteIdx].author}</p>
             </div>
           </div>
         </div>
