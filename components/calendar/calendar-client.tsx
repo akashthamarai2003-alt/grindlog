@@ -165,8 +165,8 @@ function DayCell({
       <button
       onClick={onClick}
       className={cn(
-        "relative flex flex-col items-center justify-start w-full aspect-square",
-        "rounded-[14px] pt-1.5 pb-1 select-none outline-none",
+        "relative flex flex-col items-center justify-center w-full aspect-square",
+        "rounded-[14px] select-none outline-none",
         "transition-all duration-200 active:scale-[0.82]",
         isOutside && "opacity-20 pointer-events-none",
         isSelected && [
@@ -222,7 +222,7 @@ function DayCell({
       {/* Day number */}
       <span
         className={cn(
-          "relative z-10 text-[11px] font-black leading-none transition-transform duration-300",
+          "relative z-10 text-[12px] font-black leading-none transition-transform duration-300",
           isSelected ? "scale-110" : "scale-100",
           isToday ? "text-[#007AFF]" :
           isSelected ? "text-[var(--color-text-primary)]" :
@@ -244,7 +244,7 @@ function DayCell({
 
       {/* Status dots */}
       {hasLogs && !isToday && !isOutside && (
-        <div className="flex gap-[2px] mt-auto mb-0.5">
+        <div className="absolute bottom-1.5 flex gap-[2px]">
           {dayLogs.slice(0, 3).map((log, i) => (
             <div
               key={i}
