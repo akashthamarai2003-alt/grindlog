@@ -287,13 +287,15 @@ function DayCell({
 type HabitRowProps = {
   habit: Habit;
   status: HabitLog["status"] | null;
+  remark: string | null;
   isEditable: boolean;
   isPending: boolean;
   idx: number;
   onToggle: (s: HabitLog["status"] | null) => void;
+  onViewRemark: () => void;
 };
 
-function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: HabitRowProps) {
+function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle, onViewRemark }: HabitRowProps) {
   return (
     <div
       className="flex items-center gap-3.5 px-4 py-3.5 animate-in fade-in slide-in-from-left-4 duration-300 fill-mode-both"
@@ -380,6 +382,18 @@ function HabitRow({ habit, status, isEditable, isPending, idx, onToggle }: Habit
               </button>
             );
           })}
+          {remark && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewRemark();
+              }}
+              className="ml-1 w-8 h-8 rounded-full flex items-center justify-center bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/20 transition-colors"
+              title="View Remark"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex items-center gap-1 text-[var(--color-text-tertiary)]">
@@ -404,6 +418,7 @@ type PanelProps = {
 };
 
 function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, isPending }: PanelProps) {
+  const [viewRemark, setViewRemark] = useState<{habitName: string, dateStr: string, text: string} | null>(null);
   const dateStr = toDateStr(date);
   const isToday = dateStr === todayDateStr;
   const todayDate = new Date(todayDateStr + "T12:00:00");
@@ -550,6 +565,7 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
                   key={habit.id}
                   habit={habit}
                   status={status}
+                  remark={log?.remarks || null}
                   isEditable={isEditable}
                   isPending={isPending}
                   idx={idx}
@@ -560,6 +576,11 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
                     }
                     onLogChange(habit.id, dateStr, s);
                   }}
+                  onViewRemark={() => {
+                    if (log?.remarks) {
+                      setViewRemark({ habitName: habit.name, dateStr, text: log.remarks });
+                    }
+                  }}
                 />
               );
             })}
@@ -568,6 +589,52 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
       )}
 
       <div className="h-3" />
+
+      {/* ── View Remark Modal ── */}
+      <AnimatePresence>
+        {viewRemark && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm touch-none"
+            onClick={() => setViewRemark(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col gap-4 border border-[var(--color-bg-tertiary)]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)] shrink-0">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <h2 className="text-base font-black text-[var(--color-text-primary)] tracking-tight truncate">
+                    {viewRemark.habitName}
+                  </h2>
+                  <p className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider">
+                    {new Date(viewRemark.dateStr + "T12:00:00Z").toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4 text-[14px] text-[var(--color-text-primary)] leading-relaxed italic">
+                "{viewRemark.text}"
+              </div>
+              
+              <button
+                onClick={() => setViewRemark(null)}
+                className="w-full mt-2 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
