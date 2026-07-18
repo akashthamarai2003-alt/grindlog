@@ -31,6 +31,7 @@ import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";
 
 import { createClient } from "@/lib/services/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { TimePicker12h } from "@/components/ui/time-picker-12h";
 
 /* ────────────────────────────────────────────────────────────
    Static config
