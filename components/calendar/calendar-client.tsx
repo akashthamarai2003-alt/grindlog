@@ -111,18 +111,17 @@ const STATUS_META = {
 
 function AnimatedNumber({ value }: { value: number }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const motionVal = useMotionValue(0);
 
-  useState(() => {
-    const controls = animate(motionVal, value, {
+  useEffect(() => {
+    const controls = animate(0, value, {
       duration: 1.2,
       ease: "easeOut",
       onUpdate: (v) => {
         if (ref.current) ref.current.textContent = String(Math.round(v));
       },
     });
-    return controls.stop;
-  });
+    return () => controls.stop();
+  }, [value]);
 
   return <span ref={ref}>0</span>;
 }
@@ -162,13 +161,6 @@ function DayCell({
   // Cap the progress ring so the rounded linecaps don't collide when almost complete (e.g., 95%)
   const visualPct = isPerfect ? 1 : Math.min(pct, (circ - 4.5) / circ);
 
-  // Animation state
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 100);
-    return () => clearTimeout(t);
-  }, []);
-
   return (
     <td role="gridcell" className="p-0 text-center focus-within:relative focus-within:z-20">
       <button
@@ -206,17 +198,15 @@ function DayCell({
             strokeWidth="2"
           />
           {/* Progress */}
-          <circle
+          <motion.circle
             cx="16" cy="16" r={r}
             fill="none"
             stroke={ringColor}
             strokeWidth="2.5"
             strokeLinecap="round"
-            style={{
-              strokeDasharray: circ,
-              strokeDashoffset: mounted ? circ - visualPct * circ : circ,
-              transition: "stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
-            }}
+            initial={{ strokeDasharray: circ, strokeDashoffset: circ }}
+            animate={{ strokeDashoffset: circ - visualPct * circ }}
+            transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
           />
         </svg>
       )}
