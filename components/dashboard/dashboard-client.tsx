@@ -162,15 +162,21 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       
       const newCompletedCount = completedCount + 1;
       if (newCompletedCount === totalCount && totalCount > 0 && !isPerfectDay) {
-        // Trigger large poppers blast for Perfect Day
-        const duration = 3000;
-        const end = Date.now() + duration;
-        const frame = () => {
-          confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0, y: 1 }, colors: ['#FFD700', '#FF9500', '#34C759'] });
-          confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 1 }, colors: ['#FFD700', '#FF9500', '#34C759'] });
-          if (Date.now() < end) requestAnimationFrame(frame);
-        };
-        frame();
+        // Trigger a single, clean poppers blast for Perfect Day
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { x: 0, y: 1 },
+          colors: ['#FFD700', '#FF9500', '#34C759'],
+          angle: 60,
+        });
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { x: 1, y: 1 },
+          colors: ['#FFD700', '#FF9500', '#34C759'],
+          angle: 120,
+        });
       } else {
         setShowConfetti(true);
       }
