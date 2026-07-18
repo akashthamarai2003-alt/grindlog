@@ -214,7 +214,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         {/* User-Provided Background Picture */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-105"
-          style={{ backgroundImage: 'url("/modal%20carpd.png")' }}
+          style={{ backgroundImage: 'url("/modal-card-bg.png")' }}
         />
         
         {/* Adaptive overlays: light mode keeps it bright, dark mode darkens it for white text */}
