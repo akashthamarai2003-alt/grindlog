@@ -19,10 +19,11 @@ import {
   Crown,
   X,
   BellRing,
+  Ticket,
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
-import { processMockPayment } from "@/app/actions/payment";
+import { processMockPayment, validateCouponAction } from "@/app/actions/payment";
 
 const features = [
   { icon: InfinityIcon, label: "Unlimited Habits", core: true, pro: true },
@@ -42,12 +43,12 @@ const reviews = [
   { text: "The AI coach is surprisingly good. Better than I expected!", author: "Arjun", role: "31, Entrepreneur", stars: 5 },
 ];
 
-const plans = [
+const basePlans = [
   {
     id: "monthly",
     name: "Monthly",
-    emoji: "🌱",
-    prices: { core: "₹49", pro: "₹69" },
+    emoji: "??",
+    basePrices: { core: 49, pro: 69 },
     period: "/month",
     originalPrice: null,
     badge: null,
@@ -55,21 +56,21 @@ const plans = [
   {
     id: "six_months",
     name: "6 Months",
-    emoji: "🌿",
-    prices: { core: "₹199", pro: "₹249" },
+    emoji: "??",
+    basePrices: { core: 199, pro: 249 },
     period: "/6 months",
-    originalPrice: "₹294",
-    badge: "⭐ Most Popular",
+    originalPrice: "?294",
+    badge: "? Most Popular",
     savings: "Save 32%",
   },
   {
     id: "lifetime",
     name: "Lifetime",
-    emoji: "👑",
-    prices: { core: "₹599", pro: "₹799" },
+    emoji: "??",
+    basePrices: { core: 599, pro: 799 },
     period: "one-time",
     originalPrice: null,
-    badge: "🔥 Best Value",
+    badge: "?? Best Value",
     savings: null,
   },
 ];
@@ -79,16 +80,52 @@ export default function PaymentPage() {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
   const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; discount: number } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponLoading(true);
+    setCouponError("");
+    
+    const res = await validateCouponAction(couponInput);
+    
+    if (res.success && res.discount && res.id) {
+      setAppliedCoupon({ id: res.id, discount: res.discount });
+    } else {
+      setCouponError(res.error || "Invalid coupon");
+      setAppliedCoupon(null);
+    }
+    setCouponLoading(false);
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponError("");
+  };
 
   const handleContinue = async () => {
     setIsProcessing(true);
-    const result = await processMockPayment(selectedPlan, level);
+    const result = await processMockPayment(selectedPlan, level, appliedCoupon?.id);
     if (result.success) {
       router.push("/dashboard");
     } else {
       setIsProcessing(false);
       alert("Payment failed: " + result.error);
     }
+  };
+
+  // Calculate discounted price safely
+  const calculatePrice = (base: number) => {
+    if (!appliedCoupon) return `₹${base}`;
+    const discount = (base * appliedCoupon.discount) / 100;
+    const final = Math.round(base - discount);
+    return final <= 0 ? "Free" : `₹${final}`;
   };
 
   return (
@@ -108,9 +145,9 @@ export default function PaymentPage() {
         transition={springs.default}
         className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--color-accent-green-light)] via-white to-[var(--color-bg-secondary)] p-8 text-center"
       >
-        <div className="absolute left-4 top-4 text-5xl opacity-20">🌱</div>
-        <div className="absolute right-6 top-6 text-5xl opacity-15">🌳</div>
-        <div className="absolute bottom-4 right-4 text-4xl opacity-15">✨</div>
+        <div className="absolute left-4 top-4 text-5xl opacity-20">??</div>
+        <div className="absolute right-6 top-6 text-5xl opacity-15">??</div>
+        <div className="absolute bottom-4 right-4 text-4xl opacity-15">?</div>
 
         <motion.div
           className="mx-auto mb-4"
@@ -123,21 +160,21 @@ export default function PaymentPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
             >
-              🌱
+              ??
             </motion.span>
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              →
+              ?
             </motion.span>
             <motion.span
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
             >
-              🌳
+              ??
             </motion.span>
           </div>
         </motion.div>
@@ -260,7 +297,7 @@ export default function PaymentPage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          {plans.map((plan) => (
+          {basePlans.map((plan) => (
             <motion.button
               key={plan.id}
               whileTap={{ scale: 0.97 }}
@@ -289,9 +326,16 @@ export default function PaymentPage() {
                 )}
               </div>
               <div className="text-right">
-                <p className="text-lg font-extrabold text-[var(--color-text-primary)]">
-                  {plan.prices[level]}
-                </p>
+                <div className="flex items-center justify-end gap-1.5">
+                  {appliedCoupon && (
+                    <span className="text-[10px] text-gray-400 line-through">
+                      ?{plan.basePrices[level]}
+                    </span>
+                  )}
+                  <p className="text-lg font-extrabold text-[var(--color-text-primary)]">
+                    {calculatePrice(plan.basePrices[level])}
+                  </p>
+                </div>
                 <p className="text-[10px] font-medium text-[var(--color-text-tertiary)]">
                   {plan.period}
                 </p>
@@ -299,6 +343,48 @@ export default function PaymentPage() {
             </motion.button>
           ))}
         </div>
+      </div>
+
+      {/* Coupon Section */}
+      <div className="bg-[var(--color-bg-secondary)] rounded-2xl p-4 border border-[var(--color-bg-tertiary)]">
+        {appliedCoupon ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[var(--color-accent-green)]">
+              <Ticket className="w-4 h-4" />
+              <span className="text-sm font-bold">{appliedCoupon.discount}% OFF APPLIED</span>
+            </div>
+            <button 
+              onClick={removeCoupon}
+              className="text-xs text-[var(--color-text-tertiary)] hover:text-red-500 font-semibold"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Ticket className="w-4 h-4 text-[var(--color-text-secondary)]" />
+              <span className="text-sm font-semibold text-[var(--color-text-primary)]">Have a promo code?</span>
+            </div>
+            <div className="flex gap-2">
+              <input 
+                type="text"
+                value={couponInput}
+                onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                placeholder="Enter code"
+                className="flex-1 px-3 py-2 text-sm uppercase rounded-xl border border-[var(--color-bg-tertiary)] outline-none focus:border-[var(--color-accent-green)]"
+              />
+              <button 
+                onClick={handleApplyCoupon}
+                disabled={couponLoading || !couponInput.trim()}
+                className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+              >
+                {couponLoading ? "..." : "Apply"}
+              </button>
+            </div>
+            {couponError && <p className="mt-2 text-xs text-red-500 font-medium">{couponError}</p>}
+          </div>
+        )}
       </div>
 
       {/* CTA */}
@@ -316,7 +402,7 @@ export default function PaymentPage() {
         ) : (
           <>
             <Crown className="h-5 w-5" />
-            Continue with {plans.find(p => p.id === selectedPlan)?.name}
+            {appliedCoupon?.discount === 100 ? "Get it for Free" : `Continue with ${basePlans.find(p => p.id === selectedPlan)?.name}`}
           </>
         )}
       </motion.button>
