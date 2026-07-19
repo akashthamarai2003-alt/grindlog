@@ -15,18 +15,20 @@ import {
   BellRing,
   Star,
   Crown,
+  X,
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 import { processMockPayment } from "@/app/actions/payment";
 
 const features = [
-  { icon: InfinityIcon, label: "Unlimited Habits", free: "5 habits", premium: "Unlimited" },
-  { icon: Brain, label: "AI Coach", free: "10 msgs/day", premium: "Unlimited" },
-  { icon: BarChart3, label: "Advanced Analytics", free: "Basic", premium: "Full suite" },
-  { icon: Palette, label: "Custom Themes", free: "Light only", premium: "All themes" },
-  { icon: Download, label: "Data Export", free: "Limited", premium: "Full export" },
-  { icon: BellRing, label: "Smart Reminders", free: "Basic", premium: "AI-powered" },
+  { icon: InfinityIcon, label: "Unlimited Habits", core: true, pro: true },
+  { icon: BarChart3, label: "Advanced Analytics", core: false, pro: true },
+  { icon: Brain, label: "AI Coach", core: false, pro: true },
+  { icon: Sparkles, label: "AI Habit Plans", core: false, pro: true },
+  { icon: Palette, label: "VIP Themes", core: false, pro: true },
+  { icon: BellRing, label: "Smart Reminders", core: "Standard", pro: "AI-powered" },
+  { icon: Crown, label: "Priority Support", core: false, pro: true },
 ];
 
 const reviews = [
@@ -148,8 +150,8 @@ export default function PaymentPage() {
       <div className="rounded-2xl bg-[var(--color-bg-secondary)] overflow-hidden">
         <div className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-[var(--color-bg-tertiary)]">
           <span className="text-xs font-semibold text-[var(--color-text-primary)]">Feature</span>
-          <span className="text-xs font-semibold text-[var(--color-text-tertiary)] text-center">Free</span>
-          <span className="text-xs font-semibold text-[var(--color-accent-green)] text-center">Premium</span>
+          <span className="text-xs font-semibold text-[var(--color-text-tertiary)] text-center">Core</span>
+          <span className="text-xs font-semibold text-[var(--color-accent-green)] text-center">Pro</span>
         </div>
         {features.map((f, i) => (
           <div
@@ -160,16 +162,32 @@ export default function PaymentPage() {
             )}
           >
             <div className="flex items-center gap-2">
-              <f.icon className="h-4 w-4 text-[var(--color-text-secondary)]" />
-              <span className="text-xs font-medium text-[var(--color-text-primary)]">
+              <f.icon className="h-4 w-4 text-[var(--color-text-secondary)] shrink-0" />
+              <span className="text-xs font-medium text-[var(--color-text-primary)] leading-tight">
                 {f.label}
               </span>
             </div>
-            <span className="text-xs text-center text-[var(--color-text-tertiary)]">
-              {f.free}
-            </span>
             <div className="flex justify-center">
-              <Check className="h-4 w-4 text-[var(--color-accent-green)]" />
+              {typeof f.core === "boolean" ? (
+                f.core ? (
+                  <Check className="h-4 w-4 text-[var(--color-text-primary)]" />
+                ) : (
+                  <X className="h-4 w-4 text-[var(--color-text-tertiary)] opacity-50" />
+                )
+              ) : (
+                <span className="text-xs text-center text-[var(--color-text-tertiary)]">{f.core}</span>
+              )}
+            </div>
+            <div className="flex justify-center">
+              {typeof f.pro === "boolean" ? (
+                f.pro ? (
+                  <Check className="h-4 w-4 text-[var(--color-accent-green)]" />
+                ) : (
+                  <X className="h-4 w-4 text-[var(--color-text-tertiary)] opacity-50" />
+                )
+              ) : (
+                <span className="text-xs text-center text-[var(--color-accent-green)] font-medium">{f.pro}</span>
+              )}
             </div>
           </div>
         ))}
