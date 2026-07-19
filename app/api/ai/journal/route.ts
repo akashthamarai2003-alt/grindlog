@@ -16,6 +16,11 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const { data: profile } = await supabase.from("profiles").select("premium_level").eq("id", user.id).single();
+    if (profile?.premium_level !== "pro") {
+      return NextResponse.json({ error: "Upgrade to Pro to use the AI Journal feature." }, { status: 403 });
+    }
+
     const { content, mood, energy, focus } = await request.json();
 
     const userPrompt = `Journal Content: "${content}"\nMood Rating (1-5): ${mood || "N/A"}\nEnergy Rating (1-5): ${energy || "N/A"}\nFocus Rating (1-5): ${focus || "N/A"}`;

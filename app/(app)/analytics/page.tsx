@@ -11,6 +11,17 @@ export default async function AnalyticsPage() {
     return redirect("/login");
   }
 
+  // Fetch profile to check level
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("premium_level")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.premium_level !== "pro") {
+    return redirect("/payment");
+  }
+
   // 1. Fetch habits
   const { data: habits } = await supabase
     .from("habits")
