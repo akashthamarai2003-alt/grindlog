@@ -75,7 +75,12 @@ export default function OnboardingPage() {
   const slide = slides[current];
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[var(--color-bg-primary)]">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden">
+      {/* Background Picture */}
+      <div 
+        className="fixed inset-0 z-[-1] bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: 'url("/onboarding.png")' }}
+      />
       {/* Header Navigation */}
       <div className="relative z-10 flex h-16 items-center justify-between px-5 pt-safe">
         {/* Back button */}
