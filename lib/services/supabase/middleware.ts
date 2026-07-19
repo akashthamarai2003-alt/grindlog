@@ -32,46 +32,18 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/admin")) {
-    const basicAuth = request.headers.get("authorization");
-    const url = request.nextUrl;
+    const adminCookie = request.cookies.get("admin_auth")?.value;
+    const validPwd = process.env.ADMIN_PASSWORD || "admin";
 
-    if (basicAuth) {
-      const authValue = basicAuth.split(" ")[1];
-      const [authUser, pwd] = atob(authValue).split(":");
-
-      const validUser = process.env.ADMIN_USERNAME || "admin";
-      const validPwd = process.env.ADMIN_PASSWORD || "admin";
-
-      if (authUser === validUser && pwd === validPwd) {
-        // Authenticated
-      } else {
-        return new NextResponse("Auth required", {
-          status: 401,
-          headers: { "WWW-Authenticate": "Basic realm=\"Secure Area\"" },
-        });
-      }
-    } else {
-      return new NextResponse("Auth required", {
-        status: 401,
-        headers: { "WWW-Authenticate": "Basic realm=\"Secure Area\"" },
-      });
-    }
-
-    if (!user) {
+    if (adminCookie !== validPwd) {
       const url = request.nextUrl.clone();
-      url.pathname = "/auth/signin";
+      url.pathname = "/admin-login";
       return NextResponse.redirect(url);
     }
     
-    const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase());
-    const userEmail = user.email?.toLowerCase();
-    
-    // If ADMIN_EMAILS is set, enforce it. If not, allow any logged-in user who passes the Basic Auth password prompt.
-    if (process.env.ADMIN_EMAILS && (!userEmail || !adminEmails.includes(userEmail))) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
-    }
+    // If we got here, they are an authenticated admin via the custom login page.
+    // We do NOT need to check their Supabase user for admin routes because admin routes use the Service Role key.
+    return response;
   }
 
   const publicPaths = [
@@ -81,6 +53,7 @@ export async function updateSession(request: NextRequest) {
     "/auth/callback",
     "/auth/forgot-password",
     "/auth/reset-password",
+    "/admin-login",
     "/onboarding",
     "/terms",
     "/privacy",
