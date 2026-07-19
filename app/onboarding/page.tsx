@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Sprout,
@@ -77,10 +78,15 @@ export default function OnboardingPage() {
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden">
       {/* Background Picture */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: 'url("/onboarding.png")' }}
-      />
+      <div className="absolute inset-0 z-0">
+        <Image 
+          src="/onboarding-bg.png" 
+          alt="Background" 
+          fill
+          priority
+          className="object-cover"
+        />
+      </div>
       {/* Header Navigation */}
       <div className="relative z-10 flex h-16 items-center justify-between px-5 pt-safe">
         {/* Back button */}
