@@ -37,6 +37,7 @@ const MODULES: Module[] = [
   { id: "finance", name: "Finance", icon: Wallet, path: "/finance", color: "from-[#30B0C7] to-[#007AFF]", comingSoon: true },
   { id: "sleep", name: "Sleep", icon: Moon, path: "/sleep", color: "from-[#5856D6] to-[#3A3A3C]", comingSoon: true },
   { id: "learning", name: "Learning", icon: GraduationCap, path: "/learning", color: "from-[#FF9500] to-[#FF2D55]", comingSoon: true },
+  { id: "store", name: "Store", icon: Store, path: "/store", color: "from-[#FFD60A] to-[#FF3B30]" },
 ];
 
 export default function HubPage() {
