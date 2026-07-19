@@ -32,6 +32,31 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/admin")) {
+    const basicAuth = request.headers.get("authorization");
+    const url = request.nextUrl;
+
+    if (basicAuth) {
+      const authValue = basicAuth.split(" ")[1];
+      const [authUser, pwd] = atob(authValue).split(":");
+
+      const validUser = process.env.ADMIN_USERNAME || "admin";
+      const validPwd = process.env.ADMIN_PASSWORD || "admin";
+
+      if (authUser === validUser && pwd === validPwd) {
+        // Authenticated
+      } else {
+        return new NextResponse("Auth required", {
+          status: 401,
+          headers: { "WWW-Authenticate": "Basic realm=\"Secure Area\"" },
+        });
+      }
+    } else {
+      return new NextResponse("Auth required", {
+        status: 401,
+        headers: { "WWW-Authenticate": "Basic realm=\"Secure Area\"" },
+      });
+    }
+
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth/signin";
@@ -41,7 +66,8 @@ export async function updateSession(request: NextRequest) {
     const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase());
     const userEmail = user.email?.toLowerCase();
     
-    if (!userEmail || !adminEmails.includes(userEmail)) {
+    // If ADMIN_EMAILS is set, enforce it. If not, allow any logged-in user who passes the Basic Auth password prompt.
+    if (process.env.ADMIN_EMAILS && (!userEmail || !adminEmails.includes(userEmail))) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
