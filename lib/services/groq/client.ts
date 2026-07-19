@@ -14,7 +14,7 @@ export function getGroqClient(): Groq {
 }
 
 export const GROQ_MODELS = {
-  primary: "llama-3.3-70b-versatile",
+  primary: "llama-3.1-8b-instant", // Mapped to fast model to avoid 100K token limit
   reasoning: "deepseek-r1-distill-llama-70b",
   fast: "llama-3.1-8b-instant",
 } as const;
@@ -22,7 +22,7 @@ export const GROQ_MODELS = {
 export async function generateAIResponse({
   systemPrompt,
   userPrompt,
-  model = "primary",
+  model = "fast",
   maxTokens = 1024,
   temperature = 0.7,
 }: {
@@ -50,7 +50,7 @@ export async function generateAIResponse({
 export async function generateAIResponseJSON<T>({
   systemPrompt,
   userPrompt,
-  model = "primary",
+  model = "fast",
 }: {
   systemPrompt: string;
   userPrompt: string;
