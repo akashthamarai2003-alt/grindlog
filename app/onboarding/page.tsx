@@ -285,7 +285,7 @@ export default function OnboardingPage() {
               exit={{ opacity: 0, y: 10 }}
               transition={springs.default}
               onClick={() => router.push("/auth/signin")}
-              className="px-4 py-2 text-sm font-medium text-[var(--color-text-tertiary)] transition-colors active:text-[var(--color-text-primary)]"
+              className="px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors active:text-[var(--color-text-primary)]"
             >
               Already have an account?{" "}
               <span className="font-semibold text-[var(--color-text-primary)]">
