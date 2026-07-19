@@ -93,6 +93,19 @@ export default function ClientCouponForm() {
           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-green-500"
         />
       </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1">PLAN RESTRICTION</label>
+        <select 
+          name="allowed_plan" 
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-green-500 bg-white"
+        >
+          <option value="any">Any Plan (Valid for all)</option>
+          <option value="monthly">Monthly Plan Only</option>
+          <option value="six_months">6 Months Plan Only</option>
+          <option value="lifetime">Lifetime Plan Only</option>
+        </select>
+      </div>
       
       <button 
         type="submit" 

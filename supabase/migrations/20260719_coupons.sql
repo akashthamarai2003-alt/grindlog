@@ -4,6 +4,7 @@ create table if not exists public.coupons (
     discount_percentage int not null check (discount_percentage > 0 and discount_percentage <= 100),
     max_uses int not null default 1,
     used_count int not null default 0,
+    allowed_plan text, -- 'monthly', 'six_months', 'lifetime', or null for all
     is_active boolean not null default true,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

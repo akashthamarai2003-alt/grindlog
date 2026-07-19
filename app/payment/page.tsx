@@ -83,7 +83,7 @@ export default function PaymentPage() {
   
   // Coupon state
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; discount: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; discount: number; allowed_plan?: string | null } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState("");
 
@@ -95,7 +95,12 @@ export default function PaymentPage() {
     const res = await validateCouponAction(couponInput);
     
     if (res.success && res.discount && res.id) {
-      setAppliedCoupon({ id: res.id, discount: res.discount });
+      if (res.allowed_plan && res.allowed_plan !== selectedPlan) {
+        setCouponError(`This coupon is only valid for the ${basePlans.find(p => p.id === res.allowed_plan)?.name} plan`);
+        setAppliedCoupon(null);
+      } else {
+        setAppliedCoupon({ id: res.id, discount: res.discount, allowed_plan: res.allowed_plan });
+      }
     } else {
       setCouponError(res.error || "Invalid coupon");
       setAppliedCoupon(null);
@@ -107,6 +112,13 @@ export default function PaymentPage() {
     setAppliedCoupon(null);
     setCouponInput("");
     setCouponError("");
+  };
+
+  const handlePlanChange = (planId: "monthly" | "six_months" | "lifetime") => {
+    setSelectedPlan(planId);
+    if (appliedCoupon?.allowed_plan && appliedCoupon.allowed_plan !== planId) {
+      removeCoupon();
+    }
   };
 
   const handleContinue = async () => {
@@ -301,7 +313,7 @@ export default function PaymentPage() {
             <motion.button
               key={plan.id}
               whileTap={{ scale: 0.97 }}
-              onClick={() => setSelectedPlan(plan.id as any)}
+              onClick={() => handlePlanChange(plan.id as any)}
               className={cn(
                 "relative flex items-center gap-4 rounded-2xl border p-4 text-left transition-all",
                 selectedPlan === plan.id

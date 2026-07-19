@@ -65,9 +65,16 @@ export default async function AdminCouponsPage() {
                           {c.code}
                         </td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-semibold text-xs">
-                            {c.discount_percentage}% OFF
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className="inline-flex w-fit items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-semibold text-xs">
+                              {c.discount_percentage}% OFF
+                            </span>
+                            {c.allowed_plan && (
+                              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                                {c.allowed_plan === "six_months" ? "6 Months" : c.allowed_plan} ONLY
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
