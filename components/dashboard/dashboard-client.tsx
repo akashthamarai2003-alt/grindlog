@@ -316,10 +316,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       {/* Header */}
       <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
         <div className="flex flex-col">
-          <p className="text-[13px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
+          <p className="text-base font-extrabold text-black uppercase tracking-wider">
             {greeting}
           </p>
-          <h1 className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight flex items-center gap-2 mt-0.5">
+          <h1 className="text-4xl font-black text-black tracking-tight flex items-center gap-2 mt-0.5 drop-shadow-sm">
             {profile.display_name?.split(' ')[0] || "There"} <span className="inline-block origin-bottom-right animate-tree-sway">👋</span>
           </h1>
         </div>
