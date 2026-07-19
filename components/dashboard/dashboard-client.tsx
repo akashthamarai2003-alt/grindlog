@@ -46,7 +46,7 @@ interface DashboardClientProps {
 }
 
 const QUOTES = [
-  { text: "Discipline is doing what needs to be done, even when you don't feel like it.", author: "Unknown" },
+  { text: "Discipline is doing what needs to be done, even when you don't feel like it.", author: "Anonymous" },
   { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
   { text: "Success is the product of daily habits—not once-in-a-lifetime transformations.", author: "James Clear" },
   { text: "You do not rise to the level of your goals. You fall to the level of your systems.", author: "James Clear" },
@@ -593,7 +593,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             </p>
             <div className="flex items-center gap-3">
               <div className="h-[1px] w-8 bg-amber-500/50" />
-              <p className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em]">{QUOTES[quoteIdx].author}</p>
+              <p className="text-xs font-bold text-amber-500 tracking-wider">{QUOTES[quoteIdx].author}</p>
             </div>
           </div>
         </div>
