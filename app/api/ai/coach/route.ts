@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateAIResponse } from "@/lib/services/groq/client";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { checkAILimit } from "@/lib/services/ai-limit";
 
 const COACH_PROMPT = `You are a compassionate, expert habit coach named "GrindLog Coach". 
 You speak warmly but professionally. Use emojis sparingly. 
@@ -15,6 +16,14 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { message, context } = await request.json();
+
+    const limitCheck = await checkAILimit(supabase, user.id);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        { error: "Daily AI limit reached (10/10). Please come back tomorrow!" },
+        { status: 429 }
+      );
+    }
 
     const userPrompt = context
       ? `User's stats: ${JSON.stringify(context)}\n\nUser message: ${message}`

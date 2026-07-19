@@ -3,6 +3,7 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { generateAIResponse, generateAIResponseJSON, GROQ_MODELS } from "@/lib/services/groq/client";
 import { revalidatePath } from "next/cache";
+import { checkAILimit, logAIUsage } from "@/lib/services/ai-limit";
 
 // Helper to get user context
 async function getUserContext() {
@@ -29,7 +30,13 @@ Return a JSON array of objects. Each object must strictly match the following ty
 }`;
 
     const userPrompt = `My goal is: "${goal}"`;
+
+    const limitCheck = await checkAILimit(supabase, user.id);
+    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+
     const habits = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
+    await logAIUsage(supabase, user.id, "generate_habits");
+
     return { success: true, habits };
   } catch (error: any) {
     console.error("AI Habit Generator Error:", error);
@@ -111,7 +118,13 @@ Provide an executive report in JSON format with the following fields:
 }`;
 
     const userPrompt = `Habits: ${JSON.stringify(habits || [])}\nLogs (past 7 days): ${JSON.stringify(logs || [])}`;
+
+    const limitCheck = await checkAILimit(supabase, user.id);
+    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+
     const report = await generateAIResponseJSON<any>({ systemPrompt, userPrompt });
+    await logAIUsage(supabase, user.id, "weekly_report");
+
     return { success: true, report };
   } catch (error: any) {
     console.error("Weekly Report Error:", error);
@@ -143,6 +156,9 @@ The user is tracking the following habits: ${JSON.stringify(habits || [])}.
 Today's completions: ${JSON.stringify(logs || [])}.
 Use this context to address the user's query. Be concise, empathetic, and always end with a highly actionable next step or reflection question. Speak directly, keep responses under 4 sentences where possible.`;
 
+    const limitCheck = await checkAILimit(supabase, user.id);
+    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+
     const groq = getGroqClientFromImport();
     const completion = await groq.chat.completions.create({
       model: GROQ_MODELS.primary,
@@ -154,7 +170,10 @@ Use this context to address the user's query. Be concise, empathetic, and always
       temperature: 0.7,
     });
 
-    return { success: true, content: completion.choices[0]?.message?.content || "" };
+    const content = completion.choices[0]?.message?.content || "";
+    await logAIUsage(supabase, user.id, "coach_chat");
+
+    return { success: true, content };
   } catch (error: any) {
     console.error("AI Coach Action Error:", error);
     return { success: false, error: error.message || "Failed to get coach response" };
@@ -199,7 +218,13 @@ Respond with a JSON array of objects. Each object should match this structure:
 }`;
 
     const userPrompt = `Habits: ${JSON.stringify(habits || [])}\nLogs (past 14 days): ${JSON.stringify(logs || [])}`;
+
+    const limitCheck = await checkAILimit(supabase, user.id);
+    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+
     const predictions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
+    await logAIUsage(supabase, user.id, "predictions");
+
     return { success: true, predictions };
   } catch (error: any) {
     console.error("AI Predictions Error:", error);
@@ -234,7 +259,13 @@ Respond with a JSON object matching this structure:
 }`;
 
     const userPrompt = `Profile: ${JSON.stringify(profile || {})}\nHabits: ${JSON.stringify(habits || [])}`;
+
+    const limitCheck = await checkAILimit(supabase, user.id);
+    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+
     const motivation = await generateAIResponseJSON<any>({ systemPrompt, userPrompt });
+    await logAIUsage(supabase, user.id, "motivation");
+
     return { success: true, motivation };
   } catch (error: any) {
     console.error("AI Motivation Error:", error);
@@ -265,7 +296,13 @@ Respond with a JSON array of objects matching this structure:
 }`;
 
     const userPrompt = `Current habits: ${JSON.stringify(habits || [])}`;
+
+    const limitCheck = await checkAILimit(supabase, user.id);
+    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+
     const suggestions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
+    await logAIUsage(supabase, user.id, "suggestions");
+
     return { success: true, suggestions };
   } catch (error: any) {
     console.error("AI Suggestions Error:", error);
@@ -294,7 +331,13 @@ Respond with a JSON array of objects matching this structure:
 }`;
 
     const userPrompt = `Wake time: ${wakeTime}\nSleep time: ${sleepTime}\nFocus area: ${focus}\nActive Habits: ${JSON.stringify(habits || [])}`;
+
+    const limitCheck = await checkAILimit(supabase, user.id);
+    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+
     const schedule = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
+    await logAIUsage(supabase, user.id, "schedule_builder");
+
     return { success: true, schedule };
   } catch (error: any) {
     console.error("AI Schedule Builder Error:", error);
@@ -322,7 +365,13 @@ Respond with a JSON object matching this structure:
 }`;
 
     const userPrompt = `Reflection Journal: "${text}"\nActive Habits: ${JSON.stringify(habits || [])}`;
+
+    const limitCheck = await checkAILimit(supabase, user.id);
+    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+
     const reflection = await generateAIResponseJSON<any>({ systemPrompt, userPrompt });
+    await logAIUsage(supabase, user.id, "reflection");
+
     return { success: true, reflection };
   } catch (error: any) {
     console.error("AI Reflection Error:", error);
