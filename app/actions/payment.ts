@@ -2,6 +2,7 @@
 
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
+import { revalidatePath } from "next/cache";
 
 export async function validateCouponAction(code: string) {
   if (!code) return { success: false, error: "Please enter a code" };
@@ -63,6 +64,8 @@ export async function processMockPayment(tier: "monthly" | "six_months" | "lifet
       .from("coupons")
       .update({ used_count: coupon.used_count + 1 })
       .eq("id", couponId);
+      
+    revalidatePath("/admin/coupons");
   }
 
   const { error } = await supabase
