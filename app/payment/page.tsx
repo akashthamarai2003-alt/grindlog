@@ -18,6 +18,7 @@ import {
   Star,
   Crown,
   X,
+  BellRing,
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ const features = [
   { icon: Notebook, label: "Daily AI Journaling", core: false, pro: "10/day" },
   { icon: BarChart3, label: "Advanced Analytics", core: false, pro: true },
   { icon: Brain, label: "Personal AI Coach", core: false, pro: "10/day" },
+  { icon: BellRing, label: "Mobile Push Notifications", core: true, pro: "Smart Reminders" },
 ];
 
 const reviews = [
