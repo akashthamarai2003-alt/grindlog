@@ -1,69 +1,76 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Check, Star, Zap, Crown, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import {
+  ChevronLeft,
+  Check,
+  Infinity as InfinityIcon,
+  Sparkles,
+  Brain,
+  BarChart3,
+  Palette,
+  Download,
+  BellRing,
+  Star,
+  Crown,
+} from "lucide-react";
+import { springs } from "@/animations/springs";
+import { cn } from "@/lib/utils";
 import { processMockPayment } from "@/app/actions/payment";
+
+const features = [
+  { icon: InfinityIcon, label: "Unlimited Habits", free: "5 habits", premium: "Unlimited" },
+  { icon: Brain, label: "AI Coach", free: "10 msgs/day", premium: "Unlimited" },
+  { icon: BarChart3, label: "Advanced Analytics", free: "Basic", premium: "Full suite" },
+  { icon: Palette, label: "Custom Themes", free: "Light only", premium: "All themes" },
+  { icon: Download, label: "Data Export", free: "Limited", premium: "Full export" },
+  { icon: BellRing, label: "Smart Reminders", free: "Basic", premium: "AI-powered" },
+];
+
+const reviews = [
+  { text: "Changed my life. The tree visualization makes habits actually fun.", author: "Rahul", role: "28, Engineer", stars: 5 },
+  { text: "Finally a habit tracker that doesn't feel like a chore. Premium is worth every rupee.", author: "Priya", role: "24, Designer", stars: 5 },
+  { text: "The AI coach is surprisingly good. Better than I expected!", author: "Arjun", role: "31, Entrepreneur", stars: 5 },
+];
+
+const plans = [
+  {
+    id: "monthly",
+    name: "Monthly",
+    emoji: "🌱",
+    price: "₹49",
+    period: "/month",
+    originalPrice: null,
+    badge: null,
+  },
+  {
+    id: "six_months",
+    name: "6 Months",
+    emoji: "🌿",
+    price: "₹199",
+    period: "/6 months",
+    originalPrice: "₹294",
+    badge: "⭐ Most Popular",
+    savings: "Save 32%",
+  },
+  {
+    id: "lifetime",
+    name: "Lifetime",
+    emoji: "👑",
+    price: "₹599",
+    period: "one-time",
+    originalPrice: null,
+    badge: "🔥 Best Value",
+    savings: null,
+  },
+];
 
 export default function PaymentPage() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const plans = [
-    {
-      id: "monthly",
-      name: "Monthly",
-      price: "₹49",
-      period: "per month",
-      icon: <Star className="w-5 h-5 text-blue-400" />,
-      features: [
-        "Unlimited Habits",
-        "Only Core Features",
-        "Daily Progress Tracking",
-        "Standard Reminders",
-      ],
-      color: "from-blue-500/20 to-cyan-500/20",
-      borderColor: "border-blue-500/30",
-      activeBorder: "border-blue-400",
-      badge: null,
-    },
-    {
-      id: "six_months",
-      name: "6 Months",
-      price: "₹199",
-      period: "every 6 months",
-      icon: <Zap className="w-5 h-5 text-yellow-400" />,
-      features: [
-        "Everything in Core",
-        "Advanced AI Features",
-        "AI Personalized Habit Plans",
-        "Smart Analytics & Insights",
-      ],
-      color: "from-yellow-500/20 to-orange-500/20",
-      borderColor: "border-yellow-500/30",
-      activeBorder: "border-yellow-400",
-      badge: "Most Popular",
-    },
-    {
-      id: "lifetime",
-      name: "Lifetime",
-      price: "₹599",
-      period: "one-time payment",
-      icon: <Crown className="w-5 h-5 text-purple-400" />,
-      features: [
-        "All Premium Features",
-        "Lifetime Access",
-        "Exclusive VIP Themes",
-        "Priority Support",
-      ],
-      color: "from-purple-500/20 to-pink-500/20",
-      borderColor: "border-purple-500/30",
-      activeBorder: "border-purple-400",
-      badge: "Best Value",
-    },
-  ];
 
   const handleContinue = async () => {
     setIsProcessing(true);
@@ -77,133 +84,196 @@ export default function PaymentPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-[#0f172a] text-white flex flex-col relative overflow-hidden">
-      {/* Background Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/20 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-500/20 blur-[120px] pointer-events-none" />
-      
-      <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center relative z-10">
-        
-        {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12 mt-4"
+    <div className="flex flex-col gap-5 px-5 pb-8 pt-4 safe-top">
+      {/* Header */}
+      <button
+        onClick={() => router.back()}
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-bg-secondary)]"
+      >
+        <ChevronLeft className="h-5 w-5 text-[var(--color-text-secondary)]" />
+      </button>
+
+      {/* Hero */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={springs.default}
+        className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--color-accent-green-light)] via-white to-[var(--color-bg-secondary)] p-8 text-center"
+      >
+        <div className="absolute left-4 top-4 text-5xl opacity-20">🌱</div>
+        <div className="absolute right-6 top-6 text-5xl opacity-15">🌳</div>
+        <div className="absolute bottom-4 right-4 text-4xl opacity-15">✨</div>
+
+        <motion.div
+          className="mx-auto mb-4"
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4">
-            <Crown className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm font-medium text-white/80">Unlock Your Full Potential</span>
+          <div className="flex items-center justify-center gap-2 text-5xl">
+            <motion.span
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              🌱
+            </motion.span>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              →
+            </motion.span>
+            <motion.span
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              🌳
+            </motion.span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
-            Choose Your Grind
-          </h1>
-          <p className="text-lg text-white/60 max-w-lg mx-auto">
-            Upgrade to GrindLog Pro and transform your habits with AI-powered insights, unlimited tracking, and exclusive features.
-          </p>
         </motion.div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-12">
-          {plans.map((plan, index) => (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              onClick={() => setSelectedPlan(plan.id as any)}
-              className={`relative cursor-pointer overflow-hidden rounded-3xl border-2 transition-all duration-300 ${
-                selectedPlan === plan.id 
-                  ? `${plan.activeBorder} shadow-2xl scale-[1.02]` 
-                  : `${plan.borderColor} border-transparent bg-white/5 hover:bg-white/10`
-              }`}
+        <h2 className="text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
+          Unlock Your
+          <br />
+          Full Potential
+        </h2>
+        <p className="mt-2 text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-xs mx-auto">
+          Premium features, unlimited habits, and an AI coach that actually knows you.
+        </p>
+      </motion.div>
+
+      {/* Feature Comparison */}
+      <div className="rounded-2xl bg-[var(--color-bg-secondary)] overflow-hidden">
+        <div className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-[var(--color-bg-tertiary)]">
+          <span className="text-xs font-semibold text-[var(--color-text-primary)]">Feature</span>
+          <span className="text-xs font-semibold text-[var(--color-text-tertiary)] text-center">Free</span>
+          <span className="text-xs font-semibold text-[var(--color-accent-green)] text-center">Premium</span>
+        </div>
+        {features.map((f, i) => (
+          <div
+            key={f.label}
+            className={cn(
+              "grid grid-cols-3 gap-2 px-4 py-3 items-center",
+              i < features.length - 1 && "border-b border-[var(--color-bg-tertiary)]"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <f.icon className="h-4 w-4 text-[var(--color-text-secondary)]" />
+              <span className="text-xs font-medium text-[var(--color-text-primary)]">
+                {f.label}
+              </span>
+            </div>
+            <span className="text-xs text-center text-[var(--color-text-tertiary)]">
+              {f.free}
+            </span>
+            <div className="flex justify-center">
+              <Check className="h-4 w-4 text-[var(--color-accent-green)]" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Reviews */}
+      <div>
+        <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-3">
+          What Users Say
+        </h3>
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {reviews.map((review) => (
+            <div
+              key={review.author}
+              className="min-w-[220px] rounded-2xl bg-[var(--color-bg-secondary)] p-4"
             >
-              {/* Card Background */}
-              {selectedPlan === plan.id && (
-                <div className={`absolute inset-0 bg-gradient-to-br ${plan.color} opacity-100`} />
-              )}
-              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-
-              {/* Badge */}
-              {plan.badge && (
-                <div className="absolute top-0 inset-x-0 flex justify-center">
-                  <div className={`px-4 py-1 rounded-b-xl text-xs font-bold uppercase tracking-wider text-black bg-gradient-to-r ${plan.color.replace('/20', '').replace('/20', '')}`}>
-                    {plan.badge}
-                  </div>
-                </div>
-              )}
-
-              {/* Content */}
-              <div className="relative p-6 pt-10 h-full flex flex-col">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md">
-                    {plan.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold">{plan.name}</h3>
-                </div>
-                
-                <div className="mb-6">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                  </div>
-                  <span className="text-sm text-white/50">{plan.period}</span>
-                </div>
-
-                <div className="space-y-4 mb-8 flex-1">
-                  {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                      <span className="text-sm text-white/80 leading-tight">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Radio indicator */}
-                <div className="mt-auto flex items-center justify-center">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    selectedPlan === plan.id ? plan.activeBorder : "border-white/20"
-                  }`}>
-                    {selectedPlan === plan.id && (
-                      <div className={`w-3 h-3 rounded-full bg-current ${plan.icon.props.className.split(' ')[2]}`} />
-                    )}
-                  </div>
-                </div>
+              <div className="flex gap-0.5 mb-2">
+                {Array.from({ length: review.stars }).map((_, i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-[var(--color-xp)] text-[var(--color-xp)]" />
+                ))}
               </div>
-            </motion.div>
+              <p className="text-sm leading-relaxed text-[var(--color-text-primary)]">
+                &ldquo;{review.text}&rdquo;
+              </p>
+              <p className="mt-2 text-xs font-semibold text-[var(--color-text-secondary)]">
+                — {review.author}, {review.role}
+              </p>
+            </div>
           ))}
         </div>
-
-        {/* Action Buttons */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="w-full max-w-md flex flex-col gap-4"
-        >
-          <button 
-            onClick={handleContinue}
-            disabled={isProcessing}
-            className="group relative w-full flex items-center justify-center gap-2 h-14 rounded-2xl bg-white text-black font-semibold text-lg overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100"
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  Continue with {plans.find(p => p.id === selectedPlan)?.name}
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                </>
-              )}
-            </span>
-            {!isProcessing && (
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:animate-shimmer" />
-            )}
-          </button>
-        </motion.div>
-
       </div>
+
+      {/* Pricing */}
+      <div>
+        <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-3">
+          Choose Your Plan
+        </h3>
+        <div className="flex flex-col gap-3">
+          {plans.map((plan) => (
+            <motion.button
+              key={plan.id}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setSelectedPlan(plan.id as any)}
+              className={cn(
+                "relative flex items-center gap-4 rounded-2xl border p-4 text-left transition-all",
+                selectedPlan === plan.id
+                  ? "border-[var(--color-accent-green)] bg-[var(--color-accent-green-light)] shadow-[var(--shadow-glow-green)]"
+                  : "border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)]"
+              )}
+            >
+              {plan.badge && (
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-[var(--color-accent-green)] px-3 py-0.5">
+                  <span className="text-[10px] font-bold text-white">{plan.badge}</span>
+                </div>
+              )}
+              <span className="text-2xl">{plan.emoji}</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-[var(--color-text-primary)]">
+                  {plan.name}
+                </p>
+                {plan.savings && (
+                  <p className="text-[10px] font-semibold text-[var(--color-accent-green)]">
+                    {plan.savings}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-extrabold text-[var(--color-text-primary)]">
+                  {plan.price}
+                </p>
+                <p className="text-[10px] font-medium text-[var(--color-text-tertiary)]">
+                  {plan.period}
+                </p>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <motion.button
+        whileTap={{ scale: 0.96 }}
+        disabled={isProcessing}
+        onClick={handleContinue}
+        className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-accent-green)] text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-green)]/25 disabled:opacity-80 disabled:cursor-not-allowed"
+      >
+        {isProcessing ? (
+          <>
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <Crown className="h-5 w-5" />
+            Continue with {plans.find(p => p.id === selectedPlan)?.name}
+          </>
+        )}
+      </motion.button>
+
+      <p className="text-center text-xs text-[var(--color-text-tertiary)]">
+        No commitments. Cancel anytime.
+      </p>
+
+      <div className="h-4" />
     </div>
   );
 }
