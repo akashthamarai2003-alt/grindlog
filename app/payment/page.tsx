@@ -32,9 +32,9 @@ const features = [
   { icon: TreeDeciduous, label: "Virtual Growth Tree", core: true, pro: true },
   { icon: LayoutGrid, label: "Full Life Tracking", core: "Basic", pro: "Full Suite" },
   { icon: Trophy, label: "Gamified Quests", core: "Limited", pro: "Unlimited" },
-  { icon: Notebook, label: "Daily AI Journaling", core: false, pro: "10/day" },
+  { icon: Notebook, label: "Daily AI Journaling", core: false, pro: true },
   { icon: BarChart3, label: "Advanced Analytics", core: false, pro: true },
-  { icon: Brain, label: "Personal AI Coach", core: false, pro: "10/day" },
+  { icon: Brain, label: "Personal AI Coach", core: false, pro: true },
   { icon: BellRing, label: "Mobile Push Notifications", core: true, pro: "Smart Reminders" },
 ];
 

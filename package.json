@@ -25,6 +25,7 @@
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.0",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.4.2",
     "firebase": "^12.16.0",
     "firebase-admin": "^14.1.0",
     "framer-motion": "^12.42.2",
