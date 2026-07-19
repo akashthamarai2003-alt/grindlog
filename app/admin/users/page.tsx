@@ -41,8 +41,16 @@ export default async function AdminUsersPage() {
             </thead>
             <tbody>
               {users?.map((user) => {
-                // Get the most relevant subscription (active if exists, otherwise the first one)
-                const activeSub = user.subscriptions?.find((s: any) => s.status === 'active') || user.subscriptions?.[0];
+                // Format the tier name nicely
+                const getPlanName = (tier: string) => {
+                  if (tier === 'monthly') return 'Monthly';
+                  if (tier === 'six_months') return '6 Months';
+                  if (tier === 'lifetime') return 'Lifetime';
+                  return 'Premium';
+                };
+                
+                const planName = user.premium_tier ? getPlanName(user.premium_tier) : 'Premium';
+                const paymentId = user.razorpay_payment_id || user.subscriptions?.[0]?.razorpay_subscription_id || user.subscriptions?.[0]?.razorpay_payment_id || "-";
 
                 return (
                   <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
@@ -67,9 +75,9 @@ export default async function AdminUsersPage() {
                       {user.is_premium ? (
                         <div className="flex flex-col gap-1">
                           <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {activeSub?.plan || 'Premium'}
+                            {planName}
                           </span>
-                          <span className="text-xs text-gray-400 capitalize">{activeSub?.status || 'Active'}</span>
+                          <span className="text-xs text-gray-400 capitalize">Active</span>
                         </div>
                       ) : (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -79,7 +87,7 @@ export default async function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-xs text-gray-500 font-mono">
-                        {activeSub?.razorpay_subscription_id || activeSub?.razorpay_payment_id || "-"}
+                        {paymentId}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-xs">

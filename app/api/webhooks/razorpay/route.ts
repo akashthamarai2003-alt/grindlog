@@ -43,7 +43,8 @@ export async function POST(req: Request) {
           .from("profiles")
           .update({ 
             is_premium: true,
-            premium_tier: notes.tier || "lifetime"
+            premium_tier: notes.tier || "lifetime",
+            razorpay_payment_id: payment.id
           })
           .eq("id", notes.userId);
       }
