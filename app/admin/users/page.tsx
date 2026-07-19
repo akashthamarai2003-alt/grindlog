@@ -41,15 +41,17 @@ export default async function AdminUsersPage() {
             </thead>
             <tbody>
               {users?.map((user) => {
-                // Format the tier name nicely
-                const getPlanName = (tier: string) => {
-                  if (tier === 'monthly') return 'Monthly';
-                  if (tier === 'six_months') return '6 Months';
-                  if (tier === 'lifetime') return 'Lifetime';
-                  return 'Premium';
+                const getPlanName = (tier: string, level: string) => {
+                  let baseName = 'Premium';
+                  if (tier === 'monthly') baseName = 'Monthly';
+                  if (tier === 'six_months') baseName = '6 Months';
+                  if (tier === 'lifetime') baseName = 'Lifetime';
+                  
+                  const levelName = level ? (level.charAt(0).toUpperCase() + level.slice(1)) : 'Pro';
+                  return `${baseName} - ${levelName}`;
                 };
                 
-                const planName = user.premium_tier ? getPlanName(user.premium_tier) : 'Premium';
+                const planName = user.premium_tier ? getPlanName(user.premium_tier, user.premium_level) : 'Premium';
                 const paymentId = user.razorpay_payment_id || user.subscriptions?.[0]?.razorpay_subscription_id || user.subscriptions?.[0]?.razorpay_payment_id || "-";
 
                 return (

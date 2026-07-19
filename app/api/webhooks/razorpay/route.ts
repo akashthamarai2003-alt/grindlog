@@ -44,6 +44,7 @@ export async function POST(req: Request) {
           .update({ 
             is_premium: true,
             premium_tier: notes.tier || "lifetime",
+            premium_level: notes.level || "pro",
             razorpay_payment_id: payment.id
           })
           .eq("id", notes.userId);

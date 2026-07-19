@@ -173,6 +173,7 @@ export async function verifyRazorpayPayment(
     .update({ 
       is_premium: true,
       premium_tier: tier,
+      premium_level: level,
       razorpay_payment_id: razorpayPaymentId
     })
     .eq("id", user.id);
