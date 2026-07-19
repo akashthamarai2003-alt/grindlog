@@ -45,7 +45,7 @@ const plans = [
     id: "monthly",
     name: "Monthly",
     emoji: "🌱",
-    price: "₹49",
+    prices: { core: "₹49", pro: "₹69" },
     period: "/month",
     originalPrice: null,
     badge: null,
@@ -54,7 +54,7 @@ const plans = [
     id: "six_months",
     name: "6 Months",
     emoji: "🌿",
-    price: "₹199",
+    prices: { core: "₹199", pro: "₹249" },
     period: "/6 months",
     originalPrice: "₹294",
     badge: "⭐ Most Popular",
@@ -64,7 +64,7 @@ const plans = [
     id: "lifetime",
     name: "Lifetime",
     emoji: "👑",
-    price: "₹599",
+    prices: { core: "₹599", pro: "₹799" },
     period: "one-time",
     originalPrice: null,
     badge: "🔥 Best Value",
@@ -75,11 +75,12 @@ const plans = [
 export default function PaymentPage() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
+  const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleContinue = async () => {
     setIsProcessing(true);
-    const result = await processMockPayment(selectedPlan);
+    const result = await processMockPayment(selectedPlan, level);
     if (result.success) {
       router.push("/dashboard");
     } else {
@@ -225,9 +226,37 @@ export default function PaymentPage() {
 
       {/* Pricing */}
       <div>
-        <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-3">
-          Choose Your Plan
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-[var(--color-text-primary)]">
+            Choose Your Plan
+          </h3>
+          
+          <div className="flex items-center rounded-full bg-[var(--color-bg-secondary)] p-0.5 border border-[var(--color-bg-tertiary)]">
+            <button
+              onClick={() => setLevel("core")}
+              className={cn(
+                "rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
+                level === "core"
+                  ? "bg-white text-[var(--color-text-primary)] shadow-sm"
+                  : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+              )}
+            >
+              Core
+            </button>
+            <button
+              onClick={() => setLevel("pro")}
+              className={cn(
+                "rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
+                level === "pro"
+                  ? "bg-[var(--color-accent-green)] text-white shadow-sm shadow-[var(--color-accent-green)]/25"
+                  : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+              )}
+            >
+              Pro
+            </button>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-3">
           {plans.map((plan) => (
             <motion.button
@@ -259,7 +288,7 @@ export default function PaymentPage() {
               </div>
               <div className="text-right">
                 <p className="text-lg font-extrabold text-[var(--color-text-primary)]">
-                  {plan.price}
+                  {plan.prices[level]}
                 </p>
                 <p className="text-[10px] font-medium text-[var(--color-text-tertiary)]">
                   {plan.period}

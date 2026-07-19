@@ -2,7 +2,7 @@
 
 import { createServerSupabase } from "@/lib/services/supabase/server";
 
-export async function processMockPayment(tier: "monthly" | "six_months" | "lifetime") {
+export async function processMockPayment(tier: "monthly" | "six_months" | "lifetime", level?: "core" | "pro") {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -10,6 +10,8 @@ export async function processMockPayment(tier: "monthly" | "six_months" | "lifet
     return { success: false, error: "Unauthorized" };
   }
 
+  // We save the tier, and we could also save level if we wanted to enforce it.
+  // For the mock, we just upgrade them.
   const { error } = await supabase
     .from("profiles")
     .update({ 
