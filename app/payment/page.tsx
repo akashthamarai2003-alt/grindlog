@@ -8,11 +8,13 @@ import {
   Check,
   Infinity as InfinityIcon,
   Sparkles,
-  Brain,
+  TreeDeciduous,
+  LayoutGrid,
+  Trophy,
+  Notebook,
+  Calendar,
   BarChart3,
-  Palette,
-  Download,
-  BellRing,
+  Brain,
   Star,
   Crown,
   X,
@@ -23,12 +25,13 @@ import { processMockPayment } from "@/app/actions/payment";
 
 const features = [
   { icon: InfinityIcon, label: "Unlimited Habits", core: true, pro: true },
+  { icon: Calendar, label: "Smart Planner", core: true, pro: true },
+  { icon: TreeDeciduous, label: "Virtual Growth Tree", core: true, pro: true },
+  { icon: LayoutGrid, label: "Full Life Tracking", core: "Basic", pro: "Full Suite" },
+  { icon: Trophy, label: "Gamified Quests", core: "Limited", pro: "Unlimited" },
+  { icon: Notebook, label: "Daily AI Journaling", core: false, pro: true },
   { icon: BarChart3, label: "Advanced Analytics", core: false, pro: true },
-  { icon: Brain, label: "AI Coach", core: false, pro: true },
-  { icon: Sparkles, label: "AI Habit Plans", core: false, pro: true },
-  { icon: Palette, label: "VIP Themes", core: false, pro: true },
-  { icon: BellRing, label: "Smart Reminders", core: "Standard", pro: "AI-powered" },
-  { icon: Crown, label: "Priority Support", core: false, pro: true },
+  { icon: Brain, label: "Personal AI Coach", core: false, pro: true },
 ];
 
 const reviews = [
