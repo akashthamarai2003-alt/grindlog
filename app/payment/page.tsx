@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import {
   ChevronLeft,
   Check,
@@ -23,7 +24,7 @@ import {
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
-import { processMockPayment, validateCouponAction } from "@/app/actions/payment";
+import { createRazorpayOrder, verifyRazorpayPayment, validateCouponAction } from "@/app/actions/payment";
 
 const features = [
   { icon: InfinityIcon, label: "Unlimited Habits", core: true, pro: true },
@@ -123,13 +124,79 @@ export default function PaymentPage() {
 
   const handleContinue = async () => {
     setIsProcessing(true);
-    const result = await processMockPayment(selectedPlan, level, appliedCoupon?.id);
-    if (result.success) {
-      router.push("/dashboard");
-    } else {
+    
+    // 1. Create Order
+    const orderRes = await createRazorpayOrder(selectedPlan, level, appliedCoupon?.id);
+    
+    if (!orderRes.success) {
       setIsProcessing(false);
-      alert("Payment failed: " + result.error);
+      alert(orderRes.error || "Failed to initiate payment");
+      return;
     }
+
+    // 2. Handle 100% discount bypass
+    if (orderRes.bypassRazorpay) {
+      const verifyRes = await verifyRazorpayPayment(
+        "", "", "", 
+        selectedPlan, level, appliedCoupon?.id, true
+      );
+      
+      if (verifyRes.success) {
+        router.push("/dashboard");
+      } else {
+        setIsProcessing(false);
+        alert(verifyRes.error || "Failed to process free tier");
+      }
+      return;
+    }
+
+    // 3. Open Razorpay Checkout
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      amount: orderRes.amount,
+      currency: orderRes.currency,
+      name: "GrindLog Premium",
+      description: `Upgrade to ${level.toUpperCase()} - ${selectedPlan}`,
+      order_id: orderRes.orderId,
+      handler: async function (response: any) {
+        // 4. Verify Payment on Success
+        const verifyRes = await verifyRazorpayPayment(
+          response.razorpay_order_id,
+          response.razorpay_payment_id,
+          response.razorpay_signature,
+          selectedPlan,
+          level,
+          appliedCoupon?.id,
+          false
+        );
+
+        if (verifyRes.success) {
+          router.push("/dashboard");
+        } else {
+          setIsProcessing(false);
+          alert(verifyRes.error || "Payment verification failed");
+        }
+      },
+      prefill: {
+        name: "", // Can be prefilled if we have user profile
+        email: "",
+      },
+      theme: {
+        color: "#22c55e",
+      },
+      modal: {
+        ondismiss: function () {
+          setIsProcessing(false);
+        },
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.on("payment.failed", function (response: any) {
+      setIsProcessing(false);
+      alert(response.error.description || "Payment failed");
+    });
+    rzp.open();
   };
 
   // Calculate discounted price safely
@@ -141,8 +208,10 @@ export default function PaymentPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5 px-5 pb-8 pt-4 safe-top">
-      {/* Header */}
+    <>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <div className="flex flex-col gap-5 px-5 pb-8 pt-4 safe-top">
+        {/* Header */}
       <button
         onClick={() => router.back()}
         className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-bg-secondary)]"
@@ -425,5 +494,6 @@ export default function PaymentPage() {
 
       <div className="h-4" />
     </div>
+    </>
   );
 }
