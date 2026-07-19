@@ -147,7 +147,7 @@ export default function OnboardingPage() {
               )}
 
               {slide.icons && (
-                <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 place-items-center mx-auto">
                   {slide.icons.map((Icon, i) => (
                     <motion.div
                       key={i}
@@ -160,7 +160,7 @@ export default function OnboardingPage() {
                       whileHover={{ scale: 1.05 }}
                       className={cn(
                         "flex items-center justify-center rounded-2xl bg-[var(--color-bg-secondary)] shadow-sm",
-                        i === 2 ? "col-span-3 h-20 w-20 mx-auto" : "h-20 w-20"
+                        i === 2 ? "col-span-2 h-20 w-20 mx-auto" : "h-20 w-20"
                       )}
                     >
                       <Icon className="h-9 w-9 text-[var(--color-accent-green)]" />
