@@ -1561,7 +1561,7 @@ export function CalendarClient({
               <textarea
                 value={remarkText}
                 onChange={(e) => setRemarkText(e.target.value)}
-                placeholder="e.g. I did leg day..."
+                placeholder="e.g., Focused and productive session..."
                 className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] rounded-2xl p-4 text-[14px] font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] resize-none h-24 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]/50 transition-all"
                 autoFocus
                 disabled={isSubmittingRemark}

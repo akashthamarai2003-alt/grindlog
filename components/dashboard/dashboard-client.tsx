@@ -654,7 +654,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
             <textarea
               value={remarkText}
               onChange={(e) => setRemarkText(e.target.value)}
-              placeholder="e.g., I did leg day..."
+              placeholder="e.g., Focused and productive session..."
               className="w-full resize-none rounded-xl bg-[var(--color-bg-secondary)] p-3 text-[14px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
               rows={3}
             />
