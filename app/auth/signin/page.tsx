@@ -32,23 +32,25 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center relative px-4 py-8 overflow-y-auto overflow-x-hidden">
-      <div className="fixed inset-0 z-0">
+    <>
+      <div className="fixed inset-0 z-0 pointer-events-none">
         <Image 
           src={bgImage}
           alt="Background Landscape"
           fill
           className="object-cover object-center"
           priority
+          quality={60}
         />
         <div className="absolute inset-0 bg-black/20" /> {/* Slight dark overlay for readability */}
       </div>
       
+      <div className="flex min-h-dvh w-full flex-col items-center justify-center relative z-10 px-4 py-8 overflow-y-auto overflow-x-hidden">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-sm rounded-[24px] border border-white/40 bg-white/10 p-8 backdrop-blur-md shadow-2xl relative z-10"
+        className="w-full max-w-sm rounded-[24px] border border-white/40 bg-white/10 p-8 backdrop-blur-md shadow-2xl relative z-10 transform-gpu will-change-transform"
       >
         <h1 className="text-4xl font-bold tracking-tight text-white mb-2">
           Login
@@ -173,6 +175,7 @@ export default function SignInPage() {
           </p>
         </div>
       </motion.div>
-    </div>
+      </div>
+    </>
   );
 }
