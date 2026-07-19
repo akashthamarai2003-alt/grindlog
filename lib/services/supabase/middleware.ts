@@ -31,7 +31,7 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin-login")) {
     const adminCookie = request.cookies.get("admin_auth")?.value;
     const validPwd = process.env.ADMIN_PASSWORD || "admin";
 
