@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/services/supabase/admin";
+import { calculateExpiryDate } from "@/app/actions/payment";
 
 export async function POST(req: Request) {
   try {
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
             is_premium: true,
             premium_tier: notes.tier || "lifetime",
             premium_level: notes.level || "pro",
+            premium_expires_at: calculateExpiryDate(notes.tier || "lifetime"),
             razorpay_payment_id: payment.id
           })
           .eq("id", notes.userId);

@@ -11,6 +11,18 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET || "",
 });
 
+export function calculateExpiryDate(tier: string) {
+  if (tier === "lifetime") return null;
+  
+  const now = new Date();
+  if (tier === "monthly") {
+    now.setMonth(now.getMonth() + 1);
+  } else if (tier === "six_months") {
+    now.setMonth(now.getMonth() + 6);
+  }
+  return now.toISOString();
+}
+
 export async function validateCouponAction(code: string) {
   if (!code) return { success: false, error: "Please enter a code" };
   
@@ -174,6 +186,7 @@ export async function verifyRazorpayPayment(
       is_premium: true,
       premium_tier: tier,
       premium_level: level,
+      premium_expires_at: calculateExpiryDate(tier),
       razorpay_payment_id: razorpayPaymentId
     })
     .eq("id", user.id);
