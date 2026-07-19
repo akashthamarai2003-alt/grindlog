@@ -84,6 +84,7 @@ export default function OnboardingPage() {
           alt="Background" 
           fill
           priority
+          unoptimized
           className="object-cover"
         />
       </div>
