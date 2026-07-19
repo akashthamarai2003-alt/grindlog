@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/services/supabase/admin";
 import { CreditCard, Plus, Percent, Users, Power, Ticket, RefreshCw } from "lucide-react";
 import ClientCouponForm from "./client-form";
 import ToggleCouponButton from "./toggle-button";
+import CopyButton from "./copy-button";
 
 export default async function AdminCouponsPage() {
   const supabase = createAdminClient();
@@ -62,7 +63,10 @@ export default async function AdminCouponsPage() {
                     coupons.map((c) => (
                       <tr key={c.id} className={!c.is_active || c.used_count >= c.max_uses ? "opacity-60 bg-gray-50/50" : ""}>
                         <td className="px-6 py-4 font-bold text-gray-900 tracking-wider">
-                          {c.code}
+                          <div className="flex items-center gap-2">
+                            {c.code}
+                            <CopyButton code={c.code} />
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1">
