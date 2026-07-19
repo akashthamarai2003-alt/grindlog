@@ -47,7 +47,7 @@ const basePlans = [
   {
     id: "monthly",
     name: "Monthly",
-    emoji: "??",
+    emoji: "🌱",
     basePrices: { core: 49, pro: 69 },
     period: "/month",
     originalPrice: null,
@@ -56,21 +56,21 @@ const basePlans = [
   {
     id: "six_months",
     name: "6 Months",
-    emoji: "??",
+    emoji: "🌿",
     basePrices: { core: 199, pro: 249 },
     period: "/6 months",
-    originalPrice: "?294",
-    badge: "? Most Popular",
+    originalPrice: "₹294",
+    badge: "⭐ Most Popular",
     savings: "Save 32%",
   },
   {
     id: "lifetime",
     name: "Lifetime",
-    emoji: "??",
+    emoji: "🌳",
     basePrices: { core: 599, pro: 799 },
     period: "one-time",
     originalPrice: null,
-    badge: "?? Best Value",
+    badge: "👑 Best Value",
     savings: null,
   },
 ];
@@ -157,9 +157,9 @@ export default function PaymentPage() {
         transition={springs.default}
         className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--color-accent-green-light)] via-white to-[var(--color-bg-secondary)] p-8 text-center"
       >
-        <div className="absolute left-4 top-4 text-5xl opacity-20">??</div>
-        <div className="absolute right-6 top-6 text-5xl opacity-15">??</div>
-        <div className="absolute bottom-4 right-4 text-4xl opacity-15">?</div>
+        <div className="absolute left-4 top-4 text-5xl opacity-20">🌱</div>
+        <div className="absolute right-6 top-6 text-5xl opacity-15">🌿</div>
+        <div className="absolute bottom-4 right-4 text-4xl opacity-15">🌳</div>
 
         <motion.div
           className="mx-auto mb-4"
@@ -172,21 +172,21 @@ export default function PaymentPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
             >
-              ??
+              🌱
             </motion.span>
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              ?
+              🌿
             </motion.span>
             <motion.span
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
             >
-              ??
+              🌳
             </motion.span>
           </div>
         </motion.div>
@@ -341,7 +341,7 @@ export default function PaymentPage() {
                 <div className="flex items-center justify-end gap-1.5">
                   {appliedCoupon && (
                     <span className="text-[10px] text-gray-400 line-through">
-                      ?{plan.basePrices[level]}
+                      ₹{plan.basePrices[level]}
                     </span>
                   )}
                   <p className="text-lg font-extrabold text-[var(--color-text-primary)]">
