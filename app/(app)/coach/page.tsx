@@ -58,11 +58,36 @@ export default function CoachPage() {
   const [chatLoading, setChatLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, chatLoading]);
+
+  // Bulletproof visual viewport pinning for mobile keyboards
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+    
+    const vv = window.visualViewport;
+    const updatePosition = () => {
+      if (containerRef.current) {
+        // Stick strictly to the visual viewport, cancelling out any layout viewport panning
+        containerRef.current.style.top = `${vv.offsetTop}px`;
+        containerRef.current.style.height = `${vv.height}px`;
+      }
+    };
+
+    vv.addEventListener("scroll", updatePosition);
+    vv.addEventListener("resize", updatePosition);
+    // Initial call
+    updatePosition();
+
+    return () => {
+      vv.removeEventListener("scroll", updatePosition);
+      vv.removeEventListener("resize", updatePosition);
+    };
+  }, []);
 
   // 2. AI Habit Generator State
   const [generatorGoal, setGeneratorGoal] = useState("");
@@ -291,8 +316,9 @@ export default function CoachPage() {
     <>
     <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     <div 
-      className="fixed inset-x-0 top-0 mx-auto w-full max-w-[430px] z-40 bg-[var(--color-bg-primary)] flex flex-col pt-4 safe-top overflow-hidden"
-      style={{ height: viewportHeight ? `${viewportHeight}px` : '100dvh' }}
+      ref={containerRef}
+      className="fixed inset-x-0 mx-auto w-full max-w-[430px] z-40 bg-[var(--color-bg-primary)] flex flex-col pt-4 safe-top overflow-hidden"
+      style={{ height: '100dvh', top: 0 }}
     >
       {/* ── Header Fixed ── */}
       <div className="flex-shrink-0 px-4">
