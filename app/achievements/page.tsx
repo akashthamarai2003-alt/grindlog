@@ -57,9 +57,25 @@ export default async function AchievementsPage() {
           currentProgress = liveStats.maxStreak;
           target = 30;
           break;
+        case 'quarterly_master':
+          currentProgress = liveStats.maxStreak;
+          target = 90;
+          break;
+        case 'half_year_hero':
+          currentProgress = liveStats.maxStreak;
+          target = 180;
+          break;
         case 'year_streak':
           currentProgress = liveStats.maxStreak;
           target = 365;
+          break;
+        case 'thousand_club':
+          currentProgress = liveStats.totalCompletions;
+          target = 1000;
+          break;
+        case 'grind_legend':
+          currentProgress = liveStats.totalCompletions;
+          target = 5000;
           break;
         case 'first_leaf':
           currentProgress = liveStats.treeLeaves;

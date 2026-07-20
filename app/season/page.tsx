@@ -58,10 +58,10 @@ export default async function SeasonPage() {
     id: "summer_2026",
     name: "Summer 2026 Season",
     endDate: "2026-08-31",
-    tiers: Array.from({ length: 20 }).map((_, i) => ({
+    tiers: Array.from({ length: 50 }).map((_, i) => ({
       tier: i + 1,
-      xpRequired: (i + 1) * 500, // 500 XP per tier
-      rewardCoins: (i + 1) % 5 === 0 ? 500 : 100,
+      xpRequired: (i + 1) * 1500, // 1500 XP per tier, total 75,000 XP
+      rewardCoins: (i + 1) % 5 === 0 ? 1000 : 250,
     }))
   };
 
