@@ -193,3 +193,79 @@ export async function verifyRazorpayPayment(
 
   return { success: true };
 }
+
+export async function createMessageTopUpOrder() {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    const options = {
+      amount: 10 * 100, // ₹10 in paise
+      currency: "INR",
+      receipt: `msg_${user.id}_${Date.now()}`.substring(0, 40),
+      notes: {
+        userId: user.id,
+        type: "ai_messages_topup",
+      },
+    };
+    
+    const order = await razorpay.orders.create(options);
+    
+    return {
+      success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    };
+  } catch (error: any) {
+    console.error("Razorpay topup order error:", error);
+    return { success: false, error: "Failed to create payment order" };
+  }
+}
+
+export async function verifyMessageTopUpPayment(
+  razorpayOrderId: string,
+  razorpayPaymentId: string,
+  razorpaySignature: string
+) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const secret = process.env.RAZORPAY_KEY_SECRET || "";
+  const generatedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(razorpayOrderId + "|" + razorpayPaymentId)
+    .digest("hex");
+
+  if (generatedSignature !== razorpaySignature) {
+    return { success: false, error: "Invalid payment signature" };
+  }
+
+  const adminClient = createAdminClient();
+
+  // Insert a subscription record for the purchased messages
+  const { error } = await adminClient
+    .from("subscriptions")
+    .insert({
+      user_id: user.id,
+      plan: "ai_messages_10",
+      status: "active",
+      razorpay_order_id: razorpayOrderId,
+      razorpay_payment_id: razorpayPaymentId,
+    });
+
+  if (error) {
+    console.error("Error inserting message purchase:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Brain, Send, Mic, Sparkles, Sprout, Target, LineChart,
   Flame, Plus, Check, RefreshCw, Loader2, Calendar, Clock,
-  BookOpen, CheckCircle2, AlertCircle, HelpCircle, ArrowRight
+  BookOpen, CheckCircle2, AlertCircle, HelpCircle, ArrowRight, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -21,6 +21,8 @@ import {
   generateScheduleBuilderAction,
   generateReflectionAction
 } from "@/app/actions/ai";
+import { createMessageTopUpOrder, verifyMessageTopUpPayment } from "@/app/actions/payment";
+import Script from "next/script";
 
 type Tab =
   | "coach"
@@ -85,8 +87,65 @@ export default function CoachPage() {
 
   // 8. AI Reflection State
   const [reflectionInput, setReflectionInput] = useState("");
-  const [reflectionResult, setReflectionResult] = useState<any>(null);
+  const [reflectionResult, setReflectionResult] = useState<any | null>(null);
   const [reflectionLoading, setReflectionLoading] = useState(false);
+
+  // Top Up Modal State
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [topUpLoading, setTopUpLoading] = useState(false);
+
+  const handleError = (error: string | undefined) => {
+    if (error?.includes("limit reached")) {
+      setShowTopUpModal(true);
+    } else {
+      toast.error(error || "An error occurred");
+    }
+  };
+
+  const handleTopUp = async () => {
+    setTopUpLoading(true);
+    try {
+      const orderRes = await createMessageTopUpOrder();
+      if (!orderRes.success) {
+        toast.error(orderRes.error || "Failed to initiate payment");
+        setTopUpLoading(false);
+        return;
+      }
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderRes.amount,
+        currency: orderRes.currency,
+        name: "GrindLog",
+        description: "10 Extra AI Messages",
+        order_id: orderRes.orderId,
+        handler: async function (response: any) {
+          const verifyRes = await verifyMessageTopUpPayment(
+            response.razorpay_order_id,
+            response.razorpay_payment_id,
+            response.razorpay_signature
+          );
+
+          if (verifyRes.success) {
+            toast.success("10 AI Messages added successfully!");
+            setShowTopUpModal(false);
+          } else {
+            toast.error(verifyRes.error || "Payment verification failed");
+          }
+        },
+        theme: { color: "#007AFF" },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", function () {
+        toast.error("Payment failed. Please try again.");
+      });
+      rzp.open();
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+    }
+    setTopUpLoading(false);
+  };
 
   // Action Helpers
   const handleSendChat = async () => {
@@ -101,7 +160,13 @@ export default function CoachPage() {
     if (res.success && res.content) {
       setChatMessages(prev => [...prev, { role: "assistant", content: res.content }]);
     } else {
-      setChatMessages(prev => [...prev, { role: "assistant", content: res.error || "Sorry, I had trouble communicating with the server. Let's try again!" }]);
+      if (res.error?.includes("limit reached")) {
+        setShowTopUpModal(true);
+        // Remove the user's message since it didn't go through
+        setChatMessages(chatMessages);
+      } else {
+        setChatMessages(prev => [...prev, { role: "assistant", content: res.error || "Sorry, I had trouble communicating with the server. Let's try again!" }]);
+      }
     }
     setChatLoading(false);
   };
@@ -116,7 +181,7 @@ export default function CoachPage() {
     if (res.success && res.habits) {
       setGeneratedHabits(res.habits);
     } else if (res.error) {
-      toast.error(res.error);
+      handleError(res.error);
     }
     setGeneratorLoading(false);
   };
@@ -142,7 +207,7 @@ export default function CoachPage() {
     if (res.success && res.report) {
       setWeeklyReport(res.report);
     } else if (res.error) {
-      toast.error(res.error);
+      handleError(res.error);
     }
     setReportLoading(false);
   };
@@ -154,7 +219,7 @@ export default function CoachPage() {
     if (res.success && res.predictions) {
       setPredictions(res.predictions);
     } else if (res.error) {
-      toast.error(res.error);
+      handleError(res.error);
     }
     setPredictionsLoading(false);
   };
@@ -166,7 +231,7 @@ export default function CoachPage() {
     if (res.success && res.motivation) {
       setMotivation(res.motivation);
     } else if (res.error) {
-      toast.error(res.error);
+      handleError(res.error);
     }
     setMotivationLoading(false);
   };
@@ -178,7 +243,7 @@ export default function CoachPage() {
     if (res.success && res.suggestions) {
       setSuggestions(res.suggestions);
     } else if (res.error) {
-      toast.error(res.error);
+      handleError(res.error);
     }
     setSuggestionsLoading(false);
   };
@@ -190,7 +255,7 @@ export default function CoachPage() {
     if (res.success && res.schedule) {
       setGeneratedSchedule(res.schedule);
     } else if (res.error) {
-      toast.error(res.error);
+      handleError(res.error);
     }
     setScheduleLoading(false);
   };
@@ -202,12 +267,14 @@ export default function CoachPage() {
     if (res.success && res.reflection) {
       setReflectionResult(res.reflection);
     } else if (res.error) {
-      toast.error(res.error);
+      handleError(res.error);
     }
     setReflectionLoading(false);
   };
 
   return (
+    <>
+    <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     <div className="flex flex-col min-h-dvh bg-[var(--color-bg-primary)] px-4 pb-40 pt-4 safe-top gap-5">
       {/* ── Header ── */}
       <div className="flex items-center gap-3 border-b border-[var(--color-bg-tertiary)] pb-3.5">
@@ -793,6 +860,71 @@ export default function CoachPage() {
           )}
         </AnimatePresence>
       </div>
+      {/* Top Up Modal */}
+      <AnimatePresence>
+        {showTopUpModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowTopUpModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 p-4"
+            >
+              <div className="relative overflow-hidden rounded-3xl bg-[var(--color-bg-primary)] p-6 shadow-2xl border border-[var(--color-bg-tertiary)]">
+                <button
+                  onClick={() => setShowTopUpModal(false)}
+                  className="absolute right-4 top-4 rounded-full bg-[var(--color-bg-secondary)] p-1.5 text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#007AFF]/20 to-[#AF52DE]/20">
+                  <Brain className="h-7 w-7 text-[#007AFF]" />
+                </div>
+
+                <h3 className="mb-2 text-xl font-bold text-[var(--color-text-primary)]">
+                  AI Limit Reached
+                </h3>
+                <p className="mb-6 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                  You&apos;ve used all your free AI messages for today. Don&apos;t want to wait until tomorrow? Top up instantly!
+                </p>
+
+                <div className="mb-6 rounded-2xl bg-[var(--color-bg-secondary)] p-4 border border-[var(--color-bg-tertiary)]">
+                  <div className="flex items-center justify-between font-medium">
+                    <span className="flex items-center gap-2 text-[var(--color-text-primary)]">
+                      <Sparkles className="h-4 w-4 text-[#FF9500]" /> 10 AI Messages
+                    </span>
+                    <span className="font-bold text-[#34C759]">₹10</span>
+                  </div>
+                  <div className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                    Carries over and never expires until used.
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleTopUp}
+                  disabled={topUpLoading}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#007AFF] to-[#5856D6] py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:scale-[0.98] active:scale-95 disabled:opacity-70 disabled:hover:scale-100"
+                >
+                  {topUpLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>Pay ₹10 Now</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
+    </>
   );
 }
