@@ -275,9 +275,10 @@ export default function CoachPage() {
   return (
     <>
     <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-    <div className="flex flex-col min-h-dvh bg-[var(--color-bg-primary)] px-4 pb-40 pt-4 safe-top gap-5">
-      {/* ── Header ── */}
-      <div className="flex items-center gap-3 border-b border-[var(--color-bg-tertiary)] pb-3.5">
+    <div className="flex flex-col h-[100dvh] bg-[var(--color-bg-primary)] pt-4 safe-top overflow-hidden">
+      {/* ── Header Fixed ── */}
+      <div className="flex-shrink-0 px-4">
+        <div className="flex items-center gap-3 border-b border-[var(--color-bg-tertiary)] pb-3.5 mb-5">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#007AFF] to-[#AF52DE] shadow-sm">
           <Brain className="h-5 w-5 text-white animate-breathe" />
         </div>
@@ -289,33 +290,34 @@ export default function CoachPage() {
         </div>
       </div>
 
-      {/* ── Segmented Scrollable Tab Bar ── */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
-        {TABS.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <motion.button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              whileTap={{ scale: 0.93 }}
-              className={cn(
-                "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black whitespace-nowrap transition-all duration-200 border",
-                isActive
-                  ? "bg-gradient-to-r text-white shadow-sm border-transparent"
-                  : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] border-[var(--color-bg-tertiary)]",
-                isActive && tab.color
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {tab.label}
-            </motion.button>
-          );
-        })}
+        {/* ── Segmented Scrollable Tab Bar ── */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                whileTap={{ scale: 0.93 }}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black whitespace-nowrap transition-all duration-200 border",
+                  isActive
+                    ? "bg-gradient-to-r text-white shadow-sm border-transparent"
+                    : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] border-[var(--color-bg-tertiary)]",
+                  isActive && tab.color
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {tab.label}
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Tab Content Views ── */}
-      <div className="flex-1 flex flex-col justify-start">
+      <div className="flex-1 overflow-hidden relative flex flex-col">
         <AnimatePresence mode="wait">
           {/* TAB 1: AI Coach */}
           {activeTab === "coach" && (
@@ -325,10 +327,10 @@ export default function CoachPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="flex flex-col flex-1"
+              className="flex flex-col h-full w-full"
             >
               {/* Chat Log */}
-              <div className="flex-1 flex flex-col gap-3 min-h-[300px] max-h-[480px] overflow-y-auto pb-36 scrollbar-none pr-1">
+              <div className="flex-1 flex flex-col gap-3 overflow-y-auto px-4 pt-2 pb-6 scrollbar-none">
                 {chatMessages.map((msg, i) => (
                   <motion.div
                     key={i}
@@ -353,8 +355,8 @@ export default function CoachPage() {
               </div>
 
               {/* Chat Input */}
-              <div className="fixed bottom-[114px] left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pt-4 bg-gradient-to-t from-[var(--color-bg-primary)] via-[var(--color-bg-primary)]/90 to-transparent">
-                <div className="flex items-center gap-2 rounded-full bg-[var(--color-bg-secondary)] p-1.5 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]">
+              <div className="px-4 pb-[114px] pt-3 bg-gradient-to-t from-[var(--color-bg-primary)] via-[var(--color-bg-primary)] to-transparent flex-shrink-0">
+                <div className="flex items-center gap-2 rounded-full bg-[var(--color-bg-secondary)] p-1.5 shadow-sm ring-1 ring-[var(--color-bg-tertiary)] max-w-[430px] mx-auto">
                   <button className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
                     <Mic className="h-5 w-5" />
                   </button>
@@ -384,7 +386,7 @@ export default function CoachPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
             >
               <div className="rounded-[24px] bg-[var(--color-bg-secondary)] p-5 border border-[var(--color-bg-tertiary)]">
                 <h3 className="text-sm font-black text-[var(--color-text-primary)]">Goal-to-Habit Builder</h3>
@@ -452,14 +454,14 @@ export default function CoachPage() {
             </motion.div>
           )}
 
-          {/* TAB 3: AI Weekly Report */}
+          {/* TAB 3: Weekly Report */}
           {activeTab === "report" && (
             <motion.div
               key="report"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
             >
               <button
                 onClick={handleGenerateReport}
@@ -526,14 +528,14 @@ export default function CoachPage() {
             </motion.div>
           )}
 
-          {/* TAB 4: AI Predictions */}
+          {/* TAB 4: Predictions */}
           {activeTab === "predictions" && (
             <motion.div
               key="predictions"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
             >
               <button
                 onClick={handleGeneratePredictions}
@@ -589,14 +591,14 @@ export default function CoachPage() {
             </motion.div>
           )}
 
-          {/* TAB 5: AI Motivation */}
+          {/* TAB 5: Motivation */}
           {activeTab === "motivation" && (
             <motion.div
               key="motivation"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
             >
               <button
                 onClick={handleGenerateMotivation}
@@ -631,7 +633,7 @@ export default function CoachPage() {
                   </div>
                   <div className="h-px bg-white/20" />
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-white/15 px-2 py-0.5 rounded">Coach Focus Focus</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-white/15 px-2 py-0.5 rounded">Coach Focus</span>
                     <p className="text-[11px] font-semibold mt-1.5 leading-normal text-white/90">{motivation.focus}</p>
                   </div>
                 </motion.div>
@@ -639,14 +641,14 @@ export default function CoachPage() {
             </motion.div>
           )}
 
-          {/* TAB 6: AI Suggestions */}
+          {/* TAB 6: Suggestions */}
           {activeTab === "suggestions" && (
             <motion.div
               key="suggestions"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
             >
               <button
                 onClick={handleGenerateSuggestions}
@@ -705,14 +707,14 @@ export default function CoachPage() {
             </motion.div>
           )}
 
-          {/* TAB 7: AI Schedule Builder */}
+          {/* TAB 7: Schedule Builder */}
           {activeTab === "schedule" && (
             <motion.div
               key="schedule"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
             >
               <div className="rounded-[24px] bg-[var(--color-bg-secondary)] p-5 border border-[var(--color-bg-tertiary)] flex flex-col gap-3">
                 <h3 className="text-sm font-black text-[var(--color-text-primary)]">Optimize Your Routine</h3>
@@ -790,14 +792,14 @@ export default function CoachPage() {
             </motion.div>
           )}
 
-          {/* TAB 8: AI Reflection */}
+          {/* TAB 8: Daily Reflection */}
           {activeTab === "reflection" && (
             <motion.div
               key="reflection"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
             >
               <div className="rounded-[24px] bg-[var(--color-bg-secondary)] p-5 border border-[var(--color-bg-tertiary)] flex flex-col gap-3">
                 <h3 className="text-sm font-black text-[var(--color-text-primary)]">AI Cognitive Reframing</h3>
