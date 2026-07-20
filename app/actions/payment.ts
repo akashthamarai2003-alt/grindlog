@@ -267,5 +267,8 @@ export async function verifyMessageTopUpPayment(
     return { success: false, error: error.message };
   }
 
+  revalidatePath("/coach");
+  revalidatePath("/", "layout");
+
   return { success: true };
 }
