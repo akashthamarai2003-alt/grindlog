@@ -421,12 +421,12 @@ export class TreeOfLife {
   private getTreeHeight(): number {
     const heights = {
       seed: 0,
-      sprout: 60,
-      sapling: 120,
-      tree: 200,
-      grand: 280,
-      ancient: 350,
-      mythical: 450
+      sprout: 30,
+      sapling: 60,
+      tree: 90,
+      grand: 130,
+      ancient: 170,
+      mythical: 220
     };
     return heights[this.stage];
   }
@@ -434,12 +434,12 @@ export class TreeOfLife {
   private getTreeThickness(): number {
     const thickness = {
       seed: 0,
-      sprout: 4,
-      sapling: 8,
-      tree: 16,
-      grand: 24,
-      ancient: 32,
-      mythical: 40
+      sprout: 3,
+      sapling: 5,
+      tree: 10,
+      grand: 14,
+      ancient: 18,
+      mythical: 22
     };
     return thickness[this.stage];
   }
@@ -448,11 +448,11 @@ export class TreeOfLife {
     const depths = {
       seed: 0,
       sprout: 1,
-      sapling: 3,
-      tree: 5,
-      grand: 6,
-      ancient: 7,
-      mythical: 8
+      sapling: 2,
+      tree: 3,
+      grand: 4,
+      ancient: 5,
+      mythical: 6
     };
     return depths[this.stage];
   }
@@ -460,12 +460,12 @@ export class TreeOfLife {
   private getLeafDensity(): number {
     const density = {
       seed: 0,
-      sprout: 2,
-      sapling: 3,
-      tree: 5,
-      grand: 7,
-      ancient: 9,
-      mythical: 12
+      sprout: 1,
+      sapling: 2,
+      tree: 4,
+      grand: 5,
+      ancient: 7,
+      mythical: 9
     };
     return density[this.stage];
   }
