@@ -7,6 +7,7 @@ import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function SeasonClient({ seasonData, progress }: { seasonData: any; progress: any }) {
   const router = useRouter();
@@ -47,9 +48,9 @@ export function SeasonClient({ seasonData, progress }: { seasonData: any; progre
       }
 
       setClaimedTiers(newClaimed);
-      alert(`Claimed ${rewardCoins} Coins!`);
+      toast.success(`Claimed ${rewardCoins} Coins! 💰`);
     } catch (e) {
-      alert("Failed to claim reward");
+      toast.error("Failed to claim reward");
     } finally {
       setIsClaiming(false);
     }
