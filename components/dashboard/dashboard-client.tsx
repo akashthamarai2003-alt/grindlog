@@ -306,11 +306,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
   return (
     <div className="flex flex-col gap-7 px-5 pb-8 pt-4 safe-top min-h-dvh">
-      {/* Dashboard-Specific Background Picture - Full Screen */}
-      <div 
-        className="fixed inset-0 z-[-2] bg-cover bg-center bg-no-repeat bg-fixed"
-        style={{ backgroundImage: 'url("/background.png")' }}
-      />
+
       <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
 
       {/* Header */}
