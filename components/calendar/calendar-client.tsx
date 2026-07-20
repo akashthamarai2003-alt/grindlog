@@ -166,7 +166,7 @@ function DayCell({
       <button
       onClick={onClick}
       className={cn(
-        "relative flex flex-col items-center justify-center w-full aspect-square",
+        "relative flex flex-col items-center justify-center w-full aspect-square max-w-[44px] max-h-[44px] mx-auto",
         "rounded-[14px] select-none outline-none",
         "transition-all duration-200 active:scale-[0.82]",
         isOutside && "opacity-20 pointer-events-none",
