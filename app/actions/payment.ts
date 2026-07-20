@@ -29,7 +29,7 @@ export async function validateCouponAction(code: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("coupons")
-    .select("id, discount_percentage, used_count, max_uses, is_active, allowed_plan")
+    .select("id, discount_percentage, used_count, max_uses, is_active, allowed_plan, allowed_level")
     .eq("code", code.toUpperCase().trim())
     .single();
     
@@ -49,7 +49,8 @@ export async function validateCouponAction(code: string) {
     success: true, 
     discount: data.discount_percentage,
     id: data.id,
-    allowed_plan: data.allowed_plan
+    allowed_plan: data.allowed_plan,
+    allowed_level: data.allowed_level
   };
 }
 
@@ -83,7 +84,7 @@ export async function createRazorpayOrder(
     const adminClient = createAdminClient();
     const { data: coupon } = await adminClient
       .from("coupons")
-      .select("discount_percentage, used_count, max_uses, is_active, allowed_plan")
+      .select("discount_percentage, used_count, max_uses, is_active, allowed_plan, allowed_level")
       .eq("id", couponId)
       .single();
       
@@ -92,7 +93,11 @@ export async function createRazorpayOrder(
     }
     
     if (coupon.allowed_plan && coupon.allowed_plan !== tier) {
-      return { success: false, error: `This coupon is only valid for the ${coupon.allowed_plan} plan` };
+      return { success: false, error: `This coupon is only valid for the ${coupon.allowed_plan.replace('_', ' ')} plan` };
+    }
+
+    if (coupon.allowed_level && coupon.allowed_level !== level) {
+      return { success: false, error: `This coupon is only valid for ${coupon.allowed_level} level` };
     }
     
     const discount = (finalPrice * coupon.discount_percentage) / 100;

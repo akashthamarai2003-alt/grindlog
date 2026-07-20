@@ -106,6 +106,18 @@ export default function ClientCouponForm() {
           <option value="lifetime">Lifetime Plan Only</option>
         </select>
       </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1">LEVEL RESTRICTION</label>
+        <select 
+          name="allowed_level" 
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-green-500 bg-white"
+        >
+          <option value="any">Any Level (Core & Pro)</option>
+          <option value="pro">Pro Level Only</option>
+          <option value="core">Core Level Only</option>
+        </select>
+      </div>
       
       <button 
         type="submit" 

@@ -9,12 +9,14 @@ export async function createCouponAction(formData: FormData) {
     const discountStr = formData.get("discount") as string;
     const maxUsesStr = formData.get("max_uses") as string;
     const allowedPlanStr = formData.get("allowed_plan") as string;
+    const allowedLevelStr = formData.get("allowed_level") as string;
     
     if (!code || !discountStr || !maxUsesStr) {
       return { success: false, error: "All fields are required" };
     }
     
     let allowed_plan = allowedPlanStr === "any" ? null : allowedPlanStr;
+    let allowed_level = allowedLevelStr === "any" ? null : allowedLevelStr;
     
     const discount_percentage = parseInt(discountStr, 10);
     const max_uses = parseInt(maxUsesStr, 10);
@@ -34,6 +36,7 @@ export async function createCouponAction(formData: FormData) {
       discount_percentage,
       max_uses,
       allowed_plan,
+      allowed_level,
     });
     
     if (error) {

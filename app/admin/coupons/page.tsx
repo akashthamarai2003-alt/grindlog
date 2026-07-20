@@ -78,6 +78,11 @@ export default async function AdminCouponsPage() {
                                 {c.allowed_plan === "six_months" ? "6 Months" : c.allowed_plan} ONLY
                               </span>
                             )}
+                            {c.allowed_level && (
+                              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                                {c.allowed_level} ONLY
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4">

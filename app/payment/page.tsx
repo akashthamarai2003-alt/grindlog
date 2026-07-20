@@ -84,7 +84,7 @@ export default function PaymentPage() {
   
   // Coupon state
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; discount: number; allowed_plan?: string | null } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; discount: number; allowed_plan?: string | null; allowed_level?: string | null } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState("");
 
@@ -99,8 +99,11 @@ export default function PaymentPage() {
       if (res.allowed_plan && res.allowed_plan !== selectedPlan) {
         setCouponError(`This coupon is only valid for the ${basePlans.find(p => p.id === res.allowed_plan)?.name} plan`);
         setAppliedCoupon(null);
+      } else if (res.allowed_level && res.allowed_level !== level) {
+        setCouponError(`This coupon is only valid for ${res.allowed_level} level`);
+        setAppliedCoupon(null);
       } else {
-        setAppliedCoupon({ id: res.id, discount: res.discount, allowed_plan: res.allowed_plan });
+        setAppliedCoupon({ id: res.id, discount: res.discount, allowed_plan: res.allowed_plan, allowed_level: res.allowed_level });
       }
     } else {
       setCouponError(res.error || "Invalid coupon");
@@ -118,6 +121,13 @@ export default function PaymentPage() {
   const handlePlanChange = (planId: "monthly" | "six_months" | "lifetime") => {
     setSelectedPlan(planId);
     if (appliedCoupon?.allowed_plan && appliedCoupon.allowed_plan !== planId) {
+      removeCoupon();
+    }
+  };
+
+  const handleLevelChange = (newLevel: "core" | "pro") => {
+    setLevel(newLevel);
+    if (appliedCoupon?.allowed_level && appliedCoupon.allowed_level !== newLevel) {
       removeCoupon();
     }
   };
@@ -353,7 +363,7 @@ export default function PaymentPage() {
           
           <div className="flex items-center rounded-full bg-[var(--color-bg-secondary)] p-0.5 border border-[var(--color-bg-tertiary)]">
             <button
-              onClick={() => setLevel("core")}
+              onClick={() => handleLevelChange("core")}
               className={cn(
                 "rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
                 level === "core"
@@ -364,7 +374,7 @@ export default function PaymentPage() {
               Core
             </button>
             <button
-              onClick={() => setLevel("pro")}
+              onClick={() => handleLevelChange("pro")}
               className={cn(
                 "rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
                 level === "pro"
