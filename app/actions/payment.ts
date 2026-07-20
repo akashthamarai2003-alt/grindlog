@@ -260,6 +260,8 @@ export async function verifyMessageTopUpPayment(
       status: "active",
       razorpay_order_id: razorpayOrderId,
       razorpay_payment_id: razorpayPaymentId,
+      started_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     });
 
   if (error) {
