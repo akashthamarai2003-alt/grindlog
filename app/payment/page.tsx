@@ -246,12 +246,38 @@ export default function PaymentPage() {
         transition={springs.default}
         className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--color-accent-green-light)] via-white to-[var(--color-bg-secondary)] p-6 text-center"
       >
+        <div className="absolute left-4 top-4 text-5xl opacity-20">🌱</div>
+        <div className="absolute right-6 top-6 text-5xl opacity-15">🌿</div>
+        <div className="absolute bottom-4 right-4 text-4xl opacity-15">🌳</div>
+
         <motion.div
-          className="mx-auto mb-2 relative h-32 w-32"
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="mx-auto mb-4"
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src="/tree-3d.png" alt="Premium Tree" fill className="object-contain drop-shadow-2xl" priority />
+          <div className="flex items-center justify-center gap-2 text-5xl">
+            <motion.span
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              🌱
+            </motion.span>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              🌿
+            </motion.span>
+            <motion.span
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              🌳
+            </motion.span>
+          </div>
         </motion.div>
 
         <h2 className="text-2xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
