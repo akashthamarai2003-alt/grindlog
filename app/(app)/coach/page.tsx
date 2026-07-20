@@ -277,7 +277,7 @@ export default function CoachPage() {
   return (
     <>
     <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-    <div className="flex flex-col h-[100dvh] bg-[var(--color-bg-primary)] pt-4 safe-top overflow-hidden">
+    <div className="fixed inset-x-0 top-0 mx-auto w-full max-w-[430px] h-[100dvh] z-40 bg-[var(--color-bg-primary)] flex flex-col pt-4 safe-top overflow-hidden">
       {/* ── Header Fixed ── */}
       <div className="flex-shrink-0 px-4">
         <div className="flex items-center gap-3 border-b border-[var(--color-bg-tertiary)] pb-3.5 mb-5">
