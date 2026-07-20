@@ -2841,7 +2841,7 @@ export default function TreePage() {
       />
 
       {/* Developer Testing Panel */}
-      {process.env.NODE_ENV === 'development' && !loading && (
+      {!loading && (
         <DevPanel treeRef={treeRef} />
       )}
     </div>
