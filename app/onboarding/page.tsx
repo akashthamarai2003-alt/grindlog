@@ -77,7 +77,7 @@ export default function OnboardingPage() {
   const slide = slides[current];
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-x-hidden overflow-y-auto">
+    <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden">
       {/* Background Picture */}
       <div className="fixed inset-0 z-0">
         <Image 
@@ -90,7 +90,7 @@ export default function OnboardingPage() {
         />
       </div>
       {/* Header Navigation */}
-      <div className="relative z-10 flex h-12 items-center justify-between px-4 pt-safe sm:h-16 sm:px-5">
+      <div className="relative z-10 flex h-12 shrink-0 items-center justify-between px-4 pt-safe sm:h-16 sm:px-5">
         {/* Back button */}
         <AnimatePresence mode="wait">
           {current > 0 ? (
@@ -129,7 +129,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-2 sm:px-6 sm:py-8">
+      <div className="relative z-10 flex flex-1 shrink flex-col items-center justify-center px-4 min-h-0">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={slide.id}
@@ -138,10 +138,10 @@ export default function OnboardingPage() {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: direction * -80, scale: 0.95 }}
             transition={springs.default}
-            className="flex w-full max-w-md flex-col items-center"
+            className="flex w-full max-w-md flex-col items-center gap-6 sm:gap-10"
           >
             {/* Visual Section */}
-            <div className="mb-2 flex min-h-[100px] items-center justify-center sm:mb-10 sm:min-h-[240px]">
+            <div className="flex items-center justify-center">
               {slide.image && (
                 <motion.div
                   className="relative h-40 w-40 sm:h-56 sm:w-56"
@@ -256,7 +256,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Bottom Section */}
-      <div className="relative z-10 flex flex-col items-center gap-4 px-4 pb-4 pb-safe sm:gap-6 sm:px-6 sm:pb-8">
+      <div className="relative z-10 flex shrink-0 flex-col items-center gap-4 px-4 pb-6 pb-safe sm:gap-6 sm:px-6 sm:pb-8">
         {/* Progress Dots */}
         <div className="flex gap-2">
           {slides.map((_, i) => (
