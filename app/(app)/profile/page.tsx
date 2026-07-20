@@ -141,10 +141,15 @@ export default function ProfilePage() {
                 <Award className="h-3 w-3" />
                 Gardener
               </span>
-              {user?.is_premium && (
+              {user?.is_premium ? (
                 <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FF9500]/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#d48806] ring-1 ring-[#FFD700]/30">
                   <Sparkles className="h-3 w-3" />
-                  Premium
+                  PRO
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 rounded-full bg-[var(--color-bg-tertiary)]/30 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)] ring-1 ring-[var(--color-bg-tertiary)]/50">
+                  <Star className="h-3 w-3" />
+                  CORE
                 </span>
               )}
             </div>
@@ -184,7 +189,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => {
                     if (item.action === "theme") toggleTheme();
-                    else if (item.action === "premium") window.location.href = "/premium";
+                    else if (item.action === "premium") window.location.href = "/payment";
                     else alert("This feature is coming soon!");
                   }}
                   className="group relative flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]/30 active:bg-[var(--color-bg-tertiary)]/50"
