@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Brain, Send, Mic, Sparkles, Sprout, Target, LineChart,
@@ -56,6 +56,13 @@ export default function CoachPage() {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-scroll chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatLoading]);
 
   // 2. AI Habit Generator State
   const [generatorGoal, setGeneratorGoal] = useState("");
@@ -152,6 +159,12 @@ export default function CoachPage() {
   // Action Helpers
   const handleSendChat = async () => {
     if (!chatInput.trim() || chatLoading) return;
+    
+    // Dismiss keyboard on send
+    if (chatInputRef.current) {
+      chatInputRef.current.blur();
+    }
+
     const userMsg = { role: "user", content: chatInput };
     const updatedHistory = [...chatMessages, userMsg];
     setChatMessages(updatedHistory);
@@ -357,6 +370,7 @@ export default function CoachPage() {
                     <span className="text-xs font-bold text-[var(--color-text-tertiary)]">Coach is thinking...</span>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Chat Input */}
@@ -369,6 +383,7 @@ export default function CoachPage() {
                     <Mic className="h-5 w-5" />
                   </button>
                   <input
+                    ref={chatInputRef}
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -382,8 +397,6 @@ export default function CoachPage() {
                   />
                   <button
                     onClick={handleSendChat}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onTouchStart={(e) => e.preventDefault()}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent-blue)] text-white shadow-sm active:scale-90 transition-transform"
                   >
                     <Send className="h-4 w-4 ml-0.5" />
