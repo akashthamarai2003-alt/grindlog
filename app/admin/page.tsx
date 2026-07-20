@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/services/supabase/admin";
-import { Users, Target, CreditCard } from "lucide-react";
+import { Users, Target, CreditCard, User } from "lucide-react";
 
 export default async function AdminDashboard() {
   const supabase = createAdminClient();
@@ -34,6 +34,12 @@ export default async function AdminDashboard() {
       icon: CreditCard,
       color: "bg-purple-500",
     },
+    {
+      name: "Core Members",
+      value: (usersCount || 0) - (premiumCount || 0),
+      icon: User,
+      color: "bg-gray-500",
+    },
   ];
 
   // Fetch recent users
@@ -51,7 +57,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric) => (
           <div key={metric.name} className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
             <div className="flex items-center gap-4">
