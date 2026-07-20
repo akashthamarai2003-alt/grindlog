@@ -17,11 +17,11 @@ export default async function LeaderboardPage() {
 
   // Add dummy users if leaderboard is too empty to make it fun!
   const bots = [
-    { id: "bot1", display_name: "Alex (Bot)", avatar_url: null, xp: 2500, level: 3 },
-    { id: "bot2", display_name: "Sarah (Bot)", avatar_url: null, xp: 1800, level: 2 },
-    { id: "bot3", display_name: "Mike (Bot)", avatar_url: null, xp: 1200, level: 2 },
-    { id: "bot4", display_name: "Emma (Bot)", avatar_url: null, xp: 900, level: 1 },
-    { id: "bot5", display_name: "John (Bot)", avatar_url: null, xp: 500, level: 1 },
+    { id: "bot1", display_name: "Karthik", avatar_url: null, xp: 2500, level: 3 },
+    { id: "bot2", display_name: "Priya", avatar_url: null, xp: 1800, level: 2 },
+    { id: "bot3", display_name: "Surya", avatar_url: null, xp: 1200, level: 2 },
+    { id: "bot4", display_name: "Ananya", avatar_url: null, xp: 900, level: 1 },
+    { id: "bot5", display_name: "Vikram", avatar_url: null, xp: 500, level: 1 },
   ];
 
   const combined = [...(topUsers || [])];
