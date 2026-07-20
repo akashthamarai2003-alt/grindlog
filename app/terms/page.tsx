@@ -1,23 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { springs } from "@/animations/springs";
 
 export default function TermsPage() {
+  const router = useRouter();
+
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--color-bg-primary)] px-6 pb-20 pt-8 safe-top">
       {/* Header */}
       <div className="mb-8 flex items-center gap-4">
-        <Link href="/profile">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
-          >
-            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-          </motion.button>
-        </Link>
+        <motion.button
+          onClick={() => router.back()}
+          whileTap={{ scale: 0.9 }}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
+        >
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
+        </motion.button>
         <h1 className="text-2xl font-black tracking-tight text-[var(--color-text-primary)]">
           Terms & Conditions
         </h1>
