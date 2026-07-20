@@ -76,9 +76,9 @@ export default function OnboardingPage() {
   const slide = slides[current];
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden">
+    <div className="relative flex min-h-dvh flex-col overflow-x-hidden overflow-y-auto">
       {/* Background Picture */}
-      <div className="absolute inset-0 z-0">
+      <div className="fixed inset-0 z-0">
         <Image 
           src="/onboarding-bg.png" 
           alt="Background" 
@@ -128,7 +128,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-8">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-4 sm:py-8">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={slide.id}
@@ -140,7 +140,7 @@ export default function OnboardingPage() {
             className="flex w-full max-w-md flex-col items-center"
           >
             {/* Visual Section */}
-            <div className="mb-6 flex min-h-[160px] items-center justify-center sm:mb-10 sm:min-h-[240px]">
+            <div className="mb-4 flex min-h-[120px] items-center justify-center sm:mb-10 sm:min-h-[240px]">
               {slide.emoji && (
                 <motion.div
                   className="text-[100px] leading-none sm:text-[120px]"
@@ -234,7 +234,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Bottom Section */}
-      <div className="relative z-10 flex flex-col items-center gap-6 px-6 pb-6 pb-safe">
+      <div className="relative z-10 flex flex-col items-center gap-5 px-6 pb-8 pb-safe sm:gap-6">
         {/* Progress Dots */}
         <div className="flex gap-2">
           {slides.map((_, i) => (
