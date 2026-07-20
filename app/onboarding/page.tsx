@@ -144,7 +144,7 @@ export default function OnboardingPage() {
             <div className="mb-2 flex min-h-[100px] items-center justify-center sm:mb-10 sm:min-h-[240px]">
               {slide.image && (
                 <motion.div
-                  className="relative h-32 w-32 sm:h-56 sm:w-56"
+                  className="relative h-40 w-40 sm:h-56 sm:w-56"
                   animate={{ 
                     y: [0, -10, 0],
                   }}
@@ -233,12 +233,12 @@ export default function OnboardingPage() {
             </div>
 
             {/* Text Content */}
-            <div className="flex flex-col items-center gap-2 sm:gap-4 text-center w-full px-2">
+            <div className="flex flex-col items-center gap-4 text-center w-full px-2">
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...springs.default, delay: 0.1 }}
-                className="whitespace-pre-line text-3xl sm:text-5xl font-extrabold leading-[1.15] tracking-tight text-gray-900"
+                className="whitespace-pre-line text-4xl sm:text-5xl font-extrabold leading-[1.15] tracking-tight text-gray-900"
               >
                 {slide.title}
               </motion.h1>
@@ -246,7 +246,7 @@ export default function OnboardingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...springs.default, delay: 0.2 }}
-                className="max-w-[300px] text-sm sm:text-lg font-medium leading-relaxed text-gray-800"
+                className="max-w-[300px] text-base sm:text-lg font-medium leading-relaxed text-gray-800"
               >
                 {slide.description}
               </motion.p>
