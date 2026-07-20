@@ -3,15 +3,10 @@
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import Link from "next/link";
-import {
-  Home,
-  BarChart3,
-  Calendar,
-  LayoutGrid,
-  Brain
-} from "lucide-react";
+import { Home, BarChart3, Calendar, LayoutGrid, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { springs } from "@/animations/springs";
+import { useEffect, useState } from "react";
 
 const tabs = [
   { id: "dashboard", label: "Home", icon: Home, path: "/dashboard" },
@@ -24,6 +19,27 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const activeTab = tabs.find((t) => pathname.startsWith(t.path))?.id || "dashboard";
 
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const handleFocusIn = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        setIsKeyboardOpen(true);
+      }
+    };
+    const handleFocusOut = () => {
+      setIsKeyboardOpen(false);
+    };
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
   return (
     <div className="isolate">
 
@@ -32,7 +48,12 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
         <main className="flex-1 pb-32">{children}</main>
 
         {/* Tab Bar Container */}
-        <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 drop-shadow-[0_-8px_20px_rgba(0,0,0,0.06)]">
+        <div 
+          className={cn(
+            "fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 drop-shadow-[0_-8px_20px_rgba(0,0,0,0.06)] transition-transform duration-300",
+            isKeyboardOpen ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+          )}
+        >
           
           {/* Perfect SVG Background with Smooth Notch */}
           <div className="absolute bottom-0 left-0 h-[85px] w-full">

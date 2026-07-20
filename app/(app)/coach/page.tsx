@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Brain, Send, Mic, Sparkles, Sprout, Target, LineChart,
@@ -23,6 +23,31 @@ import {
 } from "@/app/actions/ai";
 import { createMessageTopUpOrder, verifyMessageTopUpPayment } from "@/app/actions/payment";
 import Script from "next/script";
+
+export function useKeyboard() {
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const handleFocusIn = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        setIsKeyboardOpen(true);
+      }
+    };
+    const handleFocusOut = () => {
+      setIsKeyboardOpen(false);
+    };
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
+  return isKeyboardOpen;
+}
 
 type Tab =
   | "coach"
@@ -47,6 +72,7 @@ const TABS: { id: Tab; label: string; icon: any; color: string }[] = [
 
 export default function CoachPage() {
   const [activeTab, setActiveTab] = useState<Tab>("coach");
+  const isKeyboardOpen = useKeyboard();
 
   // 1. AI Coach Chat State
   const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([
@@ -355,7 +381,10 @@ export default function CoachPage() {
               </div>
 
               {/* Chat Input */}
-              <div className="px-4 pb-[114px] pt-3 bg-gradient-to-t from-[var(--color-bg-primary)] via-[var(--color-bg-primary)] to-transparent flex-shrink-0">
+              <div className={cn(
+                "px-4 pt-3 bg-gradient-to-t from-[var(--color-bg-primary)] via-[var(--color-bg-primary)] to-transparent flex-shrink-0 transition-all duration-300",
+                isKeyboardOpen ? "pb-4" : "pb-[114px]"
+              )}>
                 <div className="flex items-center gap-2 rounded-full bg-[var(--color-bg-secondary)] p-1.5 shadow-sm ring-1 ring-[var(--color-bg-tertiary)] max-w-[430px] mx-auto">
                   <button className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
                     <Mic className="h-5 w-5" />
@@ -370,6 +399,8 @@ export default function CoachPage() {
                   />
                   <button
                     onClick={handleSendChat}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.preventDefault()}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent-blue)] text-white shadow-sm active:scale-90 transition-transform"
                   >
                     <Send className="h-4 w-4 ml-0.5" />
