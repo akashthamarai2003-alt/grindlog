@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Home, BarChart3, Calendar, LayoutGrid, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { springs } from "@/animations/springs";
-import { useEffect, useState } from "react";
+import { useKeyboard } from "@/hooks/use-keyboard";
 
 const tabs = [
   { id: "dashboard", label: "Home", icon: Home, path: "/dashboard" },
@@ -19,26 +19,7 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const activeTab = tabs.find((t) => pathname.startsWith(t.path))?.id || "dashboard";
 
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-
-  useEffect(() => {
-    const handleFocusIn = (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        setIsKeyboardOpen(true);
-      }
-    };
-    const handleFocusOut = () => {
-      setIsKeyboardOpen(false);
-    };
-
-    window.addEventListener('focusin', handleFocusIn);
-    window.addEventListener('focusout', handleFocusOut);
-    return () => {
-      window.removeEventListener('focusin', handleFocusIn);
-      window.removeEventListener('focusout', handleFocusOut);
-    };
-  }, []);
+  const isKeyboardOpen = useKeyboard();
 
   return (
     <div className="isolate">

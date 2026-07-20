@@ -23,31 +23,7 @@ import {
 } from "@/app/actions/ai";
 import { createMessageTopUpOrder, verifyMessageTopUpPayment } from "@/app/actions/payment";
 import Script from "next/script";
-
-export function useKeyboard() {
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-
-  useEffect(() => {
-    const handleFocusIn = (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        setIsKeyboardOpen(true);
-      }
-    };
-    const handleFocusOut = () => {
-      setIsKeyboardOpen(false);
-    };
-
-    window.addEventListener('focusin', handleFocusIn);
-    window.addEventListener('focusout', handleFocusOut);
-    return () => {
-      window.removeEventListener('focusin', handleFocusIn);
-      window.removeEventListener('focusout', handleFocusOut);
-    };
-  }, []);
-
-  return isKeyboardOpen;
-}
+import { useKeyboard } from "@/hooks/use-keyboard";
 
 type Tab =
   | "coach"
