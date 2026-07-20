@@ -21,7 +21,8 @@ import { cn } from "@/lib/utils";
 const slides = [
   {
     id: "welcome",
-    emoji: "🌳",
+    emoji: null,
+    image: "/tree-3d.png",
     title: "Grow Into Your\nBest Self",
     description:
       "Every habit is a drop of water. Your tree grows with you, one action at a time.",
@@ -141,6 +142,27 @@ export default function OnboardingPage() {
           >
             {/* Visual Section */}
             <div className="mb-4 flex min-h-[120px] items-center justify-center sm:mb-10 sm:min-h-[240px]">
+              {slide.image && (
+                <motion.div
+                  className="relative h-48 w-48 sm:h-56 sm:w-56"
+                  animate={{ 
+                    y: [0, -10, 0],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <Image 
+                    src={slide.image} 
+                    alt="Illustration" 
+                    fill 
+                    className="object-contain drop-shadow-2xl" 
+                  />
+                </motion.div>
+              )}
+
               {slide.emoji && (
                 <motion.div
                   className="text-[100px] leading-none sm:text-[120px]"
@@ -211,12 +233,12 @@ export default function OnboardingPage() {
             </div>
 
             {/* Text Content */}
-            <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex flex-col items-center gap-4 text-center w-full rounded-[32px] bg-white/30 p-8 backdrop-blur-2xl border border-white/40 shadow-[0_8px_32px_0_rgba(0,0,0,0.05)]">
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...springs.default, delay: 0.1 }}
-                className="whitespace-pre-line text-4xl font-extrabold leading-[1.15] tracking-tight text-[var(--color-text-primary)] sm:text-5xl"
+                className="whitespace-pre-line text-4xl font-extrabold leading-[1.15] tracking-tight text-gray-900 sm:text-5xl"
               >
                 {slide.title}
               </motion.h1>
@@ -224,7 +246,7 @@ export default function OnboardingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...springs.default, delay: 0.2 }}
-                className="max-w-[340px] text-base leading-relaxed text-[var(--color-text-secondary)] sm:text-lg"
+                className="max-w-[300px] text-base font-medium leading-relaxed text-gray-800 sm:text-lg"
               >
                 {slide.description}
               </motion.p>
@@ -262,7 +284,7 @@ export default function OnboardingPage() {
           animate={{ opacity: 1, y: 0 }}
           whileTap={{ scale: 0.97 }}
           onClick={goNext}
-          className="group relative h-14 w-full max-w-md overflow-hidden rounded-2xl bg-[var(--color-accent-green)] text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-green)]/20 transition-all active:shadow-md"
+          className="group relative h-14 w-full max-w-md overflow-hidden rounded-2xl bg-gray-900 text-base font-semibold text-white shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all active:shadow-md"
         >
           <span className="relative z-10 flex items-center justify-center gap-2">
             {current === slides.length - 1 ? "Get Started" : "Continue"}
