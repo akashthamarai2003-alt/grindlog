@@ -1332,21 +1332,25 @@ export class TreeOfLife {
     ctx.save();
     
     // Branch gradient (bark texture)
-    const gradient = ctx.createLinearGradient(startX, startY, currentEndX, currentEndY);
-    
-    if (isTrunk) {
-      gradient.addColorStop(0, '#5C4033');
-      gradient.addColorStop(0.3, '#6F4E37');
-      gradient.addColorStop(0.7, '#8B6F47');
-      gradient.addColorStop(1, '#7A5C42');
+    if (this.config.performanceMode === 'medium') {
+      ctx.strokeStyle = isTrunk ? '#6F4E37' : `hsl(25, 40%, ${35 - branch.depth * 2}%)`;
     } else {
-      const lightness = 35 - branch.depth * 2;
-      gradient.addColorStop(0, `hsl(25, 40%, ${lightness}%)`);
-      gradient.addColorStop(0.5, `hsl(30, 45%, ${lightness + 5}%)`);
-      gradient.addColorStop(1, `hsl(25, 40%, ${lightness}%)`);
+      const gradient = ctx.createLinearGradient(startX, startY, currentEndX, currentEndY);
+      
+      if (isTrunk) {
+        gradient.addColorStop(0, '#5C4033');
+        gradient.addColorStop(0.3, '#6F4E37');
+        gradient.addColorStop(0.7, '#8B6F47');
+        gradient.addColorStop(1, '#7A5C42');
+      } else {
+        const lightness = 35 - branch.depth * 2;
+        gradient.addColorStop(0, `hsl(25, 40%, ${lightness}%)`);
+        gradient.addColorStop(0.5, `hsl(30, 45%, ${lightness + 5}%)`);
+        gradient.addColorStop(1, `hsl(25, 40%, ${lightness}%)`);
+      }
+      
+      ctx.strokeStyle = gradient;
     }
-    
-    ctx.strokeStyle = gradient;
     ctx.lineWidth = branch.thickness * progress;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -1358,7 +1362,7 @@ export class TreeOfLife {
     ctx.stroke();
     
     // Add bark texture for thicker branches
-    if (branch.thickness > 8 && isTrunk) {
+    if (branch.thickness > 8 && isTrunk && this.config.performanceMode !== 'medium') {
       this.addBarkTexture(startX, startY, currentEndX, currentEndY, branch.thickness);
     }
     
@@ -1422,28 +1426,31 @@ export class TreeOfLife {
     ctx.rotate((leaf.rotation * Math.PI) / 180);
     ctx.globalAlpha = leaf.alpha;
     
-    // Leaf shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-    ctx.beginPath();
-    ctx.ellipse(1, 1, leaf.size * 0.6, leaf.size, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Leaf gradient for depth
-    const leafGrad = ctx.createRadialGradient(
-      -leaf.size * 0.3, -leaf.size * 0.4, 0,
-      0, 0, leaf.size
-    );
-    
-    // Parse color and adjust
     const baseHue = 115;
     const hueVariation = (leaf.branchId * 5) % 20 - 10;
-    
-    leafGrad.addColorStop(0, `hsl(${baseHue + hueVariation + 15}, 65%, 50%)`);
-    leafGrad.addColorStop(0.4, `hsl(${baseHue + hueVariation}, 60%, 42%)`);
-    leafGrad.addColorStop(0.8, `hsl(${baseHue + hueVariation - 10}, 55%, 35%)`);
-    leafGrad.addColorStop(1, `hsl(${baseHue + hueVariation - 15}, 50%, 28%)`);
-    
-    ctx.fillStyle = leafGrad;
+
+    if (this.config.performanceMode !== 'medium') {
+      // Leaf shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.beginPath();
+      ctx.ellipse(1, 1, leaf.size * 0.6, leaf.size, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Leaf gradient for depth
+      const leafGrad = ctx.createRadialGradient(
+        -leaf.size * 0.3, -leaf.size * 0.4, 0,
+        0, 0, leaf.size
+      );
+      
+      leafGrad.addColorStop(0, `hsl(${baseHue + hueVariation + 15}, 65%, 50%)`);
+      leafGrad.addColorStop(0.4, `hsl(${baseHue + hueVariation}, 60%, 42%)`);
+      leafGrad.addColorStop(0.8, `hsl(${baseHue + hueVariation - 10}, 55%, 35%)`);
+      leafGrad.addColorStop(1, `hsl(${baseHue + hueVariation - 15}, 50%, 28%)`);
+      
+      ctx.fillStyle = leafGrad;
+    } else {
+      ctx.fillStyle = `hsl(${baseHue + hueVariation}, 60%, 42%)`;
+    }
     
     // Leaf shape (realistic)
     ctx.beginPath();
@@ -1461,39 +1468,41 @@ export class TreeOfLife {
     ctx.closePath();
     ctx.fill();
     
-    // Leaf veins
-    ctx.strokeStyle = 'rgba(0, 100, 0, 0.3)';
-    ctx.lineWidth = 0.5;
-    
-    // Central vein
-    ctx.beginPath();
-    ctx.moveTo(0, -leaf.size);
-    ctx.lineTo(0, leaf.size);
-    ctx.stroke();
-    
-    // Side veins
-    const veinCount = 4;
-    for (let i = 1; i <= veinCount; i++) {
-      const t = i / (veinCount + 1);
-      const y = -leaf.size + t * leaf.size * 2;
-      const veinLength = leaf.size * 0.5 * (1 - Math.abs(t - 0.5) * 2);
+    if (this.config.performanceMode !== 'medium') {
+      // Leaf veins
+      ctx.strokeStyle = 'rgba(0, 100, 0, 0.3)';
+      ctx.lineWidth = 0.5;
       
+      // Central vein
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(veinLength, y + veinLength * 0.3);
+      ctx.moveTo(0, -leaf.size);
+      ctx.lineTo(0, leaf.size);
       ctx.stroke();
       
+      // Side veins
+      const veinCount = 4;
+      for (let i = 1; i <= veinCount; i++) {
+        const t = i / (veinCount + 1);
+        const y = -leaf.size + t * leaf.size * 2;
+        const veinLength = leaf.size * 0.5 * (1 - Math.abs(t - 0.5) * 2);
+        
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(veinLength, y + veinLength * 0.3);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(-veinLength, y + veinLength * 0.3);
+        ctx.stroke();
+      }
+      
+      // Leaf highlight
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(-veinLength, y + veinLength * 0.3);
-      ctx.stroke();
+      ctx.ellipse(-leaf.size * 0.3, -leaf.size * 0.5, leaf.size * 0.25, leaf.size * 0.4, -0.3, 0, Math.PI * 2);
+      ctx.fill();
     }
-    
-    // Leaf highlight
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.beginPath();
-    ctx.ellipse(-leaf.size * 0.3, -leaf.size * 0.5, leaf.size * 0.25, leaf.size * 0.4, -0.3, 0, Math.PI * 2);
-    ctx.fill();
     
     ctx.restore();
   }
