@@ -115,6 +115,8 @@ export default function CoachPage() {
     const res = await generateHabitsAction(generatorGoal);
     if (res.success && res.habits) {
       setGeneratedHabits(res.habits);
+    } else if (res.error) {
+      toast.error(res.error);
     }
     setGeneratorLoading(false);
   };
@@ -139,6 +141,8 @@ export default function CoachPage() {
     const res = await generateWeeklyReportAction();
     if (res.success && res.report) {
       setWeeklyReport(res.report);
+    } else if (res.error) {
+      toast.error(res.error);
     }
     setReportLoading(false);
   };
@@ -149,6 +153,8 @@ export default function CoachPage() {
     const res = await generatePredictionsAction();
     if (res.success && res.predictions) {
       setPredictions(res.predictions);
+    } else if (res.error) {
+      toast.error(res.error);
     }
     setPredictionsLoading(false);
   };
@@ -159,6 +165,8 @@ export default function CoachPage() {
     const res = await generateMotivationAction();
     if (res.success && res.motivation) {
       setMotivation(res.motivation);
+    } else if (res.error) {
+      toast.error(res.error);
     }
     setMotivationLoading(false);
   };
@@ -169,6 +177,8 @@ export default function CoachPage() {
     const res = await generateSuggestionsAction();
     if (res.success && res.suggestions) {
       setSuggestions(res.suggestions);
+    } else if (res.error) {
+      toast.error(res.error);
     }
     setSuggestionsLoading(false);
   };
@@ -179,6 +189,8 @@ export default function CoachPage() {
     const res = await generateScheduleBuilderAction(wakeTime, sleepTime, scheduleFocus);
     if (res.success && res.schedule) {
       setGeneratedSchedule(res.schedule);
+    } else if (res.error) {
+      toast.error(res.error);
     }
     setScheduleLoading(false);
   };
@@ -189,6 +201,8 @@ export default function CoachPage() {
     const res = await generateReflectionAction(reflectionInput);
     if (res.success && res.reflection) {
       setReflectionResult(res.reflection);
+    } else if (res.error) {
+      toast.error(res.error);
     }
     setReflectionLoading(false);
   };
