@@ -229,24 +229,22 @@ export default function PaymentPage() {
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <div className="flex flex-col gap-4 px-5 pb-8 pt-2 safe-top">
-        {/* Header */}
-      <div className="flex items-center w-full relative h-9">
-        <button
-          onClick={() => router.back()}
-          className="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-bg-secondary)]"
-        >
-          <ChevronLeft className="h-5 w-5 text-[var(--color-text-secondary)]" />
-        </button>
-      </div>
-
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={springs.default}
-        className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--color-accent-green-light)] via-white to-[var(--color-bg-secondary)] p-6 text-center"
+        className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--color-accent-green-light)] via-white to-[var(--color-bg-secondary)] p-6 pt-10 text-center"
       >
-        <div className="absolute left-4 top-4 text-5xl opacity-20">🌱</div>
+        {/* Integrated Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="absolute left-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/60 backdrop-blur-md shadow-sm"
+        >
+          <ChevronLeft className="h-5 w-5 text-[var(--color-text-primary)]" />
+        </button>
+
+        <div className="absolute left-16 top-4 text-5xl opacity-20">🌱</div>
         <div className="absolute right-6 top-6 text-5xl opacity-15">🌿</div>
         <div className="absolute bottom-4 right-4 text-4xl opacity-15">🌳</div>
 
