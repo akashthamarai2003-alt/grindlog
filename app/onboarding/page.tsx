@@ -140,7 +140,7 @@ export default function OnboardingPage() {
             className="flex w-full max-w-md flex-col items-center"
           >
             {/* Visual Section */}
-            <div className="mb-10 flex min-h-[200px] items-center justify-center sm:min-h-[240px]">
+            <div className="mb-6 flex min-h-[160px] items-center justify-center sm:mb-10 sm:min-h-[240px]">
               {slide.emoji && (
                 <motion.div
                   className="text-[100px] leading-none sm:text-[120px]"
@@ -234,7 +234,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Bottom Section */}
-      <div className="relative z-10 flex flex-col items-center gap-8 px-6 pb-8 pb-safe">
+      <div className="relative z-10 flex flex-col items-center gap-6 px-6 pb-6 pb-safe">
         {/* Progress Dots */}
         <div className="flex gap-2">
           {slides.map((_, i) => (
