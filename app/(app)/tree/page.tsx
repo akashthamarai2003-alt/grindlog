@@ -1552,8 +1552,8 @@ export class TreeOfLife {
     
     // Star shape
     ctx.fillStyle = '#FFE66D';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#FFD700';
+    // ctx.shadowBlur = 10;
+    // ctx.shadowColor = '#FFD700';
     
     ctx.beginPath();
     for (let i = 0; i < 8; i++) {
@@ -1568,7 +1568,7 @@ export class TreeOfLife {
     ctx.closePath();
     ctx.fill();
     
-    ctx.shadowBlur = 0;
+    // ctx.shadowBlur = 0;
   }
 
   private drawWaterParticle(p: Particle): void {
@@ -1656,12 +1656,12 @@ export class TreeOfLife {
     
     // Core
     ctx.fillStyle = `hsl(${hue}, 100%, 90%)`;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = `hsl(${hue}, 100%, 70%)`;
+    // ctx.shadowBlur = 15;
+    // ctx.shadowColor = `hsl(${hue}, 100%, 70%)`;
     ctx.beginPath();
     ctx.arc(0, 0, size, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
+    // ctx.shadowBlur = 0;
   }
 
   private createMagicParticle(x: number, y: number, type: Particle['type']): void {
@@ -2083,12 +2083,12 @@ export class TreeOfLife {
       
       // Orb core
       ctx.fillStyle = `hsl(${hue}, 100%, 90%)`;
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = `hsl(${hue}, 100%, 70%)`;
+      // ctx.shadowBlur = 20;
+      // ctx.shadowColor = `hsl(${hue}, 100%, 70%)`;
       ctx.beginPath();
       ctx.arc(x, y, size, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
+      // ctx.shadowBlur = 0;
     }
   }
 
@@ -2115,8 +2115,8 @@ export class TreeOfLife {
       // Rune symbol (mystical)
       ctx.strokeStyle = '#FFD700';
       ctx.lineWidth = 2;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = '#FFD700';
+      // ctx.shadowBlur = 10;
+      // ctx.shadowColor = '#FFD700';
       
       ctx.beginPath();
       ctx.arc(0, 0, 12, 0, Math.PI * 2);
@@ -2130,7 +2130,7 @@ export class TreeOfLife {
       ctx.lineTo(-8, 8);
       ctx.stroke();
       
-      ctx.shadowBlur = 0;
+      // ctx.shadowBlur = 0;
       ctx.restore();
     }
     
@@ -2146,14 +2146,14 @@ export class TreeOfLife {
       
       ctx.strokeStyle = `rgba(138, 43, 226, ${waveAlpha})`;
       ctx.lineWidth = 3;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = 'rgba(138, 43, 226, 0.5)';
+      // ctx.shadowBlur = 15;
+      // ctx.shadowColor = 'rgba(138, 43, 226, 0.5)';
       
       ctx.beginPath();
       ctx.arc(this.tree.x, this.tree.y - 150, waveRadius, 0, Math.PI * 2);
       ctx.stroke();
       
-      ctx.shadowBlur = 0;
+      // ctx.shadowBlur = 0;
     }
   }
 
@@ -2178,15 +2178,15 @@ export class TreeOfLife {
       ctx.strokeStyle = gradient;
       ctx.lineWidth = branch.thickness + 4;
       ctx.lineCap = 'round';
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = `hsl(${hue}, 90%, 70%)`;
+      // ctx.shadowBlur = 20;
+      // ctx.shadowColor = `hsl(${hue}, 90%, 70%)`;
       
       ctx.beginPath();
       ctx.moveTo(branch.startX, branch.startY);
       ctx.lineTo(branch.endX, branch.endY);
       ctx.stroke();
       
-      ctx.shadowBlur = 0;
+      // ctx.shadowBlur = 0;
     });
   }
 
@@ -2243,12 +2243,12 @@ export class TreeOfLife {
     
     // Background
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    // ctx.shadowBlur = 10;
+    // ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
     ctx.beginPath();
     ctx.roundRect(15, 15, 180, 50, 10);
     ctx.fill();
-    ctx.shadowBlur = 0;
+    // ctx.shadowBlur = 0;
     
     // Emoji
     ctx.font = 'bold 28px Arial';
@@ -2274,12 +2274,12 @@ export class TreeOfLife {
     
     // Background
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    // ctx.shadowBlur = 10;
+    // ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
     ctx.beginPath();
     ctx.roundRect(this.width - 145, 15, 130, 50, 10);
     ctx.fill();
-    ctx.shadowBlur = 0;
+    // ctx.shadowBlur = 0;
     
     // Icon
     ctx.font = 'bold 24px Arial';
@@ -2346,8 +2346,8 @@ export class TreeOfLife {
     
     // Background
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    // ctx.shadowBlur = 15;
+    // ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     
     const textWidth = ctx.measureText(hint).width;
     ctx.beginPath();
@@ -2359,7 +2359,7 @@ export class TreeOfLife {
       20
     );
     ctx.fill();
-    ctx.shadowBlur = 0;
+    // ctx.shadowBlur = 0;
     
     // Text
     ctx.font = 'bold 16px Arial';
