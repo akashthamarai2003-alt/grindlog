@@ -34,30 +34,37 @@ interface SettingItem {
   highlight?: boolean;
 }
 
-const settingsGroups: { items: SettingItem[] }[] = [
-  {
-    items: [
-      { icon: Moon, label: "Dark Theme", toggle: true, action: "theme" },
-      { icon: Bell, label: "Notifications", hasValue: true, value: "On" },
-    ],
-  },
-  {
-    items: [
-      { icon: Download, label: "Export Data", hasChevron: true },
-      { icon: Star, label: "GrindLog Premium", hasValue: true, value: "Free", action: "premium", highlight: true },
-    ],
-  },
-  {
-    items: [
-      { icon: Settings, label: "About & Support", hasChevron: true },
-      { icon: Trash2, label: "Delete Account", danger: true },
-    ],
-  },
-];
-
 export default function ProfilePage() {
   const { theme, toggleTheme } = useUIStore();
   const { user } = useAuth();
+  
+  const settingsGroups: { items: SettingItem[] }[] = [
+    {
+      items: [
+        { icon: Moon, label: "Dark Theme", toggle: true, action: "theme" },
+        { icon: Bell, label: "Notifications", hasValue: true, value: "On" },
+      ],
+    },
+    {
+      items: [
+        { icon: Download, label: "Export Data", hasChevron: true },
+        { 
+          icon: Star, 
+          label: "Account", 
+          hasValue: true, 
+          value: user?.is_premium ? "Pro" : "Core", 
+          action: "premium", 
+          highlight: !!user?.is_premium 
+        },
+      ],
+    },
+    {
+      items: [
+        { icon: Settings, label: "About & Support", hasChevron: true },
+        { icon: Trash2, label: "Delete Account", danger: true },
+      ],
+    },
+  ];
   
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -70,18 +77,10 @@ export default function ProfilePage() {
   return (
     <div className="relative flex flex-col gap-6 px-5 pb-40 pt-6 safe-top min-h-dvh overflow-hidden bg-[var(--color-bg-primary)]">
       
-      {/* Dynamic Background Orbs */}
+      {/* Static Background Orbs (Removed animation to fix lag on mobile) */}
       <div className="absolute top-0 left-0 w-full h-[300px] overflow-hidden pointer-events-none">
-        <motion.div 
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-20 -right-20 w-64 h-64 bg-[var(--color-accent-green)]/20 blur-[60px] rounded-full" 
-        />
-        <motion.div 
-          animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute top-20 -left-10 w-48 h-48 bg-[#007AFF]/15 blur-[50px] rounded-full" 
-        />
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-[var(--color-accent-green)]/20 blur-[60px] rounded-full" />
+        <div className="absolute top-20 -left-10 w-48 h-48 bg-[#007AFF]/15 blur-[50px] rounded-full" />
       </div>
 
       {/* Header */}
