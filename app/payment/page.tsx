@@ -42,9 +42,9 @@ const features = [
 ];
 
 const reviews = [
-  { text: "Changed my life. The tree visualization makes habits actually fun.", author: "Rahul", role: "28, Engineer", stars: 5 },
-  { text: "Finally a habit tracker that doesn't feel like a chore. Premium is worth every rupee.", author: "Priya", role: "24, Designer", stars: 5 },
-  { text: "The AI coach is surprisingly good. Better than I expected!", author: "Arjun", role: "31, Entrepreneur", stars: 5 },
+  { text: "Bro, this app is exactly what I needed. The tree visualization makes tracking habits so much fun!", author: "Karthik", role: "21", stars: 5 },
+  { text: "Finally a habit tracker that doesn't feel like a chore. Premium is worth every rupee. Super ah irukku!", author: "Divya", role: "24", stars: 5 },
+  { text: "The AI coach works surprisingly well. Very useful for staying consistent with my daily routine.", author: "Surya", role: "22", stars: 5 },
 ];
 
 const basePlans = [
