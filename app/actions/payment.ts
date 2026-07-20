@@ -82,11 +82,11 @@ export async function createRazorpayOrder(
       return { success: false, error: "Coupon is no longer valid" };
     }
     
-    if (coupon.allowed_plan && coupon.allowed_plan !== tier) {
+    if (coupon.allowed_plan && coupon.allowed_plan !== "any" && coupon.allowed_plan !== tier) {
       return { success: false, error: `This coupon is only valid for the ${coupon.allowed_plan.replace('_', ' ')} plan` };
     }
 
-    if (coupon.allowed_level && coupon.allowed_level !== level) {
+    if (coupon.allowed_level && coupon.allowed_level !== "any" && coupon.allowed_level !== level) {
       return { success: false, error: `This coupon is only valid for ${coupon.allowed_level} level` };
     }
     

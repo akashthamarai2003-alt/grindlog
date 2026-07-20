@@ -96,10 +96,10 @@ export default function PaymentPage() {
     const res = await validateCouponAction(couponInput);
     
     if (res.success && res.discount && res.id) {
-      if (res.allowed_plan && res.allowed_plan !== selectedPlan) {
+      if (res.allowed_plan && res.allowed_plan !== "any" && res.allowed_plan !== selectedPlan) {
         setCouponError(`This coupon is only valid for the ${basePlans.find(p => p.id === res.allowed_plan)?.name} plan`);
         setAppliedCoupon(null);
-      } else if (res.allowed_level && res.allowed_level !== level) {
+      } else if (res.allowed_level && res.allowed_level !== "any" && res.allowed_level !== level) {
         setCouponError(`This coupon is only valid for ${res.allowed_level} level`);
         setAppliedCoupon(null);
       } else {
@@ -120,16 +120,23 @@ export default function PaymentPage() {
 
   const handlePlanChange = (planId: "monthly" | "six_months" | "lifetime") => {
     setSelectedPlan(planId);
-    if (appliedCoupon?.allowed_plan && appliedCoupon.allowed_plan !== planId) {
+    if (appliedCoupon?.allowed_plan && appliedCoupon.allowed_plan !== "any" && appliedCoupon.allowed_plan !== planId) {
       removeCoupon();
     }
   };
 
   const handleLevelChange = (newLevel: "core" | "pro") => {
     setLevel(newLevel);
-    if (appliedCoupon?.allowed_level && appliedCoupon.allowed_level !== newLevel) {
+    if (appliedCoupon?.allowed_level && appliedCoupon.allowed_level !== "any" && appliedCoupon.allowed_level !== newLevel) {
       removeCoupon();
     }
+  };
+
+  const isCouponValidForPlan = (planId: string, currentLevel: string) => {
+    if (!appliedCoupon) return false;
+    if (appliedCoupon.allowed_plan && appliedCoupon.allowed_plan !== "any" && appliedCoupon.allowed_plan !== planId) return false;
+    if (appliedCoupon.allowed_level && appliedCoupon.allowed_level !== "any" && appliedCoupon.allowed_level !== currentLevel) return false;
+    return true;
   };
 
   const handleContinue = async () => {
@@ -210,9 +217,9 @@ export default function PaymentPage() {
   };
 
   // Calculate discounted price safely
-  const calculatePrice = (base: number) => {
-    if (!appliedCoupon) return `₹${base}`;
-    const discount = (base * appliedCoupon.discount) / 100;
+  const calculatePrice = (base: number, planId: string, currentLevel: string) => {
+    if (!isCouponValidForPlan(planId, currentLevel)) return `₹${base}`;
+    const discount = (base * appliedCoupon!.discount) / 100;
     const final = Math.round(base - discount);
     return final <= 0 ? "Free" : `₹${final}`;
   };
@@ -418,13 +425,13 @@ export default function PaymentPage() {
               </div>
               <div className="text-right">
                 <div className="flex items-center justify-end gap-1.5">
-                  {appliedCoupon && (
+                  {appliedCoupon && isCouponValidForPlan(plan.id, level) && (
                     <span className="text-[10px] text-gray-400 line-through">
                       ₹{plan.basePrices[level]}
                     </span>
                   )}
                   <p className="text-lg font-extrabold text-[var(--color-text-primary)]">
-                    {calculatePrice(plan.basePrices[level])}
+                    {calculatePrice(plan.basePrices[level], plan.id, level)}
                   </p>
                 </div>
                 <p className="text-[10px] font-medium text-[var(--color-text-tertiary)]">
@@ -493,7 +500,7 @@ export default function PaymentPage() {
         ) : (
           <>
             <Crown className="h-5 w-5" />
-            {appliedCoupon?.discount === 100 ? "Get it for Free" : `Continue with ${basePlans.find(p => p.id === selectedPlan)?.name}`}
+            {appliedCoupon && isCouponValidForPlan(selectedPlan, level) && appliedCoupon.discount === 100 ? "Get it for Free" : `Continue with ${basePlans.find(p => p.id === selectedPlan)?.name}`}
           </>
         )}
       </motion.button>
