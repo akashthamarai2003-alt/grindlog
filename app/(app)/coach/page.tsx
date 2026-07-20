@@ -48,7 +48,7 @@ const TABS: { id: Tab; label: string; icon: any; color: string }[] = [
 
 export default function CoachPage() {
   const [activeTab, setActiveTab] = useState<Tab>("coach");
-  const isKeyboardOpen = useKeyboard();
+  const { isKeyboardOpen, viewportHeight } = useKeyboard();
 
   // 1. AI Coach Chat State
   const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([
@@ -277,7 +277,10 @@ export default function CoachPage() {
   return (
     <>
     <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-    <div className="fixed inset-x-0 top-0 mx-auto w-full max-w-[430px] h-[100dvh] z-40 bg-[var(--color-bg-primary)] flex flex-col pt-4 safe-top overflow-hidden">
+    <div 
+      className="fixed inset-x-0 top-0 mx-auto w-full max-w-[430px] z-40 bg-[var(--color-bg-primary)] flex flex-col pt-4 safe-top overflow-hidden"
+      style={{ height: viewportHeight ? `${viewportHeight}px` : '100dvh' }}
+    >
       {/* ── Header Fixed ── */}
       <div className="flex-shrink-0 px-4">
         <div className="flex items-center gap-3 border-b border-[var(--color-bg-tertiary)] pb-3.5 mb-5">
@@ -370,6 +373,10 @@ export default function CoachPage() {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
+                    onFocus={() => {
+                      // Prevent browser from panning the layout
+                      setTimeout(() => window.scrollTo(0, 0), 10);
+                    }}
                     placeholder="Ask your AI coach..."
                     className="flex-1 bg-transparent px-2 text-sm font-semibold text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)]"
                   />

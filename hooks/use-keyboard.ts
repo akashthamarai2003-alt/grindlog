@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 
 export function useKeyboard() {
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
   useEffect(() => {
     // If not in a browser, return
     if (typeof window === "undefined") return;
+    setViewportHeight(window.visualViewport ? window.visualViewport.height : window.innerHeight);
 
     const handleFocusIn = (e: Event) => {
       const target = e.target as HTMLElement;
@@ -25,6 +27,7 @@ export function useKeyboard() {
     // Visual Viewport fallback for Android/iOS
     const handleResize = () => {
       if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
         // If visual viewport is significantly smaller than layout viewport, keyboard is likely open
         if (window.visualViewport.height < window.innerHeight - 150) {
           setIsKeyboardOpen(true);
@@ -52,5 +55,5 @@ export function useKeyboard() {
     };
   }, []);
 
-  return isKeyboardOpen;
+  return { isKeyboardOpen, viewportHeight };
 }

@@ -19,7 +19,7 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const activeTab = tabs.find((t) => pathname.startsWith(t.path))?.id || "dashboard";
 
-  const isKeyboardOpen = useKeyboard();
+  const { isKeyboardOpen } = useKeyboard();
 
   return (
     <div className="isolate">
