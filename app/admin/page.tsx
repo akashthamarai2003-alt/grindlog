@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
       color: "bg-green-500",
     },
     {
-      name: "Premium Members",
+      name: "Pro Members",
       value: premiumCount || 0,
       icon: CreditCard,
       color: "bg-purple-500",
@@ -92,7 +92,7 @@ export default async function AdminDashboard() {
                   <td className="px-6 py-4">
                     {user.is_premium ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        Premium
+                        Pro
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
