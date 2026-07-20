@@ -5,6 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function calculateExpiryDate(tier: string) {
+  if (tier === "lifetime") return null;
+  
+  const now = new Date();
+  if (tier === "monthly") {
+    now.setMonth(now.getMonth() + 1);
+  } else if (tier === "six_months") {
+    now.setMonth(now.getMonth() + 6);
+  }
+  return now.toISOString();
+}
+
 export function formatDate(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleDateString("en-US", {

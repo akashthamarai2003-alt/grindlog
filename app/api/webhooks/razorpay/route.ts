@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/services/supabase/admin";
-import { calculateExpiryDate } from "@/app/actions/payment";
+import { calculateExpiryDate } from "@/lib/utils";
 
 export async function POST(req: Request) {
   try {

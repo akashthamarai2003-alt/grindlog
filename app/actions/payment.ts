@@ -5,23 +5,13 @@ import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath } from "next/cache";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import { calculateExpiryDate } from "@/lib/utils";
 
 const razorpay = new Razorpay({
   key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
   key_secret: process.env.RAZORPAY_KEY_SECRET || "",
 });
 
-export function calculateExpiryDate(tier: string) {
-  if (tier === "lifetime") return null;
-  
-  const now = new Date();
-  if (tier === "monthly") {
-    now.setMonth(now.getMonth() + 1);
-  } else if (tier === "six_months") {
-    now.setMonth(now.getMonth() + 6);
-  }
-  return now.toISOString();
-}
 
 export async function validateCouponAction(code: string) {
   if (!code) return { success: false, error: "Please enter a code" };
