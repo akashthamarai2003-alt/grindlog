@@ -22,6 +22,7 @@ import {
   X,
   BellRing,
   Ticket,
+  Table,
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ const features = [
   { icon: BarChart3, label: "Advanced Analytics", core: false, pro: true },
   { icon: Brain, label: "Personal AI Coach", core: false, pro: true },
   { icon: BellRing, label: "Mobile Push Notifications", core: true, pro: "Smart Reminders" },
+  { icon: Table, label: "Smart Track Sheet", core: false, pro: true },
 ];
 
 const reviews = [
