@@ -21,6 +21,7 @@ import { springs } from "@/animations/springs";
 import { useUIStore } from "@/store/ui-store";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { requestFirebaseNotificationPermission } from "@/lib/firebase/client";
 
 interface SettingItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -35,8 +36,9 @@ interface SettingItem {
 }
 
 export default function ProfilePage() {
-  const { theme, toggleTheme, notificationsEnabled, toggleNotifications } = useUIStore();
+  const { theme, toggleTheme, notificationsEnabled, toggleNotifications, addToast } = useUIStore();
   const { user } = useAuth();
+  const [isRegistering, setIsRegistering] = useState(false);
   
   const settingsGroups: { items: SettingItem[] }[] = [
     {
@@ -68,6 +70,45 @@ export default function ProfilePage() {
   
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleNotificationToggle = async () => {
+    // If turning off, just toggle the store (in reality you'd unsubscribe from backend)
+    if (notificationsEnabled) {
+      toggleNotifications();
+      return;
+    }
+
+    // Turning on: request permission
+    setIsRegistering(true);
+    try {
+      const oldToken = localStorage.getItem("fcm_token");
+      const token = await requestFirebaseNotificationPermission();
+      
+      if (!token) {
+        addToast({ title: "Permission Denied", description: "Please enable notifications in your browser settings.", type: "error" });
+        setIsRegistering(false);
+        return;
+      }
+
+      const res = await fetch("/api/fcm/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, oldToken }),
+      });
+
+      if (!res.ok) throw new Error("Registration failed");
+      
+      localStorage.setItem("fcm_registered", "true");
+      localStorage.setItem("fcm_token", token);
+      
+      toggleNotifications(); // Finally flip it on
+      addToast({ title: "Notifications Enabled", description: "You will now receive reminders.", type: "success" });
+    } catch (e) {
+      addToast({ title: "Error", description: "Could not enable notifications.", type: "error" });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
 
   const xp = user?.xp || 0;
   const level = user?.level || 1;
@@ -187,13 +228,14 @@ export default function ProfilePage() {
               <div key={ii}>
                 {ii > 0 && <div className="mx-5 h-px bg-[var(--color-bg-tertiary)]/60" />}
                 <button
+                  disabled={item.action === "notifications" && isRegistering}
                   onClick={() => {
                     if (item.action === "theme") toggleTheme();
-                    else if (item.action === "notifications") toggleNotifications();
+                    else if (item.action === "notifications") handleNotificationToggle();
                     else if (item.action === "premium") window.location.href = "/payment";
                     else alert("This feature is coming soon!");
                   }}
-                  className="group relative flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]/30 active:bg-[var(--color-bg-tertiary)]/50"
+                  className="group relative flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]/30 active:bg-[var(--color-bg-tertiary)]/50 disabled:opacity-50"
                 >
                   <div className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
