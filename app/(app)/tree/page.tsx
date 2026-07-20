@@ -2840,33 +2840,6 @@ export default function TreePage() {
         style={{ touchAction: 'none' }}
       />
 
-      {/* Action buttons (bottom) */}
-      {!loading && (
-        <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 z-20 flex gap-4">
-          <button
-            onClick={waterTree}
-            className="group relative px-8 py-4 bg-blue-500/90 hover:bg-blue-600/90 text-white rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 backdrop-blur-sm"
-          >
-            <span className="flex items-center gap-2 font-bold">
-              <span className="text-2xl">💧</span>
-              <span>Water Tree</span>
-            </span>
-            <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </button>
-          
-          <button
-            onClick={completeHabit}
-            className="group relative px-8 py-4 bg-green-500/90 hover:bg-green-600/90 text-white rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 backdrop-blur-sm"
-          >
-            <span className="flex items-center gap-2 font-bold">
-              <span className="text-2xl">✨</span>
-              <span>Complete Habit</span>
-            </span>
-            <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </button>
-        </div>
-      )}
-
       {/* Developer Testing Panel */}
       {process.env.NODE_ENV === 'development' && !loading && (
         <DevPanel treeRef={treeRef} />
