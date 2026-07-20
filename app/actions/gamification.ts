@@ -144,10 +144,16 @@ export async function getOrCreateAllQuests() {
   const defaultQuestsTemplate = [
     { type: "daily", key: "daily_1_habit", target: 1, xp: 20, coins: 10, dateKey: todayStr },
     { type: "daily", key: "daily_3_habits", target: 3, xp: 50, coins: 25, dateKey: todayStr },
+    { type: "daily", key: "daily_5_habits", target: 5, xp: 100, coins: 50, dateKey: todayStr },
+    { type: "daily", key: "daily_7_habits", target: 7, xp: 200, coins: 100, dateKey: todayStr },
     { type: "weekly", key: "weekly_10_habits", target: 10, xp: 150, coins: 75, dateKey: weekKey },
     { type: "weekly", key: "weekly_20_habits", target: 20, xp: 300, coins: 150, dateKey: weekKey },
+    { type: "weekly", key: "weekly_35_habits", target: 35, xp: 500, coins: 250, dateKey: weekKey },
+    { type: "weekly", key: "weekly_50_habits", target: 50, xp: 800, coins: 400, dateKey: weekKey },
     { type: "monthly", key: "monthly_50_habits", target: 50, xp: 1000, coins: 500, dateKey: monthKey },
     { type: "monthly", key: "monthly_100_habits", target: 100, xp: 2500, coins: 1000, dateKey: monthKey },
+    { type: "monthly", key: "monthly_150_habits", target: 150, xp: 4000, coins: 2000, dateKey: monthKey },
+    { type: "monthly", key: "monthly_200_habits", target: 200, xp: 6000, coins: 3000, dateKey: monthKey },
   ];
 
   let totalXpToAward = 0;

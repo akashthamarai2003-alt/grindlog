@@ -20,10 +20,16 @@ export function QuestsClient({ initialQuests }: { initialQuests: any[] }) {
   const questDetails: Record<string, { title: string, desc: string }> = {
     "daily_1_habit": { title: "Warm Up", desc: "Complete 1 habit today" },
     "daily_3_habits": { title: "Grind Session", desc: "Complete 3 habits today" },
+    "daily_5_habits": { title: "Overachiever", desc: "Complete 5 habits today" },
+    "daily_7_habits": { title: "Untouchable", desc: "Complete 7 habits today" },
     "weekly_10_habits": { title: "Weekly Warrior", desc: "Complete 10 habits this week" },
     "weekly_20_habits": { title: "Consistency is Key", desc: "Complete 20 habits this week" },
+    "weekly_35_habits": { title: "Machine Mode", desc: "Complete 35 habits this week" },
+    "weekly_50_habits": { title: "Absolute Legend", desc: "Complete 50 habits this week" },
     "monthly_50_habits": { title: "Monthly Master", desc: "Complete 50 habits this month" },
     "monthly_100_habits": { title: "Unstoppable", desc: "Complete 100 habits this month" },
+    "monthly_150_habits": { title: "Grind God", desc: "Complete 150 habits this month" },
+    "monthly_200_habits": { title: "Ascension", desc: "Complete 200 habits this month" },
   };
 
   return (
