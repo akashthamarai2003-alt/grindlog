@@ -3,7 +3,7 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { generateAIResponse, generateAIResponseJSON, GROQ_MODELS } from "@/lib/services/groq/client";
 import { revalidatePath } from "next/cache";
-import { checkAILimit, logAIUsage } from "@/lib/services/ai-limit";
+import { checkAILimit, logAIUsage, AI_LIMIT_ERROR_MESSAGE } from "@/lib/services/ai-limit";
 
 // Helper to get user context
 async function getUserContext() {
@@ -32,7 +32,7 @@ Return a JSON array of objects. Each object must strictly match the following ty
     const userPrompt = `My goal is: "${goal}"`;
 
     const limitCheck = await checkAILimit(supabase, user.id);
-    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+    if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
     const habits = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
     await logAIUsage(supabase, user.id, "generate_habits");
@@ -120,7 +120,7 @@ Provide an executive report in JSON format with the following fields:
     const userPrompt = `Habits: ${JSON.stringify(habits || [])}\nLogs (past 7 days): ${JSON.stringify(logs || [])}`;
 
     const limitCheck = await checkAILimit(supabase, user.id);
-    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+    if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
     const report = await generateAIResponseJSON<any>({ systemPrompt, userPrompt });
     await logAIUsage(supabase, user.id, "weekly_report");
@@ -157,7 +157,7 @@ Today's completions: ${JSON.stringify(logs || [])}.
 Use this context to address the user's query. Be concise, empathetic, and always end with a highly actionable next step or reflection question. Speak directly, keep responses under 4 sentences where possible.`;
 
     const limitCheck = await checkAILimit(supabase, user.id);
-    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+    if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
     const groq = getGroqClientFromImport();
     const completion = await groq.chat.completions.create({
@@ -220,7 +220,7 @@ Respond with a JSON array of objects. Each object should match this structure:
     const userPrompt = `Habits: ${JSON.stringify(habits || [])}\nLogs (past 14 days): ${JSON.stringify(logs || [])}`;
 
     const limitCheck = await checkAILimit(supabase, user.id);
-    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+    if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
     const predictions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
     await logAIUsage(supabase, user.id, "predictions");
@@ -261,7 +261,7 @@ Respond with a JSON object matching this structure:
     const userPrompt = `Profile: ${JSON.stringify(profile || {})}\nHabits: ${JSON.stringify(habits || [])}`;
 
     const limitCheck = await checkAILimit(supabase, user.id);
-    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+    if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
     const motivation = await generateAIResponseJSON<any>({ systemPrompt, userPrompt });
     await logAIUsage(supabase, user.id, "motivation");
@@ -298,7 +298,7 @@ Respond with a JSON array of objects matching this structure:
     const userPrompt = `Current habits: ${JSON.stringify(habits || [])}`;
 
     const limitCheck = await checkAILimit(supabase, user.id);
-    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+    if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
     const suggestions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
     await logAIUsage(supabase, user.id, "suggestions");
@@ -333,7 +333,7 @@ Respond with a JSON array of objects matching this structure:
     const userPrompt = `Wake time: ${wakeTime}\nSleep time: ${sleepTime}\nFocus area: ${focus}\nActive Habits: ${JSON.stringify(habits || [])}`;
 
     const limitCheck = await checkAILimit(supabase, user.id);
-    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+    if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
     const schedule = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
     await logAIUsage(supabase, user.id, "schedule_builder");
@@ -367,7 +367,7 @@ Respond with a JSON object matching this structure:
     const userPrompt = `Reflection Journal: "${text}"\nActive Habits: ${JSON.stringify(habits || [])}`;
 
     const limitCheck = await checkAILimit(supabase, user.id);
-    if (!limitCheck.allowed) return { success: false, error: "Daily AI limit reached (10/10). Please come back tomorrow!" };
+    if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
     const reflection = await generateAIResponseJSON<any>({ systemPrompt, userPrompt });
     await logAIUsage(supabase, user.id, "reflection");

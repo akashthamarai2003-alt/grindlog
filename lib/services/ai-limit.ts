@@ -1,43 +1,49 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 
-const DAILY_LIMIT = 10;
-export const AI_LIMIT_ERROR_MESSAGE = "Daily AI limit reached (10/10). Please come back tomorrow!";
+const PRO_DAILY_LIMIT = 10;
+export const AI_LIMIT_ERROR_MESSAGE = "AI limit reached. Please top up to continue!";
 
 export async function checkAILimit(supabase: SupabaseClient, userId: string) {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
-  // 1. Check if user is premium
+  // 1. Check user tier
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_premium")
+    .select("is_premium, premium_level")
     .eq("id", userId)
     .single();
 
-  if (profile?.is_premium) {
-    return { allowed: true, count: 0 };
+  let dailyFreeLimit = 0;
+  if (profile?.is_premium && profile?.premium_level === "pro") {
+    dailyFreeLimit = PRO_DAILY_LIMIT;
   }
 
-  // 2. Count today's FREE messages
+  // 2. Count today's FREE messages if they have a limit
   const adminClient = createAdminClient();
-  const { count: todayFreeCount, error } = await adminClient
-    .from("ai_sessions")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", startOfDay.toISOString())
-    .not("session_type", "like", "%_purchased");
+  let todayFreeCount = 0;
+  
+  if (dailyFreeLimit > 0) {
+    const { count, error } = await adminClient
+      .from("ai_sessions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", startOfDay.toISOString())
+      .not("session_type", "like", "%_purchased");
 
-  if (error) {
-    console.error("Error checking AI limit:", error);
-    return { allowed: false, count: 0, error };
+    if (error) {
+      console.error("Error checking AI limit:", error);
+      return { allowed: false, count: 0, error };
+    }
+    todayFreeCount = count || 0;
   }
 
-  if ((todayFreeCount || 0) < DAILY_LIMIT) {
-    return { allowed: true, count: todayFreeCount || 0 };
+  if (todayFreeCount < dailyFreeLimit) {
+    return { allowed: true, count: todayFreeCount };
   }
 
-  // 3. User exhausted free limit. Check purchased messages.
+  // 3. User exhausted free limit (or has none). Check purchased messages.
   const { count: purchasedUsedCount } = await adminClient
     .from("ai_sessions")
     .select("*", { count: "exact", head: true })
@@ -54,12 +60,12 @@ export async function checkAILimit(supabase: SupabaseClient, userId: string) {
   const totalPurchasedAllowed = (purchases?.length || 0) * 10;
   
   if ((purchasedUsedCount || 0) < totalPurchasedAllowed) {
-    return { allowed: true, count: todayFreeCount || 0, isUsingPurchased: true };
+    return { allowed: true, count: todayFreeCount, isUsingPurchased: true };
   }
 
   return {
     allowed: false,
-    count: todayFreeCount || 0
+    count: todayFreeCount
   };
 }
 
@@ -69,15 +75,30 @@ export async function logAIUsage(supabase: SupabaseClient, userId: string, sessi
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const { count: todayFreeCount } = await adminClient
-      .from("ai_sessions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", startOfDay.toISOString())
-      .not("session_type", "like", "%_purchased");
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("is_premium, premium_level")
+      .eq("id", userId)
+      .single();
+
+    let dailyFreeLimit = 0;
+    if (profile?.is_premium && profile?.premium_level === "pro") {
+      dailyFreeLimit = PRO_DAILY_LIMIT;
+    }
+
+    let todayFreeCount = 0;
+    if (dailyFreeLimit > 0) {
+      const { count } = await adminClient
+        .from("ai_sessions")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", startOfDay.toISOString())
+        .not("session_type", "like", "%_purchased");
+      todayFreeCount = count || 0;
+    }
 
     let finalSessionType = sessionType;
-    if ((todayFreeCount || 0) >= DAILY_LIMIT) {
+    if (todayFreeCount >= dailyFreeLimit) {
       finalSessionType = sessionType + "_purchased";
     }
 
