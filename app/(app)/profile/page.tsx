@@ -35,14 +35,14 @@ interface SettingItem {
 }
 
 export default function ProfilePage() {
-  const { theme, toggleTheme } = useUIStore();
+  const { theme, toggleTheme, notificationsEnabled, toggleNotifications } = useUIStore();
   const { user } = useAuth();
   
   const settingsGroups: { items: SettingItem[] }[] = [
     {
       items: [
         { icon: Moon, label: "Dark Theme", toggle: true, action: "theme" },
-        { icon: Bell, label: "Notifications", hasValue: true, value: "On" },
+        { icon: Bell, label: "Notifications", toggle: true, action: "notifications" },
       ],
     },
     {
@@ -189,6 +189,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => {
                     if (item.action === "theme") toggleTheme();
+                    else if (item.action === "notifications") toggleNotifications();
                     else if (item.action === "premium") window.location.href = "/payment";
                     else alert("This feature is coming soon!");
                   }}
@@ -219,12 +220,14 @@ export default function ProfilePage() {
                     <div
                       className={cn(
                         "flex h-[26px] w-[46px] items-center rounded-full p-1 transition-colors duration-300",
-                        theme === "dark" ? "bg-[var(--color-accent-green)]" : "bg-[var(--color-text-tertiary)]/30"
+                        (item.action === "theme" ? theme === "dark" : notificationsEnabled) 
+                          ? "bg-[var(--color-accent-green)]" 
+                          : "bg-[var(--color-text-tertiary)]/30"
                       )}
                     >
                       <motion.div
                         className="h-4.5 w-4.5 rounded-full bg-white shadow-sm"
-                        animate={{ x: theme === "dark" ? 20 : 0 }}
+                        animate={{ x: (item.action === "theme" ? theme === "dark" : notificationsEnabled) ? 20 : 0 }}
                         transition={springs.snappy}
                       />
                     </div>
