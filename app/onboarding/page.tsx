@@ -90,7 +90,7 @@ export default function OnboardingPage() {
         />
       </div>
       {/* Header Navigation */}
-      <div className="relative z-10 flex h-16 items-center justify-between px-5 pt-safe">
+      <div className="relative z-10 flex h-12 items-center justify-between px-4 pt-safe sm:h-16 sm:px-5">
         {/* Back button */}
         <AnimatePresence mode="wait">
           {current > 0 ? (
@@ -129,7 +129,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-4 sm:py-8">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-2 sm:px-6 sm:py-8">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={slide.id}
@@ -141,7 +141,7 @@ export default function OnboardingPage() {
             className="flex w-full max-w-md flex-col items-center"
           >
             {/* Visual Section */}
-            <div className="mb-4 flex min-h-[120px] items-center justify-center sm:mb-10 sm:min-h-[240px]">
+            <div className="mb-2 flex min-h-[100px] items-center justify-center sm:mb-10 sm:min-h-[240px]">
               {slide.image && (
                 <motion.div
                   className="relative h-48 w-48 sm:h-56 sm:w-56"
@@ -256,7 +256,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Bottom Section */}
-      <div className="relative z-10 flex flex-col items-center gap-5 px-6 pb-8 pb-safe sm:gap-6">
+      <div className="relative z-10 flex flex-col items-center gap-4 px-4 pb-4 pb-safe sm:gap-6 sm:px-6 sm:pb-8">
         {/* Progress Dots */}
         <div className="flex gap-2">
           {slides.map((_, i) => (
