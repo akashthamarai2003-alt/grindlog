@@ -779,6 +779,7 @@ function HabitChecklist({
   todayDateStr,
   onLogChange,
   onAntiCheat,
+  onAddRemark,
 }: {
   habits: Habit[];
   logs: HabitLog[];

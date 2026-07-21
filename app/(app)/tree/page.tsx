@@ -86,7 +86,7 @@ interface Butterfly {
   speed: number;
 }
 
-export class TreeOfLife {
+class TreeOfLife {
   // Canvas & Context
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;

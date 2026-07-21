@@ -25,7 +25,7 @@ import {
   Shuffle,
   Trash2,
 } from "lucide-react";
-import { EMOJIS, CATEGORIES } from "@/lib/constants";
+import { HABIT_CATEGORIES, TIME_OF_DAY } from "@/lib/constants";
 import { revalidateDashboard } from "@/app/actions/habits";
 import { cn } from "@/lib/utils";
 import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";

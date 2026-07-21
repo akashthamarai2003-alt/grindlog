@@ -23,6 +23,8 @@ interface Profile {
   xp: number;
   level: number;
   coins?: number;
+  premium_tier?: string | null;
+  is_premium?: boolean;
 }
 
 interface HabitWithLog {
@@ -577,7 +579,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       </div>
       
       {/* AI Inspiration */}
-      <AiInspiration isPro={profile.premium_level === "pro"} />
+      <AiInspiration isPro={profile.premium_tier === "pro" || profile.premium_tier === "lifetime" || profile.is_premium === true} />
 
       {/* Notification Prompt (only shows if not enabled) */}
       <NotificationPrompt variant="modal" />

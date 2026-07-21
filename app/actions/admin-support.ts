@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
@@ -18,7 +19,7 @@ export async function fetchSupportMessages() {
     }
 
     // Use service role to bypass RLS since this is a secure admin action
-    const adminSupabase = await createServerSupabase(true);
+    const adminSupabase = createAdminClient();
     
     const { data, error } = await adminSupabase
       .from("support_messages")
@@ -41,7 +42,7 @@ export async function updateMessageStatus(id: string, newStatus: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const adminSupabase = await createServerSupabase(true);
+    const adminSupabase = createAdminClient();
     const { error } = await adminSupabase
       .from("support_messages")
       .update({ status: newStatus })

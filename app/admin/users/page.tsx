@@ -57,7 +57,7 @@ export default async function AdminUsersPage() {
         for (const pid of validPaymentIds) {
           try {
             const payment = await razorpay.payments.fetch(pid);
-            actualPaidAmount += payment.amount / 100;
+            actualPaidAmount += Number(payment.amount) / 100;
           } catch (e) {
             console.error("Failed to fetch Razorpay payment", pid);
           }
