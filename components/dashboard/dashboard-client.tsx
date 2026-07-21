@@ -310,15 +310,16 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Header */}
       <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0 flex-1 pr-4">
           <p className="text-base font-extrabold text-black uppercase tracking-wider">
             {greeting}
           </p>
-          <h1 className="text-4xl font-black text-black tracking-tight flex items-center gap-2 mt-0.5 drop-shadow-sm">
-            {profile.display_name?.split(' ')[0] || "There"} <span className="inline-block origin-bottom-right animate-tree-sway">👋</span>
+          <h1 className="text-4xl font-black text-black tracking-tight flex items-center gap-2 mt-0.5 drop-shadow-sm min-w-0">
+            <span className="truncate">{profile.display_name?.split(' ')[0] || "There"}</span>
+            <span className="inline-block origin-bottom-right animate-tree-sway shrink-0">👋</span>
           </h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <Link href="/tree" prefetch={true} className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#34C759] transition-colors shadow-sm ring-1 ring-[#34C759]/20 overflow-hidden">
             <Image src="/tree-in-the-wind.svg" width={32} height={32} alt="Tree" className="drop-shadow-sm scale-[1.15]" />
           </Link>
