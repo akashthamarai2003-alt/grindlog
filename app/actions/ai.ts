@@ -260,11 +260,9 @@ Respond with a JSON object matching this structure:
 
     const userPrompt = `Profile: ${JSON.stringify(profile || {})}\nHabits: ${JSON.stringify(habits || [])}`;
 
-    const limitCheck = await checkAILimit(supabase, user.id);
-    if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
-
     const motivation = await generateAIResponseJSON<any>({ systemPrompt, userPrompt, maxTokens: 400 });
-    await logAIUsage(supabase, user.id, "motivation");
+    // We don't deduct from daily limits for the dashboard widget to ensure it always loads
+    // await logAIUsage(supabase, user.id, "motivation");
 
     return { success: true, motivation };
   } catch (error: any) {
