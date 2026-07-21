@@ -234,7 +234,7 @@ const DayCell = memo(function DayCell({
       {/* Day number */}
       <span
         className={cn(
-          "relative z-10 text-[12px] font-black leading-none transition-transform duration-300",
+          "relative z-10 text-[13px] font-bold leading-none -mt-1.5 transition-transform duration-300",
           isSelected ? "scale-110" : "scale-100",
           isToday ? "text-[#007AFF]" :
           isSelected ? "text-[var(--color-text-primary)]" :
@@ -251,12 +251,12 @@ const DayCell = memo(function DayCell({
 
       {/* Today dot */}
       {isToday && (
-        <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#007AFF]" />
+        <div className="absolute bottom-2.5 w-1 h-1 rounded-full bg-[#007AFF]" />
       )}
 
       {/* Status dots */}
       {hasLogs && !isToday && !isOutside && (
-        <div className="absolute bottom-1.5 flex gap-[2px]">
+        <div className="absolute bottom-2.5 flex gap-[3px]">
           {dayLogs.slice(0, 3).map((log, i) => (
               <div
               key={i}
@@ -274,7 +274,7 @@ const DayCell = memo(function DayCell({
       {/* Perfect ⭐ */}
       {isPerfect && !isOutside && (
         <span
-          className="absolute -top-2 -right-1.5 text-[9px] z-20 leading-none"
+          className="absolute -top-1 -right-1 text-[10px] z-20 leading-none drop-shadow-sm"
         >
           ⭐
         </span>
@@ -1439,11 +1439,11 @@ export function CalendarClient({
                 month:         "w-full",
                 month_caption: "hidden",
                 nav:           "hidden",
-                month_grid:    "w-full border-collapse table-fixed",
+                month_grid:    "w-full border-separate border-spacing-y-1.5 table-fixed",
                 weekdays:      "hidden",
                 weekday:       "hidden",
-                week:          "mb-1",
-                day:           "p-0.5",
+                week:          "",
+                day:           "p-0.5 sm:p-1",
                 day_button:    "hidden",
                 selected:      "",
                 today:         "",
