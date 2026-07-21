@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition, useRef, createContext, useContext, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useTransition, useRef, createContext, useContext, useMemo, memo } from "react";
 import { DayPicker } from "react-day-picker";
 import { motion, AnimatePresence, useMotionValue, animate } from "motion/react";
 import {
@@ -110,7 +110,7 @@ const STATUS_META = {
 
 // ─── Animated Counter ─────────────────────────────────────────────────────────
 
-function AnimatedNumber({ value }: { value: number }) {
+const AnimatedNumber = memo(function AnimatedNumber({ value }: { value: number }) {
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -125,7 +125,7 @@ function AnimatedNumber({ value }: { value: number }) {
   }, [value]);
 
   return <span ref={ref}>0</span>;
-}
+});
 
 // ─── Day Cell ─────────────────────────────────────────────────────────────────
 
@@ -136,11 +136,11 @@ type DayCellProps = {
   isToday: boolean;
   isSelected: boolean;
   isOutside: boolean;
-  onClick: () => void;
+  onSelect: (d: Date) => void;
 };
 
-function DayCell({
-  date, logs, habits, isToday, isSelected, isOutside, onClick,
+const DayCell = memo(function DayCell({
+  date, logs, habits, isToday, isSelected, isOutside, onSelect,
 }: DayCellProps) {
   const dateStr = toDateStr(date);
   const dayLogs = logs.filter((l) => l.date === dateStr);
@@ -165,7 +165,7 @@ function DayCell({
   return (
     <td role="gridcell" className="p-0 text-center focus-within:relative focus-within:z-20">
       <button
-      onClick={onClick}
+      onClick={() => { if (!isOutside) onSelect(date); }}
       className={cn(
         "relative flex flex-col items-center justify-center w-full aspect-square max-w-[44px] max-h-[44px] mx-auto",
         "rounded-[14px] select-none outline-none",
@@ -199,15 +199,15 @@ function DayCell({
             strokeWidth="2"
           />
           {/* Progress */}
-          <motion.circle
+          <circle
             cx="16" cy="16" r={r}
             fill="none"
             stroke={ringColor}
             strokeWidth="2.5"
             strokeLinecap="round"
-            initial={{ strokeDasharray: circ, strokeDashoffset: circ }}
-            animate={{ strokeDashoffset: circ - visualPct * circ }}
-            transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
+            strokeDasharray={circ}
+            strokeDashoffset={circ - visualPct * circ}
+            className="transition-all duration-500"
           />
         </svg>
       )}
@@ -239,21 +239,20 @@ function DayCell({
 
       {/* Today dot */}
       {isToday && (
-        <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#007AFF] animate-in zoom-in duration-300" />
+        <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#007AFF]" />
       )}
 
       {/* Status dots */}
       {hasLogs && !isToday && !isOutside && (
         <div className="absolute bottom-1.5 flex gap-[2px]">
           {dayLogs.slice(0, 3).map((log, i) => (
-            <div
+              <div
               key={i}
-              className="w-[3px] h-[3px] rounded-full animate-in zoom-in duration-300"
+              className="w-[3px] h-[3px] rounded-full"
               style={{
                 backgroundColor:
                   log.status === "completed" ? "#34C759" :
-                  log.status === "skipped"   ? "#FF9500" : "#FF3B30",
-                animationDelay: `${i * 50}ms`,
+                  log.status === "skipped"   ? "#FF9500" : "#FF3B30"
               }}
             />
           ))}
@@ -263,7 +262,7 @@ function DayCell({
       {/* Perfect ⭐ */}
       {isPerfect && !isOutside && (
         <span
-          className="absolute -top-2 -right-1.5 text-[9px] z-20 leading-none animate-in zoom-in duration-500"
+          className="absolute -top-2 -right-1.5 text-[9px] z-20 leading-none"
         >
           ⭐
         </span>
@@ -271,7 +270,7 @@ function DayCell({
     </button>
     </td>
   );
-}
+});
 
 // ─── Habit Row ────────────────────────────────────────────────────────────────
 
@@ -1223,9 +1222,7 @@ function CustomDay({ day }: any) {
       isToday={toDateStr(day.date) === ctx.todayDateStr}
       isSelected={ctx.selected ? toDateStr(day.date) === toDateStr(ctx.selected) : false}
       isOutside={day.outside ?? false}
-      onClick={() => {
-        if (!day.outside) ctx.setSelected(day.date);
-      }}
+      onSelect={ctx.setSelected}
     />
   );
 }
