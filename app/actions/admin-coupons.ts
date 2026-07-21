@@ -2,9 +2,15 @@
 
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 export async function createCouponAction(formData: FormData) {
   try {
+    const cookieStore = await cookies();
+    const adminAuth = cookieStore.get("admin_auth");
+    if (adminAuth?.value !== (process.env.ADMIN_PASSWORD || "admin")) {
+      return { success: false, error: "Unauthorized" };
+    }
     const code = formData.get("code") as string;
     const discountStr = formData.get("discount") as string;
     const maxUsesStr = formData.get("max_uses") as string;
@@ -55,6 +61,12 @@ export async function createCouponAction(formData: FormData) {
 
 export async function toggleCouponStatusAction(id: string, currentStatus: boolean) {
   try {
+    const cookieStore = await cookies();
+    const adminAuth = cookieStore.get("admin_auth");
+    if (adminAuth?.value !== (process.env.ADMIN_PASSWORD || "admin")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const supabase = createAdminClient();
     const { error } = await supabase.from("coupons")
       .update({ is_active: !currentStatus })

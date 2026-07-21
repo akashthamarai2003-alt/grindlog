@@ -38,18 +38,36 @@ export async function POST(req: Request) {
       if (notes && notes.userId) {
         const adminClient = createAdminClient();
         
-        // This acts as a fallback. If the user already got upgraded via the 
-        // client-side callback, this will just be a redundant update (which is fine).
-        await adminClient
+        // Prevent double processing
+        const { data: profile } = await adminClient
           .from("profiles")
-          .update({ 
-            is_premium: true,
-            premium_tier: notes.tier || "lifetime",
-            premium_level: notes.level || "pro",
-            premium_expires_at: calculateExpiryDate(notes.tier || "lifetime"),
-            razorpay_payment_id: payment.id
-          })
-          .eq("id", notes.userId);
+          .select("razorpay_payment_id, ai_messages_remaining")
+          .eq("id", notes.userId)
+          .single();
+
+        if (profile && profile.razorpay_payment_id !== payment.id) {
+          if (notes.type === "ai_messages_topup") {
+            await adminClient
+              .from("profiles")
+              .update({ 
+                ai_messages_remaining: (profile.ai_messages_remaining || 0) + 10,
+                razorpay_payment_id: payment.id
+              })
+              .eq("id", notes.userId);
+          } else {
+            // Normal premium upgrade
+            await adminClient
+              .from("profiles")
+              .update({ 
+                is_premium: true,
+                premium_tier: notes.tier || "lifetime",
+                premium_level: notes.level || "pro",
+                premium_expires_at: calculateExpiryDate(notes.tier || "lifetime"),
+                razorpay_payment_id: payment.id
+              })
+              .eq("id", notes.userId);
+          }
+        }
       }
     }
 

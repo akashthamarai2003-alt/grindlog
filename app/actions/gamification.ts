@@ -31,6 +31,8 @@ export async function awardSeasonXp(userId: string, xpAmount: number) {
   if (xpAmount === 0) return;
   
   const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) return;
   const seasonId = "summer_2026";
   
   const { data: progress } = await supabase
@@ -244,6 +246,8 @@ export async function getOrCreateAllQuests() {
 
 export async function updateQuestProgress(userId: string, eventType: "habit_completed") {
   const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) return;
   const { todayStr, weekKey, weekStartStr, weekEndStr, monthKey, monthStartStr, monthEndStr } = getQuestPeriods();
 
   if (eventType === "habit_completed") {
@@ -341,6 +345,8 @@ export async function updateQuestProgress(userId: string, eventType: "habit_comp
 // ----------------------------------------------------------------------
 export async function checkAndUnlockAchievements(userId: string) {
   const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) return;
 
   // 1. Get user's current habits and stats
   const { data: habits } = await supabase
