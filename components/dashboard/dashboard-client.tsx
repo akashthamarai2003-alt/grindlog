@@ -159,7 +159,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [quoteIdx, setQuoteIdx] = useState(0);
   const [selectedDateStr, setSelectedDateStr] = useState(todayDateStr);
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false);
+  const [lastFetchedDate, setLastFetchedDate] = useState(todayDateStr);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, currentCompletedStatus: boolean, streak: number} | null>(null);
   const [remarkPrompt, setRemarkPrompt] = useState<{ habitId: string; dateStr: string; } | null>(null);
@@ -177,10 +177,8 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   }, []);
 
   useEffect(() => {
-    if (!hasMounted) {
-      setHasMounted(true);
-      return;
-    }
+    if (selectedDateStr === lastFetchedDate) return;
+
     async function loadLogs() {
       setIsFetchingLogs(true);
       const logs = await getHabitLogsForDate(selectedDateStr);
@@ -190,9 +188,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         isCompleted: logsMap.get(h.id) === "completed"
       })));
       setIsFetchingLogs(false);
+      setLastFetchedDate(selectedDateStr);
     }
     loadLogs();
-  }, [selectedDateStr, hasMounted]);
+  }, [selectedDateStr, lastFetchedDate]);
 
   useEffect(() => {
     async function loadUnreadCount() {
