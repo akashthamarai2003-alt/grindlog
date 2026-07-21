@@ -41,7 +41,7 @@ export async function purchaseItem(itemId: string, cost: number) {
     return { success: false, error: "Failed to purchase" };
   }
 
-  revalidatePath("/store");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -64,7 +64,6 @@ export async function equipItem(itemId: string, type: "theme" | "frame") {
     return { success: false, error: "Failed to equip" };
   }
 
-  revalidatePath("/store");
   revalidatePath("/", "layout");
   return { success: true };
 }

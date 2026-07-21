@@ -73,7 +73,7 @@ export async function addHabitFromAIAction(habit: {
       .single();
 
     if (error) throw error;
-    revalidatePath("/dashboard");
+    revalidatePath("/", "layout");
     return { success: true, habit: data };
   } catch (error: any) {
     console.error("Add AI Habit Error:", error);

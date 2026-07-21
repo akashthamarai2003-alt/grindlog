@@ -130,7 +130,7 @@ export async function toggleHabitCompletion(
     }
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -150,8 +150,7 @@ export async function deleteHabit(habitId: string) {
     return { success: false, error: error.message };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/habits");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -187,8 +186,7 @@ export async function setHabitLogStatus(habitId: string, dateStr: string, status
   // Recalculate streak immediately for this habit
   await recalculateStreak(habitId, user.id);
   
-  revalidatePath("/calendar");
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -209,8 +207,7 @@ export async function updateHabitRemark(habitId: string, dateStr: string, remark
     return { success: false, error: error.message };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/calendar");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
