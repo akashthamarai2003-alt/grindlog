@@ -25,7 +25,8 @@ import {
   Shuffle,
   Trash2,
 } from "lucide-react";
-import { HABIT_CATEGORIES, TIME_OF_DAY } from "@/lib/constants";
+import { EMOJIS, QUICK_EMOJIS, CATEGORIES } from "@/lib/constants";
+import { revalidateDashboard } from "@/app/actions/habits";
 import { cn } from "@/lib/utils";
 import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";
 
@@ -43,13 +44,6 @@ const FREQUENCIES: { value: HabitFrequency; label: string; icon: string }[] = [
   { value: "weekdays", label: "Weekdays", icon: "💼" },
   { value: "weekends", label: "Weekends", icon: "🌴" },
   { value: "custom", label: "Custom", icon: "✨" },
-];
-
-const QUICK_EMOJIS = [
-  "🏃", "📚", "💧", "🧘", "💻", "💰", "🎨",
-  "🚶", "🍎", "✍️", "🌱", "🎯", "🏋️", "🎵",
-  "🧠", "💊", "🚀", "🧹", "🍳", "💤", "📖",
-  "🦷", "🌞", "📝", "📵", "📸", "⚽", "🎮",
 ];
 
 const STEP_TITLES = [
@@ -211,7 +205,8 @@ export default function NewHabitPage() {
         color,
       } as any);
       if (error) throw error;
-
+      
+      await revalidateDashboard();
       triggerHaptic([0, 20, 40, 60]);
       setDirection(1);
       setStep(2);
@@ -278,7 +273,8 @@ export default function NewHabitPage() {
 
       const { error } = await supabase.from("habits").insert(habitsToInsert as any);
       if (error) throw error;
-
+      
+      await revalidateDashboard();
       triggerHaptic([0, 20, 40, 60]);
       setDirection(1);
       setStep(2);

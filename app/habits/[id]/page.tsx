@@ -19,7 +19,7 @@ import {
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
-import { deleteHabit, toggleHabitCompletion } from "@/app/actions/habits";
+import { deleteHabit, toggleHabitCompletion, revalidateDashboard } from "@/app/actions/habits";
 import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";
 
 const FREQUENCIES: { value: HabitFrequency; label: string; icon: string }[] = [
@@ -169,6 +169,7 @@ export default function HabitDetailPage({
       if (error) throw error;
 
       setIsEditing(false);
+      await revalidateDashboard();
       fetchHabitDetails();
       router.refresh();
     } catch (err: any) {

@@ -7,6 +7,10 @@ import { HabitFrequency } from "@/types";
 import { updateQuestProgress, checkAndUnlockAchievements, awardSeasonXp } from "./gamification";
 
 
+export async function revalidateDashboard() {
+  revalidatePath("/", "layout");
+}
+
 export async function getMaxUserStreak() {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
