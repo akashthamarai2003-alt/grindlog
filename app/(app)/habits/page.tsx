@@ -5,7 +5,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { HabitCard } from "@/components/habits/habit-card";
 import { HabitsListClient } from "@/components/habits/habits-list-client";
 
-export const dynamic = "force-dynamic";
+
 
 export default async function HabitsPage() {
   const supabase = await createServerSupabase();

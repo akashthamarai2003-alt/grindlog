@@ -3,7 +3,7 @@ import "@/styles/globals.css";
 import { Providers } from "./providers";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 
-export const dynamic = "force-dynamic";
+
 
 export const viewport: Viewport = {
   width: "device-width",

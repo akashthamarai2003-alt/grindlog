@@ -496,7 +496,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Today's Habits */}
       <div
-        className={`flex flex-col gap-4 transition-opacity duration-300 ${isFetchingLogs ? "opacity-50 pointer-events-none" : "opacity-100"} animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both`}
+        className={`flex flex-col gap-4 transition-opacity duration-300 ${isFetchingLogs ? "opacity-50 pointer-events-none" : "opacity-100"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
       >
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
@@ -579,7 +579,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Today's Quote */}
       <div 
-        className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both"
+        className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
       >
         <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)] px-1">Inspiration</h2>
         <div className="relative overflow-hidden rounded-[24px] p-6 shadow-xl ring-1 ring-white/10">
