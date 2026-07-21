@@ -206,8 +206,11 @@ const DayCell = memo(function DayCell({
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeDasharray={circ}
-            strokeDashoffset={circ - visualPct * circ}
-            className="transition-all duration-500"
+            style={{ 
+              "--ring-start": circ, 
+              "--ring-end": circ - visualPct * circ 
+            } as React.CSSProperties}
+            className="animate-[ring-fill_0.8s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
           />
         </svg>
       )}
