@@ -2,17 +2,18 @@
 
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { revalidatePath } from "next/cache";
-import { isAdmin } from "@/lib/services/supabase/admin-auth";
+import { cookies } from "next/headers";
+
+async function verifyAdmin() {
+  const cookieStore = await cookies();
+  const adminAuth = cookieStore.get("admin_auth");
+  return adminAuth?.value === (process.env.ADMIN_PASSWORD || "admin");
+}
 
 export async function fetchSupportMessages() {
   try {
-    const supabase = await createServerSupabase();
-    // Use service role if needed, or rely on RLS assuming admin_auth check passes
-    // Wait, the client doesn't use service role by default.
-    // If the RLS isn't properly configured or admin auth table isn't what we expect, 
-    // we should securely fetch. We'll verify admin status first.
-    const hasAccess = await isAdmin();
-    if (!hasAccess) {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) {
       return { success: false, error: "Unauthorized", data: [] };
     }
 
@@ -35,8 +36,8 @@ export async function fetchSupportMessages() {
 
 export async function updateMessageStatus(id: string, newStatus: string) {
   try {
-    const hasAccess = await isAdmin();
-    if (!hasAccess) {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) {
       return { success: false, error: "Unauthorized" };
     }
 
