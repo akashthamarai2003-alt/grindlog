@@ -34,7 +34,7 @@ Return a JSON array of objects. Each object must strictly match the following ty
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const habits = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
+    const habits = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 600 });
     await logAIUsage(supabase, user.id, "generate_habits");
 
     return { success: true, habits };
@@ -122,7 +122,7 @@ Provide an executive report in JSON format with the following fields:
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const report = await generateAIResponseJSON<any>({ systemPrompt, userPrompt });
+    const report = await generateAIResponseJSON<any>({ systemPrompt, userPrompt, maxTokens: 500 });
     await logAIUsage(supabase, user.id, "weekly_report");
 
     return { success: true, report };
@@ -166,7 +166,7 @@ Use this context to address the user's query. Be concise, empathetic, and always
         { role: "system", content: systemPrompt },
         ...chatHistory.map(m => ({ role: m.role as "user" | "assistant", content: m.content }))
       ],
-      max_tokens: 512,
+      max_tokens: 400,
       temperature: 0.7,
     });
 
@@ -222,7 +222,7 @@ Respond with a JSON array of objects. Each object should match this structure:
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const predictions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
+    const predictions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 500 });
     await logAIUsage(supabase, user.id, "predictions");
 
     return { success: true, predictions };
@@ -263,7 +263,7 @@ Respond with a JSON object matching this structure:
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const motivation = await generateAIResponseJSON<any>({ systemPrompt, userPrompt });
+    const motivation = await generateAIResponseJSON<any>({ systemPrompt, userPrompt, maxTokens: 400 });
     await logAIUsage(supabase, user.id, "motivation");
 
     return { success: true, motivation };
@@ -300,7 +300,7 @@ Respond with a JSON array of objects matching this structure:
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const suggestions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
+    const suggestions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 500 });
     await logAIUsage(supabase, user.id, "suggestions");
 
     return { success: true, suggestions };
@@ -335,7 +335,7 @@ Respond with a JSON array of objects matching this structure:
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const schedule = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt });
+    const schedule = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 600 });
     await logAIUsage(supabase, user.id, "schedule_builder");
 
     return { success: true, schedule };
@@ -369,7 +369,7 @@ Respond with a JSON object matching this structure:
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const reflection = await generateAIResponseJSON<any>({ systemPrompt, userPrompt });
+    const reflection = await generateAIResponseJSON<any>({ systemPrompt, userPrompt, maxTokens: 400 });
     await logAIUsage(supabase, user.id, "reflection");
 
     return { success: true, reflection };

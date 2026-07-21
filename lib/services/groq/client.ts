@@ -31,6 +31,7 @@ export async function generateAIResponse({
   model?: keyof typeof GROQ_MODELS;
   maxTokens?: number;
   temperature?: number;
+  responseFormat?: "json_object" | "text";
 }): Promise<string> {
   const groq = getGroqClient();
 
@@ -42,6 +43,7 @@ export async function generateAIResponse({
     ],
     max_tokens: maxTokens,
     temperature,
+    response_format: responseFormat ? { type: responseFormat } : undefined,
   });
 
   return completion.choices[0]?.message?.content || "";
@@ -51,17 +53,20 @@ export async function generateAIResponseJSON<T>({
   systemPrompt,
   userPrompt,
   model = "fast",
+  maxTokens = 1024,
 }: {
   systemPrompt: string;
   userPrompt: string;
   model?: keyof typeof GROQ_MODELS;
+  maxTokens?: number;
 }): Promise<T> {
   const text = await generateAIResponse({
     systemPrompt: `${systemPrompt}\n\nYou MUST respond with valid JSON only. No markdown, no explanation.`,
     userPrompt,
     model,
-    maxTokens: 2048,
+    maxTokens,
     temperature: 0.5,
+    responseFormat: "json_object",
   });
 
   try {
