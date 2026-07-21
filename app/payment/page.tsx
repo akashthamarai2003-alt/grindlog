@@ -162,7 +162,7 @@ export default function PaymentPage() {
       );
       
       if (verifyRes.success) {
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         setIsProcessing(false);
         alert(verifyRes.error || "Failed to process free tier");
@@ -191,7 +191,7 @@ export default function PaymentPage() {
         );
 
         if (verifyRes.success) {
-          router.push("/dashboard");
+          window.location.href = "/dashboard";
         } else {
           setIsProcessing(false);
           alert(verifyRes.error || "Payment verification failed");
