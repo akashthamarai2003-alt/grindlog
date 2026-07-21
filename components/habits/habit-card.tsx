@@ -50,11 +50,30 @@ export function HabitCard({ habit, onComplete, onDelete, onRemark }: HabitCardPr
 
       <div className="ml-2 flex items-center gap-4">
         {/* Emoji Box */}
-        <div
-          className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] text-[20px] shadow-sm"
-          style={{ backgroundColor: habit.color + "25", color: habit.color }}
-        >
-          {habit.emoji}
+        <div className="relative shrink-0">
+          <div
+            className="flex h-[46px] w-[46px] items-center justify-center rounded-[14px] text-[20px] shadow-sm transition-transform duration-300 group-hover:scale-110"
+            style={{ backgroundColor: habit.color + "25", color: habit.color }}
+          >
+            {habit.emoji}
+          </div>
+          {onRemark && habit.isCompleted && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemark();
+              }}
+              className={cn(
+                "absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center shadow-sm ring-2 ring-[var(--color-bg-primary)] hover:scale-110 transition-transform",
+                // For HabitCard we don't have the remark text itself in props, so we just use the secondary color
+                // unless we want to assume it's unstyled. We'll use secondary color for now.
+                "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
+              )}
+              title="Add/Edit Remark"
+            >
+              <MessageSquarePlus className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         
         {/* Info */}
@@ -87,24 +106,7 @@ export function HabitCard({ habit, onComplete, onDelete, onRemark }: HabitCardPr
           <Pencil className="h-4 w-4" strokeWidth={2.5} />
         </Link>
 
-        {onRemark && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemark();
-            }}
-            disabled={!habit.isCompleted}
-            className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-[14px] transition-colors shadow-sm",
-              habit.isCompleted
-                ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
-                : "bg-[var(--color-bg-secondary)]/50 text-[var(--color-text-tertiary)] opacity-50 cursor-not-allowed sm:opacity-0 sm:group-hover:opacity-50"
-            )}
-            title={habit.isCompleted ? "Add/Edit Remark" : "Complete habit first"}
-          >
-            <MessageSquarePlus className="h-4 w-4" strokeWidth={2.5} />
-          </button>
-        )}
+
 
         {onDelete && (
           <button

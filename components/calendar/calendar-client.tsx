@@ -283,11 +283,10 @@ type HabitRowProps = {
   isPending: boolean;
   idx: number;
   onToggle: (s: HabitLog["status"] | null) => void;
-  onViewRemark: () => void;
   onAddRemark: () => void;
 };
 
-function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle, onViewRemark, onAddRemark }: HabitRowProps) {
+function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle, onAddRemark }: HabitRowProps) {
   return (
     <div
       className="flex items-center gap-3.5 px-4 py-3.5 animate-in fade-in slide-in-from-left-4 duration-300 fill-mode-both"
@@ -304,16 +303,25 @@ function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle,
         >
           {habit.emoji}
         </div>
-        {remark && (
+        {status && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onViewRemark();
+              onAddRemark();
             }}
-            className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center bg-[var(--color-accent-blue)] text-white shadow-sm ring-2 ring-[var(--color-bg-primary)] hover:scale-110 transition-transform"
-            title="View Remark"
+            className={cn(
+              "absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center shadow-sm ring-2 ring-[var(--color-bg-primary)] hover:scale-110 transition-transform",
+              remark 
+                ? "bg-[var(--color-accent-blue)] text-white" 
+                : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
+            )}
+            title={remark ? "View/Edit Remark" : "Add Remark"}
           >
-            <MessageCircle className="h-3.5 w-3.5" />
+            {remark ? (
+              <MessageCircle className="h-3.5 w-3.5" />
+            ) : (
+              <MessageSquarePlus className="h-3.5 w-3.5" />
+            )}
           </button>
         )}
       </div>
@@ -354,22 +362,6 @@ function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle,
       {/* Action buttons or lock */}
       {isEditable ? (
         <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddRemark();
-            }}
-            disabled={!status}
-            className={cn(
-              "w-[38px] h-[38px] rounded-[14px] flex items-center justify-center transition-colors shadow-sm",
-              status 
-                ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
-                : "bg-[var(--color-bg-secondary)]/50 text-[var(--color-text-tertiary)] opacity-50 cursor-not-allowed"
-            )}
-            title={status ? "Add/Edit Remark" : "Mark habit first"}
-          >
-            <MessageSquarePlus className="h-4 w-4" strokeWidth={2.5} />
-          </button>
           {(["completed", "skipped", "failed"] as const).map((s) => {
             const meta = STATUS_META[s];
             const Icon = meta.icon;
@@ -586,11 +578,6 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
                       return;
                     }
                     onLogChange(habit.id, dateStr, s);
-                  }}
-                  onViewRemark={() => {
-                    if (log?.remarks) {
-                      setViewRemark({ habitName: habit.name, dateStr, text: log.remarks });
-                    }
                   }}
                   onAddRemark={() => onAddRemark(habit.id, dateStr)}
                 />
