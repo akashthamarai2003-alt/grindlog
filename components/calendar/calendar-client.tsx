@@ -207,8 +207,8 @@ const DayCell = memo(function DayCell({
             strokeLinecap="round"
             strokeDasharray={circ}
             style={{ 
-              "--ring-start": circ, 
-              "--ring-end": circ - visualPct * circ 
+              "--ring-start": `${circ}px`, 
+              "--ring-end": `${circ - visualPct * circ}px` 
             } as React.CSSProperties}
             className="animate-[ring-fill_0.8s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
           />
