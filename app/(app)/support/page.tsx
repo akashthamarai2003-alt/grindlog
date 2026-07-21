@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Send, Loader2, Info, Mail, Heart } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Info, Mail, Heart, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { springs } from "@/animations/springs";
 import { submitSupportMessage } from "@/app/actions/support";
@@ -13,6 +13,7 @@ export default function SupportPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +26,7 @@ export default function SupportPage() {
       addToast({ title: "Message Sent", description: "The admin will get back to you soon.", type: "success" });
       setSubject("");
       setMessage("");
+      setIsSubmitted(true);
     } else {
       addToast({ title: "Error", description: res.error || "Failed to send message.", type: "error" });
     }
@@ -71,7 +73,6 @@ export default function SupportPage() {
         <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-tertiary)]">
           <span>Made with</span>
           <Heart className="h-4 w-4 text-red-500" fill="currentColor" />
-          <span>by Akash</span>
         </div>
       </motion.div>
 
@@ -92,44 +93,62 @@ export default function SupportPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-[var(--color-text-secondary)]">
-              Subject
-            </label>
-            <input 
-              type="text" 
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-full rounded-2xl bg-[var(--color-bg-primary)] px-5 py-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#007AFF] transition-all font-medium placeholder:font-normal ring-1 ring-[var(--color-bg-tertiary)]"
-              placeholder="e.g. Bug with payment"
-              required
-            />
+        {isSubmitted ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center gap-4 animate-in fade-in zoom-in-95 duration-500">
+            <div className="w-16 h-16 rounded-full bg-[#34C759]/10 flex items-center justify-center">
+              <CheckCircle2 className="w-8 h-8 text-[#34C759]" />
+            </div>
+            <h3 className="text-xl font-bold text-[var(--color-text-primary)] tracking-tight">Message Sent!</h3>
+            <p className="text-[14px] text-[var(--color-text-secondary)] font-medium max-w-[250px] leading-relaxed">
+              Thanks for reaching out. The admin has received your message and will get back to you soon.
+            </p>
+            <button
+              onClick={() => setIsSubmitted(false)}
+              className="mt-6 px-6 py-3.5 rounded-2xl bg-[var(--color-bg-primary)] ring-1 ring-[var(--color-bg-tertiary)] font-bold text-[14px] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-all active:scale-95"
+            >
+              Send another message
+            </button>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-[var(--color-text-secondary)]">
+                Subject
+              </label>
+              <input 
+                type="text" 
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="w-full rounded-2xl bg-[var(--color-bg-primary)] px-5 py-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#007AFF] transition-all font-medium placeholder:font-normal ring-1 ring-[var(--color-bg-tertiary)]"
+                placeholder="e.g. Bug with payment"
+                required
+              />
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-[var(--color-text-secondary)]">
-              Message
-            </label>
-            <textarea 
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-              className="w-full resize-none rounded-2xl bg-[var(--color-bg-primary)] px-5 py-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#007AFF] transition-all font-medium placeholder:font-normal ring-1 ring-[var(--color-bg-tertiary)]"
-              placeholder="How can we help you?"
-              required
-            />
-          </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-[var(--color-text-secondary)]">
+                Message
+              </label>
+              <textarea 
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                className="w-full resize-none rounded-2xl bg-[var(--color-bg-primary)] px-5 py-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#007AFF] transition-all font-medium placeholder:font-normal ring-1 ring-[var(--color-bg-tertiary)]"
+                placeholder="How can we help you?"
+                required
+              />
+            </div>
 
-          <button 
-            type="submit"
-            disabled={isSending || !subject.trim() || !message.trim()}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#007AFF] py-4 font-bold text-white shadow-lg shadow-[#007AFF]/30 transition-all active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:active:scale-100"
-          >
-            {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-            Send Message
-          </button>
-        </form>
+            <button 
+              type="submit"
+              disabled={isSending || !subject.trim() || !message.trim()}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#007AFF] py-4 font-bold text-white shadow-lg shadow-[#007AFF]/30 transition-all active:scale-[0.98] disabled:opacity-50 disabled:shadow-none disabled:active:scale-100"
+            >
+              {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              Send Message
+            </button>
+          </form>
+        )}
       </motion.div>
     </div>
   );
