@@ -26,7 +26,7 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("display_name, xp, level, coins")
+      .select("display_name, xp, level, coins, premium_level")
       .eq("id", user.id)
       .single(),
     supabase
@@ -57,7 +57,7 @@ export default async function DashboardPage() {
         tree_stage: 1,
         theme: "light",
       } as any)
-      .select("display_name, xp, level, coins")
+      .select("display_name, xp, level, coins, premium_level")
       .single();
       
     finalProfile = newProfile;
