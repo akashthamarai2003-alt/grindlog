@@ -25,7 +25,7 @@ import {
   Shuffle,
   Trash2,
 } from "lucide-react";
-import { EMOJIS, QUICK_EMOJIS, CATEGORIES } from "@/lib/constants";
+import { EMOJIS, CATEGORIES } from "@/lib/constants";
 import { revalidateDashboard } from "@/app/actions/habits";
 import { cn } from "@/lib/utils";
 import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";
@@ -44,6 +44,13 @@ const FREQUENCIES: { value: HabitFrequency; label: string; icon: string }[] = [
   { value: "weekdays", label: "Weekdays", icon: "💼" },
   { value: "weekends", label: "Weekends", icon: "🌴" },
   { value: "custom", label: "Custom", icon: "✨" },
+];
+
+const QUICK_EMOJIS = [
+  "🏃", "📚", "💧", "🧘", "💻", "💰", "🎨",
+  "🚶", "🍎", "✍️", "🌱", "🎯", "🏋️", "🎵",
+  "🧠", "💊", "🚀", "🧹", "🍳", "💤", "📖",
+  "🦷", "🌞", "📝", "📵", "📸", "⚽", "🎮",
 ];
 
 const STEP_TITLES = [
