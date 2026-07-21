@@ -22,6 +22,7 @@ import { useUIStore } from "@/store/ui-store";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { requestFirebaseNotificationPermission } from "@/lib/firebase/client";
+import { exportUserData } from "@/app/actions/export";
 
 interface SettingItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -39,6 +40,7 @@ export default function ProfilePage() {
   const { theme, toggleTheme, notificationsEnabled, setNotificationsEnabled, toggleNotifications, addToast } = useUIStore();
   const { user } = useAuth();
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Sync initial notification state from local storage
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function ProfilePage() {
     },
     {
       items: [
-        { icon: Download, label: "Export Data", hasChevron: true },
+        { icon: Download, label: "Export Data", hasChevron: true, action: "export" },
         { 
           icon: Star, 
           label: "Account", 
@@ -78,6 +80,35 @@ export default function ProfilePage() {
   
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    addToast({ title: "Export Started", description: "Preparing your data...", type: "success" });
+    try {
+      const res = await exportUserData();
+      if (!res.success || !res.data) {
+        throw new Error(res.error || "Failed to export");
+      }
+      
+      const jsonString = JSON.stringify(res.data, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `grindlog_export_${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      addToast({ title: "Export Complete", description: "Your data has been downloaded.", type: "success" });
+    } catch (e: any) {
+      addToast({ title: "Export Failed", description: e.message || "Could not export data.", type: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleNotificationToggle = async () => {
     // Turning off: unregister from backend
@@ -256,11 +287,12 @@ export default function ProfilePage() {
               <div key={ii}>
                 {ii > 0 && <div className="mx-5 h-px bg-[var(--color-bg-tertiary)]/60" />}
                 <button
-                  disabled={item.action === "notifications" && isRegistering}
+                  disabled={(item.action === "notifications" && isRegistering) || (item.action === "export" && isExporting)}
                   onClick={() => {
                     if (item.action === "theme") toggleTheme();
                     else if (item.action === "notifications") handleNotificationToggle();
                     else if (item.action === "premium") window.location.href = "/payment";
+                    else if (item.action === "export") handleExportData();
                     else alert("This feature is coming soon!");
                   }}
                   className="group relative flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]/30 active:bg-[var(--color-bg-tertiary)]/50 disabled:opacity-50"
