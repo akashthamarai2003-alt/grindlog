@@ -72,9 +72,27 @@ export default function ProfilePage() {
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleNotificationToggle = async () => {
-    // If turning off, just toggle the store (in reality you'd unsubscribe from backend)
+    // Turning off: unregister from backend
     if (notificationsEnabled) {
-      toggleNotifications();
+      setIsRegistering(true);
+      try {
+        const token = localStorage.getItem("fcm_token");
+        if (token) {
+          await fetch("/api/fcm/unregister", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token }),
+          });
+        }
+        localStorage.removeItem("fcm_registered");
+        localStorage.removeItem("fcm_token");
+        toggleNotifications();
+        addToast({ title: "Notifications Disabled", description: "You will no longer receive reminders.", type: "success" });
+      } catch (e) {
+        addToast({ title: "Error", description: "Could not disable notifications.", type: "error" });
+      } finally {
+        setIsRegistering(false);
+      }
       return;
     }
 
