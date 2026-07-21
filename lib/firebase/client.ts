@@ -33,13 +33,11 @@ export const requestFirebaseNotificationPermission = async () => {
 
     const messagingSupported = await isSupported();
     if (!messagingSupported) {
-      console.warn("Firebase Messaging is not supported in this browser.");
-      return null;
+      throw new Error("Firebase Messaging is not supported in this browser (requires HTTPS).");
     }
 
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-      console.warn("Notifications are not supported in this browser.");
-      return null;
+      throw new Error("Notifications or Service Workers are not supported in this browser.");
     }
 
     const messaging = getMessaging(app);
@@ -53,7 +51,11 @@ export const requestFirebaseNotificationPermission = async () => {
 
     const serviceWorkerRegistration = await getFirebaseServiceWorkerRegistration();
     if (!serviceWorkerRegistration) {
-      return null;
+      throw new Error("Failed to register Service Worker.");
+    }
+
+    if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY) {
+      throw new Error("Missing NEXT_PUBLIC_FIREBASE_VAPID_KEY environment variable. Add it to Vercel.");
     }
 
     const token = await getToken(messaging, {
@@ -64,11 +66,10 @@ export const requestFirebaseNotificationPermission = async () => {
     if (token) {
       return token;
     } else {
-      console.warn("No registration token available. Request permission to generate one.");
-      return null;
+      throw new Error("No registration token available. Ensure your VAPID key is correct.");
     }
   } catch (error) {
     console.error("An error occurred while retrieving token. ", error);
-    return null;
+    throw error;
   }
 };

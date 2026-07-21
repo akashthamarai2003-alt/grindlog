@@ -40,6 +40,7 @@ export default function EditProfilePage() {
     // Update local state
     setUser({ ...user, display_name: name });
     setIsSaving(false);
+    router.refresh();
     router.push("/profile");
   };
 
