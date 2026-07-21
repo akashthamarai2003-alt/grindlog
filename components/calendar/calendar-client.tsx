@@ -287,7 +287,7 @@ type HabitRowProps = {
   onAddRemark: () => void;
 };
 
-function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle, onViewRemark }: HabitRowProps) {
+function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle, onViewRemark, onAddRemark }: HabitRowProps) {
   return (
     <div
       className="flex items-center gap-3.5 px-4 py-3.5 animate-in fade-in slide-in-from-left-4 duration-300 fill-mode-both"
