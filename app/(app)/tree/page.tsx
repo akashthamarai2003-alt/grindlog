@@ -236,7 +236,23 @@ export class TreeOfLife {
     this.setupCanvas();
     this.setupEventListeners();
     this.generateTree();
+    this.spawnInitialCreatures();
     this.startAnimation();
+  }
+
+  private spawnInitialCreatures(): void {
+    const stageCreatures: Record<string, { birds: number; butterflies: number }> = {
+      seed: { birds: 0, butterflies: 0 },
+      sprout: { birds: 0, butterflies: 1 },
+      sapling: { birds: 1, butterflies: 1 },
+      tree: { birds: 2, butterflies: 2 },
+      grand: { birds: 3, butterflies: 3 },
+      ancient: { birds: 3, butterflies: 4 },
+      mythical: { birds: 4, butterflies: 5 },
+    };
+    const counts = stageCreatures[this.stage] || { birds: 0, butterflies: 0 };
+    for (let i = 0; i < counts.birds; i++) this.addBird();
+    for (let i = 0; i < counts.butterflies; i++) this.addButterfly();
   }
 
   private setupCanvas(): void {
@@ -264,15 +280,15 @@ export class TreeOfLife {
     if (isMobile) {
       return {
         performanceMode: 'medium',
-        particleLimit: 100,
+        particleLimit: 150,
         enablePhysics: true,
-        enableWeather: false
+        enableWeather: true
       };
     }
 
     return {
       performanceMode: 'high',
-      particleLimit: 300,
+      particleLimit: 400,
       enablePhysics: true,
       enableWeather: true
     };
@@ -524,11 +540,47 @@ export class TreeOfLife {
     });
   }
 
+  private windGustTimer: number = 0;
+  private windGustActive: boolean = false;
+  private windGustStrength: number = 0;
+
   private updateWind(): void {
     this.wind.phase += this.deltaTime;
-    this.wind.strength = 0.2 + Math.sin(this.wind.phase * 0.5) * 0.3;
+
+    // Base wind
+    let baseStrength = 0.2 + Math.sin(this.wind.phase * 0.5) * 0.15;
     this.wind.direction = Math.sin(this.wind.phase * 0.3) * 0.5;
     this.wind.turbulence = Math.sin(this.wind.phase * 2) * 0.1;
+
+    // Wind gusts every 10-25 seconds
+    this.windGustTimer -= this.deltaTime;
+    if (this.windGustTimer <= 0 && !this.windGustActive) {
+      this.windGustActive = true;
+      this.windGustStrength = 0.6 + Math.random() * 0.6;
+      this.windGustTimer = 1.5 + Math.random() * 2; // gust duration
+
+      // Spawn leaves during gust
+      if (this.stage !== 'seed' && this.stage !== 'sprout') {
+        for (let i = 0; i < 8; i++) {
+          setTimeout(() => {
+            this.createMagicParticle(
+              this.tree.x + (Math.random() - 0.5) * 200,
+              this.tree.y - 80 - Math.random() * 180,
+              'leaf'
+            );
+          }, i * 120);
+        }
+      }
+    } else if (this.windGustActive && this.windGustTimer <= 0) {
+      this.windGustActive = false;
+      this.windGustTimer = 10 + Math.random() * 15; // wait before next gust
+    }
+
+    if (this.windGustActive) {
+      baseStrength += this.windGustStrength * Math.sin(this.wind.phase * 4) * 0.5;
+    }
+
+    this.wind.strength = baseStrength;
   }
 
   private updateBranches(): void {
@@ -640,10 +692,30 @@ export class TreeOfLife {
   }
 
   private updateLighting(): void {
-    this.lighting.timeOfDay = (Math.sin(this.time * 0.1) + 1) / 2;
-    this.lighting.sunX = this.width * (0.2 + this.lighting.timeOfDay * 0.6);
-    this.lighting.sunY = 100 + Math.sin(this.lighting.timeOfDay * Math.PI) * 50;
-    this.lighting.ambient = 0.6 + this.lighting.timeOfDay * 0.4;
+    // Real day/night cycle based on actual local time
+    const now = new Date();
+    const hours = now.getHours() + now.getMinutes() / 60;
+    
+    // Map 24h to 0..1 where 0.5 = noon, 0 = midnight
+    // Dawn ~6am, Dusk ~18pm
+    let tod: number;
+    if (hours >= 6 && hours <= 18) {
+      // Daytime: 6am=0.3, 12pm=1.0, 6pm=0.3
+      tod = 0.3 + 0.7 * Math.sin(((hours - 6) / 12) * Math.PI);
+    } else {
+      // Nighttime: smoothly go from 0.3 down to 0
+      const nightHours = hours >= 18 ? hours - 18 : hours + 6;
+      tod = 0.3 * Math.max(0, 1 - nightHours / 3); // fade to 0 within 3 hours after dusk
+      if (hours < 6 && hours >= 3) {
+        // Pre-dawn glow
+        tod = 0.1 * ((hours - 3) / 3);
+      }
+    }
+
+    this.lighting.timeOfDay = tod;
+    this.lighting.sunX = this.width * (0.1 + ((hours % 12) / 12) * 0.8);
+    this.lighting.sunY = 60 + Math.sin(tod * Math.PI) * 80;
+    this.lighting.ambient = 0.4 + tod * 0.6;
   }
     // ═══════════════════════════════════════════════════════════
   //  RENDERING SYSTEM
@@ -768,54 +840,87 @@ export class TreeOfLife {
     if (isDay) {
       // Sun
       const sunSize = 45;
-      const pulseSize = sunSize + Math.sin(this.time * 2) * 3;
+      const breathe = Math.sin(this.time * 1.5) * 0.5 + 0.5;
+      const pulseSize = sunSize + breathe * 6;
       
-      // Sun rays
+      // Outer halo ring
+      const haloSize = pulseSize * 3.5;
+      const haloGrad = ctx.createRadialGradient(x, y, pulseSize * 1.5, x, y, haloSize);
+      haloGrad.addColorStop(0, `rgba(255, 220, 100, ${0.08 + breathe * 0.06})`);
+      haloGrad.addColorStop(0.5, `rgba(255, 200, 80, ${0.04 + breathe * 0.03})`);
+      haloGrad.addColorStop(1, 'rgba(255, 180, 60, 0)');
+      
+      ctx.fillStyle = haloGrad;
+      ctx.beginPath();
+      ctx.arc(x, y, haloSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Sun rays - longer, more dynamic
       ctx.save();
       ctx.translate(x, y);
-      ctx.rotate(this.time * 0.1);
+      ctx.rotate(this.time * 0.08);
       
-      for (let i = 0; i < 12; i++) {
-        const angle = (i / 12) * Math.PI * 2;
-        const rayLength = pulseSize + 15;
+      for (let i = 0; i < 16; i++) {
+        const angle = (i / 16) * Math.PI * 2;
+        const rayBreathe = Math.sin(this.time * 2 + i * 0.4) * 0.3 + 0.7;
+        const rayLength = (pulseSize + 20) * rayBreathe;
+        const rayWidth = 0.12 + Math.sin(this.time * 1.5 + i) * 0.04;
         
-        ctx.fillStyle = 'rgba(255, 230, 150, 0.3)';
+        const rayGrad = ctx.createLinearGradient(0, 0, Math.cos(angle) * rayLength, Math.sin(angle) * rayLength);
+        rayGrad.addColorStop(0, `rgba(255, 240, 180, ${0.4 * rayBreathe})`);
+        rayGrad.addColorStop(0.6, `rgba(255, 220, 130, ${0.2 * rayBreathe})`);
+        rayGrad.addColorStop(1, 'rgba(255, 200, 100, 0)');
+        
+        ctx.fillStyle = rayGrad;
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(
-          Math.cos(angle) * rayLength,
-          Math.sin(angle) * rayLength
+          Math.cos(angle - rayWidth) * rayLength,
+          Math.sin(angle - rayWidth) * rayLength
         );
         ctx.lineTo(
-          Math.cos(angle + 0.2) * (rayLength * 0.7),
-          Math.sin(angle + 0.2) * (rayLength * 0.7)
+          Math.cos(angle + rayWidth) * rayLength,
+          Math.sin(angle + rayWidth) * rayLength
         );
         ctx.closePath();
         ctx.fill();
       }
       ctx.restore();
       
-      // Sun glow
-      const sunGlow = ctx.createRadialGradient(x, y, 0, x, y, pulseSize * 2);
-      sunGlow.addColorStop(0, 'rgba(255, 255, 220, 0.8)');
-      sunGlow.addColorStop(0.3, 'rgba(255, 230, 150, 0.5)');
-      sunGlow.addColorStop(0.6, 'rgba(255, 200, 100, 0.2)');
-      sunGlow.addColorStop(1, 'rgba(255, 180, 80, 0)');
+      // Sun glow (warm aura)
+      const sunGlow = ctx.createRadialGradient(x, y, 0, x, y, pulseSize * 2.5);
+      sunGlow.addColorStop(0, 'rgba(255, 255, 220, 0.9)');
+      sunGlow.addColorStop(0.2, 'rgba(255, 240, 180, 0.6)');
+      sunGlow.addColorStop(0.5, 'rgba(255, 210, 120, 0.3)');
+      sunGlow.addColorStop(0.8, 'rgba(255, 180, 80, 0.1)');
+      sunGlow.addColorStop(1, 'rgba(255, 160, 60, 0)');
       
       ctx.fillStyle = sunGlow;
       ctx.beginPath();
-      ctx.arc(x, y, pulseSize * 2, 0, Math.PI * 2);
+      ctx.arc(x, y, pulseSize * 2.5, 0, Math.PI * 2);
       ctx.fill();
       
-      // Sun body
-      const sunGrad = ctx.createRadialGradient(x - 10, y - 10, 0, x, y, pulseSize);
-      sunGrad.addColorStop(0, '#FFFFEE');
-      sunGrad.addColorStop(0.5, '#FFE66D');
-      sunGrad.addColorStop(1, '#FFA500');
+      // Sun body with warm gradient
+      const sunGrad = ctx.createRadialGradient(x - 12, y - 12, 0, x, y, pulseSize);
+      sunGrad.addColorStop(0, '#FFFFF8');
+      sunGrad.addColorStop(0.3, '#FFF8E1');
+      sunGrad.addColorStop(0.6, '#FFE66D');
+      sunGrad.addColorStop(0.85, '#FFC107');
+      sunGrad.addColorStop(1, '#FF9800');
       
       ctx.fillStyle = sunGrad;
       ctx.beginPath();
       ctx.arc(x, y, pulseSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Lens flare (subtle)
+      const flareY = y + pulseSize * 2.5;
+      const flareGrad = ctx.createRadialGradient(x + 20, flareY, 0, x + 20, flareY, 15);
+      flareGrad.addColorStop(0, `rgba(255, 255, 255, ${0.15 * breathe})`);
+      flareGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = flareGrad;
+      ctx.beginPath();
+      ctx.arc(x + 20, flareY, 15, 0, Math.PI * 2);
       ctx.fill();
     } else {
       // Moon
@@ -863,15 +968,16 @@ export class TreeOfLife {
 
   private renderClouds(): void {
     const ctx = this.ctx;
-    const cloudCount = 5;
-    const baseSpeed = 8;
+    const cloudCount = 7;
+    const baseSpeed = 6;
     
     for (let i = 0; i < cloudCount; i++) {
       const speed = baseSpeed * (0.8 + i * 0.1);
       const x = ((this.time * speed + i * 180) % (this.width + 400)) - 200;
-      const y = 60 + i * 35 + Math.sin(this.time * 0.5 + i) * 15;
-      const scale = 0.8 + i * 0.15;
-      const alpha = 0.4 + this.lighting.timeOfDay * 0.5 - i * 0.05;
+      const bobbing = Math.sin(this.time * 0.4 + i * 1.2) * 8;
+      const y = 50 + i * 28 + Math.sin(i * 2.3) * 15 + bobbing;
+      const scale = 0.7 + i * 0.2;
+      const alpha = 0.45 + this.lighting.timeOfDay * 0.45 - i * 0.05;
       
       this.drawCloud(x, y, scale, alpha);
     }
@@ -884,17 +990,46 @@ export class TreeOfLife {
     ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
     
     // Cloud color based on time of day
-    const cloudColor = this.lighting.timeOfDay > 0.3 
+    const isDay = this.lighting.timeOfDay > 0.3;
+    const cloudColor = isDay
       ? `rgba(255, 255, 255, ${alpha})`
       : `rgba(150, 160, 180, ${alpha * 0.6})`;
     
-    // Multiple overlapping circles for fluffy cloud
+    // Volumetric shadow (bottom of cloud is darker)
+    const shadowY = 8 * scale;
+    const shadowCircles = [
+      { x: 5, y: shadowY, r: 33 },
+      { x: 33, y: shadowY + 2, r: 38 },
+      { x: 62, y: shadowY, r: 33 },
+      { x: 22, y: shadowY - 5, r: 28 },
+      { x: 42, y: shadowY - 3, r: 26 }
+    ];
+    
+    const shadowAlpha = isDay ? 0.08 : 0.04;
+    shadowCircles.forEach(circle => {
+      const gradient = ctx.createRadialGradient(
+        x + circle.x * scale, y + circle.y * scale, 0,
+        x + circle.x * scale, y + circle.y * scale, circle.r * scale
+      );
+      gradient.addColorStop(0, `rgba(100, 110, 130, ${shadowAlpha})`);
+      gradient.addColorStop(0.7, `rgba(100, 110, 130, ${shadowAlpha * 0.5})`);
+      gradient.addColorStop(1, 'rgba(100, 110, 130, 0)');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x + circle.x * scale, y + circle.y * scale, circle.r * scale, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    
+    // Main cloud body (fluffy overlapping circles)
     const circles = [
       { x: 0, y: 0, r: 35 },
-      { x: 30, y: -5, r: 40 },
-      { x: 60, y: 0, r: 35 },
-      { x: 20, y: -20, r: 30 },
-      { x: 40, y: -18, r: 28 }
+      { x: 30, y: -5, r: 42 },
+      { x: 62, y: 0, r: 35 },
+      { x: 20, y: -22, r: 32 },
+      { x: 42, y: -20, r: 30 },
+      { x: 10, y: -10, r: 28 },
+      { x: 50, y: -10, r: 26 }
     ];
     
     circles.forEach(circle => {
@@ -908,7 +1043,7 @@ export class TreeOfLife {
       );
       
       gradient.addColorStop(0, cloudColor);
-      gradient.addColorStop(0.7, cloudColor);
+      gradient.addColorStop(0.6, cloudColor);
       gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
       
       ctx.fillStyle = gradient;
@@ -922,6 +1057,26 @@ export class TreeOfLife {
       );
       ctx.fill();
     });
+    
+    // Top highlight for sunlit effect
+    if (isDay) {
+      const highlightCircles = [
+        { x: 18, y: -24, r: 18 },
+        { x: 40, y: -22, r: 16 },
+      ];
+      highlightCircles.forEach(circle => {
+        const gradient = ctx.createRadialGradient(
+          x + circle.x * scale, y + circle.y * scale, 0,
+          x + circle.x * scale, y + circle.y * scale, circle.r * scale
+        );
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${0.3 * alpha})`);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x + circle.x * scale, y + circle.y * scale, circle.r * scale, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
     
     ctx.restore();
   }
@@ -1000,22 +1155,25 @@ export class TreeOfLife {
 
   private renderGrass(groundY: number): void {
     const ctx = this.ctx;
-    const grassCount = 80;
+    const grassCount = 160;
     
     for (let i = 0; i < grassCount; i++) {
       const x = (i / grassCount) * this.width;
-      const baseHeight = 12 + Math.sin(i * 0.5) * 8;
-      const sway = Math.sin(this.time * 2 + i * 0.3) * 4 * this.wind.strength;
+      const baseHeight = 14 + Math.sin(i * 0.5) * 10;
+      const swayMultiplier = 1 + (this.windGustActive ? this.windGustStrength * 1.5 : 0);
+      const sway = Math.sin(this.time * 2.5 + i * 0.25) * 6 * this.wind.strength * swayMultiplier;
       const y = groundY;
       
       // Grass blade with gradient
+      const hueShift = Math.sin(i * 0.7) * 20;
       const grassGrad = ctx.createLinearGradient(x, y, x + sway, y - baseHeight);
-      grassGrad.addColorStop(0, `hsl(${90 + Math.sin(i) * 15}, 45%, 30%)`);
-      grassGrad.addColorStop(0.5, `hsl(${100 + Math.sin(i) * 15}, 55%, 40%)`);
-      grassGrad.addColorStop(1, `hsl(${110 + Math.sin(i) * 15}, 60%, 45%)`);
+      grassGrad.addColorStop(0, `hsl(${85 + hueShift}, 40%, 25%)`);
+      grassGrad.addColorStop(0.4, `hsl(${95 + hueShift}, 55%, 35%)`);
+      grassGrad.addColorStop(0.8, `hsl(${110 + hueShift}, 60%, 42%)`);
+      grassGrad.addColorStop(1, `hsl(${115 + hueShift}, 65%, 48%)`);
       
       ctx.strokeStyle = grassGrad;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.8;
       ctx.lineCap = 'round';
       
       ctx.beginPath();
@@ -1030,13 +1188,29 @@ export class TreeOfLife {
       
       // Second blade (slightly offset)
       if (i % 2 === 0) {
+        const sway2 = Math.sin(this.time * 2.2 + i * 0.3 + 1) * 5 * this.wind.strength * swayMultiplier;
         ctx.beginPath();
         ctx.moveTo(x + 2, y);
         ctx.quadraticCurveTo(
-          x + 2 + sway * 0.4,
+          x + 2 + sway2 * 0.4,
           y - baseHeight * 0.5,
-          x + 2 + sway * 0.8,
-          y - baseHeight * 0.8
+          x + 2 + sway2 * 0.8,
+          y - baseHeight * 0.85
+        );
+        ctx.stroke();
+      }
+      
+      // Third blade for density
+      if (i % 3 === 0) {
+        const sway3 = Math.sin(this.time * 1.8 + i * 0.4 + 2) * 4 * this.wind.strength * swayMultiplier;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x - 1, y);
+        ctx.quadraticCurveTo(
+          x - 1 + sway3 * 0.6,
+          y - baseHeight * 0.4,
+          x - 1 + sway3,
+          y - baseHeight * 0.7
         );
         ctx.stroke();
       }
@@ -2014,16 +2188,102 @@ export class TreeOfLife {
   //  WEATHER EFFECTS
   // ═══════════════════════════════════════════════════════════
 
+  private rainDrops: { x: number; y: number; speed: number; length: number; opacity: number }[] = [];
+  private leafFallTimer: number = 0;
+
   private renderWeatherEffects(): void {
-    if (!this.config.enableWeather) return;
+    const ctx = this.ctx;
+
+    // ── Continuous Falling Leaves ──
+    if (this.stage !== 'seed' && this.stage !== 'sprout') {
+      this.leafFallTimer -= this.deltaTime;
+      if (this.leafFallTimer <= 0) {
+        this.leafFallTimer = 0.3 + Math.random() * 0.5; // 2-3 leaves per second
+        this.createMagicParticle(
+          this.tree.x + (Math.random() - 0.5) * 180,
+          this.tree.y - 60 - Math.random() * 160,
+          Math.random() < 0.3 ? 'petal' : 'leaf'
+        );
+      }
+    }
+
+    // ── Rain System ──
+    // Rain probability varies — more rain at certain times
+    const rainChance = Math.sin(this.time * 0.02) * 0.5 + 0.5; // slow cycle
+    const isRaining = rainChance > 0.75; // raining ~25% of time cycle
     
-    // Occasional rain/particle effects based on stage
-    if (Math.random() < 0.005 && this.stage !== 'seed') {
-      this.createMagicParticle(
-        this.tree.x + (Math.random() - 0.5) * 200,
-        0,
-        'water'
+    if (isRaining && this.stage !== 'seed') {
+      const intensity = (rainChance - 0.75) * 4; // 0..1
+      const dropCount = Math.floor(3 + intensity * 8);
+      
+      // Spawn new raindrops
+      for (let i = 0; i < dropCount; i++) {
+        if (this.rainDrops.length < 200) {
+          this.rainDrops.push({
+            x: Math.random() * this.width,
+            y: -10 - Math.random() * 40,
+            speed: 400 + Math.random() * 300,
+            length: 12 + Math.random() * 18,
+            opacity: 0.15 + Math.random() * 0.25
+          });
+        }
+      }
+      
+      // Darken sky slightly during rain
+      ctx.fillStyle = `rgba(0, 0, 30, ${intensity * 0.15})`;
+      ctx.fillRect(0, 0, this.width, this.height);
+    }
+    
+    // Update and render raindrops
+    const groundY = this.height - 120;
+    for (let i = this.rainDrops.length - 1; i >= 0; i--) {
+      const drop = this.rainDrops[i];
+      
+      // Update position
+      drop.y += drop.speed * this.deltaTime;
+      drop.x += this.wind.direction * 60 * this.deltaTime;
+      
+      // Render raindrop as angled streak
+      ctx.save();
+      ctx.globalAlpha = drop.opacity;
+      
+      const rainGrad = ctx.createLinearGradient(
+        drop.x, drop.y - drop.length,
+        drop.x + this.wind.direction * 4, drop.y
       );
+      rainGrad.addColorStop(0, 'rgba(180, 210, 240, 0)');
+      rainGrad.addColorStop(0.3, 'rgba(180, 210, 240, 0.6)');
+      rainGrad.addColorStop(1, 'rgba(200, 225, 255, 1)');
+      
+      ctx.strokeStyle = rainGrad;
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(drop.x, drop.y - drop.length);
+      ctx.lineTo(drop.x + this.wind.direction * 4, drop.y);
+      ctx.stroke();
+      ctx.restore();
+      
+      // Splash on ground
+      if (drop.y >= groundY) {
+        // Create tiny splash rings
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.strokeStyle = 'rgba(200, 220, 255, 0.5)';
+        ctx.lineWidth = 0.8;
+        const splashSize = 3 + Math.random() * 4;
+        ctx.beginPath();
+        ctx.ellipse(drop.x, groundY, splashSize, splashSize * 0.3, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+        
+        this.rainDrops.splice(i, 1);
+      }
+      
+      // Remove if off-screen
+      if (drop.y > this.height + 50 || drop.x < -50 || drop.x > this.width + 50) {
+        this.rainDrops.splice(i, 1);
+      }
     }
   }
 
@@ -2199,9 +2459,11 @@ export class TreeOfLife {
     });
   }
 
+  private fireflies: { x: number; y: number; vx: number; vy: number; phase: number; brightness: number; size: number }[] = [];
+
   private renderMagicalEffects(): void {
+    // Ancient/Mythical sparkles
     if (this.stage === 'ancient' || this.stage === 'mythical') {
-      // Ambient sparkles
       if (Math.random() < 0.08) {
         this.createMagicParticle(
           this.tree.x + (Math.random() - 0.5) * 300,
@@ -2209,6 +2471,85 @@ export class TreeOfLife {
           this.stage === 'mythical' ? 'magic' : 'sparkle'
         );
       }
+    }
+
+    // ── Fireflies at Night ──
+    const isNight = this.lighting.timeOfDay < 0.25;
+    if (isNight) {
+      const maxFireflies = 25;
+      
+      // Spawn fireflies
+      while (this.fireflies.length < maxFireflies) {
+        this.fireflies.push({
+          x: Math.random() * this.width,
+          y: this.tree.y - 200 + Math.random() * 250,
+          vx: (Math.random() - 0.5) * 20,
+          vy: (Math.random() - 0.5) * 15,
+          phase: Math.random() * Math.PI * 2,
+          brightness: 0,
+          size: 2 + Math.random() * 2
+        });
+      }
+      
+      const ctx = this.ctx;
+      
+      // Update and render fireflies
+      this.fireflies.forEach(ff => {
+        // Gentle sine-wave movement
+        ff.phase += this.deltaTime * (1 + Math.random() * 0.3);
+        ff.x += Math.sin(ff.phase * 0.7) * 15 * this.deltaTime + ff.vx * this.deltaTime;
+        ff.y += Math.cos(ff.phase * 0.9) * 10 * this.deltaTime + ff.vy * this.deltaTime;
+        
+        // Pulsing glow
+        ff.brightness = (Math.sin(ff.phase * 2) * 0.5 + 0.5) * 0.9;
+        
+        // Bounce off edges
+        if (ff.x < 20 || ff.x > this.width - 20) ff.vx *= -1;
+        if (ff.y < 50 || ff.y > this.height - 140) ff.vy *= -1;
+        
+        // Occasional direction change
+        if (Math.random() < 0.005) {
+          ff.vx = (Math.random() - 0.5) * 25;
+          ff.vy = (Math.random() - 0.5) * 18;
+        }
+        
+        // Render firefly glow
+        ctx.save();
+        
+        // Outer glow
+        const outerGlow = ctx.createRadialGradient(ff.x, ff.y, 0, ff.x, ff.y, ff.size * 8);
+        outerGlow.addColorStop(0, `rgba(200, 255, 100, ${ff.brightness * 0.4})`);
+        outerGlow.addColorStop(0.3, `rgba(180, 240, 80, ${ff.brightness * 0.2})`);
+        outerGlow.addColorStop(0.6, `rgba(150, 220, 50, ${ff.brightness * 0.08})`);
+        outerGlow.addColorStop(1, 'rgba(120, 200, 30, 0)');
+        
+        ctx.fillStyle = outerGlow;
+        ctx.beginPath();
+        ctx.arc(ff.x, ff.y, ff.size * 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner glow
+        const innerGlow = ctx.createRadialGradient(ff.x, ff.y, 0, ff.x, ff.y, ff.size * 3);
+        innerGlow.addColorStop(0, `rgba(255, 255, 200, ${ff.brightness * 0.9})`);
+        innerGlow.addColorStop(0.5, `rgba(220, 255, 120, ${ff.brightness * 0.6})`);
+        innerGlow.addColorStop(1, 'rgba(180, 240, 80, 0)');
+        
+        ctx.fillStyle = innerGlow;
+        ctx.beginPath();
+        ctx.arc(ff.x, ff.y, ff.size * 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Core
+        ctx.fillStyle = `rgba(255, 255, 230, ${ff.brightness})`;
+        ctx.beginPath();
+        ctx.arc(ff.x, ff.y, ff.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      });
+    } else {
+      // Clear fireflies during day
+      this.fireflies = [];
     }
   }
     // ═══════════════════════════════════════════════════════════
@@ -2774,6 +3115,8 @@ export class TreeOfLife {
     this.tree.allBranches = [];
     this.tree.leaves = [];
     this.touches.clear();
+    this.rainDrops = [];
+    this.fireflies = [];
     
     console.log('🌳 Tree of Life destroyed');
   }
