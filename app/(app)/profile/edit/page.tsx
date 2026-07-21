@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/services/supabase/client";
 import { springs } from "@/animations/springs";
+import { updateProfileName } from "@/app/actions/profile";
 
 export default function EditProfilePage() {
   const { user, setUser } = useAuth();
@@ -25,14 +26,10 @@ export default function EditProfilePage() {
     setIsSaving(true);
     setError(null);
 
-    const { error: updateError } = await supabase
-      .from("profiles")
-      // @ts-ignore
-      .update({ display_name: name })
-      .eq("id", user.id);
+    const res = await updateProfileName(name);
 
-    if (updateError) {
-      setError(updateError.message);
+    if (!res.success) {
+      setError(res.error || "Failed to update profile");
       setIsSaving(false);
       return;
     }
