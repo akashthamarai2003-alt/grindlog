@@ -54,9 +54,9 @@ export default function ProfilePage() {
           icon: Star, 
           label: "Account", 
           hasValue: true, 
-          value: user?.is_premium ? "Pro" : "Core", 
+          value: user?.premium_level === "pro" ? "Pro" : "Core", 
           action: "premium", 
-          highlight: !!user?.is_premium 
+          highlight: user?.premium_level === "pro"
         },
       ],
     },
@@ -182,7 +182,7 @@ export default function ProfilePage() {
                 <Award className="h-3 w-3" />
                 Gardener
               </span>
-              {user?.is_premium ? (
+              {user?.premium_level === "pro" ? (
                 <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FF9500]/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#d48806] ring-1 ring-[#FFD700]/30">
                   <Sparkles className="h-3 w-3" />
                   PRO

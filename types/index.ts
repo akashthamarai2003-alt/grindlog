@@ -18,6 +18,7 @@ export interface Profile {
   tree_golden: boolean;
   is_premium: boolean;
   premium_tier: PremiumTier | null;
+  premium_level: "core" | "pro" | null;
   premium_expires_at: string | null;
   trial_used: boolean;
   theme: "light" | "dark";
