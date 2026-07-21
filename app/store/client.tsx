@@ -21,7 +21,7 @@ const STORE_ITEMS = [
     type: "theme" as const,
     name: "Neon Cyberpunk",
     description: "A dark, glowing futuristic aesthetic.",
-    price: 500,
+    price: 2500,
     icon: Palette,
     color: "#818cf8"
   },
@@ -30,7 +30,7 @@ const STORE_ITEMS = [
     type: "theme" as const,
     name: "Ocean Breeze",
     description: "Cool blues and calming water tones.",
-    price: 500,
+    price: 2500,
     icon: Palette,
     color: "#0ea5e9"
   },
@@ -39,7 +39,7 @@ const STORE_ITEMS = [
     type: "theme" as const,
     name: "Sunset Glow",
     description: "Warm orange and red evening hues.",
-    price: 500,
+    price: 2500,
     icon: Palette,
     color: "#ea580c"
   },
@@ -48,7 +48,7 @@ const STORE_ITEMS = [
     type: "theme" as const,
     name: "Sakura Blossom",
     description: "Soft pinks and cherry blossom aesthetics.",
-    price: 800,
+    price: 3500,
     icon: Sparkles,
     color: "#ff69b4"
   },
@@ -57,7 +57,7 @@ const STORE_ITEMS = [
     type: "theme" as const,
     name: "Midnight OLED",
     description: "Pure blacks with striking purple accents.",
-    price: 1000,
+    price: 5000,
     icon: Palette,
     color: "#a855f7"
   },
@@ -66,7 +66,7 @@ const STORE_ITEMS = [
     type: "theme" as const,
     name: "Forest Canopy",
     description: "Rich, deep natural greens and earthy tones.",
-    price: 500,
+    price: 2500,
     icon: Palette,
     color: "#10b981"
   },
@@ -77,7 +77,7 @@ const STORE_ITEMS = [
     type: "frame" as const,
     name: "Golden Aura",
     description: "A glowing gold frame for your avatar.",
-    price: 250,
+    price: 1500,
     icon: Crown,
     color: "#ffd700"
   },
@@ -86,7 +86,7 @@ const STORE_ITEMS = [
     type: "frame" as const,
     name: "Diamond Shine",
     description: "An icy blue border that sparkles.",
-    price: 350,
+    price: 2000,
     icon: Crown,
     color: "#00ffff"
   },
@@ -95,7 +95,7 @@ const STORE_ITEMS = [
     type: "frame" as const,
     name: "Blazing Fire",
     description: "An animated, pulsing fire ring.",
-    price: 600,
+    price: 3000,
     icon: Crown,
     color: "#ff4500"
   },
