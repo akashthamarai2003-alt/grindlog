@@ -1,16 +1,29 @@
 import Groq from "groq-sdk";
 
-let groqClient: Groq | null = null;
+// Cache clients by API key to avoid recreating them
+const groqClients = new Map<string, Groq>();
 
 export function getGroqClient(): Groq {
-  if (!groqClient) {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      throw new Error("GROQ_API_KEY is missing. Please configure it in your Vercel Environment Variables or local .env.local file.");
-    }
-    groqClient = new Groq({ apiKey });
+  const apiKeyString = process.env.GROQ_API_KEY;
+  if (!apiKeyString) {
+    throw new Error("GROQ_API_KEY is missing. Please configure it in your Vercel Environment Variables or local .env.local file.");
   }
-  return groqClient;
+  
+  // Support multiple keys separated by commas
+  const keys = apiKeyString.split(',').map(k => k.trim()).filter(k => k.length > 0);
+  
+  if (keys.length === 0) {
+    throw new Error("No valid GROQ_API_KEY found.");
+  }
+
+  // Pick a random key to distribute the load and bypass rate limits
+  const randomKey = keys[Math.floor(Math.random() * keys.length)];
+  
+  if (!groqClients.has(randomKey)) {
+    groqClients.set(randomKey, new Groq({ apiKey: randomKey }));
+  }
+  
+  return groqClients.get(randomKey)!;
 }
 
 export const GROQ_MODELS = {
