@@ -162,6 +162,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, currentCompletedStatus: boolean, streak: number} | null>(null);
   const [remarkPrompt, setRemarkPrompt] = useState<{ habitId: string; dateStr: string; } | null>(null);
+  const [viewRemark, setViewRemark] = useState<{habitName: string, dateStr: string, text: string} | null>(null);
   const [remarkText, setRemarkText] = useState("");
   const [isSavingRemark, setIsSavingRemark] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -545,6 +546,11 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                       setRemarkPrompt({ habitId: habit.id, dateStr: selectedDateStr });
                       setRemarkText(habit.remark || "");
                     }}
+                    onViewRemark={() => {
+                      if (habit.remark) {
+                        setViewRemark({ habitName: habit.name, dateStr: selectedDateStr, text: habit.remark });
+                      }
+                    }}
                   />
                 </div>
               ))}
@@ -567,6 +573,8 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           )}
         </div>
       </div>
+
+
 
       {/* Today's Quote */}
       <div 
@@ -687,6 +695,66 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         </div>
       )}
 
+      {/* ── View Remark Modal ── */}
+      <AnimatePresence>
+        {viewRemark && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm touch-none"
+            onClick={() => setViewRemark(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--color-bg-primary)] p-6 rounded-[28px] w-full max-w-[320px] shadow-2xl flex flex-col gap-4 border border-[var(--color-bg-tertiary)]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)] shrink-0">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <h2 className="text-base font-black text-[var(--color-text-primary)] tracking-tight truncate">
+                    {viewRemark.habitName}
+                  </h2>
+                  <p className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider">
+                    {new Date(viewRemark.dateStr + "T12:00:00Z").toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4 text-[14px] text-[var(--color-text-primary)] leading-relaxed italic break-words break-all">
+                "{viewRemark.text}"
+              </div>
+              
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  onClick={() => {
+                    const habitId = optimisticHabits.find(h => h.name === viewRemark.habitName)?.id;
+                    if (habitId) {
+                      setRemarkPrompt({ habitId, dateStr: viewRemark.dateStr });
+                      setRemarkText(viewRemark.text);
+                    }
+                    setViewRemark(null);
+                  }}
+                  className="flex-1 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setViewRemark(null)}
+                  className="flex-1 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

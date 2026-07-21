@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { motion } from "motion/react";
-import { Check, Flame, Trash2, Pencil, MessageSquarePlus } from "lucide-react";
+import { Check, Flame, Trash2, Pencil, MessageSquarePlus, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -16,15 +16,17 @@ interface HabitCardProps {
     color: string;
     isCompleted: boolean;
     currentStreak: number;
+    remark?: string;
     preferredTime?: string;
     reminderTime?: string | null;
   };
   onComplete?: () => void;
   onDelete?: () => void;
   onRemark?: () => void;
+  onViewRemark?: () => void;
 }
 
-export function HabitCard({ habit, onComplete, onDelete, onRemark }: HabitCardProps) {
+export function HabitCard({ habit, onComplete, onDelete, onRemark, onViewRemark }: HabitCardProps) {
   const targetLabel = useMemo(() => {
     if (habit.targetCount === 1 && habit.targetUnit === "times") {
       if (habit.reminderTime) {
@@ -61,17 +63,25 @@ export function HabitCard({ habit, onComplete, onDelete, onRemark }: HabitCardPr
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onRemark();
+                if (habit.remark && onViewRemark) {
+                  onViewRemark();
+                } else {
+                  onRemark();
+                }
               }}
               className={cn(
                 "absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center shadow-sm ring-2 ring-[var(--color-bg-primary)] hover:scale-110 transition-transform",
-                // For HabitCard we don't have the remark text itself in props, so we just use the secondary color
-                // unless we want to assume it's unstyled. We'll use secondary color for now.
-                "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
+                habit.remark
+                  ? "bg-[var(--color-accent-blue)] text-white"
+                  : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
               )}
-              title="Add/Edit Remark"
+              title={habit.remark ? "View/Edit Remark" : "Add Remark"}
             >
-              <MessageSquarePlus className="h-3.5 w-3.5" />
+              {habit.remark ? (
+                <MessageCircle className="h-3.5 w-3.5" />
+              ) : (
+                <MessageSquarePlus className="h-3.5 w-3.5" />
+              )}
             </button>
           )}
         </div>
