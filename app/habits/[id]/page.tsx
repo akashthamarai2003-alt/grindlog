@@ -186,8 +186,7 @@ export default function HabitDetailPage({
     try {
       const res = await deleteHabit(id);
       if (!res.success) throw new Error(res.error || "Failed to delete");
-      router.push("/dashboard");
-      router.refresh();
+      window.location.href = "/dashboard";
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Failed to delete habit");

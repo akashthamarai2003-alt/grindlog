@@ -218,8 +218,7 @@ export default function NewHabitPage() {
       setDirection(1);
       setStep(2);
       setTimeout(() => {
-        router.push("/dashboard");
-        router.refresh();
+        window.location.href = "/dashboard";
       }, 4200);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to save habit");
@@ -286,8 +285,7 @@ export default function NewHabitPage() {
       setDirection(1);
       setStep(2);
       setTimeout(() => {
-        router.push("/dashboard");
-        router.refresh();
+        window.location.href = "/dashboard";
       }, 4200);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to save habits");

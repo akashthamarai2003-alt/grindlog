@@ -37,8 +37,10 @@ export default function EditProfilePage() {
     // Update local state
     setUser({ ...user, display_name: name });
     setIsSaving(false);
-    router.refresh();
-    router.push("/profile");
+    
+    // Force a hard navigation to completely destroy the client router cache
+    // This ensures the dashboard and profile pages show the new name instantly.
+    window.location.href = "/profile";
   };
 
   return (
