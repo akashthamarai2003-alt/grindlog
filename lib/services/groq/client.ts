@@ -38,6 +38,7 @@ export async function generateAIResponse({
   model = "fast",
   maxTokens = 1024,
   temperature = 0.7,
+  responseFormat,
 }: {
   systemPrompt: string;
   userPrompt: string;
