@@ -17,6 +17,7 @@ import {
   Lock,
   Maximize,
   MessageCircle,
+  MessageSquarePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/services/supabase/client";
@@ -283,6 +284,7 @@ type HabitRowProps = {
   idx: number;
   onToggle: (s: HabitLog["status"] | null) => void;
   onViewRemark: () => void;
+  onAddRemark: () => void;
 };
 
 function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle, onViewRemark }: HabitRowProps) {
@@ -352,6 +354,22 @@ function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle,
       {/* Action buttons or lock */}
       {isEditable ? (
         <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddRemark();
+            }}
+            disabled={!status}
+            className={cn(
+              "w-[38px] h-[38px] rounded-[14px] flex items-center justify-center transition-colors shadow-sm",
+              status 
+                ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
+                : "bg-[var(--color-bg-secondary)]/50 text-[var(--color-text-tertiary)] opacity-50 cursor-not-allowed"
+            )}
+            title={status ? "Add/Edit Remark" : "Mark habit first"}
+          >
+            <MessageSquarePlus className="h-4 w-4" strokeWidth={2.5} />
+          </button>
           {(["completed", "skipped", "failed"] as const).map((s) => {
             const meta = STATUS_META[s];
             const Icon = meta.icon;
@@ -406,10 +424,11 @@ type PanelProps = {
   todayDateStr: string;
   onLogChange: (habitId: string, date: string, status: HabitLog["status"] | null) => void;
   onAntiCheat: (habitId: string, date: string, status: HabitLog["status"] | null) => void;
+  onAddRemark: (habitId: string, date: string) => void;
   isPending: boolean;
 };
 
-function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, isPending }: PanelProps) {
+function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, onAddRemark, isPending }: PanelProps) {
   const [viewRemark, setViewRemark] = useState<{habitName: string, dateStr: string, text: string} | null>(null);
   const dateStr = toDateStr(date);
   const isToday = dateStr === todayDateStr;
@@ -573,6 +592,7 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
                       setViewRemark({ habitName: habit.name, dateStr, text: log.remarks });
                     }
                   }}
+                  onAddRemark={() => onAddRemark(habit.id, dateStr)}
                 />
               );
             })}
@@ -1242,11 +1262,6 @@ export function CalendarClient({
         return status ? [...without, { habit_id: habitId, date, status }] : without;
       });
 
-      if (status === "completed") {
-        setRemarkPrompt({ habitId, dateStr: date });
-        setRemarkText("");
-      }
-
       try {
         await setHabitLogStatus(habitId, date, status);
       } catch (e) {
@@ -1437,6 +1452,10 @@ export function CalendarClient({
             todayDateStr={todayDateStr}
             onLogChange={handleLogChange}
             onAntiCheat={(habitId, date, status) => setCheatConfirm({ habitId, dateStr: date, status })}
+            onAddRemark={(habitId, date) => {
+              setRemarkPrompt({ habitId, dateStr: date });
+              setRemarkText(logs.find((l) => l.habit_id === habitId && l.date === date)?.remarks || "");
+            }}
             isPending={isPending}
           />
         )}

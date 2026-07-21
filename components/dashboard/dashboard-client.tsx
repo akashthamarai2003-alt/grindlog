@@ -34,6 +34,7 @@ interface HabitWithLog {
   color: string;
   currentStreak: number;
   isCompleted: boolean;
+  remark?: string;
   preferredTime?: string;
   reminderTime?: string | null;
   createdAt?: string;
@@ -258,10 +259,6 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
     if (newStatus) {
       setOptimisticXp(prev => prev + 10);
       setOptimisticCoins(prev => prev + 5);
-      
-      // Prompt for remark
-      setRemarkPrompt({ habitId, dateStr: selectedDateStr });
-      setRemarkText("");
       
       const newCompletedCount = completedCount + 1;
       if (newCompletedCount === totalCount && totalCount > 0 && !isPerfectDay) {
@@ -543,7 +540,11 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                         return;
                       }
                       handleHabitComplete(habit.id, habit.isCompleted, habit.currentStreak);
-                    }} 
+                    }}
+                    onRemark={() => {
+                      setRemarkPrompt({ habitId: habit.id, dateStr: selectedDateStr });
+                      setRemarkText(habit.remark || "");
+                    }}
                   />
                 </div>
               ))}
@@ -669,6 +670,9 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                   setIsSavingRemark(true);
                   try {
                     await updateHabitRemark(remarkPrompt.habitId, remarkPrompt.dateStr, remarkText.trim());
+                    setOptimisticHabits(prev =>
+                      prev.map(h => h.id === remarkPrompt.habitId ? { ...h, remark: remarkText.trim() } : h)
+                    );
                   } finally {
                     setIsSavingRemark(false);
                     setRemarkPrompt(null);

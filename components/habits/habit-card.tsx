@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { motion } from "motion/react";
-import { Check, Flame, Trash2, Pencil } from "lucide-react";
+import { Check, Flame, Trash2, Pencil, MessageSquarePlus } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -21,9 +21,10 @@ interface HabitCardProps {
   };
   onComplete?: () => void;
   onDelete?: () => void;
+  onRemark?: () => void;
 }
 
-export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
+export function HabitCard({ habit, onComplete, onDelete, onRemark }: HabitCardProps) {
   const targetLabel = useMemo(() => {
     if (habit.targetCount === 1 && habit.targetUnit === "times") {
       if (habit.reminderTime) {
@@ -85,6 +86,25 @@ export function HabitCard({ habit, onComplete, onDelete }: HabitCardProps) {
         >
           <Pencil className="h-4 w-4" strokeWidth={2.5} />
         </Link>
+
+        {onRemark && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemark();
+            }}
+            disabled={!habit.isCompleted}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-[14px] transition-colors shadow-sm",
+              habit.isCompleted
+                ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+                : "bg-[var(--color-bg-secondary)]/50 text-[var(--color-text-tertiary)] opacity-50 cursor-not-allowed sm:opacity-0 sm:group-hover:opacity-50"
+            )}
+            title={habit.isCompleted ? "Add/Edit Remark" : "Complete habit first"}
+          >
+            <MessageSquarePlus className="h-4 w-4" strokeWidth={2.5} />
+          </button>
+        )}
 
         {onDelete && (
           <button

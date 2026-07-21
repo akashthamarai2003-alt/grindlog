@@ -37,7 +37,7 @@ export default async function DashboardPage() {
       .order("created_at", { ascending: true }),
     supabase
       .from("habit_logs")
-      .select("habit_id, status")
+      .select("habit_id, status, remark")
       .eq("user_id", user.id)
       .eq("date", todayDateStr)
   ]);
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const logsMap = new Map((logs || []).map(l => [l.habit_id, l.status]));
+  const logsMap = new Map((logs || []).map(l => [l.habit_id, { status: l.status, remark: l.remark }]));
 
   // Format data for client
   const formattedHabits = (habits || []).map((h) => ({
@@ -85,7 +85,8 @@ export default async function DashboardPage() {
     targetUnit: h.target_unit || "times",
     color: h.color || "#34C759",
     currentStreak: h.current_streak || 0,
-    isCompleted: logsMap.get(h.id) === "completed",
+    isCompleted: logsMap.get(h.id)?.status === "completed",
+    remark: logsMap.get(h.id)?.remark || "",
     preferredTime: h.preferred_time || "anytime",
     reminderTime: h.reminder_time || null,
     createdAt: h.created_at,
