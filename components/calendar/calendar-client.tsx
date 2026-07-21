@@ -161,6 +161,18 @@ const DayCell = memo(function DayCell({
 
   // Cap the progress ring so the rounded linecaps don't collide when almost complete (e.g., 95%)
   const visualPct = isPerfect ? 1 : Math.min(pct, (circ - 4.5) / circ);
+  const targetOffset = circ - visualPct * circ;
+
+  const [offset, setOffset] = useState(circ);
+  
+  useEffect(() => {
+    // Small delay to ensure the browser has painted the initial empty state
+    // before applying the target offset to trigger the CSS transition
+    const timer = setTimeout(() => {
+      setOffset(targetOffset);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [targetOffset]);
 
   return (
     <td role="gridcell" className="p-0 text-center focus-within:relative focus-within:z-20">
@@ -206,11 +218,8 @@ const DayCell = memo(function DayCell({
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeDasharray={circ}
-            style={{ 
-              "--ring-start": `${circ}px`, 
-              "--ring-end": `${circ - visualPct * circ}px` 
-            } as React.CSSProperties}
-            className="animate-[ring-fill_0.8s_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
+            strokeDashoffset={offset}
+            className="transition-all duration-[800ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]"
           />
         </svg>
       )}
