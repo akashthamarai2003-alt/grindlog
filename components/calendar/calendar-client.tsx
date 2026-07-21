@@ -637,11 +637,9 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
               <div className="flex items-center gap-3 mt-2">
                 <button
                   onClick={() => {
-                    // Open the edit prompt instead
                     const habitId = habits.find(h => h.name === viewRemark.habitName)?.id;
                     if (habitId) {
-                      setRemarkPrompt({ habitId, dateStr: viewRemark.dateStr });
-                      setRemarkText(viewRemark.text);
+                      onAddRemark(habitId, viewRemark.dateStr);
                     }
                     setViewRemark(null);
                   }}
@@ -777,6 +775,7 @@ function HabitChecklist({
   todayDateStr: string;
   onLogChange: (habitId: string, dateStr: string, status: HabitLog["status"] | null) => void;
   onAntiCheat?: (habitId: string, dateStr: string, status: HabitLog["status"] | null) => void;
+  onAddRemark: (habitId: string, date: string) => void;
 }) {
   const [isPreview, setIsPreview] = useState(false);
   const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
@@ -1175,12 +1174,26 @@ function HabitChecklist({
                 "{viewRemark.text}"
               </div>
               
-              <button
-                onClick={() => setViewRemark(null)}
-                className="w-full mt-2 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-              >
-                Close
-              </button>
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  onClick={() => {
+                    const habitId = habits.find(h => h.name === viewRemark.habitName)?.id;
+                    if (habitId) {
+                      onAddRemark(habitId, viewRemark.dateStr);
+                    }
+                    setViewRemark(null);
+                  }}
+                  className="flex-1 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setViewRemark(null)}
+                  className="flex-1 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -1489,6 +1502,10 @@ export function CalendarClient({
               todayDateStr={todayDateStr}
               onLogChange={handleLogChange}
               onAntiCheat={(habitId, date, status) => setCheatConfirm({ habitId, dateStr: date, status })}
+              onAddRemark={(habitId, date) => {
+                setRemarkPrompt({ habitId, dateStr: date });
+                setRemarkText(logs.find((l) => l.habit_id === habitId && l.date === date)?.remarks || "");
+              }}
             />
           </motion.div>
         )}
