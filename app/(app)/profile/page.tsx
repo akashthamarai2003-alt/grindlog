@@ -73,8 +73,8 @@ export default function ProfilePage() {
     },
     {
       items: [
-        { icon: Settings, label: "About & Support", hasChevron: true },
-        { icon: Trash2, label: "Delete Account", danger: true },
+        { icon: Settings, label: "About & Support", hasChevron: true, action: "support" },
+        { icon: Trash2, label: "Delete Account", danger: true, action: "delete" },
       ],
     },
   ];
@@ -324,6 +324,7 @@ export default function ProfilePage() {
                     else if (item.action === "notifications") handleNotificationToggle();
                     else if (item.action === "premium") window.location.href = "/payment";
                     else if (item.action === "export") handleExportData();
+                    else if (item.action === "support") window.location.href = "/support";
                     else alert("This feature is coming soon!");
                   }}
                   className="group relative flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]/30 active:bg-[var(--color-bg-tertiary)]/50 disabled:opacity-50"
