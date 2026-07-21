@@ -283,10 +283,11 @@ type HabitRowProps = {
   isPending: boolean;
   idx: number;
   onToggle: (s: HabitLog["status"] | null) => void;
+  onViewRemark: () => void;
   onAddRemark: () => void;
 };
 
-function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle, onAddRemark }: HabitRowProps) {
+function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle, onViewRemark, onAddRemark }: HabitRowProps) {
   return (
     <div
       className="flex items-center gap-3.5 px-4 py-3.5 animate-in fade-in slide-in-from-left-4 duration-300 fill-mode-both"
@@ -307,7 +308,11 @@ function HabitRow({ habit, status, remark, isEditable, isPending, idx, onToggle,
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onAddRemark();
+              if (remark) {
+                onViewRemark();
+              } else {
+                onAddRemark();
+              }
             }}
             className={cn(
               "absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center shadow-sm ring-2 ring-[var(--color-bg-primary)] hover:scale-110 transition-transform",
@@ -579,6 +584,11 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
                     }
                     onLogChange(habit.id, dateStr, s);
                   }}
+                  onViewRemark={() => {
+                    if (log?.remarks) {
+                      setViewRemark({ habitName: habit.name, dateStr, text: log.remarks });
+                    }
+                  }}
                   onAddRemark={() => onAddRemark(habit.id, dateStr)}
                 />
               );
@@ -624,12 +634,28 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
                 "{viewRemark.text}"
               </div>
               
-              <button
-                onClick={() => setViewRemark(null)}
-                className="w-full mt-2 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-              >
-                Close
-              </button>
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  onClick={() => {
+                    // Open the edit prompt instead
+                    const habitId = habits.find(h => h.name === viewRemark.habitName)?.id;
+                    if (habitId) {
+                      setRemarkPrompt({ habitId, dateStr: viewRemark.dateStr });
+                      setRemarkText(viewRemark.text);
+                    }
+                    setViewRemark(null);
+                  }}
+                  className="flex-1 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setViewRemark(null)}
+                  className="flex-1 py-3.5 rounded-[16px] font-bold text-[13px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
