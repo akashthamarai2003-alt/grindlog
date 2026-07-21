@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { requestFirebaseNotificationPermission } from "@/lib/firebase/client";
 import { exportUserData } from "@/app/actions/export";
+import * as XLSX from "xlsx";
 
 interface SettingItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -90,17 +91,47 @@ export default function ProfilePage() {
         throw new Error(res.error || "Failed to export");
       }
       
-      const jsonString = JSON.stringify(res.data, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `grindlog_export_${new Date().toISOString().split("T")[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const { profile, habits, habitLogs, journalEntries, goals, fitnessLogs } = res.data as any;
+
+      // Create workbook and add sheets
+      const wb = XLSX.utils.book_new();
+
+      // Profile Sheet (array of one object)
+      const profileSheet = XLSX.utils.json_to_sheet([profile]);
+      XLSX.utils.book_append_sheet(wb, profileSheet, "Profile");
+
+      // Habits Sheet
+      if (habits && habits.length > 0) {
+        const habitsSheet = XLSX.utils.json_to_sheet(habits);
+        XLSX.utils.book_append_sheet(wb, habitsSheet, "Habits");
+      }
+
+      // Habit Logs Sheet
+      if (habitLogs && habitLogs.length > 0) {
+        const logsSheet = XLSX.utils.json_to_sheet(habitLogs);
+        XLSX.utils.book_append_sheet(wb, logsSheet, "Habit Logs");
+      }
+
+      // Journal Sheet
+      if (journalEntries && journalEntries.length > 0) {
+        const journalSheet = XLSX.utils.json_to_sheet(journalEntries);
+        XLSX.utils.book_append_sheet(wb, journalSheet, "Journal");
+      }
+
+      // Goals Sheet
+      if (goals && goals.length > 0) {
+        const goalsSheet = XLSX.utils.json_to_sheet(goals);
+        XLSX.utils.book_append_sheet(wb, goalsSheet, "Goals");
+      }
+
+      // Fitness Sheet
+      if (fitnessLogs && fitnessLogs.length > 0) {
+        const fitnessSheet = XLSX.utils.json_to_sheet(fitnessLogs);
+        XLSX.utils.book_append_sheet(wb, fitnessSheet, "Fitness Logs");
+      }
+
+      // Write workbook to buffer and trigger download
+      XLSX.writeFile(wb, `grindlog_export_${new Date().toISOString().split("T")[0]}.xlsx`);
       
       addToast({ title: "Export Complete", description: "Your data has been downloaded.", type: "success" });
     } catch (e: any) {
