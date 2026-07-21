@@ -54,9 +54,11 @@ export function NotificationPrompt({ variant = "card" }: NotificationPromptProps
         localStorage.getItem("fcm_registered") === "true" &&
         localStorage.getItem("fcm_registration_version") === FCM_REGISTRATION_VERSION;
 
+      const isManuallyDisabled = localStorage.getItem("fcm_disabled_manually") === "true";
+
       if (hasCurrentRegistration) {
         setRegistered(true);
-      } else if (Notification.permission === "granted") {
+      } else if (Notification.permission === "granted" && !isManuallyDisabled) {
         registerDevice().catch((error) => {
           console.error("Failed to refresh notification registration", error);
         });
@@ -99,6 +101,11 @@ export function NotificationPrompt({ variant = "card" }: NotificationPromptProps
   }
 
   if (permission === "granted" && registered) {
+    return null;
+  }
+
+  // Do not show prompt if user manually disabled notifications in profile
+  if (typeof window !== "undefined" && localStorage.getItem("fcm_disabled_manually") === "true") {
     return null;
   }
 

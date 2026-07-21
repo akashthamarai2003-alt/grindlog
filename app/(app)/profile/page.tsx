@@ -94,6 +94,7 @@ export default function ProfilePage() {
         }
         localStorage.removeItem("fcm_registered");
         localStorage.removeItem("fcm_token");
+        localStorage.setItem("fcm_disabled_manually", "true");
         toggleNotifications();
         addToast({ title: "Notifications Disabled", description: "You will no longer receive reminders.", type: "success" });
       } catch (e) {
@@ -126,6 +127,7 @@ export default function ProfilePage() {
       
       localStorage.setItem("fcm_registered", "true");
       localStorage.setItem("fcm_token", token);
+      localStorage.removeItem("fcm_disabled_manually");
       
       toggleNotifications(); // Finally flip it on
       addToast({ title: "Notifications Enabled", description: "You will now receive reminders.", type: "success" });
