@@ -39,26 +39,40 @@ export default async function AdminUsersPage() {
 
   const usersWithAmounts = await Promise.all(
     (users || []).map(async (user) => {
-      const paymentId = user.razorpay_payment_id || user.subscriptions?.[0]?.razorpay_subscription_id || user.subscriptions?.[0]?.razorpay_payment_id;
+      // 1. Collect ALL unique payment IDs (Premium Upgrade + AI Top Ups)
+      const paymentIds = new Set<string>();
+      if (user.razorpay_payment_id) paymentIds.add(user.razorpay_payment_id);
+      if (user.subscriptions) {
+        user.subscriptions.forEach((sub: any) => {
+          if (sub.razorpay_payment_id) paymentIds.add(sub.razorpay_payment_id);
+          if (sub.razorpay_subscription_id) paymentIds.add(sub.razorpay_subscription_id);
+        });
+      }
+      
+      const validPaymentIds = Array.from(paymentIds).filter(id => id && id.startsWith("pay_"));
       let actualPaidAmount = 0;
       
-      if (paymentId && paymentId.startsWith("pay_")) {
-        try {
-          const payment = await razorpay.payments.fetch(paymentId);
-          actualPaidAmount = payment.amount / 100;
-        } catch (e) {
-          console.error("Failed to fetch Razorpay payment", paymentId);
-          actualPaidAmount = getPaidAmount(user.premium_tier, user.premium_level, user.is_premium);
+      // 2. Fetch amounts for all valid Razorpay payments and sum them
+      if (validPaymentIds.length > 0) {
+        for (const pid of validPaymentIds) {
+          try {
+            const payment = await razorpay.payments.fetch(pid);
+            actualPaidAmount += payment.amount / 100;
+          } catch (e) {
+            console.error("Failed to fetch Razorpay payment", pid);
+          }
         }
-      } else if (user.is_premium) {
-         // Fallback if bypassed (100% discount) or missing payment ID
+      } 
+      
+      // 3. Fallback logic: If no real payments found but user is premium, maybe bypassed.
+      if (actualPaidAmount === 0 && user.is_premium) {
          actualPaidAmount = getPaidAmount(user.premium_tier, user.premium_level, user.is_premium);
       }
       
       return {
         ...user,
         actualPaidAmount,
-        paymentId: paymentId || "-"
+        paymentId: validPaymentIds.length > 0 ? validPaymentIds.join(", ") : "-"
       };
     })
   );
@@ -135,8 +149,10 @@ export default async function AdminUsersPage() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-xs text-gray-500 font-mono">
-                        {paymentId}
+                      <div className="text-xs text-gray-500 font-mono flex flex-col gap-1">
+                        {paymentId.split(", ").map((pid: string, i: number) => (
+                          <span key={i}>{pid}</span>
+                        ))}
                       </div>
                     </td>
                     <td className="px-6 py-4">
