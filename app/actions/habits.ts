@@ -35,25 +35,52 @@ export async function toggleHabitCompletion(
   if (!user) throw new Error("Unauthorized");
 
   if (isCompleted) {
-    // 1. Insert completion log
-    const { error: logError } = await supabase
+    // 1. Check existing log to handle remarks and prevent double XP
+    const { data: existingLog } = await supabase
       .from("habit_logs")
-      .insert({
-        habit_id: habitId,
-        user_id: user.id,
-        date: dateStr,
-        status: "completed",
-        streak_before: currentStreak,
-        streak_after: currentStreak + 1,
-        xp_earned: xpReward,
-        coins_earned: 5
-      });
+      .select("status, remarks")
+      .eq("habit_id", habitId)
+      .eq("date", dateStr)
+      .single();
+
+    if (existingLog?.status === "completed") {
+      // Already logged, just return without awarding double XP
+      return { success: true };
+    }
+
+    let logError;
+    if (existingLog) {
+      // Log exists (e.g., skipped to preserve remarks), so update it
+      const { error } = await supabase
+        .from("habit_logs")
+        .update({
+          status: "completed",
+          streak_before: currentStreak,
+          streak_after: currentStreak + 1,
+          xp_earned: xpReward,
+          coins_earned: 5
+        })
+        .eq("habit_id", habitId)
+        .eq("date", dateStr);
+      logError = error;
+    } else {
+      // No log exists, insert a new one
+      const { error } = await supabase
+        .from("habit_logs")
+        .insert({
+          habit_id: habitId,
+          user_id: user.id,
+          date: dateStr,
+          status: "completed",
+          streak_before: currentStreak,
+          streak_after: currentStreak + 1,
+          xp_earned: xpReward,
+          coins_earned: 5
+        });
+      logError = error;
+    }
       
     if (logError) {
-      if (logError.code === '23505') {
-        // Already logged, just return without awarding double XP
-        return { success: true };
-      }
       console.error("Error logging habit:", logError);
       return { success: false, error: logError.message };
     }
@@ -88,20 +115,53 @@ export async function toggleHabitCompletion(
     ]).catch(console.error);
   } else {
     // Un-check the habit
-    // 1. Delete the log
-    const { data: deletedLogs, error: deleteError } = await supabase
+    // 1. Check if there are remarks
+    const { data: logToUncheck } = await supabase
       .from("habit_logs")
-      .delete()
+      .select("remarks")
       .eq("habit_id", habitId)
       .eq("date", dateStr)
-      .select();
+      .single();
+
+    let deletedLogs = null;
+    let deleteError = null;
+
+    if (logToUncheck?.remarks && logToUncheck.remarks.trim() !== "") {
+      // Preserve remarks, just change status to skipped
+      const { data, error } = await supabase
+        .from("habit_logs")
+        .update({
+          status: "skipped",
+          streak_before: 0,
+          streak_after: 0,
+          xp_earned: 0,
+          coins_earned: 0
+        })
+        .eq("habit_id", habitId)
+        .eq("date", dateStr)
+        .select();
+      
+      deletedLogs = data;
+      deleteError = error;
+    } else {
+      // Safely delete if no remarks
+      const { data, error } = await supabase
+        .from("habit_logs")
+        .delete()
+        .eq("habit_id", habitId)
+        .eq("date", dateStr)
+        .select();
+        
+      deletedLogs = data;
+      deleteError = error;
+    }
       
     if (deleteError) {
       console.error("Error un-logging habit:", deleteError);
       return { success: false, error: deleteError.message };
     }
 
-    // If nothing was deleted (e.g. rapid double clicks), do not deduct XP
+    // If nothing was modified, do not deduct XP
     if (!deletedLogs || deletedLogs.length === 0) {
       return { success: true };
     }
@@ -261,7 +321,7 @@ export async function syncMissedHabits(todayDateStr: string) {
           habit_id: habit.id,
           user_id: user.id,
           date: dStr,
-          status: "failed",
+          status: "missed",
           streak_before: 0,
           streak_after: 0,
           xp_earned: 0,
