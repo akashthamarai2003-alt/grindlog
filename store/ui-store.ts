@@ -16,6 +16,7 @@ interface UIState {
   notificationsEnabled: boolean;
   setTheme: (theme: "light" | "dark") => void;
   toggleTheme: () => void;
+  setNotificationsEnabled: (enabled: boolean) => void;
   toggleNotifications: () => void;
   setActiveTab: (tab: string) => void;
   addToast: (toast: Omit<Toast, "id">) => void;
@@ -32,6 +33,7 @@ export const useUIStore = create<UIState>((set) => ({
   setTheme: (theme) => set({ theme }),
   toggleTheme: () =>
     set((s) => ({ theme: s.theme === "light" ? "dark" : "light" })),
+  setNotificationsEnabled: (enabled: boolean) => set({ notificationsEnabled: enabled }),
   toggleNotifications: () =>
     set((s) => ({ notificationsEnabled: !s.notificationsEnabled })),
   setActiveTab: (activeTab) => set({ activeTab }),

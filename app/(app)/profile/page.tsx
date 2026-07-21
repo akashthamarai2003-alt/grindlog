@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import {
@@ -36,9 +36,17 @@ interface SettingItem {
 }
 
 export default function ProfilePage() {
-  const { theme, toggleTheme, notificationsEnabled, toggleNotifications, addToast } = useUIStore();
+  const { theme, toggleTheme, notificationsEnabled, setNotificationsEnabled, toggleNotifications, addToast } = useUIStore();
   const { user } = useAuth();
   const [isRegistering, setIsRegistering] = useState(false);
+  
+  // Sync initial notification state from local storage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isRegistered = localStorage.getItem("fcm_registered") === "true";
+      setNotificationsEnabled(isRegistered);
+    }
+  }, [setNotificationsEnabled]);
   
   const settingsGroups: { items: SettingItem[] }[] = [
     {
