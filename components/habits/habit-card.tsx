@@ -110,7 +110,7 @@ export function HabitCard({ habit, onComplete, onDelete, onRemark, onViewRemark 
         <Link
           href={`/habits/${habit.id}`}
           onClick={(e) => e.stopPropagation()}
-          className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-sm"
+          className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors shadow-sm"
           title="Edit Habit"
         >
           <Pencil className="h-4 w-4" strokeWidth={2.5} />
@@ -124,7 +124,7 @@ export function HabitCard({ habit, onComplete, onDelete, onRemark, onViewRemark 
               e.stopPropagation();
               onDelete();
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-sm"
+            className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors shadow-sm"
             title="Delete Habit"
           >
             <Trash2 className="h-4 w-4" strokeWidth={2.5} />
