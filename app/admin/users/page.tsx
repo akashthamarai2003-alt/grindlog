@@ -1,7 +1,12 @@
 import { createAdminClient } from "@/lib/services/supabase/admin";
+import Razorpay from "razorpay";
 
 export default async function AdminUsersPage() {
   const supabase = createAdminClient();
+  const razorpay = new Razorpay({
+    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
+    key_secret: process.env.RAZORPAY_KEY_SECRET || "",
+  });
 
   // Fetch all users with their active subscriptions if any
   const { data: users } = await supabase
@@ -32,7 +37,33 @@ export default async function AdminUsersPage() {
     return 0;
   };
 
-  const totalRevenue = users?.reduce((acc, user) => acc + getPaidAmount(user.premium_tier, user.premium_level, user.is_premium), 0) || 0;
+  const usersWithAmounts = await Promise.all(
+    (users || []).map(async (user) => {
+      const paymentId = user.razorpay_payment_id || user.subscriptions?.[0]?.razorpay_subscription_id || user.subscriptions?.[0]?.razorpay_payment_id;
+      let actualPaidAmount = 0;
+      
+      if (paymentId && paymentId.startsWith("pay_")) {
+        try {
+          const payment = await razorpay.payments.fetch(paymentId);
+          actualPaidAmount = payment.amount / 100;
+        } catch (e) {
+          console.error("Failed to fetch Razorpay payment", paymentId);
+          actualPaidAmount = getPaidAmount(user.premium_tier, user.premium_level, user.is_premium);
+        }
+      } else if (user.is_premium) {
+         // Fallback if bypassed (100% discount) or missing payment ID
+         actualPaidAmount = getPaidAmount(user.premium_tier, user.premium_level, user.is_premium);
+      }
+      
+      return {
+        ...user,
+        actualPaidAmount,
+        paymentId: paymentId || "-"
+      };
+    })
+  );
+
+  const totalRevenue = usersWithAmounts.reduce((acc, user) => acc + user.actualPaidAmount, 0) || 0;
 
   return (
     <div className="space-y-6">
@@ -55,7 +86,7 @@ export default async function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users?.map((user) => {
+              {usersWithAmounts.map((user) => {
                 const getPlanName = (tier: string, level: string) => {
                   let baseName = 'Pro';
                   if (tier === 'monthly') baseName = 'Monthly';
@@ -67,8 +98,8 @@ export default async function AdminUsersPage() {
                 };
                 
                 const planName = user.premium_tier ? getPlanName(user.premium_tier, user.premium_level) : 'Pro';
-                const paymentId = user.razorpay_payment_id || user.subscriptions?.[0]?.razorpay_subscription_id || user.subscriptions?.[0]?.razorpay_payment_id || "-";
-                const paidAmount = getPaidAmount(user.premium_tier, user.premium_level, user.is_premium);
+                const paymentId = user.paymentId;
+                const paidAmount = user.actualPaidAmount;
 
                 return (
                   <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
@@ -129,7 +160,7 @@ export default async function AdminUsersPage() {
             </tfoot>
           </table>
           
-          {(!users || users.length === 0) && (
+          {(!usersWithAmounts || usersWithAmounts.length === 0) && (
             <div className="p-8 text-center text-gray-500">
               No users found.
             </div>
