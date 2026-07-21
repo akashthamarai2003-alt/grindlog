@@ -136,16 +136,34 @@ export default async function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4">
                       {user.is_premium ? (
-                        <div className="flex flex-col gap-1">
-                          <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {planName}
-                          </span>
-                          <span className="text-xs text-gray-400 capitalize">Active</span>
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              {planName}
+                            </span>
+                          </div>
+                          
+                          {/* Render AI Message Top Ups if they exist */}
+                          {user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
+                             <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                               + AI Messages (₹10)
+                             </span>
+                          ))}
+                          <span className="text-xs text-gray-400 capitalize mt-1">Active</span>
                         </div>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Unpaid
-                        </span>
+                        <div className="flex flex-col gap-1.5">
+                          <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Unpaid
+                          </span>
+                          
+                          {/* Render AI Message Top Ups if they exist */}
+                          {user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
+                             <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                               + AI Messages (₹10)
+                             </span>
+                          ))}
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4">
