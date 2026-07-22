@@ -33,10 +33,12 @@ export default function DeleteUserButton({
         toast.success(`User ${displayName} deleted successfully!`);
         router.refresh();
       } else {
-        toast.error(res.error || "Failed to delete user");
+        const errorText = typeof res.error === "string" ? res.error : (res.error ? JSON.stringify(res.error) : "Failed to delete user");
+        toast.error(errorText);
       }
     } catch (err: any) {
-      toast.error(err.message || "An unexpected error occurred");
+      const catchText = typeof err === "string" ? err : (err?.message || JSON.stringify(err) || "An unexpected error occurred");
+      toast.error(catchText);
     } finally {
       setIsDeleting(false);
     }
