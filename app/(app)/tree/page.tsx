@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { getMaxUserStreak } from '@/app/actions/habits';
+import { getUserTreeStats } from '@/app/actions/habits';
 import { createClient } from '@/lib/services/supabase/client';
 import { ProUpgradeModal } from '@/components/modals/pro-upgrade-modal';
 import { Crown, Zap } from 'lucide-react';
@@ -163,7 +163,7 @@ class TreeOfLife {
   private touches: Map<number, { x: number; y: number }> = new Map();
   private isInteracting: boolean = false;
 
-  constructor(canvas: HTMLCanvasElement, initialDay: number = 1) {
+  constructor(canvas: HTMLCanvasElement, initialDay: number = 1, initialHabits: number = 0) {
     this.canvas = canvas;
     const ctx = canvas.getContext('2d', {
       alpha: false,
@@ -179,7 +179,7 @@ class TreeOfLife {
     this.config = this.detectPerformanceLevel();
 
     this.day = initialDay;
-    this.habitCount = 0;
+    this.habitCount = initialHabits;
     this.stage = this.calculateStage(initialDay);
 
     // Initialize tree
@@ -3132,12 +3132,12 @@ class TreeOfLife {
 export default function TreePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const treeRef = useRef<TreeOfLife | null>(null);
-  const [streak, setStreak] = useState<number | null>(null);
+  const [treeStats, setTreeStats] = useState<{ streak: number; habitsCompleted: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPro, setIsPro] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  // Load user profile & streak data
+  // Load user profile & real habit tree stats
   useEffect(() => {
     async function loadTreeData() {
       try {
@@ -3156,11 +3156,11 @@ export default function TreePage() {
           }
         }
 
-        const maxStreak = await getMaxUserStreak();
-        setStreak(maxStreak === 0 ? 1 : maxStreak);
+        const stats = await getUserTreeStats();
+        setTreeStats(stats);
       } catch (err) {
         console.error('Failed to load tree data:', err);
-        setStreak(1);
+        setTreeStats({ streak: 1, habitsCompleted: 0 });
       } finally {
         setLoading(false);
       }
@@ -3169,23 +3169,18 @@ export default function TreePage() {
     loadTreeData();
   }, []);
 
-  // Initialize tree
+  // Initialize tree with actual user habit statistics
   useEffect(() => {
-    if (isPro && streak !== null && canvasRef.current && !treeRef.current) {
-      const tree = new TreeOfLife(canvasRef.current, streak);
+    if (isPro && treeStats !== null && canvasRef.current && !treeRef.current) {
+      const tree = new TreeOfLife(canvasRef.current, treeStats.streak, treeStats.habitsCompleted);
       treeRef.current = tree;
-      
-      // Expose to window for debugging
-      if (typeof window !== 'undefined') {
-        (window as any).tree = tree;
-      }
       
       return () => {
         tree.destroy();
         treeRef.current = null;
       };
     }
-  }, [isPro, streak]);
+  }, [isPro, treeStats]);
 
   // Public methods for parent component
   const waterTree = useCallback(() => {
@@ -3243,187 +3238,6 @@ export default function TreePage() {
         className="absolute inset-0 w-full h-full touch-none cursor-pointer"
         style={{ touchAction: 'none' }}
       />
-
-      {/* Developer Testing Panel */}
-      {!loading && (
-        <DevPanel treeRef={treeRef} />
-      )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════
-//  DEVELOPER TESTING PANEL
-// ═══════════════════════════════════════════════════════════
-
-function DevPanel({ treeRef }: { treeRef: React.RefObject<TreeOfLife | null> }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [info, setInfo] = useState<any>(null);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (treeRef.current) {
-        setInfo(treeRef.current.getState());
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [treeRef]);
-
-  const setStage = (day: number) => {
-    treeRef.current?.setDay(day);
-  };
-
-  const addCreature = (type: 'bird' | 'butterfly') => {
-    if (type === 'bird') {
-      (treeRef.current as any)?.addBird();
-    } else {
-      (treeRef.current as any)?.addButterfly();
-    }
-  };
-
-  return (
-    <div className="absolute top-20 right-4 z-30">
-      {/* Toggle button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="mb-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg transition-all"
-      >
-        {isOpen ? '❌ Close' : '🛠️ Dev Tools'}
-      </button>
-
-      {/* Panel */}
-      {isOpen && (
-        <div className="bg-black/90 backdrop-blur-md p-4 rounded-xl border border-white/20 shadow-2xl max-h-[70vh] overflow-y-auto">
-          <h3 className="text-white font-bold text-lg mb-3 pb-2 border-b border-white/20">
-            🌳 Tree Control Panel
-          </h3>
-
-          {/* Current state */}
-          {info && (
-            <div className="mb-4 p-3 bg-white/10 rounded-lg text-xs text-white/80 font-mono">
-              <div>Stage: <span className="text-green-400">{info.stage}</span></div>
-              <div>Day: <span className="text-blue-400">{info.day}</span></div>
-              <div>Habits: <span className="text-yellow-400">{info.habitCount}</span></div>
-              <div>Growth: <span className="text-purple-400">{(info.growth * 100).toFixed(1)}%</span></div>
-              <div>Health: <span className="text-red-400">{(info.health * 100).toFixed(1)}%</span></div>
-            </div>
-          )}
-
-          {/* Stage controls */}
-          <div className="space-y-2 mb-4">
-            <p className="text-white/60 text-xs font-bold mb-2">QUICK STAGES:</p>
-            
-            <button
-              onClick={() => setStage(1)}
-              className="w-full px-3 py-2 bg-amber-700/50 hover:bg-amber-700/70 text-white rounded text-sm transition-all"
-            >
-              🌰 Seed (Day 1)
-            </button>
-            
-            <button
-              onClick={() => setStage(7)}
-              className="w-full px-3 py-2 bg-green-700/50 hover:bg-green-700/70 text-white rounded text-sm transition-all"
-            >
-              🌱 Sprout (Day 7)
-            </button>
-            
-            <button
-              onClick={() => setStage(25)}
-              className="w-full px-3 py-2 bg-green-600/50 hover:bg-green-600/70 text-white rounded text-sm transition-all"
-            >
-              🌿 Sapling (Day 25)
-            </button>
-            
-            <button
-              onClick={() => setStage(70)}
-              className="w-full px-3 py-2 bg-green-500/50 hover:bg-green-500/70 text-white rounded text-sm transition-all"
-            >
-              🌳 Tree (Day 70)
-            </button>
-            
-            <button
-              onClick={() => setStage(200)}
-              className="w-full px-3 py-2 bg-emerald-600/50 hover:bg-emerald-600/70 text-white rounded text-sm transition-all"
-            >
-              🌲 Grand Tree (Day 200)
-            </button>
-            
-            <button
-              onClick={() => setStage(400)}
-              className="w-full px-3 py-2 bg-teal-600/50 hover:bg-teal-600/70 text-white rounded text-sm transition-all"
-            >
-              🎄 Ancient (Day 400)
-            </button>
-            
-            <button
-              onClick={() => setStage(550)}
-              className="w-full px-3 py-2 bg-gradient-to-r from-purple-600/50 to-pink-600/50 hover:from-purple-600/70 hover:to-pink-600/70 text-white rounded text-sm transition-all"
-            >
-              ✨ Mythical (Day 550)
-            </button>
-          </div>
-
-          {/* Creature controls */}
-          <div className="space-y-2 mb-4">
-            <p className="text-white/60 text-xs font-bold mb-2">CREATURES:</p>
-            
-            <button
-              onClick={() => addCreature('bird')}
-              className="w-full px-3 py-2 bg-sky-600/50 hover:bg-sky-600/70 text-white rounded text-sm transition-all"
-            >
-              🐦 Add Bird
-            </button>
-            
-            <button
-              onClick={() => addCreature('butterfly')}
-              className="w-full px-3 py-2 bg-pink-600/50 hover:bg-pink-600/70 text-white rounded text-sm transition-all"
-            >
-              🦋 Add Butterfly
-            </button>
-          </div>
-
-          {/* Actions */}
-          <div className="space-y-2">
-            <p className="text-white/60 text-xs font-bold mb-2">ACTIONS:</p>
-            
-            <button
-              onClick={() => treeRef.current?.waterTree()}
-              className="w-full px-3 py-2 bg-blue-600/50 hover:bg-blue-600/70 text-white rounded text-sm transition-all"
-            >
-              💧 Water
-            </button>
-            
-            <button
-              onClick={() => treeRef.current?.completeHabit()}
-              className="w-full px-3 py-2 bg-green-600/50 hover:bg-green-600/70 text-white rounded text-sm transition-all"
-            >
-              ✅ Complete Habit
-            </button>
-            
-            <button
-              onClick={() => {
-                if (confirm('Reset tree to seed?')) {
-                  treeRef.current?.reset();
-                }
-              }}
-              className="w-full px-3 py-2 bg-red-600/50 hover:bg-red-600/70 text-white rounded text-sm transition-all"
-            >
-              🔄 Reset Tree
-            </button>
-          </div>
-
-          {/* Tips */}
-          <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
-            <p className="text-blue-300 text-xs font-bold mb-1">💡 Tips:</p>
-            <ul className="text-blue-200/80 text-xs space-y-1">
-              <li>• Tap anywhere to interact</li>
-              <li>• Shake device for wind effect</li>
-              <li>• Access tree via: <code className="bg-black/30 px-1 rounded">window.tree</code></li>
-            </ul>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -433,3 +433,26 @@ export async function checkHabitLimitAction(requestedNewCount: number = 1) {
     return { allowed: true, activeCount: 0, isPro: false };
   }
 }
+
+export async function getUserTreeStats() {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { streak: 1, habitsCompleted: 0 };
+
+    const [{ data: habits }, { count: habitsCompleted }] = await Promise.all([
+      supabase.from("habits").select("current_streak").eq("user_id", user.id).eq("is_active", true),
+      supabase.from("habit_logs").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "completed")
+    ]);
+
+    const maxStreak = habits && habits.length > 0 ? Math.max(...habits.map((h: any) => h.current_streak || 0)) : 0;
+    
+    return {
+      streak: maxStreak === 0 ? 1 : maxStreak,
+      habitsCompleted: habitsCompleted || 0
+    };
+  } catch (err: any) {
+    console.error("Failed to fetch user tree stats:", err);
+    return { streak: 1, habitsCompleted: 0 };
+  }
+}
