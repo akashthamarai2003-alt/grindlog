@@ -387,7 +387,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         {/* User-Provided Background Picture */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-105"
-          style={{ backgroundImage: 'url("/modal-card-bg.png")' }}
+          style={{ backgroundImage: 'url("/hero-card-bg.jpg")' }}
         />
         
         {/* Transparent overlay so the bright meadow is ALWAYS visible, regardless of device theme */}
