@@ -160,8 +160,13 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   const [optimisticCoins, setOptimisticCoins] = useState(profile.coins || 0);
   const [quoteIdx, setQuoteIdx] = useState(0);
   const [selectedDateStr, setSelectedDateStr] = useState(todayDateStr);
-  const [isFetchingLogs, setIsFetchingLogs] = useState(false);
-  const [lastFetchedDate, setLastFetchedDate] = useState(todayDateStr);
+  const [dateLogsCache, setDateLogsCache] = useState<Record<string, Map<string, any>>>(() => {
+    const initialMap = new Map<string, any>();
+    initialHabits.forEach(h => {
+      initialMap.set(h.id, { status: h.isCompleted ? "completed" : "pending", remark: h.remark });
+    });
+    return { [todayDateStr]: initialMap };
+  });
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const [cheatConfirm, setCheatConfirm] = useState<{habitId: string, currentCompletedStatus: boolean, streak: number} | null>(null);
   const [remarkPrompt, setRemarkPrompt] = useState<{ habitId: string; dateStr: string; } | null>(null);
@@ -179,21 +184,46 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   }, []);
 
   useEffect(() => {
-    if (selectedDateStr === lastFetchedDate) return;
+    let isMounted = true;
 
-    async function loadLogs() {
-      setIsFetchingLogs(true);
-      const logs = await getHabitLogsForDate(selectedDateStr);
-      const logsMap = new Map(logs.map((l: any) => [l.habit_id, l.status]));
+    // Apply cached log status immediately if available
+    if (dateLogsCache[selectedDateStr]) {
+      const cachedMap = dateLogsCache[selectedDateStr];
       setOptimisticHabits(prev => prev.map(h => ({
         ...h,
-        isCompleted: logsMap.get(h.id) === "completed"
+        isCompleted: cachedMap.get(h.id)?.status === "completed",
+        remark: cachedMap.get(h.id)?.remark ?? h.remark
       })));
-      setIsFetchingLogs(false);
-      setLastFetchedDate(selectedDateStr);
     }
+
+    async function loadLogs() {
+      try {
+        const logs = await getHabitLogsForDate(selectedDateStr);
+        if (!isMounted) return;
+
+        const logsMap = new Map<string, any>(logs.map((l: any) => [l.habit_id, { status: l.status, remark: l.remarks }]));
+        
+        setDateLogsCache(prev => ({
+          ...prev,
+          [selectedDateStr]: logsMap
+        }));
+
+        setOptimisticHabits(prev => prev.map(h => ({
+          ...h,
+          isCompleted: logsMap.get(h.id)?.status === "completed",
+          remark: logsMap.has(h.id) ? logsMap.get(h.id)?.remark : h.remark
+        })));
+      } catch (err) {
+        console.error("Failed to load logs for date:", err);
+      }
+    }
+
     loadLogs();
-  }, [selectedDateStr, lastFetchedDate]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDateStr]);
 
   useEffect(() => {
     async function loadUnreadCount() {
@@ -291,6 +321,13 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
     setOptimisticHabits(prev => 
       prev.map(h => h.id === habitId ? { ...h, isCompleted: newStatus } : h)
     );
+
+    setDateLogsCache(prev => {
+      const currentMap = new Map(prev[selectedDateStr] || []);
+      const existing = currentMap.get(habitId) || {};
+      currentMap.set(habitId, { ...existing, status: newStatus ? "completed" : "pending" });
+      return { ...prev, [selectedDateStr]: currentMap };
+    });
 
     // Call server action
     try {
@@ -498,7 +535,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
 
       {/* Today's Habits */}
       <div
-        className={`flex flex-col gap-4 transition-opacity duration-300 ${isFetchingLogs ? "opacity-50 pointer-events-none" : "opacity-100"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+        className="flex flex-col gap-4"
       >
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
