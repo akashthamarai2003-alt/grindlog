@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Send, Loader2, Info, Mail, Heart, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Info, Mail, Heart, CheckCircle2, Clock, MessageSquareText } from "lucide-react";
 import Link from "next/link";
 import { springs } from "@/animations/springs";
-import { submitSupportMessage } from "@/app/actions/support";
+import { submitSupportMessage, getUserSupportMessages } from "@/app/actions/support";
 import { useUIStore } from "@/store/ui-store";
+import { formatDistanceToNow } from "date-fns";
 
 export default function SupportPage() {
   const { addToast } = useUIStore();
@@ -14,6 +15,21 @@ export default function SupportPage() {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [userMessages, setUserMessages] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  const loadHistory = async () => {
+    setIsLoadingHistory(true);
+    const res = await getUserSupportMessages();
+    if (res.success) {
+      setUserMessages(res.data);
+    }
+    setIsLoadingHistory(false);
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +43,7 @@ export default function SupportPage() {
       setSubject("");
       setMessage("");
       setIsSubmitted(true);
+      await loadHistory();
     } else {
       addToast({ title: "Error", description: res.error || "Failed to send message.", type: "error" });
     }
@@ -148,6 +165,81 @@ export default function SupportPage() {
               Send Message
             </button>
           </form>
+        )}
+      </motion.div>
+
+      {/* User Message History & Live Statuses */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...springs.default, delay: 0.3 }}
+        className="rounded-[24px] bg-[var(--color-bg-secondary)] p-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50"
+      >
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-500">
+            <MessageSquareText className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-[var(--color-text-primary)]">Your Messages</h2>
+            <p className="text-xs font-semibold text-[var(--color-text-tertiary)]">Track admin responses & resolution status</p>
+          </div>
+        </div>
+
+        {isLoadingHistory ? (
+          <div className="flex items-center justify-center py-8 text-[var(--color-text-tertiary)]">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : userMessages.length === 0 ? (
+          <div className="text-center py-6 text-xs font-semibold text-[var(--color-text-tertiary)]">
+            No support messages submitted yet.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3.5">
+            {userMessages.map((msg) => {
+              const isResolved = msg.status === "resolved";
+              return (
+                <div
+                  key={msg.id}
+                  className="flex flex-col gap-2 rounded-2xl bg-[var(--color-bg-primary)] p-4 ring-1 ring-[var(--color-bg-tertiary)]/60"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-sm font-bold text-[var(--color-text-primary)] leading-snug">
+                      {msg.subject}
+                    </h3>
+                    
+                    {/* Status Badge */}
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold shrink-0 border ${
+                        isResolved
+                          ? "bg-green-500/10 text-green-600 border-green-500/30"
+                          : "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                      }`}
+                    >
+                      {isResolved ? (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                          <span>Resolved</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="h-3.5 w-3.5 text-amber-600" />
+                          <span>Pending Review</span>
+                        </>
+                      )}
+                    </span>
+                  </div>
+
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)] whitespace-pre-wrap leading-relaxed">
+                    {msg.message}
+                  </p>
+
+                  <span className="text-[10px] font-semibold text-[var(--color-text-tertiary)] pt-1">
+                    Submitted {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         )}
       </motion.div>
     </div>

@@ -51,6 +51,7 @@ export async function updateMessageStatus(id: string, newStatus: string) {
     if (error) throw error;
     
     revalidatePath("/admin/support");
+    revalidatePath("/support");
     return { success: true };
   } catch (err: any) {
     console.error("Failed to update status:", err);
