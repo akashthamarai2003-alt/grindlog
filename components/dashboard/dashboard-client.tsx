@@ -342,7 +342,10 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
   };
 
   return (
-    <div className="flex flex-col gap-7 px-5 pb-8 pt-4 safe-top min-h-dvh">
+    <div 
+      className="flex flex-col gap-7 px-5 pb-8 pt-4 safe-top min-h-dvh bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: 'url("/back-dash.png")' }}
+    >
 
       <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
 

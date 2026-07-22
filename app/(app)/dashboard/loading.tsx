@@ -2,7 +2,10 @@ import React from "react";
 
 export default function DashboardLoading() {
   return (
-    <div className="flex flex-col gap-6 px-5 pb-8 pt-6 safe-top bg-[var(--color-bg-primary)] min-h-screen">
+    <div 
+      className="flex flex-col gap-6 px-5 pb-8 pt-6 safe-top bg-[var(--color-bg-primary)] min-h-screen bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: 'url("/back-dash.png")' }}
+    >
       
       {/* Header Skeleton */}
       <div className="flex items-center justify-between animate-pulse">
