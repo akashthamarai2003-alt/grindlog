@@ -230,7 +230,7 @@ export default function PaymentPage() {
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-      <div className="flex flex-col gap-4 px-5 pb-8 pt-2 safe-top">
+      <div className="flex flex-col gap-4 px-5 pb-8 pt-0 safe-top">
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -507,10 +507,6 @@ export default function PaymentPage() {
           </>
         )}
       </motion.button>
-
-      <p className="text-center text-xs text-[var(--color-text-tertiary)]">
-        No commitments. Cancel anytime.
-      </p>
 
       <div className="h-4" />
     </div>
