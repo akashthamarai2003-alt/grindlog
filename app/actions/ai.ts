@@ -159,18 +159,18 @@ Use this context to address the user's query. Be concise, empathetic, and always
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const groq = getGroqClientFromImport();
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODELS.primary,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...chatHistory.map(m => ({ role: m.role as "user" | "assistant", content: m.content }))
-      ],
-      max_tokens: 400,
-      temperature: 0.7,
+    const lastUserMessage = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].content : "Hello Coach!";
+    const contextSummary = chatHistory
+      .slice(-6)
+      .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+      .join("\n");
+
+    const content = await generateAIResponse({
+      systemPrompt,
+      userPrompt: `Recent Conversation History:\n${contextSummary}\n\nUser Question: ${lastUserMessage}`,
+      maxTokens: 400,
     });
 
-    const content = completion.choices[0]?.message?.content || "";
     await logAIUsage(supabase, user.id, "coach_chat");
 
     return { success: true, content };
