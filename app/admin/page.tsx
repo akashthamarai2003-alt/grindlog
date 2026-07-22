@@ -8,11 +8,13 @@ export default async function AdminDashboard() {
   const [
     { count: usersCount },
     { count: habitsCount },
-    { count: premiumCount }
+    { count: proCount },
+    { count: coreCount }
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("habits").select("*", { count: "exact", head: true }),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_premium", true)
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_premium", true).eq("premium_level", "pro"),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_premium", true).eq("premium_level", "core")
   ]);
 
   const metrics = [
@@ -30,15 +32,15 @@ export default async function AdminDashboard() {
     },
     {
       name: "Pro Members",
-      value: premiumCount || 0,
+      value: proCount || 0,
       icon: CreditCard,
       color: "bg-purple-500",
     },
     {
       name: "Core Members",
-      value: (usersCount || 0) - (premiumCount || 0),
+      value: coreCount || 0,
       icon: User,
-      color: "bg-gray-500",
+      color: "bg-indigo-500",
     },
   ];
 
@@ -97,12 +99,18 @@ export default async function AdminDashboard() {
                   <td className="px-6 py-4">{user.email}</td>
                   <td className="px-6 py-4">
                     {user.is_premium ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        Pro
-                      </span>
+                      user.premium_level === "pro" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          Pro
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                          Core
+                        </span>
+                      )
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        Core
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Unpaid
                       </span>
                     )}
                   </td>
