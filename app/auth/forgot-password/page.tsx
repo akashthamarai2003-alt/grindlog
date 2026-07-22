@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import bgImage from "../../../public/login-page.png";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -17,10 +17,19 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [cooldown, setCooldown] = useState<number>(0);
 
   const cleanEmail = email.trim();
   const isValidEmail = EMAIL_REGEX.test(cleanEmail);
   const showFieldError = touched && cleanEmail.length > 0 && !isValidEmail;
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +45,8 @@ export default function ForgotPasswordPage() {
       return;
     }
 
+    if (cooldown > 0) return;
+
     setIsLoading(true);
     setError(null);
 
@@ -44,8 +55,16 @@ export default function ForgotPasswordPage() {
 
     if (result.success) {
       setIsSuccess(true);
-    } else {
-      setError(result.error || "Failed to send password reset email. Please try again.");
+      setCooldown(60);
+    } else if (result.error) {
+      const secMatch = result.error.match(/after (\d+) seconds/i);
+      if (secMatch) {
+        const secs = parseInt(secMatch[1], 10) || 60;
+        setCooldown(secs);
+        setError(`Reset email already dispatched! For security, you can resend in ${secs}s.`);
+      } else {
+        setError(result.error);
+      }
     }
   };
 
@@ -59,9 +78,9 @@ export default function ForgotPasswordPage() {
           className="object-cover object-center"
           priority
         />
-        <div className="absolute inset-0 bg-black/20" /> {/* Slight dark overlay for readability */}
+        <div className="absolute inset-0 bg-black/20" />
       </div>
-      
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -79,10 +98,14 @@ export default function ForgotPasswordPage() {
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-5 rounded-xl bg-red-500/25 border border-red-500/60 px-4 py-3 text-sm font-medium text-white flex items-center gap-2"
+            className="mb-5 rounded-xl bg-amber-500/25 border border-amber-500/60 px-4 py-3 text-sm font-medium text-white flex items-start gap-2.5"
           >
-            <AlertCircle className="h-4 w-4 shrink-0 text-red-200" />
-            <span>{error}</span>
+            {cooldown > 0 ? (
+              <Clock className="h-4 w-4 shrink-0 text-amber-200 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-200 mt-0.5" />
+            )}
+            <span className="leading-snug">{error}</span>
           </motion.div>
         )}
 
@@ -94,7 +117,7 @@ export default function ForgotPasswordPage() {
           >
             <CheckCircle2 className="h-16 w-16 text-[#34C759] mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">Check your email</h3>
-            <p className="text-sm text-white/80 mb-6">
+            <p className="text-sm text-white/80 mb-6 leading-relaxed">
               We've sent a password reset link to <br/>
               <span className="font-bold text-white">{cleanEmail}</span>
             </p>
@@ -115,7 +138,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    if (error) setError(null);
+                    if (error && cooldown <= 0) setError(null);
                   }}
                   onBlur={() => setTouched(true)}
                   className={`h-12 w-full rounded-xl border bg-transparent pl-4 pr-11 text-sm font-medium text-white placeholder:text-white/80 outline-none transition-colors ${
@@ -137,7 +160,7 @@ export default function ForgotPasswordPage() {
             <motion.button
               type="submit"
               whileTap={{ scale: 0.96 }}
-              disabled={isLoading || !cleanEmail || (touched && !isValidEmail)}
+              disabled={isLoading || !cleanEmail || (touched && !isValidEmail) || cooldown > 0}
               className="mt-2 flex h-12 w-full items-center justify-center rounded-xl bg-[#34C759] text-lg font-bold text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] transition-all hover:brightness-110 disabled:opacity-50 border border-white/20"
             >
               {isLoading ? (
@@ -149,6 +172,8 @@ export default function ForgotPasswordPage() {
                   />
                   <span>Sending Link...</span>
                 </div>
+              ) : cooldown > 0 ? (
+                `Resend Link (${cooldown}s)`
               ) : (
                 "Send Reset Link"
               )}
