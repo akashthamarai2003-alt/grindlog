@@ -90,7 +90,12 @@ export function NotificationPrompt({ variant = "card" }: NotificationPromptProps
       }
     } catch (error: any) {
       console.error("Failed to enable notifications", error);
-      setErrorMsg(error.message || "An unexpected error occurred.");
+      const rawMsg = error?.message || "";
+      if (rawMsg.includes("no active Service Worker") || rawMsg.includes("PushManager") || rawMsg.includes("subscribe")) {
+        setErrorMsg("Service Worker is starting up. Please click 'Allow Notifications' once more.");
+      } else {
+        setErrorMsg(rawMsg || "An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }

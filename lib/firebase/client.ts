@@ -21,9 +21,39 @@ async function getFirebaseServiceWorkerRegistration() {
     return null;
   }
 
-  return navigator.serviceWorker.register("/firebase-messaging-sw.js", {
+  const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
     scope: FIREBASE_MESSAGING_SW_SCOPE,
   });
+
+  // If Service Worker is already active, return immediately
+  if (registration.active) {
+    return registration;
+  }
+
+  // Wait for installing/waiting worker to activate
+  const worker = registration.installing || registration.waiting;
+  if (worker) {
+    await new Promise<void>((resolve) => {
+      const stateChangeHandler = () => {
+        if (worker.state === "activated" || registration.active) {
+          worker.removeEventListener("statechange", stateChangeHandler);
+          resolve();
+        }
+      };
+      worker.addEventListener("statechange", stateChangeHandler);
+      // Timeout fallback after 3 seconds to avoid infinite waiting
+      setTimeout(resolve, 3000);
+    });
+  }
+
+  // Fallback to serviceWorker.ready
+  try {
+    await navigator.serviceWorker.ready;
+  } catch (err) {
+    console.warn("ServiceWorker ready check timed out or failed", err);
+  }
+
+  return registration;
 }
 
 // Initialize Cloud Messaging and get a reference to the service
