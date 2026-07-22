@@ -11,8 +11,6 @@ import {
   Trash2,
   LogOut,
   ChevronRight,
-  Moon,
-  Sun,
   Edit2,
   Sparkles,
   Award,
@@ -54,7 +52,6 @@ export default function ProfilePage() {
   const settingsGroups: { items: SettingItem[] }[] = [
     {
       items: [
-        { icon: Moon, label: "Dark Theme", toggle: true, action: "theme" },
         { icon: Bell, label: "Notifications", toggle: true, action: "notifications" },
       ],
     },
