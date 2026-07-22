@@ -26,8 +26,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { HABIT_CATEGORIES, TIME_OF_DAY } from "@/lib/constants";
-import { revalidateDashboard } from "@/app/actions/habits";
+import { revalidateDashboard, checkHabitLimitAction } from "@/app/actions/habits";
 import { cn } from "@/lib/utils";
+import { ProUpgradeModal } from "@/components/modals/pro-upgrade-modal";
 import type { HabitCategory, TimeOfDay, HabitFrequency } from "@/types";
 
 import { createClient } from "@/lib/services/supabase/client";
@@ -153,6 +154,7 @@ export default function NewHabitPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showProModal, setShowProModal] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const nameShakeControls = useAnimation();
@@ -196,6 +198,16 @@ export default function NewHabitPage() {
     if (!form.name || !form.category) return setErrorMsg("Fill out name and category.");
     setIsSaving(true);
     setErrorMsg(null);
+
+    // Enforce 10-habit maximum limit for Core users
+    const limitCheck = await checkHabitLimitAction(1);
+    if (!limitCheck.allowed) {
+      setIsSaving(false);
+      setErrorMsg(limitCheck.error || "Habit limit reached.");
+      setShowProModal(true);
+      return;
+    }
+
     try {
       const supabase = createClient();
       const { error } = await supabase.from("habits").insert({
@@ -254,6 +266,16 @@ export default function NewHabitPage() {
     
     setIsSaving(true);
     setErrorMsg(null);
+
+    // Enforce 10-habit maximum limit for Core users
+    const limitCheck = await checkHabitLimitAction(habitsToCreate.length);
+    if (!limitCheck.allowed) {
+      setIsSaving(false);
+      setErrorMsg(limitCheck.error || "Habit limit reached.");
+      setShowProModal(true);
+      return;
+    }
+
     try {
       const supabase = createClient();
       
@@ -447,7 +469,14 @@ export default function NewHabitPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--color-bg-secondary)] overflow-hidden">
+    <>
+      <ProUpgradeModal
+        isOpen={showProModal}
+        onClose={() => setShowProModal(false)}
+        title="Core Habit Limit Reached (10 Max)"
+        description="Core plan users can create up to 10 active habits. Upgrade to GrindLog Pro for unlimited habits & AI features!"
+      />
+      <div className="flex min-h-dvh flex-col bg-[var(--color-bg-secondary)] overflow-hidden">
       {/* Ambient background blobs */}
       {/* Ambient background blobs - Static to prevent typing lag */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -1045,7 +1074,8 @@ export default function NewHabitPage() {
         </div>
       </div>
     </div>
-  );
+  </>
+);
 }
 
 /* ─── Small Reusable Components ─── */

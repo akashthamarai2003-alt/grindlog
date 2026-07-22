@@ -1,6 +1,9 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { getMaxUserStreak } from '@/app/actions/habits';
+import { createClient } from '@/lib/services/supabase/client';
+import { ProUpgradeModal } from '@/components/modals/pro-upgrade-modal';
+import { Crown, Zap } from 'lucide-react';
 
 /**
  * ═══════════════════════════════════════════════════════════
@@ -3131,24 +3134,44 @@ export default function TreePage() {
   const treeRef = useRef<TreeOfLife | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPro, setIsPro] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  // Load streak data
+  // Load user profile & streak data
   useEffect(() => {
-    getMaxUserStreak()
-      .then(max => {
-        setStreak(max === 0 ? 1 : max);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Failed to load streak:', err);
+    async function loadTreeData() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+          if ((profile as any)?.premium_level === "pro") {
+            setIsPro(true);
+          }
+        }
+
+        const maxStreak = await getMaxUserStreak();
+        setStreak(maxStreak === 0 ? 1 : maxStreak);
+      } catch (err) {
+        console.error('Failed to load tree data:', err);
         setStreak(1);
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+
+    loadTreeData();
   }, []);
 
   // Initialize tree
   useEffect(() => {
-    if (streak !== null && canvasRef.current && !treeRef.current) {
+    if (isPro && streak !== null && canvasRef.current && !treeRef.current) {
       const tree = new TreeOfLife(canvasRef.current, streak);
       treeRef.current = tree;
       
@@ -3162,7 +3185,7 @@ export default function TreePage() {
         treeRef.current = null;
       };
     }
-  }, [streak]);
+  }, [isPro, streak]);
 
   // Public methods for parent component
   const waterTree = useCallback(() => {
@@ -3172,6 +3195,35 @@ export default function TreePage() {
   const completeHabit = useCallback(() => {
     treeRef.current?.completeHabit();
   }, []);
+
+  if (!loading && !isPro) {
+    return (
+      <>
+        <ProUpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          title="Unlock Virtual Growth Tree"
+          description="Watch your habit consistency blossom into a living, ultra-realistic 3D Tree of Life with GrindLog Pro."
+        />
+        <div className="flex h-[calc(100dvh-80px)] w-full flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-slate-900 via-slate-850 to-slate-950 text-white">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#FFD60A] to-[#FF9500] shadow-xl shadow-amber-500/20 mb-6 animate-bounce">
+            <Crown className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight mb-2">Virtual Growth Tree is Pro Only</h1>
+          <p className="text-sm font-medium text-slate-300 max-w-xs leading-relaxed mb-8">
+            Upgrade to GrindLog Pro to watch your daily habit streaks grow a magnificent, animated 3D tree with active wildlife & weather physics!
+          </p>
+          <button
+            onClick={() => setShowUpgradeModal(true)}
+            className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#34C759] to-[#28A745] text-sm font-black text-white shadow-lg shadow-green-500/25 hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+          >
+            <Zap className="h-4 w-4" />
+            <span>Upgrade to Pro</span>
+          </button>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="relative w-full h-[calc(100dvh-80px)] bg-gradient-to-b from-slate-900 to-slate-800 overflow-hidden">

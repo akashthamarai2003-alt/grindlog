@@ -403,3 +403,33 @@ async function recalculateStreak(habitId: string, userId: string) {
 
   await supabase.from("habits").update({ current_streak: streak, total_completions: logs.length }).eq("id", habitId);
 }
+
+export async function checkHabitLimitAction(requestedNewCount: number = 1) {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { allowed: false, error: "Not authenticated" };
+
+    const [{ data: profile }, { count }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("habits").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("is_active", true)
+    ]);
+
+    const isPro = (profile as any)?.premium_level === "pro";
+    const activeCount = count || 0;
+
+    if (!isPro && (activeCount + requestedNewCount) > 10) {
+      return {
+        allowed: false,
+        activeCount,
+        isPro: false,
+        error: `Core plan limit reached! You have ${activeCount} active habit(s). Core plan allows maximum 10 active habits. Upgrade to Pro for unlimited habits!`
+      };
+    }
+
+    return { allowed: true, activeCount, isPro };
+  } catch (err: any) {
+    console.error("Habit limit check error:", err);
+    return { allowed: true, activeCount: 0, isPro: false };
+  }
+}

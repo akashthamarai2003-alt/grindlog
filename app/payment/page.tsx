@@ -29,9 +29,9 @@ import { cn } from "@/lib/utils";
 import { createRazorpayOrder, verifyRazorpayPayment, validateCouponAction } from "@/app/actions/payment";
 
 const features = [
-  { icon: InfinityIcon, label: "Unlimited Habits", core: true, pro: true },
+  { icon: InfinityIcon, label: "Active Habits", core: "10 Max", pro: "Unlimited" },
   { icon: Calendar, label: "Smart Planner", core: true, pro: true },
-  { icon: TreeDeciduous, label: "Virtual Growth Tree", core: true, pro: true },
+  { icon: TreeDeciduous, label: "Virtual Growth Tree", core: false, pro: true },
   { icon: LayoutGrid, label: "Full Life Tracking", core: "Basic", pro: "Full Suite" },
   { icon: Trophy, label: "Gamified Quests", core: "Limited", pro: "Unlimited" },
   { icon: Notebook, label: "Daily AI Journaling", core: false, pro: true },
