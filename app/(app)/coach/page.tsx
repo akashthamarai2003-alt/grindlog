@@ -176,7 +176,11 @@ export default function CoachPage() {
           try {
             const parsed = JSON.parse(localSched);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              setGeneratedSchedule(parsed);
+              const sanitized = parsed.map((item, i) => ({
+                ...item,
+                id: item.id && !parsed.slice(0, i).some(p => p.id === item.id) ? item.id : `block_${i}_${Date.now()}`
+              }));
+              setGeneratedSchedule(sanitized);
             }
           } catch (e) {}
         }
@@ -257,8 +261,11 @@ export default function CoachPage() {
       const updated = prev.map(block => {
         const shiftTimeStr = (timeStr: string) => {
           try {
+            if (!timeStr) return timeStr;
             const [timePart, modifier] = timeStr.trim().split(" ");
             let [hours, mins] = timePart.split(":").map(Number);
+            if (isNaN(mins)) mins = 0;
+            if (isNaN(hours)) return timeStr;
             if (modifier === "PM" && hours < 12) hours += 12;
             if (modifier === "AM" && hours === 12) hours = 0;
             let total = hours * 60 + mins + minutes;
@@ -471,8 +478,12 @@ export default function CoachPage() {
       selectedHabitNames
     });
     if (res.success && res.schedule) {
-      setGeneratedSchedule(res.schedule);
-      localStorage.setItem("grindlog_active_schedule", JSON.stringify(res.schedule));
+      const uniqueSchedule = res.schedule.map((block: any, idx: number) => ({
+        ...block,
+        id: `ai_${idx}_${Date.now()}`
+      }));
+      setGeneratedSchedule(uniqueSchedule);
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(uniqueSchedule));
       toast.success("Routine synthesized & saved!");
     } else if (res.error) {
       handleError(res.error);
