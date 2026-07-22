@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import Razorpay from "razorpay";
+import DeleteUserButton from "./delete-user-button";
 
 export default async function AdminUsersPage() {
   const supabase = createAdminClient();
@@ -97,6 +98,7 @@ export default async function AdminUsersPage() {
                 <th className="px-6 py-3">Payment ID</th>
                 <th className="px-6 py-3">Paid Amount</th>
                 <th className="px-6 py-3">Joined</th>
+                <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -181,6 +183,13 @@ export default async function AdminUsersPage() {
                     <td className="px-6 py-4 text-xs">
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      <DeleteUserButton
+                        userId={user.id}
+                        userName={user.display_name}
+                        userEmail={user.email}
+                      />
+                    </td>
                   </tr>
                 );
               })}
@@ -189,7 +198,7 @@ export default async function AdminUsersPage() {
               <tr>
                 <td colSpan={4} className="px-6 py-4 text-right uppercase text-xs">Total Revenue:</td>
                 <td className="px-6 py-4 text-green-600">₹{totalRevenue.toLocaleString()}</td>
-                <td></td>
+                <td colSpan={2}></td>
               </tr>
             </tfoot>
           </table>
