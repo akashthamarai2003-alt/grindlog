@@ -5,7 +5,10 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Brain, Send, Mic, Sparkles, Sprout, Target, LineChart,
   Flame, Plus, Check, RefreshCw, Loader2, Calendar, Clock,
-  BookOpen, CheckCircle2, AlertCircle, HelpCircle, ArrowRight, X
+  BookOpen, CheckCircle2, AlertCircle, HelpCircle, ArrowRight, X,
+  Zap, Coffee, Dumbbell, Sliders, Sun, Moon, Scale, Edit3, Trash2,
+  ChevronUp, ChevronDown, Play, Save, Download, CheckSquare, Square,
+  Filter, Layers, ArrowUp, ArrowDown, Share2, ShieldCheck, CheckCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -112,17 +115,307 @@ export default function CoachPage() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [addedSuggestions, setAddedSuggestions] = useState<Record<number, boolean>>({});
 
-  // 7. AI Schedule Builder State
+  // 7. AI Schedule Builder Advanced State
   const [wakeTime, setWakeTime] = useState("07:00");
   const [sleepTime, setSleepTime] = useState("23:00");
   const [scheduleFocus, setScheduleFocus] = useState("");
+  const [chronotype, setChronotype] = useState<string>("balanced");
+  const [bufferMinutes, setBufferMinutes] = useState<number>(15);
+  const [intensity, setIntensity] = useState<string>("moderate");
+  const [userActiveHabits, setUserActiveHabits] = useState<any[]>([]);
+  const [selectedHabitNames, setSelectedHabitNames] = useState<string[]>([]);
+  const [showHabitSelector, setShowHabitSelector] = useState(false);
   const [generatedSchedule, setGeneratedSchedule] = useState<any[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleFilter, setScheduleFilter] = useState<string>("all");
+  const [editingBlock, setEditingBlock] = useState<any | null>(null);
+  const [isAddingBlock, setIsAddingBlock] = useState(false);
+  const [newBlockData, setNewBlockData] = useState({
+    activity: "",
+    emoji: "⚡",
+    time: "09:00 AM",
+    endTime: "09:30 AM",
+    category: "Deep Work",
+    duration: 30
+  });
+  const [savedPresets, setSavedPresets] = useState<any[]>([]);
+  const [showPresetModal, setShowPresetModal] = useState(false);
+  const [presetNameInput, setPresetNameInput] = useState("");
+  const [syncingPlanner, setSyncingPlanner] = useState(false);
+  const [currentTimeStr, setCurrentTimeStr] = useState<string>("");
 
   // 8. AI Reflection State
   const [reflectionInput, setReflectionInput] = useState("");
   const [reflectionResult, setReflectionResult] = useState<any | null>(null);
   const [reflectionLoading, setReflectionLoading] = useState(false);
+
+  useEffect(() => {
+    async function initScheduleData() {
+      try {
+        const { createClient } = await import("@/lib/services/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data } = await supabase
+            .from("habits")
+            .select("id, name, emoji, color")
+            .eq("user_id", user.id)
+            .eq("is_active", true);
+          if (data && data.length > 0) {
+            setUserActiveHabits(data);
+            setSelectedHabitNames(data.map(h => h.name));
+          }
+        }
+      } catch (err) {
+        console.error("Habits load error:", err);
+      }
+
+      if (typeof window !== "undefined") {
+        const localSched = localStorage.getItem("grindlog_active_schedule");
+        if (localSched) {
+          try {
+            const parsed = JSON.parse(localSched);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setGeneratedSchedule(parsed);
+            }
+          } catch (e) {}
+        }
+        const localPresets = localStorage.getItem("grindlog_schedule_presets");
+        if (localPresets) {
+          try {
+            const parsed = JSON.parse(localPresets);
+            if (Array.isArray(parsed)) {
+              setSavedPresets(parsed);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    initScheduleData();
+  }, []);
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const hrs = now.getHours();
+      const mins = now.getMinutes();
+      const mod = hrs >= 12 ? "PM" : "AM";
+      const displayHrs = hrs % 12 === 0 ? 12 : hrs % 12;
+      setCurrentTimeStr(`${String(displayHrs).padStart(2, "0")}:${String(mins).padStart(2, "0")} ${mod}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getCurrentActiveBlock = (schedule: any[]) => {
+    if (!schedule || schedule.length === 0) return null;
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    for (const block of schedule) {
+      if (!block.time) continue;
+      const parseTimeToMinutes = (tStr: string) => {
+        try {
+          const [timePart, modifier] = tStr.trim().split(" ");
+          let [hours, minutes] = timePart.split(":").map(Number);
+          if (modifier === "PM" && hours < 12) hours += 12;
+          if (modifier === "AM" && hours === 12) hours = 0;
+          return hours * 60 + minutes;
+        } catch (e) {
+          return null;
+        }
+      };
+      const startMins = parseTimeToMinutes(block.time);
+      const endMins = block.endTime ? parseTimeToMinutes(block.endTime) : (startMins !== null ? startMins + (block.duration || 30) : null);
+
+      if (startMins !== null && endMins !== null) {
+        if (currentMinutes >= startMins && currentMinutes < endMins) {
+          return { ...block, remainingMins: endMins - currentMinutes };
+        }
+      }
+    }
+    return null;
+  };
+
+  const handleToggleBlockComplete = (idOrIdx: any) => {
+    setGeneratedSchedule(prev => {
+      const updated = prev.map((item, idx) => {
+        if (item.id === idOrIdx || idx === idOrIdx) {
+          return { ...item, completed: !item.completed };
+        }
+        return item;
+      });
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleShiftSchedule = (minutes: number) => {
+    setGeneratedSchedule(prev => {
+      const updated = prev.map(block => {
+        const shiftTimeStr = (timeStr: string) => {
+          try {
+            const [timePart, modifier] = timeStr.trim().split(" ");
+            let [hours, mins] = timePart.split(":").map(Number);
+            if (modifier === "PM" && hours < 12) hours += 12;
+            if (modifier === "AM" && hours === 12) hours = 0;
+            let total = hours * 60 + mins + minutes;
+            if (total < 0) total += 24 * 60;
+            total = total % (24 * 60);
+            let newHours = Math.floor(total / 60);
+            let newMins = total % 60;
+            const newMod = newHours >= 12 ? "PM" : "AM";
+            if (newHours > 12) newHours -= 12;
+            if (newHours === 0) newHours = 12;
+            return `${String(newHours).padStart(2, "0")}:${String(newMins).padStart(2, "0")} ${newMod}`;
+          } catch (e) {
+            return timeStr;
+          }
+        };
+        return {
+          ...block,
+          time: shiftTimeStr(block.time),
+          endTime: block.endTime ? shiftTimeStr(block.endTime) : block.endTime
+        };
+      });
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(updated));
+      return updated;
+    });
+    toast.success(`Schedule shifted ${minutes > 0 ? `+${minutes}` : minutes}m`);
+  };
+
+  const handleDeleteBlock = (idx: number) => {
+    setGeneratedSchedule(prev => {
+      const updated = prev.filter((_, i) => i !== idx);
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(updated));
+      return updated;
+    });
+    toast.success("Block removed");
+  };
+
+  const handleMoveBlock = (idx: number, direction: "up" | "down") => {
+    if (direction === "up" && idx === 0) return;
+    if (direction === "down" && idx === generatedSchedule.length - 1) return;
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    setGeneratedSchedule(prev => {
+      const updated = [...prev];
+      const temp = updated[idx];
+      updated[idx] = updated[targetIdx];
+      updated[targetIdx] = temp;
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleSaveEditedBlock = (updatedBlock: any) => {
+    setGeneratedSchedule(prev => {
+      const updated = prev.map(item => item.id === updatedBlock.id ? updatedBlock : item);
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(updated));
+      return updated;
+    });
+    setEditingBlock(null);
+    toast.success("Block updated");
+  };
+
+  const handleAddCustomBlock = () => {
+    if (!newBlockData.activity.trim()) return;
+    const newBlock = {
+      id: `custom_${Date.now()}`,
+      time: newBlockData.time || "09:00 AM",
+      endTime: newBlockData.endTime || "09:30 AM",
+      duration: Number(newBlockData.duration) || 30,
+      activity: newBlockData.activity,
+      emoji: newBlockData.emoji || "⚡",
+      category: newBlockData.category || "Routine",
+      isHabit: newBlockData.category === "Habit",
+      energy: "Medium",
+      tip: "Focus and complete with intention.",
+      completed: false
+    };
+    setGeneratedSchedule(prev => {
+      const updated = [...prev, newBlock];
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(updated));
+      return updated;
+    });
+    setIsAddingBlock(false);
+    setNewBlockData({ activity: "", emoji: "⚡", time: "09:00 AM", endTime: "09:30 AM", category: "Deep Work", duration: 30 });
+    toast.success("Custom block added!");
+  };
+
+  const handleSavePreset = (name: string) => {
+    if (!name.trim() || generatedSchedule.length === 0) return;
+    const preset = {
+      id: `preset_${Date.now()}`,
+      name,
+      wakeTime,
+      sleepTime,
+      schedule: generatedSchedule
+    };
+    const updatedPresets = [...savedPresets, preset];
+    setSavedPresets(updatedPresets);
+    localStorage.setItem("grindlog_schedule_presets", JSON.stringify(updatedPresets));
+    setPresetNameInput("");
+    setShowPresetModal(false);
+    toast.success(`Preset "${name}" saved!`);
+  };
+
+  const handleLoadPreset = (preset: any) => {
+    setWakeTime(preset.wakeTime || "07:00");
+    setSleepTime(preset.sleepTime || "23:00");
+    setGeneratedSchedule(preset.schedule || []);
+    localStorage.setItem("grindlog_active_schedule", JSON.stringify(preset.schedule || []));
+    toast.success(`Loaded preset: ${preset.name}`);
+  };
+
+  const handleApplyToPlanner = async () => {
+    if (generatedSchedule.length === 0 || syncingPlanner) return;
+    setSyncingPlanner(true);
+    let addedCount = 0;
+    try {
+      for (const block of generatedSchedule) {
+        if (block.isHabit || block.category === "Habit") {
+          const habitPayload = {
+            name: block.activity,
+            emoji: block.emoji || "⚡",
+            target_count: 1,
+            target_unit: "times",
+            color: "#34C759",
+            preferred_time: block.time
+          };
+          const res = await addHabitFromAIAction(habitPayload);
+          if (res.success) {
+            addedCount++;
+          }
+        }
+      }
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(generatedSchedule));
+      toast.success(`Synced! ${addedCount > 0 ? `Added ${addedCount} routine habits & ` : ""}Saved active schedule to Planner.`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to sync to planner");
+    }
+    setSyncingPlanner(false);
+  };
+
+  const handleBuildSchedule = async () => {
+    if (scheduleLoading) return;
+    setScheduleLoading(true);
+    const res = await generateScheduleBuilderAction(wakeTime, sleepTime, scheduleFocus, {
+      chronotype,
+      bufferMinutes,
+      intensity,
+      selectedHabitNames
+    });
+    if (res.success && res.schedule) {
+      setGeneratedSchedule(res.schedule);
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(res.schedule));
+      toast.success("Routine synthesized & saved!");
+    } else if (res.error) {
+      handleError(res.error);
+    }
+    setScheduleLoading(false);
+  };
 
   // Top Up Modal State
   const [showTopUpModal, setShowTopUpModal] = useState(false);
@@ -288,17 +581,6 @@ export default function CoachPage() {
     setSuggestionsLoading(false);
   };
 
-  const handleBuildSchedule = async () => {
-    if (scheduleLoading) return;
-    setScheduleLoading(true);
-    const res = await generateScheduleBuilderAction(wakeTime, sleepTime, scheduleFocus);
-    if (res.success && res.schedule) {
-      setGeneratedSchedule(res.schedule);
-    } else if (res.error) {
-      handleError(res.error);
-    }
-    setScheduleLoading(false);
-  };
 
   const handleAnalyzeReflection = async () => {
     if (!reflectionInput.trim() || reflectionLoading) return;
@@ -767,13 +1049,65 @@ export default function CoachPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[140px] h-full scrollbar-none"
             >
-              <div className="rounded-[24px] bg-[var(--color-bg-secondary)] p-5 border border-[var(--color-bg-tertiary)] flex flex-col gap-3">
-                <h3 className="text-sm font-black text-[var(--color-text-primary)]">Optimize Your Routine</h3>
+              {/* Preset Selector Bar */}
+              <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                  <span className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider whitespace-nowrap">Presets:</span>
+                  {savedPresets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      onClick={() => handleLoadPreset(preset)}
+                      className="px-2.5 py-1 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] text-[10px] font-bold text-[var(--color-text-primary)] hover:border-[#30B0C7] transition-all whitespace-nowrap"
+                    >
+                      ⚡ {preset.name}
+                    </button>
+                  ))}
+                </div>
+                {generatedSchedule.length > 0 && (
+                  <button
+                    onClick={() => setShowPresetModal(true)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#30B0C7]/15 text-[#30B0C7] text-[10px] font-black hover:bg-[#30B0C7]/25 transition-all whitespace-nowrap"
+                  >
+                    <Save className="h-3 w-3" /> Save Preset
+                  </button>
+                )}
+              </div>
+
+              {/* Main Configuration Card */}
+              <div className="rounded-[24px] bg-[var(--color-bg-secondary)] p-5 border border-[var(--color-bg-tertiary)] flex flex-col gap-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#30B0C7]/15 text-[#30B0C7] flex items-center justify-center">
+                      <Sliders className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-black text-[var(--color-text-primary)] uppercase tracking-wider">AI Schedule Blueprint</h3>
+                      <p className="text-[10px] font-bold text-[var(--color-text-tertiary)]">Tailored time-blocking & energy flow</p>
+                    </div>
+                  </div>
+                  {generatedSchedule.length > 0 && (
+                    <button
+                      onClick={() => {
+                        if (confirm("Reset current routine timeline?")) {
+                          setGeneratedSchedule([]);
+                          localStorage.removeItem("grindlog_active_schedule");
+                        }
+                      }}
+                      className="text-[10px] font-bold text-[#FF3B30] hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Wake & Sleep Times */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">Wake Up</label>
+                    <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider flex items-center gap-1">
+                      <Sun className="h-3 w-3 text-[#FF9500]" /> Wake Up
+                    </label>
                     <div className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] flex items-center h-[38px]">
                       <TimePicker12h
                         value={wakeTime}
@@ -783,7 +1117,9 @@ export default function CoachPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">Bedtime</label>
+                    <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider flex items-center gap-1">
+                      <Moon className="h-3 w-3 text-[#AF52DE]" /> Bedtime
+                    </label>
                     <div className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] flex items-center h-[38px]">
                       <TimePicker12h
                         value={sleepTime}
@@ -793,55 +1129,683 @@ export default function CoachPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">Core Daily Focus</label>
+
+                {/* Core Daily Focus */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">Core Daily Focus / Main Quest</label>
                   <input
                     type="text"
                     value={scheduleFocus}
                     onChange={e => setScheduleFocus(e.target.value)}
-                    placeholder="e.g. Deep coding, stress reduction"
-                    className="bg-[var(--color-bg-primary)] px-3 py-2.5 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
+                    placeholder="e.g. Trading & Market Analysis, Deep Coding"
+                    className="bg-[var(--color-bg-primary)] px-3 py-2.5 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]/50 focus:border-[#30B0C7] transition-all"
                   />
+                  {/* Quick Focus Tags */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-0.5">
+                    {["Trading 📈", "Deep Coding 💻", "Exam Prep 📚", "Fitness 🏋️", "Relax & Reset ☕"].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setScheduleFocus(tag.split(" ")[0])}
+                        className="px-2 py-0.5 rounded-full bg-[var(--color-bg-primary)] border border-[var(--color-bg-tertiary)] text-[9px] font-bold text-[var(--color-text-secondary)] whitespace-nowrap active:scale-95 transition-all"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Chronotype Profile Selector */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">Energy & Chronotype Profile</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: "early_bird", label: "Early Bird", desc: "Peak morning focus", emoji: "🌅" },
+                      { id: "balanced", label: "Balanced Flow", desc: "Steady energy distribution", emoji: "⚖️" },
+                      { id: "night_owl", label: "Night Owl", desc: "Peak evening focus", emoji: "🦉" },
+                      { id: "ultra_focus", label: "Beast Mode", desc: "Intense 90m sprints", emoji: "⚡" },
+                    ].map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setChronotype(c.id)}
+                        className={cn(
+                          "p-2.5 rounded-xl border text-left flex flex-col gap-0.5 transition-all",
+                          chronotype === c.id
+                            ? "bg-[#30B0C7]/15 border-[#30B0C7] text-[var(--color-text-primary)]"
+                            : "bg-[var(--color-bg-primary)] border-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-tertiary)]"
+                        )}
+                      >
+                        <span className="text-xs font-black flex items-center gap-1.5">
+                          <span>{c.emoji}</span> {c.label}
+                        </span>
+                        <span className="text-[9px] font-semibold text-[var(--color-text-tertiary)]">{c.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Buffer Pace & Intensity */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">Block Buffer</label>
+                    <select
+                      value={bufferMinutes}
+                      onChange={e => setBufferMinutes(Number(e.target.value))}
+                      className="bg-[var(--color-bg-primary)] px-2.5 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none text-[var(--color-text-primary)]"
+                    >
+                      <option value={5}>🏃 5m Tight Buffer</option>
+                      <option value={15}>⚖️ 15m Balanced Buffer</option>
+                      <option value={30}>☕ 30m Relaxed Buffer</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider">Intensity</label>
+                    <select
+                      value={intensity}
+                      onChange={e => setIntensity(e.target.value)}
+                      className="bg-[var(--color-bg-primary)] px-2.5 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none text-[var(--color-text-primary)]"
+                    >
+                      <option value="light">🌱 Light Pace</option>
+                      <option value="moderate">🔥 Moderate Flow</option>
+                      <option value="intense">⚡ High Intensity</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Active Habits Lock-In Checklist */}
+                {userActiveHabits.length > 0 && (
+                  <div className="flex flex-col gap-2 pt-1 border-t border-[var(--color-bg-tertiary)]">
+                    <button
+                      type="button"
+                      onClick={() => setShowHabitSelector(!showHabitSelector)}
+                      className="flex items-center justify-between text-[10px] font-black text-[var(--color-text-secondary)] uppercase tracking-wider"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <CheckSquare className="h-3.5 w-3.5 text-[#34C759]" /> Include Active Habits ({selectedHabitNames.length}/{userActiveHabits.length})
+                      </span>
+                      {showHabitSelector ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </button>
+
+                    {showHabitSelector && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {userActiveHabits.map((h) => {
+                          const isSelected = selectedHabitNames.includes(h.name);
+                          return (
+                            <button
+                              key={h.id}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedHabitNames(prev => prev.filter(n => n !== h.name));
+                                } else {
+                                  setSelectedHabitNames(prev => [...prev, h.name]);
+                                }
+                              }}
+                              className={cn(
+                                "px-2.5 py-1 rounded-xl border text-[10px] font-bold flex items-center gap-1.5 transition-all active:scale-95",
+                                isSelected
+                                  ? "bg-[#34C759]/15 border-[#34C759] text-[#34C759]"
+                                  : "bg-[var(--color-bg-primary)] border-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] opacity-60"
+                              )}
+                            >
+                              <span>{h.emoji}</span>
+                              <span>{h.name}</span>
+                              {isSelected ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <button
                   onClick={handleBuildSchedule}
                   disabled={scheduleLoading}
-                  className="w-full bg-[#30B0C7] text-white text-xs font-black py-2.5 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+                  className="w-full bg-gradient-to-r from-[#30B0C7] to-[#007AFF] text-white text-xs font-black py-3 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2 shadow-md"
                 >
-                  {scheduleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Synthesize Routine"}
+                  {scheduleLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Synthesizing Perfect Routine...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" /> Synthesize Routine
+                    </>
+                  )}
                 </button>
               </div>
 
-              {/* Timeline Output */}
-              <div className="relative border-l-2 border-[var(--color-bg-tertiary)] ml-4 pl-4 space-y-4">
-                {generatedSchedule.map((item, idx) => (
+              {/* Generated Routine Dashboard */}
+              {generatedSchedule.length > 0 && (
+                <div className="flex flex-col gap-4 mt-2">
+                  {/* LIVE NOW Banner */}
+                  {(() => {
+                    const activeNow = getCurrentActiveBlock(generatedSchedule);
+                    if (!activeNow) return null;
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="rounded-2xl bg-gradient-to-r from-[#34C759]/20 via-[#30B0C7]/20 to-[#007AFF]/20 border border-[#34C759]/40 p-4 flex items-center justify-between shadow-sm relative overflow-hidden"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <div className="w-3 h-3 rounded-full bg-[#34C759] animate-ping absolute top-0 left-0" />
+                            <div className="w-3 h-3 rounded-full bg-[#34C759]" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-[#34C759] bg-[#34C759]/20 px-2 py-0.5 rounded-full">
+                                CURRENT BLOCK NOW ({activeNow.time})
+                              </span>
+                              {activeNow.remainingMins && (
+                                <span className="text-[9px] font-bold text-[var(--color-text-tertiary)]">
+                                  ⌛ {activeNow.remainingMins}m remaining
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs font-black text-[var(--color-text-primary)] mt-1 flex items-center gap-1.5">
+                              <span>{activeNow.emoji}</span> {activeNow.activity}
+                            </p>
+                            {activeNow.tip && (
+                              <p className="text-[10px] font-medium text-[var(--color-text-secondary)] mt-0.5 italic">
+                                💡 Tip: {activeNow.tip}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleToggleBlockComplete(activeNow.id)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 flex items-center gap-1.5 whitespace-nowrap",
+                            activeNow.completed
+                              ? "bg-[#34C759] text-white shadow"
+                              : "bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] border border-[var(--color-bg-tertiary)]"
+                          )}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          {activeNow.completed ? "Done!" : "Check Off"}
+                        </button>
+                      </motion.div>
+                    );
+                  })()}
+
+                  {/* Routine Analytics & Breakdown */}
+                  {(() => {
+                    const deepMins = generatedSchedule.filter(b => b.category === "Deep Work").reduce((acc, b) => acc + (b.duration || 30), 0);
+                    const restMins = generatedSchedule.filter(b => b.category === "Rest" || b.category === "Meal").reduce((acc, b) => acc + (b.duration || 30), 0);
+                    const habitCount = generatedSchedule.filter(b => b.isHabit || b.category === "Habit").length;
+                    const completedCount = generatedSchedule.filter(b => b.completed).length;
+
+                    return (
+                      <div className="grid grid-cols-4 gap-2">
+                        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] p-2.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                          <span className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Progress</span>
+                          <span className="text-sm font-black text-[#34C759] mt-0.5">{completedCount}/{generatedSchedule.length}</span>
+                        </div>
+                        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] p-2.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                          <span className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Deep Work</span>
+                          <span className="text-sm font-black text-[#007AFF] mt-0.5">{(deepMins / 60).toFixed(1)}h</span>
+                        </div>
+                        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] p-2.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                          <span className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Habits</span>
+                          <span className="text-sm font-black text-[#FF9500] mt-0.5">{habitCount}</span>
+                        </div>
+                        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] p-2.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                          <span className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Rest/Meals</span>
+                          <span className="text-sm font-black text-[#AF52DE] mt-0.5">{(restMins / 60).toFixed(1)}h</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Toolbar & Filter Actions */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2 overflow-x-auto scrollbar-none pb-1">
+                      {/* Filter Chips */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                        {["all", "Deep Work", "Habit", "Rest", "Health"].map((cat) => (
+                          <button
+                            key={cat}
+                            onClick={() => setScheduleFilter(cat)}
+                            className={cn(
+                              "px-2.5 py-1 rounded-xl text-[10px] font-black capitalize transition-all whitespace-nowrap border",
+                              scheduleFilter === cat
+                                ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] border-transparent"
+                                : "bg-[var(--color-bg-secondary)] text-[var(--color-text-tertiary)] border-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
+                            )}
+                          >
+                            {cat === "all" ? "All Blocks" : cat}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Quick Shift Time */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleShiftSchedule(-15)}
+                          title="Shift entire timeline back 15 minutes"
+                          className="px-2 py-1 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] text-[9px] font-black text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] whitespace-nowrap"
+                        >
+                          -15m
+                        </button>
+                        <button
+                          onClick={() => handleShiftSchedule(15)}
+                          title="Shift entire timeline forward 15 minutes"
+                          className="px-2 py-1 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] text-[9px] font-black text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] whitespace-nowrap"
+                        >
+                          +15m
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => setIsAddingBlock(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] text-[11px] font-black text-[var(--color-text-primary)] active:scale-95 transition-all shadow-sm"
+                      >
+                        <Plus className="h-3.5 w-3.5 text-[#30B0C7]" /> Add Block
+                      </button>
+
+                      {/* Apply to Planner button */}
+                      <button
+                        onClick={handleApplyToPlanner}
+                        disabled={syncingPlanner}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#34C759] text-white text-[11px] font-black active:scale-95 transition-all shadow-sm"
+                      >
+                        {syncingPlanner ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                        Sync to Planner & Habits
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Interactive Timeline List */}
+                  <div className="relative border-l-2 border-[var(--color-bg-tertiary)] ml-3 pl-4 space-y-3 pt-2">
+                    {generatedSchedule
+                      .filter(item => scheduleFilter === "all" || item.category === scheduleFilter || (scheduleFilter === "Habit" && item.isHabit))
+                      .map((item, idx) => {
+                        const originalIdx = generatedSchedule.findIndex(b => b === item || (b.id && b.id === item.id));
+                        const isCurrent = getCurrentActiveBlock([item]) !== null;
+
+                        return (
+                          <motion.div
+                            key={item.id || idx}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="relative group"
+                          >
+                            {/* Circle anchor */}
+                            <button
+                              onClick={() => handleToggleBlockComplete(item.id || originalIdx)}
+                              className={cn(
+                                "absolute -left-[23px] top-3.5 w-3.5 h-3.5 rounded-full border-2 transition-all flex items-center justify-center",
+                                item.completed
+                                  ? "bg-[#34C759] border-[#34C759] text-white"
+                                  : isCurrent
+                                  ? "bg-[#30B0C7] border-white animate-pulse"
+                                  : item.isHabit
+                                  ? "bg-[#34C759]/30 border-[#34C759]"
+                                  : "bg-[var(--color-bg-primary)] border-[var(--color-text-tertiary)] hover:border-[var(--color-text-primary)]"
+                              )}
+                            >
+                              {item.completed && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                            </button>
+
+                            {/* Block Card */}
+                            <div className={cn(
+                              "rounded-2xl p-3.5 border transition-all flex flex-col gap-2 shadow-sm",
+                              item.completed
+                                ? "bg-[var(--color-bg-secondary)]/50 border-[var(--color-bg-tertiary)] opacity-70"
+                                : isCurrent
+                                ? "bg-[#30B0C7]/10 border-[#30B0C7]"
+                                : "bg-[var(--color-bg-secondary)] border-[var(--color-bg-tertiary)] hover:border-[var(--color-text-tertiary)]"
+                            )}>
+                              {/* Header: Time, Category Badge, Controls */}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] font-black text-[var(--color-text-primary)]">
+                                    {item.time} {item.endTime ? `- ${item.endTime}` : ""}
+                                  </span>
+                                  {item.duration && (
+                                    <span className="text-[9px] font-bold text-[var(--color-text-tertiary)] bg-[var(--color-bg-primary)] px-1.5 py-0.5 rounded border border-[var(--color-bg-tertiary)]">
+                                      {item.duration}m
+                                    </span>
+                                  )}
+                                  {item.category && (
+                                    <span className={cn(
+                                      "text-[8px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider",
+                                      item.category === "Deep Work" ? "bg-[#007AFF]/15 text-[#007AFF]" :
+                                      item.category === "Habit" || item.isHabit ? "bg-[#34C759]/15 text-[#34C759]" :
+                                      item.category === "Health" ? "bg-[#FF2D55]/15 text-[#FF2D55]" :
+                                      item.category === "Rest" ? "bg-[#AF52DE]/15 text-[#AF52DE]" :
+                                      item.category === "Meal" ? "bg-[#FF9500]/15 text-[#FF9500]" :
+                                      "bg-[var(--color-bg-primary)] text-[var(--color-text-tertiary)]"
+                                    )}>
+                                      {item.category}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Actions: Reorder, Edit, Delete */}
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => handleMoveBlock(originalIdx, "up")}
+                                    disabled={originalIdx === 0}
+                                    className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] disabled:opacity-20"
+                                  >
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleMoveBlock(originalIdx, "down")}
+                                    disabled={originalIdx === generatedSchedule.length - 1}
+                                    className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] disabled:opacity-20"
+                                  >
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingBlock(item)}
+                                    className="p-1 text-[var(--color-text-tertiary)] hover:text-[#007AFF]"
+                                  >
+                                    <Edit3 className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteBlock(originalIdx)}
+                                    className="p-1 text-[var(--color-text-tertiary)] hover:text-[#FF3B30]"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Title & Emoji */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-base">{item.emoji || "⚡"}</span>
+                                <span className={cn("text-xs font-bold text-[var(--color-text-primary)]", item.completed && "line-through text-[var(--color-text-tertiary)]")}>
+                                  {item.activity}
+                                </span>
+                              </div>
+
+                              {/* Coaching Tip */}
+                              {item.tip && (
+                                <p className="text-[10px] font-medium text-[var(--color-text-secondary)] italic">
+                                  💡 {item.tip}
+                                </p>
+                              )}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Block Modal */}
+              {editingBlock && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
                   <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="relative flex items-center gap-3"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 shadow-2xl"
                   >
-                    {/* Circle timeline anchor */}
-                    <div className={cn(
-                      "absolute -left-[23px] w-2.5 h-2.5 rounded-full border-2",
-                      item.isHabit ? "bg-[#34C759] border-[#eafff0]" : "bg-[var(--color-text-tertiary)] border-[var(--color-bg-primary)]"
-                    )} />
-                    <span className="text-[10px] font-black text-[var(--color-text-tertiary)] min-w-[56px]">
-                      {item.time}
-                    </span>
-                    <div className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold shadow-sm border",
-                      item.isHabit
-                        ? "bg-[#34C759]/10 text-[#248A3D] border-[#34C759]/20"
-                        : "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border-[var(--color-bg-tertiary)]"
-                    )}>
-                      <span>{item.emoji}</span>
-                      <span>{item.activity}</span>
-                      {item.isHabit && <span className="text-[8px] font-black bg-[#34C759]/25 text-[#34C759] px-1 rounded uppercase">Habit</span>}
+                    <div className="flex items-center justify-between border-b border-[var(--color-bg-tertiary)] pb-3">
+                      <h4 className="text-xs font-black text-[var(--color-text-primary)] uppercase tracking-wider flex items-center gap-2">
+                        <Edit3 className="h-4 w-4 text-[#007AFF]" /> Edit Routine Block
+                      </h4>
+                      <button onClick={() => setEditingBlock(null)} className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editingBlock.emoji || ""}
+                          onChange={e => setEditingBlock({ ...editingBlock, emoji: e.target.value })}
+                          className="w-12 text-center text-lg bg-[var(--color-bg-primary)] p-2 rounded-xl border border-[var(--color-bg-tertiary)] outline-none"
+                          placeholder="⚡"
+                        />
+                        <input
+                          type="text"
+                          value={editingBlock.activity || ""}
+                          onChange={e => setEditingBlock({ ...editingBlock, activity: e.target.value })}
+                          className="flex-1 bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
+                          placeholder="Block Activity Title"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Start Time</label>
+                          <input
+                            type="text"
+                            value={editingBlock.time || ""}
+                            onChange={e => setEditingBlock({ ...editingBlock, time: e.target.value })}
+                            className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">End Time</label>
+                          <input
+                            type="text"
+                            value={editingBlock.endTime || ""}
+                            onChange={e => setEditingBlock({ ...editingBlock, endTime: e.target.value })}
+                            className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Category</label>
+                          <select
+                            value={editingBlock.category || "Routine"}
+                            onChange={e => setEditingBlock({ ...editingBlock, category: e.target.value, isHabit: e.target.value === "Habit" })}
+                            className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none text-[var(--color-text-primary)]"
+                          >
+                            <option value="Deep Work">🧠 Deep Work</option>
+                            <option value="Habit">⚡ Habit</option>
+                            <option value="Health">🏋️ Health</option>
+                            <option value="Rest">☕ Rest</option>
+                            <option value="Meal">🥗 Meal</option>
+                            <option value="Admin">📧 Admin</option>
+                            <option value="Routine">⏱️ Routine</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Duration (mins)</label>
+                          <input
+                            type="number"
+                            value={editingBlock.duration || 30}
+                            onChange={e => setEditingBlock({ ...editingBlock, duration: Number(e.target.value) })}
+                            className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Coaching Tip</label>
+                        <input
+                          type="text"
+                          value={editingBlock.tip || ""}
+                          onChange={e => setEditingBlock({ ...editingBlock, tip: e.target.value })}
+                          className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-medium outline-none"
+                          placeholder="Actionable focus tip"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2">
+                      <button
+                        onClick={() => setEditingBlock(null)}
+                        className="flex-1 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] text-xs font-black py-2.5 rounded-xl active:scale-95 transition-transform"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleSaveEditedBlock(editingBlock)}
+                        className="flex-1 bg-[#007AFF] text-white text-xs font-black py-2.5 rounded-xl active:scale-95 transition-transform shadow-md"
+                      >
+                        Save Changes
+                      </button>
                     </div>
                   </motion.div>
-                ))}
-              </div>
+                </div>
+              )}
+
+              {/* Add Block Modal */}
+              {isAddingBlock && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 shadow-2xl"
+                  >
+                    <div className="flex items-center justify-between border-b border-[var(--color-bg-tertiary)] pb-3">
+                      <h4 className="text-xs font-black text-[var(--color-text-primary)] uppercase tracking-wider flex items-center gap-2">
+                        <Plus className="h-4 w-4 text-[#34C759]" /> Add Custom Block
+                      </h4>
+                      <button onClick={() => setIsAddingBlock(false)} className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newBlockData.emoji}
+                          onChange={e => setNewBlockData({ ...newBlockData, emoji: e.target.value })}
+                          className="w-12 text-center text-lg bg-[var(--color-bg-primary)] p-2 rounded-xl border border-[var(--color-bg-tertiary)] outline-none"
+                          placeholder="⚡"
+                        />
+                        <input
+                          type="text"
+                          value={newBlockData.activity}
+                          onChange={e => setNewBlockData({ ...newBlockData, activity: e.target.value })}
+                          className="flex-1 bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
+                          placeholder="Activity Title e.g. Reading 20 mins"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Start Time</label>
+                          <input
+                            type="text"
+                            value={newBlockData.time}
+                            onChange={e => setNewBlockData({ ...newBlockData, time: e.target.value })}
+                            className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
+                            placeholder="09:00 AM"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">End Time</label>
+                          <input
+                            type="text"
+                            value={newBlockData.endTime}
+                            onChange={e => setNewBlockData({ ...newBlockData, endTime: e.target.value })}
+                            className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
+                            placeholder="09:30 AM"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Category</label>
+                          <select
+                            value={newBlockData.category}
+                            onChange={e => setNewBlockData({ ...newBlockData, category: e.target.value })}
+                            className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none text-[var(--color-text-primary)]"
+                          >
+                            <option value="Deep Work">🧠 Deep Work</option>
+                            <option value="Habit">⚡ Habit</option>
+                            <option value="Health">🏋️ Health</option>
+                            <option value="Rest">☕ Rest</option>
+                            <option value="Meal">🥗 Meal</option>
+                            <option value="Admin">📧 Admin</option>
+                            <option value="Routine">⏱️ Routine</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Duration (mins)</label>
+                          <input
+                            type="number"
+                            value={newBlockData.duration}
+                            onChange={e => setNewBlockData({ ...newBlockData, duration: Number(e.target.value) })}
+                            className="bg-[var(--color-bg-primary)] px-3 py-2 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2">
+                      <button
+                        onClick={() => setIsAddingBlock(false)}
+                        className="flex-1 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] text-xs font-black py-2.5 rounded-xl active:scale-95 transition-transform"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleAddCustomBlock}
+                        className="flex-1 bg-[#34C759] text-white text-xs font-black py-2.5 rounded-xl active:scale-95 transition-transform shadow-md"
+                      >
+                        Add Block
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+
+              {/* Save Preset Modal */}
+              {showPresetModal && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 shadow-2xl"
+                  >
+                    <div className="flex items-center justify-between border-b border-[var(--color-bg-tertiary)] pb-3">
+                      <h4 className="text-xs font-black text-[var(--color-text-primary)] uppercase tracking-wider flex items-center gap-2">
+                        <Save className="h-4 w-4 text-[#30B0C7]" /> Save Schedule Preset
+                      </h4>
+                      <button onClick={() => setShowPresetModal(false)} className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase">Preset Name</label>
+                      <input
+                        type="text"
+                        value={presetNameInput}
+                        onChange={e => setPresetNameInput(e.target.value)}
+                        className="bg-[var(--color-bg-primary)] px-3 py-2.5 rounded-xl border border-[var(--color-bg-tertiary)] text-xs font-bold outline-none text-[var(--color-text-primary)]"
+                        placeholder="e.g. Trading Grindday, Weekend Recovery"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2">
+                      <button
+                        onClick={() => setShowPresetModal(false)}
+                        className="flex-1 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] text-xs font-black py-2.5 rounded-xl active:scale-95 transition-transform"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleSavePreset(presetNameInput)}
+                        disabled={!presetNameInput.trim()}
+                        className="flex-1 bg-[#30B0C7] text-white text-xs font-black py-2.5 rounded-xl active:scale-95 transition-transform shadow-md disabled:opacity-50"
+                      >
+                        Save Preset
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
             </motion.div>
           )}
 

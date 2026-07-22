@@ -309,31 +309,74 @@ Respond with a JSON array of objects matching this structure:
 }
 
 // 7. AI Schedule Builder Action
-export async function generateScheduleBuilderAction(wakeTime: string, sleepTime: string, focus: string) {
+export async function generateScheduleBuilderAction(
+  wakeTime: string,
+  sleepTime: string,
+  focus: string,
+  options?: {
+    chronotype?: string;
+    bufferMinutes?: number;
+    intensity?: string;
+    selectedHabitNames?: string[];
+  }
+) {
   try {
     const { supabase, user } = await getUserContext();
 
     const { data: habits } = await supabase
       .from("habits")
-      .select("name, emoji")
+      .select("id, name, emoji, preferred_time")
       .eq("user_id", user.id)
       .eq("is_active", true);
 
-    const systemPrompt = `You are a time-blocking productivity expert. Create an optimized daily routine based on the user's wake time, sleep time, core focus, and active habits.
-Respond with a JSON array of objects matching this structure:
-{
-  "time": string, // e.g. "07:30 AM"
-  "activity": string, // name of activity or routine block
-  "emoji": string, // matching emoji
-  "isHabit": boolean // true if this block directly integrates one of their active habits
-}`;
+    const userHabits = habits || [];
+    const activeHabitNames = options?.selectedHabitNames && options.selectedHabitNames.length > 0
+      ? userHabits.filter(h => options.selectedHabitNames?.includes(h.name))
+      : userHabits;
 
-    const userPrompt = `Wake time: ${wakeTime}\nSleep time: ${sleepTime}\nFocus area: ${focus}\nActive Habits: ${JSON.stringify(habits || [])}`;
+    const systemPrompt = `You are an elite productivity strategist and neuro-performance coach. Create a realistic, science-backed time-blocked daily schedule optimized for energy flow and productivity.
+Structure the routine from Wake Time to Bedtime.
+
+Respond strictly with a JSON array of block objects adhering to this schema:
+[
+  {
+    "id": string, // e.g. "block_1"
+    "time": string, // Start time e.g. "07:00 AM"
+    "endTime": string, // End time e.g. "07:30 AM"
+    "duration": number, // Duration in minutes e.g. 30
+    "activity": string, // Actionable title of the block e.g. "Morning Sunlight & Hydrate"
+    "emoji": string, // Relevant emoji e.g. "🌅"
+    "category": string, // One of: "Deep Work" | "Habit" | "Health" | "Rest" | "Meal" | "Admin" | "Routine"
+    "isHabit": boolean, // true if this directly performs an active habit
+    "habitName": string | null, // matching habit name if applicable
+    "energy": string, // One of: "Peak" | "High" | "Medium" | "Low" | "Rest"
+    "tip": string, // Short 1-sentence tactical tip for max execution
+    "completed": boolean // default false
+  }
+]
+
+Guidelines:
+1. Respect chronotype energy allocation:
+   - "early_bird": Peak deep work blocks in early morning (8 AM - 12 PM).
+   - "night_owl": Peak deep work blocks in afternoon/evening (4 PM - 10 PM).
+   - "balanced": Evenly space focus blocks with mid-day & evening work.
+   - "ultra_focus": 90-minute focus sprints with structured 15m breaks.
+2. Include hydration, nutritious meal windows, and a wind-down routine 1 hour before sleep.
+3. Seamlessly weave in the user's selected active habits at optimal time slots.
+4. Ensure start and end times follow a continuous chronological timeline without major unexplained gaps.`;
+
+    const userPrompt = `Wake time: ${wakeTime}
+Bedtime: ${sleepTime}
+Core Daily Focus: ${focus || "High Productivity & Wellness"}
+Chronotype/Style: ${options?.chronotype || "balanced"}
+Buffer Between Blocks: ${options?.bufferMinutes || 15} minutes
+Intensity Level: ${options?.intensity || "moderate"}
+Active Habits to Lock In: ${JSON.stringify(activeHabitNames.map(h => ({ name: h.name, emoji: h.emoji, preferred: h.preferred_time })))}`;
 
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const schedule = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 600 });
+    const schedule = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 1200 });
     await logAIUsage(supabase, user.id, "schedule_builder");
 
     return { success: true, schedule };
