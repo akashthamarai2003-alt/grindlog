@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { generateMotivationAction } from "@/app/actions/ai";
 import { Sparkles, BrainCircuit, Target, ArrowRight, Lock } from "lucide-react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ProUpgradeModal } from "@/components/modals/pro-upgrade-modal";
 
 type AiMotivation = {
   quote: string;
@@ -22,6 +22,7 @@ const STATIC_QUOTE = {
 export function AiInspiration({ isPro }: { isPro: boolean }) {
   const [data, setData] = useState<AiMotivation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     if (!isPro) {
@@ -61,38 +62,50 @@ export function AiInspiration({ isPro }: { isPro: boolean }) {
 
   if (!isPro) {
     return (
-      <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-        <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)] px-1">Inspiration</h2>
-        <div className="relative overflow-hidden rounded-[24px] bg-[var(--color-bg-elevated)] p-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50">
-          <div className="relative z-10 flex flex-col gap-5">
-            <p className="text-[15px] font-medium italic leading-relaxed text-[var(--color-text-primary)]">
-              "{STATIC_QUOTE.quote}"
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="h-[1px] w-8 bg-[var(--color-accent-green)]/50" />
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                {STATIC_QUOTE.author}
+      <>
+        <ProUpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          title="Unlock Personal AI Coach"
+          description="Get personalized daily tasks, AI routine synthesis, and tailored mindset quotes with GrindLog Pro."
+        />
+        <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <h2 className="text-lg font-black tracking-tight text-[var(--color-text-primary)] px-1">Inspiration</h2>
+          <div className="relative overflow-hidden rounded-[24px] bg-[var(--color-bg-elevated)] p-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50">
+            <div className="relative z-10 flex flex-col gap-5">
+              <p className="text-[15px] font-medium italic leading-relaxed text-[var(--color-text-primary)]">
+                "{STATIC_QUOTE.quote}"
               </p>
-            </div>
-
-            {/* Teaser for Pro */}
-            <div className="mt-2 rounded-xl bg-[var(--color-bg-secondary)] p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500">
-                  <BrainCircuit className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-black text-[var(--color-text-primary)]">Unlock AI Coach</span>
-                  <span className="text-[10px] font-medium text-[var(--color-text-secondary)]">Personalized daily tasks</span>
-                </div>
+                <div className="h-[1px] w-8 bg-[var(--color-accent-green)]/50" />
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                  {STATIC_QUOTE.author}
+                </p>
               </div>
-              <Link href="/store" className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-bg-tertiary)]">
-                <Lock className="h-3 w-3 text-[var(--color-text-secondary)]" />
-              </Link>
+
+              {/* Teaser for Pro */}
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(true)}
+                className="mt-2 rounded-xl bg-[var(--color-bg-secondary)] p-4 flex items-center justify-between hover:bg-[var(--color-bg-tertiary)]/50 transition-all text-left cursor-pointer border border-[var(--color-bg-tertiary)] group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 shadow-sm">
+                    <BrainCircuit className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black text-[var(--color-text-primary)] group-hover:text-indigo-500 transition-colors">Unlock AI Coach</span>
+                    <span className="text-[10px] font-medium text-[var(--color-text-secondary)]">Personalized daily tasks & coaching</span>
+                  </div>
+                </div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-bg-tertiary)] group-hover:bg-indigo-500/15 transition-colors">
+                  <Lock className="h-3.5 w-3.5 text-[var(--color-text-secondary)] group-hover:text-indigo-500 transition-colors" />
+                </div>
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
