@@ -398,25 +398,6 @@ export default function CoachPage() {
     setSyncingPlanner(false);
   };
 
-  const handleBuildSchedule = async () => {
-    if (scheduleLoading) return;
-    setScheduleLoading(true);
-    const res = await generateScheduleBuilderAction(wakeTime, sleepTime, scheduleFocus, {
-      chronotype,
-      bufferMinutes,
-      intensity,
-      selectedHabitNames
-    });
-    if (res.success && res.schedule) {
-      setGeneratedSchedule(res.schedule);
-      localStorage.setItem("grindlog_active_schedule", JSON.stringify(res.schedule));
-      toast.success("Routine synthesized & saved!");
-    } else if (res.error) {
-      handleError(res.error);
-    }
-    setScheduleLoading(false);
-  };
-
   // Top Up Modal State
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [topUpLoading, setTopUpLoading] = useState(false);
@@ -432,6 +413,12 @@ export default function CoachPage() {
   const handleTopUp = async () => {
     setTopUpLoading(true);
     try {
+      if (typeof window === "undefined" || !(window as any).Razorpay) {
+        toast.error("Razorpay SDK loading. Please try again in 2 seconds.");
+        setTopUpLoading(false);
+        return;
+      }
+
       const orderRes = await createMessageTopUpOrder();
       if (!orderRes.success) {
         toast.error(orderRes.error || "Failed to initiate payment");
@@ -472,6 +459,25 @@ export default function CoachPage() {
       toast.error("An error occurred. Please try again.");
     }
     setTopUpLoading(false);
+  };
+
+  const handleBuildSchedule = async () => {
+    if (scheduleLoading) return;
+    setScheduleLoading(true);
+    const res = await generateScheduleBuilderAction(wakeTime, sleepTime, scheduleFocus, {
+      chronotype,
+      bufferMinutes,
+      intensity,
+      selectedHabitNames
+    });
+    if (res.success && res.schedule) {
+      setGeneratedSchedule(res.schedule);
+      localStorage.setItem("grindlog_active_schedule", JSON.stringify(res.schedule));
+      toast.success("Routine synthesized & saved!");
+    } else if (res.error) {
+      handleError(res.error);
+    }
+    setScheduleLoading(false);
   };
 
   // Action Helpers
