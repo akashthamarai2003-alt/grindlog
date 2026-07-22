@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { createRazorpayOrder, verifyRazorpayPayment, validateCouponAction } from "@/app/actions/payment";
 
 const features = [
-  { icon: InfinityIcon, label: "Active Habits", core: "10 Max", pro: "Unlimited" },
+  { icon: InfinityIcon, label: "Active Habits", core: "Limited", pro: "Unlimited" },
   { icon: Calendar, label: "Smart Planner", core: true, pro: true },
   { icon: TreeDeciduous, label: "Virtual Growth Tree", core: false, pro: true },
   { icon: LayoutGrid, label: "Full Life Tracking", core: "Basic", pro: "Full Suite" },
