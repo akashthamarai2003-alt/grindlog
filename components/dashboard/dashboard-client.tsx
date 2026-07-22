@@ -414,12 +414,12 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           </div>
           
           {/* Progress Ring */}
-          <div className="relative flex h-[100px] w-[100px] items-center justify-center">
+          <div className="relative flex h-[100px] w-[100px] items-center justify-center rounded-full bg-white/40 backdrop-blur-md border border-white/60 shadow-lg shrink-0">
             {/* Outer Glow */}
-            <div className="absolute inset-0 rounded-full bg-[#34C759] opacity-20 blur-xl" />
+            <div className="absolute inset-0 rounded-full bg-[#34C759]/30 blur-md" />
             
-            <svg className="h-full w-full rotate-[-90deg] drop-shadow-sm" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="42" className="fill-none stroke-black/5 stroke-[10]" />
+            <svg className="h-full w-full rotate-[-90deg] p-1 drop-shadow-sm" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="42" className="fill-none stroke-black/10 stroke-[10]" />
               <circle
                 cx="50"
                 cy="50"
@@ -433,7 +433,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
               <defs>
                 <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#34C759" />
-                  <stop offset="100%" stopColor="#32ADE6" />
+                  <stop offset="100%" stopColor="#FF9500" />
                 </linearGradient>
               </defs>
             </svg>
