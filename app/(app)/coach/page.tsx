@@ -327,13 +327,16 @@ export default function CoachPage() {
   };
 
   const handleAddCustomBlock = () => {
-    if (!newBlockData.activity.trim()) return;
+    if (!newBlockData.activity || !newBlockData.activity.trim()) {
+      toast.error("Please enter an activity title");
+      return;
+    }
     const newBlock = {
       id: `custom_${Date.now()}`,
       time: newBlockData.time || "09:00 AM",
       endTime: newBlockData.endTime || "09:30 AM",
       duration: Number(newBlockData.duration) || 30,
-      activity: newBlockData.activity,
+      activity: newBlockData.activity.trim(),
       emoji: newBlockData.emoji || "⚡",
       category: newBlockData.category || "Routine",
       isHabit: newBlockData.category === "Habit",
@@ -342,7 +345,8 @@ export default function CoachPage() {
       completed: false
     };
     setGeneratedSchedule(prev => {
-      const updated = [...prev, newBlock];
+      const current = Array.isArray(prev) ? prev : [];
+      const updated = [...current, newBlock];
       localStorage.setItem("grindlog_active_schedule", JSON.stringify(updated));
       return updated;
     });
