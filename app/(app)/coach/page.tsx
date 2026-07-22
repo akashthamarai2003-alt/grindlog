@@ -604,20 +604,20 @@ export default function CoachPage() {
     >
       {/* ── Header Fixed ── */}
       <div className="flex-shrink-0 px-4">
-        <div className="flex items-center gap-3 border-b border-[var(--color-bg-tertiary)] pb-3.5 mb-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#007AFF] to-[#AF52DE] shadow-sm">
-          <Brain className="h-5 w-5 text-white animate-breathe" />
+        <div className="flex items-center gap-3 border-b border-[var(--color-bg-tertiary)] pb-3 mb-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#007AFF] to-[#AF52DE] shadow-sm">
+            <Brain className="h-5 w-5 text-white animate-breathe" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-[var(--color-text-primary)] tracking-tight">AI Lab</h1>
+            <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider flex items-center gap-1">
+              <Sparkles className="h-3 w-3 text-[#FF9500]" /> Groq Intelligence Hub
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-black text-[var(--color-text-primary)] tracking-tight">AI Lab</h1>
-          <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider flex items-center gap-1">
-            <Sparkles className="h-3 w-3 text-[#FF9500]" /> Groq Intelligence Hub
-          </p>
-        </div>
-      </div>
 
         {/* ── Segmented Scrollable Tab Bar ── */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
+        <div className="flex gap-2 overflow-x-auto pb-2.5 mb-1 -mx-4 px-4 scrollbar-none">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -721,7 +721,7 @@ export default function CoachPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pt-2.5 pb-[200px] h-full scrollbar-none"
             >
               <div className="rounded-[24px] bg-[var(--color-bg-secondary)] p-5 border border-[var(--color-bg-tertiary)]">
                 <h3 className="text-sm font-black text-[var(--color-text-primary)]">Goal-to-Habit Builder</h3>
@@ -796,7 +796,7 @@ export default function CoachPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pt-2.5 pb-[200px] h-full scrollbar-none"
             >
               <button
                 onClick={handleGenerateReport}
@@ -870,7 +870,7 @@ export default function CoachPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pt-2.5 pb-[200px] h-full scrollbar-none"
             >
               <button
                 onClick={handleGeneratePredictions}
@@ -933,7 +933,7 @@ export default function CoachPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pt-2.5 pb-[200px] h-full scrollbar-none"
             >
               <button
                 onClick={handleGenerateMotivation}
@@ -983,7 +983,7 @@ export default function CoachPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pt-2.5 pb-[200px] h-full scrollbar-none"
             >
               <button
                 onClick={handleGenerateSuggestions}
@@ -1049,7 +1049,7 @@ export default function CoachPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[140px] h-full scrollbar-none"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pt-2.5 pb-[200px] h-full scrollbar-none"
             >
               {/* Preset Selector Bar */}
               <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -1816,7 +1816,7 @@ export default function CoachPage() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="flex flex-col gap-4 overflow-y-auto px-4 pb-[130px] h-full scrollbar-none"
+              className="flex flex-col gap-4 overflow-y-auto px-4 pt-2.5 pb-[200px] h-full scrollbar-none"
             >
               <div className="rounded-[24px] bg-[var(--color-bg-secondary)] p-5 border border-[var(--color-bg-tertiary)] flex flex-col gap-3">
                 <h3 className="text-sm font-black text-[var(--color-text-primary)]">AI Cognitive Reframing</h3>
