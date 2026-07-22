@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,9 +17,22 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
   const [touched, setTouched] = useState({ email: false, password: false });
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-fill saved email if "Remember me" was previously checked
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem("grindlog_remember_email");
+      if (savedEmail) {
+        setForm((prev) => ({ ...prev, email: savedEmail }));
+        setRememberMe(true);
+      }
+    } catch (e) {
+      // Ignore local storage errors
+    }
+  }, []);
 
   const cleanEmail = form.email.trim();
   const isValidEmail = EMAIL_REGEX.test(cleanEmail);
@@ -42,6 +55,17 @@ export default function SignInPage() {
     if (!form.password) {
       setError("Please enter your password");
       return;
+    }
+
+    // Save or clear remembered email
+    try {
+      if (rememberMe) {
+        localStorage.setItem("grindlog_remember_email", cleanEmail);
+      } else {
+        localStorage.removeItem("grindlog_remember_email");
+      }
+    } catch (e) {
+      // Ignore storage errors
     }
 
     setIsLoading(true);
@@ -178,15 +202,24 @@ export default function SignInPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <button
+                type="button"
+                onClick={() => setRememberMe(!rememberMe)}
+                className="flex items-center gap-2 cursor-pointer select-none group"
+              >
                 <div 
-                  className={`flex h-4 w-4 items-center justify-center rounded ${rememberMe ? 'bg-[#34C759]' : 'border border-white/50 bg-transparent'}`}
-                  onClick={() => setRememberMe(!rememberMe)}
+                  className={`flex h-4.5 w-4.5 items-center justify-center rounded-md transition-all ${
+                    rememberMe 
+                      ? 'bg-[#34C759] border border-[#34C759] shadow-sm' 
+                      : 'border border-white/60 bg-transparent group-hover:border-white'
+                  }`}
                 >
-                  {rememberMe && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                  {rememberMe && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                 </div>
-                <span className="text-sm font-medium text-white/80 select-none">Remember me</span>
-              </label>
+                <span className="text-sm font-medium text-white/90 group-hover:text-white transition-colors">
+                  Remember me
+                </span>
+              </button>
 
               <Link 
                 href="/auth/forgot-password" 
