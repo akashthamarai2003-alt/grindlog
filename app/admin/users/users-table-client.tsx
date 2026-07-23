@@ -305,7 +305,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             </tbody>
             <tfoot className="bg-gray-50 font-bold text-gray-900 border-t border-gray-200">
               <tr>
-                <td colSpan={4} className="px-6 py-4 text-right uppercase text-xs">Filtered Revenue:</td>
+                <td colSpan={5} className="px-6 py-4 text-right uppercase text-xs">Filtered Revenue:</td>
                 <td className="px-6 py-4 text-green-600">₹{filteredRevenue.toLocaleString()}</td>
                 <td colSpan={2}></td>
               </tr>
