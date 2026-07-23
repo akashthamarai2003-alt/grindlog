@@ -87,6 +87,7 @@ export default function PaymentPage() {
   const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
+  const [debugLog, setDebugLog] = useState<string>("Waiting for payment...");
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -204,6 +205,7 @@ export default function PaymentPage() {
       description: `Upgrade to ${level.toUpperCase()} - ${selectedPlan}`,
       order_id: orderRes.orderId,
       handler: function (response: any) {
+        setDebugLog("Payment successful. Verifying signature on server...");
         // 4. Verify Payment on Success
         verifyRazorpayPayment(
           response.razorpay_order_id,
@@ -215,14 +217,18 @@ export default function PaymentPage() {
           false
         )
         .then((verifyRes) => {
+          setDebugLog(`Verification response: ${JSON.stringify(verifyRes)}`);
           if (verifyRes.success) {
+            setDebugLog("Verification successful! Redirecting to dashboard...");
             window.location.href = "/dashboard?success=true&t=" + Date.now();
           } else {
             setIsProcessing(false);
+            setDebugLog(`Verification failed: ${verifyRes.error}`);
             alert(verifyRes.error || "Payment verification failed");
           }
         })
         .catch((err: any) => {
+          setDebugLog(`Verification exception: ${err?.message || 'Unknown error'}`);
           console.error("Verification error:", err);
           setIsProcessing(false);
           alert(err?.message || "Payment completed, but verification encountered an error. Please refresh your dashboard.");
@@ -552,6 +558,14 @@ export default function PaymentPage() {
       </motion.button>
 
       <div className="h-4" />
+      
+      {/* Debug log for troubleshooting laptop redirects */}
+      {isProcessing && (
+        <div className="fixed bottom-4 right-4 max-w-sm w-full bg-black/80 text-green-400 p-4 rounded-lg font-mono text-xs z-50 pointer-events-none">
+          <div>Diagnostics:</div>
+          <div className="text-gray-300 mt-1">{debugLog}</div>
+        </div>
+      )}
     </div>
     </>
   );
