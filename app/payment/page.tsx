@@ -91,7 +91,7 @@ export default function PaymentPage() {
   useEffect(() => {
     checkUserPremiumStatusAction().then((isPremium) => {
       if (isPremium) {
-        window.location.replace("/dashboard");
+        window.location.href = "/dashboard?t=" + Date.now();
       }
     });
 
@@ -193,30 +193,30 @@ export default function PaymentPage() {
       name: "GrindLog Premium",
       description: `Upgrade to ${level.toUpperCase()} - ${selectedPlan}`,
       order_id: orderRes.orderId,
-      handler: async function (response: any) {
-        try {
-          // 4. Verify Payment on Success
-          const verifyRes = await verifyRazorpayPayment(
-            response.razorpay_order_id,
-            response.razorpay_payment_id,
-            response.razorpay_signature,
-            selectedPlan,
-            level,
-            appliedCoupon?.id,
-            false
-          );
-
+      handler: function (response: any) {
+        // 4. Verify Payment on Success
+        verifyRazorpayPayment(
+          response.razorpay_order_id,
+          response.razorpay_payment_id,
+          response.razorpay_signature,
+          selectedPlan,
+          level,
+          appliedCoupon?.id,
+          false
+        )
+        .then((verifyRes) => {
           if (verifyRes.success) {
-            window.location.replace("/dashboard");
+            window.location.href = "/dashboard?success=true&t=" + Date.now();
           } else {
             setIsProcessing(false);
             alert(verifyRes.error || "Payment verification failed");
           }
-        } catch (err: any) {
+        })
+        .catch((err: any) => {
           console.error("Verification error:", err);
           setIsProcessing(false);
           alert(err?.message || "Payment completed, but verification encountered an error. Please refresh your dashboard.");
-        }
+        });
       },
       prefill: {
         name: "", // Can be prefilled if we have user profile
