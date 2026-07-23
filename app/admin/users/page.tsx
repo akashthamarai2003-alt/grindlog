@@ -94,12 +94,7 @@ export default async function AdminUsersPage() {
         const tier = user.premium_tier as "monthly" | "six_months" | "lifetime";
         const level = user.premium_level as "core" | "pro";
         
-        let estimatedPremiumCost = 0;
-        if (tier && level && livePricing[tier] && livePricing[tier][level]) {
-          estimatedPremiumCost = livePricing[tier][level].price;
-        } else {
-          estimatedPremiumCost = getPaidAmount(tier, level, true);
-        }
+        let estimatedPremiumCost = getPaidAmount(tier, level, true);
         actualPaidAmount += estimatedPremiumCost;
         
         // Add a fallback manual record for legacy users

@@ -97,7 +97,8 @@ export default function PaymentPage() {
       
       checkUserPremiumStatusAction(selectedPlan, level).then((isPremium) => {
         if (isPremium) {
-          window.location.href = "/dashboard?success=true&t=" + Date.now();
+          router.refresh();
+          router.push("/dashboard?success=true&t=" + Date.now());
         } else {
           timeoutId = setTimeout(pollPremiumStatus, 4000);
         }
@@ -212,7 +213,7 @@ export default function PaymentPage() {
       description: `Upgrade to ${level.toUpperCase()} - ${selectedPlan}`,
       order_id: orderRes.orderId,
       handler: function (response: any) {
-        // 4. Verify Payment on Success
+        setIsProcessing(true); // Ensure UI stays in processing state until redirect
         verifyRazorpayPayment(
           response.razorpay_order_id,
           response.razorpay_payment_id,
@@ -224,7 +225,8 @@ export default function PaymentPage() {
         )
         .then((verifyRes) => {
           if (verifyRes.success) {
-            window.location.href = "/dashboard?success=true&t=" + Date.now();
+            router.refresh();
+            router.push("/dashboard?success=true&t=" + Date.now());
           } else {
             setIsProcessing(false);
             alert(verifyRes.error || "Payment verification failed");
