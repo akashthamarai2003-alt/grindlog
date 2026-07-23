@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 
 export async function submitSupportMessage(subject: string, message: string) {
   try {
@@ -13,8 +14,10 @@ export async function submitSupportMessage(subject: string, message: string) {
 
     const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
 
+    const adminClient = createAdminClient();
+
     // Insert message into the database
-    const { error } = await supabase.from("support_messages").insert({
+    const { error } = await adminClient.from("support_messages").insert({
       user_id: user.id,
       user_email: user.email,
       user_name: profile?.display_name || 'Unknown',
@@ -41,7 +44,9 @@ export async function getUserSupportMessages() {
       return { success: false, error: "Not authenticated", data: [] };
     }
 
-    const { data, error } = await supabase
+    const adminClient = createAdminClient();
+
+    const { data, error } = await adminClient
       .from("support_messages")
       .select("*")
       .eq("user_id", user.id)
