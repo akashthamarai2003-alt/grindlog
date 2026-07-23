@@ -77,6 +77,27 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
     return `${baseName} - ${levelName}`;
   };
 
+  const getDurationString = (user: UserWithDetails) => {
+    if (!user.is_premium) return "-";
+    if (user.premium_tier === 'lifetime') return "Lifetime";
+    if (!user.premium_expires_at) return "-";
+
+    const expiresAt = new Date(user.premium_expires_at);
+    const now = new Date();
+    
+    let totalDays = 30;
+    if (user.premium_tier === 'six_months') totalDays = 180;
+    
+    const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 3600 * 24));
+    
+    if (daysLeft < 0) return "Expired";
+    
+    const daysElapsed = totalDays - daysLeft;
+    const safeDaysElapsed = Math.max(0, Math.min(daysElapsed, totalDays));
+    
+    return `${safeDaysElapsed}/${totalDays} Days`;
+  };
+
   return (
     <div className="space-y-4">
       {/* Filters & Search Control Bar */}
@@ -102,7 +123,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
         </div>
 
         {/* Filter Inputs Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {/* Search Input */}
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -166,6 +187,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                 <th className="px-6 py-3">User</th>
                 <th className="px-6 py-3">Stats</th>
                 <th className="px-6 py-3">Plan</th>
+                <th className="px-6 py-3">Duration</th>
                 <th className="px-6 py-3">Payment ID</th>
                 <th className="px-6 py-3">Paid Amount</th>
                 <th className="px-6 py-3">Joined</th>
@@ -177,6 +199,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                 const planName = user.premium_tier ? getPlanName(user.premium_tier, user.premium_level) : 'Pro';
                 const paymentId = user.paymentId;
                 const paidAmount = user.actualPaidAmount;
+                const durationString = getDurationString(user);
 
                 return (
                   <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
@@ -228,6 +251,11 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                           ))}
                         </div>
                       )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-xs font-semibold text-gray-700">
+                        {durationString}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-xs text-gray-500 font-mono flex flex-col gap-1">
