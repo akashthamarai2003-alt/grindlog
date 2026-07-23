@@ -86,7 +86,15 @@ export default function PaymentPage() {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
   const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
+
+  // Reliable redirect effect
+  useEffect(() => {
+    if (isSuccess) {
+      window.location.href = "/dashboard?success=true&t=" + Date.now();
+    }
+  }, [isSuccess]);
 
   // Poll for premium status ONLY while payment is being processed
   useEffect(() => {
@@ -97,8 +105,7 @@ export default function PaymentPage() {
       
       checkUserPremiumStatusAction(selectedPlan, level).then((isPremium) => {
         if (isPremium) {
-          router.refresh();
-          router.push("/dashboard?success=true&t=" + Date.now());
+          setIsSuccess(true);
         } else {
           timeoutId = setTimeout(pollPremiumStatus, 4000);
         }
@@ -196,7 +203,7 @@ export default function PaymentPage() {
       );
       
       if (verifyRes.success) {
-        window.location.replace("/dashboard");
+        setIsSuccess(true);
       } else {
         setIsProcessing(false);
         alert(verifyRes.error || "Failed to process free tier");
@@ -225,8 +232,7 @@ export default function PaymentPage() {
         )
         .then((verifyRes) => {
           if (verifyRes.success) {
-            router.refresh();
-            router.push("/dashboard?success=true&t=" + Date.now());
+            setIsSuccess(true);
           } else {
             setIsProcessing(false);
             alert(verifyRes.error || "Payment verification failed");
@@ -562,6 +568,33 @@ export default function PaymentPage() {
       </motion.button>
 
       <div className="h-4" />
+      
+      {/* Full screen overlay */}
+      {(isProcessing || isSuccess) && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-xl">
+            {isSuccess ? (
+              <>
+                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-sm font-bold text-[var(--color-text-primary)]">
+                  Payment Successful! Redirecting...
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--color-accent-green)] border-t-transparent" />
+                <p className="text-sm font-bold text-[var(--color-text-primary)]">
+                  Processing Payment...
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
