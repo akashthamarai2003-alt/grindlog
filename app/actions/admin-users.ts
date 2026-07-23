@@ -107,8 +107,10 @@ export async function sendUserEmailAdminAction(toEmail: string, subject: string,
         </div>
       `;
 
+      const fromAddress = process.env.RESEND_FROM_EMAIL || "GrindLog <support@grindlog.in>";
+
       const { data, error } = await resend.emails.send({
-        from: "GrindLog <grindlogapp6@gmail.com>",
+        from: fromAddress,
         to: [cleanEmail],
         subject: subject.trim(),
         html: formattedHtml,
