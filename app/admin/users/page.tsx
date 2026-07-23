@@ -38,22 +38,33 @@ export default async function AdminUsersPage() {
     return 0;
   };
 
+  const { getPlanPricesAction } = await import("@/app/actions/admin-pricing");
+  const livePricing = await getPlanPricesAction();
+
   const usersWithAmounts = await Promise.all(
     (users || []).map(async (user) => {
-      // 1. Collect ALL unique payment IDs (Premium Upgrade + AI Top Ups)
       const paymentIds = new Set<string>();
-      if (user.razorpay_payment_id) paymentIds.add(user.razorpay_payment_id);
+      let hasPremiumPaymentId = false;
+
+      if (user.razorpay_payment_id) {
+        paymentIds.add(user.razorpay_payment_id);
+        hasPremiumPaymentId = true;
+      }
+
       if (user.subscriptions) {
         user.subscriptions.forEach((sub: any) => {
           if (sub.razorpay_payment_id) paymentIds.add(sub.razorpay_payment_id);
           if (sub.razorpay_subscription_id) paymentIds.add(sub.razorpay_subscription_id);
+          if (sub.plan && sub.plan !== "ai_messages_10") {
+            hasPremiumPaymentId = true;
+          }
         });
       }
       
       const validPaymentIds = Array.from(paymentIds).filter(id => id && id.startsWith("pay_"));
       let actualPaidAmount = 0;
       
-      // 2. Fetch amounts for all valid Razorpay payments and sum them
+      // Fetch amounts for all valid Razorpay payments (AI topups + any recorded subs)
       if (validPaymentIds.length > 0) {
         for (const pid of validPaymentIds) {
           try {
@@ -65,9 +76,18 @@ export default async function AdminUsersPage() {
         }
       } 
       
-      // 3. Fallback logic: If no real payments found but user is premium, maybe bypassed.
-      if (actualPaidAmount === 0 && user.is_premium) {
-         actualPaidAmount = getPaidAmount(user.premium_tier, user.premium_level, user.is_premium);
+      // If user is premium but their primary premium payment ID wasn't found in Razorpay records
+      if (user.is_premium && !hasPremiumPaymentId) {
+        const tier = user.premium_tier as "monthly" | "six_months" | "lifetime";
+        const level = user.premium_level as "core" | "pro";
+        
+        let estimatedPremiumCost = 0;
+        if (tier && level && livePricing[tier] && livePricing[tier][level]) {
+          estimatedPremiumCost = livePricing[tier][level].price;
+        } else {
+          estimatedPremiumCost = getPaidAmount(tier, level, true);
+        }
+        actualPaidAmount += estimatedPremiumCost;
       }
       
       return {
