@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import Razorpay from "razorpay";
-import DeleteUserButton from "./delete-user-button";
+import UsersTableClient from "./users-table-client";
 
 export default async function AdminUsersPage() {
   const supabase = createAdminClient();
@@ -78,8 +78,6 @@ export default async function AdminUsersPage() {
     })
   );
 
-  const totalRevenue = usersWithAmounts.reduce((acc, user) => acc + user.actualPaidAmount, 0) || 0;
-
   return (
     <div className="space-y-6">
       <div>
@@ -87,129 +85,7 @@ export default async function AdminUsersPage() {
         <p className="text-gray-500">View all registered users and their payment statuses.</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-              <tr>
-                <th className="px-6 py-3">User</th>
-                <th className="px-6 py-3">Stats</th>
-                <th className="px-6 py-3">Plan</th>
-                <th className="px-6 py-3">Payment ID</th>
-                <th className="px-6 py-3">Paid Amount</th>
-                <th className="px-6 py-3">Joined</th>
-                <th className="px-6 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usersWithAmounts.map((user) => {
-                const getPlanName = (tier: string, level: string) => {
-                  let baseName = 'Pro';
-                  if (tier === 'monthly') baseName = 'Monthly';
-                  if (tier === 'six_months') baseName = '6 Months';
-                  if (tier === 'lifetime') baseName = 'Lifetime';
-                  
-                  const levelName = level ? (level.charAt(0).toUpperCase() + level.slice(1)) : 'Pro';
-                  return `${baseName} - ${levelName}`;
-                };
-                
-                const planName = user.premium_tier ? getPlanName(user.premium_tier, user.premium_level) : 'Pro';
-                const paymentId = user.paymentId;
-                const paidAmount = user.actualPaidAmount;
-
-                return (
-                  <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold">
-                          {user.display_name?.charAt(0).toUpperCase() || "?"}
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{user.display_name}</div>
-                          <div className="text-gray-500 text-xs">{user.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col text-xs space-y-1">
-                        <span>XP: {user.xp || 0}</span>
-                        <span>Level: {user.level || 1}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.is_premium ? (
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                              {planName}
-                            </span>
-                          </div>
-                          
-                          {/* Render AI Message Top Ups if they exist */}
-                          {user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
-                             <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-                               + AI Messages (₹10)
-                             </span>
-                          ))}
-                          <span className="text-xs text-gray-400 capitalize mt-1">Active</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-1.5">
-                          <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Unpaid
-                          </span>
-                          
-                          {/* Render AI Message Top Ups if they exist */}
-                          {user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
-                             <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-                               + AI Messages (₹10)
-                             </span>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-xs text-gray-500 font-mono flex flex-col gap-1">
-                        {paymentId.split(", ").map((pid: string, i: number) => (
-                          <span key={i}>{pid}</span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-xs font-bold text-green-600">
-                        {paidAmount > 0 ? `₹${paidAmount}` : "-"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-xs">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <DeleteUserButton
-                        userId={user.id}
-                        userName={user.display_name}
-                        userEmail={user.email}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot className="bg-gray-50 font-bold text-gray-900">
-              <tr>
-                <td colSpan={4} className="px-6 py-4 text-right uppercase text-xs">Total Revenue:</td>
-                <td className="px-6 py-4 text-green-600">₹{totalRevenue.toLocaleString()}</td>
-                <td colSpan={2}></td>
-              </tr>
-            </tfoot>
-          </table>
-          
-          {(!usersWithAmounts || usersWithAmounts.length === 0) && (
-            <div className="p-8 text-center text-gray-500">
-              No users found.
-            </div>
-          )}
-        </div>
-      </div>
+      <UsersTableClient users={usersWithAmounts} />
     </div>
   );
 }
