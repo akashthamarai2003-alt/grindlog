@@ -39,10 +39,11 @@ export async function POST(request: Request) {
 
         if (!linkError && linkData?.properties?.action_link) {
           const resetLink = linkData.properties.action_link;
-          const fromAddress = process.env.RESEND_FROM_EMAIL || "GrindLog <grindlogapp6@gmail.com>";
+          const fromAddress = process.env.RESEND_FROM_EMAIL || "GrindLog <onboarding@resend.dev>";
           const { error: resendError } = await resend.emails.send({
             from: fromAddress,
             to: [cleanEmail],
+            replyTo: "grindlogapp6@gmail.com",
             subject: "Reset your GrindLog password",
             html: `
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
