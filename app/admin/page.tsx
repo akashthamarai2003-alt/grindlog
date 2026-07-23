@@ -59,28 +59,52 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {metrics.map((metric) => (
-          <div key={metric.name} className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-lg ${metric.color} flex items-center justify-center text-white`}>
-                <metric.icon className="w-6 h-6" />
+          <div key={metric.name} className="bg-white rounded-xl border border-gray-200 p-3.5 sm:p-6 shadow-sm">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-lg ${metric.color} flex items-center justify-center text-white shrink-0`}>
+                <metric.icon className="w-4 h-4 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">{metric.name}</p>
-                <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">{metric.name}</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{metric.value}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Recent Users Table */}
+      {/* Recent Users Section */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Signups</h2>
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Recent Signups</h2>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile View: Cards */}
+        <div className="block sm:hidden divide-y divide-gray-100">
+          {recentUsers?.map((user) => (
+            <div key={user.id} className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-sm text-gray-900">{user.display_name || "Unnamed"}</span>
+                {user.is_premium ? (
+                  user.premium_level === "pro" ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800">Pro</span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">Core</span>
+                  )
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">Unpaid</span>
+                )}
+              </div>
+              <div className="text-xs text-gray-500 truncate">{user.email}</div>
+              <div className="text-[11px] text-gray-400">Joined: {new Date(user.created_at).toLocaleDateString()}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop View: Table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm text-left text-gray-500">
             <thead className="text-xs text-gray-700 uppercase bg-gray-50">
               <tr>

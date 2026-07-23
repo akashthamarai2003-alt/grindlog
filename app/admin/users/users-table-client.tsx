@@ -126,7 +126,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
         </div>
 
         {/* Filter Inputs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
           {/* Search Input */}
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -183,23 +183,23 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
 
       {/* Bulk Action Bar */}
       {selectedUserIds.size > 0 && (
-        <div className="flex items-center justify-between p-3 mb-4 bg-blue-50 border border-blue-200 rounded-xl shadow-sm animate-in slide-in-from-top-2 fade-in duration-200">
-          <div className="flex items-center gap-2 px-2">
-            <span className="text-sm font-bold text-blue-800">{selectedUserIds.size} User(s) Selected</span>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-3 mb-4 bg-blue-50 border border-blue-200 rounded-xl shadow-sm animate-in slide-in-from-top-2 fade-in duration-200">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-xs sm:text-sm font-bold text-blue-800">{selectedUserIds.size} User(s) Selected</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-end">
             <button
               onClick={() => setSelectedUserIds(new Set())}
               className="px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
             >
-              Clear Selection
+              Clear
             </button>
             <button
               onClick={() => {
                 const usersToMail = users.filter(u => selectedUserIds.has(u.id));
                 setSelectedMailUsers(usersToMail);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm active:scale-95"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm active:scale-95 flex-1 sm:flex-none"
             >
               <Mail className="w-3.5 h-3.5" />
               <span>Send Bulk Mail</span>
