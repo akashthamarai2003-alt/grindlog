@@ -86,6 +86,7 @@ export default function PaymentPage() {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
   const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
 
@@ -96,28 +97,31 @@ export default function PaymentPage() {
     }
   }, [isSuccess]);
 
-  // Poll for premium status ONLY while payment is being processed
+  // Robust polling that survives modal dismissal
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
+    let attempts = 0;
 
     const pollPremiumStatus = () => {
-      if (!isProcessing) return; // Stop polling if modal closed or not processing
+      attempts++;
+      if (!isPolling || attempts > 30) return; // Stop polling after ~2 minutes
       
       checkUserPremiumStatusAction(selectedPlan, level).then((isPremium) => {
         if (isPremium) {
           setIsSuccess(true);
+          setIsPolling(false);
         } else {
           timeoutId = setTimeout(pollPremiumStatus, 4000);
         }
       });
     };
 
-    if (isProcessing) {
+    if (isPolling) {
       pollPremiumStatus();
     }
 
     return () => clearTimeout(timeoutId);
-  }, [isProcessing]);
+  }, [isPolling, selectedPlan, level]);
 
   // Fetch dynamic pricing on mount
   useEffect(() => {
@@ -185,6 +189,7 @@ export default function PaymentPage() {
 
   const handleContinue = async () => {
     setIsProcessing(true);
+    setIsPolling(true); // Start polling when they initiate
     
     // 1. Create Order
     const orderRes = await createRazorpayOrder(selectedPlan, level, appliedCoupon?.id);
