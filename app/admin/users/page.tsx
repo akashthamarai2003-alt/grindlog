@@ -63,6 +63,7 @@ export default async function AdminUsersPage() {
       
       const validPaymentIds = Array.from(paymentIds).filter(id => id && id.startsWith("pay_"));
       let actualPaidAmount = 0;
+      let paymentHistory: any[] = [];
       
       // Fetch amounts for all valid Razorpay payments (AI topups + any recorded subs)
       if (validPaymentIds.length > 0) {
@@ -70,11 +71,23 @@ export default async function AdminUsersPage() {
           try {
             const payment = await razorpay.payments.fetch(pid);
             actualPaidAmount += Number(payment.amount) / 100;
+            paymentHistory.push({
+              id: payment.id,
+              amount: Number(payment.amount) / 100,
+              currency: payment.currency,
+              status: payment.status,
+              created_at: payment.created_at,
+              method: payment.method,
+              description: payment.description || (user.subscriptions?.find(s => s.razorpay_payment_id === pid)?.plan) || "Premium Plan",
+            });
           } catch (e) {
             console.error("Failed to fetch Razorpay payment", pid);
           }
         }
-      } 
+      }
+      
+      // Sort payment history by date descending
+      paymentHistory.sort((a, b) => b.created_at - a.created_at);
       
       // If user is premium but their primary premium payment ID wasn't found in Razorpay records
       if (user.is_premium && !hasPremiumPaymentId) {
@@ -88,11 +101,23 @@ export default async function AdminUsersPage() {
           estimatedPremiumCost = getPaidAmount(tier, level, true);
         }
         actualPaidAmount += estimatedPremiumCost;
+        
+        // Add a fallback manual record for legacy users
+        paymentHistory.push({
+          id: "legacy_record",
+          amount: estimatedPremiumCost,
+          currency: "INR",
+          status: "captured",
+          created_at: new Date(user.created_at).getTime() / 1000,
+          method: "legacy",
+          description: "Legacy Plan (No Receipt)",
+        });
       }
       
       return {
         ...user,
         actualPaidAmount,
+        paymentHistory,
         paymentId: validPaymentIds.length > 0 ? validPaymentIds.join(", ") : "-"
       };
     })

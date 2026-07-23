@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Filter, RotateCcw, Crown, Shield, Calendar, DollarSign, Mail } from "lucide-react";
+import { Search, Filter, RotateCcw, Crown, Shield, Calendar, DollarSign, Mail, Receipt } from "lucide-react";
 import DeleteUserButton from "./delete-user-button";
 import SendMailModal from "./send-mail-modal";
+import PaymentHistoryModal from "./payment-history-modal";
 
 interface UserWithDetails {
   id: string;
@@ -26,6 +27,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
   const [levelFilter, setLevelFilter] = useState<"all" | "pro" | "core">("all");
   const [tierFilter, setTierFilter] = useState<"all" | "monthly" | "six_months" | "lifetime">("all");
   const [selectedMailUser, setSelectedMailUser] = useState<UserWithDetails | null>(null);
+  const [selectedHistoryUser, setSelectedHistoryUser] = useState<UserWithDetails | null>(null);
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -275,12 +277,20 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => setSelectedHistoryUser(user)}
+                          title="View Payment History"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 text-xs font-semibold border border-green-200 transition-all active:scale-95 shrink-0"
+                        >
+                          <Receipt className="h-3.5 w-3.5" />
+                          <span>History</span>
+                        </button>
+                        <button
                           onClick={() => setSelectedMailUser(user)}
                           title="Send Email to User"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-xs font-semibold border border-blue-200 transition-all active:scale-95 shrink-0"
                         >
-                          <Mail className="h-3.5 w-3.5 text-blue-600" />
-                          <span>Send Mail</span>
+                          <Mail className="h-3.5 w-3.5" />
+                          <span>Mail</span>
                         </button>
                         <DeleteUserButton
                           userId={user.id}
@@ -324,6 +334,14 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
         <SendMailModal
           user={selectedMailUser}
           onClose={() => setSelectedMailUser(null)}
+        />
+      )}
+
+      {/* Payment History Modal */}
+      {selectedHistoryUser && (
+        <PaymentHistoryModal
+          user={selectedHistoryUser}
+          onClose={() => setSelectedHistoryUser(null)}
         />
       )}
     </div>
