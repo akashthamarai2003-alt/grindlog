@@ -55,7 +55,7 @@ export default function SendMailModal({ user, onClose }: SendMailModalProps) {
   const handleOpenMailto = () => {
     if (!recipientEmail) return;
     const mailtoUrl = `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-    window.open(mailtoUrl, "_blank");
+    window.location.href = mailtoUrl;
   };
 
   return (
