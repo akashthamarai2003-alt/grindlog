@@ -197,8 +197,7 @@ export async function verifyRazorpayPayment(
       is_premium: true,
       premium_tier: tier,
       premium_level: level,
-      premium_expires_at: calculateExpiryDate(tier),
-      razorpay_payment_id: razorpayPaymentId || `pay_direct_${Date.now()}`
+      premium_expires_at: calculateExpiryDate(tier)
     })
     .eq("id", user.id);
 

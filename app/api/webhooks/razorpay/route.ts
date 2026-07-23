@@ -41,17 +41,16 @@ export async function POST(req: Request) {
         // Prevent double processing
         const { data: profile } = await adminClient
           .from("profiles")
-          .select("razorpay_payment_id, ai_messages_remaining")
+          .select("ai_messages_remaining, is_premium")
           .eq("id", notes.userId)
           .single();
 
-        if (profile && profile.razorpay_payment_id !== payment.id) {
+        if (profile) {
           if (notes.type === "ai_messages_topup") {
             await adminClient
               .from("profiles")
               .update({ 
-                ai_messages_remaining: (profile.ai_messages_remaining || 0) + 10,
-                razorpay_payment_id: payment.id
+                ai_messages_remaining: (profile.ai_messages_remaining || 0) + 10
               })
               .eq("id", notes.userId);
           } else {
@@ -62,8 +61,7 @@ export async function POST(req: Request) {
                 is_premium: true,
                 premium_tier: notes.tier || "lifetime",
                 premium_level: notes.level || "pro",
-                premium_expires_at: calculateExpiryDate(notes.tier || "lifetime"),
-                razorpay_payment_id: payment.id
+                premium_expires_at: calculateExpiryDate(notes.tier || "lifetime")
               })
               .eq("id", notes.userId);
           }
