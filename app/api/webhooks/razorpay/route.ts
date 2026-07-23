@@ -61,6 +61,7 @@ export async function POST(req: Request) {
                 status: "active",
                 razorpay_order_id: payment.order_id,
                 razorpay_payment_id: payment.id,
+                started_at: new Date().toISOString(),
               });
             } catch (subErr) {
               console.warn("Webhook AI topup subscription insert warning:", subErr);
@@ -86,6 +87,7 @@ export async function POST(req: Request) {
                 razorpay_order_id: payment.order_id,
                 razorpay_payment_id: payment.id,
                 expires_at: calculateExpiryDate(notes.tier || "lifetime"),
+                started_at: new Date().toISOString(),
               });
             } catch (subErr) {
               console.warn("Webhook subscription record insert warning:", subErr);

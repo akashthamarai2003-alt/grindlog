@@ -215,6 +215,7 @@ export async function verifyRazorpayPayment(
       razorpay_order_id: razorpayOrderId,
       razorpay_payment_id: razorpayPaymentId,
       expires_at: calculateExpiryDate(tier),
+      started_at: new Date().toISOString(),
     });
   } catch (subErr) {
     console.warn("Subscription record insert warning:", subErr);
