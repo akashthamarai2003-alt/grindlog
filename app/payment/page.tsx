@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
-import { createRazorpayOrder, verifyRazorpayPayment, validateCouponAction } from "@/app/actions/payment";
+import { createRazorpayOrder, verifyRazorpayPayment, validateCouponAction, checkUserPremiumStatusAction } from "@/app/actions/payment";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 
@@ -89,6 +89,12 @@ export default function PaymentPage() {
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
 
   useEffect(() => {
+    checkUserPremiumStatusAction().then((isPremium) => {
+      if (isPremium) {
+        window.location.replace("/dashboard");
+      }
+    });
+
     getPlanPricesAction().then((res) => {
       if (res) setPricingConfig(res);
     });
