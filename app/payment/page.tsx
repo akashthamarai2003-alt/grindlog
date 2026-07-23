@@ -88,10 +88,13 @@ export default function PaymentPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
 
+  // Poll for premium status ONLY while payment is being processed
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
     const pollPremiumStatus = () => {
+      if (!isProcessing) return; // Stop polling if modal closed or not processing
+      
       checkUserPremiumStatusAction().then((isPremium) => {
         if (isPremium) {
           window.location.href = "/dashboard?success=true&t=" + Date.now();
@@ -101,13 +104,18 @@ export default function PaymentPage() {
       });
     };
 
-    pollPremiumStatus();
+    if (isProcessing) {
+      pollPremiumStatus();
+    }
 
+    return () => clearTimeout(timeoutId);
+  }, [isProcessing]);
+
+  // Fetch dynamic pricing on mount
+  useEffect(() => {
     getPlanPricesAction().then((res) => {
       if (res) setPricingConfig(res);
     });
-
-    return () => clearTimeout(timeoutId);
   }, []);
   
   // Coupon state
