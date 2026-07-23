@@ -171,21 +171,42 @@ export async function verifyRazorpayPayment(
     }
   }
 
-  const { error } = await supabase
+  const { error } = await adminClient
     .from("profiles")
     .update({ 
       is_premium: true,
       premium_tier: tier,
       premium_level: level,
       premium_expires_at: calculateExpiryDate(tier),
-      razorpay_payment_id: razorpayPaymentId
+      razorpay_payment_id: razorpayPaymentId || `pay_direct_${Date.now()}`
     })
     .eq("id", user.id);
 
   if (error) {
-    console.error("Error updating premium status:", error);
+    console.error("Error updating premium status with adminClient:", error);
     return { success: false, error: error.message };
   }
+
+  // Record subscription entry
+  try {
+    await adminClient.from("subscriptions").insert({
+      user_id: user.id,
+      plan: `${tier}_${level}`,
+      status: "active",
+      razorpay_order_id: razorpayOrderId,
+      razorpay_payment_id: razorpayPaymentId,
+      expires_at: calculateExpiryDate(tier),
+    });
+  } catch (subErr) {
+    console.warn("Subscription record insert warning:", subErr);
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath("/payment");
+  revalidatePath("/profile");
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
 
   return { success: true };
 }

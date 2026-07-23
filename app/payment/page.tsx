@@ -171,7 +171,7 @@ export default function PaymentPage() {
       );
       
       if (verifyRes.success) {
-        window.location.href = "/dashboard";
+        window.location.replace("/dashboard");
       } else {
         setIsProcessing(false);
         alert(verifyRes.error || "Failed to process free tier");
@@ -188,22 +188,28 @@ export default function PaymentPage() {
       description: `Upgrade to ${level.toUpperCase()} - ${selectedPlan}`,
       order_id: orderRes.orderId,
       handler: async function (response: any) {
-        // 4. Verify Payment on Success
-        const verifyRes = await verifyRazorpayPayment(
-          response.razorpay_order_id,
-          response.razorpay_payment_id,
-          response.razorpay_signature,
-          selectedPlan,
-          level,
-          appliedCoupon?.id,
-          false
-        );
+        try {
+          // 4. Verify Payment on Success
+          const verifyRes = await verifyRazorpayPayment(
+            response.razorpay_order_id,
+            response.razorpay_payment_id,
+            response.razorpay_signature,
+            selectedPlan,
+            level,
+            appliedCoupon?.id,
+            false
+          );
 
-        if (verifyRes.success) {
-          window.location.href = "/dashboard";
-        } else {
+          if (verifyRes.success) {
+            window.location.replace("/dashboard");
+          } else {
+            setIsProcessing(false);
+            alert(verifyRes.error || "Payment verification failed");
+          }
+        } catch (err: any) {
+          console.error("Verification error:", err);
           setIsProcessing(false);
-          alert(verifyRes.error || "Payment verification failed");
+          alert(err?.message || "Payment completed, but verification encountered an error. Please refresh your dashboard.");
         }
       },
       prefill: {
