@@ -53,6 +53,18 @@ export async function POST(req: Request) {
                 ai_messages_remaining: (profile.ai_messages_remaining || 0) + 10
               })
               .eq("id", notes.userId);
+              
+            try {
+              await adminClient.from("subscriptions").insert({
+                user_id: notes.userId,
+                plan: "ai_messages_10",
+                status: "active",
+                razorpay_order_id: payment.order_id,
+                razorpay_payment_id: payment.id,
+              });
+            } catch (subErr) {
+              console.warn("Webhook AI topup subscription insert warning:", subErr);
+            }
           } else {
             // Normal premium upgrade
             await adminClient
@@ -64,6 +76,20 @@ export async function POST(req: Request) {
                 premium_expires_at: calculateExpiryDate(notes.tier || "lifetime")
               })
               .eq("id", notes.userId);
+              
+            // Record subscription entry to track LTV
+            try {
+              await adminClient.from("subscriptions").insert({
+                user_id: notes.userId,
+                plan: `${notes.tier || "lifetime"}_${notes.level || "pro"}`,
+                status: "active",
+                razorpay_order_id: payment.order_id,
+                razorpay_payment_id: payment.id,
+                expires_at: calculateExpiryDate(notes.tier || "lifetime"),
+              });
+            } catch (subErr) {
+              console.warn("Webhook subscription record insert warning:", subErr);
+            }
           }
         }
       }
