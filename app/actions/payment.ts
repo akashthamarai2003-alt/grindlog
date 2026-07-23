@@ -311,7 +311,10 @@ export async function verifyMessageTopUpPayment(
   return { success: true };
 }
 
-export async function checkUserPremiumStatusAction() {
+export async function checkUserPremiumStatusAction(
+  expectedTier?: "monthly" | "six_months" | "lifetime",
+  expectedLevel?: "core" | "pro"
+) {
   try {
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
@@ -321,12 +324,15 @@ export async function checkUserPremiumStatusAction() {
     const adminClient = createAdminClient();
     const { data: profile } = await adminClient
       .from("profiles")
-      .select("is_premium, premium_expires_at")
+      .select("is_premium, premium_expires_at, premium_tier, premium_level")
       .eq("id", user.id)
       .single();
 
     if (profile?.is_premium) {
       if (!profile.premium_expires_at || new Date(profile.premium_expires_at) > new Date()) {
+        if (expectedTier && expectedLevel) {
+          return profile.premium_tier === expectedTier && profile.premium_level === expectedLevel;
+        }
         return true;
       }
     }

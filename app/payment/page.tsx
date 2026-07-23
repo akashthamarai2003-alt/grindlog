@@ -95,7 +95,7 @@ export default function PaymentPage() {
     const pollPremiumStatus = () => {
       if (!isProcessing) return; // Stop polling if modal closed or not processing
       
-      checkUserPremiumStatusAction().then((isPremium) => {
+      checkUserPremiumStatusAction(selectedPlan, level).then((isPremium) => {
         if (isPremium) {
           window.location.href = "/dashboard?success=true&t=" + Date.now();
         } else {
