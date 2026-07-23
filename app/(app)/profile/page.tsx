@@ -49,6 +49,38 @@ export default function ProfilePage() {
     }
   }, [setNotificationsEnabled]);
   
+  const getPlanDisplay = (user: any) => {
+    if (!user?.is_premium) return "Free Plan";
+    
+    const level = user.premium_level === "pro" ? "Pro" : "Core";
+    let tierName = "Lifetime";
+    let totalDays = 0;
+    
+    if (user.premium_tier === "monthly") {
+      tierName = "1 Month";
+      totalDays = 30;
+    } else if (user.premium_tier === "six_months") {
+      tierName = "6 Months";
+      totalDays = 180;
+    }
+
+    if (tierName === "Lifetime") return `Lifetime ${level}`;
+
+    if (user.premium_expires_at) {
+      const expiresAt = new Date(user.premium_expires_at);
+      const now = new Date();
+      const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 3600 * 24));
+      
+      if (daysLeft < 0) return `${tierName} ${level} (Expired)`;
+      
+      const daysElapsed = totalDays - daysLeft;
+      const safeDaysElapsed = Math.max(0, Math.min(daysElapsed, totalDays));
+      return `${tierName} ${level} (${safeDaysElapsed}/${totalDays} days)`;
+    }
+    
+    return `${tierName} ${level}`;
+  };
+
   const settingsGroups: { items: SettingItem[] }[] = [
     {
       items: [
@@ -62,7 +94,7 @@ export default function ProfilePage() {
           icon: Star, 
           label: "Account", 
           hasValue: true, 
-          value: user?.premium_level === "pro" ? "Pro" : "Core", 
+          value: getPlanDisplay(user), 
           action: "premium", 
           highlight: user?.premium_level === "pro"
         },
