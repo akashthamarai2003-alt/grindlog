@@ -1073,27 +1073,36 @@ export default function CoachPage() {
               className="flex flex-col gap-4 overflow-y-auto px-4 pt-6 pb-[200px] h-full scrollbar-none"
             >
               {/* Preset Selector Bar */}
-              <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 pb-1 scrollbar-none">
-                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-                  <span className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider whitespace-nowrap">Presets:</span>
-                  {Array.isArray(savedPresets) && savedPresets.map((preset) => (
-                    <button
-                      key={preset.id}
-                      onClick={() => handleLoadPreset(preset)}
-                      className="px-2.5 py-1 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] text-[10px] font-bold text-[var(--color-text-primary)] hover:border-[#30B0C7] transition-all whitespace-nowrap"
-                    >
-                      ⚡ {preset.name}
-                    </button>
-                  ))}
+              <div className="flex items-center justify-between gap-3 pt-1 pb-1">
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none min-w-0">
+                  <span className="text-[10px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider whitespace-nowrap shrink-0">Presets:</span>
+                  {Array.isArray(savedPresets) && savedPresets.length > 0 ? (
+                    savedPresets.map((preset) => (
+                      <button
+                        key={preset.id}
+                        onClick={() => handleLoadPreset(preset)}
+                        className="px-2.5 py-1 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-bg-tertiary)] text-[10px] font-bold text-[var(--color-text-primary)] hover:border-[#30B0C7] transition-all whitespace-nowrap shrink-0"
+                      >
+                        ⚡ {preset.name}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="text-[10px] font-medium text-[var(--color-text-tertiary)] italic whitespace-nowrap">No presets saved yet</span>
+                  )}
                 </div>
-                {generatedSchedule.length > 0 && (
-                  <button
-                    onClick={() => setShowPresetModal(true)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#30B0C7]/15 text-[#30B0C7] text-[10px] font-black hover:bg-[#30B0C7]/25 transition-all whitespace-nowrap"
-                  >
-                    <Save className="h-3 w-3" /> Save Preset
-                  </button>
-                )}
+
+                <button
+                  onClick={() => {
+                    if (generatedSchedule.length === 0) {
+                      toast.error("Please generate or add a schedule block first");
+                      return;
+                    }
+                    setShowPresetModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#007AFF] text-white text-[11px] font-black hover:bg-[#0066CC] active:scale-95 transition-all shadow-sm shrink-0"
+                >
+                  <Save className="h-3.5 w-3.5" /> Save Preset
+                </button>
               </div>
 
               {/* Main Configuration Card */}
