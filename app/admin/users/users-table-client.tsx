@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Filter, RotateCcw, Crown, Shield, Calendar, DollarSign, Mail } from "lucide-react";
+import { Search, Filter, RotateCcw, Crown, Shield, Calendar, DollarSign, Mail, Edit3 } from "lucide-react";
 import DeleteUserButton from "./delete-user-button";
 import SendMailModal from "./send-mail-modal";
+import EditPlanModal from "./edit-plan-modal";
 
 interface UserWithDetails {
   id: string;
@@ -26,6 +27,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
   const [levelFilter, setLevelFilter] = useState<"all" | "pro" | "core">("all");
   const [tierFilter, setTierFilter] = useState<"all" | "monthly" | "six_months" | "lifetime">("all");
   const [selectedMailUser, setSelectedMailUser] = useState<UserWithDetails | null>(null);
+  const [selectedEditUser, setSelectedEditUser] = useState<UserWithDetails | null>(null);
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -247,6 +249,14 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => setSelectedEditUser(user)}
+                          title="Modify Plan & Payment"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800 text-xs font-semibold border border-purple-200 transition-all active:scale-95 shrink-0"
+                        >
+                          <Edit3 className="h-3.5 w-3.5 text-purple-600" />
+                          <span>Edit Plan</span>
+                        </button>
+                        <button
                           onClick={() => setSelectedMailUser(user)}
                           title="Send Email to User"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-xs font-semibold border border-blue-200 transition-all active:scale-95 shrink-0"
@@ -290,6 +300,14 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
           )}
         </div>
       </div>
+
+      {/* Edit Plan Modal */}
+      {selectedEditUser && (
+        <EditPlanModal
+          user={selectedEditUser}
+          onClose={() => setSelectedEditUser(null)}
+        />
+      )}
 
       {/* Send Mail Modal */}
       {selectedMailUser && (
