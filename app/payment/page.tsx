@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
@@ -27,6 +27,7 @@ import {
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 import { createRazorpayOrder, verifyRazorpayPayment, validateCouponAction } from "@/app/actions/payment";
+import { getPlanPricesAction, DEFAULT_PRICING, PlanPricingConfig } from "@/app/actions/admin-pricing";
 
 const features = [
   { icon: InfinityIcon, label: "Active Habits", core: "Limited", pro: "Unlimited" },
@@ -84,6 +85,13 @@ export default function PaymentPage() {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
   const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
+
+  useEffect(() => {
+    getPlanPricesAction().then((res) => {
+      if (res) setPricingConfig(res);
+    });
+  }, []);
   
   // Coupon state
   const [couponInput, setCouponInput] = useState("");
@@ -398,51 +406,63 @@ export default function PaymentPage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          {basePlans.map((plan) => (
-            <motion.button
-              key={plan.id}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => handlePlanChange(plan.id as any)}
-              className={cn(
-                "relative flex items-center gap-4 rounded-2xl border p-4 text-left transition-all",
-                selectedPlan === plan.id
-                  ? "border-[var(--color-accent-green)] bg-[var(--color-accent-green-light)] shadow-[var(--shadow-glow-green)]"
-                  : "border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)]"
-              )}
-            >
-              {plan.badge && (
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-[var(--color-accent-green)] px-3 py-0.5">
-                  <span className="text-[10px] font-bold text-white">{plan.badge}</span>
-                </div>
-              )}
-              <span className="text-2xl">{plan.emoji}</span>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-[var(--color-text-primary)]">
-                  {plan.name}
-                </p>
-                {plan.savings && (
-                  <p className="text-[10px] font-semibold text-[var(--color-accent-green)]">
-                    {plan.savings}
-                  </p>
+          {basePlans.map((plan) => {
+            const planPricing = pricingConfig[plan.id as keyof PlanPricingConfig]?.[level] || { price: plan.basePrices[level] };
+            const offerPrice = planPricing.price;
+            const originalPrice = planPricing.originalPrice;
+
+            return (
+              <motion.button
+                key={plan.id}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => handlePlanChange(plan.id as any)}
+                className={cn(
+                  "relative flex items-center gap-4 rounded-2xl border p-4 text-left transition-all",
+                  selectedPlan === plan.id
+                    ? "border-[var(--color-accent-green)] bg-[var(--color-accent-green-light)] shadow-[var(--shadow-glow-green)]"
+                    : "border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)]"
                 )}
-              </div>
-              <div className="text-right">
-                <div className="flex items-center justify-end gap-1.5">
-                  {appliedCoupon && isCouponValidForPlan(plan.id, level) && (
-                    <span className="text-[10px] text-gray-400 line-through">
-                      ₹{plan.basePrices[level]}
-                    </span>
+              >
+                {plan.badge && (
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-[var(--color-accent-green)] px-3 py-0.5">
+                    <span className="text-[10px] font-bold text-white">{plan.badge}</span>
+                  </div>
+                )}
+                <span className="text-2xl">{plan.emoji}</span>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-[var(--color-text-primary)]">
+                    {plan.name}
+                  </p>
+                  {plan.savings && (
+                    <p className="text-[10px] font-semibold text-[var(--color-accent-green)]">
+                      {plan.savings}
+                    </p>
                   )}
-                  <p className="text-lg font-extrabold text-[var(--color-text-primary)]">
-                    {calculatePrice(plan.basePrices[level], plan.id, level)}
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-1.5">
+                    {appliedCoupon && isCouponValidForPlan(plan.id, level) ? (
+                      <span className="text-[10px] text-gray-400 line-through font-semibold">
+                        ₹{offerPrice}
+                      </span>
+                    ) : (
+                      originalPrice && originalPrice > offerPrice && (
+                        <span className="text-[10px] text-gray-400 line-through font-semibold">
+                          ₹{originalPrice}
+                        </span>
+                      )
+                    )}
+                    <p className="text-lg font-extrabold text-[var(--color-text-primary)]">
+                      {calculatePrice(offerPrice, plan.id, level)}
+                    </p>
+                  </div>
+                  <p className="text-[10px] font-medium text-[var(--color-text-tertiary)]">
+                    {plan.period}
                   </p>
                 </div>
-                <p className="text-[10px] font-medium text-[var(--color-text-tertiary)]">
-                  {plan.period}
-                </p>
-              </div>
-            </motion.button>
-          ))}
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { calculateExpiryDate } from "@/lib/utils";
+import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 
 const razorpay = new Razorpay({
   key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
@@ -56,14 +57,9 @@ export async function createRazorpayOrder(
     return { success: false, error: "Unauthorized" };
   }
 
-  // Base Prices Mapping
-  const basePrices = {
-    monthly: { core: 49, pro: 69 },
-    six_months: { core: 199, pro: 249 },
-    lifetime: { core: 599, pro: 799 },
-  };
-
-  let finalPrice = basePrices[tier]?.[level] || 0;
+  // Fetch dynamic live offer prices set by Admin
+  const livePricing = await getPlanPricesAction();
+  let finalPrice = livePricing[tier]?.[level]?.price || 0;
 
   if (finalPrice <= 0) {
     return { success: false, error: "Invalid plan" };

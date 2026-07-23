@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, CreditCard, LogOut, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, LogOut, MessageSquare, Tag } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -14,6 +14,7 @@ export default function AdminLayout({
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Users", href: "/admin/users", icon: Users },
+    { name: "Plan Pricing", href: "/admin/pricing", icon: Tag },
     { name: "Coupons", href: "/admin/coupons", icon: CreditCard },
     { name: "Support Inbox", href: "/admin/support", icon: MessageSquare },
   ];
