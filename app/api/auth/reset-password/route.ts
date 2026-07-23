@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
         if (!linkError && linkData?.properties?.action_link) {
           const resetLink = linkData.properties.action_link;
-          const fromAddress = process.env.RESEND_FROM_EMAIL || "GrindLog <onboarding@resend.dev>";
+          const fromAddress = process.env.RESEND_FROM_EMAIL || "GrindLog <grindlogapp6@gmail.com>";
           const { error: resendError } = await resend.emails.send({
             from: fromAddress,
             to: [cleanEmail],
