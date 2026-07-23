@@ -3,28 +3,34 @@
 import { useState } from "react";
 import { Mail, X, Send, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { sendUserEmailAdminAction } from "@/app/actions/admin-users";
+import { sendUserEmailAdminAction, sendBulkUserEmailAdminAction } from "@/app/actions/admin-users";
 
 interface SendMailModalProps {
-  user: {
+  users: {
     id: string;
     display_name?: string;
     email?: string;
-  };
+  }[];
   onClose: () => void;
 }
 
-export default function SendMailModal({ user, onClose }: SendMailModalProps) {
-  const recipientEmail = user.email || "";
-  const recipientName = user.display_name || user.email?.split("@")[0] || "User";
+export default function SendMailModal({ users, onClose }: SendMailModalProps) {
+  const isBulk = users.length > 1;
+  const singleUser = users[0];
+  const recipientEmail = isBulk ? `${users.length} Users Selected` : (singleUser?.email || "");
+  const recipientName = isBulk ? "{{name}}" : (singleUser?.display_name || singleUser?.email?.split("@")[0] || "User");
 
   const [subject, setSubject] = useState(`Update regarding your GrindLog account`);
   const [message, setMessage] = useState(`Hi ${recipientName},\n\nWe are reaching out to you regarding your GrindLog account.\n\nBest regards,\nGrindLog Support Team`);
   const [isSending, setIsSending] = useState(false);
 
   const handleSendEmail = async () => {
-    if (!recipientEmail) {
+    if (!isBulk && !singleUser?.email) {
       toast.error("User does not have a valid email address");
+      return;
+    }
+    if (isBulk && users.some(u => !u.email)) {
+      toast.error("Some selected users do not have a valid email address");
       return;
     }
     if (!subject.trim()) {
@@ -38,12 +44,26 @@ export default function SendMailModal({ user, onClose }: SendMailModalProps) {
 
     setIsSending(true);
     try {
-      const res = await sendUserEmailAdminAction(recipientEmail, subject, message);
-      if (res.success) {
-        toast.success(`Email sent successfully to ${recipientEmail}!`);
-        onClose();
+      if (isBulk) {
+        const payload = users.map(u => ({
+          email: u.email!,
+          name: u.display_name || u.email?.split("@")[0] || "User"
+        }));
+        const res = await sendBulkUserEmailAdminAction(payload, subject, message);
+        if (res.success) {
+          toast.success(`Bulk email sent successfully to ${users.length} users!`);
+          onClose();
+        } else {
+          toast.error(res.error || "Failed to send bulk email");
+        }
       } else {
-        toast.error(res.error || "Failed to send email");
+        const res = await sendUserEmailAdminAction(recipientEmail, subject, message);
+        if (res.success) {
+          toast.success(`Email sent successfully to ${recipientEmail}!`);
+          onClose();
+        } else {
+          toast.error(res.error || "Failed to send email");
+        }
       }
     } catch (err: any) {
       toast.error(err?.message || "An unexpected error occurred while sending email");
@@ -53,9 +73,15 @@ export default function SendMailModal({ user, onClose }: SendMailModalProps) {
   };
 
   const handleOpenMailto = () => {
-    if (!recipientEmail) return;
-    const mailtoUrl = `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-    window.location.href = mailtoUrl;
+    if (isBulk) {
+      const emails = users.map(u => u.email).filter(Boolean).join(",");
+      const mailtoUrl = `mailto:?bcc=${encodeURIComponent(emails)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+      window.location.href = mailtoUrl;
+    } else {
+      if (!recipientEmail) return;
+      const mailtoUrl = `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+      window.location.href = mailtoUrl;
+    }
   };
 
   return (
@@ -68,8 +94,8 @@ export default function SendMailModal({ user, onClose }: SendMailModalProps) {
               <Mail className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900">Send Email to User</h3>
-              <p className="text-xs text-gray-500">{recipientName} ({recipientEmail})</p>
+              <h3 className="text-sm font-bold text-gray-900">{isBulk ? "Send Bulk Email" : "Send Email to User"}</h3>
+              <p className="text-xs text-gray-500">{isBulk ? `${users.length} users selected` : `${recipientName} (${recipientEmail})`}</p>
             </div>
           </div>
           <button
@@ -119,9 +145,12 @@ export default function SendMailModal({ user, onClose }: SendMailModalProps) {
 
           {/* Recipient Input (Read Only) */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-700">Recipient Email</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-gray-700">Recipient{isBulk ? "s" : " Email"}</label>
+              {isBulk && <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">BCC / Batch Sent</span>}
+            </div>
             <input
-              type="email"
+              type="text"
               value={recipientEmail}
               readOnly
               className="w-full px-3 py-2 text-xs font-medium bg-gray-100 border border-gray-200 rounded-xl text-gray-600 outline-none cursor-not-allowed"

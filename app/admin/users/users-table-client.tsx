@@ -26,7 +26,8 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "pro" | "core">("all");
   const [tierFilter, setTierFilter] = useState<"all" | "monthly" | "six_months" | "lifetime">("all");
-  const [selectedMailUser, setSelectedMailUser] = useState<UserWithDetails | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [selectedMailUsers, setSelectedMailUsers] = useState<UserWithDetails[] | null>(null);
   const [selectedHistoryUser, setSelectedHistoryUser] = useState<UserWithDetails | null>(null);
 
   const filteredUsers = useMemo(() => {
@@ -180,12 +181,55 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedUserIds.size > 0 && (
+        <div className="flex items-center justify-between p-3 mb-4 bg-blue-50 border border-blue-200 rounded-xl shadow-sm animate-in slide-in-from-top-2 fade-in duration-200">
+          <div className="flex items-center gap-2 px-2">
+            <span className="text-sm font-bold text-blue-800">{selectedUserIds.size} User(s) Selected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedUserIds(new Set())}
+              className="px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+            >
+              Clear Selection
+            </button>
+            <button
+              onClick={() => {
+                const usersToMail = users.filter(u => selectedUserIds.has(u.id));
+                setSelectedMailUsers(usersToMail);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm active:scale-95"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>Send Bulk Mail</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Table Card */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-gray-500">
             <thead className="text-xs text-gray-700 uppercase bg-gray-50">
               <tr>
+                <th className="px-6 py-3 w-10 text-center">
+                  <input 
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    checked={filteredUsers.length > 0 && filteredUsers.every(u => selectedUserIds.has(u.id))}
+                    onChange={(e) => {
+                      const newSet = new Set(selectedUserIds);
+                      if (e.target.checked) {
+                        filteredUsers.forEach(u => newSet.add(u.id));
+                      } else {
+                        filteredUsers.forEach(u => newSet.delete(u.id));
+                      }
+                      setSelectedUserIds(newSet);
+                    }}
+                  />
+                </th>
                 <th className="px-6 py-3">User</th>
                 <th className="px-6 py-3">Stats</th>
                 <th className="px-6 py-3">Plan</th>
@@ -205,6 +249,19 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
 
                 return (
                   <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
+                    <td className="px-6 py-4 text-center">
+                      <input 
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        checked={selectedUserIds.has(user.id)}
+                        onChange={(e) => {
+                          const newSet = new Set(selectedUserIds);
+                          if (e.target.checked) newSet.add(user.id);
+                          else newSet.delete(user.id);
+                          setSelectedUserIds(newSet);
+                        }}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold shrink-0">
@@ -285,7 +342,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                           <span>History</span>
                         </button>
                         <button
-                          onClick={() => setSelectedMailUser(user)}
+                          onClick={() => setSelectedMailUsers([user])}
                           title="Send Email to User"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-xs font-semibold border border-blue-200 transition-all active:scale-95 shrink-0"
                         >
@@ -305,7 +362,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             </tbody>
             <tfoot className="bg-gray-50 font-bold text-gray-900 border-t border-gray-200">
               <tr>
-                <td colSpan={5} className="px-6 py-4 text-right uppercase text-xs">Filtered Revenue:</td>
+                <td colSpan={6} className="px-6 py-4 text-right uppercase text-xs">Filtered Revenue:</td>
                 <td className="px-6 py-4 text-green-600">₹{filteredRevenue.toLocaleString()}</td>
                 <td colSpan={2}></td>
               </tr>
@@ -330,10 +387,10 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
       </div>
 
       {/* Send Mail Modal */}
-      {selectedMailUser && (
+      {selectedMailUsers && (
         <SendMailModal
-          user={selectedMailUser}
-          onClose={() => setSelectedMailUser(null)}
+          users={selectedMailUsers}
+          onClose={() => setSelectedMailUsers(null)}
         />
       )}
 
