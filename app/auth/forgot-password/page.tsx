@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
       if (secMatch) {
         const secs = parseInt(secMatch[1], 10) || 60;
         setCooldown(secs);
-        setError(`Reset email already dispatched! For security, you can resend in ${secs}s.`);
+        setError(`Reset email already dispatched! For security, please wait before trying again.`);
       } else {
         setError(result.error);
       }
