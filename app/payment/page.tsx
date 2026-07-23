@@ -89,15 +89,25 @@ export default function PaymentPage() {
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
 
   useEffect(() => {
-    checkUserPremiumStatusAction().then((isPremium) => {
-      if (isPremium) {
-        window.location.href = "/dashboard?t=" + Date.now();
-      }
-    });
+    let timeoutId: NodeJS.Timeout;
+
+    const pollPremiumStatus = () => {
+      checkUserPremiumStatusAction().then((isPremium) => {
+        if (isPremium) {
+          window.location.href = "/dashboard?success=true&t=" + Date.now();
+        } else {
+          timeoutId = setTimeout(pollPremiumStatus, 4000);
+        }
+      });
+    };
+
+    pollPremiumStatus();
 
     getPlanPricesAction().then((res) => {
       if (res) setPricingConfig(res);
     });
+
+    return () => clearTimeout(timeoutId);
   }, []);
   
   // Coupon state
