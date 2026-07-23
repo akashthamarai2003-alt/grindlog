@@ -533,7 +533,7 @@ export default function CoachPage() {
 
     const res = await generateHabitsAction(generatorGoal);
     if (res.success && res.habits) {
-      setGeneratedHabits(res.habits);
+      setGeneratedHabits(Array.isArray(res.habits) ? res.habits : []);
     } else if (res.error) {
       handleError(res.error);
     }
@@ -639,7 +639,7 @@ export default function CoachPage() {
 
         {/* ── Segmented Scrollable Tab Bar ── */}
         <div className="flex gap-2 overflow-x-auto pb-3 mb-3 -mx-4 px-4 scrollbar-none">
-          {TABS.map(tab => {
+          {Array.isArray(TABS) && TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
@@ -678,7 +678,7 @@ export default function CoachPage() {
             >
               {/* Chat Log */}
               <div className="flex-1 flex flex-col gap-3 overflow-y-auto px-4 pt-2 pb-6 scrollbar-none">
-                {chatMessages.map((msg, i) => (
+                {Array.isArray(chatMessages) && chatMessages.map((msg, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -769,7 +769,7 @@ export default function CoachPage() {
 
               {/* Generated Habit Results */}
               <div className="flex flex-col gap-3">
-                {generatedHabits.map((habit, idx) => (
+                {Array.isArray(generatedHabits) && generatedHabits.map((habit, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, scale: 0.97 }}
@@ -862,7 +862,7 @@ export default function CoachPage() {
                         <CheckCircle2 className="h-3.5 w-3.5" /> Highlights
                       </h4>
                       <ul className="text-[10px] font-semibold text-[var(--color-text-secondary)] mt-2 space-y-1.5 list-disc pl-3">
-                        {weeklyReport.highlights.map((h: string, i: number) => (
+                        {Array.isArray(weeklyReport.highlights) && weeklyReport.highlights.map((h: string, i: number) => (
                           <li key={i}>{h}</li>
                         ))}
                       </ul>
@@ -873,7 +873,7 @@ export default function CoachPage() {
                         <AlertCircle className="h-3.5 w-3.5" /> Needs Work
                       </h4>
                       <ul className="text-[10px] font-semibold text-[var(--color-text-secondary)] mt-2 space-y-1.5 list-disc pl-3">
-                        {weeklyReport.improvements.map((imp: string, i: number) => (
+                        {Array.isArray(weeklyReport.improvements) && weeklyReport.improvements.map((imp: string, i: number) => (
                           <li key={i}>{imp}</li>
                         ))}
                       </ul>
@@ -910,7 +910,7 @@ export default function CoachPage() {
               </button>
 
               <div className="flex flex-col gap-3">
-                {predictions.map((p, idx) => (
+                {Array.isArray(predictions) && predictions.map((p, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, scale: 0.97 }}
@@ -1023,7 +1023,7 @@ export default function CoachPage() {
               </button>
 
               <div className="flex flex-col gap-3">
-                {suggestions.map((item, idx) => (
+                {Array.isArray(suggestions) && suggestions.map((item, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, scale: 0.97 }}
@@ -1076,7 +1076,7 @@ export default function CoachPage() {
               <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 pb-1 scrollbar-none">
                 <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
                   <span className="text-[9px] font-black text-[var(--color-text-tertiary)] uppercase tracking-wider whitespace-nowrap">Presets:</span>
-                  {savedPresets.map((preset) => (
+                  {Array.isArray(savedPresets) && savedPresets.map((preset) => (
                     <button
                       key={preset.id}
                       onClick={() => handleLoadPreset(preset)}
@@ -1235,7 +1235,7 @@ export default function CoachPage() {
                 </div>
 
                 {/* Active Habits Lock-In Checklist */}
-                {userActiveHabits.length > 0 && (
+                {Array.isArray(userActiveHabits) && userActiveHabits.length > 0 && (
                   <div className="flex flex-col gap-2 pt-1 border-t border-[var(--color-bg-tertiary)]">
                     <button
                       type="button"
@@ -1444,7 +1444,7 @@ export default function CoachPage() {
 
                   {/* Interactive Timeline List */}
                   <div className="relative border-l-2 border-[var(--color-bg-tertiary)] ml-3 pl-4 space-y-3 pt-2">
-                    {generatedSchedule
+                    {Array.isArray(generatedSchedule) && generatedSchedule
                       .filter(item => scheduleFilter === "all" || item.category === scheduleFilter || (scheduleFilter === "Habit" && item.isHabit))
                       .map((item, idx) => {
                         const originalIdx = generatedSchedule.findIndex(b => b === item || (b.id && b.id === item.id));
@@ -1878,14 +1878,14 @@ export default function CoachPage() {
                     <h4 className="text-[11px] font-black text-[#5856D6] uppercase tracking-wider flex items-center gap-1">
                       <HelpCircle className="h-3.5 w-3.5" /> Psychological Insights
                     </h4>
-                    <ul className="text-xs font-bold text-[var(--color-text-secondary)] space-y-2 mt-1">
-                      {reflectionResult.insights.map((ins: string, i: number) => (
+                    <div className="flex flex-col gap-2">
+                      {Array.isArray(reflectionResult?.insights) && reflectionResult.insights.map((ins: string, i: number) => (
                         <li key={i} className="flex items-start gap-1.5">
                           <ArrowRight className="h-3.5 w-3.5 text-[#5856D6] shrink-0 mt-0.5" />
                           <span>{ins}</span>
                         </li>
                       ))}
-                    </ul>
+                    </div>
                   </div>
 
                   <div className="rounded-[20px] bg-[#34C759]/10 p-4 border border-[#34C759]/20">

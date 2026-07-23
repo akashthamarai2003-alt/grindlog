@@ -13,13 +13,31 @@ async function getUserContext() {
   return { supabase, user };
 }
 
+// Helper to extract an array safely from raw AI response
+function ensureArray<T = any>(data: any): T[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    if (Array.isArray(data.habits)) return data.habits;
+    if (Array.isArray(data.schedule)) return data.schedule;
+    if (Array.isArray(data.predictions)) return data.predictions;
+    if (Array.isArray(data.suggestions)) return data.suggestions;
+    if (Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data.items)) return data.items;
+    if (Array.isArray(data.blocks)) return data.blocks;
+    if (Array.isArray(data.results)) return data.results;
+    const firstArrayProp = Object.values(data).find((val) => Array.isArray(val));
+    if (firstArrayProp) return firstArrayProp as T[];
+  }
+  return [];
+}
+
 // 1. AI Habit Generator Action
 export async function generateHabitsAction(goal: string) {
   try {
     const { supabase, user } = await getUserContext();
 
     const systemPrompt = `You are a world-class performance and habit design coach. Your task is to design a set of 3 to 5 daily habits specifically tailored to help the user achieve their goal.
-Return a JSON array of objects. Each object must strictly match the following typescript structure:
+Return a JSON object with a "habits" key containing an array of objects. Each object must strictly match:
 {
   "name": string, // short, actionable habit name (e.g., "Deep Work Block", "Hydrate first thing")
   "emoji": string, // single emoji matching the habit
@@ -34,7 +52,8 @@ Return a JSON array of objects. Each object must strictly match the following ty
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const habits = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 600 });
+    const raw = await generateAIResponseJSON<any>({ systemPrompt, userPrompt, maxTokens: 600 });
+    const habits = ensureArray(raw);
     await logAIUsage(supabase, user.id, "generate_habits");
 
     return { success: true, habits };
@@ -222,7 +241,8 @@ Respond with a JSON array of objects. Each object should match this structure:
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const predictions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 500 });
+    const raw = await generateAIResponseJSON<any>({ systemPrompt, userPrompt, maxTokens: 500 });
+    const predictions = ensureArray(raw);
     await logAIUsage(supabase, user.id, "predictions");
 
     return { success: true, predictions };
@@ -298,7 +318,8 @@ Respond with a JSON array of objects matching this structure:
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const suggestions = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 500 });
+    const raw = await generateAIResponseJSON<any>({ systemPrompt, userPrompt, maxTokens: 500 });
+    const suggestions = ensureArray(raw);
     await logAIUsage(supabase, user.id, "suggestions");
 
     return { success: true, suggestions };
@@ -376,7 +397,8 @@ Active Habits to Lock In: ${JSON.stringify(activeHabitNames.map(h => ({ name: h.
     const limitCheck = await checkAILimit(supabase, user.id);
     if (!limitCheck.allowed) return { success: false, error: AI_LIMIT_ERROR_MESSAGE };
 
-    const schedule = await generateAIResponseJSON<any[]>({ systemPrompt, userPrompt, maxTokens: 1200 });
+    const raw = await generateAIResponseJSON<any>({ systemPrompt, userPrompt, maxTokens: 1200 });
+    const schedule = ensureArray(raw);
     await logAIUsage(supabase, user.id, "schedule_builder");
 
     return { success: true, schedule };
