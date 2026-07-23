@@ -43,14 +43,7 @@ export default function SendMailModal({ user, onClose }: SendMailModalProps) {
         toast.success(`Email sent successfully to ${recipientEmail}!`);
         onClose();
       } else {
-        const errMsg = res.error || "Failed to send email";
-        if (errMsg.includes("testing emails") || errMsg.includes("domain is not verified") || errMsg.includes("resend.com/domains")) {
-          toast.info("Resend testing mode limits emails to owner. Opening Mail App for user...", { duration: 4000 });
-          handleOpenMailto();
-          onClose();
-        } else {
-          toast.error(errMsg);
-        }
+        toast.error(res.error || "Failed to send email");
       }
     } catch (err: any) {
       toast.error(err?.message || "An unexpected error occurred while sending email");
