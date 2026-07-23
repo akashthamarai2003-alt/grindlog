@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         if (!linkError && linkData?.properties?.action_link) {
           const resetLink = linkData.properties.action_link;
           const { error: resendError } = await resend.emails.send({
-            from: "GrindLog <onboarding@resend.dev>",
+            from: "GrindLog <grindlogapp6@gmail.com>",
             to: [cleanEmail],
             subject: "Reset your GrindLog password",
             html: `
