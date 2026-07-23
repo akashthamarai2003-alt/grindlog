@@ -94,6 +94,7 @@ export async function sendUserEmailAdminAction(toEmail: string, subject: string,
       const formattedHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 16px; background-color: #ffffff;">
           <div style="text-align: center; margin-bottom: 20px; border-bottom: 1px solid #f3f4f6; padding-bottom: 16px;">
+            <img src="https://grindlog.in/icons/icon-192.png" alt="GrindLog Logo" style="width: 56px; height: 56px; border-radius: 12px; margin-bottom: 12px; object-fit: cover; display: inline-block;" />
             <h2 style="color: #34C759; margin: 0; font-size: 20px;">GrindLog Support</h2>
           </div>
           <h3 style="color: #111827; margin-bottom: 16px; font-size: 16px;">${safeSubject}</h3>
