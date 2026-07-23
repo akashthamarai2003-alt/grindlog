@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { Users, Target, CreditCard, User } from "lucide-react";
-import RecentSignupsClient from "./recent-signups-client";
 
 export default async function AdminDashboard() {
   const supabase = createAdminClient();
@@ -81,7 +80,48 @@ export default async function AdminDashboard() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Recent Signups</h2>
         </div>
-        <RecentSignupsClient users={recentUsers || []} />
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left text-gray-500">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+              <tr>
+                <th className="px-6 py-3">Name</th>
+                <th className="px-6 py-3">Email</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentUsers?.map((user) => (
+                <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
+                  <td className="px-6 py-4 font-medium text-gray-900">
+                    {user.display_name}
+                  </td>
+                  <td className="px-6 py-4">{user.email}</td>
+                  <td className="px-6 py-4">
+                    {user.is_premium ? (
+                      user.premium_level === "pro" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          Pro
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                          Core
+                        </span>
+                      )
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Unpaid
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

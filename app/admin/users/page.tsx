@@ -53,21 +53,14 @@ export default async function AdminUsersPage() {
       const validPaymentIds = Array.from(paymentIds).filter(id => id && id.startsWith("pay_"));
       let actualPaidAmount = 0;
       
-      // 2. Fetch amounts for all valid Razorpay / Manual payments and sum them
+      // 2. Fetch amounts for all valid Razorpay payments and sum them
       if (validPaymentIds.length > 0) {
         for (const pid of validPaymentIds) {
-          if (pid.startsWith("pay_manual_")) {
-            const match = pid.match(/pay_manual_₹?(\d+(?:\.\d+)?)/);
-            if (match && match[1]) {
-              actualPaidAmount += parseFloat(match[1]);
-            }
-          } else {
-            try {
-              const payment = await razorpay.payments.fetch(pid);
-              actualPaidAmount += Number(payment.amount) / 100;
-            } catch (e) {
-              console.error("Failed to fetch Razorpay payment", pid);
-            }
+          try {
+            const payment = await razorpay.payments.fetch(pid);
+            actualPaidAmount += Number(payment.amount) / 100;
+          } catch (e) {
+            console.error("Failed to fetch Razorpay payment", pid);
           }
         }
       } 
