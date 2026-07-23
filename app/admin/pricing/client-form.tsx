@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Tag, Save, Loader2, Sparkles, CheckCircle2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { PlanPricingConfig, updatePlanPricesAction } from "@/app/actions/admin-pricing";
+import { updatePlanPricesAction } from "@/app/actions/admin-pricing";
+import { PlanPricingConfig } from "@/lib/constants/pricing";
 
 export default function PricingClientForm({ initialPricing }: { initialPricing: PlanPricingConfig }) {
   const [pricing, setPricing] = useState<PlanPricingConfig>(initialPricing);

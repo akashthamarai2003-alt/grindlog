@@ -27,7 +27,8 @@ import {
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
 import { createRazorpayOrder, verifyRazorpayPayment, validateCouponAction } from "@/app/actions/payment";
-import { getPlanPricesAction, DEFAULT_PRICING, PlanPricingConfig } from "@/app/actions/admin-pricing";
+import { getPlanPricesAction } from "@/app/actions/admin-pricing";
+import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 
 const features = [
   { icon: InfinityIcon, label: "Active Habits", core: "Limited", pro: "Unlimited" },
