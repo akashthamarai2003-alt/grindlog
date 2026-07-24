@@ -25,6 +25,13 @@ export default function SplashPage() {
   useEffect(() => {
     if (stage === "done") {
       const timer = setTimeout(() => {
+        try {
+          const hasSeen = localStorage.getItem("grindlog_has_seen_onboarding");
+          if (hasSeen === "true") {
+            window.location.href = "/auth/signin";
+            return;
+          }
+        } catch (e) {}
         window.location.href = "/onboarding";
       }, 100);
       return () => clearTimeout(timer);

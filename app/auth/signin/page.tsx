@@ -75,6 +75,9 @@ export default function SignInPage() {
     setIsLoading(false);
 
     if (result.success) {
+      try {
+        localStorage.setItem("grindlog_has_seen_onboarding", "true");
+      } catch (e) {}
       router.push("/dashboard");
     } else {
       const rawError = result.error || "";

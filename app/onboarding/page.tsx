@@ -58,12 +58,19 @@ export default function OnboardingPage() {
   const [direction, setDirection] = useState<1 | -1>(1);
   const router = useRouter();
 
+  const finishOnboarding = (path: string) => {
+    try {
+      localStorage.setItem("grindlog_has_seen_onboarding", "true");
+    } catch (e) {}
+    router.push(path);
+  };
+
   const goNext = () => {
     if (current < slides.length - 1) {
       setDirection(1);
       setCurrent(current + 1);
     } else {
-      router.push("/auth/signup");
+      finishOnboarding("/auth/signup");
     }
   };
 
@@ -119,7 +126,7 @@ export default function OnboardingPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={springs.default}
-              onClick={() => router.push("/auth/signup")}
+              onClick={() => finishOnboarding("/auth/signup")}
               className="px-4 py-2 text-sm font-semibold text-[var(--color-text-tertiary)] transition-colors active:text-[var(--color-text-primary)]"
             >
               Skip
@@ -306,7 +313,7 @@ export default function OnboardingPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={springs.default}
-              onClick={() => router.push("/auth/signin")}
+              onClick={() => finishOnboarding("/auth/signin")}
               className="px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-colors active:text-[var(--color-text-primary)]"
             >
               Already have an account?{" "}
