@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Eye, EyeOff, Check, AlertCircle } from "lucide-react";
+import { InstallAppCard } from "@/components/pwa/install-card";
 import bgImage from "../../../public/login-page.png";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -254,12 +255,13 @@ export default function SignInPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-[13px] font-medium text-white/90">
+            <p className="text-[13px] font-medium text-white/90 mb-4">
               Don't have an account?{" "}
               <Link href="/auth/signup" className="font-bold text-white hover:underline">
                 Signup
               </Link>
             </p>
+            <InstallAppCard />
           </div>
         </motion.div>
       </div>

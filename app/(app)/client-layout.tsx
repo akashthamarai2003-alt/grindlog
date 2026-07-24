@@ -7,7 +7,6 @@ import { Home, BarChart3, Calendar, LayoutGrid, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { springs } from "@/animations/springs";
 import { useKeyboard } from "@/hooks/use-keyboard";
-import { InstallModal } from "@/components/pwa/install-modal";
 
 const tabs = [
   { id: "dashboard", label: "Home", icon: Home, path: "/dashboard" },
@@ -24,7 +23,6 @@ export default function ClientAppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="isolate">
-      <InstallModal />
 
       <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.05)] ring-1 ring-gray-200 dark:ring-gray-900 overflow-x-hidden">
         {/* Main content */}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 import { Providers } from "./providers";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { InstallModal } from "@/components/pwa/install-modal";
 
 
 
@@ -81,6 +82,7 @@ export default async function RootLayout({
       </head>
       <body>
         <Providers initialTheme={equippedTheme}>{children}</Providers>
+        <InstallModal />
       </body>
     </html>
   );

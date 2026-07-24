@@ -16,6 +16,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { springs } from "@/animations/springs";
+import { InstallAppCard } from "@/components/pwa/install-card";
 import { cn } from "@/lib/utils";
 
 const slides = [
@@ -283,6 +284,10 @@ export default function OnboardingPage() {
               aria-label={`Go to slide ${i + 1}`}
             />
           ))}
+        </div>
+
+        <div className="w-full max-w-md">
+          <InstallAppCard />
         </div>
 
         {/* CTA Button */}
