@@ -129,14 +129,34 @@ export function InstallModal() {
                       </li>
                     </ol>
                   </div>
-                ) : (
+                ) : deferredPrompt ? (
                   <button
                     onClick={handleInstallClick}
-                    disabled={!deferredPrompt}
-                    className="w-full rounded-xl bg-[var(--color-accent-green)] py-3.5 font-bold text-black shadow-lg shadow-[var(--color-accent-green)]/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
+                    className="w-full rounded-xl bg-[var(--color-accent-green)] py-3.5 font-bold text-black shadow-lg shadow-[var(--color-accent-green)]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    {deferredPrompt ? "Install Now" : "Install from Browser Menu"}
+                    Install Now
                   </button>
+                ) : (
+                  <div className="w-full rounded-xl bg-white/5 border border-white/10 p-5 text-left">
+                    <ol className="flex flex-col gap-4 text-sm font-medium text-gray-200">
+                      <li className="flex items-center gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs">
+                          1
+                        </span>
+                        <span>
+                          Tap the browser menu (⋮) at the top right
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs">
+                          2
+                        </span>
+                        <span>
+                          Select <strong className="text-white">Install app</strong> or <strong className="text-white">Add to Home screen</strong>
+                        </span>
+                      </li>
+                    </ol>
+                  </div>
                 )}
               </div>
             </motion.div>
