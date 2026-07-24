@@ -20,6 +20,7 @@ import {
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 import { LucideProps } from "lucide-react";
 import { NotificationPrompt } from "@/components/notifications/notification-prompt";
+import { InstallAppCard } from "@/components/pwa/install-card";
 
 type Module = {
   id: string;
@@ -51,6 +52,8 @@ export default function HubPage() {
           All your modules in one place.
         </p>
       </div>
+
+      <InstallAppCard />
 
       <div className="grid grid-cols-2 gap-4">
         {MODULES.map((mod) => {
