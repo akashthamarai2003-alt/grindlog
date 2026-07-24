@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import { Providers } from "./providers";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { InstallModal } from "@/components/pwa/install-modal";
+import { InstallPopup } from "@/components/pwa/install-popup";
 
 
 
@@ -83,6 +84,7 @@ export default async function RootLayout({
       <body>
         <Providers initialTheme={equippedTheme}>{children}</Providers>
         <InstallModal />
+        <InstallPopup />
       </body>
     </html>
   );
