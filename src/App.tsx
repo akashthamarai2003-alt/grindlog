@@ -323,7 +323,7 @@ function Hero({ handleInstallClick }: { handleInstallClick: any }) {
     <section id="home" className="grain relative flex min-h-[100svh] items-center justify-center overflow-hidden px-5 pt-20 pb-12 sm:px-8">
       <video
         ref={videoRef}
-        className="absolute inset-0 h-full w-full object-cover hidden sm:block"
+        className="absolute inset-0 h-full w-full object-cover"
         src={VIDEO_URL}
         preload="metadata"
         autoPlay
@@ -331,7 +331,6 @@ function Hero({ handleInstallClick }: { handleInstallClick: any }) {
         playsInline
         aria-hidden="true"
       />
-      <div className="absolute inset-0 h-full w-full bg-[#1b2520] sm:hidden" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-white/25 to-white opacity-[0.83]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/75 to-transparent" />
       <motion.div style={{ opacity: contentOpacity, y: softY }} className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
