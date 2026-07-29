@@ -295,7 +295,7 @@ function Header() {
             </a>
           ))}
         </nav>
-        <a href="https://grindlog.in/app" target="_blank" rel="noopener noreferrer">
+        <a href="https://app.grindlog.in" target="_blank" rel="noopener noreferrer">
           <Button aria-label="Open App" className="h-10 px-4 text-xs sm:h-11 sm:px-5">
             <span>Open App</span>
             <ArrowUpRight size={14} className="ml-1.5" />
@@ -357,7 +357,7 @@ function Hero() {
           transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.56 }}
           className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center"
         >
-          <a href="https://grindlog.in/app" target="_blank" rel="noopener noreferrer">
+          <a href="https://app.grindlog.in" target="_blank" rel="noopener noreferrer">
             <Button className="min-w-[166px] bg-[#22C55E] text-white hover:bg-[#16A34A]">
               <Download size={16} className="mr-1.5" />
               Install App
@@ -1414,7 +1414,7 @@ function FinalCta() {
           <h2 className="mt-6 font-display text-[clamp(3.2rem,7.2vw,6.9rem)] leading-[0.88] tracking-[-0.064em]">Invest in the person<br className="hidden sm:block" /> you&apos;re becoming.</h2>
           <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-white/66 sm:text-xl">For less than a cup of coffee each month, you get the tools to build habits that can last a lifetime.</p>
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ type: 'spring', stiffness: 120, damping: 20, delay: 0.25 }} className="mt-10">
-            <a href="https://grindlog.in/app" target="_blank" rel="noopener noreferrer"><Button variant="light" className="h-13 min-w-[185px] bg-[#DDF7E2] px-6 text-[#112017] hover:bg-white">Start My Journey <ArrowRight size={16} /></Button></a>
+            <a href="https://app.grindlog.in" target="_blank" rel="noopener noreferrer"><Button variant="light" className="h-13 min-w-[185px] bg-[#DDF7E2] px-6 text-[#112017] hover:bg-white">Start My Journey <ArrowRight size={16} /></Button></a>
           </motion.div>
           <p className="mt-5 text-[11px] font-medium tracking-[0.08em] text-white/42 uppercase">A calmer system for showing up</p>
         </Reveal>
@@ -1460,7 +1460,7 @@ function App() {
       {/* Mobile Sticky Install App CTA */}
       <div className="fixed bottom-4 inset-x-4 z-40 sm:hidden">
         <a
-          href="https://grindlog.in/app"
+          href="https://app.grindlog.in"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-between gap-3 rounded-2xl bg-[#0F1711]/95 p-3.5 text-white shadow-2xl backdrop-blur-xl border border-white/10"
