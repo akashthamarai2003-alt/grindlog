@@ -136,6 +136,10 @@ const reviews = [
 
 function useSmoothScroll() {
   useEffect(() => {
+    // Disable smooth scrolling on mobile devices to prevent lag and respect native momentum scrolling
+    const isMobile = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches;
+    if (isMobile) return;
+
     const lenis = new Lenis({
       lerp: 0.085,
       smoothWheel: true,
@@ -319,7 +323,7 @@ function Hero() {
     <section id="home" className="grain relative flex min-h-[100svh] items-center justify-center overflow-hidden px-5 pt-20 pb-12 sm:px-8">
       <video
         ref={videoRef}
-        className="absolute inset-0 h-full w-full scale-[1.03] object-cover"
+        className="absolute inset-0 h-full w-full object-cover hidden sm:block"
         src={VIDEO_URL}
         preload="metadata"
         autoPlay
@@ -327,6 +331,7 @@ function Hero() {
         playsInline
         aria-hidden="true"
       />
+      <div className="absolute inset-0 h-full w-full bg-[#1b2520] sm:hidden" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-white/25 to-white opacity-[0.83]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/75 to-transparent" />
       <motion.div style={{ opacity: contentOpacity, y: softY }} className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
@@ -445,7 +450,7 @@ function TreeScene() {
           {[...Array(20)].map((_, index) => (
             <motion.span
               key={index}
-              className="absolute h-1 w-1 rounded-full bg-[#22C55E]/55"
+              className="hidden sm:block absolute h-1 w-1 rounded-full bg-[#22C55E]/55"
               style={{ left: `${12 + ((index * 29) % 76)}%`, top: `${10 + ((index * 37) % 72)}%` }}
               animate={{ y: [0, -10 - (index % 5) * 4, 0], opacity: [0.12, 0.7, 0.12] }}
               transition={{ duration: 3.5 + (index % 3), repeat: Infinity, delay: index * 0.14, ease: 'easeInOut' }}
@@ -467,10 +472,6 @@ function TreeScene() {
                 <stop offset="0.45" stopColor="#66C85C" />
                 <stop offset="1" stopColor="#208B4B" />
               </linearGradient>
-              <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
-                <feGaussianBlur stdDeviation="12" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
             </defs>
             <ellipse cx="340" cy="652" rx="234" ry="29" fill="#2E8B5740" />
             <g ref={rootRef}>
@@ -482,7 +483,7 @@ function TreeScene() {
               <path d="M343 455 C303 415 268 395 223 354 M349 409 C394 370 443 350 485 305 M340 338 C295 305 271 272 247 225 M353 330 C392 289 431 263 474 215" fill="none" stroke="#684634" strokeWidth="21" strokeLinecap="round" />
               <path d="M348 454 C309 414 270 393 228 356 M351 408 C396 369 441 349 482 308 M344 337 C300 301 274 270 251 226 M354 329 C394 288 431 261 472 218" fill="none" stroke="#9B7054" strokeWidth="5" strokeLinecap="round" opacity=".56" />
             </g>
-            <g ref={canopyRef} filter="url(#glow)">
+            <g ref={canopyRef} style={{ willChange: 'transform' }}>
               <path d="M143 319 C126 238 191 174 273 190 C295 109 412 96 448 181 C532 144 602 221 564 299 C629 352 579 453 499 445 C466 508 368 501 336 442 C264 502 164 471 175 386 C117 380 99 347 143 319Z" fill="#3EA856" opacity=".94" />
               <path d="M176 295 C211 216 282 209 322 236 C348 155 425 165 462 225 C524 194 569 244 543 302 C581 349 536 410 475 394 C446 462 369 447 342 401 C275 454 201 424 207 359 C154 356 145 323 176 295Z" fill="url(#leaf)" />
               <path d="M196 262 C253 210 299 225 328 255 M386 185 C414 230 430 260 431 291 M477 235 C438 270 426 304 438 333 M252 380 C298 362 323 337 336 300 M366 399 C382 354 409 331 460 319" fill="none" stroke="#BDF59C" strokeWidth="4" strokeLinecap="round" opacity=".42" />
