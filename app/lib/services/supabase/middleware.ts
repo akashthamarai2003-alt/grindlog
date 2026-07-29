@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
 
   const publicPaths = [
     "/",
+    "/app",
     "/auth/signup",
     "/auth/signin",
     "/auth/callback",
@@ -65,6 +66,10 @@ export async function updateSession(request: NextRequest) {
   );
 
   if (!user && !isPublicPath) {
+    // HARDCODED EXCEPTION FOR /app just in case publicPaths fails on Vercel Edge
+    if (pathname === "/app" || pathname.startsWith("/app/")) {
+      return response;
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/auth/signin";
     return NextResponse.redirect(url);
