@@ -1494,27 +1494,6 @@ function App() {
       <About />
       <FinalCta />
       <Footer />
-      {/* Mobile Sticky Install App CTA */}
-      <div className="fixed bottom-4 inset-x-4 z-40 sm:hidden">
-        <a
-          href="https://grindlog.in/app"
-          onClick={handleInstallClick}
-          className="flex items-center justify-between gap-3 rounded-2xl bg-[#0F1711]/95 p-3.5 text-white shadow-2xl backdrop-blur-xl border border-white/10 active:scale-[0.98] transition-transform"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#22C55E] text-white">
-              <Download size={18} />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-white">Install GrindLog</p>
-              <p className="text-[10px] text-zinc-400">Habit Tracker on Mobile</p>
-            </div>
-          </div>
-          <span className="rounded-xl bg-[#22C55E] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#16A34A] transition-colors">
-            Install
-          </span>
-        </a>
-      </div>
     </main>
   )
 }
