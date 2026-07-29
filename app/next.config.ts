@@ -30,6 +30,14 @@ const nextConfig: NextConfig = {
       "date-fns",
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/",
+        destination: "/marketing.html",
+      },
+    ];
+  },
 };
 
 const config = withPWA({
