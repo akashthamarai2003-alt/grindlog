@@ -54,10 +54,46 @@ import {
   Store,
   Laptop,
   Target,
+  Apple,
   type LucideIcon,
 } from 'lucide-react'
 import { Button } from './components/ui/button'
 import { cn } from './lib/utils'
+
+// --- PWA Installation Modal ---
+function InstallModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative w-full max-w-sm overflow-hidden rounded-3xl bg-white p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button onClick={onClose} className="absolute right-4 top-4 rounded-full bg-zinc-100 p-2 text-zinc-500 hover:bg-zinc-200">
+          <X size={16} />
+        </button>
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-green-600">
+          <Apple size={28} />
+        </div>
+        <h3 className="mb-2 text-xl font-bold text-zinc-900">Install on iPhone</h3>
+        <p className="mb-6 text-sm leading-relaxed text-zinc-600">
+          To install GrindLog natively on your iPhone or iPad, tap the <strong className="text-zinc-900">Share</strong> icon at the bottom of Safari, then select <strong className="text-zinc-900">Add to Home Screen</strong>.
+        </p>
+        <div className="flex flex-col gap-3">
+          <a href="https://grindlog.in/app" className="block w-full">
+            <Button className="w-full bg-[#22C55E] text-white hover:bg-[#16A34A]">
+              Open Web App Anyway
+            </Button>
+          </a>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+// ------------------------------
 
 const VIDEO_URL =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_083109_283f3553-e28f-428b-a723-d639c617eb2b.mp4'
@@ -1441,13 +1477,9 @@ function App() {
 
   // --- PWA Installation Logic ---
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isIOS, setIsIOS] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   useEffect(() => {
-    // Detect iOS to show alternative instructions if needed
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    setIsIOS(/iphone|ipad|ipod/.test(userAgent));
-
     const handler = (e: any) => {
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
@@ -1460,23 +1492,23 @@ function App() {
   }, []);
 
   const handleInstallClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
     if (deferredPrompt) {
-      e.preventDefault();
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
       }
-    } else if (isIOS) {
-      // On iOS, the beforeinstallprompt doesn't fire. Let it naturally navigate to /app.
-      // The user will have to use the Share menu in Safari to install.
-      // For now, navigating to /app is the best fallback.
+    } else {
+      // Show manual instructions modal for iOS or browsers that haven't fired the event
+      setShowInstallModal(true);
     }
   };
   // ------------------------------
 
   return (
     <main className="page-shell">
+      <InstallModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
       <Header />
       <Hero handleInstallClick={handleInstallClick} />
       <TreeScene />
