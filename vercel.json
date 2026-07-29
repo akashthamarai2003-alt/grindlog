@@ -5,12 +5,12 @@
   "redirects": [
     {
       "source": "/app",
-      "destination": "https://grindlog-lake.vercel.app",
+      "destination": "https://grindlog.in",
       "permanent": false
     },
     {
       "source": "/app/:path*",
-      "destination": "https://grindlog-lake.vercel.app/:path*",
+      "destination": "https://grindlog.in/:path*",
       "permanent": false
     }
   ],
