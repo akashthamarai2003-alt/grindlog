@@ -4,6 +4,14 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/app",
+      "destination": "https://grindlog-lake.vercel.app"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "https://grindlog-lake.vercel.app/:path*"
+    },
+    {
       "source": "/((?!app).*)",
       "destination": "/index.html"
     }
