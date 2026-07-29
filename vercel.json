@@ -1,23 +1,4 @@
 {
-  "framework": "vite",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "redirects": [
-    {
-      "source": "/app",
-      "destination": "https://app.grindlog.in",
-      "permanent": false
-    },
-    {
-      "source": "/app/:path*",
-      "destination": "https://app.grindlog.in/:path*",
-      "permanent": false
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/:path*",
-      "destination": "/index.html"
-    }
-  ]
+  "framework": "nextjs",
+  "rootDirectory": "app"
 }
