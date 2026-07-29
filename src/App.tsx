@@ -310,7 +310,7 @@ function Header() {
   )
 }
 
-function Hero() {
+function Hero({ handleInstallClick }: { handleInstallClick: any }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const { scrollYProgress } = useScroll()
   const contentOpacity = useTransform(scrollYProgress, [0, 0.11], [1, 0])
@@ -362,7 +362,7 @@ function Hero() {
           transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.56 }}
           className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center"
         >
-          <a href="https://grindlog.in/app">
+          <a href="https://grindlog.in/app" onClick={handleInstallClick}>
             <Button className="min-w-[166px] bg-[#22C55E] text-white hover:bg-[#16A34A]">
               <Download size={16} className="mr-1.5" />
               Install App
@@ -1438,11 +1438,48 @@ function Footer() {
 
 function App() {
   useSmoothScroll()
+  const { scrollYProgress } = useScroll()
+
+  // --- PWA Installation Logic ---
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    // Detect iOS to show alternative instructions if needed
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    setIsIOS(/iphone|ipad|ipod/.test(userAgent));
+
+    const handler = (e: any) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (deferredPrompt) {
+      e.preventDefault();
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else if (isIOS) {
+      // On iOS, the beforeinstallprompt doesn't fire. Let it naturally navigate to /app.
+      // The user will have to use the Share menu in Safari to install.
+      // For now, navigating to /app is the best fallback.
+    }
+  };
+  // ------------------------------
 
   return (
     <main className="page-shell">
       <Header />
-      <Hero />
+      <Hero handleInstallClick={handleInstallClick} />
       <TreeScene />
       <PhoneShowcase />
       <Features />
@@ -1462,7 +1499,8 @@ function App() {
       <div className="fixed bottom-4 inset-x-4 z-40 sm:hidden">
         <a
           href="https://grindlog.in/app"
-          className="flex items-center justify-between gap-3 rounded-2xl bg-[#0F1711]/95 p-3.5 text-white shadow-2xl backdrop-blur-xl border border-white/10"
+          onClick={handleInstallClick}
+          className="flex items-center justify-between gap-3 rounded-2xl bg-[#0F1711]/95 p-3.5 text-white shadow-2xl backdrop-blur-xl border border-white/10 active:scale-[0.98] transition-transform"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#22C55E] text-white">
@@ -1473,7 +1511,7 @@ function App() {
               <p className="text-[10px] text-zinc-400">Habit Tracker on Mobile</p>
             </div>
           </div>
-          <span className="rounded-xl bg-[#22C55E] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm">
+          <span className="rounded-xl bg-[#22C55E] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#16A34A] transition-colors">
             Install
           </span>
         </a>
