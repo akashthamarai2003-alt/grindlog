@@ -742,7 +742,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
                 </div>
               </div>
               
-              <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4 text-[14px] text-[var(--color-text-primary)] leading-relaxed italic break-words break-all">
+              <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4 text-[14px] text-[var(--color-text-primary)] leading-relaxed italic break-words break-all max-h-[50vh] overflow-y-auto custom-scrollbar">
                 "{viewRemark.text}"
               </div>
               

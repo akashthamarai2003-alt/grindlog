@@ -641,7 +641,7 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
                 </div>
               </div>
               
-              <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4 text-[14px] text-[var(--color-text-primary)] leading-relaxed italic break-words break-all">
+              <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4 text-[14px] text-[var(--color-text-primary)] leading-relaxed italic break-words break-all max-h-[50vh] overflow-y-auto custom-scrollbar">
                 "{viewRemark.text}"
               </div>
               
@@ -1182,7 +1182,7 @@ function HabitChecklist({
                 </div>
               </div>
               
-              <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4 text-[14px] text-[var(--color-text-primary)] leading-relaxed italic break-words break-all">
+              <div className="bg-[var(--color-bg-secondary)] rounded-xl p-4 text-[14px] text-[var(--color-text-primary)] leading-relaxed italic break-words break-all max-h-[50vh] overflow-y-auto custom-scrollbar">
                 "{viewRemark.text}"
               </div>
               
