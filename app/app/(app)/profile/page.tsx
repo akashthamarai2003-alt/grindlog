@@ -69,11 +69,20 @@ export default function ProfilePage() {
     if (user.premium_expires_at) {
       const expiresAt = new Date(user.premium_expires_at);
       const now = new Date();
-      const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 3600 * 24));
       
-      if (daysLeft < 0) return `${tierName} ${level} (Expired)`;
+      // Invert the month addition to find the exact start date
+      const startDate = new Date(expiresAt);
+      if (user.premium_tier === "monthly") {
+        startDate.setMonth(startDate.getMonth() - 1);
+      } else if (user.premium_tier === "six_months") {
+        startDate.setMonth(startDate.getMonth() - 6);
+      }
       
-      const daysElapsed = totalDays - daysLeft;
+      // Calculate actual days passed since they paid
+      const daysElapsed = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+      
+      if (now > expiresAt) return `${tierName} ${level} (Expired)`;
+      
       const safeDaysElapsed = Math.max(0, Math.min(daysElapsed, totalDays));
       return `${tierName} ${level} (${safeDaysElapsed}/${totalDays} days)`;
     }

@@ -88,14 +88,22 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
     const expiresAt = new Date(user.premium_expires_at);
     const now = new Date();
     
+    // Invert the month addition to find the exact start date
+    const startDate = new Date(expiresAt);
+    if (user.premium_tier === "monthly") {
+      startDate.setMonth(startDate.getMonth() - 1);
+    } else if (user.premium_tier === "six_months") {
+      startDate.setMonth(startDate.getMonth() - 6);
+    }
+    
     let totalDays = 30;
     if (user.premium_tier === 'six_months') totalDays = 180;
     
-    const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 3600 * 24));
+    // Calculate actual days passed since they paid
+    const daysElapsed = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
     
-    if (daysLeft < 0) return "Expired";
+    if (now > expiresAt) return "Expired";
     
-    const daysElapsed = totalDays - daysLeft;
     const safeDaysElapsed = Math.max(0, Math.min(daysElapsed, totalDays));
     
     return `${safeDaysElapsed}/${totalDays} Days`;
