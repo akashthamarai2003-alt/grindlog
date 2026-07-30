@@ -1078,15 +1078,15 @@ function HabitChecklist({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-[var(--color-bg-primary)] flex items-center justify-center overflow-hidden"
+            className="fixed inset-0 z-[100] bg-[var(--color-bg-primary)] flex items-center justify-center overflow-hidden touch-none"
           >
             <div 
-              className="relative flex flex-col shrink-0 w-[100dvh] h-[100dvw] bg-[var(--color-bg-primary)] shadow-2xl overflow-hidden"
+              className="relative flex flex-col shrink-0 w-[100dvh] h-[100dvw] bg-[var(--color-bg-primary)] shadow-2xl"
               style={{
                 transform: 'rotate(90deg)',
               }}
             >
-              <div className="w-full h-full overflow-y-auto overflow-x-hidden">
+              <div className="flex-1 overflow-y-auto w-full">
                 {/* Header */}
                 <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)] shrink-0">
                 <div className="flex flex-col">
@@ -1144,7 +1144,7 @@ function HabitChecklist({
               </div>
               
               {/* Grid content wrapping */}
-              <div className="flex-none p-4 md:p-8 bg-[var(--color-bg-primary)] min-h-max">
+              <div className="p-4 md:p-8 bg-[var(--color-bg-primary)]">
                 {gridContent}
               </div>
             </div>
