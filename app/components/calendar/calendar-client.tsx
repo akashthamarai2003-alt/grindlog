@@ -467,7 +467,7 @@ function DayPanel({ date, habits, logs, todayDateStr, onLogChange, onAntiCheat, 
       exit={{ opacity: 0, y: -16, scale: 0.97 }}
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
       className={cn(
-        "rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)] overflow-hidden transition-all duration-300",
+        "rounded-[28px] bg-[var(--color-bg-primary)] ring-1 ring-[var(--color-bg-tertiary)]/60 overflow-hidden transition-all duration-300 shadow-sm",
         isPerfect ? "border-t-2 border-[#34C759]/30" :
         pct > 0 ? "border-t-2 border-[#007AFF]/30" :
         "border-t-2 border-transparent"
@@ -730,7 +730,7 @@ function MonthStats({
               delay: 0.08 + i * 0.07,
             }}
             className="flex-shrink-0 min-w-[92px] snap-start flex flex-col items-center gap-1.5 rounded-[20px] py-4 px-2
-                       bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)]
+                       bg-[var(--color-bg-primary)] ring-1 ring-[var(--color-bg-tertiary)]/60
                        relative overflow-hidden shadow-sm"
           >
             {/* Subtle color bg */}
@@ -1006,7 +1006,7 @@ function HabitChecklist({
 
   return (
     <>
-      <div className="flex flex-col gap-3 rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)] p-4 shadow-sm border-t-2 border-[var(--color-primary)]/15">
+      <div className="flex flex-col gap-3 rounded-[28px] bg-[var(--color-bg-primary)] ring-1 ring-[var(--color-bg-tertiary)]/60 p-4 shadow-sm border-t-2 border-[var(--color-primary)]/15">
         <div className="flex flex-col gap-3 px-1">
           <div className="flex items-center justify-between">
             <h2 className="text-[17px] font-black tracking-tight text-[var(--color-text-primary)]">
@@ -1321,7 +1321,7 @@ export function CalendarClient({
   const dayLogs = logs.filter((l) => l.date === toDateStr(selected));
 
   return (
-    <div className="flex flex-col min-h-dvh bg-[var(--color-bg-primary)] px-4 pt-4 pb-14 safe-top gap-5">
+    <div className="flex flex-col min-h-dvh bg-[var(--color-bg-secondary)] px-4 pt-4 pb-14 safe-top gap-5">
 
       {/* ── Header ── */}
       <motion.div
@@ -1359,7 +1359,7 @@ export function CalendarClient({
         initial={{ opacity: 0, y: 16, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 280, damping: 28, delay: 0.12 }}
-        className="rounded-[28px] bg-[var(--color-bg-secondary)] ring-1 ring-[var(--color-bg-tertiary)]
+        className="rounded-[28px] bg-[var(--color-bg-primary)] ring-1 ring-[var(--color-bg-tertiary)]/60
                    px-3 pt-3 pb-3 overflow-hidden shadow-sm border-t-2 border-[var(--color-primary)]/15"
       >
         {/* ── Custom Nav ── */}
