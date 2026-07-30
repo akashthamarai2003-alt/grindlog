@@ -1078,16 +1078,17 @@ function HabitChecklist({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-[var(--color-bg-primary)] flex items-center justify-center overflow-hidden touch-none"
+            className="fixed inset-0 z-[100] bg-[var(--color-bg-primary)] flex items-center justify-center overflow-hidden"
           >
             <div 
-              className="relative flex flex-col shrink-0 w-[100dvh] h-[100dvw] bg-[var(--color-bg-primary)] shadow-2xl overflow-y-auto overflow-x-hidden"
+              className="relative flex flex-col shrink-0 w-[100dvh] h-[100dvw] bg-[var(--color-bg-primary)] shadow-2xl overflow-hidden"
               style={{
                 transform: 'rotate(90deg)',
               }}
             >
-              {/* Header */}
-              <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)] shrink-0">
+              <div className="w-full h-full overflow-y-auto overflow-x-hidden">
+                {/* Header */}
+                <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)] shrink-0">
                 <div className="flex flex-col">
                   <h2 className="text-base font-black text-[var(--color-text-primary)] tracking-tight">{title}</h2>
                   <div className="flex items-center gap-1.5 -ml-1 mt-0.5">
@@ -1143,11 +1144,12 @@ function HabitChecklist({
               </div>
               
               {/* Grid content wrapping */}
-              <div className="flex-none p-4 md:p-8 bg-[var(--color-bg-primary)]">
+              <div className="flex-none p-4 md:p-8 bg-[var(--color-bg-primary)] min-h-max">
                 {gridContent}
               </div>
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
         )}
       </AnimatePresence>
 
