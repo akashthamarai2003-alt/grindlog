@@ -64,6 +64,8 @@ import { cn } from './lib/utils'
 function InstallModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   if (!isOpen) return null;
 
+  const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
       <motion.div
@@ -75,13 +77,29 @@ function InstallModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         <button onClick={onClose} className="absolute right-4 top-4 rounded-full bg-zinc-100 p-2 text-zinc-500 hover:bg-zinc-200">
           <X size={16} />
         </button>
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-green-600">
-          <Apple size={28} />
-        </div>
-        <h3 className="mb-2 text-xl font-bold text-zinc-900">Install on iPhone</h3>
-        <p className="mb-6 text-sm leading-relaxed text-zinc-600">
-          To install GrindLog natively on your iPhone or iPad, tap the <strong className="text-zinc-900">Share</strong> icon at the bottom of Safari, then select <strong className="text-zinc-900">Add to Home Screen</strong>.
-        </p>
+        
+        {isIOS ? (
+          <>
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-green-600">
+              <Apple size={28} />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-zinc-900">Install on iPhone</h3>
+            <p className="mb-6 text-sm leading-relaxed text-zinc-600">
+              To install GrindLog natively on your iPhone or iPad, tap the <strong className="text-zinc-900">Share</strong> icon at the bottom of Safari, then select <strong className="text-zinc-900">Add to Home Screen</strong>.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-green-600">
+              <Smartphone size={28} />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-zinc-900">Install App</h3>
+            <p className="mb-6 text-sm leading-relaxed text-zinc-600">
+              To install GrindLog natively, tap the <strong className="text-zinc-900">Menu (3 dots)</strong> at the top right of your browser, then select <strong className="text-zinc-900">Install app</strong> or <strong className="text-zinc-900">Add to Home Screen</strong>.
+            </p>
+          </>
+        )}
+
         <div className="flex flex-col gap-3">
           <a href="https://grindlog.in/app" className="block w-full">
             <Button className="w-full bg-[#22C55E] text-white hover:bg-[#16A34A]">
