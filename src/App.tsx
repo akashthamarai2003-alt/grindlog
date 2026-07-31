@@ -499,7 +499,7 @@ function TreeScene() {
         </Reveal>
 
         <div className="relative mx-auto h-[460px] w-full max-w-[650px] sm:h-[600px] lg:h-[690px]">
-          <div className="absolute inset-x-[4%] bottom-[4%] h-[18%] rounded-[50%] bg-[#BFF0CA]/60 blur-3xl" />
+          <div className="absolute inset-x-[4%] bottom-[4%] h-[18%] rounded-[50%] bg-[radial-gradient(circle_at_center,rgba(191,240,202,0.6)_0%,transparent_70%)]" />
           {[...Array(20)].map((_, index) => (
             <motion.span
               key={index}
@@ -1006,7 +1006,7 @@ function Analytics() {
           </motion.article>
           <motion.article initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.18 }} transition={{ type: 'spring', stiffness: 88, damping: 22, delay: 0.14 }} className="rounded-[28px] border border-black/6 bg-[#FFFDF9] p-5 sm:p-7 lg:col-span-8">
             <div className="flex items-center justify-between"><div><p className="text-xs font-medium text-zinc-500">Quiet consistency</p><p className="mt-2 text-3xl font-semibold tracking-[-0.04em]"><CountValue value={126} /> days</p></div><motion.span initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ type: 'spring', delay: 0.5 }} className="rounded-full bg-[#FFF1CC] px-3 py-1.5 text-[10px] font-semibold text-[#9E6A12]">Personal best</motion.span></div>
-            <div className="mt-8 grid grid-cols-14 gap-1.5">{Array.from({ length: 70 }).map((_, index) => <motion.span key={index} initial={{ opacity: 0, scale: 0.6 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ type: 'spring', stiffness: 200, damping: 18, delay: (index % 14) * 0.015 + Math.floor(index / 14) * 0.045 }} className={cn('aspect-square rounded-[3px]', index % 11 === 2 || index % 9 === 0 ? 'bg-[#DBE7DD]' : index % 5 === 0 ? 'bg-[#8DDD9A]' : 'bg-[#D9F4DE]')} />)}</div>
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} transition={{ staggerChildren: 0.02 }} className="mt-8 grid grid-cols-14 gap-1.5">{Array.from({ length: 70 }).map((_, index) => <motion.span key={index} variants={{ hidden: { opacity: 0, scale: 0.6 }, visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 200, damping: 18 } } }} className={cn('aspect-square rounded-[3px]', index % 11 === 2 || index % 9 === 0 ? 'bg-[#DBE7DD]' : index % 5 === 0 ? 'bg-[#8DDD9A]' : 'bg-[#D9F4DE]')} />)}</motion.div>
             <div className="mt-3 flex justify-between text-[10px] text-zinc-400"><span>8 weeks ago</span><span>This week</span></div>
           </motion.article>
         </div>
@@ -1026,7 +1026,7 @@ function CalendarExperience() {
 
   return (
     <section className="relative isolate overflow-hidden bg-[#FCFDFB] px-5 py-24 sm:px-8 sm:py-36 lg:py-44">
-      <div className="pointer-events-none absolute -left-28 top-16 h-[460px] w-[460px] rounded-full bg-[#D9F7DF]/65 blur-3xl" />
+      <div className="pointer-events-none absolute -left-28 top-16 h-[460px] w-[460px] rounded-full bg-[radial-gradient(circle_at_center,rgba(217,247,223,0.65)_0%,transparent_70%)]" />
       <div className="relative mx-auto grid max-w-[1180px] gap-14 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-24">
         <Reveal className="max-w-[455px]">
           <Eyebrow>Calendar</Eyebrow>
@@ -1045,7 +1045,7 @@ function CalendarExperience() {
 
         <Reveal delay={0.1} className="relative mx-auto w-full max-w-[545px]">
           <motion.div animate={{ y: [0, -7, 0] }} transition={{ duration: 6.5, repeat: Infinity, ease: 'easeInOut' }} className="relative rounded-[34px] border border-white/90 bg-white/85 p-4 shadow-[0_30px_75px_rgba(31,75,43,0.13)] backdrop-blur-xl sm:p-6">
-            <div className="absolute -inset-8 -z-10 rounded-[55px] bg-[#BCEEC6]/55 blur-3xl" />
+            <div className="absolute -inset-8 -z-10 rounded-[55px] bg-[radial-gradient(circle_at_center,rgba(188,238,198,0.55)_0%,transparent_70%)]" />
             <div className="flex items-start justify-between">
               <div><p className="text-[10px] font-semibold tracking-[0.14em] text-[#859187] uppercase">Your month</p><p className="mt-1 font-display text-[2rem] leading-none tracking-[-0.04em] text-[#16241A]">July 2026</p></div>
               <motion.div initial={{ opacity: 0, scale: 0.86 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ type: 'spring', stiffness: 130, damping: 17, delay: 0.35 }} className="rounded-2xl bg-[#E8F8EC] px-3 py-2 text-right"><p className="text-[10px] font-medium text-[#57715E]">Month in motion</p><p className="mt-0.5 text-sm font-bold tracking-[-0.03em] text-[#198A43]">82% kept</p></motion.div>
@@ -1053,21 +1053,18 @@ function CalendarExperience() {
             <div className="mt-6 grid grid-cols-7 gap-y-3 text-center text-[10px] font-semibold text-[#94A096]">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => <span key={day}>{day}</span>)}
             </div>
-            <div className="mt-3 grid grid-cols-7 gap-1.5 sm:gap-2.5">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} transition={{ staggerChildren: 0.015, delayChildren: 0.16 }} className="mt-3 grid grid-cols-7 gap-1.5 sm:gap-2.5">
               {days.map((day, index) => (
                 <motion.div
                   key={`${day.number}-${index}`}
-                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ type: 'spring', stiffness: 190, damping: 17, delay: index * 0.018 + 0.16 }}
+                  variants={{ hidden: { opacity: 0, y: 10, scale: 0.8 }, visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 190, damping: 17 } } }}
                   className={cn('relative flex aspect-square items-center justify-center rounded-xl text-xs font-semibold sm:rounded-2xl sm:text-sm', day.muted ? 'text-[#C5CDC7]' : 'text-[#314138]', day.status === 'green' && 'bg-[#DFF5E4]', day.status === 'mixed' && 'bg-[#FFF2CF]', day.status === 'red' && 'bg-[#FCE2E0]', day.number === 24 && 'ring-2 ring-[#1B9A4B] ring-offset-2')}
                 >
                   {day.number}
                   {day.status && <motion.span animate={day.number === 24 ? { opacity: [0.45, 1, 0.45], scale: [0.82, 1, 0.82] } : undefined} transition={{ duration: 1.8, repeat: Infinity }} className={cn('absolute bottom-1 h-1 w-1 rounded-full sm:bottom-1.5', day.status === 'green' ? 'bg-[#33AD58]' : day.status === 'mixed' ? 'bg-[#E7A327]' : 'bg-[#DE6866]')} />}
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
             <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ type: 'spring', stiffness: 120, damping: 20, delay: 0.9 }} className="mt-5 flex items-center justify-between rounded-2xl bg-[#13261A] px-4 py-3 text-white">
               <div className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-[#9CE6AA]"><Sparkles size={15} /></span><div><p className="text-xs font-semibold">Your strongest rhythm</p><p className="mt-0.5 text-[10px] text-white/55">Morning habits, six days in a row</p></div></div>
               <ArrowUpRight size={16} className="text-[#A8F0B5]" />
@@ -1090,7 +1087,7 @@ function PlannerExperience() {
   return (
     <section className="relative isolate overflow-hidden bg-[#111913] px-5 py-24 text-white sm:px-8 sm:py-36 lg:py-44">
       <div className="pointer-events-none absolute inset-0 opacity-[0.14] [background-image:linear-gradient(rgba(255,255,255,.24)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.24)_1px,transparent_1px)] [background-size:42px_42px] mask-radial" />
-      <motion.div aria-hidden="true" animate={{ x: [0, 36, 0], y: [0, -25, 0] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }} className="pointer-events-none absolute -right-24 top-[18%] h-80 w-80 rounded-full bg-[#2E9E4A]/20 blur-3xl" />
+      <motion.div aria-hidden="true" animate={{ x: [0, 36, 0], y: [0, -25, 0] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }} className="pointer-events-none absolute -right-24 top-[18%] h-80 w-80 rounded-full bg-[radial-gradient(circle_at_center,rgba(46,158,74,0.2)_0%,transparent_70%)]" />
       <div className="relative mx-auto grid max-w-[1210px] gap-14 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:gap-24">
         <Reveal className="max-w-[450px]">
           <Eyebrow light>Planner</Eyebrow>
@@ -1139,8 +1136,8 @@ function PersonalizationExperience() {
 
   return (
     <section className="relative isolate overflow-hidden bg-[#FAF8FC] px-5 py-24 sm:px-8 sm:py-36 lg:py-44">
-      <div className="pointer-events-none absolute -left-28 bottom-[-10%] h-[460px] w-[460px] rounded-full bg-[#E5D8FF]/58 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 top-0 h-[390px] w-[390px] rounded-full bg-[#FFE3CB]/60 blur-3xl" />
+      <div className="pointer-events-none absolute -left-28 bottom-[-10%] h-[460px] w-[460px] rounded-full bg-[radial-gradient(circle_at_center,rgba(229,216,255,0.58)_0%,transparent_70%)]" />
+      <div className="pointer-events-none absolute -right-32 top-0 h-[390px] w-[390px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,227,203,0.6)_0%,transparent_70%)]" />
       <div className="relative mx-auto grid max-w-[1180px] gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-24">
         <Reveal className="max-w-[470px]">
           <Eyebrow>Personalize everything</Eyebrow>
@@ -1186,13 +1183,13 @@ function AiCoach() {
         aria-hidden="true"
         animate={{ x: [0, 38, 0], y: [0, -18, 0], scale: [1, 1.08, 1] }}
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-        className="pointer-events-none absolute -right-24 top-8 h-72 w-72 rounded-full bg-[#A7E8B4]/35 blur-3xl"
+        className="pointer-events-none absolute -right-24 top-8 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(167,232,180,0.35)_0%,transparent_70%)]"
       />
       <motion.div
         aria-hidden="true"
         animate={{ x: [0, -30, 0], y: [0, 20, 0], scale: [1.04, 0.94, 1.04] }}
         transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-        className="pointer-events-none absolute -bottom-24 left-[23%] h-72 w-72 rounded-full bg-white/90 blur-3xl"
+        className="pointer-events-none absolute -bottom-24 left-[23%] h-72 w-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.9)_0%,transparent_70%)]"
       />
       <div className="relative mx-auto grid max-w-[1180px] gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-24">
         <Reveal className="max-w-[470px]">
@@ -1236,7 +1233,7 @@ function AiCoach() {
             transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
             className="relative"
           >
-            <div className="absolute -inset-10 rounded-[58px] bg-[#B8EDC5]/65 blur-3xl" />
+            <div className="absolute -inset-10 rounded-[58px] bg-[radial-gradient(circle_at_center,rgba(184,237,197,0.65)_0%,transparent_70%)]" />
             <div className="relative overflow-hidden rounded-[31px] border border-white/90 bg-[#FBFEFC]/85 p-3.5 shadow-[0_30px_80px_rgba(31,75,44,0.15)] backdrop-blur-xl sm:p-5">
               <div className="flex items-center justify-between border-b border-[#17301E]/8 pb-4">
                 <div className="flex items-center gap-3">
@@ -1342,7 +1339,7 @@ function Gamification() {
         <div className="mt-14 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <motion.article initial={{ opacity: 0, scale: 0.97 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: 0.25 }} transition={{ type: 'spring', stiffness: 80, damping: 22 }} className="relative min-h-[390px] overflow-hidden rounded-[30px] border border-white/10 bg-[#131B15] p-6 sm:p-8">
             <div className="flex items-start justify-between"><div><p className="text-xs font-medium text-white/50">Your Tree of Life</p><p className="mt-2 text-3xl font-semibold tracking-[-0.04em]">Legendary growth</p></div><div className="rounded-full border border-[#8FE79E]/20 bg-[#8FE79E]/10 px-3 py-1.5 text-[10px] font-semibold text-[#9CEAA8]">Level 12</div></div>
-            <div className="absolute inset-x-0 bottom-0 top-20 flex items-end justify-center overflow-hidden"><div className="absolute bottom-[17%] h-28 w-[75%] rounded-[50%] bg-[#1D6E37]/40 blur-3xl" /><motion.div animate={{ y: [0, -7, 0], rotate: [-1, 1, -1] }} transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }} className="relative h-[250px] w-[250px]"><div className="absolute bottom-0 left-1/2 h-[155px] w-7 -translate-x-1/2 rounded-t-[100%] bg-gradient-to-r from-[#4B3426] via-[#947056] to-[#4B3426]" /><div className="absolute bottom-[120px] left-1/2 h-[140px] w-[225px] -translate-x-1/2 rounded-[48%_52%_45%_55%] bg-[#3AAB59] shadow-[0_0_70px_rgba(115,231,130,0.42)]" /><div className="absolute bottom-[178px] left-1/2 h-[86px] w-[158px] -translate-x-1/2 rounded-[52%_48%_55%_45%] bg-[#76D46A]" />{Array.from({ length: 18 }).map((_, index) => <motion.i key={index} animate={{ y: [0, -12, 0], rotate: [0, index % 2 ? 20 : -20, 0], opacity: [0.35, 1, 0.35] }} transition={{ duration: 3 + (index % 3), repeat: Infinity, delay: index * 0.13 }} style={{ left: `${20 + ((index * 31) % 62)}%`, bottom: `${32 + ((index * 19) % 40)}%` }} className="absolute h-3 w-2 rounded-[100%_0_100%_0] bg-[#C8FFA4]" />)}</motion.div></div>
+            <div className="absolute inset-x-0 bottom-0 top-20 flex items-end justify-center overflow-hidden"><div className="absolute bottom-[17%] h-28 w-[75%] rounded-[50%] bg-[radial-gradient(circle_at_center,rgba(29,110,55,0.4)_0%,transparent_70%)]" /><motion.div animate={{ y: [0, -7, 0], rotate: [-1, 1, -1] }} transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }} className="relative h-[250px] w-[250px]"><div className="absolute bottom-0 left-1/2 h-[155px] w-7 -translate-x-1/2 rounded-t-[100%] bg-gradient-to-r from-[#4B3426] via-[#947056] to-[#4B3426]" /><div className="absolute bottom-[120px] left-1/2 h-[140px] w-[225px] -translate-x-1/2 rounded-[48%_52%_45%_55%] bg-[#3AAB59] shadow-[0_0_70px_rgba(115,231,130,0.42)]" /><div className="absolute bottom-[178px] left-1/2 h-[86px] w-[158px] -translate-x-1/2 rounded-[52%_48%_55%_45%] bg-[#76D46A]" />{Array.from({ length: 18 }).map((_, index) => <motion.i key={index} animate={{ y: [0, -12, 0], rotate: [0, index % 2 ? 20 : -20, 0], opacity: [0.35, 1, 0.35] }} transition={{ duration: 3 + (index % 3), repeat: Infinity, delay: index * 0.13 }} style={{ left: `${20 + ((index * 31) % 62)}%`, bottom: `${32 + ((index * 19) % 40)}%` }} className="absolute h-3 w-2 rounded-[100%_0_100%_0] bg-[#C8FFA4]" />)}</motion.div></div>
             <div className="absolute bottom-6 left-6 flex gap-2"><span className="rounded-full bg-white/8 px-3 py-2 text-[10px] text-white/65">32 day streak</span><span className="rounded-full bg-white/8 px-3 py-2 text-[10px] text-white/65">+ 2,850 XP</span></div>
           </motion.article>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
@@ -1368,8 +1365,8 @@ function StorySection() {
   return (
     <section className="relative isolate overflow-hidden bg-[#0B100C] px-5 py-28 text-white sm:px-8 sm:py-40 lg:py-48">
       <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:radial-gradient(rgba(174,243,183,.85)_1px,transparent_1px)] [background-size:24px_24px]" />
-      <motion.div aria-hidden="true" animate={{ x: [0, 40, 0], y: [0, -22, 0], scale: [1, 1.12, 1] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} className="pointer-events-none absolute left-[18%] top-[15%] h-72 w-72 rounded-full bg-[#2B9651]/25 blur-3xl" />
-      <motion.div aria-hidden="true" animate={{ x: [0, -34, 0], y: [0, 32, 0] }} transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }} className="pointer-events-none absolute bottom-[4%] right-[12%] h-80 w-80 rounded-full bg-[#A5E6A8]/12 blur-3xl" />
+      <motion.div aria-hidden="true" animate={{ x: [0, 40, 0], y: [0, -22, 0], scale: [1, 1.12, 1] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} className="pointer-events-none absolute left-[18%] top-[15%] h-72 w-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(43,150,81,0.25)_0%,transparent_70%)]" />
+      <motion.div aria-hidden="true" animate={{ x: [0, -34, 0], y: [0, 32, 0] }} transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }} className="pointer-events-none absolute bottom-[4%] right-[12%] h-80 w-80 rounded-full bg-[radial-gradient(circle_at_center,rgba(165,230,168,0.12)_0%,transparent_70%)]" />
       <div className="relative mx-auto max-w-[1120px] text-center">
         <Reveal className="mx-auto max-w-3xl">
           <Eyebrow light>Your story is built daily</Eyebrow>
@@ -1461,8 +1458,8 @@ function FinalCta() {
     <section className="relative isolate overflow-hidden bg-[#EEF8F0] px-5 py-20 sm:px-8 sm:py-28">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(142,226,159,.5),transparent_26%),radial-gradient(circle_at_90%_78%,rgba(188,233,198,.72),transparent_27%)]" />
       <div className="relative mx-auto max-w-[1080px] overflow-hidden rounded-[38px] bg-[#122419] px-6 py-14 text-center text-white shadow-[0_28px_70px_rgba(26,75,42,0.2)] sm:rounded-[48px] sm:px-12 sm:py-20">
-        <motion.div aria-hidden="true" animate={{ x: [0, 35, 0], y: [0, -20, 0], scale: [1, 1.12, 1] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }} className="pointer-events-none absolute -left-14 -top-20 h-64 w-64 rounded-full bg-[#58C973]/22 blur-3xl" />
-        <motion.div aria-hidden="true" animate={{ x: [0, -30, 0], y: [0, 18, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }} className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-[#B7F0C1]/18 blur-3xl" />
+        <motion.div aria-hidden="true" animate={{ x: [0, 35, 0], y: [0, -20, 0], scale: [1, 1.12, 1] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }} className="pointer-events-none absolute -left-14 -top-20 h-64 w-64 rounded-full bg-[radial-gradient(circle_at_center,rgba(88,201,115,0.22)_0%,transparent_70%)]" />
+        <motion.div aria-hidden="true" animate={{ x: [0, -30, 0], y: [0, 18, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }} className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(183,240,193,0.18)_0%,transparent_70%)]" />
         <Reveal className="relative mx-auto max-w-4xl">
           <Eyebrow light>Begin with yourself</Eyebrow>
           <h2 className="mt-6 font-display text-[clamp(3.2rem,7.2vw,6.9rem)] leading-[0.88] tracking-[-0.064em]">Invest in the person<br className="hidden sm:block" /> you&apos;re becoming.</h2>
