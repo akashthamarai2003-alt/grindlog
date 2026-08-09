@@ -343,3 +343,29 @@ export async function checkUserPremiumStatusAction(
     return false;
   }
 }
+
+export async function getUserPremiumDetailsAction() {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const adminClient = createAdminClient();
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("is_premium, premium_expires_at, premium_tier, premium_level")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.is_premium) {
+      if (!profile.premium_expires_at || new Date(profile.premium_expires_at) > new Date()) {
+        return profile;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error("getUserPremiumDetailsAction error:", err);
+    return null;
+  }
+}

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { cn } from "@/lib/utils";
-import { createRazorpayOrder, verifyRazorpayPayment, validateCouponAction, checkUserPremiumStatusAction } from "@/app/actions/payment";
+import { createRazorpayOrder, verifyRazorpayPayment, validateCouponAction, checkUserPremiumStatusAction, getUserPremiumDetailsAction } from "@/app/actions/payment";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 
@@ -89,6 +89,14 @@ export default function PaymentPage() {
   const [isPolling, setIsPolling] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
+  const [currentPremiumInfo, setCurrentPremiumInfo] = useState<{ premium_tier?: string; premium_level?: string } | null>(null);
+
+  // Fetch current premium status
+  useEffect(() => {
+    getUserPremiumDetailsAction().then((res) => {
+      if (res) setCurrentPremiumInfo(res as any);
+    });
+  }, []);
 
   // Reliable redirect effect
   useEffect(() => {
@@ -474,6 +482,7 @@ export default function PaymentPage() {
             const planPricing = pricingConfig[plan.id as keyof PlanPricingConfig]?.[level] || { price: plan.basePrices[level] };
             const offerPrice = planPricing.price;
             const originalPrice = planPricing.originalPrice;
+            const isCurrentPlan = currentPremiumInfo?.premium_tier === plan.id && currentPremiumInfo?.premium_level === level;
 
             return (
               <motion.button
@@ -487,7 +496,11 @@ export default function PaymentPage() {
                     : "border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)]"
                 )}
               >
-                {plan.badge && (
+                {isCurrentPlan ? (
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-blue-500 px-3 py-0.5">
+                    <span className="text-[10px] font-bold text-white">✓ Current Plan</span>
+                  </div>
+                ) : plan.badge && (
                   <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-[var(--color-accent-green)] px-3 py-0.5">
                     <span className="text-[10px] font-bold text-white">{plan.badge}</span>
                   </div>
@@ -575,7 +588,7 @@ export default function PaymentPage() {
       {/* CTA */}
       <motion.button
         whileTap={{ scale: 0.96 }}
-        disabled={isProcessing}
+        disabled={isProcessing || (currentPremiumInfo?.premium_tier === selectedPlan && currentPremiumInfo?.premium_level === level)}
         onClick={handleContinue}
         className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-accent-green)] text-base font-semibold text-white shadow-lg shadow-[var(--color-accent-green)]/25 disabled:opacity-80 disabled:cursor-not-allowed"
       >
@@ -583,6 +596,11 @@ export default function PaymentPage() {
           <>
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
             Processing...
+          </>
+        ) : currentPremiumInfo?.premium_tier === selectedPlan && currentPremiumInfo?.premium_level === level ? (
+          <>
+            <Check className="h-5 w-5" />
+            This is your current plan
           </>
         ) : (
           <>
