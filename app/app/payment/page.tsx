@@ -130,13 +130,16 @@ export default function PaymentPage() {
     });
   }, []);
 
-  // Check if user is already premium on mount (e.g., after returning from UPI app)
+  // Check if user is already premium on mount ONLY IF they initiated a payment in this session (e.g., returning from UPI)
   useEffect(() => {
-    checkUserPremiumStatusAction().then((isPremium) => {
-      if (isPremium) {
-        setIsSuccess(true);
-      }
-    });
+    if (sessionStorage.getItem("payment_in_progress") === "true") {
+      checkUserPremiumStatusAction().then((isPremium) => {
+        if (isPremium) {
+          sessionStorage.removeItem("payment_in_progress");
+          setIsSuccess(true);
+        }
+      });
+    }
   }, []);
   
   // Coupon state
@@ -199,6 +202,7 @@ export default function PaymentPage() {
   const handleContinue = async () => {
     setIsProcessing(true);
     setIsPolling(true); // Start polling when they initiate
+    sessionStorage.setItem("payment_in_progress", "true");
     
     // 1. Create Order
     const orderRes = await createRazorpayOrder(selectedPlan, level, appliedCoupon?.id);
@@ -248,13 +252,16 @@ export default function PaymentPage() {
         )
         .then((verifyRes) => {
           if (verifyRes.success) {
+            sessionStorage.removeItem("payment_in_progress");
             setIsSuccess(true);
           } else {
+            sessionStorage.removeItem("payment_in_progress");
             setIsProcessing(false);
             alert(verifyRes.error || "Payment verification failed");
           }
         })
         .catch((err: any) => {
+          sessionStorage.removeItem("payment_in_progress");
           console.error("Verification error:", err);
           setIsProcessing(false);
           alert(err?.message || "Payment completed, but verification encountered an error. Please refresh your dashboard.");
@@ -269,6 +276,7 @@ export default function PaymentPage() {
       },
       modal: {
         ondismiss: function () {
+          sessionStorage.removeItem("payment_in_progress");
           setIsProcessing(false);
         },
       },
@@ -276,6 +284,7 @@ export default function PaymentPage() {
 
     const rzp = new (window as any).Razorpay(options);
     rzp.on("payment.failed", function (response: any) {
+      sessionStorage.removeItem("payment_in_progress");
       setIsProcessing(false);
       alert(response.error.description || "Payment failed");
     });
