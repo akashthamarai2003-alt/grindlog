@@ -9,6 +9,11 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET || "",
 });
 
+export async function GET(req: NextRequest) {
+  // If a user accidentally navigates to this URL directly, redirect them to safety
+  return NextResponse.redirect(new URL("/dashboard", req.url));
+}
+
 export async function POST(req: NextRequest) {
   try {
     const text = await req.text();
