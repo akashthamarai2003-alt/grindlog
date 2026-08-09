@@ -16,6 +16,7 @@ interface UserWithDetails {
   is_premium?: boolean;
   premium_level?: string;
   premium_tier?: string;
+  premium_expires_at?: string;
   subscriptions?: any[];
   paymentId: string;
   actualPaidAmount: number;

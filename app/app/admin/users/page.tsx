@@ -78,7 +78,7 @@ export default async function AdminUsersPage() {
               status: payment.status,
               created_at: payment.created_at,
               method: payment.method,
-              description: payment.description || (user.subscriptions?.find(s => s.razorpay_payment_id === pid)?.plan) || "Premium Plan",
+              description: payment.description || (user.subscriptions?.find((s: any) => s.razorpay_payment_id === pid)?.plan) || "Premium Plan",
             });
           } catch (e) {
             console.error("Failed to fetch Razorpay payment", pid);

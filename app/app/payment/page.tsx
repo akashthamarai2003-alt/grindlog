@@ -129,6 +129,15 @@ export default function PaymentPage() {
       if (res) setPricingConfig(res);
     });
   }, []);
+
+  // Check if user is already premium on mount (e.g., after returning from UPI app)
+  useEffect(() => {
+    checkUserPremiumStatusAction().then((isPremium) => {
+      if (isPremium) {
+        setIsSuccess(true);
+      }
+    });
+  }, []);
   
   // Coupon state
   const [couponInput, setCouponInput] = useState("");
@@ -224,6 +233,8 @@ export default function PaymentPage() {
       name: "GrindLog Premium",
       description: `Upgrade to ${level.toUpperCase()} - ${selectedPlan}`,
       order_id: orderRes.orderId,
+      callback_url: `${window.location.origin}/api/payment/callback`,
+      redirect: true,
       handler: function (response: any) {
         setIsProcessing(true); // Ensure UI stays in processing state until redirect
         verifyRazorpayPayment(

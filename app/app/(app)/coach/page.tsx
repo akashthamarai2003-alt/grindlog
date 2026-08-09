@@ -444,6 +444,8 @@ export default function CoachPage() {
         name: "GrindLog",
         description: "10 Extra AI Messages",
         order_id: orderRes.orderId,
+        callback_url: `${window.location.origin}/api/payment/callback`,
+        redirect: true,
         handler: async function (response: any) {
           const verifyRes = await verifyMessageTopUpPayment(
             response.razorpay_order_id,
