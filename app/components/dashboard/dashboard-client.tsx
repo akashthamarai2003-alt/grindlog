@@ -355,7 +355,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
           <p className="text-base font-extrabold text-black uppercase tracking-wider">
             {greeting}
           </p>
-          <h1 className="text-4xl font-black text-black tracking-tight flex items-center gap-2 mt-0.5 drop-shadow-sm min-w-0">
+          <h1 className="text-3xl font-black text-black tracking-tight flex items-center gap-2 mt-0.5 drop-shadow-sm min-w-0">
             <span className="truncate">{profile.display_name?.split(' ')[0] || "There"}</span>
             <span className="inline-block origin-bottom-right animate-tree-sway shrink-0">👋</span>
           </h1>
