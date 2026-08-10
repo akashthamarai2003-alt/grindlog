@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
 
     if (!webhookSecret) {
       console.warn("Razorpay webhook secret not configured. Ignoring webhook.");
