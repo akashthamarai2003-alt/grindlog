@@ -1,5 +1,5 @@
-import { FitnessGuard } from "@/components/fitness/layout/fitness-guard";
-import { FitnessShell } from "@/components/fitness/layout/fitness-shell";
+import { FitnessGuard } from "@/components/fitness/fitness-guard";
+import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { ProfileSubscription } from "@/components/fitness/profile/profile-subscription";
 import { createClient } from "@/lib/services/supabase/server";
 import { getFitnessSubscription, getFitnessPlan } from "@/lib/fitness/subscription/access";

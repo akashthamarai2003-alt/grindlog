@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { createClient } from "@/lib/services/supabase/server";
-import { FitnessGuard } from "@/components/fitness/layout/fitness-guard";
-import { FitnessShell } from "@/components/fitness/layout/fitness-shell";
+import { FitnessGuard } from "@/components/fitness/fitness-guard";
+import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { ProgressView } from "@/components/fitness/progress/progress-view";
 
 export const metadata: Metadata = {
