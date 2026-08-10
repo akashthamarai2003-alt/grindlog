@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, CreditCard, LogOut, MessageSquare, Tag, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, LogOut, MessageSquare, Tag, Menu, X, Activity } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -15,6 +15,7 @@ export default function AdminLayout({
 
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { name: "Fitness AI OS", href: "/admin/fitness", icon: Activity },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Plan Pricing", href: "/admin/pricing", icon: Tag },
     { name: "Coupons", href: "/admin/coupons", icon: CreditCard },
