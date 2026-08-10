@@ -17,10 +17,20 @@ export const GeneratedWorkoutSchema = z.object({
   exercises: z.array(GeneratedExerciseSchema).min(1).max(15)
 });
 
+export const GeneratedMealSchema = z.object({
+  meal_name: z.string().describe("e.g., Breakfast, Lunch, Snack"),
+  time_of_day: z.string().describe("e.g., 08:00 AM"),
+  items: z.array(z.string()).describe("List of food items with quantities"),
+  total_calories: z.number().int().nullable(),
+  protein_grams: z.number().int().nullable(),
+  prep_instructions: z.string().describe("Brief prep instructions, highlighting if it's no-cook or hostel-friendly")
+});
+
 export const GeneratedNutritionSchema = z.object({
   daily_calories: z.number().int().max(10000).nullable(),
   protein_grams: z.number().int().min(30).max(400).nullable(),
   meals_per_day: z.number().int().min(1).max(8).nullable(),
+  meals: z.array(GeneratedMealSchema).default([]),
   guidance: z.string().describe("General healthy eating tips reflecting allergies and preferences")
 });
 

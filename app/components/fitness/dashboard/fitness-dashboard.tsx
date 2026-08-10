@@ -10,6 +10,7 @@ import { TransformationCard } from "./transformation-card";
 import { QuickActions } from "./quick-actions";
 import { WeeklyProgress } from "./weekly-progress";
 import { AIInsightCard } from "./ai-insight-card";
+import { DietPlanCard } from "./diet-plan-card";
 
 interface FitnessDashboardProps {
   user: User;
@@ -17,9 +18,10 @@ interface FitnessDashboardProps {
   todayWorkout?: any;
   hasPlan?: boolean;
   latestReview?: any;
+  nutrition?: any;
 }
 
-export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestReview }: FitnessDashboardProps) {
+export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestReview, nutrition }: FitnessDashboardProps) {
   return (
     <div className="flex flex-col gap-8 w-full max-w-md mx-auto px-5 pt-8 pb-28">
       <FitnessHeader user={user} />
@@ -27,6 +29,7 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
       <AIInsightCard review={latestReview || null} />
 
       <TodayPlanCard workout={todayWorkout} hasPlan={hasPlan} />
+      <DietPlanCard nutrition={nutrition} />
       <DailyProgress />
       
       <div className="grid grid-cols-2 gap-3 sm:gap-4">

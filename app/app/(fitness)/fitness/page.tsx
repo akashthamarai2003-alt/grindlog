@@ -24,7 +24,7 @@ async function DashboardContent() {
 
   const { data: plan } = await supabase
     .from("fitness_os_workout_plans")
-    .select("id")
+    .select("id, plan_data")
     .eq("user_id", user.id)
     .eq("status", "active")
     .maybeSingle();
@@ -51,7 +51,7 @@ async function DashboardContent() {
     .limit(1)
     .maybeSingle();
 
-  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} />;
+  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} />;
 }
 
 export default function FitnessHome() {

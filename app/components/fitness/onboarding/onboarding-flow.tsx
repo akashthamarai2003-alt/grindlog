@@ -46,7 +46,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
       const res = await saveFitnessOnboardingAction(data);
       if (res.success) {
         toast.success("Profile created!");
-        router.push("/fitness");
+        router.push("/fitness/scanner");
         router.refresh();
       } else {
         toast.error(res.error || "Failed to save profile.");
