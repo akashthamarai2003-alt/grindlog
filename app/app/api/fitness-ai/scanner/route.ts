@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Could not process uploaded images" }, { status: 400 });
     }
 
-    // 4. Construct Groq Payload (Limit to 3 images max to avoid Groq 400 Error)
+    // 4. Construct Groq Payload (Limit to 2 images max to avoid Groq 8k TPM limit)
     const priority = ["front", "side", "goal", "back"];
     const sortedImages = base64Images.sort((a, b) => {
       const idxA = priority.indexOf(a.view);
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
     });
 
-    const imageContents = sortedImages.slice(0, 3).map(img => ({
+    const imageContents = sortedImages.slice(0, 2).map(img => ({
       type: "image_url",
       image_url: {
         url: `data:${img.mimeType};base64,${img.data}`
