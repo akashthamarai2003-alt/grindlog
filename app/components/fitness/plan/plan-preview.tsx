@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Calendar, Dumbbell, Apple, Check } from "lucide-react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/services/supabase/client";
 
 interface PlanPreviewProps {
   planId: string;
@@ -13,7 +13,7 @@ interface PlanPreviewProps {
 export function PlanPreview({ planId, onConfirm }: PlanPreviewProps) {
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   useEffect(() => {
     const fetchPlan = async () => {
