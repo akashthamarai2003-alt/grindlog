@@ -24,7 +24,7 @@ export function TodayPlanCard({ workout, hasPlan }: TodayPlanCardProps) {
         <h3 className="text-lg font-bold text-gray-900 mb-1">No plan found</h3>
         <p className="text-sm text-gray-500 font-medium mb-6">Let AI create a personalized plan for you</p>
         <Link 
-          href="/fitness/plan/generating"
+          href="/fitness/scanner"
           className="bg-gray-900 text-white font-bold py-3 px-6 rounded-xl text-sm active:scale-[0.98] transition-transform"
         >
           Build My Fitness Plan

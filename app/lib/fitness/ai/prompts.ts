@@ -14,7 +14,7 @@ CRITICAL RULES:
 For workout schedules, generate workouts exactly starting from tomorrow or the current week, distributing them according to the user's preferred days and 'training_days_per_week'.
 `;
 
-export function buildFitnessPlanPrompt(profile: Partial<OnboardingData>, todayDateStr: string): string {
+export function buildFitnessPlanPrompt(profile: Partial<OnboardingData>, todayDateStr: string, geminiAnalysis?: string | null): string {
   return `Please generate a personalized fitness plan for me.
   
 User Profile:
@@ -37,6 +37,7 @@ User Profile:
 - Sleep Target: ${profile.sleep_duration} hours
 - Lifestyle Context: ${profile.lifestyle_description || "N/A"}
 
+${geminiAnalysis ? `AI Body Scan Analysis (Gemini Vision):\n${geminiAnalysis}\n` : ''}
 Current Date: ${todayDateStr}
 
 Instructions:

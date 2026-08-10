@@ -45,9 +45,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Profile not found" }, { status: 404 });
     }
 
+    // 4.5 Fetch latest Gemini Body Scan (if any)
+    const { data: scan } = await supabase
+      .from("fitness_os_scans")
+      .select("gemini_analysis")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     // 5. Call AI Server-Side
     const todayStr = new Date().toISOString().split('T')[0];
-    const userPrompt = buildFitnessPlanPrompt(profile, todayStr);
+    const userPrompt = buildFitnessPlanPrompt(profile, todayStr, scan?.gemini_analysis);
     
     const aiResponse = await generateAIResponseJSON<any>({
       systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,

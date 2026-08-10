@@ -51,8 +51,9 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
       } else {
         toast.error(res.error || "Failed to save profile.");
       }
-    } catch (e) {
-      toast.error("Network error. Please try again.");
+    } catch (e: any) {
+      console.error("Server Action Exception:", e);
+      toast.error(`Network error: ${e.message || String(e)}`);
     } finally {
       setIsSaving(false);
     }
