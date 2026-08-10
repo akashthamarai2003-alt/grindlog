@@ -31,7 +31,7 @@ export default async function ProgressPage() {
     .lte("workout_date", weekEndStr);
 
   const workoutsPlanned = workouts?.length || 0;
-  const workoutsCompleted = workouts?.filter(w => w.status === "completed").length || 0;
+  const workoutsCompleted = workouts?.filter((w: any) => w.status === "completed").length || 0;
 
   // 2. Sessions
   const { data: sessions } = await supabase
@@ -41,15 +41,15 @@ export default async function ProgressPage() {
     .gte("created_at", weekStart.toISOString())
     .lte("created_at", today.toISOString());
 
-  const totalMinutes = sessions?.reduce((acc, s) => acc + (s.duration_seconds ? Math.round(s.duration_seconds / 60) : 0), 0) || 0;
+  const totalMinutes = sessions?.reduce((acc: any, s: any) => acc + (s.duration_seconds ? Math.round(s.duration_seconds / 60) : 0), 0) || 0;
 
   // 3. Sets
   let setsCompleted = 0;
   if (workoutsCompleted > 0) {
-    const completedWorkoutIds = workouts!.filter(w => w.status === "completed").map(w => w.id);
+    const completedWorkoutIds = workouts!.filter((w: any) => w.status === "completed").map((w: any) => w.id);
     const { data: exercises } = await supabase.from("fitness_os_exercises").select("id").in("workout_id", completedWorkoutIds);
     if (exercises && exercises.length > 0) {
-      const exerciseIds = exercises.map(e => e.id);
+      const exerciseIds = exercises.map((e: any) => e.id);
       const { count } = await supabase.from("fitness_os_sets").select("id", { count: "exact", head: true }).in("exercise_id", exerciseIds).eq("completed", true);
       setsCompleted = count || 0;
     }

@@ -68,8 +68,8 @@ export async function buildFitnessCoachContext(userId: string): Promise<string> 
   if (!recentWorkouts || recentWorkouts.length === 0) {
     context += "No recent workouts found.\n";
   } else {
-    recentWorkouts.forEach(w => {
-      const session = recentSessions?.find(s => s.workout_id === w.id);
+    recentWorkouts.forEach((w: any) => {
+      const session = recentSessions?.find((s: any) => s.workout_id === w.id);
       const actualDuration = session?.duration_seconds ? Math.round(session.duration_seconds / 60) : 0;
       context += `- Date: ${w.workout_date}, Name: ${w.name}, Status: ${w.status}, Planned Duration: ${w.duration_minutes || 0}m, Actual Duration: ${actualDuration}m\n`;
     });

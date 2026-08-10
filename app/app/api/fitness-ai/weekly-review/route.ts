@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       .lte("workout_date", weekEndStr);
 
     const workoutsPlanned = workouts?.length || 0;
-    const workoutsCompleted = workouts?.filter(w => w.status === "completed").length || 0;
+    const workoutsCompleted = workouts?.filter((w: any) => w.status === "completed").length || 0;
 
     // 2. Fetch Completed Sessions
     const { data: sessions } = await supabase
@@ -62,12 +62,12 @@ export async function POST(req: NextRequest) {
       .gte("created_at", weekStart.toISOString())
       .lte("created_at", today.toISOString());
 
-    const totalWorkoutMinutes = sessions?.reduce((acc, s) => acc + (s.duration_seconds ? Math.round(s.duration_seconds / 60) : 0), 0) || 0;
+    const totalWorkoutMinutes = sessions?.reduce((acc: any, s: any) => acc + (s.duration_seconds ? Math.round(s.duration_seconds / 60) : 0), 0) || 0;
 
     // 3. Fetch Completed Sets (for exercises inside completed workouts)
     let setsCompleted = 0;
     if (workoutsCompleted > 0) {
-      const completedWorkoutIds = workouts!.filter(w => w.status === "completed").map(w => w.id);
+      const completedWorkoutIds = workouts!.filter((w: any) => w.status === "completed").map((w: any) => w.id);
       
       const { data: exercises } = await supabase
         .from("fitness_os_exercises")
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         .in("workout_id", completedWorkoutIds);
         
       if (exercises && exercises.length > 0) {
-        const exerciseIds = exercises.map(e => e.id);
+        const exerciseIds = exercises.map((e: any) => e.id);
         const { count } = await supabase
           .from("fitness_os_sets")
           .select("id", { count: "exact", head: true })

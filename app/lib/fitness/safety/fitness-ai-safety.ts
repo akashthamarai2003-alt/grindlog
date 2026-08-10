@@ -1,4 +1,4 @@
-import { GeneratedPlanData } from "./schemas";
+import { GeneratedPlanData } from "../ai/schemas";
 import { OnboardingData } from "@/types/fitness/onboarding";
 
 export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partial<OnboardingData>): { safe: boolean; reason?: string } {

@@ -21,3 +21,6 @@ export async function createServerSupabase() {
     },
   );
 }
+
+// Alias for convenience used in Fitness AI OS
+export const createClient = createServerSupabase;
