@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     };
 
     // 5. Call Gemini REST API
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`;
     
     const res = await fetch(geminiUrl, {
       method: "POST",
