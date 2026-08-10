@@ -1,18 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import bgImage from "../../../public/login-page.png";
 import { useAuth } from "@/hooks/use-auth";
+import { getSafeRedirect } from "@/lib/utils/redirect";
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh flex items-center justify-center bg-black/90"><div className="w-8 h-8 rounded-full border-2 border-white border-t-transparent animate-spin" /></div>}>
+      <SignUpContent />
+    </Suspense>
+  );
+}
+
+function SignUpContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+  const safeRedirect = getSafeRedirect(redirectParam);
+  
   const { signUp, signInWithGoogle } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -110,7 +123,7 @@ export default function SignUpPage() {
           <div className="mb-6">
             <button
               type="button"
-              onClick={signInWithGoogle}
+              onClick={() => signInWithGoogle(safeRedirect)}
               disabled={!agreed}
               className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/20 border border-white/40 py-3 text-sm font-bold text-white transition-colors hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white/20"
             >
@@ -243,7 +256,10 @@ export default function SignUpPage() {
           <div className="mt-6 text-center">
             <p className="text-[13px] font-medium text-white/90">
               Already have an account?{" "}
-              <Link href="/auth/signin" className="font-bold text-white hover:underline">
+              <Link 
+                href={redirectParam ? `/auth/signin?redirect=${encodeURIComponent(redirectParam)}` : "/auth/signin"} 
+                className="font-bold text-white hover:underline"
+              >
                 Login
               </Link>
             </p>

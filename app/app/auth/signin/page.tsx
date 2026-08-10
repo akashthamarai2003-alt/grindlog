@@ -269,7 +269,10 @@ function SignInContent() {
           <div className="mt-6 text-center">
             <p className="text-[13px] font-medium text-white/90">
               Don't have an account?{" "}
-              <Link href="/auth/signup" className="font-bold text-white hover:underline">
+              <Link 
+                href={redirectParam ? `/auth/signup?redirect=${encodeURIComponent(redirectParam)}` : "/auth/signup"} 
+                className="font-bold text-white hover:underline"
+              >
                 Signup
               </Link>
             </p>
