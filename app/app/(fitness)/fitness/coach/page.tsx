@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 import { CoachHeader } from "@/components/fitness/coach/coach-header";
 import { CoachChat } from "@/components/fitness/coach/coach-chat";
-import { FitnessGuard } from "@/components/fitness/layout/fitness-guard";
-import { FitnessShell } from "@/components/fitness/layout/fitness-shell";
+import { FitnessGuard } from "@/components/fitness/fitness-guard";
+import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { createClient } from "@/lib/services/supabase/server";
 
 export const metadata: Metadata = {
