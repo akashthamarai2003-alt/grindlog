@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
 
     // 4. Construct Gemini Payload
     const parts = base64Images.map(img => ({
-      inline_data: {
-        mime_type: img.mimeType,
+      inlineData: {
+        mimeType: img.mimeType,
         data: img.data
       }
     }));
