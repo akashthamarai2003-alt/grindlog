@@ -73,7 +73,10 @@ export function ScannerFlow() {
           
           const { error: uploadError } = await supabase.storage
             .from('fitness_os_scans')
-            .upload(fileName, img.file, { upsert: true });
+            .upload(fileName, img.file, { 
+              upsert: true,
+              contentType: img.file.type
+            });
 
           if (uploadError) {
             console.error(`Upload error for ${view}:`, uploadError);

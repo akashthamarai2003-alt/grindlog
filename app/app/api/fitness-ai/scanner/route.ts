@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       const errorText = await res.text();
       console.error("Gemini API Error:", errorText);
-      return NextResponse.json({ success: false, error: "AI Vision analysis failed." }, { status: 500 });
+      return NextResponse.json({ success: false, error: `Gemini Error: ${errorText}` }, { status: 500 });
     }
 
     const geminiData = await res.json();
