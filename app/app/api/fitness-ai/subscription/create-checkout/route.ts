@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         amount: planConfig.priceInPaise,
         currency: planConfig.currency,
-        receipt: `receipt_${userId}_${Date.now()}`,
+        receipt: `rec_${Date.now().toString(36)}_${userId.substring(0, 8)}`,
         notes: {
           userId: userId,
           planId: planId,
