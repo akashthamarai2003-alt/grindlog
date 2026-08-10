@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     if (dbError) {
       console.error("Failed to save pending subscription:", dbError);
-      return NextResponse.json({ error: "Failed to initialize subscription." }, { status: 500 });
+      return NextResponse.json({ error: `DB Error: ${dbError.message || JSON.stringify(dbError)}` }, { status: 500 });
     }
 
     return NextResponse.json({
