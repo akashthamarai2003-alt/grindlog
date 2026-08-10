@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { FITNESS_PLANS } from "@/lib/fitness/subscription/plans";
 import { FitnessPlanId } from "@/lib/fitness/subscription/types";
 
@@ -66,7 +67,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Upsert subscription as 'created' (pending payment)
-    const { error: dbError } = await supabase
+    const adminSupabase = createAdminClient();
+    const { error: dbError } = await adminSupabase
       .from("fitness_os_subscriptions")
       .upsert({
         user_id: userId,
