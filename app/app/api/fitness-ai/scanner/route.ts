@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { getGroqClient } from "@/lib/services/groq/client";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 
 export async function POST(req: NextRequest) {
@@ -18,11 +19,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Ensure Gemini API key is present
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey) {
-      console.warn("GEMINI_API_KEY is not configured.");
-      return NextResponse.json({ success: false, error: "AI Vision is not configured." }, { status: 500 });
-    }
+
+    // (We don't need GEMINI_API_KEY anymore as getGroqClient handles GROQ_API_KEY)
 
     // 3. Download images as Base64 using Supabase Admin client
     const adminClient = createAdminClient();
@@ -49,56 +47,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Could not process uploaded images" }, { status: 400 });
     }
 
-    // 4. Construct Gemini Payload
-    const parts = base64Images.map(img => ({
-      inlineData: {
-        mimeType: img.mimeType,
-        data: img.data
+    // 4. Construct Groq Payload
+    const imageContents = base64Images.map(img => ({
+      type: "image_url",
+      image_url: {
+        url: `data:${img.mimeType};base64,${img.data}`
       }
     }));
 
-    // Add prompt instructions
-    parts.push({
-      text: `You are a professional fitness coach and biomechanics expert. Analyze these body scan photos of a client. 
+    const promptText = `You are a professional fitness coach and biomechanics expert. Analyze these body scan photos of a client. 
       Identify general visual characteristics (e.g., broad shoulders, narrow waist, apparent postural imbalances like forward head posture or anterior pelvic tilt). 
       If a goal physique photo is included, identify the focus areas needed to bridge the gap.
       CRITICAL INSTRUCTIONS:
       - DO NOT make any medical diagnoses.
       - DO NOT guess or state exact body-fat percentages.
       - Keep the analysis concise, structured, and focused on physical traits that will influence workout programming.
-      Respond in plain text.` as any
-    });
+      Respond in plain text.`;
 
-    const payload = {
-      contents: [{
-        parts: parts
-      }],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 1000
-      }
-    };
-
-    // 5. Call Gemini REST API
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`;
+    const groq = getGroqClient();
     
-    const res = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+    const response = await groq.chat.completions.create({
+      model: "llama-3.2-90b-vision-preview",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: promptText },
+            ...imageContents
+          ] as any
+        }
+      ],
+      temperature: 0.2,
+      max_tokens: 1024,
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Gemini API Error:", errorText);
-      return NextResponse.json({ success: false, error: `Gemini Error: ${errorText}` }, { status: 500 });
-    }
-
-    const geminiData = await res.json();
-    const analysisText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    const analysisText = response.choices[0]?.message?.content;
 
     if (!analysisText) {
-      return NextResponse.json({ success: false, error: "Could not generate analysis." }, { status: 500 });
+      throw new Error("No analysis generated from Groq.");
     }
 
     // 5.5 Delete images from Supabase Storage immediately for privacy
@@ -134,6 +120,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error("Scanner API Error:", error);
-    return NextResponse.json({ success: false, error: "An unexpected error occurred." }, { status: 500 });
+    return NextResponse.json({ success: false, error: `Groq Error: ${error.message || "Unknown error"}` }, { status: 500 });
   }
 }
