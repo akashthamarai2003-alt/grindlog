@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     const groq = getGroqClient();
     
     const response = await groq.chat.completions.create({
-      model: "llama-3.2-90b-vision-preview",
+      model: "llama-3.2-11b-vision-preview",
       messages: [
         {
           role: "user",
