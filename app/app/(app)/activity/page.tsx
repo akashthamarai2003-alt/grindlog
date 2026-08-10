@@ -229,7 +229,7 @@ export default function FitnessPage() {
             Fitness
           </h1>
         </div>
-        <Link href="/fitness/new">
+        <Link href="/activity/new">
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.9 }}
@@ -415,7 +415,7 @@ export default function FitnessPage() {
           {QUICK_ADD.map((q, i) => {
             const config = getConfig(q.type);
             return (
-              <Link key={q.type} href={`/fitness/new?type=${q.type}`}>
+              <Link key={q.type} href={`/activity/new?type=${q.type}`}>
                 <motion.div
                   initial={{ opacity: 0, x: 12 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -509,7 +509,7 @@ export default function FitnessPage() {
                 ? "No workouts logged yet. Go get a sweat in!"
                 : "No workouts in this category yet."}
             </p>
-            <Link href="/fitness/new">
+            <Link href="/activity/new">
               <motion.span
                 whileTap={{ scale: 0.95 }}
                 className="mt-4 inline-block rounded-full bg-[#FF2D55] px-5 py-2.5 text-xs font-bold text-white"
