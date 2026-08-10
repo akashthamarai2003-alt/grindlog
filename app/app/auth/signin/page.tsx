@@ -1,18 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Eye, EyeOff, Check, AlertCircle } from "lucide-react";
 import bgImage from "../../../public/login-page.png";
 import { useAuth } from "@/hooks/use-auth";
+import { getSafeRedirect } from "@/lib/utils/redirect";
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh flex items-center justify-center bg-black/90"><div className="w-8 h-8 rounded-full border-2 border-white border-t-transparent animate-spin" /></div>}>
+      <SignInContent />
+    </Suspense>
+  );
+}
+
+function SignInContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+  const safeRedirect = getSafeRedirect(redirectParam);
+  
   const { signIn, signInWithGoogle } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
@@ -78,7 +91,7 @@ export default function SignInPage() {
       try {
         localStorage.setItem("grindlog_has_seen_onboarding", "true");
       } catch (e) {}
-      router.push("/dashboard");
+      router.push(safeRedirect);
     } else {
       const rawError = result.error || "";
       if (rawError.toLowerCase().includes("invalid login credentials")) {
@@ -131,7 +144,7 @@ export default function SignInPage() {
           <div className="mb-6">
             <button
               type="button"
-              onClick={signInWithGoogle}
+              onClick={() => signInWithGoogle(safeRedirect)}
               className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/20 border border-white/40 py-3 text-sm font-bold text-white transition-colors hover:bg-white/30"
             >
               <svg className="h-5 w-5 bg-white rounded-full p-0.5" viewBox="0 0 24 24">

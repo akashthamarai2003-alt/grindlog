@@ -72,13 +72,30 @@ export async function updateSession(request: NextRequest) {
     }
     const url = request.nextUrl.clone();
     url.pathname = "/auth/signin";
+    if (pathname !== "/") {
+      url.searchParams.set("redirect", request.nextUrl.pathname + request.nextUrl.search);
+    }
     return NextResponse.redirect(url);
   }
 
   if (user && isPublicPath && !["/auth/reset-password", "/terms", "/privacy", "/refund", "/admin-login"].includes(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    
+    // Determine safe redirect
+    const redirectParam = request.nextUrl.searchParams.get("redirect");
+    let safeRedirect = "/dashboard";
+    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
+       const allowedBasePaths = ["/dashboard", "/app", "/fitness", "/calendar", "/habits", "/quests", "/store", "/profile"];
+       const isAllowed = allowedBasePaths.some(p => redirectParam === p || redirectParam.startsWith(p + "/"));
+       if (isAllowed) {
+         safeRedirect = redirectParam;
+       }
+    }
+    
+    url.pathname = safeRedirect.split("?")[0];
+    const search = safeRedirect.includes("?") ? safeRedirect.substring(safeRedirect.indexOf("?")) : "";
+    
+    return NextResponse.redirect(new URL(url.pathname + search, request.url));
   }
 
   return response;
