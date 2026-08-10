@@ -43,7 +43,15 @@ async function DashboardContent() {
     .limit(1)
     .maybeSingle();
 
-  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} />;
+  const { data: latestReview } = await supabase
+    .from("fitness_os_progress_reviews")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} />;
 }
 
 export default function FitnessHome() {

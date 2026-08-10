@@ -1,24 +1,22 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/services/supabase/admin";
-
-// Basic limits for Fitness AI OS
-const FREE_DAILY_FITNESS_LIMIT = 2; // Generation takes a lot
-const PRO_DAILY_FITNESS_LIMIT = 10;
+import { getFitnessAILimit } from "@/lib/fitness/subscription/access";
 
 export async function checkFitnessAILimit(supabase: SupabaseClient, userId: string) {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
-  // 1. Check user tier
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_premium, premium_level")
-    .eq("id", userId)
-    .single();
+  // 1. Get dynamic limit based on active Fitness OS subscription
+  const dailyLimit = await getFitnessAILimit(userId);
 
-  let dailyFreeLimit = FREE_DAILY_FITNESS_LIMIT;
-  if (profile?.is_premium && profile?.premium_level === "pro") {
-    dailyFreeLimit = PRO_DAILY_FITNESS_LIMIT;
+  // If no limit (0), they don't have access
+  if (dailyLimit <= 0) {
+    return {
+      allowed: false,
+      limit: 0,
+      used: 0,
+      remaining: 0
+    };
   }
 
   // 2. Count today's fitness AI sessions
@@ -32,18 +30,26 @@ export async function checkFitnessAILimit(supabase: SupabaseClient, userId: stri
 
   if (error) {
     console.error("Error checking Fitness AI limit:", error);
-    return { allowed: false, count: 0, error };
+    return { allowed: false, limit: dailyLimit, used: 0, remaining: 0, error };
   }
   
   const todayCount = count || 0;
+  const remaining = Math.max(0, dailyLimit - todayCount);
 
-  if (todayCount < dailyFreeLimit) {
-    return { allowed: true, count: todayCount };
+  if (todayCount < dailyLimit) {
+    return { 
+      allowed: true, 
+      limit: dailyLimit,
+      used: todayCount,
+      remaining
+    };
   }
 
   return {
     allowed: false,
-    count: todayCount
+    limit: dailyLimit,
+    used: todayCount,
+    remaining: 0
   };
 }
 

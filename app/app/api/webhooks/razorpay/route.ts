@@ -36,6 +36,11 @@ export async function POST(req: Request) {
       const notes = payment.notes;
 
       if (notes && notes.userId) {
+        // Prevent Fitness AI OS payments from being processed by GrindLog webhook
+        if (notes.source === "fitness_ai_os") {
+          return NextResponse.json({ success: true, message: "Ignored by GrindLog, handled by Fitness OS" });
+        }
+
         const adminClient = createAdminClient();
         
         // Prevent double processing

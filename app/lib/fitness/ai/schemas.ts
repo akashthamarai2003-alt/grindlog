@@ -42,3 +42,30 @@ export const GeneratedPlanSchema = z.object({
 });
 
 export type GeneratedPlanData = z.infer<typeof GeneratedPlanSchema>;
+
+export const CoachResponseSchema = z.object({
+  message: z.string(),
+  tone: z.enum(["supportive", "motivational", "informative"]),
+  recommendations: z.array(z.string()),
+  warnings: z.array(z.string())
+});
+export type CoachResponseData = z.infer<typeof CoachResponseSchema>;
+
+export const WeeklyReviewSchema = z.object({
+  summary: z.string(),
+  highlights: z.array(z.string()),
+  recommendations: z.array(z.string()),
+  encouragement: z.string()
+});
+export type WeeklyReviewData = z.infer<typeof WeeklyReviewSchema>;
+
+export const PlanAdjustmentSchema = z.object({
+  should_adjust: z.boolean(),
+  reason: z.string(),
+  changes: z.array(z.object({
+    workout_id: z.string().describe("Can be 'all' or specific workout ID if known by AI, else generic name"),
+    change_type: z.string(),
+    description: z.string()
+  }))
+});
+export type PlanAdjustmentData = z.infer<typeof PlanAdjustmentSchema>;
