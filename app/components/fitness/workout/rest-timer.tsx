@@ -74,16 +74,19 @@ export function RestTimer({ initialSeconds, onComplete, onSkip }: RestTimerProps
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: 'auto' }}
         exit={{ opacity: 0, height: 0 }}
-        className="w-full bg-blue-50 border border-blue-100 rounded-3xl p-5 overflow-hidden"
+        className="w-full bg-[#111A10] border border-[#ADFF00]/20 rounded-3xl p-5 overflow-hidden shadow-[0_0_20px_rgba(173,255,0,0.1)] relative"
       >
-        <div className="flex items-center justify-between">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#ADFF00]/5 rounded-full blur-[40px] pointer-events-none" />
+
+        <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-              <Timer className="w-6 h-6 text-blue-500" />
+            <div className="w-12 h-12 bg-[#ADFF00]/10 rounded-full flex items-center justify-center border border-[#ADFF00]/20">
+              <Timer className="w-6 h-6 text-[#ADFF00]" />
             </div>
             <div>
-              <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Rest</p>
-              <h3 className="text-3xl font-bold text-blue-900 leading-none font-mono">
+              <p className="text-xs font-bold text-[#ADFF00]/70 uppercase tracking-widest">Rest</p>
+              <h3 className="text-3xl font-black text-white leading-none font-mono">
                 {formatTime(timeLeft)}
               </h3>
             </div>
@@ -92,19 +95,29 @@ export function RestTimer({ initialSeconds, onComplete, onSkip }: RestTimerProps
           <div className="flex gap-2">
             <button
               onClick={togglePause}
-              className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors shadow-sm"
+              className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#ADFF00] hover:bg-white/10 transition-colors"
               aria-label={isPaused ? "Resume rest timer" : "Pause rest timer"}
             >
               {isPaused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
             </button>
             <button
               onClick={onSkip}
-              className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-sm"
+              className="w-12 h-12 bg-[#ADFF00] rounded-2xl flex items-center justify-center text-black hover:bg-[#bfff33] transition-colors shadow-[0_0_10px_rgba(173,255,0,0.3)]"
               aria-label="Skip rest"
             >
-              <SkipForward className="w-5 h-5 fill-current" />
+              <SkipForward className="w-5 h-5 fill-black" />
             </button>
           </div>
+        </div>
+        
+        {/* Progress bar visual */}
+        <div className="w-full h-1 bg-black/40 rounded-full mt-4 overflow-hidden border border-white/5 relative z-10">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-[#ADFF00]/50 to-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)]"
+            initial={{ width: "100%" }}
+            animate={{ width: `${(timeLeft / initialSeconds) * 100}%` }}
+            transition={{ duration: 0.2 }}
+          />
         </div>
       </motion.div>
     </AnimatePresence>

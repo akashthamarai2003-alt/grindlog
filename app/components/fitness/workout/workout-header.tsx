@@ -20,22 +20,22 @@ export function WorkoutHeader({ title, dateStr, avatarUrl, backUrl = "/fitness" 
       className="flex items-center justify-between w-full pb-4"
     >
       <div className="flex items-center gap-3">
-        <Link href={backUrl} className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-700" />
+        <Link href={backUrl} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
+          <ArrowLeft className="w-5 h-5 text-white/70 hover:text-white" />
         </Link>
         <div className="flex flex-col">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight leading-none">
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase leading-none">
             {title}
           </h1>
           {dateStr && (
-            <p className="text-xs font-medium text-gray-500 mt-1">
+            <p className="text-xs font-semibold text-[#ADFF00] mt-1 tracking-wider uppercase">
               {dateStr}
             </p>
           )}
         </div>
       </div>
       
-      <button className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors shrink-0">
+      <button className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 transition-colors shrink-0">
         {avatarUrl ? (
           <img 
             src={avatarUrl} 

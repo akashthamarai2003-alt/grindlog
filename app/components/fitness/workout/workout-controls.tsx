@@ -60,12 +60,12 @@ export function WorkoutControls({ sessionId, isPaused, hasIncompleteSets }: Work
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-gray-100 pb-[calc(1.25rem+env(safe-area-inset-bottom))] z-40">
+      <div className="fixed bottom-0 left-0 right-0 p-5 bg-[#0A1108]/90 backdrop-blur-xl border-t border-white/5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] z-40">
         <div className="max-w-md mx-auto flex gap-3">
           <button
             onClick={handlePauseResume}
             disabled={!!loadingAction}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all text-gray-900 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 active:scale-[0.98] transition-all text-white font-black uppercase tracking-wide py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isPaused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
             {isPaused ? "Resume" : "Pause"}
@@ -74,21 +74,21 @@ export function WorkoutControls({ sessionId, isPaused, hasIncompleteSets }: Work
           <button
             onClick={handleFinishRequest}
             disabled={!!loadingAction}
-            className="flex-[2] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-all text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.4)] disabled:opacity-50"
+            className="flex-[2] bg-[#ADFF00] hover:bg-[#bfff33] active:scale-[0.98] transition-all text-black font-black uppercase tracking-wide py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] disabled:opacity-50"
           >
-            <CheckCircle className="w-5 h-5" strokeWidth={2.5} />
+            <CheckCircle className="w-5 h-5 stroke-[2.5]" />
             Finish Workout
           </button>
         </div>
       </div>
 
       {showConfirm && (
-        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-5">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-5">
+          <div className="w-full max-w-sm bg-[#111A10] border border-white/10 rounded-3xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">
               Finish workout?
             </h3>
-            <p className="text-sm font-medium text-gray-500 mb-6">
+            <p className="text-sm font-medium text-white/60 mb-6">
               {hasIncompleteSets 
                 ? "You still have incomplete sets. Are you sure you want to finish?" 
                 : "Great job! Ready to wrap up?"}
@@ -98,16 +98,16 @@ export function WorkoutControls({ sessionId, isPaused, hasIncompleteSets }: Work
               <button
                 onClick={executeFinish}
                 disabled={loadingAction === "finish"}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-all text-white font-bold py-3.5 rounded-2xl"
+                className="w-full py-4 bg-[#ADFF00] hover:bg-[#bfff33] active:scale-[0.98] transition-all text-black font-black uppercase tracking-wide rounded-xl flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(173,255,0,0.3)] disabled:opacity-50"
               >
-                {loadingAction === "finish" ? "Finishing..." : hasIncompleteSets ? "Finish Anyway" : "Finish"}
+                {loadingAction === "finish" ? "Finishing..." : "Yes, finish workout"}
               </button>
               <button
                 onClick={() => setShowConfirm(false)}
                 disabled={loadingAction === "finish"}
-                className="w-full bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all text-gray-900 font-bold py-3.5 rounded-2xl"
+                className="w-full py-4 bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all text-white font-bold uppercase tracking-wide rounded-xl disabled:opacity-50 border border-white/5"
               >
-                {hasIncompleteSets ? "Continue Workout" : "Cancel"}
+                Cancel
               </button>
             </div>
           </div>

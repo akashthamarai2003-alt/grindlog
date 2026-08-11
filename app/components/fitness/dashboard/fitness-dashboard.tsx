@@ -6,7 +6,7 @@ import { DashboardHeader } from "./dashboard-header";
 import { AIMessageCard } from "./ai-message-card";
 import { HorizontalCalendar } from "./horizontal-calendar";
 import { CategoryPills } from "./category-pills";
-import { HorizontalWorkoutList } from "./horizontal-workout-list";
+import { TodaysWorkoutCard } from "./todays-workout-card";
 import { TransformationCard } from "./transformation-card";
 interface FitnessDashboardProps {
   user: User;
@@ -45,8 +45,8 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
         {/* 4. Filter Tags / Category Pills */}
         <CategoryPills />
 
-        {/* 5. Horizontal Scrolling Workouts */}
-        <HorizontalWorkoutList workout={todayWorkout} />
+        {/* 5. Today's Workout Card */}
+        <TodaysWorkoutCard workout={todayWorkout} />
 
       </main>
 

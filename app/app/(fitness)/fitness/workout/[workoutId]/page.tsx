@@ -52,7 +52,7 @@ export default async function ActiveWorkoutPage({ params }: { params: Promise<{ 
 
   return (
     <FitnessGuard>
-      <div className="min-h-screen bg-gray-50/50">
+      <div className="min-h-screen bg-[#0A1108] text-white">
         <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
           <WorkoutHeader 
             title={workout.name}

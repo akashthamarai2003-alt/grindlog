@@ -48,9 +48,9 @@ export function SetRow({ setRecord, onSetCompleted, isTimerActive }: SetRowProps
   };
 
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-2xl transition-colors ${isCompleted ? 'bg-emerald-50/50' : 'bg-gray-50'}`}>
+    <div className={`flex items-center gap-3 p-3 rounded-2xl transition-colors ${isCompleted ? 'bg-[#ADFF00]/10 border border-[#ADFF00]/20' : 'bg-white/5 border border-transparent'}`}>
       <div className="w-8 flex items-center justify-center shrink-0">
-        <span className={`text-sm font-bold ${isCompleted ? 'text-emerald-600' : 'text-gray-500'}`}>
+        <span className={`text-sm font-bold ${isCompleted ? 'text-[#ADFF00]' : 'text-white/40'}`}>
           {setRecord.set_number}
         </span>
       </div>
@@ -64,11 +64,11 @@ export function SetRow({ setRecord, onSetCompleted, isTimerActive }: SetRowProps
             onChange={(e) => setActualReps(e.target.value)}
             disabled={isCompleted || isSubmitting}
             placeholder={setRecord.target_reps?.toString() || "-"}
-            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-transparent disabled:border-transparent disabled:text-emerald-700"
+            className="w-full bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-sm font-bold text-white text-center focus:outline-none focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] disabled:bg-transparent disabled:border-transparent disabled:text-[#ADFF00]/80 placeholder:text-white/20"
             aria-label={`Set ${setRecord.set_number} reps`}
           />
           {!isCompleted && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white/30">
               REPS
             </span>
           )}
@@ -83,11 +83,11 @@ export function SetRow({ setRecord, onSetCompleted, isTimerActive }: SetRowProps
             onChange={(e) => setWeightKg(e.target.value)}
             disabled={isCompleted || isSubmitting}
             placeholder="-"
-            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 text-center focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-transparent disabled:border-transparent disabled:text-emerald-700"
+            className="w-full bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-sm font-bold text-white text-center focus:outline-none focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] disabled:bg-transparent disabled:border-transparent disabled:text-[#ADFF00]/80 placeholder:text-white/20"
             aria-label={`Set ${setRecord.set_number} weight in kg`}
           />
           {!isCompleted && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white/30">
               KG
             </span>
           )}
@@ -98,18 +98,16 @@ export function SetRow({ setRecord, onSetCompleted, isTimerActive }: SetRowProps
         onClick={handleComplete}
         disabled={isCompleted || isSubmitting || isTimerActive}
         className={`w-12 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all ${
-          isCompleted 
-            ? 'bg-emerald-100 text-emerald-600' 
-            : 'bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 disabled:bg-gray-200 disabled:text-gray-400'
-        }`}
-        aria-label={isCompleted ? `Set ${setRecord.set_number} completed` : `Complete set ${setRecord.set_number}`}
+          isCompleted
+            ? 'bg-[#ADFF00] text-black shadow-[0_0_10px_rgba(173,255,0,0.5)]'
+            : 'bg-white/10 text-white/50 hover:bg-white/20 hover:text-white'
+        } ${isTimerActive && !isCompleted ? 'opacity-30 cursor-not-allowed' : ''}`}
+        aria-label={isCompleted ? "Set completed" : "Complete set"}
       >
         {isSubmitting ? (
           <Loader2 className="w-5 h-5 animate-spin" />
-        ) : isCompleted ? (
-          <Check className="w-5 h-5" strokeWidth={3} />
         ) : (
-          <Check className="w-5 h-5" strokeWidth={2.5} />
+          <Check className={`w-5 h-5 ${isCompleted ? 'stroke-[3]' : 'stroke-[2]'}`} />
         )}
       </button>
     </div>
