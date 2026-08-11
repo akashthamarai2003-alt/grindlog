@@ -13,7 +13,7 @@ export function TodaysWorkoutCard({ workout }: TodaysWorkoutCardProps) {
   // Use real data if available, fallback to mock data for the aesthetic
   const title = workout?.name || "Chest + Triceps";
   const numExercises = workout?.fitness_os_exercises?.length || 6;
-  const totalDuration = workout?.duration_minutes ? \`\${workout.duration_minutes} min\` : "45–55 min";
+  const totalDuration = workout?.duration_minutes ? `${workout.duration_minutes} min` : "45–55 min";
   
   return (
     <motion.div
@@ -62,7 +62,7 @@ export function TodaysWorkoutCard({ workout }: TodaysWorkoutCardProps) {
           <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: \`0%\` }}
+              animate={{ width: `0%` }}
               transition={{ duration: 1.5, ease: "easeOut", delay: 0.6 }}
               className="h-full bg-gradient-to-r from-[#ADFF00]/50 to-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)] rounded-full relative"
             >
