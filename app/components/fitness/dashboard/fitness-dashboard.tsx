@@ -7,7 +7,7 @@ import { AIMessageCard } from "./ai-message-card";
 import { HorizontalCalendar } from "./horizontal-calendar";
 import { CategoryPills } from "./category-pills";
 import { HorizontalWorkoutList } from "./horizontal-workout-list";
-import { BottomNav } from "./bottom-nav";
+
 
 interface FitnessDashboardProps {
   user: User;
@@ -49,7 +49,7 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
       </main>
 
       {/* 6. Custom Neon Bottom Navigation */}
-      <BottomNav />
+
     </div>
   );
 }
