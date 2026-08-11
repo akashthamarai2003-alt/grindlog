@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<OnboardingData> }) {
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(1);
   const [data, setData] = useState<Partial<OnboardingData>>(initialData);
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
@@ -18,11 +19,19 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const showProgress = step > 1 && step < 12;
 
   const handleNext = () => {
+    setDirection(1);
     setStep(s => Math.min(s + 1, totalSteps));
   };
 
-  const handleBack = () => setStep(s => Math.max(s - 1, 1));
-  const jumpToStep = (s: number) => setStep(s);
+  const handleBack = () => {
+    setDirection(-1);
+    setStep(s => Math.max(s - 1, 1));
+  };
+
+  const jumpToStep = (s: number) => {
+    setDirection(s > step ? 1 : -1);
+    setStep(s);
+  };
 
   const handleUpdate = (updates: Partial<OnboardingData>) => {
     setData(prev => ({ ...prev, ...updates }));
@@ -53,6 +62,21 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 30 : -30,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 30 : -30,
+      opacity: 0,
+    })
   };
 
   const OptionCard = ({ 
@@ -688,13 +712,15 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
 
         {/* Main Content Area */}
         <div className="flex-1 relative">
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
             <motion.div
               key={step}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 overflow-y-auto overflow-x-hidden scrollbar-hide"
             >
               {renderStep()}
