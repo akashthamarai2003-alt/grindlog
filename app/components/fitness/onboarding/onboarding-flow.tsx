@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
-import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, Clock, ListChecks, ArrowRight, User } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown } from "lucide-react";
 import { toast } from "sonner";
 
 export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<OnboardingData> }) {
@@ -16,8 +16,8 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const [showSchedule, setShowSchedule] = useState(false);
   const router = useRouter();
 
-  const totalSteps = 12;
-  const showProgress = step > 1 && step < 12;
+  const totalSteps = 15;
+  const showProgress = step > 1 && step < 15;
 
   const handleNext = () => {
     setDirection(1);
@@ -807,7 +807,348 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           </div>
         );
 
-      case 11:
+            case 11:
+        return (
+          <div className="flex flex-col h-[85vh] justify-center px-6 relative text-center">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
+              <div className="w-20 h-20 bg-yellow-500/10 border border-yellow-500/30 rounded-3xl flex items-center justify-center mb-8 text-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.15)]">
+                <AlertTriangle size={36} strokeWidth={1.5} />
+              </div>
+              <h1 className="text-4xl font-black text-white tracking-tight leading-tight mb-5">
+                Anything we should know about your body?
+              </h1>
+              <p className="text-lg text-gray-400 mb-6">
+                Help your AI coach understand your limitations, previous injuries, and physical concerns so it can create a safer training plan for you.
+              </p>
+              
+              <div className="flex items-center gap-2 bg-[#121E12] px-4 py-2 rounded-full border border-[#1E2E1D] mx-auto text-sm font-semibold text-gray-300">
+                <span className="text-xl">🧍</span>
+                <span>Your body comes first</span>
+              </div>
+              
+              <p className="text-sm text-gray-500 mt-6">This takes about 1 minute.</p>
+            </motion.div>
+            <div className="pb-8 space-y-4">
+              <button 
+                onClick={handleNext} 
+                className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg shadow-[0_0_30px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group hover:bg-[#c4ff33]"
+              >
+                <span>Continue</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+        );
+
+      case 12:
+        return (
+          <div className="px-6 pt-6 pb-36">
+            <StepHeader title="Physical Concerns" subtitle="Help us build a safe plan for you." />
+            <div className="space-y-8">
+              
+              {/* 2. Current Physical Problems */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Do you currently have any physical problems? <span className="text-xs text-gray-500 font-normal ml-2">Select all that apply</span></label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Back pain", "Neck pain", "Shoulder pain", "Knee pain", "Hip pain", 
+                    "Ankle/foot pain", "Wrist pain", "Elbow pain", "Muscle/joint pain", 
+                    "Mobility limitation", "None", "Other"
+                  ].map(opt => {
+                    const isSelected = data.physical_problems?.includes(opt) || false;
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => {
+                          let newProbs = [...(data.physical_problems || [])];
+                          if (opt === "None") {
+                            newProbs = ["None"];
+                          } else {
+                            newProbs = newProbs.filter(e => e !== "None");
+                            if (isSelected) {
+                              newProbs = newProbs.filter(e => e !== opt);
+                            } else {
+                              newProbs.push(opt);
+                            }
+                          }
+                          handleUpdate({ physical_problems: newProbs });
+                          // Reset current pain severity if they say None
+                          if (opt === "None" || newProbs.length === 0) {
+                            handleUpdate({ current_pain_severity: undefined, current_pain_triggers: [] });
+                          }
+                        }}
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                          isSelected 
+                            ? "bg-red-500/10 border-red-500 text-red-500" 
+                            : (opt === "None" && isSelected) ? "bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]" : "bg-[#121E12] border-[#1A2619] text-gray-400 hover:border-gray-500 hover:text-gray-200"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 4. Current Pain (Conditional based on step 2) */}
+              <AnimatePresence>
+                {data.physical_problems && data.physical_problems.length > 0 && !data.physical_problems.includes("None") && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 32 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-4 bg-red-950/20 border border-red-900/50 rounded-2xl space-y-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-red-400 mb-4">How severe is the pain right now?</label>
+                        <div className="flex justify-between text-xs text-gray-500 font-semibold mb-2">
+                          <span>No pain</span>
+                          <span>Severe</span>
+                        </div>
+                        <div className="flex justify-between gap-1">
+                          {[0,1,2,3,4,5,6,7,8,9,10].map(val => (
+                            <button
+                              key={val}
+                              onClick={() => handleUpdate({ current_pain_severity: val })}
+                              className={`flex-1 aspect-square rounded flex items-center justify-center font-bold text-xs transition-colors ${
+                                data.current_pain_severity === val 
+                                  ? (val > 6 ? "bg-red-600 text-white" : val > 3 ? "bg-orange-500 text-white" : "bg-yellow-500 text-white") 
+                                  : "bg-[#1A2619] text-gray-500 hover:bg-[#233522]"
+                              }`}
+                            >
+                              {val}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-red-400 mb-3">When do you usually feel it?</label>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            "During exercise", "After exercise", "While walking", 
+                            "While sitting", "During daily activities", "All the time", "Other"
+                          ].map(opt => {
+                            const isSelected = data.current_pain_triggers?.includes(opt) || false;
+                            return (
+                              <button
+                                key={opt}
+                                onClick={() => {
+                                  let newTriggers = [...(data.current_pain_triggers || [])];
+                                  if (isSelected) newTriggers = newTriggers.filter(e => e !== opt);
+                                  else newTriggers.push(opt);
+                                  handleUpdate({ current_pain_triggers: newTriggers });
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                                  isSelected ? "bg-red-500/20 border-red-500 text-red-400" : "bg-[#121E12] border-[#1A2619] text-gray-400"
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 3. Previous Injuries */}
+              <div className="pt-4 border-t border-[#1A2619]">
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Have you had any previous injuries?</label>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => handleUpdate({ previous_injuries: false, previous_injury_areas: [], previous_injury_timeline: undefined })}
+                    className={`flex-1 py-3 rounded-xl font-bold transition-all border ${
+                      data.previous_injuries === false ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    No
+                  </button>
+                  <button 
+                    onClick={() => handleUpdate({ previous_injuries: true })}
+                    className={`flex-1 py-3 rounded-xl font-bold transition-all border ${
+                      data.previous_injuries === true ? 'bg-orange-500/10 border-orange-500 text-orange-500' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    Yes
+                  </button>
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {data.previous_injuries && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    className="overflow-hidden space-y-6"
+                  >
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 mb-3">Which area?</label>
+                      <div className="flex flex-wrap gap-2">
+                        {["Shoulder", "Knee", "Back", "Ankle", "Wrist", "Elbow", "Hip", "Other"].map(opt => {
+                          const isSelected = data.previous_injury_areas?.includes(opt) || false;
+                          return (
+                            <button
+                              key={opt}
+                              onClick={() => {
+                                let newAreas = [...(data.previous_injury_areas || [])];
+                                if (isSelected) newAreas = newAreas.filter(e => e !== opt);
+                                else newAreas.push(opt);
+                                handleUpdate({ previous_injury_areas: newAreas });
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                                isSelected ? "bg-orange-500/20 border-orange-500 text-orange-400" : "bg-[#121E12] border-[#1A2619] text-gray-400"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 mb-3">When did it happen?</label>
+                      <div className="flex flex-col gap-2">
+                        {["Recently", "Within the last year", "More than 1 year ago"].map(opt => (
+                          <button
+                            key={opt}
+                            onClick={() => handleUpdate({ previous_injury_timeline: opt })}
+                            className={`p-3 rounded-xl text-sm font-semibold transition-all border text-left ${
+                              data.previous_injury_timeline === opt ? "bg-orange-500/10 border-orange-500 text-orange-500" : "bg-[#121E12] border-[#1A2619] text-gray-400"
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 5. Exercise Limitations */}
+              <div className="pt-4 border-t border-[#1A2619]">
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Are there any movements you cannot comfortably perform?</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Squatting", "Running", "Jumping", "Bending", "Overhead movements", 
+                    "Push-ups", "Pull-ups", "Lunges", "None", "Other"
+                  ].map(opt => {
+                    const isSelected = data.exercise_limitations?.includes(opt) || false;
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => {
+                          let newLims = [...(data.exercise_limitations || [])];
+                          if (opt === "None") {
+                            newLims = ["None"];
+                          } else {
+                            newLims = newLims.filter(e => e !== "None");
+                            if (isSelected) {
+                              newLims = newLims.filter(e => e !== opt);
+                            } else {
+                              newLims.push(opt);
+                            }
+                          }
+                          handleUpdate({ exercise_limitations: newLims });
+                        }}
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                          isSelected 
+                            ? "bg-yellow-500/10 border-yellow-500 text-yellow-500" 
+                            : "bg-[#121E12] border-[#1A2619] text-gray-400 hover:border-gray-500"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 6. Medical Guidance & 7. Additional Notes */}
+              <div className="pt-4 border-t border-[#1A2619] space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-3">Has a healthcare professional ever advised you to avoid certain exercises or activities?</label>
+                  <input 
+                    type="text" 
+                    value={data.medical_guidance || ""}
+                    onChange={e => handleUpdate({ medical_guidance: e.target.value })}
+                    placeholder="If yes, what should you avoid?"
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors outline-none placeholder:text-gray-600" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-3">Anything else your AI coach should know? (Optional)</label>
+                  <textarea 
+                    value={data.additional_health_notes || ""}
+                    onChange={e => handleUpdate({ additional_health_notes: e.target.value })}
+                    placeholder="Example: 'I sometimes get lower-back discomfort after sitting for long hours.'"
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600 min-h-[100px] resize-none"
+                  />
+                </div>
+              </div>
+
+            </div>
+            <BottomBar 
+              canProceed={
+                data.physical_problems !== undefined && data.physical_problems.length > 0 &&
+                data.previous_injuries !== undefined &&
+                data.exercise_limitations !== undefined && data.exercise_limitations.length > 0
+              } 
+              onProceed={handleNext} 
+            />
+          </div>
+        );
+
+      case 13:
+        return (
+          <div className="flex flex-col h-[85vh] justify-center px-6 relative">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center text-center">
+              <div className="w-16 h-16 bg-[#121E12] border border-[#1E2E1D] rounded-full flex items-center justify-center mb-6 text-gray-400">
+                <Stethoscope size={28} />
+              </div>
+              <h2 className="text-3xl font-black text-white tracking-tight mb-4">Your safety comes first</h2>
+              <p className="text-gray-400 text-sm mb-4 leading-relaxed">
+                Your answers help personalize your fitness recommendations. The AI cannot diagnose injuries or medical conditions.
+              </p>
+              <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                If you have significant pain, a serious injury, or have been advised by a healthcare professional to restrict exercise, follow professional guidance before starting or changing your workout.
+              </p>
+              
+              <button 
+                onClick={() => handleUpdate({ safety_acknowledged: !data.safety_acknowledged })}
+                className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                  data.safety_acknowledged ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D]"
+                }`}
+              >
+                <div className={`w-6 h-6 rounded flex items-center justify-center border ${
+                  data.safety_acknowledged ? "bg-[#ADFF00] border-[#ADFF00] text-black" : "border-gray-600"
+                }`}>
+                  {data.safety_acknowledged && <Check size={16} strokeWidth={3} />}
+                </div>
+                <span className={`font-semibold text-left ${data.safety_acknowledged ? "text-[#ADFF00]" : "text-gray-300"}`}>
+                  I understand
+                </span>
+              </button>
+            </motion.div>
+            <div className="pb-8">
+              <button 
+                onClick={handleNext} 
+                disabled={!data.safety_acknowledged}
+                className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg shadow-[0_0_30px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none hover:bg-[#c4ff33]"
+              >
+                <span>Continue</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        );
+
+case 14:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Review Your Profile" subtitle="Make sure everything looks good." />
@@ -828,6 +1169,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                 { label: "Environment", value: data.training_location ? `${data.training_location}${data.equipment?.length ? ` (${data.equipment.join(", ")})` : ''}` : null, stepIndex: 7 },
                 { label: "Schedule", value: data.workout_duration_minutes ? `${data.workout_duration_minutes} min, ${data.preferred_training_time}` : null, stepIndex: 8 },
                 { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 9 },
+                { label: "Health & Safety", value: data.physical_problems?.includes("None") && data.previous_injuries === false ? "No concerns" : "Concerns noted", stepIndex: 12 },
                 { label: "Lifestyle", value: `${data.activity_level || "Not set"}, ${data.daily_steps || "Not set"} steps, ${data.sleep_duration || "Not set"} sleep`, stepIndex: 10 }
               ].map((section, idx) => (
                 <div key={idx} className="bg-[#0D150D] p-4 rounded-2xl border border-[#1A2619] flex justify-between items-center">
@@ -847,7 +1189,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
           </div>
         );
-      case 12:
+      case 15:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 text-center">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
@@ -889,7 +1231,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
         <div className="h-16 flex items-center px-4 relative z-10">
-          {step > 1 && step < 12 && (
+          {step > 1 && step < 15 && (
             <button 
               onClick={handleBack}
               className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"

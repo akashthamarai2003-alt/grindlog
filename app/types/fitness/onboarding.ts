@@ -60,6 +60,17 @@ export const OnboardingSchema = z.object({
   workout_time: z.string().optional(),
   work_time: z.string().optional(),
   
+  physical_problems: z.array(z.string()).optional(),
+  previous_injuries: z.boolean().optional(),
+  previous_injury_areas: z.array(z.string()).optional(),
+  previous_injury_timeline: z.string().optional(),
+  current_pain_severity: z.number().min(0).max(10).optional(),
+  current_pain_triggers: z.array(z.string()).optional(),
+  exercise_limitations: z.array(z.string()).optional(),
+  medical_guidance: z.string().optional(),
+  additional_health_notes: z.string().optional(),
+  safety_acknowledged: z.boolean().optional(),
+  
   lifestyle_description: z.string().optional()
 });
 
