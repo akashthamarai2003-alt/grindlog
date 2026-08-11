@@ -64,7 +64,7 @@ async function DashboardContent() {
     dayNumber = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} dayNumber={dayNumber} />;
+  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} />;
 }
 
 export default function FitnessHome() {

@@ -9,6 +9,7 @@ import { CategoryPills } from "./category-pills";
 import { TodaysWorkoutCard } from "./todays-workout-card";
 import { TransformationCard } from "./transformation-card";
 import { TodaysNutritionCard } from "./todays-nutrition-card";
+import { DailyActivityCard } from "./daily-activity-card";
 interface FitnessDashboardProps {
   user: User;
   profile: Partial<OnboardingData>;
@@ -16,10 +17,11 @@ interface FitnessDashboardProps {
   hasPlan?: boolean;
   latestReview?: any;
   nutrition?: any;
+  lifestyle?: any;
   dayNumber?: number;
 }
 
-export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestReview, nutrition, dayNumber = 1 }: FitnessDashboardProps) {
+export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestReview, nutrition, lifestyle, dayNumber = 1 }: FitnessDashboardProps) {
   // Extract user's first name, defaulting to "User" if missing
   const firstName = profile?.name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || "User";
 
@@ -51,6 +53,9 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
 
         {/* 6. Today's Nutrition Card */}
         <TodaysNutritionCard nutrition={nutrition} />
+
+        {/* 7. Daily Activity Card */}
+        <DailyActivityCard lifestyle={lifestyle} workoutCompleted={todayWorkout?.status === 'completed'} />
 
       </main>
 
