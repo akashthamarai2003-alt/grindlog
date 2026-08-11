@@ -1,83 +1,58 @@
 "use client";
 
-import { useState } from "react";
-import { FullWorkoutData } from "@/types/fitness/workout";
-import { ExerciseCard } from "./exercise-card";
-import { RestTimer } from "./rest-timer";
-import { WorkoutProgress } from "./workout-progress";
-import { WorkoutControls } from "./workout-controls";
+import { TodaysExercisesList } from "./todays-exercises-list";
+import { AiCoachNote } from "./ai-coach-note";
+import { WorkoutSummaryCard } from "./workout-summary-card";
+import { Pause, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 
 interface WorkoutExecutionProps {
-  workout: FullWorkoutData;
+  workout: FitnessWorkout & {
+    fitness_os_exercises: (FitnessExercise & { fitness_os_sets: FitnessSet[] })[];
+  };
   sessionId: string;
 }
 
 export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) {
   const router = useRouter();
-  
-  // Flatten sets for progress calculation
-  const allSets = workout.fitness_os_exercises.flatMap(e => e.fitness_os_sets);
-  const totalSets = allSets.length;
-  const completedSets = allSets.filter(s => s.completed).length;
 
-  const [activeRestSeconds, setActiveRestSeconds] = useState<number | null>(null);
-
-  // Determine current active session state (paused vs active)
-  const currentSession = workout.fitness_os_workout_sessions.find(s => s.id === sessionId);
-  const isPaused = currentSession?.status === "paused";
-
-  const handleSetCompleted = (restSeconds: number) => {
-    setActiveRestSeconds(restSeconds);
-    // After state update, the component will re-render and we might want to automatically scroll to timer
-    // but for now simple display is fine.
+  const handleFinish = () => {
+    // In real app, complete the session in DB
+    router.push(`/fitness/workout/${workout.id}/summary`);
   };
-
-  const handleRestComplete = () => {
-    setActiveRestSeconds(null);
-  };
-
-  const hasIncompleteSets = completedSets < totalSets;
-
-  // If status is completed, redirect to summary
-  if (workout.status === "completed") {
-    // Actually we shouldn't render this if it's already completed.
-    // The server component should have redirected.
-  }
-
-  // Sort exercises by order
-  const sortedExercises = [...workout.fitness_os_exercises].sort((a, b) => a.exercise_order - b.exercise_order);
 
   return (
-    <div className="pb-32">
-      <WorkoutProgress completedSets={completedSets} totalSets={totalSets} />
-      
-      {activeRestSeconds !== null && (
-        <div className="mb-6 sticky top-4 z-30">
-          <RestTimer 
-            initialSeconds={activeRestSeconds} 
-            onComplete={handleRestComplete}
-            onSkip={handleRestComplete} 
-          />
-        </div>
-      )}
-
-      <div className={`space-y-6 ${isPaused ? 'opacity-50 pointer-events-none grayscale-[0.5] transition-all' : 'transition-all'}`}>
-        {sortedExercises.map((exercise) => (
-          <ExerciseCard 
-            key={exercise.id} 
-            exercise={exercise} 
-            onSetCompleted={handleSetCompleted}
-            isTimerActive={activeRestSeconds !== null}
-          />
-        ))}
+    <div className="w-full h-full flex flex-col pb-32">
+      <div className="mt-2">
+        <WorkoutSummaryCard 
+          workout={workout as any} 
+          exerciseCount={workout.fitness_os_exercises?.length || 6} 
+        />
+        <AiCoachNote />
+        <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises} />
       </div>
 
-      <WorkoutControls 
-        sessionId={sessionId} 
-        isPaused={isPaused} 
-        hasIncompleteSets={hasIncompleteSets} 
-      />
+      <div className="w-full h-px bg-white/10 my-8" />
+
+      <div className="flex flex-col gap-3 px-2">
+        <button 
+          onClick={() => toast("Workout paused.")}
+          className="w-full py-4 bg-[#111A10] border border-white/10 hover:bg-white/5 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2"
+        >
+          <Pause className="w-4 h-4 text-white/50" />
+          <span className="text-[11px] font-black text-white/70 uppercase tracking-widest">Pause Workout</span>
+        </button>
+
+        <button 
+          onClick={handleFinish}
+          className="w-full py-4 bg-[#ADFF00] text-black active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)]"
+        >
+          <CheckCircle className="w-4 h-4" />
+          <span className="text-[11px] font-black uppercase tracking-widest">Finish Workout</span>
+        </button>
+      </div>
     </div>
   );
 }

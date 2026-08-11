@@ -2,8 +2,9 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import { WorkoutSummaryCard } from "@/components/fitness/workout/workout-summary-card";
-import { AiCoachNote } from "@/components/fitness/workout/ai-coach-note";
 import { TodaysExercisesList } from "@/components/fitness/workout/todays-exercises-list";
+import { ActiveWorkoutResumeCard } from "@/components/fitness/workout/active-workout-resume-card";
+import { AiCoachNote } from "@/components/fitness/workout/ai-coach-note";
 import { redirect } from "next/navigation";
 
 export default async function WorkoutIndexPage() {
@@ -59,10 +60,18 @@ export default async function WorkoutIndexPage() {
           />
           
           <div className="mt-2">
-            <WorkoutSummaryCard 
-              workout={workout} 
-              exerciseCount={workout.fitness_os_exercises?.length || 6} 
-            />
+            {workout.status === "in_progress" ? (
+              <ActiveWorkoutResumeCard 
+                workoutId={workout.id} 
+                completedExercises={workout.fitness_os_exercises?.filter((e: any) => e.fitness_os_sets?.every((s: any) => s.completed)).length || 4} 
+                totalExercises={workout.fitness_os_exercises?.length || 6} 
+              />
+            ) : (
+              <WorkoutSummaryCard 
+                workout={workout} 
+                exerciseCount={workout.fitness_os_exercises?.length || 6} 
+              />
+            )}
             
             <AiCoachNote />
             

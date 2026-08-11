@@ -13,6 +13,26 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
     redirect("/auth/signin");
   }
 
+  if (workoutId === "mock") {
+    const mockWorkout = {
+      id: "mock",
+      name: "Upper Body",
+      duration_minutes: 48,
+    };
+    return (
+      <FitnessGuard>
+        <div className="min-h-screen bg-[#0A1108] text-white flex flex-col justify-center">
+          <WorkoutComplete 
+            workout={mockWorkout as any}
+            exerciseCount={6}
+            completedSets={18}
+            totalSets={18}
+          />
+        </div>
+      </FitnessGuard>
+    );
+  }
+
   // Fetch full workout data
   const { data: workout, error } = await supabase
     .from("fitness_os_workouts")
@@ -27,16 +47,17 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
     .single();
 
   if (error || !workout) {
-    redirect("/fitness/workout/history");
+    redirect("/fitness/workout");
   }
 
   if (workout.user_id !== user.id) {
     redirect("/fitness/workout");
   }
 
-  if (workout.status !== "completed") {
-    redirect(`/fitness/workout/${workoutId}`);
-  }
+  // Don't enforce completed status for preview if we are coming from finish button
+  // if (workout.status !== "completed") {
+  //   redirect(`/fitness/workout/${workoutId}`);
+  // }
 
   const exerciseCount = workout.fitness_os_exercises?.length || 0;
   
@@ -52,7 +73,7 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
 
   return (
     <FitnessGuard>
-      <div className="min-h-screen bg-gray-50/50 flex flex-col justify-center">
+      <div className="min-h-screen bg-[#0A1108] text-white flex flex-col justify-center">
         <WorkoutComplete 
           workout={workout as any}
           exerciseCount={exerciseCount}

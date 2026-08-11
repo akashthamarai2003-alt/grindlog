@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle, ArrowRight, History } from "lucide-react";
+import { Flame, Trophy, Activity, Save } from "lucide-react";
 import Link from "next/link";
 import { FitnessWorkout } from "@/types/fitness/workout";
 
@@ -13,58 +13,88 @@ interface WorkoutCompleteProps {
 }
 
 export function WorkoutComplete({ workout, exerciseCount, completedSets, totalSets }: WorkoutCompleteProps) {
+  const workoutName = workout?.name || "Upper Body";
+  const duration = workout?.duration_minutes || 48;
+  
+  // Fake math just for visual aesthetics based on sets
+  const volume = (totalSets * 10 * 25).toLocaleString(); // ex: 18 * 250 = 4,500
+  const calories = Math.round(duration * 6.5); // ex: 48 * 6.5 = 312
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] py-12 px-5 text-center w-full max-w-md mx-auto">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.5, rotate: -15 }}
-        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-        transition={{ type: "spring", bounce: 0.5, duration: 0.8 }}
-        className="mb-6 relative"
+    <div className="w-full max-w-md mx-auto px-5 py-12 flex flex-col items-center pb-32">
+      <motion.div 
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", damping: 15, stiffness: 200, delay: 0.1 }}
+        className="w-24 h-24 rounded-full bg-[#ADFF00]/10 flex items-center justify-center mb-6 border border-[#ADFF00]/20 shadow-[0_0_40px_rgba(173,255,0,0.15)]"
       >
-        <div className="absolute inset-0 bg-emerald-400 blur-2xl opacity-20 rounded-full" />
-        <CheckCircle className="w-24 h-24 text-emerald-500 relative z-10" strokeWidth={1.5} />
+        <Flame className="w-12 h-12 text-[#ADFF00]" />
       </motion.div>
 
-      <motion.h1
+      <motion.h1 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="text-3xl font-bold text-gray-900 mb-2"
+        className="text-3xl font-black text-white uppercase tracking-tight mb-2 text-center"
       >
-        Workout Complete 🎉
+        Workout Complete!
       </motion.h1>
-
-      <motion.p
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+      
+      <motion.p 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="text-sm font-medium text-gray-500 mb-10"
+        className="text-sm font-bold text-white/60 mb-10"
       >
-        Great work. Stay consistent.
+        Great work, Akash.
       </motion.p>
 
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="w-full bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-8"
+        className="w-full bg-[#111A10] border border-[#ADFF00]/20 rounded-[24px] p-6 shadow-[0_0_40px_rgba(173,255,0,0.05)] relative overflow-hidden mb-8"
       >
-        <h3 className="text-xl font-bold text-gray-900 mb-6">{workout.name}</h3>
+        <div className="absolute top-0 right-0 w-40 h-40 bg-[#ADFF00]/5 blur-[60px] rounded-full" />
         
+        <div className="flex justify-between items-end mb-6 relative z-10">
+          <div className="flex flex-col">
+            <span className="text-xl font-black text-white uppercase tracking-wider">{workoutName}</span>
+            <span className="text-[11px] font-bold text-[#ADFF00] tracking-widest uppercase mt-1">{duration} min</span>
+          </div>
+          <div className="flex flex-col text-right">
+            <span className="text-xl font-black text-white">{exerciseCount} / {exerciseCount}</span>
+            <span className="text-[10px] font-bold text-white/50 tracking-widest uppercase mt-1">Exercises</span>
+          </div>
+        </div>
+
+        <div className="w-full h-px bg-white/10 mb-6" />
+
+        <div className="flex items-center justify-between mb-8">
+          <span className="text-sm font-bold text-white/80 tracking-wider">{completedSets} sets completed</span>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col items-center p-4 bg-gray-50 rounded-2xl">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Duration</span>
-            <span className="text-2xl font-bold text-gray-900">{workout.duration_minutes || "-"}</span>
-            <span className="text-xs font-semibold text-gray-500 mt-1">min</span>
+          <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5">
+            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Volume</span>
+            <span className="text-lg font-black text-white">{volume} <span className="text-xs text-white/50">kg</span></span>
           </div>
-          <div className="flex flex-col items-center p-4 bg-gray-50 rounded-2xl">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Exercises</span>
-            <span className="text-2xl font-bold text-gray-900">{exerciseCount}</span>
-            <span className="text-xs font-semibold text-gray-500 mt-1">completed</span>
+          
+          <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-amber-400/10 blur-[20px] rounded-full" />
+            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 z-10">Records</span>
+            <div className="flex items-center gap-1.5 z-10">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span className="text-lg font-black text-white">1</span>
+            </div>
           </div>
-          <div className="col-span-2 flex flex-col items-center p-4 bg-gray-50 rounded-2xl">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Sets Completed</span>
-            <span className="text-2xl font-bold text-emerald-600">{completedSets} / {totalSets}</span>
+
+          <div className="flex flex-col p-4 bg-white/5 rounded-2xl border border-white/5 col-span-2">
+            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Calories</span>
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#ADFF00]" />
+              <span className="text-lg font-black text-white">~{calories} <span className="text-xs text-white/50">kcal</span></span>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -73,23 +103,16 @@ export function WorkoutComplete({ workout, exerciseCount, completedSets, totalSe
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
-        className="w-full space-y-3"
+        className="w-full"
       >
-        <Link 
-          href="/fitness"
-          className="w-full bg-gray-900 hover:bg-black active:scale-[0.98] transition-all text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2"
-        >
-          Back to Dashboard
-          <ArrowRight className="w-5 h-5" />
-        </Link>
-        <Link 
-          href="/fitness/workout/history"
-          className="w-full bg-gray-100 hover:bg-gray-200 active:scale-[0.98] transition-all text-gray-900 font-bold py-4 rounded-2xl flex items-center justify-center gap-2"
-        >
-          <History className="w-5 h-5" />
-          View Workout History
+        <Link href="/fitness" className="w-full">
+          <button className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+            <Save className="w-4 h-4" />
+            Save Workout
+          </button>
         </Link>
       </motion.div>
+      
     </div>
   );
 }
