@@ -80,7 +80,9 @@ export const OnboardingSchema = z.object({
   body_scan_left: z.string().optional(),
   body_scan_right: z.string().optional(),
   body_scan_back: z.string().optional(),
-  body_scan_inspiration: z.string().optional()
+  body_scan_inspiration: z.string().optional(),
+  
+  ai_strategy: z.record(z.any()).optional()
 });
 
 export type OnboardingData = z.infer<typeof OnboardingSchema>;

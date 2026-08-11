@@ -39,31 +39,9 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
     setData(prev => ({ ...prev, ...updates }));
   };
 
-  const handleComplete = async () => {
-    setIsSaving(true);
-    
-    const result = OnboardingSchema.safeParse(data);
-    if (!result.success) {
-      toast.error("Please fill in all required fields correctly.");
-      setIsSaving(false);
-      return;
-    }
-
-    try {
-      const res = await saveFitnessOnboardingAction(data);
-      if (res.success) {
-        toast.success("Profile created!");
-        router.push("/fitness/scanner");
-        router.refresh();
-      } else {
-        toast.error(res.error || "Failed to save profile.");
-      }
-    } catch (e: any) {
-      console.error("Server Action Exception:", e);
-      toast.error(`Network error: ${e.message || String(e)}`);
-    } finally {
-      setIsSaving(false);
-    }
+  const handleComplete = () => {
+    router.push("/fitness/dashboard"); // Assuming dashboard is the entry point, or scanner
+    router.refresh();
   };
 
   const variants = {
@@ -1442,7 +1420,7 @@ case 16:
             <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
           </div>
         );      case 17:
-        return <AIAnalysisScreen onComplete={handleComplete} isSaving={isSaving} />;
+        return <AIAnalysisScreen onComplete={handleComplete} data={data} />;
 
       default:
         return null;
@@ -1500,15 +1478,119 @@ case 16:
 }
 
 
-const AIAnalysisScreen = ({ onComplete, isSaving }: { onComplete: () => void, isSaving: boolean }) => {
+const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: any }) => {
   const [phase, setPhase] = useState(0);
+  const [isDone, setIsDone] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 2000);
     const t2 = setTimeout(() => setPhase(2), 3500);
     const t3 = setTimeout(() => setPhase(3), 5500);
     const t4 = setTimeout(() => setPhase(4), 7500);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+
+    let isMounted = true;
+    fetch('/api/fitness/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (isMounted) {
+        if (res.success) {
+          setIsDone(true);
+        } else {
+          setError(res.error || "Analysis failed");
+        }
+      }
+    })
+    .catch(err => {
+      if (isMounted) {
+        setError(err.message);
+      }
+    });
+
+    return () => { 
+      isMounted = false;
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
+    };
+  }, [data]);
+
+  return (
+    <div className="flex flex-col min-h-[100dvh] justify-center px-6 relative overflow-hidden bg-[#0A1108]">
+      {/* Background glow */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+        <div className="w-[300px] h-[300px] bg-[#ADFF00] rounded-full blur-[100px] animate-pulse" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm mx-auto py-12">
+        <div className="flex justify-center mb-10 h-16">
+          {phase < 4 ? (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+              className="w-16 h-16 border-4 border-[#1A2619] border-t-[#ADFF00] rounded-full"
+            />
+          ) : (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-16 h-16 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(173,255,0,0.5)]">
+              <Check size={32} strokeWidth={3} />
+            </motion.div>
+          )}
+        </div>
+
+        <div className="space-y-8 min-h-[280px]">
+          <AnalysisBlock 
+            title="Understanding your profile..." 
+            items={["Body information", "Fitness goal", "Training experience", "Lifestyle", "Nutrition preferences"]}
+            isActive={phase >= 0}
+            isComplete={phase >= 1}
+          />
+          <AnalysisBlock 
+            title="Analyzing your uploaded photos..." 
+            items={["Visual assessment"]}
+            isActive={phase >= 1}
+            isComplete={phase >= 2}
+          />
+          <AnalysisBlock 
+            title="Building your transformation strategy..." 
+            items={["Training strategy", "Nutrition strategy", "Progress roadmap"]}
+            isActive={phase >= 2}
+            isComplete={phase >= 3}
+          />
+        </div>
+
+        <div className="mt-8 h-16">
+          <AnimatePresence>
+            {phase >= 4 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+              >
+                <button 
+                  onClick={onComplete} 
+                  disabled={!isDone && !error}
+                  className={`w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center ${error ? 'bg-red-500/20 text-red-500 border border-red-500' : 'bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33]'} disabled:opacity-70 disabled:cursor-not-allowed`}
+                >
+                  {error ? (
+                    "Analysis Error"
+                  ) : !isDone ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="animate-spin w-5 h-5" />
+                      <span>Finalizing Strategy...</span>
+                    </div>
+                  ) : (
+                    "View Transformation Plan"
+                  )}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+};
   }, []);
 
   return (
