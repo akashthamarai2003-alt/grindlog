@@ -17,8 +17,7 @@ export function PlanPreview({ planId, onConfirm }: PlanPreviewProps) {
 
   useEffect(() => {
     const fetchPlan = async () => {
-      // @ts-ignore
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("fitness_os_workout_plans")
         .select(`
           name, description, goal,

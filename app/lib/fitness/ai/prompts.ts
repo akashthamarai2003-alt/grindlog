@@ -14,7 +14,8 @@ CRITICAL RULES:
 For workout schedules, generate workouts exactly starting from tomorrow or the current week, distributing them according to the user's preferred days and 'training_days_per_week'.
 `;
 
-export function buildFitnessPlanPrompt(profile: Partial<OnboardingData>, todayDateStr: string, geminiAnalysis?: string | null): string {
+export function buildFitnessPlanPrompt(profileData: any, todayDateStr: string, geminiAnalysis?: string | null): string {
+  const profile: any = profileData;
   return `Please generate a personalized fitness plan for me.
   
 User Profile:

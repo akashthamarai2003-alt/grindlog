@@ -571,7 +571,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
               </AnimatePresence>
             </div>
             <BottomBar 
-              canProceed={!!data.training_location && (data.training_location === "Outdoor" || (data.equipment && data.equipment.length > 0))} 
+              canProceed={Boolean(data.training_location && (data.training_location === "Outdoor" || (data.equipment && data.equipment.length > 0)))} 
               onProceed={handleNext} 
             />
           </div>

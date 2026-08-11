@@ -192,7 +192,7 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
           
           <div className="space-y-3">
             {items.map((item, localIdx) => {
-              const globalIdx = groceryList.findIndex(g => g.name === item.name);
+              const globalIdx = groceryList.findIndex((g: any) => g.name === item.name);
               return (
                 <div key={localIdx} className="bg-[#121E12] border border-[#1A2619] rounded-xl p-4 flex items-center justify-between">
                   <div className="flex-1 pr-4">
