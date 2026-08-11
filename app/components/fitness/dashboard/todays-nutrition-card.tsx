@@ -10,17 +10,16 @@ interface TodaysNutritionCardProps {
 }
 
 export function TodaysNutritionCard({ nutrition }: TodaysNutritionCardProps) {
-  // Use real data if available, fallback to mock data
   const targetCalories = nutrition?.daily_calories || 2100;
-  // Let's assume user has consumed some for the visual effect
-  const currentCalories = 1420; 
+  // TODO: Fetch from actual consumption logs
+  const currentCalories = 0; 
   const caloriesPercent = Math.min((currentCalories / targetCalories) * 100, 100);
 
   const targetProtein = nutrition?.protein_grams || 120;
-  const currentProtein = 82;
+  // TODO: Fetch from actual consumption logs
+  const currentProtein = 0;
   const proteinPercent = Math.min((currentProtein / targetProtein) * 100, 100);
 
-  // Fallback to mock meals if nutrition data is missing
   const meals = nutrition?.meals && nutrition.meals.length > 0 
     ? nutrition.meals.map((m: any, idx: number) => ({
         id: idx,
@@ -28,12 +27,11 @@ export function TodaysNutritionCard({ nutrition }: TodaysNutritionCardProps) {
         desc: m.items?.join(" + ") || "Planned Meal",
         completed: false // Default to not completed unless we track it
       }))
-    : [
-        { id: 1, name: "Breakfast", desc: "Idli + 3 Eggs", completed: true },
-        { id: 2, name: "Lunch", desc: "Rice + Sambar", completed: true },
-        { id: 3, name: "Snack", desc: "Banana + Chana", completed: false },
-        { id: 4, name: "Dinner", desc: "Planned Meal", completed: false },
-      ];
+    : [];
+    
+  if (meals.length === 0) {
+    return null;
+  }
 
   // We can add simple local state just for the UI interaction of ticking meals
   const [completedMeals, setCompletedMeals] = useState<Record<number, boolean>>(
