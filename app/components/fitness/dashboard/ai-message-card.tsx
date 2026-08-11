@@ -1,6 +1,7 @@
 "use client";
 
 import { Brain, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export function AIMessageCard() {
   return (
@@ -29,9 +30,11 @@ export function AIMessageCard() {
 
       {/* Action Button */}
       <div className="relative z-10 shrink-0">
-        <button className="bg-black text-white text-[10px] font-black uppercase px-4 py-2.5 rounded-full flex items-center gap-1 shadow-xl hover:bg-gray-900 transition-colors">
-          Start <ArrowRight size={12} />
-        </button>
+        <Link href="/fitness/workout">
+          <button className="bg-black text-white text-[10px] font-black uppercase px-4 py-2.5 rounded-full flex items-center gap-1 shadow-xl hover:bg-gray-900 transition-colors">
+            Start <ArrowRight size={12} />
+          </button>
+        </Link>
       </div>
 
     </div>
