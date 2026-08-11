@@ -178,7 +178,7 @@ export function FitnessLandingPage() {
               Log in
             </Link>
             <Link
-              href="/fitness/onboarding"
+              href="/auth/signup?redirect=/fitness/onboarding"
               className="relative group px-5 py-2.5 rounded-full text-sm font-bold text-black bg-[#ADFF00] hover:bg-[#c4ff33] transition-all shadow-[0_0_25px_rgba(173,255,0,0.35)] flex items-center gap-2"
             >
               <span>Start Free</span>
@@ -231,7 +231,7 @@ export function FitnessLandingPage() {
           className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Link
-            href="/fitness/onboarding"
+            href="/auth/signup?redirect=/fitness/onboarding"
             className="w-full sm:w-auto px-8 py-4 rounded-full text-base font-extrabold text-black bg-[#ADFF00] hover:bg-[#c6ff47] transition-all shadow-[0_0_35px_rgba(173,255,0,0.45)] hover:scale-105 flex items-center justify-center gap-3 group"
           >
             <span>Start My Transformation</span>
@@ -345,7 +345,7 @@ export function FitnessLandingPage() {
               </span>
             </div>
             <Link
-              href="/fitness/onboarding"
+              href="/auth/signup?redirect=/fitness/onboarding"
               className="text-[#ADFF00] hover:underline font-bold flex items-center gap-1"
             >
               <span>Test Flow</span>
@@ -489,7 +489,7 @@ export function FitnessLandingPage() {
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/fitness/onboarding"
+              href="/auth/signup?redirect=/fitness/onboarding"
               className="w-full sm:w-auto px-10 py-5 rounded-full text-lg font-black text-black bg-[#ADFF00] hover:bg-[#c6ff47] transition-all shadow-[0_0_40px_rgba(173,255,0,0.5)] hover:scale-105 flex items-center justify-center gap-3 group"
             >
               <span>Start My Transformation Now</span>
@@ -506,7 +506,7 @@ export function FitnessLandingPage() {
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-            <Link href="/fitness/onboarding" className="hover:text-[#ADFF00] transition-colors font-bold">Body Scanner</Link>
+            <Link href="/auth/signup?redirect=/fitness/onboarding" className="hover:text-[#ADFF00] transition-colors font-bold">Body Scanner</Link>
           </div>
         </div>
       </footer>
