@@ -99,8 +99,8 @@ export default async function AIStartingReportPage() {
 
         {/* Continue Button */}
         <div className="pt-4">
-          <Link href="/fitness" className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg active:scale-[0.98] transition-transform flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33]">
-            <span>Enter Dashboard</span>
+          <Link href="/fitness/plan-setup" className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg active:scale-[0.98] transition-transform flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33]">
+            <span>Generate My Plan</span>
             <ArrowRight size={20} />
           </Link>
         </div>
