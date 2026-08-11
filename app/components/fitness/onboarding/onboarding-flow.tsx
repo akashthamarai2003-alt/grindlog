@@ -645,36 +645,83 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
       case 9:
         return (
           <div className="px-6 pt-6 pb-36">
-            <StepHeader title="Nutrition Preferences" subtitle="We only store your preferences. No diet plan is generated yet." />
-            <div className="space-y-6">
+            <StepHeader title="Nutrition Profile" subtitle="Help us understand your eating habits." />
+            <div className="space-y-8">
+              
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-3">Diet Type</label>
-                <div className="grid grid-cols-1 gap-3">
-                  {["No Preference", "Vegetarian", "Vegan", "Non-Vegetarian", "Other"].map(opt => (
-                    <OptionCard
-                      key={opt}
-                      title={opt}
-                      selected={data.diet_preference === opt}
-                      onClick={() => handleUpdate({ diet_preference: opt as any })}
-                    />
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Food Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: "Vegetarian", emoji: "🥗" },
+                    { id: "Eggetarian", emoji: "🥚" },
+                    { id: "Non-Vegetarian", emoji: "🍗" },
+                    { id: "Vegan", emoji: "🌱" }
+                  ].map(opt => (
+                    <motion.button
+                      key={opt.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleUpdate({ food_type: opt.id as any })}
+                      className={`p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all border-2 ${
+                        data.food_type === opt.id 
+                          ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' 
+                          : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-gray-500'
+                      }`}
+                    >
+                      <span className="text-3xl mb-2">{opt.emoji}</span>
+                      <span className="font-semibold text-sm">{opt.id}</span>
+                    </motion.button>
                   ))}
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Meals Per Day</label>
-                <input 
-                  type="number" 
-                  min={1} max={10}
-                  value={data.meals_per_day || ""} 
-                  onChange={e => handleUpdate({ meals_per_day: parseInt(e.target.value) || undefined })}
-                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
-                  placeholder="e.g. 3"
-                />
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Meal Frequency</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {["2 meals", "3 meals", "4 meals", "5+ meals"].map(opt => (
+                    <button 
+                      key={opt}
+                      onClick={() => handleUpdate({ meals_per_day: opt as any })}
+                      className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
+                        data.meals_per_day === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-xs">{opt}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Food Environment</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: "Home", emoji: "🏠" },
+                    { id: "PG", emoji: "🏢" },
+                    { id: "Hostel", emoji: "🎓" },
+                    { id: "Office/Canteen", emoji: "🍱" },
+                    { id: "I Cook", emoji: "🍳" },
+                    { id: "Mixed", emoji: "🔄" }
+                  ].map(opt => (
+                    <button 
+                      key={opt.id}
+                      onClick={() => handleUpdate({ food_environment: opt.id as any })}
+                      className={`p-3 rounded-xl flex items-center gap-3 font-bold transition-all border text-left ${
+                        data.food_environment === opt.id ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-xl">{opt.emoji}</span>
+                      <span className="text-sm">{opt.id}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
             </div>
-            <BottomBar canProceed={!!(data.diet_preference && data.meals_per_day)} onProceed={handleNext} />
+            <BottomBar canProceed={!!(data.food_type && data.meals_per_day && data.food_environment)} onProceed={handleNext} />
           </div>
         );
+
       case 10:
         return (
           <div className="px-6 pt-6 pb-36">
@@ -1168,7 +1215,7 @@ case 14:
                 { label: "Experience", value: data.fitness_level ? `${data.fitness_level} (${data.training_days_per_week} days/wk)` : null, stepIndex: 6 },
                 { label: "Environment", value: data.training_location ? `${data.training_location}${data.equipment?.length ? ` (${data.equipment.join(", ")})` : ''}` : null, stepIndex: 7 },
                 { label: "Schedule", value: data.workout_duration_minutes ? `${data.workout_duration_minutes} min, ${data.preferred_training_time}` : null, stepIndex: 8 },
-                { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 9 },
+                { label: "Nutrition", value: `${data.food_type || "Not set"}, ${data.meals_per_day || "Not set"}, ${data.food_environment || "Not set"}`, stepIndex: 9 },
                 { label: "Health & Safety", value: data.physical_problems?.includes("None") && data.previous_injuries === false ? "No concerns" : "Concerns noted", stepIndex: 12 },
                 { label: "Lifestyle", value: `${data.activity_level || "Not set"}, ${data.daily_steps || "Not set"} steps, ${data.sleep_duration || "Not set"} sleep`, stepIndex: 10 }
               ].map((section, idx) => (

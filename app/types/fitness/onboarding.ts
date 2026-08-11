@@ -45,10 +45,11 @@ export const OnboardingSchema = z.object({
   preferred_training_days: z.array(z.string()).optional(),
   preferred_training_time: z.string().optional(),
   
-  diet_preference: z.enum(["No Preference", "Vegetarian", "Vegan", "Non-Vegetarian", "Other"]).optional(),
+  food_type: z.enum(["Vegetarian", "Eggetarian", "Non-Vegetarian", "Vegan"]).optional(),
+  food_environment: z.enum(["Home", "PG", "Hostel", "Office/Canteen", "I Cook", "Mixed"]).optional(),
   food_avoidances: z.array(z.string()).optional(),
   allergies: z.array(z.string()).optional(),
-  meals_per_day: z.number().min(1).max(10).optional(),
+  meals_per_day: z.enum(["2 meals", "3 meals", "4 meals", "5+ meals"]).optional(),
   nutrition_budget: z.string().optional(),
   
   activity_level: z.enum(["Mostly sitting", "Lightly active", "Moderately active", "Very active"]).optional(),
