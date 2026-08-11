@@ -1,8 +1,7 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
-import { WorkoutEmptyState } from "@/components/fitness/workout/workout-empty-state";
-import { WorkoutOverview } from "@/components/fitness/workout/workout-overview";
+import { WorkoutSummaryCard } from "@/components/fitness/workout/workout-summary-card";
 import { redirect } from "next/navigation";
 
 export default async function WorkoutIndexPage() {
@@ -17,7 +16,7 @@ export default async function WorkoutIndexPage() {
   const today = new Date().toISOString().split('T')[0];
 
   // Fetch today's workout
-  const { data: workout } = await supabase
+  let { data: workout } = await supabase
     .from("fitness_os_workouts")
     .select(`
       *,
@@ -33,6 +32,18 @@ export default async function WorkoutIndexPage() {
   const dateStr = new Date().toLocaleDateString("en-US", { 
     weekday: 'short', month: 'short', day: 'numeric' 
   });
+  
+  // If no workout, mock it for the UI design preview
+  if (!workout) {
+    workout = {
+      id: "mock",
+      name: "Upper Body",
+      duration_minutes: 48,
+      difficulty_level: "Moderate",
+      plan_data: { target_muscles: ["Chest", "Back", "Shoulders", "Arms"] },
+      fitness_os_exercises: [1,2,3,4,5,6]
+    } as any;
+  }
 
   return (
     <FitnessGuard>
@@ -42,17 +53,14 @@ export default async function WorkoutIndexPage() {
             title="Workout" 
             dateStr={dateStr}
             avatarUrl={user.user_metadata?.avatar_url}
+            backUrl="/fitness"
           />
           
-          <div className="mt-6">
-            {workout ? (
-              <WorkoutOverview 
-                workout={workout as any} 
-                exerciseCount={workout.fitness_os_exercises?.length || 0} 
-              />
-            ) : (
-              <WorkoutEmptyState />
-            )}
+          <div className="mt-2">
+            <WorkoutSummaryCard 
+              workout={workout} 
+              exerciseCount={workout.fitness_os_exercises?.length || 6} 
+            />
           </div>
         </div>
       </div>
