@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/services/supabase/client';
 import { ArrowRight, CheckCircle2, Target, Calendar, Activity, Zap, ShieldCheck, Flame, ShoppingCart, User, Brain, TrendingDown } from 'lucide-react';
 
 export default function RoadmapPage() {
