@@ -3,6 +3,7 @@ import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import { WorkoutExecution } from "@/components/fitness/workout/workout-execution";
 import { ExerciseDetail } from "@/components/fitness/workout/exercise-detail";
+import { WorkoutTimer } from "@/components/fitness/workout/workout-timer";
 import { redirect } from "next/navigation";
 
 export default async function ActiveWorkoutPage({ 
@@ -55,6 +56,10 @@ export default async function ActiveWorkoutPage({
 
     return (
       <FitnessGuard>
+        <WorkoutTimer 
+          completedExercises={mockWorkout.fitness_os_exercises.filter((e: any) => e.fitness_os_sets.every((s: any) => s.completed)).length} 
+          totalExercises={mockWorkout.fitness_os_exercises.length} 
+        />
         <div className="min-h-screen bg-[#0A1108] text-white">
           <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
             {!activeExercise && (
@@ -121,6 +126,10 @@ export default async function ActiveWorkoutPage({
 
   return (
     <FitnessGuard>
+      <WorkoutTimer 
+        completedExercises={workout.fitness_os_exercises.filter((e: any) => e.fitness_os_sets.every((s: any) => s.completed)).length} 
+        totalExercises={workout.fitness_os_exercises.length} 
+      />
       <div className="min-h-screen bg-[#0A1108] text-white">
         <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
           {!activeExercise && (

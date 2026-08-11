@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, PlayCircle, Bot, Check, Loader2, SkipForward } from "lucide-react";
+import { ArrowLeft, PlayCircle, Bot, Check, Loader2, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { completeSetAction } from "@/app/actions/fitness";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { ExerciseOptionsModal } from "./exercise-options-modal";
 
 interface ExerciseDetailProps {
   exercise: FitnessExercise & { fitness_os_sets: FitnessSet[] };
@@ -20,6 +21,7 @@ export function ExerciseDetail({ exercise, workoutId }: ExerciseDetailProps) {
   
   const [activeRestSeconds, setActiveRestSeconds] = useState<number | null>(null);
   const [submittingSetId, setSubmittingSetId] = useState<string | null>(null);
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
 
   // Local state to track input values for sets so they are easily updatable
   const [setInputs, setSetInputs] = useState<Record<string, { weight: string, reps: string }>>(
@@ -79,12 +81,27 @@ export function ExerciseDetail({ exercise, workoutId }: ExerciseDetailProps) {
   return (
     <div className="w-full flex flex-col pb-32">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link href={`/fitness/workout/${workoutId}`} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-white/70 hover:text-white" />
-        </Link>
-        <h1 className="text-xl font-black text-white tracking-tight uppercase">BACK</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Link href={`/fitness/workout/${workoutId}`} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-white/70 hover:text-white" />
+          </Link>
+          <h1 className="text-xl font-black text-white tracking-tight uppercase">BACK</h1>
+        </div>
+        
+        <button 
+          onClick={() => setIsOptionsOpen(true)}
+          className="p-2 -mr-2 rounded-full hover:bg-white/10 transition-colors"
+        >
+          <MoreHorizontal className="w-6 h-6 text-white/70 hover:text-white" />
+        </button>
       </div>
+
+      <ExerciseOptionsModal 
+        isOpen={isOptionsOpen}
+        onClose={() => setIsOptionsOpen(false)}
+        exerciseName={exercise.name}
+      />
 
       <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-4">
         {exercise.name}
