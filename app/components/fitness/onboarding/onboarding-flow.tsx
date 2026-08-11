@@ -14,10 +14,11 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const [data, setData] = useState<Partial<OnboardingData>>(initialData);
   const [isSaving, setIsSaving] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [showRestrictions, setShowRestrictions] = useState(false);
   const router = useRouter();
 
-  const totalSteps = 15;
-  const showProgress = step > 1 && step < 15;
+  const totalSteps = 16;
+  const showProgress = step > 1 && step < 16;
 
   const handleNext = () => {
     setDirection(1);
@@ -722,7 +723,119 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           </div>
         );
 
-      case 10:
+            case 10:
+        return (
+          <div className="px-6 pt-6 pb-36">
+            <StepHeader title="Food & Budget" subtitle="Let's make sure the plan fits your wallet." />
+            <div className="space-y-8">
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-3">How much can you spend on additional fitness food each month?</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {["₹0–1,000", "₹1,000–2,000", "₹2,000–5,000", "₹5,000+"].map(opt => (
+                    <button 
+                      key={opt}
+                      onClick={() => handleUpdate({ nutrition_budget: opt as any })}
+                      className={`py-4 rounded-xl flex items-center justify-center font-bold transition-all border ${
+                        data.nutrition_budget === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-sm">{opt}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Available foods <span className="text-xs text-gray-500 font-normal ml-2">Select all you eat</span></label>
+                <div className="flex flex-wrap gap-2">
+                  {["Eggs", "Milk", "Curd", "Paneer", "Soya", "Chana", "Peanuts", "Oats", "Chicken", "Fish"].map(opt => {
+                    const isSelected = data.available_foods?.includes(opt) || false;
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => {
+                          let newFoods = [...(data.available_foods || [])];
+                          if (isSelected) newFoods = newFoods.filter(e => e !== opt);
+                          else newFoods.push(opt);
+                          handleUpdate({ available_foods: newFoods });
+                        }}
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                          isSelected 
+                            ? "bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]" 
+                            : "bg-[#121E12] border-[#1A2619] text-gray-400 hover:border-[#ADFF00]/50 hover:text-gray-200"
+                        }`}
+                      >
+                        {isSelected ? `☑ ${opt}` : `☐ ${opt}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-[#1A2619]">
+                <button 
+                  onClick={() => setShowRestrictions(!showRestrictions)}
+                  className="w-full flex items-center justify-between py-2 text-left"
+                >
+                  <div>
+                    <h3 className="font-semibold text-gray-200">Restrictions (Optional)</h3>
+                    <p className="text-xs text-gray-500 mt-1">Allergies, dislikes, or foods you avoid.</p>
+                  </div>
+                  <div className={`p-2 rounded-full transition-colors ${showRestrictions ? "bg-red-500/20 text-red-500" : "bg-[#121E12] text-gray-400"}`}>
+                    <ChevronRight size={18} className={`transition-transform duration-300 ${showRestrictions ? 'rotate-90' : ''}`} />
+                  </div>
+                </button>
+
+                <AnimatePresence>
+                  {showRestrictions && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      className="overflow-hidden space-y-4"
+                    >
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-2">Food allergies</label>
+                        <input 
+                          type="text" 
+                          value={data.food_allergies || ""} 
+                          onChange={e => handleUpdate({ food_allergies: e.target.value })}
+                          placeholder="e.g., Peanut, Lactose"
+                          className="w-full p-3 rounded-xl border border-[#1A2619] bg-[#121E12] text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors outline-none placeholder:text-gray-600" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-2">Foods you dislike</label>
+                        <input 
+                          type="text" 
+                          value={data.foods_disliked || ""} 
+                          onChange={e => handleUpdate({ foods_disliked: e.target.value })}
+                          placeholder="e.g., Broccoli"
+                          className="w-full p-3 rounded-xl border border-[#1A2619] bg-[#121E12] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-2">Foods you don't eat</label>
+                        <input 
+                          type="text" 
+                          value={data.foods_avoided || ""} 
+                          onChange={e => handleUpdate({ foods_avoided: e.target.value })}
+                          placeholder="e.g., Pork, Beef"
+                          className="w-full p-3 rounded-xl border border-[#1A2619] bg-[#121E12] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+            </div>
+            <BottomBar canProceed={!!data.nutrition_budget} onProceed={handleNext} />
+          </div>
+        );
+
+case 11:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Lifestyle Profile" subtitle="How do you spend your days?" />
@@ -854,7 +967,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           </div>
         );
 
-            case 11:
+            case 12:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 relative text-center">
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
@@ -887,7 +1000,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           </div>
         );
 
-      case 12:
+      case 13:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Physical Concerns" subtitle="Help us build a safe plan for you." />
@@ -1151,7 +1264,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           </div>
         );
 
-      case 13:
+      case 14:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 relative">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center text-center">
@@ -1195,7 +1308,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           </div>
         );
 
-case 14:
+case 15:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Review Your Profile" subtitle="Make sure everything looks good." />
@@ -1216,8 +1329,9 @@ case 14:
                 { label: "Environment", value: data.training_location ? `${data.training_location}${data.equipment?.length ? ` (${data.equipment.join(", ")})` : ''}` : null, stepIndex: 7 },
                 { label: "Schedule", value: data.workout_duration_minutes ? `${data.workout_duration_minutes} min, ${data.preferred_training_time}` : null, stepIndex: 8 },
                 { label: "Nutrition", value: `${data.food_type || "Not set"}, ${data.meals_per_day || "Not set"}, ${data.food_environment || "Not set"}`, stepIndex: 9 },
-                { label: "Health & Safety", value: data.physical_problems?.includes("None") && data.previous_injuries === false ? "No concerns" : "Concerns noted", stepIndex: 12 },
-                { label: "Lifestyle", value: `${data.activity_level || "Not set"}, ${data.daily_steps || "Not set"} steps, ${data.sleep_duration || "Not set"} sleep`, stepIndex: 10 }
+                { label: "Health & Safety", value: data.physical_problems?.includes("None") && data.previous_injuries === false ? "No concerns" : "Concerns noted", stepIndex: 13 },
+                { label: "Food & Budget", value: data.nutrition_budget ? `${data.nutrition_budget}, ${data.available_foods?.length || 0} foods` : null, stepIndex: 10 },
+                { label: "Lifestyle", value: `${data.activity_level || "Not set"}, ${data.daily_steps || "Not set"} steps, ${data.sleep_duration || "Not set"} sleep`, stepIndex: 11 }
               ].map((section, idx) => (
                 <div key={idx} className="bg-[#0D150D] p-4 rounded-2xl border border-[#1A2619] flex justify-between items-center">
                   <div className="pr-4">
@@ -1236,7 +1350,7 @@ case 14:
             <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
           </div>
         );
-      case 15:
+      case 16:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 text-center">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
@@ -1278,7 +1392,7 @@ case 14:
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
         <div className="h-16 flex items-center px-4 relative z-10">
-          {step > 1 && step < 15 && (
+          {step > 1 && step < 16 && (
             <button 
               onClick={handleBack}
               className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"

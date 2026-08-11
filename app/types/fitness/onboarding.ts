@@ -47,10 +47,12 @@ export const OnboardingSchema = z.object({
   
   food_type: z.enum(["Vegetarian", "Eggetarian", "Non-Vegetarian", "Vegan"]).optional(),
   food_environment: z.enum(["Home", "PG", "Hostel", "Office/Canteen", "I Cook", "Mixed"]).optional(),
-  food_avoidances: z.array(z.string()).optional(),
-  allergies: z.array(z.string()).optional(),
   meals_per_day: z.enum(["2 meals", "3 meals", "4 meals", "5+ meals"]).optional(),
-  nutrition_budget: z.string().optional(),
+  nutrition_budget: z.enum(["₹0–1,000", "₹1,000–2,000", "₹2,000–5,000", "₹5,000+"]).optional(),
+  available_foods: z.array(z.string()).optional(),
+  food_allergies: z.string().optional(),
+  foods_disliked: z.string().optional(),
+  foods_avoided: z.string().optional(),
   
   activity_level: z.enum(["Mostly sitting", "Lightly active", "Moderately active", "Very active"]).optional(),
   daily_steps: z.enum(["<3k", "3–5k", "5–10k", "10k+"]).optional(),
