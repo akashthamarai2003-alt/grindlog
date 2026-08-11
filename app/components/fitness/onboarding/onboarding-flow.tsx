@@ -15,8 +15,8 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
-  const totalSteps = 13;
-  const showProgress = step > 1 && step < 13;
+  const totalSteps = 12;
+  const showProgress = step > 1 && step < 12;
 
   const handleNext = () => {
     setDirection(1);
@@ -506,58 +506,98 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
         );
       case 7:
         return (
-          <div className="px-6 pt-6 pb-28">
-            <StepHeader title="Where do you train?" />
-            <div className="space-y-4">
-              {["Gym", "Home", "Outdoor", "Mixed"].map(opt => (
-                <OptionCard
-                  key={opt}
-                  title={opt}
-                  selected={data.training_location === opt}
-                  onClick={() => handleUpdate({ training_location: opt as any })}
-                />
-              ))}
-            </div>
-            <BottomBar canProceed={!!data.training_location} onProceed={handleNext} />
-          </div>
-        );
-      case 8:
-        return (
-          <div className="px-6 pt-6 pb-28">
-            <StepHeader title="What equipment do you have access to?" subtitle="Select all that apply." />
-            <div className="space-y-3">
-              {[
-                "No Equipment", "Dumbbells", "Barbell", "Bench", "Resistance Bands", 
-                "Pull-up Bar", "Cable Machine", "Machines", "Full Gym"
-              ].map(opt => {
-                const isSelected = data.equipment?.includes(opt) || false;
-                return (
-                  <OptionCard
-                    key={opt}
-                    title={opt}
-                    selected={isSelected}
+          <div className="px-6 pt-6 pb-36">
+            <StepHeader title="Workout Environment" subtitle="Where will you train?" />
+            <div className="space-y-8">
+              <div className="space-y-4">
+                {[
+                  { id: "Gym", emoji: "🏋️" },
+                  { id: "Home", emoji: "🏠" },
+                  { id: "Outdoor", emoji: "🌳" },
+                  { id: "Combination", emoji: "🔄" }
+                ].map(opt => (
+                  <motion.button
+                    key={opt.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
-                      let newEq = [...(data.equipment || [])];
-                      if (opt === "No Equipment") {
-                        newEq = ["No Equipment"];
-                      } else {
-                        newEq = newEq.filter(e => e !== "No Equipment");
-                        if (isSelected) {
-                          newEq = newEq.filter(e => e !== opt);
-                        } else {
-                          newEq.push(opt);
-                        }
-                      }
-                      handleUpdate({ equipment: newEq });
+                      handleUpdate({ training_location: opt.id as any, equipment: [] });
                     }}
-                  />
-                );
-              })}
+                    className={`w-full flex items-center p-4 rounded-2xl border-2 text-left transition-all ${
+                      data.training_location === opt.id ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
+                    }`}
+                  >
+                    <div className={`text-2xl mr-4 ${data.training_location === opt.id ? "" : "opacity-70 grayscale"}`}>
+                      {opt.emoji}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className={`font-semibold text-lg ${data.training_location === opt.id ? "text-[#ADFF00]" : "text-gray-200"}`}>{opt.id}</h3>
+                    </div>
+                    {data.training_location === opt.id && (
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[#ADFF00] ml-4">
+                        <Check size={24} />
+                      </motion.div>
+                    )}
+                  </motion.button>
+                ))}
+              </div>
+
+              <AnimatePresence>
+                {data.training_location && data.training_location !== "Outdoor" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 32 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <label className="block text-sm font-semibold text-gray-300 mb-3">Available Equipment</label>
+                    <div className="flex flex-wrap gap-3">
+                      {(data.training_location === "Gym" || data.training_location === "Combination" ? [
+                        "Dumbbells", "Barbells", "Machines", "Cable", "Bench", "Squat Rack"
+                      ] : [
+                        "Dumbbells", "Resistance Bands", "Pull-up Bar", "Mat", "No Equipment"
+                      ]).map(opt => {
+                        const isSelected = data.equipment?.includes(opt) || false;
+                        return (
+                          <button
+                            key={opt}
+                            onClick={() => {
+                              let newEq = [...(data.equipment || [])];
+                              if (opt === "No Equipment") {
+                                newEq = ["No Equipment"];
+                              } else {
+                                newEq = newEq.filter(e => e !== "No Equipment");
+                                if (isSelected) {
+                                  newEq = newEq.filter(e => e !== opt);
+                                } else {
+                                  newEq.push(opt);
+                                }
+                              }
+                              handleUpdate({ equipment: newEq });
+                            }}
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                              isSelected 
+                                ? "bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]" 
+                                : "bg-[#121E12] border-[#1A2619] text-gray-400 hover:border-[#ADFF00]/50 hover:text-gray-200"
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            <BottomBar canProceed={!!(data.equipment && data.equipment.length > 0)} onProceed={handleNext} />
+            <BottomBar 
+              canProceed={!!data.training_location && (data.training_location === "Outdoor" || (data.equipment && data.equipment.length > 0))} 
+              onProceed={handleNext} 
+            />
           </div>
         );
-      case 9:
+
+      case 8:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Training Schedule" subtitle="How much time can you commit?" />
@@ -601,7 +641,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             />
           </div>
         );
-      case 10:
+      case 9:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Nutrition Preferences" subtitle="We only store your preferences. No diet plan is generated yet." />
@@ -634,7 +674,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!(data.diet_preference && data.meals_per_day)} onProceed={handleNext} />
           </div>
         );
-      case 11:
+      case 10:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Lifestyle" subtitle="Tell us about your daily activity." />
@@ -673,7 +713,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!(data.activity_level && data.sleep_duration)} onProceed={handleNext} />
           </div>
         );
-      case 12:
+      case 11:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Review Your Profile" subtitle="Make sure everything looks good." />
@@ -691,11 +731,10 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                 { label: "Goal", value: data.goal ? `${data.goal} (Target: ${data.target_weight}kg)` : null, stepIndex: 4 },
                 { label: "Target Physique", value: data.target_physique, stepIndex: 5 },
                 { label: "Experience", value: data.fitness_level ? `${data.fitness_level} (${data.training_days_per_week} days/wk)` : null, stepIndex: 6 },
-                { label: "Location", value: data.training_location, stepIndex: 7 },
-                { label: "Equipment", value: data.equipment?.join(", "), stepIndex: 8 },
-                { label: "Schedule", value: data.workout_duration_minutes ? `${data.workout_duration_minutes} min, ${data.preferred_training_time}` : null, stepIndex: 9 },
-                { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 10 },
-                { label: "Lifestyle", value: `${data.activity_level}, ${data.sleep_duration} hrs sleep`, stepIndex: 11 }
+                { label: "Environment", value: data.training_location ? `${data.training_location}${data.equipment?.length ? ` (${data.equipment.join(", ")})` : ''}` : null, stepIndex: 7 },
+                { label: "Schedule", value: data.workout_duration_minutes ? `${data.workout_duration_minutes} min, ${data.preferred_training_time}` : null, stepIndex: 8 },
+                { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 9 },
+                { label: "Lifestyle", value: `${data.activity_level}, ${data.sleep_duration} hrs sleep`, stepIndex: 10 }
               ].map((section, idx) => (
                 <div key={idx} className="bg-[#0D150D] p-4 rounded-2xl border border-[#1A2619] flex justify-between items-center">
                   <div className="pr-4">
@@ -714,7 +753,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
           </div>
         );
-      case 13:
+      case 12:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 text-center">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
@@ -756,7 +795,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
         <div className="h-16 flex items-center px-4 relative z-10">
-          {step > 1 && step < 13 && (
+          {step > 1 && step < 12 && (
             <button 
               onClick={handleBack}
               className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"

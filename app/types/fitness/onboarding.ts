@@ -37,7 +37,7 @@ export const OnboardingSchema = z.object({
   thigh_cm: z.number().min(10).max(150).optional(),
   gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
   
-  training_location: z.enum(["Gym", "Home", "Outdoor", "Mixed"]).optional(),
+  training_location: z.enum(["Gym", "Home", "Outdoor", "Combination"]).optional(),
   equipment: z.array(z.string()).optional(),
   
   training_days_per_week: z.number().min(1).max(7).optional(),
