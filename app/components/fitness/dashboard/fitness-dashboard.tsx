@@ -10,6 +10,7 @@ import { TodaysWorkoutCard } from "./todays-workout-card";
 import { TransformationCard } from "./transformation-card";
 import { TodaysNutritionCard } from "./todays-nutrition-card";
 import { DailyActivityCard } from "./daily-activity-card";
+import { TodaysGoalsCard } from "./todays-goals-card";
 interface FitnessDashboardProps {
   user: User;
   profile: Partial<OnboardingData>;
@@ -56,6 +57,9 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
 
         {/* 7. Daily Activity Card */}
         <DailyActivityCard lifestyle={lifestyle} workoutCompleted={todayWorkout?.status === 'completed'} />
+
+        {/* 8. Today's Goals Card */}
+        <TodaysGoalsCard lifestyle={lifestyle} nutrition={nutrition} workoutCompleted={todayWorkout?.status === 'completed'} />
 
       </main>
 
