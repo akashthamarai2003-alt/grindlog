@@ -17,11 +17,11 @@ export function TodaysGoalsCard({ lifestyle, nutrition, workoutCompleted = false
   const sleepTarget = lifestyle?.sleep_target_hours || 8;
   const proteinTarget = nutrition?.protein_grams || 120;
 
-  // We are defaulting the first three to checked to match the user's requested visual
+  // Use real data to determine if completed (everything false initially except workout if it's done)
   const initialGoals = [
     { id: 'workout', text: "Complete workout", completed: workoutCompleted },
-    { id: 'breakfast', text: "Eat breakfast", completed: true },
-    { id: 'protein', text: `Hit ${proteinTarget}g protein target`, completed: true },
+    { id: 'breakfast', text: "Eat breakfast", completed: false },
+    { id: 'protein', text: `Hit ${proteinTarget}g protein target`, completed: false },
     { id: 'steps', text: `${stepsTarget.toLocaleString()} steps`, completed: false },
     { id: 'water', text: `${waterTarget}L water`, completed: false },
     { id: 'sleep', text: `Sleep before 11 PM (Target ${sleepTarget}h)`, completed: false },
