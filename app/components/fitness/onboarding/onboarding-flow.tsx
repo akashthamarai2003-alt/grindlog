@@ -1327,7 +1327,7 @@ case 11:
 
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider text-center">Inspiration (Optional)</label>
-                <div className={`w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
+                <div className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
                   <input type="file" accept="image/*" onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
