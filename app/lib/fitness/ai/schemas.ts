@@ -26,11 +26,22 @@ export const GeneratedMealSchema = z.object({
   prep_instructions: z.string().describe("Brief prep instructions, highlighting if it's no-cook or hostel-friendly")
 });
 
+export const GeneratedGroceryItemSchema = z.object({
+  name: z.string(),
+  monthly_quantity: z.number(),
+  unit: z.string().describe("e.g. pieces, kg, liters, grams"),
+  estimated_price: z.number().describe("Estimated market price in local currency"),
+  category: z.enum(["Protein", "Carbohydrates", "Fruits", "Vegetables", "Dairy", "Snacks", "Other"]),
+  is_optional: z.boolean(),
+  reason: z.string()
+});
+
 export const GeneratedNutritionSchema = z.object({
   daily_calories: z.number().int().max(10000).nullable(),
   protein_grams: z.number().int().min(30).max(400).nullable(),
   meals_per_day: z.number().int().min(1).max(8).nullable(),
   meals: z.array(GeneratedMealSchema).default([]),
+  grocery_list: z.array(GeneratedGroceryItemSchema).default([]),
   guidance: z.string().describe("General healthy eating tips reflecting allergies and preferences")
 });
 

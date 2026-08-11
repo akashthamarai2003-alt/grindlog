@@ -46,7 +46,8 @@ Instructions:
 2. Generate an array of 'workouts' matching my 'training_days_per_week'. Each workout should have a 'workout_date' (YYYY-MM-DD) distributed across the next 7 days, starting from ${todayDateStr}.
 3. Generate 'exercises' for each workout that fit within my ${profile.workout_duration_minutes} minute duration and match my ${profile.training_location} / ${profile.equipment?.join(", ") || "None"} constraints.
 4. Generate 'nutrition' providing a safe daily_calories target and protein_grams. Create a 'meals' array with exactly ${profile.meals_per_day} meals. For each meal, provide specific, realistic food items that fit my Budget (${profile.nutrition_budget || "Not specified"}), Diet (${profile.diet_preference}), and Lifestyle (${profile.lifestyle_description}). If my lifestyle implies I am a student/in a hostel, prioritize NO-COOK or LOW-PREP meals. Ensure prep_instructions are practical. Avoid ${profile.allergies?.join(", ")} and ${profile.food_avoidances?.join(", ")}.
-5. Generate 'lifestyle' targets suitable for my profile.
+5. Generate a practical monthly 'grocery_list' based directly on the generated nutrition plan. Prioritize foods already available to me (${profile.available_foods?.join(", ") || "None"}). Do not recommend purchasing foods already provided by my ${profile.food_environment} environment. Respect my monthly food budget (${profile.nutrition_budget || "Not specified"}). Quantities should represent realistic approximately 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.
+6. Generate 'lifestyle' targets suitable for my profile.
 
 Respond entirely in JSON format matching the expected schema.`;
 }

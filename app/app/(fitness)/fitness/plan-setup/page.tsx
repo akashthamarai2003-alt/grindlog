@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame } from 'lucide-react';
+import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
+import GroceryTab from '@/components/fitness/plan/grocery-tab';
 
 export default function PlanSetupPage() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function PlanSetupPage() {
   const [loading, setLoading] = useState(true);
   
   const [selectedDay, setSelectedDay] = useState(0); // 0 = Mon, 6 = Sun
-  const [activeTab, setActiveTab] = useState<"workout" | "diet">("workout");
+  const [activeTab, setActiveTab] = useState<"workout" | "diet" | "grocery">("workout");
   
   const [chatInput, setChatInput] = useState("");
   const [modulating, setModulating] = useState(false);
@@ -123,7 +124,9 @@ export default function PlanSetupPage() {
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[140px]">
       <div className="pt-12 px-6 pb-6">
-        <h1 className="text-3xl font-black mb-2 tracking-tight">{activeTab === 'workout' ? 'Your Training Plan' : 'Your Nutrition Plan'}</h1>
+        <h1 className="text-3xl font-black mb-2 tracking-tight">
+          {activeTab === 'workout' ? 'Your Training Plan' : activeTab === 'diet' ? 'Your Nutrition Plan' : 'Your Grocery Plan'}
+        </h1>
         <p className="text-gray-400">{planData.plan?.description || "Here is your custom AI generated plan."}</p>
       </div>
 
@@ -140,6 +143,12 @@ export default function PlanSetupPage() {
           className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "diet" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
         >
           <Apple size={16} /> Diet
+        </button>
+        <button 
+          onClick={() => setActiveTab("grocery")}
+          className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "grocery" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+        >
+          <ShoppingCart size={16} /> Grocery
         </button>
       </div>
 
@@ -278,6 +287,8 @@ export default function PlanSetupPage() {
             ))}
           </div>
         </div>
+      ) : (
+        <GroceryTab planData={planData} setPlanData={setPlanData} profile={planData._profile} />
       )}
 
       {/* Floating Modulator & Save */}
