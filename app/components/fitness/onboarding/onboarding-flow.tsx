@@ -15,8 +15,8 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
-  const totalSteps = 12;
-  const showProgress = step > 1 && step < 12;
+  const totalSteps = 13;
+  const showProgress = step > 1 && step < 13;
 
   const handleNext = () => {
     setDirection(1);
@@ -398,7 +398,68 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!data.goal && !!data.target_weight} onProceed={handleNext} />
           </div>
         );
-      case 5:
+            case 5:
+        return (
+          <div className="px-6 pt-6 pb-36">
+            <StepHeader title="Target Physique" subtitle="What do you want your body to look like?" />
+            <div className="space-y-4">
+              {[
+                "Lean Athletic",
+                "Muscular",
+                "Six Pack",
+                "Men's Physique",
+                "Bodybuilder",
+                "Sporty",
+                "Strong & Functional"
+              ].map(opt => (
+                <OptionCard
+                  key={opt}
+                  title={opt}
+                  selected={data.target_physique === opt}
+                  onClick={() => handleUpdate({ target_physique: opt as any })}
+                />
+              ))}
+            </div>
+
+            <div className="mt-8 p-5 bg-[#0D150D] border border-[#1A2619] rounded-2xl">
+              <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Upload Inspiration</h3>
+              <p className="text-xs text-gray-500 mb-4">We'll use this visual reference for AI comparison. We don't guarantee exact results.</p>
+              
+              <div className="relative">
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        handleUpdate({ goal_physique_image: reader.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                />
+                <div className={`w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
+                  {data.goal_physique_image ? (
+                    <img src={data.goal_physique_image} alt="Inspiration" className="w-full h-full object-cover rounded-xl" />
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 bg-[#1A2619] rounded-full flex items-center justify-center mb-2">
+                        <User className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-300">+ Upload Photo</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <BottomBar canProceed={!!data.target_physique} onProceed={handleNext} />
+          </div>
+        );
+case 6:
         return (
           <div className="px-6 pt-6 pb-28">
             <StepHeader title="What's your current fitness level?" subtitle="This helps us calibrate your initial plan." />
@@ -420,7 +481,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!data.fitness_level} onProceed={handleNext} />
           </div>
         );
-      case 6:
+      case 7:
         return (
           <div className="px-6 pt-6 pb-28">
             <StepHeader title="Where do you train?" />
@@ -437,7 +498,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!data.training_location} onProceed={handleNext} />
           </div>
         );
-      case 7:
+      case 8:
         return (
           <div className="px-6 pt-6 pb-28">
             <StepHeader title="What equipment do you have access to?" subtitle="Select all that apply." />
@@ -473,7 +534,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!(data.equipment && data.equipment.length > 0)} onProceed={handleNext} />
           </div>
         );
-      case 8:
+      case 9:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Training Schedule" subtitle="How much time can you commit?" />
@@ -533,7 +594,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             />
           </div>
         );
-      case 9:
+      case 10:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Nutrition Preferences" subtitle="We only store your preferences. No diet plan is generated yet." />
@@ -566,7 +627,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!(data.diet_preference && data.meals_per_day)} onProceed={handleNext} />
           </div>
         );
-      case 10:
+      case 11:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Lifestyle" subtitle="Tell us about your daily activity." />
@@ -605,7 +666,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!(data.activity_level && data.sleep_duration)} onProceed={handleNext} />
           </div>
         );
-      case 11:
+      case 12:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Review Your Profile" subtitle="Make sure everything looks good." />
@@ -621,12 +682,13 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     data.thigh_cm ? `T:${data.thigh_cm}cm` : null
                   ].filter(Boolean).join(", "), stepIndex: 3 },
                 { label: "Goal", value: data.goal ? `${data.goal} (Target: ${data.target_weight}kg)` : null, stepIndex: 4 },
-                { label: "Fitness Level", value: data.fitness_level, stepIndex: 5 },
-                { label: "Location", value: data.training_location, stepIndex: 6 },
-                { label: "Equipment", value: data.equipment?.join(", "), stepIndex: 7 },
-                { label: "Schedule", value: `${data.training_days_per_week} days/wk, ${data.workout_duration_minutes} min`, stepIndex: 8 },
-                { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 9 },
-                { label: "Lifestyle", value: `${data.activity_level}, ${data.sleep_duration} hrs sleep`, stepIndex: 10 }
+                { label: "Target Physique", value: data.target_physique, stepIndex: 5 },
+                { label: "Fitness Level", value: data.fitness_level, stepIndex: 6 },
+                { label: "Location", value: data.training_location, stepIndex: 7 },
+                { label: "Equipment", value: data.equipment?.join(", "), stepIndex: 8 },
+                { label: "Schedule", value: `${data.training_days_per_week} days/wk, ${data.workout_duration_minutes} min`, stepIndex: 9 },
+                { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 10 },
+                { label: "Lifestyle", value: `${data.activity_level}, ${data.sleep_duration} hrs sleep`, stepIndex: 11 }
               ].map((section, idx) => (
                 <div key={idx} className="bg-[#0D150D] p-4 rounded-2xl border border-[#1A2619] flex justify-between items-center">
                   <div className="pr-4">
@@ -645,7 +707,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
           </div>
         );
-      case 12:
+      case 13:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 text-center">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
@@ -687,7 +749,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
         <div className="h-16 flex items-center px-4 relative z-10">
-          {step > 1 && step < 12 && (
+          {step > 1 && step < 13 && (
             <button 
               onClick={handleBack}
               className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"

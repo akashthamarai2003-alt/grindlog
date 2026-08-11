@@ -13,6 +13,17 @@ export const OnboardingSchema = z.object({
     "Improve Fitness", 
     "Maintain"
   ]).optional(),
+
+  target_physique: z.enum([
+    "Lean Athletic",
+    "Muscular",
+    "Six Pack",
+    "Men's Physique",
+    "Bodybuilder",
+    "Sporty",
+    "Strong & Functional"
+  ]).optional(),
+  goal_physique_image: z.string().optional(),
   
   fitness_level: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
   
