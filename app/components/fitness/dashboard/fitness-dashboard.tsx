@@ -8,6 +8,7 @@ import { HorizontalCalendar } from "./horizontal-calendar";
 import { CategoryPills } from "./category-pills";
 import { TodaysWorkoutCard } from "./todays-workout-card";
 import { TransformationCard } from "./transformation-card";
+import { TodaysNutritionCard } from "./todays-nutrition-card";
 interface FitnessDashboardProps {
   user: User;
   profile: Partial<OnboardingData>;
@@ -47,6 +48,9 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
 
         {/* 5. Today's Workout Card */}
         <TodaysWorkoutCard workout={todayWorkout} />
+
+        {/* 6. Today's Nutrition Card */}
+        <TodaysNutritionCard nutrition={nutrition} />
 
       </main>
 
