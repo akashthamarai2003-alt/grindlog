@@ -57,7 +57,7 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
   let initial_protein_target = null;
   if (validData.weight) {
     let proteinMultiplier = 1.6;
-    if (validData.goal === "Build Muscle" || validData.goal === "Body Recomposition") {
+    if (validData.goal === "Build Muscle" || validData.goal === "Lose Fat + Build Muscle") {
       proteinMultiplier = 2.0;
     } else if (validData.goal === "Build Strength") {
       proteinMultiplier = 1.8;

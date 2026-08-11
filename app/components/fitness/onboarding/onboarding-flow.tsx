@@ -234,53 +234,6 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
         );
       case 3:
         return (
-          <div className="px-6 pt-6 pb-28">
-            <StepHeader title="What do you want to achieve?" />
-            <div className="space-y-4">
-              {[
-                { id: "Lose Fat", icon: Flame },
-                { id: "Build Muscle", icon: Dumbbell },
-                { id: "Build Strength", icon: Target },
-                { id: "Body Recomposition", icon: Scale },
-                { id: "Improve Fitness", icon: Heart },
-                { id: "Improve Health", icon: Info }
-              ].map(opt => (
-                <OptionCard
-                  key={opt.id}
-                  title={opt.id}
-                  icon={opt.icon}
-                  selected={data.goal === opt.id}
-                  onClick={() => handleUpdate({ goal: opt.id as any })}
-                />
-              ))}
-            </div>
-            <BottomBar canProceed={!!data.goal} onProceed={handleNext} />
-          </div>
-        );
-      case 4:
-        return (
-          <div className="px-6 pt-6 pb-28">
-            <StepHeader title="What's your current fitness level?" subtitle="This helps us calibrate your initial plan." />
-            <div className="space-y-4">
-              {[
-                { id: "Beginner", desc: "New to structured training." },
-                { id: "Intermediate", desc: "Consistent training experience." },
-                { id: "Advanced", desc: "Experienced with structured training." }
-              ].map(opt => (
-                <OptionCard
-                  key={opt.id}
-                  title={opt.id}
-                  desc={opt.desc}
-                  selected={data.fitness_level === opt.id}
-                  onClick={() => handleUpdate({ fitness_level: opt.id as any })}
-                />
-              ))}
-            </div>
-            <BottomBar canProceed={!!data.fitness_level} onProceed={handleNext} />
-          </div>
-        );
-      case 5:
-        return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Body Details" subtitle="Let's understand your starting point." />
             <div className="space-y-6">
@@ -357,6 +310,90 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
               canProceed={!!(data.height && data.weight)} 
               onProceed={handleNext} 
             />
+          </div>
+        );
+      case 4:
+        return (
+          <div className="px-6 pt-6 pb-36">
+            <StepHeader title="What do you want to achieve?" />
+            <div className="space-y-4">
+              {[
+                { id: "Lose Fat", emoji: "🔥" },
+                { id: "Build Muscle", emoji: "💪" },
+                { id: "Lose Fat + Build Muscle", emoji: "🔥💪" },
+                { id: "Build Strength", emoji: "🏋️" },
+                { id: "Improve Fitness", emoji: "🏃" },
+                { id: "Maintain", emoji: "⚖️" }
+              ].map(opt => (
+                <motion.button
+                  key={opt.id}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleUpdate({ goal: opt.id as any })}
+                  className={`w-full flex items-center p-4 rounded-2xl border-2 text-left transition-all ${
+                    data.goal === opt.id ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
+                  }`}
+                >
+                  <div className={`text-2xl mr-4 ${data.goal === opt.id ? "" : "opacity-70 grayscale"}`}>
+                    {opt.emoji}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-semibold text-lg ${data.goal === opt.id ? "text-[#ADFF00]" : "text-gray-200"}`}>{opt.id}</h3>
+                  </div>
+                  {data.goal === opt.id && (
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[#ADFF00] ml-4">
+                      <Check size={24} />
+                    </motion.div>
+                  )}
+                </motion.button>
+              ))}
+            </div>
+
+            <div className="mt-8 p-5 bg-[#0D150D] border border-[#1A2619] rounded-2xl">
+              <h3 className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">Target</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-2">Current Weight</label>
+                  <div className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#121E12] text-gray-400 font-medium">
+                    {data.weight ? `${data.weight} kg` : "Not set"}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#ADFF00] mb-2">Target Weight (kg)</label>
+                  <input 
+                    type="number" 
+                    value={data.target_weight || ""} 
+                    onChange={e => handleUpdate({ target_weight: parseFloat(e.target.value) || undefined })}
+                    className="w-full p-4 rounded-xl border border-[#ADFF00]/30 bg-[#ADFF00]/5 text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600 font-bold" 
+                    placeholder={data.weight ? `${Math.round(data.weight * 0.9)}` : "68"}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <BottomBar canProceed={!!data.goal && !!data.target_weight} onProceed={handleNext} />
+          </div>
+        );
+      case 5:
+        return (
+          <div className="px-6 pt-6 pb-28">
+            <StepHeader title="What's your current fitness level?" subtitle="This helps us calibrate your initial plan." />
+            <div className="space-y-4">
+              {[
+                { id: "Beginner", desc: "New to structured training." },
+                { id: "Intermediate", desc: "Consistent training experience." },
+                { id: "Advanced", desc: "Experienced with structured training." }
+              ].map(opt => (
+                <OptionCard
+                  key={opt.id}
+                  title={opt.id}
+                  desc={opt.desc}
+                  selected={data.fitness_level === opt.id}
+                  onClick={() => handleUpdate({ fitness_level: opt.id as any })}
+                />
+              ))}
+            </div>
+            <BottomBar canProceed={!!data.fitness_level} onProceed={handleNext} />
           </div>
         );
       case 6:
@@ -551,8 +588,6 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <div className="space-y-4">
               {[
                 { label: "Personal", value: `${data.name}, ${data.age} yrs, ${data.country}`, stepIndex: 2 },
-                { label: "Goal", value: data.goal, stepIndex: 3 },
-                { label: "Fitness Level", value: data.fitness_level, stepIndex: 4 },
                 { label: "Body Details", value: [
                     data.height ? `${data.height}cm` : null,
                     data.weight ? `${data.weight}kg` : null,
@@ -560,7 +595,9 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     data.chest_cm ? `C:${data.chest_cm}cm` : null,
                     data.arm_cm ? `A:${data.arm_cm}cm` : null,
                     data.thigh_cm ? `T:${data.thigh_cm}cm` : null
-                  ].filter(Boolean).join(", "), stepIndex: 5 },
+                  ].filter(Boolean).join(", "), stepIndex: 3 },
+                { label: "Goal", value: data.goal ? `${data.goal} (Target: ${data.target_weight}kg)` : null, stepIndex: 4 },
+                { label: "Fitness Level", value: data.fitness_level, stepIndex: 5 },
                 { label: "Location", value: data.training_location, stepIndex: 6 },
                 { label: "Equipment", value: data.equipment?.join(", "), stepIndex: 7 },
                 { label: "Schedule", value: `${data.training_days_per_week} days/wk, ${data.workout_duration_minutes} min`, stepIndex: 8 },
