@@ -27,6 +27,7 @@ function getGroqClientForKey(apiKey: string): Groq {
 export function getGroqClient(): Groq {
   const keys = getApiKeys();
   const currentApiKey = keys[globalKeyCounter % keys.length];
+  globalKeyCounter = (globalKeyCounter + 1) % keys.length;
   return getGroqClientForKey(currentApiKey);
 }
 

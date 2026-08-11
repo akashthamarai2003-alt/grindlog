@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { GeneratedGroceryItemSchema } from "@/lib/fitness/ai/schemas";
+import { getGroqClient } from "@/lib/services/groq/client";
 import { z } from "zod";
-import Groq from 'groq-sdk';
 
 const GenerateGroceryResponseSchema = z.object({
   grocery_list: z.array(GeneratedGroceryItemSchema)
@@ -57,7 +57,7 @@ Generate a practical monthly 'grocery_list' based directly on the nutrition plan
 
 Respond entirely in JSON format matching this schema: { "grocery_list": [ { "name": string, "monthly_quantity": number, "unit": string, "estimated_price": number, "category": string, "is_optional": boolean, "reason": string } ] }`;
 
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY?.split(',')[0] || process.env.GROQ_API_KEY });
+    const groq = getGroqClient();
     
     const response = await groq.chat.completions.create({
       messages: [

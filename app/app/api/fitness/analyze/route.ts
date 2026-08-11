@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { OnboardingSchema } from '@/types/fitness/onboarding';
-import Groq from 'groq-sdk';
-
-// Initialize Groq (ensure GROQ_API_KEY is in your environment)
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY?.split(',')[0] || process.env.GROQ_API_KEY });
+import { getGroqClient } from "@/lib/services/groq/client";
 
 export async function POST(req: Request) {
   try {
+    const groq = getGroqClient();
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
     
