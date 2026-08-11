@@ -29,7 +29,7 @@ async function DashboardContent() {
 
   const { data: plan } = await supabase
     .from("fitness_os_workout_plans")
-    .select("id, plan_data")
+    .select("id, plan_data, created_at")
     .eq("user_id", user.id)
     .eq("status", "active")
     .maybeSingle();
@@ -56,7 +56,15 @@ async function DashboardContent() {
     .limit(1)
     .maybeSingle();
 
-  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} />;
+  let dayNumber = 1;
+  if (plan?.created_at) {
+    const start = new Date(plan.created_at);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - start.getTime());
+    dayNumber = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} dayNumber={dayNumber} />;
 }
 
 export default function FitnessHome() {
