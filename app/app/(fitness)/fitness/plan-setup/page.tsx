@@ -83,7 +83,7 @@ export default function PlanSetupPage() {
       const data = await res.json();
       if (data.success) {
         toast.success("Plan activated!");
-        router.push("/fitness");
+        router.push("/fitness/roadmap");
         router.refresh();
       } else {
         toast.error(data.error || "Failed to save plan");
