@@ -459,26 +459,49 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!data.target_physique} onProceed={handleNext} />
           </div>
         );
-case 6:
+        case 6:
         return (
           <div className="px-6 pt-6 pb-28">
-            <StepHeader title="What's your current fitness level?" subtitle="This helps us calibrate your initial plan." />
-            <div className="space-y-4">
-              {[
-                { id: "Beginner", desc: "New to structured training." },
-                { id: "Intermediate", desc: "Consistent training experience." },
-                { id: "Advanced", desc: "Experienced with structured training." }
-              ].map(opt => (
-                <OptionCard
-                  key={opt.id}
-                  title={opt.id}
-                  desc={opt.desc}
-                  selected={data.fitness_level === opt.id}
-                  onClick={() => handleUpdate({ fitness_level: opt.id as any })}
-                />
-              ))}
+            <StepHeader title="What's your training experience?" />
+            <div className="space-y-8">
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Experience Level</label>
+                <div className="space-y-4">
+                  {[
+                    { id: "Beginner", desc: "0–6 months" },
+                    { id: "Intermediate", desc: "6 months–2 years" },
+                    { id: "Advanced", desc: "2+ years" }
+                  ].map(opt => (
+                    <OptionCard
+                      key={opt.id}
+                      title={opt.id}
+                      desc={opt.desc}
+                      selected={data.fitness_level === opt.id}
+                      onClick={() => handleUpdate({ fitness_level: opt.id as any })}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Training Frequency</label>
+                <div className="flex justify-between gap-2">
+                  {[3,4,5,6,7].map(d => (
+                    <button 
+                      key={d}
+                      onClick={() => handleUpdate({ training_days_per_week: d })}
+                      className={`flex-1 py-3 rounded-xl flex flex-col items-center justify-center font-bold transition-all border ${
+                        data.training_days_per_week === d ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-xl">{d}</span>
+                      <span className="text-xs uppercase tracking-wider mt-1 opacity-70 font-semibold">days</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <BottomBar canProceed={!!data.fitness_level} onProceed={handleNext} />
+            <BottomBar canProceed={!!data.fitness_level && !!data.training_days_per_week} onProceed={handleNext} />
           </div>
         );
       case 7:
@@ -540,22 +563,6 @@ case 6:
             <StepHeader title="Training Schedule" subtitle="How much time can you commit?" />
             <div className="space-y-8">
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-3">Days per week</label>
-                <div className="flex justify-between gap-2">
-                  {[2,3,4,5,6,7].map(d => (
-                    <button 
-                      key={d}
-                      onClick={() => handleUpdate({ training_days_per_week: d })}
-                      className={`flex-1 aspect-square rounded-xl flex items-center justify-center text-lg font-bold transition-all border ${
-                        data.training_days_per_week === d ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-3">Preferred Workout Duration</label>
                 <div className="grid grid-cols-3 gap-3">
                   {[10, 20, 30, 45, 60, 90].map(m => (
@@ -589,7 +596,7 @@ case 6:
               </div>
             </div>
             <BottomBar 
-              canProceed={!!(data.training_days_per_week && data.workout_duration_minutes && data.preferred_training_time)} 
+              canProceed={!!(data.workout_duration_minutes && data.preferred_training_time)} 
               onProceed={handleNext} 
             />
           </div>
@@ -683,10 +690,10 @@ case 6:
                   ].filter(Boolean).join(", "), stepIndex: 3 },
                 { label: "Goal", value: data.goal ? `${data.goal} (Target: ${data.target_weight}kg)` : null, stepIndex: 4 },
                 { label: "Target Physique", value: data.target_physique, stepIndex: 5 },
-                { label: "Fitness Level", value: data.fitness_level, stepIndex: 6 },
+                { label: "Experience", value: data.fitness_level ? `${data.fitness_level} (${data.training_days_per_week} days/wk)` : null, stepIndex: 6 },
                 { label: "Location", value: data.training_location, stepIndex: 7 },
                 { label: "Equipment", value: data.equipment?.join(", "), stepIndex: 8 },
-                { label: "Schedule", value: `${data.training_days_per_week} days/wk, ${data.workout_duration_minutes} min`, stepIndex: 9 },
+                { label: "Schedule", value: data.workout_duration_minutes ? `${data.workout_duration_minutes} min, ${data.preferred_training_time}` : null, stepIndex: 9 },
                 { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 10 },
                 { label: "Lifestyle", value: `${data.activity_level}, ${data.sleep_duration} hrs sleep`, stepIndex: 11 }
               ].map((section, idx) => (
