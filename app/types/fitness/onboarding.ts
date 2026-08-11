@@ -74,7 +74,13 @@ export const OnboardingSchema = z.object({
   additional_health_notes: z.string().optional(),
   safety_acknowledged: z.boolean().optional(),
   
-  lifestyle_description: z.string().optional()
+  lifestyle_description: z.string().optional(),
+  
+  body_scan_front: z.string().optional(),
+  body_scan_left: z.string().optional(),
+  body_scan_right: z.string().optional(),
+  body_scan_back: z.string().optional(),
+  body_scan_inspiration: z.string().optional()
 });
 
 export type OnboardingData = z.infer<typeof OnboardingSchema>;

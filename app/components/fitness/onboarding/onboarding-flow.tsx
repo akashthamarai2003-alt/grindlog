@@ -17,8 +17,8 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const [showRestrictions, setShowRestrictions] = useState(false);
   const router = useRouter();
 
-  const totalSteps = 16;
-  const showProgress = step > 1 && step < 16;
+  const totalSteps = 17;
+  const showProgress = step > 1 && step < 17;
 
   const handleNext = () => {
     setDirection(1);
@@ -1308,12 +1308,104 @@ case 11:
           </div>
         );
 
-case 15:
+      case 15:
+        return (
+          <div className="px-6 pt-6 pb-36">
+            <StepHeader title="Current Body Scan" subtitle="Show your AI coach where you're starting." />
+            
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: "FRONT", field: "body_scan_front" },
+                  { label: "LEFT SIDE", field: "body_scan_left" },
+                  { label: "RIGHT SIDE", field: "body_scan_right" },
+                  { label: "BACK", field: "body_scan_back" },
+                ].map(item => (
+                  <div key={item.field} className="relative">
+                    <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider text-center">{item.label}</label>
+                    <div className={`w-full aspect-[3/4] rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
+                      <input type="file" accept="image/*" onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => handleUpdate({ [item.field]: ev.target?.result as string });
+                          reader.readAsDataURL(file);
+                        }
+                      }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                      {(data as any)[item.field] ? (
+                        <img src={(data as any)[item.field]} className="w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <div className="w-8 h-8 bg-[#1A2619] rounded-full flex items-center justify-center mb-2">
+                            <User className="w-4 h-4 text-gray-400" />
+                          </div>
+                          <span className="text-xs font-semibold text-gray-300">+ Upload</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider text-center">Inspiration (Optional)</label>
+                <div className={`w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
+                  <input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => handleUpdate({ body_scan_inspiration: ev.target?.result as string });
+                      reader.readAsDataURL(file);
+                    }
+                  }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                  {data.body_scan_inspiration ? (
+                    <img src={data.body_scan_inspiration} className="w-full h-full object-cover" />
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 bg-[#1A2619] rounded-full flex items-center justify-center mb-2">
+                        <User className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-300">+ Upload Photo</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-[#121E12] border border-[#1A2619] rounded-xl p-4 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Info size={16} className="text-[#ADFF00]" />
+                  <span className="text-sm font-semibold text-white">Photo Instructions</span>
+                </div>
+                <ul className="text-xs text-gray-400 space-y-2">
+                  <li className="flex items-center gap-2"><span>✅</span> Full body in natural standing position</li>
+                  <li className="flex items-center gap-2"><span>✅</span> Good lighting & plain background</li>
+                  <li className="flex items-center gap-2"><span>✅</span> Camera at approx waist/chest height</li>
+                  <li className="flex items-center gap-2"><span>❌</span> Don't flex</li>
+                </ul>
+              </div>
+
+              <div className="text-center px-4">
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  Your photos are private and are only used according to your selected AI analysis and privacy settings.
+                </p>
+              </div>
+
+            </div>
+            <BottomBar 
+              canProceed={!!(data.body_scan_front && data.body_scan_left && data.body_scan_right && data.body_scan_back)} 
+              onProceed={handleNext} 
+              label="Analyze" 
+            />
+          </div>
+        );
+
+case 16:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Review Your Profile" subtitle="Make sure everything looks good." />
             <div className="space-y-4">
               {[
+                { label: "Body Scan", value: data.body_scan_front ? "4 Photos uploaded" : "Not set", stepIndex: 15 },
                 { label: "Personal", value: `${data.name}, ${data.age} yrs, ${data.country}`, stepIndex: 2 },
                 { label: "Body Details", value: [
                     data.height ? `${data.height}cm` : null,
@@ -1350,7 +1442,7 @@ case 15:
             <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
           </div>
         );
-      case 16:
+      case 17:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 text-center">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
@@ -1392,7 +1484,7 @@ case 15:
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
         <div className="h-16 flex items-center px-4 relative z-10">
-          {step > 1 && step < 16 && (
+          {step > 1 && step < 17 && (
             <button 
               onClick={handleBack}
               className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"
