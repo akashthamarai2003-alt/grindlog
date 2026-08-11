@@ -5,6 +5,7 @@ import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-a
 import { GeneratedPlanSchema, GeneratedPlanData } from "@/lib/fitness/ai/schemas";
 import { FITNESS_PLAN_SYSTEM_PROMPT, buildFitnessPlanPrompt } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
+import Groq from 'groq-sdk';
 
 export async function POST(req: Request) {
   try {
@@ -56,12 +57,19 @@ export async function POST(req: Request) {
     const todayStr = new Date().toISOString().split('T')[0];
     const userPrompt = buildFitnessPlanPrompt(profile, todayStr, scan?.gemini_analysis);
     
-    const aiResponse = await generateAIResponseJSON<any>({
-      systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
-      userPrompt,
-      model: "fast", // Fast and cheap for structured JSON
-      maxTokens: 4000
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY?.split(',')[0] || process.env.GROQ_API_KEY });
+    const response = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: FITNESS_PLAN_SYSTEM_PROMPT },
+        { role: "user", content: userPrompt }
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.3,
+      max_tokens: 8000,
+      response_format: { type: "json_object" }
     });
+
+    const aiResponse = JSON.parse(response.choices[0].message.content || "{}");
 
     // 6. Validate AI JSON
     const parsed = GeneratedPlanSchema.safeParse(aiResponse);

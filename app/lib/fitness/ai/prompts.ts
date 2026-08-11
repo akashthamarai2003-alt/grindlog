@@ -50,7 +50,65 @@ Instructions:
 5. Generate a practical monthly 'grocery_list' based directly on the generated nutrition plan. Prioritize foods already available to me (${profile.available_foods?.join(", ") || "None"}). Do not recommend purchasing foods already provided by my ${profile.food_environment} environment. Respect my monthly food budget (${profile.nutrition_budget || "Not specified"}). Quantities should represent realistic approximately 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.
 6. Generate 'lifestyle' targets suitable for my profile.
 
-Respond entirely in JSON format matching the expected schema.`;
+Respond entirely in JSON format matching this exact schema:
+{
+  "plan": {
+    "name": "string",
+    "description": "string",
+    "goal": "string"
+  },
+  "workouts": [
+    {
+      "title": "string",
+      "workout_date": "YYYY-MM-DD",
+      "duration_minutes": number,
+      "exercises": [
+        {
+          "name": "string",
+          "exercise_order": number,
+          "sets": number,
+          "reps_string": "string",
+          "target_reps_num": number | null,
+          "rest_seconds": number,
+          "notes": "string"
+        }
+      ]
+    }
+  ],
+  "nutrition": {
+    "daily_calories": number,
+    "protein_grams": number,
+    "meals_per_day": number,
+    "guidance": "string",
+    "meals": [
+      {
+        "meal_name": "string",
+        "time_of_day": "string",
+        "items": ["string"],
+        "total_calories": number,
+        "protein_grams": number,
+        "prep_instructions": "string"
+      }
+    ],
+    "grocery_list": [
+      {
+        "name": "string",
+        "monthly_quantity": number,
+        "unit": "string",
+        "estimated_price": number,
+        "category": "Protein|Carbohydrates|Fruits|Vegetables|Dairy|Snacks|Other",
+        "is_optional": boolean,
+        "reason": "string"
+      }
+    ]
+  },
+  "lifestyle": {
+    "sleep_target_hours": number,
+    "water_target_liters": number,
+    "daily_steps_target": number
+  }
+}
+`;
 }
 
 export const FITNESS_COACH_SYSTEM_PROMPT = `You are an elite, supportive Fitness AI Coach. Your primary job is to provide actionable fitness advice and progress analysis based strictly on the user's actual data.
