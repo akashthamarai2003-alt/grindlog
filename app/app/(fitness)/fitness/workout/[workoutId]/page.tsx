@@ -2,10 +2,18 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import { WorkoutExecution } from "@/components/fitness/workout/workout-execution";
+import { ExerciseDetail } from "@/components/fitness/workout/exercise-detail";
 import { redirect } from "next/navigation";
 
-export default async function ActiveWorkoutPage({ params }: { params: Promise<{ workoutId: string }> }) {
+export default async function ActiveWorkoutPage({ 
+  params,
+  searchParams
+}: { 
+  params: Promise<{ workoutId: string }>,
+  searchParams: Promise<{ exercise?: string }>
+}) {
   const { workoutId } = await params;
+  const { exercise: activeExerciseId } = await searchParams;
   
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -50,15 +58,30 @@ export default async function ActiveWorkoutPage({ params }: { params: Promise<{ 
     redirect("/fitness/workout");
   }
 
+  // Find active exercise if specified
+  const activeExercise = activeExerciseId 
+    ? workout.fitness_os_exercises.find((e: any) => e.id === activeExerciseId)
+    : null;
+
   return (
     <FitnessGuard>
       <div className="min-h-screen bg-[#0A1108] text-white">
         <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
-          <WorkoutHeader 
-            title={workout.name}
-            backUrl="/fitness/workout"
-          />
-          <WorkoutExecution workout={workout as any} sessionId={activeSession.id} />
+          {!activeExercise && (
+            <WorkoutHeader 
+              title={workout.name}
+              backUrl="/fitness/workout"
+            />
+          )}
+          
+          {activeExercise ? (
+            <ExerciseDetail 
+              exercise={activeExercise} 
+              workoutId={workout.id} 
+            />
+          ) : (
+            <WorkoutExecution workout={workout as any} sessionId={activeSession.id} />
+          )}
         </div>
       </div>
     </FitnessGuard>
