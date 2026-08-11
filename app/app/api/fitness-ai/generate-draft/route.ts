@@ -5,6 +5,7 @@ import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-a
 import { GeneratedPlanSchema, GeneratedPlanData } from "@/lib/fitness/ai/schemas";
 import { FITNESS_PLAN_SYSTEM_PROMPT, buildFitnessPlanPrompt } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
+import Groq from 'groq-sdk';
 
 export async function POST(req: Request) {
   try {
@@ -45,7 +46,6 @@ export async function POST(req: Request) {
     const userPrompt = buildFitnessPlanPrompt(profile, todayStr, scan?.gemini_analysis);
     
     // Using groq client directly for better control
-    import Groq from 'groq-sdk';
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY?.split(',')[0] || process.env.GROQ_API_KEY });
     
     const response = await groq.chat.completions.create({
