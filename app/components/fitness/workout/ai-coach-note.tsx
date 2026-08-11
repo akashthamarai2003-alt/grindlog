@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, HelpCircle, X, Target, Activity, Dumbbell, Clock, HeartPulse, TrendingUp, Settings2 } from "lucide-react";
