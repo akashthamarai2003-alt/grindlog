@@ -240,7 +240,7 @@ export default function PlanSetupPage() {
 
 
         </>
-      ) : (
+      ) : activeTab === "diet" ? (
         <div className="px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="grid grid-cols-3 gap-3 mb-6">
             <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex flex-col items-center justify-center text-center">
