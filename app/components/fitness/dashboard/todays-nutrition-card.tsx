@@ -28,10 +28,7 @@ export function TodaysNutritionCard({ nutrition }: TodaysNutritionCardProps) {
         completed: false // Default to not completed unless we track it
       }))
     : [];
-    
-  if (meals.length === 0) {
-    return null;
-  }
+  // Remove early return so we can render an empty state if no meals exist
 
   // We can add simple local state just for the UI interaction of ticking meals
   const [completedMeals, setCompletedMeals] = useState<Record<number, boolean>>(
@@ -99,33 +96,40 @@ export function TodaysNutritionCard({ nutrition }: TodaysNutritionCardProps) {
 
         {/* Meals List */}
         <div className="bg-black/30 rounded-xl border border-white/5 overflow-hidden">
-          {meals.map((meal: any, idx: number) => {
-            const isCompleted = completedMeals[meal.id];
-            
-            return (
-              <div 
-                key={meal.id}
-                onClick={() => toggleMeal(meal.id)}
-                className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${idx !== meals.length - 1 ? 'border-b border-white/5' : ''} ${isCompleted ? 'bg-[#ADFF00]/5' : 'hover:bg-white/5'}`}
-              >
-                <div className="shrink-0 flex items-center justify-center">
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-5 h-5 text-[#ADFF00]" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-white/20" />
-                  )}
+          {meals.length > 0 ? (
+            meals.map((meal: any, idx: number) => {
+              const isCompleted = completedMeals[meal.id];
+              
+              return (
+                <div 
+                  key={meal.id}
+                  onClick={() => toggleMeal(meal.id)}
+                  className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${idx !== meals.length - 1 ? 'border-b border-white/5' : ''} ${isCompleted ? 'bg-[#ADFF00]/5' : 'hover:bg-white/5'}`}
+                >
+                  <div className="shrink-0 flex items-center justify-center">
+                    {isCompleted ? (
+                      <CheckCircle2 className="w-5 h-5 text-[#ADFF00]" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-white/20" />
+                    )}
+                  </div>
+                  <div>
+                    <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isCompleted ? 'text-[#ADFF00]/80' : 'text-white/80'}`}>
+                      {meal.name}
+                    </p>
+                    <p className="text-xs font-medium text-white/40 truncate max-w-[200px]">
+                      {meal.desc}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${isCompleted ? 'text-[#ADFF00]/80' : 'text-white/80'}`}>
-                    {meal.name}
-                  </p>
-                  <p className="text-xs font-medium text-white/40 truncate max-w-[200px]">
-                    {meal.desc}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="p-5 flex flex-col items-center justify-center text-center">
+              <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">No Meals Planned</p>
+              <p className="text-xs text-white/30">Your AI nutrition plan will appear here.</p>
+            </div>
+          )}
         </div>
 
         {/* Link Button */}
