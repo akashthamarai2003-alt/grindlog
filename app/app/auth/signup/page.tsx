@@ -75,7 +75,7 @@ function SignUpContent() {
     setIsLoading(false);
 
     if (result.success) {
-      router.push("/payment");
+      router.push("/fitness/onboarding");
     } else {
       setError(result.error || "Failed to create account. Please try again.");
     }

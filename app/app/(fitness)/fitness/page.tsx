@@ -5,12 +5,14 @@ import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboa
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
 import { Suspense } from "react";
 
+import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
+
 async function DashboardContent() {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    return <FitnessLandingPage />;
   }
 
   const { data: profile } = await supabase

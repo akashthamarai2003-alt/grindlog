@@ -10,7 +10,7 @@ export default async function FitnessLayout({ children }: { children: React.Reac
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    return <>{children}</>;
   }
 
   return <FitnessShell>{children}</FitnessShell>;
