@@ -7,8 +7,7 @@ import { AIMessageCard } from "./ai-message-card";
 import { HorizontalCalendar } from "./horizontal-calendar";
 import { CategoryPills } from "./category-pills";
 import { HorizontalWorkoutList } from "./horizontal-workout-list";
-
-
+import { TransformationCard } from "./transformation-card";
 interface FitnessDashboardProps {
   user: User;
   profile: Partial<OnboardingData>;
@@ -37,7 +36,10 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
         {/* 2. AI Target / Message Card */}
         <AIMessageCard />
 
-        {/* 3. Horizontal Calendar */}
+        {/* 3. Transformation Card */}
+        <TransformationCard profile={profile} />
+
+        {/* 4. Horizontal Calendar */}
         <HorizontalCalendar />
 
         {/* 4. Filter Tags / Category Pills */}
