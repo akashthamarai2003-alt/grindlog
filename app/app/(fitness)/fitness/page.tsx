@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
 import { Suspense } from "react";
@@ -20,6 +19,10 @@ async function DashboardContent() {
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  if (!profile?.onboarding_completed) {
+    redirect("/fitness/onboarding");
+  }
 
   // Get today's local date string
   const today = new Date().toISOString().split('T')[0];
@@ -58,16 +61,14 @@ async function DashboardContent() {
 
 export default function FitnessHome() {
   return (
-    <FitnessGuard>
-      <div className="min-h-screen bg-gray-50/50">
-        <Suspense fallback={
-          <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">
-            <DashboardSkeleton />
-          </div>
-        }>
-          <DashboardContent />
-        </Suspense>
-      </div>
-    </FitnessGuard>
+    <div className="min-h-screen bg-gray-50/50">
+      <Suspense fallback={
+        <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">
+          <DashboardSkeleton />
+        </div>
+      }>
+        <DashboardContent />
+      </Suspense>
+    </div>
   );
 }
