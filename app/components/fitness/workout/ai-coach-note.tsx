@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Bot, HelpCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface AiCoachNoteProps {
   note?: string;
@@ -30,7 +31,10 @@ export function AiCoachNote({ note }: AiCoachNoteProps) {
           "{note || defaultNote}"
         </p>
 
-        <button className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 border border-white/5">
+        <button 
+          onClick={() => toast.success("AI insights and logic explanation coming soon!")}
+          className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 border border-white/5"
+        >
           <HelpCircle className="w-4 h-4 text-white/50" />
           <span className="text-[11px] font-black text-white/80 uppercase tracking-widest">Why this workout?</span>
         </button>

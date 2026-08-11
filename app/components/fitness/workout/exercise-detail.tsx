@@ -40,6 +40,16 @@ export function ExerciseDetail({ exercise, workoutId }: ExerciseDetailProps) {
     const reps = input.reps ? parseInt(input.reps, 10) : null;
     const weight = input.weight ? parseFloat(input.weight) : null;
 
+    // If it's the mock workout, just simulate a successful save
+    if (workoutId === "mock") {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setActiveRestSeconds(exercise.rest_seconds);
+      // We manually update the local state to show it's completed for the preview
+      setRecord.completed = true;
+      setSubmittingSetId(null);
+      return;
+    }
+
     const res = await completeSetAction({
       setId: setRecord.id,
       actualReps: reps,
