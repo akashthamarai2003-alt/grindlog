@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell } from 'lucide-react';
+import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function PlanSetupPage() {
@@ -12,6 +12,7 @@ export default function PlanSetupPage() {
   const [loading, setLoading] = useState(true);
   
   const [selectedDay, setSelectedDay] = useState(0); // 0 = Mon, 6 = Sun
+  const [activeTab, setActiveTab] = useState<"workout" | "diet">("workout");
   
   const [chatInput, setChatInput] = useState("");
   const [modulating, setModulating] = useState(false);
@@ -122,10 +123,28 @@ export default function PlanSetupPage() {
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[140px]">
       <div className="pt-12 px-6 pb-6">
-        <h1 className="text-3xl font-black mb-2 tracking-tight">Your 6-Day Training Plan</h1>
+        <h1 className="text-3xl font-black mb-2 tracking-tight">{activeTab === 'workout' ? 'Your Training Plan' : 'Your Nutrition Plan'}</h1>
         <p className="text-gray-400">{planData.plan?.description || "Here is your custom AI generated plan."}</p>
       </div>
 
+      {/* Tab Toggle */}
+      <div className="flex bg-[#121E12] rounded-full p-1 mx-6 mb-6">
+        <button 
+          onClick={() => setActiveTab("workout")}
+          className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "workout" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+        >
+          <Dumbbell size={16} /> Workout
+        </button>
+        <button 
+          onClick={() => setActiveTab("diet")}
+          className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "diet" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+        >
+          <Apple size={16} /> Diet
+        </button>
+      </div>
+
+      {activeTab === "workout" ? (
+        <>
       {/* Week Selector */}
       <div className="flex overflow-x-auto gap-3 px-6 pb-4 scrollbar-hide snap-x">
         {days.map((day, i) => {
@@ -209,6 +228,57 @@ export default function PlanSetupPage() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+
+        </>
+      ) : (
+        <div className="px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+              <Flame size={20} className="text-orange-500 mb-2" />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Calories</span>
+              <span className="text-lg font-black text-white">{planData.nutrition?.daily_calories || '--'}</span>
+            </div>
+            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+              <Dumbbell size={20} className="text-blue-500 mb-2" />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Protein</span>
+              <span className="text-lg font-black text-white">{planData.nutrition?.protein_grams || '--'}g</span>
+            </div>
+            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+              <Droplets size={20} className="text-cyan-500 mb-2" />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Water</span>
+              <span className="text-lg font-black text-white">{planData.lifestyle?.water_target_liters || 3}L</span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {planData.nutrition?.meals?.map((meal: any, idx: number) => (
+              <div key={idx} className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#ADFF00] opacity-50"></div>
+                <div className="flex justify-between items-start mb-3 pl-2">
+                  <h3 className="font-bold text-gray-200 text-lg">{meal.meal_name}</h3>
+                  <span className="text-xs font-semibold text-gray-500 bg-black/40 px-2 py-1 rounded-md">{meal.time_of_day}</span>
+                </div>
+                
+                <div className="space-y-2 pl-2">
+                  {meal.items?.map((item: string, itemIdx: number) => (
+                    <div key={itemIdx} className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#ADFF00]"></div>
+                      <span className="text-sm font-medium text-gray-300">{item}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {meal.prep_instructions && (
+                  <div className="mt-4 pl-2 text-[11px] text-gray-500 border-t border-[#1A2619] pt-3">
+                    {meal.prep_instructions}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Floating Modulator & Save */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50 pointer-events-none">
