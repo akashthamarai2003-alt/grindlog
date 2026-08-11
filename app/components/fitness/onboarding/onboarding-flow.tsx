@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
-import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, Clock, ListChecks, ArrowRight } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, Clock, ListChecks, ArrowRight, User } from "lucide-react";
 import { toast } from "sonner";
 
 export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<OnboardingData> }) {
@@ -14,8 +14,8 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
-  const totalSteps = 11;
-  const showProgress = step > 1 && step < 11;
+  const totalSteps = 12;
+  const showProgress = step > 1 && step < 12;
 
   const handleNext = () => {
     setStep(s => Math.min(s + 1, totalSteps));
@@ -165,6 +165,75 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
         );
       case 2:
         return (
+          <div className="px-6 pt-6 pb-36">
+            <StepHeader title="Personal Profile" subtitle="Tell us a bit about yourself." />
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-2">Name</label>
+                <input 
+                  type="text" 
+                  value={data.name || ""} 
+                  onChange={e => handleUpdate({ name: e.target.value })}
+                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                  placeholder="Your Name"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Age</label>
+                  <input 
+                    type="number" 
+                    min={16} max={120}
+                    value={data.age || ""} 
+                    onChange={e => handleUpdate({ age: parseInt(e.target.value) || undefined })}
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    placeholder="25"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Gender</label>
+                  <select 
+                    value={data.gender || ""} 
+                    onChange={e => handleUpdate({ gender: e.target.value as any })}
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none appearance-none"
+                  >
+                    <option value="" disabled className="text-gray-500">Select</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-2">Country</label>
+                <input 
+                  type="text" 
+                  value={data.country || ""} 
+                  onChange={e => handleUpdate({ country: e.target.value })}
+                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                  placeholder="e.g. United States"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-2">Preferred Language</label>
+                <input 
+                  type="text" 
+                  value={data.preferred_language || ""} 
+                  onChange={e => handleUpdate({ preferred_language: e.target.value })}
+                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                  placeholder="e.g. English"
+                />
+              </div>
+            </div>
+            <BottomBar 
+              canProceed={!!(data.name && data.age && data.age >= 16 && data.gender && data.country && data.preferred_language)} 
+              onProceed={handleNext} 
+            />
+          </div>
+        );
+      case 3:
+        return (
           <div className="px-6 pt-6 pb-28">
             <StepHeader title="What do you want to achieve?" />
             <div className="space-y-4">
@@ -188,7 +257,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!data.goal} onProceed={handleNext} />
           </div>
         );
-      case 3:
+      case 4:
         return (
           <div className="px-6 pt-6 pb-28">
             <StepHeader title="What's your current fitness level?" subtitle="This helps us calibrate your initial plan." />
@@ -210,22 +279,11 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!data.fitness_level} onProceed={handleNext} />
           </div>
         );
-      case 4:
+      case 5:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Basic Information" subtitle="We need these to calculate your metrics accurately." />
             <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Age</label>
-                <input 
-                  type="number" 
-                  min={16} max={120}
-                  value={data.age || ""} 
-                  onChange={e => handleUpdate({ age: parseInt(e.target.value) || undefined })}
-                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
-                  placeholder="e.g. 25"
-                />
-              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-2">Height (cm)</label>
@@ -258,28 +316,14 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                   placeholder="65"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Gender</label>
-                <select 
-                  value={data.gender || ""} 
-                  onChange={e => handleUpdate({ gender: e.target.value as any })}
-                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none appearance-none"
-                >
-                  <option value="" disabled className="text-gray-500">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
-                </select>
-              </div>
             </div>
             <BottomBar 
-              canProceed={!!(data.age && data.age >= 16 && data.height && data.weight && data.gender)} 
+              canProceed={!!(data.height && data.weight)} 
               onProceed={handleNext} 
             />
           </div>
         );
-      case 5:
+      case 6:
         return (
           <div className="px-6 pt-6 pb-28">
             <StepHeader title="Where do you train?" />
@@ -296,7 +340,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!data.training_location} onProceed={handleNext} />
           </div>
         );
-      case 6:
+      case 7:
         return (
           <div className="px-6 pt-6 pb-28">
             <StepHeader title="What equipment do you have access to?" subtitle="Select all that apply." />
@@ -332,7 +376,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!(data.equipment && data.equipment.length > 0)} onProceed={handleNext} />
           </div>
         );
-      case 7:
+      case 8:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Training Schedule" subtitle="How much time can you commit?" />
@@ -392,7 +436,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             />
           </div>
         );
-      case 8:
+      case 9:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Nutrition Preferences" subtitle="We only store your preferences. No diet plan is generated yet." />
@@ -425,7 +469,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!(data.diet_preference && data.meals_per_day)} onProceed={handleNext} />
           </div>
         );
-      case 9:
+      case 10:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Lifestyle" subtitle="Tell us about your daily activity." />
@@ -464,20 +508,21 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!(data.activity_level && data.sleep_duration)} onProceed={handleNext} />
           </div>
         );
-      case 10:
+      case 11:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Review Your Profile" subtitle="Make sure everything looks good." />
             <div className="space-y-4">
               {[
-                { label: "Goal", value: data.goal, stepIndex: 2 },
-                { label: "Fitness Level", value: data.fitness_level, stepIndex: 3 },
-                { label: "Body Info", value: `${data.age} yrs, ${data.height} cm, ${data.weight} kg`, stepIndex: 4 },
-                { label: "Location", value: data.training_location, stepIndex: 5 },
-                { label: "Equipment", value: data.equipment?.join(", "), stepIndex: 6 },
-                { label: "Schedule", value: `${data.training_days_per_week} days/wk, ${data.workout_duration_minutes} min`, stepIndex: 7 },
-                { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 8 },
-                { label: "Lifestyle", value: `${data.activity_level}, ${data.sleep_duration} hrs sleep`, stepIndex: 9 }
+                { label: "Personal", value: `${data.name}, ${data.age} yrs, ${data.country}`, stepIndex: 2 },
+                { label: "Goal", value: data.goal, stepIndex: 3 },
+                { label: "Fitness Level", value: data.fitness_level, stepIndex: 4 },
+                { label: "Body Info", value: `${data.height} cm, ${data.weight} kg`, stepIndex: 5 },
+                { label: "Location", value: data.training_location, stepIndex: 6 },
+                { label: "Equipment", value: data.equipment?.join(", "), stepIndex: 7 },
+                { label: "Schedule", value: `${data.training_days_per_week} days/wk, ${data.workout_duration_minutes} min`, stepIndex: 8 },
+                { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 9 },
+                { label: "Lifestyle", value: `${data.activity_level}, ${data.sleep_duration} hrs sleep`, stepIndex: 10 }
               ].map((section, idx) => (
                 <div key={idx} className="bg-[#0D150D] p-4 rounded-2xl border border-[#1A2619] flex justify-between items-center">
                   <div className="pr-4">
@@ -496,7 +541,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
           </div>
         );
-      case 11:
+      case 12:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 text-center">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
@@ -538,7 +583,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
         <div className="h-16 flex items-center px-4 relative z-10">
-          {step > 1 && step < 11 && (
+          {step > 1 && step < 12 && (
             <button 
               onClick={handleBack}
               className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"

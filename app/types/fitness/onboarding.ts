@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 export const OnboardingSchema = z.object({
+  name: z.string().optional(),
+  country: z.string().optional(),
+  preferred_language: z.string().optional(),
+
   goal: z.enum([
     "Lose Fat", 
     "Build Muscle", 
