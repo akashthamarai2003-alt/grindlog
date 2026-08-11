@@ -2,6 +2,8 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import { WorkoutSummaryCard } from "@/components/fitness/workout/workout-summary-card";
+import { AiCoachNote } from "@/components/fitness/workout/ai-coach-note";
+import { TodaysExercisesList } from "@/components/fitness/workout/todays-exercises-list";
 import { redirect } from "next/navigation";
 
 export default async function WorkoutIndexPage() {
@@ -61,6 +63,10 @@ export default async function WorkoutIndexPage() {
               workout={workout} 
               exerciseCount={workout.fitness_os_exercises?.length || 6} 
             />
+            
+            <AiCoachNote />
+            
+            <TodaysExercisesList workoutId={workout.id} />
           </div>
         </div>
       </div>
