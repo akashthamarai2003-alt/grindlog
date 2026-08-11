@@ -40,7 +40,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   };
 
   const handleComplete = () => {
-    router.push("/fitness/dashboard"); // Assuming dashboard is the entry point, or scanner
+    router.push("/fitness/report");
     router.refresh();
   };
 

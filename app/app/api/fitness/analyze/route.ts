@@ -100,6 +100,8 @@ Generate a comprehensive Transformation Strategy JSON containing exactly these t
 - "training_strategy": (string) A summary of the workout approach they should take.
 - "nutrition_strategy": (string) A summary of the diet approach.
 - "progress_roadmap": (array of strings) 3-4 key milestones they will hit in the next 3-6 months.
+- "focus_areas": (array of exactly 5 short strings) Top 5 areas they need to focus on (e.g. 'Reduce waist/body fat', 'Develop shoulders', etc).
+- "fitness_score": (number 0-100) A coach-assigned starting fitness score based on their current stats vs goal.
 Output ONLY valid JSON matching this schema.`;
 
       const reasoningResponse = await groq.chat.completions.create({
