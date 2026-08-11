@@ -20,6 +20,10 @@ export const OnboardingSchema = z.object({
   height: z.number().min(50, "Height seems too low").max(300, "Height seems too high").optional(),
   weight: z.number().min(30, "Weight seems too low").max(400, "Weight seems too high").optional(),
   target_weight: z.number().min(30).max(400).optional(),
+  waist_cm: z.number().min(20).max(300).optional(),
+  chest_cm: z.number().min(20).max(300).optional(),
+  arm_cm: z.number().min(10).max(100).optional(),
+  thigh_cm: z.number().min(10).max(150).optional(),
   gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
   
   training_location: z.enum(["Gym", "Home", "Outdoor", "Mixed"]).optional(),

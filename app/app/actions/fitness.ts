@@ -27,6 +27,46 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
 
   const validData = result.data;
 
+  let bmi = null;
+  if (validData.height && validData.weight) {
+    const heightInMeters = validData.height / 100;
+    bmi = parseFloat((validData.weight / (heightInMeters * heightInMeters)).toFixed(1));
+  }
+
+  let baseline_calories = null;
+  if (validData.weight && validData.height && validData.age && validData.gender) {
+    let bmr = 0;
+    if (validData.gender === "Male") {
+      bmr = 10 * validData.weight + 6.25 * validData.height - 5 * validData.age + 5;
+    } else if (validData.gender === "Female") {
+      bmr = 10 * validData.weight + 6.25 * validData.height - 5 * validData.age - 161;
+    } else {
+      bmr = 10 * validData.weight + 6.25 * validData.height - 5 * validData.age - 78;
+    }
+
+    const activityMultipliers: Record<string, number> = {
+      "Mostly sedentary": 1.2,
+      "Lightly active": 1.375,
+      "Moderately active": 1.55,
+      "Very active": 1.725
+    };
+    const multiplier = validData.activity_level ? (activityMultipliers[validData.activity_level] || 1.2) : 1.2;
+    baseline_calories = Math.round(bmr * multiplier);
+  }
+
+  let initial_protein_target = null;
+  if (validData.weight) {
+    let proteinMultiplier = 1.6;
+    if (validData.goal === "Build Muscle" || validData.goal === "Body Recomposition") {
+      proteinMultiplier = 2.0;
+    } else if (validData.goal === "Build Strength") {
+      proteinMultiplier = 1.8;
+    }
+    initial_protein_target = Math.round(validData.weight * proteinMultiplier);
+  }
+
+  const weight_trend_baseline = validData.weight || null;
+
   // Insert or Update logic based on UNIQUE user_id
   const { error: upsertError } = await supabase
     .from("fitness_os_profiles")
@@ -34,6 +74,10 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
       { 
         user_id: user.id, 
         ...validData,
+        bmi,
+        baseline_calories,
+        initial_protein_target,
+        weight_trend_baseline,
         onboarding_completed: true,
         updated_at: new Date().toISOString()
       },

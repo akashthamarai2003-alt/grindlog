@@ -282,7 +282,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
       case 5:
         return (
           <div className="px-6 pt-6 pb-36">
-            <StepHeader title="Basic Information" subtitle="We need these to calculate your metrics accurately." />
+            <StepHeader title="Body Details" subtitle="Let's understand your starting point." />
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -292,7 +292,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     value={data.height || ""} 
                     onChange={e => handleUpdate({ height: parseFloat(e.target.value) || undefined })}
                     className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
-                    placeholder="175"
+                    placeholder="173"
                   />
                 </div>
                 <div>
@@ -302,19 +302,55 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     value={data.weight || ""} 
                     onChange={e => handleUpdate({ weight: parseFloat(e.target.value) || undefined })}
                     className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
-                    placeholder="70"
+                    placeholder="73"
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Target Weight (kg) <span className="text-gray-500 font-normal">(Optional)</span></label>
-                <input 
-                  type="number" 
-                  value={data.target_weight || ""} 
-                  onChange={e => handleUpdate({ target_weight: parseFloat(e.target.value) || undefined })}
-                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
-                  placeholder="65"
-                />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Waist (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
+                  <input 
+                    type="number" 
+                    value={data.waist_cm || ""} 
+                    onChange={e => handleUpdate({ waist_cm: parseFloat(e.target.value) || undefined })}
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    placeholder="80"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Chest (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
+                  <input 
+                    type="number" 
+                    value={data.chest_cm || ""} 
+                    onChange={e => handleUpdate({ chest_cm: parseFloat(e.target.value) || undefined })}
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    placeholder="95"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Arm (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
+                  <input 
+                    type="number" 
+                    value={data.arm_cm || ""} 
+                    onChange={e => handleUpdate({ arm_cm: parseFloat(e.target.value) || undefined })}
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    placeholder="35"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Thigh (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
+                  <input 
+                    type="number" 
+                    value={data.thigh_cm || ""} 
+                    onChange={e => handleUpdate({ thigh_cm: parseFloat(e.target.value) || undefined })}
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    placeholder="55"
+                  />
+                </div>
               </div>
             </div>
             <BottomBar 
@@ -517,7 +553,14 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                 { label: "Personal", value: `${data.name}, ${data.age} yrs, ${data.country}`, stepIndex: 2 },
                 { label: "Goal", value: data.goal, stepIndex: 3 },
                 { label: "Fitness Level", value: data.fitness_level, stepIndex: 4 },
-                { label: "Body Info", value: `${data.height} cm, ${data.weight} kg`, stepIndex: 5 },
+                { label: "Body Details", value: [
+                    data.height ? `${data.height}cm` : null,
+                    data.weight ? `${data.weight}kg` : null,
+                    data.waist_cm ? `W:${data.waist_cm}cm` : null,
+                    data.chest_cm ? `C:${data.chest_cm}cm` : null,
+                    data.arm_cm ? `A:${data.arm_cm}cm` : null,
+                    data.thigh_cm ? `T:${data.thigh_cm}cm` : null
+                  ].filter(Boolean).join(", "), stepIndex: 5 },
                 { label: "Location", value: data.training_location, stepIndex: 6 },
                 { label: "Equipment", value: data.equipment?.join(", "), stepIndex: 7 },
                 { label: "Schedule", value: `${data.training_days_per_week} days/wk, ${data.workout_duration_minutes} min`, stepIndex: 8 },
