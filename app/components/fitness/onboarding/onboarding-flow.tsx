@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
@@ -1441,39 +1441,9 @@ case 16:
             </div>
             <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
           </div>
-        );
-      case 17:
-        return (
-          <div className="flex flex-col h-[85vh] justify-center px-6 text-center">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
-              <div className="w-20 h-20 bg-[#ADFF00] rounded-full flex items-center justify-center mb-6 text-black shadow-[0_0_30px_rgba(173,255,0,0.5)]">
-                <Check size={40} strokeWidth={3} />
-              </div>
-              <h1 className="text-4xl font-black text-white tracking-tight leading-tight mb-4">
-                You're ready.
-              </h1>
-              <p className="text-lg text-gray-400 max-w-[280px]">
-                We have everything we need to personalize your Fitness AI OS.
-              </p>
-            </motion.div>
-            <div className="pb-8">
-              <button 
-                onClick={handleComplete} 
-                disabled={isSaving}
-                className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg shadow-[0_0_30px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-transform flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isSaving ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="animate-spin w-5 h-5" />
-                    <span>Processing...</span>
-                  </div>
-                ) : (
-                  "Enter My Fitness OS"
-                )}
-              </button>
-            </div>
-          </div>
-        );
+        );      case 17:
+        return <AIAnalysisScreen onComplete={handleComplete} isSaving={isSaving} />;
+
       default:
         return null;
     }
@@ -1528,3 +1498,116 @@ case 16:
     </div>
   );
 }
+
+
+const AIAnalysisScreen = ({ onComplete, isSaving }: { onComplete: () => void, isSaving: boolean }) => {
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase(1), 2000);
+    const t2 = setTimeout(() => setPhase(2), 3500);
+    const t3 = setTimeout(() => setPhase(3), 5500);
+    const t4 = setTimeout(() => setPhase(4), 7500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, []);
+
+  return (
+    <div className="flex flex-col min-h-[100dvh] justify-center px-6 relative overflow-hidden bg-[#0A1108]">
+      {/* Background glow */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+        <div className="w-[300px] h-[300px] bg-[#ADFF00] rounded-full blur-[100px] animate-pulse" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm mx-auto py-12">
+        <div className="flex justify-center mb-10 h-16">
+          {phase < 4 ? (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+              className="w-16 h-16 border-4 border-[#1A2619] border-t-[#ADFF00] rounded-full"
+            />
+          ) : (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-16 h-16 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(173,255,0,0.5)]">
+              <Check size={32} strokeWidth={3} />
+            </motion.div>
+          )}
+        </div>
+
+        <div className="space-y-8 min-h-[280px]">
+          <AnalysisBlock 
+            title="Understanding your profile..." 
+            items={["Body information", "Fitness goal", "Training experience", "Lifestyle", "Nutrition preferences"]}
+            isActive={phase >= 0}
+            isComplete={phase >= 1}
+          />
+          <AnalysisBlock 
+            title="Analyzing your uploaded photos..." 
+            items={["Visual assessment"]}
+            isActive={phase >= 1}
+            isComplete={phase >= 2}
+          />
+          <AnalysisBlock 
+            title="Building your transformation strategy..." 
+            items={["Training strategy", "Nutrition strategy", "Progress roadmap"]}
+            isActive={phase >= 2}
+            isComplete={phase >= 3}
+          />
+        </div>
+
+        <div className="mt-8 h-16">
+          <AnimatePresence>
+            {phase >= 4 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+              >
+                <button 
+                  onClick={onComplete} 
+                  disabled={isSaving}
+                  className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg shadow-[0_0_30px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed hover:bg-[#c4ff33]"
+                >
+                  {isSaving ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="animate-spin w-5 h-5" />
+                      <span>Saving...</span>
+                    </div>
+                  ) : (
+                    "View Transformation Plan"
+                  )}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AnalysisBlock = ({ title, items, isActive, isComplete }: { title: string, items: string[], isActive: boolean, isComplete: boolean }) => {
+  if (!isActive) return null;
+  
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+      <h3 className={`font-black text-sm transition-colors duration-500 ${isComplete ? 'text-gray-400' : 'text-white'}`}>{title}</h3>
+      <div className="space-y-2">
+        {items.map((item, i) => (
+          <motion.div 
+            key={item} 
+            initial={{ opacity: 0, x: -10 }} 
+            animate={{ opacity: 1, x: 0 }} 
+            transition={{ delay: i * 0.15 }}
+            className="flex items-center gap-3"
+          >
+            <div className={`w-5 h-5 rounded-full flex flex-shrink-0 items-center justify-center border-2 transition-colors duration-500 ${
+              isComplete ? 'border-[#ADFF00] bg-[#ADFF00]/10 text-[#ADFF00]' : 'border-gray-600 bg-transparent text-transparent'
+            }`}>
+              <Check size={12} strokeWidth={3} className={isComplete ? "opacity-100" : "opacity-0"} />
+            </div>
+            <span className={`text-sm font-semibold transition-colors duration-500 ${isComplete ? 'text-gray-300' : 'text-gray-500'}`}>{item}</span>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
