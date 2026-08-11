@@ -13,6 +13,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const [direction, setDirection] = useState(1);
   const [data, setData] = useState<Partial<OnboardingData>>(initialData);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
   const router = useRouter();
 
   const totalSteps = 12;
@@ -677,42 +678,135 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
       case 10:
         return (
           <div className="px-6 pt-6 pb-36">
-            <StepHeader title="Lifestyle" subtitle="Tell us about your daily activity." />
-            <div className="space-y-6">
+            <StepHeader title="Lifestyle Profile" subtitle="How do you spend your days?" />
+            <div className="space-y-8">
+              
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-3">Daily Activity Level</label>
-                <div className="space-y-3">
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Activity</label>
+                <div className="grid grid-cols-2 gap-3">
                   {[
-                    { id: "Mostly sedentary", desc: "Desk job, little walking." },
-                    { id: "Lightly active", desc: "Some walking, standing." },
-                    { id: "Moderately active", desc: "Active job, manual labor." },
-                    { id: "Very active", desc: "Intense physical work daily." }
+                    "Mostly sitting",
+                    "Lightly active",
+                    "Moderately active",
+                    "Very active"
                   ].map(opt => (
-                    <OptionCard
-                      key={opt.id}
-                      title={opt.id}
-                      desc={opt.desc}
-                      selected={data.activity_level === opt.id}
-                      onClick={() => handleUpdate({ activity_level: opt.id as any })}
-                    />
+                    <button 
+                      key={opt}
+                      onClick={() => handleUpdate({ activity_level: opt as any })}
+                      className={`p-3 rounded-xl flex flex-col items-center text-center justify-center font-bold transition-all border ${
+                        data.activity_level === opt ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-sm">{opt}</span>
+                    </button>
                   ))}
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Average Sleep (Hours)</label>
-                <input 
-                  type="number" 
-                  min={3} max={16}
-                  value={data.sleep_duration || ""} 
-                  onChange={e => handleUpdate({ sleep_duration: parseFloat(e.target.value) || undefined })}
-                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
-                  placeholder="e.g. 7.5"
-                />
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Daily Steps</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {["<3k", "3–5k", "5–10k", "10k+"].map(opt => (
+                    <button 
+                      key={opt}
+                      onClick={() => handleUpdate({ daily_steps: opt as any })}
+                      className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
+                        data.daily_steps === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-xs">{opt}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Sleep</label>
+                <div className="flex flex-wrap gap-2">
+                  {["<5h", "5–6h", "6–7h", "7–8h", "8h+"].map(opt => (
+                    <button 
+                      key={opt}
+                      onClick={() => handleUpdate({ sleep_duration: opt as any })}
+                      className={`flex-1 min-w-[60px] py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
+                        data.sleep_duration === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-sm">{opt}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-[#1A2619]">
+                <button 
+                  onClick={() => setShowSchedule(!showSchedule)}
+                  className="w-full flex items-center justify-between py-2 text-left"
+                >
+                  <div>
+                    <h3 className="font-semibold text-gray-200">Daily Schedule (Optional)</h3>
+                    <p className="text-xs text-gray-500 mt-1">Allows the AI to create plans that fit your life.</p>
+                  </div>
+                  <div className={`p-2 rounded-full transition-colors ${showSchedule ? "bg-[#ADFF00]/20 text-[#ADFF00]" : "bg-[#121E12] text-gray-400"}`}>
+                    <ChevronRight size={18} className={`transition-transform duration-300 ${showSchedule ? 'rotate-90' : ''}`} />
+                  </div>
+                </button>
+
+                <AnimatePresence>
+                  {showSchedule && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-2">Wake-up</label>
+                          <input 
+                            type="time" 
+                            value={data.wake_time || ""} 
+                            onChange={e => handleUpdate({ wake_time: e.target.value })}
+                            className="w-full p-3 rounded-xl border border-[#1A2619] bg-[#121E12] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-2">Workout time</label>
+                          <input 
+                            type="time" 
+                            value={data.workout_time || ""} 
+                            onChange={e => handleUpdate({ workout_time: e.target.value })}
+                            className="w-full p-3 rounded-xl border border-[#1A2619] bg-[#121E12] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-2">Work/College</label>
+                          <input 
+                            type="time" 
+                            value={data.work_time || ""} 
+                            onChange={e => handleUpdate({ work_time: e.target.value })}
+                            className="w-full p-3 rounded-xl border border-[#1A2619] bg-[#121E12] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-2">Sleep time</label>
+                          <input 
+                            type="time" 
+                            value={data.sleep_time || ""} 
+                            onChange={e => handleUpdate({ sleep_time: e.target.value })}
+                            className="w-full p-3 rounded-xl border border-[#1A2619] bg-[#121E12] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none" 
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
             </div>
-            <BottomBar canProceed={!!(data.activity_level && data.sleep_duration)} onProceed={handleNext} />
+            <BottomBar canProceed={!!(data.activity_level && data.daily_steps && data.sleep_duration)} onProceed={handleNext} />
           </div>
         );
+
       case 11:
         return (
           <div className="px-6 pt-6 pb-36">
@@ -734,7 +828,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                 { label: "Environment", value: data.training_location ? `${data.training_location}${data.equipment?.length ? ` (${data.equipment.join(", ")})` : ''}` : null, stepIndex: 7 },
                 { label: "Schedule", value: data.workout_duration_minutes ? `${data.workout_duration_minutes} min, ${data.preferred_training_time}` : null, stepIndex: 8 },
                 { label: "Nutrition", value: `${data.diet_preference}, ${data.meals_per_day} meals`, stepIndex: 9 },
-                { label: "Lifestyle", value: `${data.activity_level}, ${data.sleep_duration} hrs sleep`, stepIndex: 10 }
+                { label: "Lifestyle", value: `${data.activity_level || "Not set"}, ${data.daily_steps || "Not set"} steps, ${data.sleep_duration || "Not set"} sleep`, stepIndex: 10 }
               ].map((section, idx) => (
                 <div key={idx} className="bg-[#0D150D] p-4 rounded-2xl border border-[#1A2619] flex justify-between items-center">
                   <div className="pr-4">

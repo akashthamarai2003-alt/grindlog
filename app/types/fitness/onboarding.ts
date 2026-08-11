@@ -51,10 +51,15 @@ export const OnboardingSchema = z.object({
   meals_per_day: z.number().min(1).max(10).optional(),
   nutrition_budget: z.string().optional(),
   
-  activity_level: z.enum(["Mostly sedentary", "Lightly active", "Moderately active", "Very active"]).optional(),
-  sleep_duration: z.number().min(3).max(16).optional(),
+  activity_level: z.enum(["Mostly sitting", "Lightly active", "Moderately active", "Very active"]).optional(),
+  daily_steps: z.enum(["<3k", "3–5k", "5–10k", "10k+"]).optional(),
+  sleep_duration: z.enum(["<5h", "5–6h", "6–7h", "7–8h", "8h+"]).optional(),
+  
   wake_time: z.string().optional(),
   sleep_time: z.string().optional(),
+  workout_time: z.string().optional(),
+  work_time: z.string().optional(),
+  
   lifestyle_description: z.string().optional()
 });
 
