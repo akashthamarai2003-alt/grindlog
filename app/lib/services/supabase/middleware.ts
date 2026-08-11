@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
 
   const publicPaths = [
     "/",
+    "/fitness",
     "/landing",
     "/fitness/landing",
     "/app",
@@ -80,7 +81,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath && !["/auth/reset-password", "/terms", "/privacy", "/refund", "/admin-login", "/landing", "/fitness/landing"].includes(pathname)) {
+  if (user && isPublicPath && !["/auth/reset-password", "/terms", "/privacy", "/refund", "/admin-login", "/landing", "/fitness/landing", "/fitness"].includes(pathname)) {
     const url = request.nextUrl.clone();
     
     // Determine safe redirect
