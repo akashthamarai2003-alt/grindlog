@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Flame, Trophy, Activity, Save } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Flame, Trophy, Activity, Save, Bot, ChevronRight, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { FitnessWorkout } from "@/types/fitness/workout";
 
@@ -20,13 +21,21 @@ export function WorkoutComplete({ workout, exerciseCount, completedSets, totalSe
   const volume = (totalSets * 10 * 25).toLocaleString(); // ex: 18 * 250 = 4,500
   const calories = Math.round(duration * 6.5); // ex: 48 * 6.5 = 312
 
+  // Feedback State
+  const [difficulty, setDifficulty] = useState<string | null>(null);
+  const [feel, setFeel] = useState<string | null>(null);
+  const [pain, setPain] = useState<string | null>(null);
+  const [painLocation, setPainLocation] = useState<string | null>(null);
+
+  const isFeedbackComplete = difficulty && feel && (pain === "No" || (pain === "Yes" && painLocation));
+
   return (
     <div className="w-full max-w-md mx-auto px-5 py-12 flex flex-col items-center pb-32">
       <motion.div 
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", damping: 15, stiffness: 200, delay: 0.1 }}
-        className="w-24 h-24 rounded-full bg-[#ADFF00]/10 flex items-center justify-center mb-6 border border-[#ADFF00]/20 shadow-[0_0_40px_rgba(173,255,0,0.15)]"
+        className="w-24 h-24 rounded-full bg-[#ADFF00]/10 flex items-center justify-center mb-6 border border-[#ADFF00]/20 shadow-[0_0_40px_rgba(173,255,0,0.15)] shrink-0"
       >
         <Flame className="w-12 h-12 text-[#ADFF00]" />
       </motion.div>
@@ -49,11 +58,12 @@ export function WorkoutComplete({ workout, exerciseCount, completedSets, totalSe
         Great work, Akash.
       </motion.p>
 
+      {/* Stats Card */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="w-full bg-[#111A10] border border-[#ADFF00]/20 rounded-[24px] p-6 shadow-[0_0_40px_rgba(173,255,0,0.05)] relative overflow-hidden mb-8"
+        className="w-full bg-[#111A10] border border-[#ADFF00]/20 rounded-[24px] p-6 shadow-[0_0_40px_rgba(173,255,0,0.05)] relative overflow-hidden mb-8 shrink-0"
       >
         <div className="absolute top-0 right-0 w-40 h-40 bg-[#ADFF00]/5 blur-[60px] rounded-full" />
         
@@ -99,6 +109,148 @@ export function WorkoutComplete({ workout, exerciseCount, completedSets, totalSe
         </div>
       </motion.div>
 
+      {/* Post-Workout Feedback */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="w-full flex flex-col gap-6 mb-8"
+      >
+        <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase text-center">
+          Post-Workout Feedback
+        </h2>
+
+        {/* Difficulty */}
+        <div className="flex flex-col gap-3">
+          <span className="text-sm font-bold text-white/80 tracking-wide">How difficult was today's workout?</span>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: "Easy", emoji: "😴" },
+              { label: "Moderate", emoji: "🙂" },
+              { label: "Hard", emoji: "😤" },
+              { label: "Very Hard", emoji: "🔥" }
+            ].map(opt => (
+              <button
+                key={opt.label}
+                onClick={() => setDifficulty(opt.label)}
+                className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${difficulty === opt.label ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'bg-[#111A10] border-white/5 text-white/60 hover:bg-white/5'}`}
+              >
+                <span className="text-lg">{opt.emoji}</span>
+                <span className="text-xs font-bold uppercase tracking-wider">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Feel */}
+        <div className="flex flex-col gap-3">
+          <span className="text-sm font-bold text-white/80 tracking-wide">How did you feel?</span>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: "Great", emoji: "😊" },
+              { label: "Good", emoji: "🙂" },
+              { label: "Normal", emoji: "😐" },
+              { label: "Tired", emoji: "😫" }
+            ].map(opt => (
+              <button
+                key={opt.label}
+                onClick={() => setFeel(opt.label)}
+                className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${feel === opt.label ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'bg-[#111A10] border-white/5 text-white/60 hover:bg-white/5'}`}
+              >
+                <span className="text-2xl mb-1">{opt.emoji}</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Pain */}
+        <div className="flex flex-col gap-3">
+          <span className="text-sm font-bold text-white/80 tracking-wide">Any pain/discomfort?</span>
+          <div className="grid grid-cols-2 gap-2">
+            {["No", "Yes"].map(opt => (
+              <button
+                key={opt}
+                onClick={() => { setPain(opt); if (opt === "No") setPainLocation(null); }}
+                className={`flex items-center justify-center p-3 rounded-xl border transition-all ${pain === opt ? (opt === 'Yes' ? 'bg-red-500/10 border-red-500 text-red-500' : 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]') : 'bg-[#111A10] border-white/5 text-white/60 hover:bg-white/5'}`}
+              >
+                <span className="text-xs font-bold uppercase tracking-wider">{opt}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Pain Location (Conditional) */}
+        <AnimatePresence>
+          {pain === "Yes" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex flex-col gap-3 overflow-hidden"
+            >
+              <div className="flex items-center gap-2 text-red-400 mt-2">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">Where?</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {["Shoulder", "Elbow", "Wrist", "Back", "Knee", "Other"].map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setPainLocation(opt)}
+                    className={`flex items-center justify-center p-2 rounded-xl border transition-all ${painLocation === opt ? 'bg-red-500/10 border-red-500 text-red-400' : 'bg-[#111A10] border-white/5 text-white/60 hover:bg-white/5'}`}
+                  >
+                    <span className="text-[10px] font-bold uppercase tracking-wider">{opt}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* AI Review (Shows when feedback is complete) */}
+      <AnimatePresence>
+        {isFeedbackComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full bg-[#111A10] border border-[#ADFF00]/30 rounded-2xl p-6 mb-8 relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 w-1 h-full bg-[#ADFF00]" />
+            
+            <div className="flex items-center gap-2 mb-4">
+              <Bot className="w-5 h-5 text-[#ADFF00]" />
+              <h3 className="text-sm font-black tracking-widest text-[#ADFF00] uppercase">
+                AI Workout Review
+              </h3>
+            </div>
+
+            <p className="text-sm font-medium text-white/90 leading-relaxed mb-4">
+              Excellent session. You completed all {exerciseCount} exercises and maintained your planned volume.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                Next Session Recommendations
+              </span>
+              <ul className="flex flex-col gap-2">
+                {[
+                  "Keep current weights",
+                  "Increase reps on lateral raises",
+                  "Maintain current recovery"
+                ].map((rec, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm font-medium text-white/70">
+                    <ChevronRight className="w-4 h-4 text-[#ADFF00] shrink-0" />
+                    {rec}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -106,7 +258,10 @@ export function WorkoutComplete({ workout, exerciseCount, completedSets, totalSe
         className="w-full"
       >
         <Link href="/fitness" className="w-full">
-          <button className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+          <button 
+            disabled={!isFeedbackComplete}
+            className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+          >
             <Save className="w-4 h-4" />
             Save Workout
           </button>
