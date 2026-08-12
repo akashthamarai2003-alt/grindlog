@@ -10,10 +10,11 @@ export default async function AdminUsersPage() {
   });
 
   // Fetch all users with their active subscriptions if any
-  const { data: users } = await supabase
+    const { data: users } = await supabase
     .from("profiles")
     .select(`
       *,
+      fitness_os_profiles (user_id),
       subscriptions (
         id,
         plan,
@@ -111,6 +112,7 @@ export default async function AdminUsersPage() {
       
       return {
         ...user,
+        has_fitness_profile: !!(user.fitness_os_profiles && Array.isArray(user.fitness_os_profiles) ? user.fitness_os_profiles.length > 0 : user.fitness_os_profiles),
         actualPaidAmount,
         paymentHistory,
         paymentId: validPaymentIds.length > 0 ? validPaymentIds.join(", ") : "-"

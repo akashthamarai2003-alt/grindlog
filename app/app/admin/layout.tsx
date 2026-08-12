@@ -16,7 +16,6 @@ export default function AdminLayout({
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Fitness AI OS", href: "/admin/fitness", icon: Activity },
-    { name: "Fitness Users", href: "/admin/fitness-users", icon: Dumbbell },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Plan Pricing", href: "/admin/pricing", icon: Tag },
     { name: "Coupons", href: "/admin/coupons", icon: CreditCard },

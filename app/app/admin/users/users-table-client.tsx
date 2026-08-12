@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Filter, RotateCcw, Crown, Shield, Calendar, DollarSign, Mail, Receipt } from "lucide-react";
+import { Search, Filter, RotateCcw, Crown, Shield, Calendar, DollarSign, Mail, Receipt, Dumbbell, X } from "lucide-react";
 import DeleteUserButton from "./delete-user-button";
 import SendMailModal from "./send-mail-modal";
 import PaymentHistoryModal from "./payment-history-modal";
-
+import { grantFitnessOSAction, revokeFitnessOSAction } from "./grant-fitness-action";
 
 interface UserWithDetails {
   id: string;
@@ -19,18 +19,43 @@ interface UserWithDetails {
   premium_tier?: string;
   premium_expires_at?: string;
   subscriptions?: any[];
-  paymentId: string;
+  paymentId?: string;
   actualPaidAmount: number;
+  has_fitness_profile?: boolean;
 }
 
 export default function UsersTableClient({ users }: { users: UserWithDetails[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">("all");
-  const [levelFilter, setLevelFilter] = useState<"all" | "pro" | "core">("all");
+  const [levelFilter, setLevelFilter] = useState<"all" | "core" | "pro">("all");
   const [tierFilter, setTierFilter] = useState<"all" | "monthly" | "six_months" | "lifetime">("all");
+  const [appFilter, setAppFilter] = useState<"all" | "grindlog" | "fitness">("all");
+
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [selectedMailUsers, setSelectedMailUsers] = useState<UserWithDetails[] | null>(null);
   const [selectedHistoryUser, setSelectedHistoryUser] = useState<UserWithDetails | null>(null);
+  
+  const [grantingFitnessId, setGrantingFitnessId] = useState<string | null>(null);
+  const [grantMessage, setGrantMessage] = useState<{ userId: string; text: string; ok: boolean } | null>(null);
+
+  const handleGrantFitness = async (userId: string) => {
+    setGrantingFitnessId(userId);
+    setGrantMessage(null);
+    const res = await grantFitnessOSAction(userId, "monthly", "pro");
+    setGrantingFitnessId(null);
+    setGrantMessage({ userId, text: res.success ? "✅ Fitness OS Pro granted!" : `❌ ${res.error}`, ok: !!res.success });
+    setTimeout(() => setGrantMessage(null), 3000);
+  };
+
+  const handleRevokeFitness = async (userId: string) => {
+    if (!confirm("Revoke ALL premium access from this user?")) return;
+    setGrantingFitnessId(userId);
+    setGrantMessage(null);
+    const res = await revokeFitnessOSAction(userId);
+    setGrantingFitnessId(null);
+    setGrantMessage({ userId, text: res.success ? "✅ Premium revoked." : `❌ ${res.error}`, ok: !!res.success });
+    setTimeout(() => setGrantMessage(null), 3000);
+  };
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -41,6 +66,10 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
         const matchEmail = user.email?.toLowerCase().includes(q);
         if (!matchName && !matchEmail) return false;
       }
+
+      // Filter by App
+      if (appFilter === "fitness" && !user.has_fitness_profile && !user.is_premium) return false;
+      if (appFilter === "grindlog" && user.has_fitness_profile) return false;
 
       // 2. Status filter
       if (statusFilter === "paid" && !user.is_premium) return false;
@@ -57,19 +86,20 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
 
       return true;
     });
-  }, [users, searchQuery, statusFilter, levelFilter, tierFilter]);
+  }, [users, searchQuery, statusFilter, levelFilter, tierFilter, appFilter]);
 
   const filteredRevenue = useMemo(() => {
     return filteredUsers.reduce((acc, user) => acc + (user.actualPaidAmount || 0), 0);
   }, [filteredUsers]);
 
-  const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || levelFilter !== "all" || tierFilter !== "all";
+  const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || levelFilter !== "all" || tierFilter !== "all" || appFilter !== "all";
 
   const resetFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
     setLevelFilter("all");
     setTierFilter("all");
+    setAppFilter("all");
   };
 
   const getPlanName = (tier?: string, level?: string) => {
@@ -123,7 +153,6 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
               {filteredUsers.length} of {users.length}
             </span>
           </div>
-
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
@@ -136,7 +165,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
         </div>
 
         {/* Filter Inputs Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-3">
           {/* Search Input */}
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -147,6 +176,19 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
               placeholder="Search by name or email..."
               className="w-full pl-9 pr-3 py-2 text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-900 placeholder:text-gray-400"
             />
+          </div>
+
+          {/* App Filter Dropdown */}
+          <div className="flex flex-col gap-1">
+            <select
+              value={appFilter}
+              onChange={(e) => setAppFilter(e.target.value as any)}
+              className="px-3 py-2 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 text-gray-700"
+            >
+              <option value="all">App: All Apps</option>
+              <option value="grindlog">App: GrindLog Users</option>
+              <option value="fitness">App: Fitness OS Users</option>
+            </select>
           </div>
 
           {/* Status Filter Dropdown */}
@@ -366,6 +408,38 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                             userEmail={user.email}
                           />
                         </div>
+
+                        {/* Fitness OS Actions */}
+                        <div className="flex items-center gap-2">
+                          {!user.is_premium ? (
+                            <button
+                              onClick={() => handleGrantFitness(user.id)}
+                              disabled={grantingFitnessId === user.id}
+                              title="Grant Fitness OS Pro access"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-lime-50 hover:bg-lime-100 text-lime-700 hover:text-lime-800 text-xs font-semibold border border-lime-300 transition-all active:scale-95 shrink-0 disabled:opacity-50"
+                            >
+                              <Dumbbell className="h-3.5 w-3.5" />
+                              <span>{grantingFitnessId === user.id ? "Granting..." : "Grant Fitness"}</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleRevokeFitness(user.id)}
+                              disabled={grantingFitnessId === user.id}
+                              title="Revoke premium access"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 text-xs font-semibold border border-red-200 transition-all active:scale-95 shrink-0 disabled:opacity-50"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              <span>{grantingFitnessId === user.id ? "Revoking..." : "Revoke Fitness"}</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Inline feedback message */}
+                        {grantMessage?.userId === user.id && (
+                          <span className={`text-[10px] font-bold ${grantMessage.ok ? "text-lime-600" : "text-red-500"}`}>
+                            {grantMessage.text}
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>
