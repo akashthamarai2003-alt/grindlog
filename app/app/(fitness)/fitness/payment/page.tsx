@@ -317,11 +317,18 @@ export default function FitnessPaymentPage() {
                   <h3 className={`font-bold ${level === "core" ? "text-white" : "text-gray-300"}`}>Core</h3>
                 </div>
                 
-                <div className="flex items-baseline gap-2">
-                  <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>
-                    ₹29
-                  </span>
-                  <span className="text-xs text-gray-500 font-medium">/month</span>
+                <div className="flex flex-col">
+                  <div className="flex items-baseline gap-2">
+                    {pricingConfig.monthly?.core?.originalPrice && pricingConfig.monthly.core.originalPrice > (pricingConfig.monthly?.core?.price || 29) && (
+                      <span className="text-sm text-gray-500 line-through font-semibold">
+                        ₹{pricingConfig.monthly.core.originalPrice}
+                      </span>
+                    )}
+                    <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>
+                      ₹{pricingConfig.monthly?.core?.price || 29}
+                    </span>
+                    <span className="text-xs text-gray-500 font-medium">/month</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -351,11 +358,18 @@ export default function FitnessPaymentPage() {
                   <h3 className={`font-bold ${level === "pro" ? "text-white" : "text-gray-300"}`}>Pro</h3>
                 </div>
                 
-                <div className="flex items-baseline gap-2">
-                  <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>
-                    ₹99
-                  </span>
-                  <span className="text-xs text-gray-500 font-medium">/month</span>
+                <div className="flex flex-col">
+                  <div className="flex items-baseline gap-2">
+                    {pricingConfig.monthly?.pro?.originalPrice && pricingConfig.monthly.pro.originalPrice > (pricingConfig.monthly?.pro?.price || 99) && (
+                      <span className="text-sm text-gray-500 line-through font-semibold">
+                        ₹{pricingConfig.monthly.pro.originalPrice}
+                      </span>
+                    )}
+                    <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>
+                      ₹{pricingConfig.monthly?.pro?.price || 99}
+                    </span>
+                    <span className="text-xs text-gray-500 font-medium">/month</span>
+                  </div>
                 </div>
               </div>
             </div>
