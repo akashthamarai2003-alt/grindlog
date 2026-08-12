@@ -16,6 +16,8 @@ export function NutritionView() {
   const [modalMealType, setModalMealType] = useState("lunch");
   const [modalPreselectedFoods, setModalPreselectedFoods] = useState<any[]>([]);
 
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const fetchToday = async () => {
     try {
       const res = await nutritionApi.getToday();
@@ -31,6 +33,23 @@ export function NutritionView() {
   useEffect(() => {
     fetchToday();
   }, []);
+
+  const handleGeneratePlan = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await nutritionApi.generatePlan();
+      if (res.existing) {
+        toast.info(res.message);
+      } else {
+        toast.success("Meal plan generated successfully!");
+      }
+      await fetchToday();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to generate plan");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleAddWater = async (amount: number) => {
     setIsWaterLoading(true);
@@ -70,8 +89,13 @@ export function NutritionView() {
           </div>
           <h2 className="text-lg font-black text-white uppercase tracking-widest mb-2">No Plan Found</h2>
           <p className="text-white/50 text-sm mb-6">You don't have active nutrition targets or a meal plan for today.</p>
-          <button className="w-full py-4 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black rounded-xl text-xs font-black tracking-widest uppercase transition-all">
-            Generate My Plan
+          <button 
+            disabled={isGenerating}
+            onClick={handleGeneratePlan}
+            className="w-full py-4 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black rounded-xl text-xs font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2 disabled:opacity-50"
+          >
+            {isGenerating ? <Loader2 className="animate-spin" size={16} /> : "Generate My Plan"}
+            {isGenerating && "Generating..."}
           </button>
         </div>
       );
@@ -202,7 +226,14 @@ export function NutritionView() {
         {meals.length === 0 ? (
           <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-8 text-center opacity-70">
              <p className="text-white/50 text-sm mb-4">No meal plan generated for today.</p>
-             <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold">Generate Plan</button>
+             <button 
+               disabled={isGenerating}
+               onClick={handleGeneratePlan}
+               className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
+             >
+               {isGenerating ? <Loader2 className="animate-spin" size={14} /> : null}
+               {isGenerating ? "Generating..." : "Generate Plan"}
+             </button>
           </div>
         ) : (
           <div className="space-y-3">
