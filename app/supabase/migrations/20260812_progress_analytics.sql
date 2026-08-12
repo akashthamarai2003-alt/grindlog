@@ -68,6 +68,16 @@ CREATE TABLE IF NOT EXISTS public.fitness_os_workout_sessions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+ALTER TABLE public.fitness_os_workout_sessions
+ADD COLUMN IF NOT EXISTS planned_workout TEXT,
+ADD COLUMN IF NOT EXISTS start_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ADD COLUMN IF NOT EXISTS completion_time TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS duration_seconds INTEGER,
+ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'planned',
+ADD COLUMN IF NOT EXISTS difficulty TEXT,
+ADD COLUMN IF NOT EXISTS feeling TEXT,
+ADD COLUMN IF NOT EXISTS notes TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_fitness_os_workout_sessions_user_time ON public.fitness_os_workout_sessions(user_id, start_time);
 
 ALTER TABLE public.fitness_os_workout_sessions ENABLE ROW LEVEL SECURITY;
