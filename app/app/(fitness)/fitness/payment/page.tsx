@@ -71,7 +71,7 @@ export default function FitnessPaymentPage() {
       if (returnTo) {
         window.location.href = `${returnTo}?success=true&t=${Date.now()}`;
       } else {
-        window.location.href = "/fitness/onboarding?success=true&t=" + Date.now();
+        window.location.href = "/fitness?success=true&t=" + Date.now();
       }
     }
   }, [isSuccess, returnTo]);
