@@ -11,7 +11,8 @@ export function FitnessShell({ children }: { children: React.ReactNode }) {
                       pathname?.includes("/report") || 
                       pathname?.includes("/plan-setup") || 
                       pathname?.includes("/roadmap") ||
-                      pathname?.includes("/generating");
+                      pathname?.includes("/generating") ||
+                      pathname?.includes("/payment");
 
   return (
     <div className="flex justify-center min-h-screen bg-[#0A1108]">

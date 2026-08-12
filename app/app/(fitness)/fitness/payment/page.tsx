@@ -23,9 +23,11 @@ import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 
 const features = [
   { icon: Target, label: "Workout Strategy", core: "Standard", pro: "Hyper-Personalized AI" },
+  { icon: Dumbbell, label: "Detailed Exercise Library", core: false, pro: true },
   { icon: Flame, label: "Diet Plan Generation", core: "Macros Only", pro: "Full Meal Plan" },
   { icon: ShoppingCart, label: "Smart Grocery Strategy", core: false, pro: true },
   { icon: Activity, label: "Progress Tracking", core: "Manual", pro: "Automated AI" },
+  { icon: Activity, label: "Water & Calorie Logging", core: false, pro: true },
   { icon: Brain, label: "AI Coach Support", core: false, pro: true },
   { icon: ShieldCheck, label: "Weekly AI Reviews", core: false, pro: true },
 ];
@@ -255,11 +257,49 @@ export default function FitnessPaymentPage() {
           </p>
         </div>
 
+        {/* Features Comparison */}
+        <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-6 mb-10 overflow-hidden">
+          <div className="grid grid-cols-12 mb-6 border-b border-[#1A2619] pb-4 items-center">
+            <h3 className="col-span-6 font-bold text-gray-200 text-sm">Feature</h3>
+            <div className="col-span-3 text-center text-xs font-semibold text-gray-400">Core</div>
+            <div className="col-span-3 text-center font-black text-[#ADFF00] tracking-wider uppercase text-xs">Pro</div>
+          </div>
+          
+          <div className="space-y-5">
+            {features.map((feature, i) => (
+              <div key={i} className="grid grid-cols-12 items-center">
+                <div className="col-span-6 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#1A2619] flex items-center justify-center text-gray-400 shrink-0">
+                    <feature.icon size={14} />
+                  </div>
+                  <span className="text-xs font-medium text-gray-300 leading-tight pr-2">{feature.label}</span>
+                </div>
+                
+                <div className="col-span-3 flex justify-center">
+                  {typeof feature.core === "boolean" ? (
+                    feature.core ? <Check size={16} className="text-gray-400" /> : <span className="text-gray-600 text-lg leading-none">&times;</span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-gray-400">{feature.core}</span>
+                  )}
+                </div>
+                
+                <div className="col-span-3 flex justify-center">
+                  {typeof feature.pro === "boolean" ? (
+                    feature.pro ? <Check size={16} className="text-[#ADFF00]" strokeWidth={3} /> : <span className="text-gray-600 text-lg leading-none">&times;</span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-[#ADFF00]">{feature.pro}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Plan Selector */}
         <div className="space-y-3 mb-10">
           {basePlans.map((plan) => {
             const isSelected = selectedPlan === plan.id;
-            const price = pricingConfig[plan.id as keyof PlanPricingConfig]?.[level]?.price ?? plan.basePrices[level as "core" | "pro"];
+            const price = plan.basePrices.pro; // Always display the Pro price
             
             return (
               <button
@@ -302,44 +342,6 @@ export default function FitnessPaymentPage() {
               </button>
             );
           })}
-        </div>
-
-        {/* Features Comparison */}
-        <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-6 mb-10 overflow-hidden">
-          <div className="grid grid-cols-12 mb-6 border-b border-[#1A2619] pb-4 items-center">
-            <h3 className="col-span-6 font-bold text-gray-200 text-sm">Feature</h3>
-            <div className="col-span-3 text-center text-xs font-semibold text-gray-400">Core</div>
-            <div className="col-span-3 text-center font-black text-[#ADFF00] tracking-wider uppercase text-xs">Pro</div>
-          </div>
-          
-          <div className="space-y-5">
-            {features.map((feature, i) => (
-              <div key={i} className="grid grid-cols-12 items-center">
-                <div className="col-span-6 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#1A2619] flex items-center justify-center text-gray-400 shrink-0">
-                    <feature.icon size={14} />
-                  </div>
-                  <span className="text-xs font-medium text-gray-300 leading-tight pr-2">{feature.label}</span>
-                </div>
-                
-                <div className="col-span-3 flex justify-center">
-                  {typeof feature.core === "boolean" ? (
-                    feature.core ? <Check size={16} className="text-gray-400" /> : <span className="text-gray-600 text-lg leading-none">&times;</span>
-                  ) : (
-                    <span className="text-[10px] font-semibold text-gray-400">{feature.core}</span>
-                  )}
-                </div>
-                
-                <div className="col-span-3 flex justify-center">
-                  {typeof feature.pro === "boolean" ? (
-                    feature.pro ? <Check size={16} className="text-[#ADFF00]" strokeWidth={3} /> : <span className="text-gray-600 text-lg leading-none">&times;</span>
-                  ) : (
-                    <span className="text-[10px] font-bold text-[#ADFF00]">{feature.pro}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
