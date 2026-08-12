@@ -132,7 +132,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
       {/* Metadata */}
       <div className="flex flex-col gap-1 mb-8">
         <span className="text-[11px] font-black tracking-[0.2em] text-[#ADFF00] uppercase mb-1">
-          {exercise.target_muscles?.[0] || "Target Muscle"}
+          {(exercise as any).target_muscles?.[0] || "Target Muscle"}
         </span>
         <div className="flex justify-between items-end border-b border-white/5 pb-4">
           <div className="flex flex-col">

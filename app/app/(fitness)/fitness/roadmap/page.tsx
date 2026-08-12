@@ -17,7 +17,7 @@ export default function RoadmapPage() {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: fitnessProfile } = await supabase.from('fitness_os_profiles').select('*').eq('user_id', user.id).single();
+        const { data: fitnessProfile } = await (supabase.from('fitness_os_profiles' as any) as any).select('*').eq('user_id', user.id).single();
         if (fitnessProfile) setProfile(fitnessProfile);
         
         const { data: mainProfile } = await supabase.from('profiles').select('is_premium').eq('id', user.id).single();

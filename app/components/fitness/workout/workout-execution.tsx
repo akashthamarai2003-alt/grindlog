@@ -54,7 +54,7 @@ export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) 
           exerciseCount={workout.fitness_os_exercises?.length || 6} 
         />
         <AiCoachNote />
-        <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises} />
+        <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises as any} />
       </div>
 
       <div className="w-full h-px bg-white/10 my-8" />

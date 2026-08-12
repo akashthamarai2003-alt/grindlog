@@ -380,7 +380,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-xs text-gray-500 font-mono flex flex-col gap-1">
-                        {paymentId.split(", ").map((pid: string, i: number) => (
+                        {(paymentId || "-").split(", ").map((pid: string, i: number) => (
                           <span key={i}>{pid}</span>
                         ))}
                       </div>
