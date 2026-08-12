@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Dumbbell, Utensils, User } from "lucide-react";
+import { Home, Dumbbell, Utensils, User, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,6 +11,7 @@ export function BottomNav() {
     { icon: Home, label: "Home", href: "/fitness" },
     { icon: Dumbbell, label: "Workout", href: "/fitness/workout" },
     { icon: Utensils, label: "Meals", href: "/fitness/nutrition" },
+    { icon: TrendingUp, label: "Progress", href: "/fitness/progress" },
     { icon: User, label: "Profile", href: "/fitness/profile" }
   ];
 
