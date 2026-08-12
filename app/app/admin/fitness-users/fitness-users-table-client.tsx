@@ -35,7 +35,6 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
       }
       if (statusFilter === "active" && !u.is_premium) return false;
       if (statusFilter === "inactive" && u.is_premium) return false;
-      if (statusFilter === "started" && !u.has_started_fitness) return false;
       return true;
     });
   }, [users, searchQuery, statusFilter]);
@@ -78,9 +77,6 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
           <span className="text-xs bg-lime-100 text-lime-700 font-bold px-2 py-0.5 rounded-full">
             {users.filter(u => u.is_premium).length} Premium
           </span>
-          <span className="text-xs bg-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">
-            {users.filter(u => u.has_started_fitness).length} On Fitness App
-          </span>
           <span className="text-xs bg-gray-100 text-gray-500 font-semibold px-2 py-0.5 rounded-full">
             {filteredUsers.length} of {users.length}
           </span>
@@ -101,10 +97,9 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
             onChange={(e) => setStatusFilter(e.target.value as any)}
             className="px-3 py-2 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-lime-500 text-gray-700"
           >
-            <option value="all">All Users</option>
-            <option value="active">Fitness OS Active (Premium)</option>
-            <option value="started">Started Fitness Onboarding</option>
-            <option value="inactive">No Fitness Access</option>
+            <option value="all">All Fitness Users</option>
+            <option value="active">Active (Premium)</option>
+            <option value="inactive">No Access</option>
           </select>
           {(searchQuery || statusFilter !== "all") && (
             <button
