@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot } from "lucide-react";
+import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check } from "lucide-react";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function NutritionView() {
   const [data, setData] = useState<any>(null);
@@ -17,11 +18,30 @@ export function NutritionView() {
   const [modalPreselectedFoods, setModalPreselectedFoods] = useState<any[]>([]);
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showTargetsModal, setShowTargetsModal] = useState(false);
+
+  // Targets Modal Form State
+  const [targetForm, setTargetForm] = useState({
+    calories: 2000,
+    protein: 130,
+    carbs: 225,
+    fat: 55,
+    water_ml: 3000
+  });
 
   const fetchToday = async () => {
     try {
       const res = await nutritionApi.getToday();
       setData(res);
+      if (res?.targets) {
+        setTargetForm({
+          calories: res.targets.calories || 2000,
+          protein: res.targets.protein || 130,
+          carbs: res.targets.carbs || 225,
+          fat: res.targets.fat || 55,
+          water_ml: res.targets.water_ml || 3000
+        });
+      }
       setError(null);
     } catch (err: any) {
       setError(err);
@@ -33,6 +53,20 @@ export function NutritionView() {
   useEffect(() => {
     fetchToday();
   }, []);
+
+  const handleSetDailyTargets = async (customPayload?: any) => {
+    setIsGenerating(true);
+    try {
+      await nutritionApi.setTargets(customPayload || targetForm);
+      toast.success("Daily nutrition targets initialized!");
+      setShowTargetsModal(false);
+      await fetchToday();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to set daily targets");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleGeneratePlan = async () => {
     setIsGenerating(true);
@@ -88,12 +122,14 @@ export function NutritionView() {
             <Apple size={32} />
           </div>
           <h2 className="text-lg font-black text-white uppercase tracking-widest mb-2">Targets Missing</h2>
-          <p className="text-white/50 text-sm mb-6">You need to set your daily nutrition targets before you can generate a meal plan.</p>
+          <p className="text-white/50 text-sm mb-6">Set your daily nutrition targets or auto-initialize calculated targets now.</p>
           <button 
-            onClick={() => window.location.href = '/fitness/profile'}
-            className="w-full py-4 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black rounded-xl text-xs font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2"
+            disabled={isGenerating}
+            onClick={() => handleSetDailyTargets()}
+            className="w-full py-4 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black rounded-xl text-xs font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2 cursor-pointer disabled:opacity-50 shadow-[0_0_20px_rgba(173,255,0,0.3)]"
           >
-            Set Daily Targets
+            {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} />}
+            <span>{isGenerating ? "Initializing Targets..." : "Set Daily Targets"}</span>
           </button>
         </div>
       );
@@ -120,12 +156,10 @@ export function NutritionView() {
     }
   };
 
-  // Determine meal status strictly from backend data (if foods are logged for that meal type)
   const isMealCompleted = (type: string) => {
     return data.logged_foods?.some((f: any) => f.meal_type === type);
   };
 
-  // Group foods by meal type for display
   const foodsByMeal = (data.logged_foods || []).reduce((acc: any, log: any) => {
     const t = log.meal_type || 'snack';
     if (!acc[t]) acc[t] = [];
@@ -193,7 +227,15 @@ export function NutritionView() {
         {/* Daily Target card */}
         <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-5">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-[11px] font-black tracking-widest text-white uppercase">Your Daily Targets</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-[11px] font-black tracking-widest text-white uppercase">Your Daily Targets</h3>
+              <button 
+                onClick={() => setShowTargetsModal(true)} 
+                className="text-[10px] font-bold text-[#ADFF00] hover:underline flex items-center gap-1"
+              >
+                <Edit3 size={12} /> Edit
+              </button>
+            </div>
             <span className="text-[10px] font-black tracking-widest text-white/40 uppercase">Score: <span className={nutrition_score > 80 ? "text-[#ADFF00]" : "text-white"}>{nutrition_score}</span></span>
           </div>
           <div className="grid grid-cols-4 gap-2">
@@ -405,6 +447,95 @@ export function NutritionView() {
         defaultMealType={modalMealType}
         preselectedFoods={modalPreselectedFoods}
       />
+
+      {/* Edit Daily Targets Modal */}
+      <AnimatePresence>
+        {showTargetsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-[#111A10] border border-white/10 rounded-3xl p-6 shadow-2xl relative"
+            >
+              <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center text-[#ADFF00]">
+                    <Edit3 size={16} />
+                  </div>
+                  <h2 className="text-base font-black text-white uppercase tracking-wider">Set Daily Nutrition Targets</h2>
+                </div>
+                <button onClick={() => setShowTargetsModal(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-white/60 uppercase tracking-wider mb-1">Calories (kcal)</label>
+                    <input 
+                      type="number"
+                      value={targetForm.calories}
+                      onChange={(e) => setTargetForm(p => ({ ...p, calories: Number(e.target.value) }))}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white font-bold text-sm outline-none focus:border-[#ADFF00]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#ADFF00] uppercase tracking-wider mb-1">Protein (g)</label>
+                    <input 
+                      type="number"
+                      value={targetForm.protein}
+                      onChange={(e) => setTargetForm(p => ({ ...p, protein: Number(e.target.value) }))}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-[#ADFF00]/30 text-white font-bold text-sm outline-none focus:border-[#ADFF00]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-blue-400 uppercase tracking-wider mb-1">Carbs (g)</label>
+                    <input 
+                      type="number"
+                      value={targetForm.carbs}
+                      onChange={(e) => setTargetForm(p => ({ ...p, carbs: Number(e.target.value) }))}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-blue-400/30 text-white font-bold text-sm outline-none focus:border-blue-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-orange-400 uppercase tracking-wider mb-1">Fat (g)</label>
+                    <input 
+                      type="number"
+                      value={targetForm.fat}
+                      onChange={(e) => setTargetForm(p => ({ ...p, fat: Number(e.target.value) }))}
+                      className="w-full p-3 rounded-xl bg-black/40 border border-orange-400/30 text-white font-bold text-sm outline-none focus:border-orange-400"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-cyan-400 uppercase tracking-wider mb-1">Water Target (ml)</label>
+                  <input 
+                    type="number"
+                    value={targetForm.water_ml}
+                    onChange={(e) => setTargetForm(p => ({ ...p, water_ml: Number(e.target.value) }))}
+                    className="w-full p-3 rounded-xl bg-black/40 border border-cyan-400/30 text-white font-bold text-sm outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <button
+                  disabled={isGenerating}
+                  onClick={() => handleSetDailyTargets()}
+                  className="w-full py-4 mt-2 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
+                  <span>{isGenerating ? "Saving Targets..." : "Save Daily Targets"}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       
       {/* Floating Action Buttons */}
       <div className="fixed bottom-24 right-5 flex flex-col gap-3 z-40">

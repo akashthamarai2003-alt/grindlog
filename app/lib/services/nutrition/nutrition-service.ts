@@ -84,8 +84,61 @@ export class NutritionService {
       .maybeSingle();
 
     if (error) throw error;
-    if (!data) return null; // TARGET_NOT_FOUND
-    return data;
+    if (data) return data;
+
+    // Fallback: Check fitness_os_profiles or fitness_os_workout_plans
+    const { data: fitProfile } = await supabase
+      .from('fitness_os_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const { data: activePlan } = await supabase
+      .from('fitness_os_workout_plans')
+      .select('plan_data')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    const planNut = activePlan?.plan_data?.nutrition;
+
+    const calories = planNut?.daily_calories || fitProfile?.baseline_calories || 2000;
+    const protein = planNut?.protein_grams || fitProfile?.initial_protein_target || 130;
+    const carbs = Math.round((calories * 0.45) / 4);
+    const fat = Math.round((calories * 0.25) / 9);
+    const water_ml = 3000;
+
+    // Save auto-generated target row into database
+    const { data: newTarget } = await supabase
+      .from('nutrition_targets')
+      .insert({
+        user_id: userId,
+        calories,
+        protein,
+        carbs,
+        fat,
+        water_ml,
+        daily_budget: 300,
+        monthly_budget: 6000,
+        effective_date: localDate
+      })
+      .select()
+      .maybeSingle();
+
+    if (newTarget) return newTarget;
+
+    // Return synthetic target object if database save was skipped
+    return {
+      user_id: userId,
+      calories,
+      protein,
+      carbs,
+      fat,
+      water_ml,
+      daily_budget: 300,
+      monthly_budget: 6000,
+      effective_date: localDate
+    };
   }
 
   static computeNutritionScore(consumed: any, targets: any, mealsCompleted: number, totalMeals: number = 4): number {

@@ -12,6 +12,17 @@ export const nutritionApi = {
     return json.data;
   },
 
+  async setTargets(payload?: any) {
+    const res = await fetch('/api/nutrition/targets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {})
+    });
+    const json = await res.json();
+    if (!res.ok) throw json.error;
+    return json.data;
+  },
+
   async logFood(payload: LogFoodRequest) {
     const res = await fetch('/api/nutrition/log-food', {
       method: 'POST',
