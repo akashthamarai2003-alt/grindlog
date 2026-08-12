@@ -1,10 +1,11 @@
 "use server";
 
 import { createAdminClient } from "@/lib/services/supabase/admin";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore } from "next/cache";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 
 export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'grindlog'): Promise<PlanPricingConfig> {
+  unstable_noStore();
   try {
     const supabase = createAdminClient();
     const configId = appType === 'fitness' ? 'fitness_pricing_config' : 'pricing_config';
@@ -76,6 +77,7 @@ export async function updatePlanPricesAction(newPricing: PlanPricingConfig, appT
 
     revalidatePath("/payment");
     revalidatePath("/admin/pricing");
+    revalidatePath("/fitness/payment");
     return { success: true };
   } catch (err: any) {
     console.error("updatePlanPricesAction exception:", err);
