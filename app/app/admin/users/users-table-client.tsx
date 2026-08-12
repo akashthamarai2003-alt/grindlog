@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Filter, RotateCcw, Crown, Shield, Calendar, DollarSign, Mail, Receipt } from "lucide-react";
+import { Search, Filter, RotateCcw, Crown, Shield, Calendar, DollarSign, Mail, Receipt, Dumbbell, X } from "lucide-react";
 import DeleteUserButton from "./delete-user-button";
 import SendMailModal from "./send-mail-modal";
 import PaymentHistoryModal from "./payment-history-modal";
-
+import { grantFitnessOSAction, revokeFitnessOSAction } from "./grant-fitness-action";
 
 interface UserWithDetails {
   id: string;
@@ -31,7 +31,27 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [selectedMailUsers, setSelectedMailUsers] = useState<UserWithDetails[] | null>(null);
   const [selectedHistoryUser, setSelectedHistoryUser] = useState<UserWithDetails | null>(null);
+  const [grantingFitnessId, setGrantingFitnessId] = useState<string | null>(null);
+  const [grantMessage, setGrantMessage] = useState<{ userId: string; text: string; ok: boolean } | null>(null);
 
+  const handleGrantFitness = async (userId: string) => {
+    setGrantingFitnessId(userId);
+    setGrantMessage(null);
+    const res = await grantFitnessOSAction(userId, "monthly", "pro");
+    setGrantingFitnessId(null);
+    setGrantMessage({ userId, text: res.success ? "✅ Fitness OS Pro granted!" : `❌ ${res.error}`, ok: !!res.success });
+    setTimeout(() => setGrantMessage(null), 3000);
+  };
+
+  const handleRevokeFitness = async (userId: string) => {
+    if (!confirm("Revoke ALL premium access from this user?")) return;
+    setGrantingFitnessId(userId);
+    setGrantMessage(null);
+    const res = await revokeFitnessOSAction(userId);
+    setGrantingFitnessId(null);
+    setGrantMessage({ userId, text: res.success ? "✅ Premium revoked." : `❌ ${res.error}`, ok: !!res.success });
+    setTimeout(() => setGrantMessage(null), 3000);
+  };
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -343,28 +363,62 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setSelectedHistoryUser(user)}
-                          title="View Payment History"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 text-xs font-semibold border border-green-200 transition-all active:scale-95 shrink-0"
-                        >
-                          <Receipt className="h-3.5 w-3.5" />
-                          <span>History</span>
-                        </button>
-                        <button
-                          onClick={() => setSelectedMailUsers([user])}
-                          title="Send Email to User"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-xs font-semibold border border-blue-200 transition-all active:scale-95 shrink-0"
-                        >
-                          <Mail className="h-3.5 w-3.5" />
-                          <span>Mail</span>
-                        </button>
-                        <DeleteUserButton
-                          userId={user.id}
-                          userName={user.display_name}
-                          userEmail={user.email}
-                        />
+                      <div className="flex flex-col items-end gap-1.5">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setSelectedHistoryUser(user)}
+                            title="View Payment History"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 text-xs font-semibold border border-green-200 transition-all active:scale-95 shrink-0"
+                          >
+                            <Receipt className="h-3.5 w-3.5" />
+                            <span>History</span>
+                          </button>
+                          <button
+                            onClick={() => setSelectedMailUsers([user])}
+                            title="Send Email to User"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-xs font-semibold border border-blue-200 transition-all active:scale-95 shrink-0"
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            <span>Mail</span>
+                          </button>
+                          <DeleteUserButton
+                            userId={user.id}
+                            userName={user.display_name}
+                            userEmail={user.email}
+                          />
+                        </div>
+
+                        {/* Fitness OS Actions */}
+                        <div className="flex items-center gap-2">
+                          {!user.is_premium ? (
+                            <button
+                              onClick={() => handleGrantFitness(user.id)}
+                              disabled={grantingFitnessId === user.id}
+                              title="Grant Fitness OS Pro access"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-lime-50 hover:bg-lime-100 text-lime-700 hover:text-lime-800 text-xs font-semibold border border-lime-300 transition-all active:scale-95 shrink-0 disabled:opacity-50"
+                            >
+                              <Dumbbell className="h-3.5 w-3.5" />
+                              <span>{grantingFitnessId === user.id ? "Granting..." : "Grant Fitness"}</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleRevokeFitness(user.id)}
+                              disabled={grantingFitnessId === user.id}
+                              title="Revoke premium access"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 text-xs font-semibold border border-red-200 transition-all active:scale-95 shrink-0 disabled:opacity-50"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              <span>{grantingFitnessId === user.id ? "Revoking..." : "Revoke Fitness"}</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Inline feedback message */}
+                        {grantMessage?.userId === user.id && (
+                          <span className={`text-[10px] font-bold ${grantMessage.ok ? "text-lime-600" : "text-red-500"}`}>
+                            {grantMessage.text}
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>
