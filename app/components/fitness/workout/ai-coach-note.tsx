@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, HelpCircle, X, Target, Activity, Dumbbell, Clock, HeartPulse, TrendingUp, Settings2 } from "lucide-react";
+import { Bot, HelpCircle, X, Target, Activity, Dumbbell, Clock, HeartPulse, TrendingUp, Settings2, Loader2 } from "lucide-react";
 
 interface AiCoachNoteProps {
-  note?: string;
+  workoutId?: string;
 }
 
-export function AiCoachNote({ note }: AiCoachNoteProps) {
+export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
+  const [note, setNote] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const defaultNote = "Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.";
 
@@ -21,6 +23,28 @@ export function AiCoachNote({ note }: AiCoachNoteProps) {
     { icon: TrendingUp, label: "Progress", value: "Progressive overload applied" },
     { icon: Settings2, label: "Preferences", value: "Free weights prioritized" },
   ];
+
+  useEffect(() => {
+    if (!workoutId || workoutId === "mock") {
+      setNote("Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.");
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchNote = async () => {
+      try {
+        const res = await fetch(`/api/workouts/${workoutId}/ai-coach-note`);
+        const data = await res.json();
+        setNote(data.note || "Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.");
+      } catch (err) {
+        setNote("Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNote();
+  }, [workoutId]);
 
   return (
     <>
@@ -39,9 +63,16 @@ export function AiCoachNote({ note }: AiCoachNoteProps) {
             </h3>
           </div>
 
-          <p className="text-sm font-medium text-white/80 leading-relaxed mb-5 italic border-l-2 border-[#ADFF00]/50 pl-3">
-            "{note || defaultNote}"
-          </p>
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-white/50 mb-5">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm italic">Generating insights...</span>
+            </div>
+          ) : (
+            <p className="text-sm font-medium text-white/80 leading-relaxed mb-5 italic border-l-2 border-[#ADFF00]/50 pl-3">
+              "{note}"
+            </p>
+          )}
 
           <button 
             onClick={() => setIsModalOpen(true)}

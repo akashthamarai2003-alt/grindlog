@@ -16,9 +16,25 @@ export function WorkoutSummaryCard({ workout, exerciseCount }: WorkoutSummaryCar
   const [isStarting, setIsStarting] = useState(false);
 
   const handleStart = async () => {
-    // In a real app, this would call an action to start the session.
-    // For now, we can just navigate or show a toast.
-    router.push(`/fitness/workout/${workout.id}`);
+    if (isStarting) return;
+    setIsStarting(true);
+    
+    try {
+      const res = await fetch("/api/workouts/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workoutId: workout.id })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || "Failed to start workout");
+      
+      router.push(`/fitness/workout/${workout.id}`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to start workout");
+      setIsStarting(false);
+    }
   };
 
   const completedCount = 0; // Mock progress for now
@@ -99,9 +115,9 @@ export function WorkoutSummaryCard({ workout, exerciseCount }: WorkoutSummaryCar
         <button
           onClick={handleStart}
           disabled={isStarting}
-          className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#bfff33] transition-colors shadow-[0_0_20px_rgba(173,255,0,0.2)] active:scale-[0.98]"
+          className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#bfff33] transition-colors shadow-[0_0_20px_rgba(173,255,0,0.2)] active:scale-[0.98] disabled:opacity-70"
         >
-          START WORKOUT <ArrowRight className="w-5 h-5" />
+          {isStarting ? "STARTING..." : "START WORKOUT"} <ArrowRight className="w-5 h-5" />
         </button>
 
       </div>

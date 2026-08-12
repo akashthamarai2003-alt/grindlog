@@ -73,6 +73,7 @@ export default async function ActiveWorkoutPage({
               <ExerciseDetail 
                 exercise={activeExercise as any} 
                 workoutId={mockWorkout.id} 
+                sessionId="mock-session"
               />
             ) : (
               <WorkoutExecution workout={mockWorkout as any} sessionId="mock-session" />
@@ -143,6 +144,7 @@ export default async function ActiveWorkoutPage({
             <ExerciseDetail 
               exercise={activeExercise} 
               workoutId={workout.id} 
+              sessionId={activeSession.id}
             />
           ) : (
             <WorkoutExecution workout={workout as any} sessionId={activeSession.id} />

@@ -4,18 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, X, Check, Circle, Dot, Minus } from "lucide-react";
 
-export function WeeklyWorkoutView() {
+export function WeeklyWorkoutView({ weekDays = [] }: { weekDays?: any[] }) {
   const [isPlanOpen, setIsPlanOpen] = useState(false);
-
-  const weekDays = [
-    { day: "MON", status: "completed", name: "Chest + Triceps" },
-    { day: "TUE", status: "today", name: "Back + Biceps" },
-    { day: "WED", status: "upcoming", name: "Legs" },
-    { day: "THU", status: "upcoming", name: "Shoulders + Core" },
-    { day: "FRI", status: "upcoming", name: "Upper Body" },
-    { day: "SAT", status: "upcoming", name: "Conditioning" },
-    { day: "SUN", status: "rest", name: "Recovery" },
-  ];
 
   const getStatusIcon = (status: string) => {
     switch (status) {

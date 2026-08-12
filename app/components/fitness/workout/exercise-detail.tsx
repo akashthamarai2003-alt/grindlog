@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, PlayCircle, Bot, Check, Loader2, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
-import { completeSetAction } from "@/app/actions/fitness";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { ExerciseOptionsModal } from "./exercise-options-modal";
@@ -13,9 +12,10 @@ import { ExerciseOptionsModal } from "./exercise-options-modal";
 interface ExerciseDetailProps {
   exercise: FitnessExercise & { fitness_os_sets: FitnessSet[] };
   workoutId: string;
+  sessionId: string;
 }
 
-export function ExerciseDetail({ exercise, workoutId }: ExerciseDetailProps) {
+export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetailProps) {
   const router = useRouter();
   const sortedSets = [...exercise.fitness_os_sets].sort((a, b) => a.set_number - b.set_number);
   
@@ -34,6 +34,14 @@ export function ExerciseDetail({ exercise, workoutId }: ExerciseDetailProps) {
     }), {})
   );
 
+  useEffect(() => {
+    if (activeRestSeconds === null || activeRestSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setActiveRestSeconds(prev => (prev && prev > 0 ? prev - 1 : null));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeRestSeconds]);
+
   const handleCompleteSet = async (setRecord: FitnessSet) => {
     if (setRecord.completed || submittingSetId) return;
     setSubmittingSetId(setRecord.id);
@@ -46,27 +54,32 @@ export function ExerciseDetail({ exercise, workoutId }: ExerciseDetailProps) {
     if (workoutId === "mock") {
       await new Promise(resolve => setTimeout(resolve, 500));
       setActiveRestSeconds(exercise.rest_seconds);
-      // We manually update the local state to show it's completed for the preview
       setRecord.completed = true;
       setSubmittingSetId(null);
       return;
     }
 
-    const res = await completeSetAction({
-      setId: setRecord.id,
-      actualReps: reps,
-      weightKg: weight,
-      durationSeconds: 0 
-    });
+    try {
+      const res = await fetch(`/api/workouts/sessions/${sessionId}/sets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          setId: setRecord.id,
+          reps,
+          weightKg: weight
+        })
+      });
 
-    if (res.success) {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to complete set");
+
       setActiveRestSeconds(exercise.rest_seconds);
-      router.refresh(); // Refresh to get updated set completion status
-    } else {
-      toast.error(res.error || "Failed to complete set");
+      router.refresh();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to complete set");
+    } finally {
+      setSubmittingSetId(null);
     }
-
-    setSubmittingSetId(null);
   };
 
   const handleInputChange = (setId: string, field: 'weight' | 'reps', value: string) => {
@@ -209,7 +222,9 @@ export function ExerciseDetail({ exercise, workoutId }: ExerciseDetailProps) {
                     <span className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest mb-1 flex items-center gap-1.5">
                       <Check className="w-3 h-3" /> Set Completed
                     </span>
-                    <span className="text-xl font-black text-white">Rest 01:24</span>
+                    <span className="text-xl font-black text-white">
+                      Rest {Math.floor(activeRestSeconds / 60).toString().padStart(2, '0')}:{(activeRestSeconds % 60).toString().padStart(2, '0')}
+                    </span>
                   </div>
                   <button 
                     onClick={skipRest}

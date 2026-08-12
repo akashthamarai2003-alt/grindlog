@@ -7,6 +7,9 @@ import { AiCoachNote } from "@/components/fitness/workout/ai-coach-note";
 import { WeeklyWorkoutView } from "@/components/fitness/workout/weekly-workout-view";
 import { WorkoutSummaryCard } from "@/components/fitness/workout/workout-summary-card";
 import { redirect } from "next/navigation";
+import { WorkoutService } from "@/lib/services/fitness/workout-service";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
 export default async function WorkoutIndexPage() {
   const supabase = await createServerSupabase();
@@ -16,38 +19,14 @@ export default async function WorkoutIndexPage() {
     redirect("/auth/signin");
   }
 
-  // Get today's local date string
-  const today = new Date().toISOString().split('T')[0];
+  const workout = await WorkoutService.getTodayWorkout(user.id);
+  const weekDays = await WorkoutService.getWeeklyWorkout(user.id);
 
-  // Fetch today's workout
-  let { data: workout } = await supabase
-    .from("fitness_os_workouts")
-    .select(`
-      *,
-      fitness_os_exercises (id)
-    `)
-    .eq("user_id", user.id)
-    .eq("workout_date", today)
-    .in("status", ["scheduled", "in_progress"])
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  const dateStr = new Date().toLocaleDateString("en-US", { 
-    weekday: 'short', month: 'short', day: 'numeric' 
+  const tz = await WorkoutService.getUserTimezone(user.id);
+  const formatter = new Intl.DateTimeFormat('en-US', { 
+    timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' 
   });
-  
-  // If no workout, mock it for the UI design preview
-  if (!workout) {
-    workout = {
-      id: "mock",
-      name: "Upper Body",
-      duration_minutes: 48,
-      difficulty_level: "Moderate",
-      plan_data: { target_muscles: ["Chest", "Back", "Shoulders", "Arms"] },
-      fitness_os_exercises: [1,2,3,4,5,6]
-    } as any;
-  }
+  const dateStr = formatter.format(new Date());
 
   return (
     <FitnessGuard>
@@ -61,24 +40,40 @@ export default async function WorkoutIndexPage() {
           />
           
           <div className="mt-2">
-            <WeeklyWorkoutView />
+            <WeeklyWorkoutView weekDays={weekDays} />
 
-            {workout.status === "in_progress" ? (
-              <ActiveWorkoutResumeCard 
-                workoutId={workout.id} 
-                completedExercises={workout.fitness_os_exercises?.filter((e: any) => e.fitness_os_sets?.every((s: any) => s.completed)).length || 4} 
-                totalExercises={workout.fitness_os_exercises?.length || 6} 
-              />
+            {!workout ? (
+              <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6 mb-6">
+                <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
+                <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 text-center py-12">
+                  <h3 className="text-xl font-black text-white uppercase tracking-tight">No Workout Scheduled</h3>
+                  <p className="text-sm font-medium text-white/60">Generate an AI-optimized workout for today.</p>
+                  <button className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#bfff33] transition-colors shadow-[0_0_20px_rgba(173,255,0,0.2)] active:scale-[0.98]">
+                    <Plus className="w-5 h-5" />
+                    GENERATE WORKOUT
+                  </button>
+                </div>
+              </div>
             ) : (
-              <WorkoutSummaryCard 
-                workout={workout} 
-                exerciseCount={workout.fitness_os_exercises?.length || 6} 
-              />
+              <>
+                {workout.status === "in_progress" ? (
+                  <ActiveWorkoutResumeCard 
+                    workoutId={workout.id} 
+                    completedExercises={workout.completedExercises} 
+                    totalExercises={workout.exerciseCount} 
+                  />
+                ) : (
+                  <WorkoutSummaryCard 
+                    workout={workout} 
+                    exerciseCount={workout.exerciseCount} 
+                  />
+                )}
+                
+                <AiCoachNote workoutId={workout.id} />
+                
+                <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises || []} />
+              </>
             )}
-            
-            <AiCoachNote />
-            
-            <TodaysExercisesList workoutId={workout.id} />
           </div>
         </div>
       </div>
