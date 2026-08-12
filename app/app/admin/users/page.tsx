@@ -10,11 +10,10 @@ export default async function AdminUsersPage() {
   });
 
   // Fetch all users with their active subscriptions if any
-    const { data: users } = await supabase
+  const { data: users, error: usersError } = await supabase
     .from("profiles")
     .select(`
       *,
-      fitness_os_profiles (user_id),
       subscriptions (
         id,
         plan,
@@ -26,6 +25,17 @@ export default async function AdminUsersPage() {
       )
     `)
     .order("created_at", { ascending: false });
+
+  if (usersError) {
+    console.error("Error fetching profiles:", usersError);
+  }
+
+  // Fetch fitness profiles separately to avoid PostgREST relationship ambiguity errors
+  const { data: fitnessProfiles } = await supabase
+    .from("fitness_os_profiles")
+    .select("user_id");
+
+  const fitnessUserIds = new Set((fitnessProfiles || []).map(fp => fp.user_id));
 
   // Helper to estimate paid amount since it wasn't historically tracked in DB
   const getPaidAmount = (tier?: string, level?: string, isPremium?: boolean) => {
@@ -112,7 +122,7 @@ export default async function AdminUsersPage() {
       
       return {
         ...user,
-        has_fitness_profile: !!(user.fitness_os_profiles && Array.isArray(user.fitness_os_profiles) ? user.fitness_os_profiles.length > 0 : user.fitness_os_profiles),
+        has_fitness_profile: fitnessUserIds.has(user.id),
         actualPaidAmount,
         paymentHistory,
         paymentId: validPaymentIds.length > 0 ? validPaymentIds.join(", ") : "-"
