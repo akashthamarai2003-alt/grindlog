@@ -1,0 +1,219 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { Search, Dumbbell, X, Check, Filter, RotateCcw, Mail } from "lucide-react";
+import { grantFitnessOSAction, revokeFitnessOSAction } from "../users/grant-fitness-action";
+
+interface FitnessUser {
+  id: string;
+  display_name?: string;
+  email?: string;
+  is_premium?: boolean;
+  premium_tier?: string;
+  premium_level?: string;
+  premium_expires_at?: string;
+  created_at: string;
+  subscriptions?: any[];
+}
+
+export default function FitnessUsersTableClient({ users }: { users: FitnessUser[] }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [grantingId, setGrantingId] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ userId: string; text: string; ok: boolean } | null>(null);
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        if (!u.display_name?.toLowerCase().includes(q) && !u.email?.toLowerCase().includes(q)) return false;
+      }
+      if (statusFilter === "active" && !u.is_premium) return false;
+      if (statusFilter === "inactive" && u.is_premium) return false;
+      return true;
+    });
+  }, [users, searchQuery, statusFilter]);
+
+  const activeCount = users.filter((u) => u.is_premium).length;
+
+  const handleGrant = async (userId: string) => {
+    setGrantingId(userId);
+    setMessage(null);
+    const res = await grantFitnessOSAction(userId, "monthly", "pro");
+    setGrantingId(null);
+    setMessage({ userId, text: res.success ? "✅ Fitness OS Pro granted!" : `❌ ${res.error}`, ok: !!res.success });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handleRevoke = async (userId: string) => {
+    if (!confirm("Revoke Fitness OS access from this user?")) return;
+    setGrantingId(userId);
+    setMessage(null);
+    const res = await revokeFitnessOSAction(userId);
+    setGrantingId(null);
+    setMessage({ userId, text: res.success ? "✅ Access revoked." : `❌ ${res.error}`, ok: !!res.success });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const getDaysRemaining = (u: FitnessUser) => {
+    if (!u.is_premium) return null;
+    if (u.premium_tier === "lifetime") return "Lifetime";
+    if (!u.premium_expires_at) return null;
+    const diff = new Date(u.premium_expires_at).getTime() - Date.now();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days > 0 ? `${days} days left` : "Expired";
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Filter Bar */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+          <Filter className="w-4 h-4 text-gray-400" />
+          <span className="text-sm font-bold text-gray-700">Filter Fitness Users</span>
+          <span className="text-xs bg-lime-100 text-lime-700 font-bold px-2 py-0.5 rounded-full">
+            {activeCount} Active
+          </span>
+          <span className="text-xs bg-gray-100 text-gray-500 font-semibold px-2 py-0.5 rounded-full">
+            {filteredUsers.length} of {users.length}
+          </span>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name or email..."
+              className="w-full pl-9 pr-3 py-2 text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-lime-500 focus:bg-white transition-all text-gray-900 placeholder:text-gray-400"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="px-3 py-2 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-lime-500 text-gray-700"
+          >
+            <option value="all">All Users</option>
+            <option value="active">Active Fitness OS</option>
+            <option value="inactive">No Access</option>
+          </select>
+          {(searchQuery || statusFilter !== "all") && (
+            <button
+              onClick={() => { setSearchQuery(""); setStatusFilter("all"); }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 bg-gray-100 rounded-lg"
+            >
+              <RotateCcw className="w-3 h-3" /> Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs uppercase bg-gray-50 text-gray-600 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3">User</th>
+                <th className="px-6 py-3">Fitness OS Status</th>
+                <th className="px-6 py-3">Plan</th>
+                <th className="px-6 py-3">Access Expires</th>
+                <th className="px-6 py-3">Joined</th>
+                <th className="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => {
+                const daysLeft = getDaysRemaining(user);
+                const isExpired = daysLeft === "Expired";
+                return (
+                  <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#ADFF00]/20 border-2 border-[#ADFF00]/40 flex items-center justify-center text-lime-700 font-black text-sm shrink-0">
+                          {user.display_name?.charAt(0).toUpperCase() || "?"}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 text-sm">{user.display_name || "—"}</div>
+                          <div className="text-gray-400 text-xs">{user.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.is_premium && !isExpired ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-lime-100 text-lime-700 border border-lime-200">
+                          <Check className="w-3 h-3" /> Active
+                        </span>
+                      ) : isExpired ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-600 border border-orange-200">
+                          Expired
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
+                          No Access
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.is_premium ? (
+                        <div className="text-xs font-semibold text-gray-700 capitalize">
+                          {user.premium_tier?.replace("_", " ")} · {user.premium_level?.toUpperCase()}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs font-semibold ${isExpired ? "text-orange-500" : "text-gray-600"}`}>
+                        {daysLeft || "—"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-gray-500">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex flex-col items-end gap-1.5">
+                        {!user.is_premium || isExpired ? (
+                          <button
+                            onClick={() => handleGrant(user.id)}
+                            disabled={grantingId === user.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-lime-50 hover:bg-lime-100 text-lime-700 text-xs font-bold border border-lime-300 transition-all active:scale-95 disabled:opacity-50"
+                          >
+                            <Dumbbell className="h-3.5 w-3.5" />
+                            {grantingId === user.id ? "Granting..." : "Grant Fitness OS"}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleRevoke(user.id)}
+                            disabled={grantingId === user.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold border border-red-200 transition-all active:scale-95 disabled:opacity-50"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            {grantingId === user.id ? "Revoking..." : "Revoke Access"}
+                          </button>
+                        )}
+                        {message?.userId === user.id && (
+                          <span className={`text-[10px] font-bold ${message.ok ? "text-lime-600" : "text-red-500"}`}>
+                            {message.text}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm">
+                    No users match your filter.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
