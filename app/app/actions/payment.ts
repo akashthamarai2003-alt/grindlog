@@ -60,14 +60,9 @@ export async function createRazorpayOrder(
 
   let finalPrice = 0;
 
-  if (source === "fitness_os") {
-    if (tier === "monthly" && level === "core") finalPrice = 29;
-    if (tier === "monthly" && level === "pro") finalPrice = 99;
-  } else {
-    // Fetch dynamic live offer prices set by Admin
-    const livePricing = await getPlanPricesAction();
-    finalPrice = livePricing[tier]?.[level]?.price || 0;
-  }
+  const appType = source === "fitness_os" ? "fitness" : "grindlog";
+  const livePricing = await getPlanPricesAction(appType);
+  finalPrice = livePricing[tier]?.[level]?.price || 0;
 
   if (finalPrice <= 0) {
     return { success: false, error: "Invalid plan" };
