@@ -9,7 +9,7 @@ import { WorkoutSummaryCard } from "@/components/fitness/workout/workout-summary
 import { redirect } from "next/navigation";
 import { WorkoutService } from "@/lib/services/fitness/workout-service";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { GenerateWorkoutButton } from "@/components/fitness/workout/generate-workout-button";
 
 export default async function WorkoutIndexPage() {
   const supabase = await createServerSupabase();
@@ -48,10 +48,7 @@ export default async function WorkoutIndexPage() {
                 <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 text-center py-12">
                   <h3 className="text-xl font-black text-white uppercase tracking-tight">No Workout Scheduled</h3>
                   <p className="text-sm font-medium text-white/60">Generate an AI-optimized workout for today.</p>
-                  <button className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#bfff33] transition-colors shadow-[0_0_20px_rgba(173,255,0,0.2)] active:scale-[0.98]">
-                    <Plus className="w-5 h-5" />
-                    GENERATE WORKOUT
-                  </button>
+                  <GenerateWorkoutButton />
                 </div>
               </div>
             ) : (
