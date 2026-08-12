@@ -7,9 +7,10 @@ import { OnboardingData } from "@/types/fitness/onboarding";
 
 interface TransformationCardProps {
   profile: Partial<OnboardingData>;
+  premiumLevel?: string;
 }
 
-export function TransformationCard({ profile }: TransformationCardProps) {
+export function TransformationCard({ profile, premiumLevel = "core" }: TransformationCardProps) {
   const currentWeight = profile.weight || 73;
   const targetWeight = profile.target_weight || 68;
   const progressPercentage = 0; // Defaulting to 0 as requested
@@ -81,12 +82,21 @@ export function TransformationCard({ profile }: TransformationCardProps) {
           </div>
         </div>
 
-        <Link href="/fitness/progress" className="w-full mt-3">
-          <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 active:bg-white/5 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-white/5">
-            <span className="text-sm font-semibold text-white/90 group-hover/btn:text-white transition-colors">View Full Progress</span>
-            <ArrowRight className="w-4 h-4 text-[#ADFF00] group-hover/btn:translate-x-1 transition-transform duration-300" />
-          </button>
-        </Link>
+        {premiumLevel === "core" ? (
+          <Link href="/fitness/payment?returnTo=/fitness" className="w-full mt-3">
+            <button className="w-full py-3 px-4 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-[#ADFF00]/20">
+              <span className="text-sm font-semibold text-[#ADFF00] group-hover/btn:text-[#ADFF00] transition-colors">Upgrade to unlock Automated AI Tracking</span>
+              <div className="bg-[#ADFF00] text-black text-[9px] font-black uppercase px-2 py-1 rounded-full">Pro</div>
+            </button>
+          </Link>
+        ) : (
+          <Link href="/fitness/progress" className="w-full mt-3">
+            <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 active:bg-white/5 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-white/5">
+              <span className="text-sm font-semibold text-white/90 group-hover/btn:text-white transition-colors">View Full Progress</span>
+              <ArrowRight className="w-4 h-4 text-[#ADFF00] group-hover/btn:translate-x-1 transition-transform duration-300" />
+            </button>
+          </Link>
+        )}
         
       </div>
     </motion.div>

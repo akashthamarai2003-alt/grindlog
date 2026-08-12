@@ -22,7 +22,7 @@ async function DashboardContent() {
 
   const { data: mainProfile } = await supabase
     .from("profiles")
-    .select("is_premium")
+    .select("is_premium, premium_level")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -78,7 +78,7 @@ async function DashboardContent() {
     dayNumber = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} />;
+  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} premiumLevel={mainProfile?.premium_level || 'core'} />;
 }
 
 export default function FitnessHome() {

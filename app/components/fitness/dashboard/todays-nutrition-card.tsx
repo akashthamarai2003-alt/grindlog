@@ -7,9 +7,10 @@ import { useState } from "react";
 
 interface TodaysNutritionCardProps {
   nutrition?: any; // The nutrition plan object from DB
+  premiumLevel?: string;
 }
 
-export function TodaysNutritionCard({ nutrition }: TodaysNutritionCardProps) {
+export function TodaysNutritionCard({ nutrition, premiumLevel = "core" }: TodaysNutritionCardProps) {
   const targetCalories = nutrition?.daily_calories || 2100;
   // TODO: Fetch from actual consumption logs
   const currentCalories = 0; 
@@ -96,7 +97,22 @@ export function TodaysNutritionCard({ nutrition }: TodaysNutritionCardProps) {
 
         {/* Meals List */}
         <div className="bg-black/30 rounded-xl border border-white/5 overflow-hidden">
-          {meals.length > 0 ? (
+          {premiumLevel === "core" ? (
+            <div className="p-5 flex flex-col items-center justify-center text-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#ADFF00]/10 flex items-center justify-center mb-1">
+                <Utensils className="w-5 h-5 text-[#ADFF00]" />
+              </div>
+              <h4 className="text-sm font-bold text-white">Full Meal Plan Locked</h4>
+              <p className="text-[10px] text-white/50 max-w-[200px]">
+                You currently have access to Macros Only. Upgrade to Pro for a hyper-personalized daily meal plan.
+              </p>
+              <Link href="/fitness/payment?returnTo=/fitness" className="mt-1">
+                <button className="bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 text-[#ADFF00] text-[10px] font-black uppercase px-4 py-2 rounded-full border border-[#ADFF00]/20 transition-all flex items-center gap-1.5">
+                  Unlock Pro <ArrowRight size={12} />
+                </button>
+              </Link>
+            </div>
+          ) : meals.length > 0 ? (
             meals.map((meal: any, idx: number) => {
               const isCompleted = completedMeals[meal.id];
               

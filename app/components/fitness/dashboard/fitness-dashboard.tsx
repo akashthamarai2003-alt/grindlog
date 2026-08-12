@@ -20,9 +20,10 @@ interface FitnessDashboardProps {
   nutrition?: any;
   lifestyle?: any;
   dayNumber?: number;
+  premiumLevel?: string;
 }
 
-export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestReview, nutrition, lifestyle, dayNumber = 1 }: FitnessDashboardProps) {
+export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestReview, nutrition, lifestyle, dayNumber = 1, premiumLevel = "core" }: FitnessDashboardProps) {
   // Extract user's first name, defaulting to "User" if missing
   const firstName = profile?.name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || "User";
 
@@ -38,10 +39,10 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
         <DashboardHeader name={firstName} dayNumber={dayNumber} />
 
         {/* 2. AI Target / Message Card */}
-        <AIMessageCard />
+        <AIMessageCard premiumLevel={premiumLevel} />
 
         {/* 3. Transformation Card */}
-        <TransformationCard profile={profile} />
+        <TransformationCard profile={profile} premiumLevel={premiumLevel} />
 
         {/* 4. Horizontal Calendar */}
         <HorizontalCalendar />
@@ -53,10 +54,10 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
         <TodaysWorkoutCard workout={todayWorkout} />
 
         {/* 6. Today's Nutrition Card */}
-        <TodaysNutritionCard nutrition={nutrition} />
+        <TodaysNutritionCard nutrition={nutrition} premiumLevel={premiumLevel} />
 
         {/* 7. Daily Activity Card */}
-        <DailyActivityCard lifestyle={lifestyle} workoutCompleted={todayWorkout?.status === 'completed'} />
+        <DailyActivityCard lifestyle={lifestyle} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} />
 
         {/* 8. Today's Goals Card */}
         <TodaysGoalsCard lifestyle={lifestyle} nutrition={nutrition} workoutCompleted={todayWorkout?.status === 'completed'} />
