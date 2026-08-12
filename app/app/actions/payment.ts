@@ -48,7 +48,8 @@ export async function validateCouponAction(code: string) {
 export async function createRazorpayOrder(
   tier: "monthly" | "six_months" | "lifetime", 
   level: "core" | "pro", 
-  couponId?: string
+  couponId?: string,
+  source?: string
 ) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -57,9 +58,16 @@ export async function createRazorpayOrder(
     return { success: false, error: "Unauthorized" };
   }
 
-  // Fetch dynamic live offer prices set by Admin
-  const livePricing = await getPlanPricesAction();
-  let finalPrice = livePricing[tier]?.[level]?.price || 0;
+  let finalPrice = 0;
+
+  if (source === "fitness_os") {
+    if (tier === "monthly" && level === "core") finalPrice = 29;
+    if (tier === "monthly" && level === "pro") finalPrice = 99;
+  } else {
+    // Fetch dynamic live offer prices set by Admin
+    const livePricing = await getPlanPricesAction();
+    finalPrice = livePricing[tier]?.[level]?.price || 0;
+  }
 
   if (finalPrice <= 0) {
     return { success: false, error: "Invalid plan" };
@@ -224,6 +232,8 @@ export async function verifyRazorpayPayment(
   revalidatePath("/", "layout");
   revalidatePath("/dashboard");
   revalidatePath("/payment");
+  revalidatePath("/fitness/payment");
+  revalidatePath("/fitness");
   revalidatePath("/profile");
   revalidatePath("/admin/users");
   revalidatePath("/admin");

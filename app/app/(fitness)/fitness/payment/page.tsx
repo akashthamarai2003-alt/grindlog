@@ -127,7 +127,7 @@ export default function FitnessPaymentPage() {
       sessionStorage.setItem("payment_in_progress", "true");
       setIsPolling(true);
 
-      const orderResponse = await createRazorpayOrder(selectedPlan, level, undefined);
+      const orderResponse = await createRazorpayOrder(selectedPlan, level, undefined, "fitness_os");
 
       if (!orderResponse.success) {
         throw new Error(orderResponse.error || "Failed to create order");
