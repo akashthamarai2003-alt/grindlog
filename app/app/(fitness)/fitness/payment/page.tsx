@@ -49,9 +49,9 @@ export default function FitnessPaymentPage() {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo');
   
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("monthly");
-  // Fitness OS relies on Pro features
-  const level = "pro"; 
+  // In Fitness OS, the duration is always monthly, but we let them choose the tier
+  const selectedPlan = "monthly";
+  const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -297,51 +297,69 @@ export default function FitnessPaymentPage() {
 
         {/* Plan Selector */}
         <div className="space-y-3 mb-10">
-          {basePlans.map((plan) => {
-            const isSelected = selectedPlan === plan.id;
-            const price = plan.basePrices.pro; // Always display the Pro price
-            
-            return (
-              <button
-                key={plan.id}
-                onClick={() => setSelectedPlan(plan.id as any)}
-                className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
-                  isSelected 
-                    ? "border-[#ADFF00] bg-[#ADFF00]/5" 
-                    : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
-                }`}
-              >
-                {plan.badge && (
-                  <div className="absolute top-0 right-0 bg-[#ADFF00] text-black text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-wider uppercase">
-                    {plan.badge}
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-4">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? "border-[#ADFF00]" : "border-gray-600"}`}>
-                    {isSelected && <div className="w-3 h-3 rounded-full bg-[#ADFF00]" />}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">{plan.emoji}</span>
-                      <h3 className={`font-bold ${isSelected ? "text-white" : "text-gray-300"}`}>{plan.name}</h3>
-                    </div>
-                    
-                    <div className="flex items-baseline gap-2">
-                      <span className={`text-2xl font-black ${isSelected ? "text-[#ADFF00]" : "text-white"}`}>
-                        ₹{price}
-                      </span>
-                      {plan.originalPrice && (
-                        <span className="text-sm text-gray-500 line-through">{plan.originalPrice}</span>
-                      )}
-                      <span className="text-xs text-gray-500 font-medium">{plan.period}</span>
-                    </div>
-                  </div>
+          {/* Core Plan */}
+          <button
+            onClick={() => setLevel("core")}
+            className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
+              level === "core" 
+                ? "border-[#ADFF00] bg-[#ADFF00]/5" 
+                : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${level === "core" ? "border-[#ADFF00]" : "border-gray-600"}`}>
+                {level === "core" && <div className="w-3 h-3 rounded-full bg-[#ADFF00]" />}
+              </div>
+              
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">⚡</span>
+                  <h3 className={`font-bold ${level === "core" ? "text-white" : "text-gray-300"}`}>Core</h3>
                 </div>
-              </button>
-            );
-          })}
+                
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>
+                    ₹29
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">/month</span>
+                </div>
+              </div>
+            </div>
+          </button>
+
+          {/* Pro Plan */}
+          <button
+            onClick={() => setLevel("pro")}
+            className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
+              level === "pro" 
+                ? "border-[#ADFF00] bg-[#ADFF00]/5" 
+                : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
+            }`}
+          >
+            <div className="absolute top-0 right-0 bg-[#ADFF00] text-black text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-wider uppercase">
+              ⭐ Recommended
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${level === "pro" ? "border-[#ADFF00]" : "border-gray-600"}`}>
+                {level === "pro" && <div className="w-3 h-3 rounded-full bg-[#ADFF00]" />}
+              </div>
+              
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">🔥</span>
+                  <h3 className={`font-bold ${level === "pro" ? "text-white" : "text-gray-300"}`}>Pro</h3>
+                </div>
+                
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>
+                    ₹99
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">/month</span>
+                </div>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
 
