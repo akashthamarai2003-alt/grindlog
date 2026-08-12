@@ -4,13 +4,15 @@ import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 
-export async function getPlanPricesAction(): Promise<PlanPricingConfig> {
+export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'grindlog'): Promise<PlanPricingConfig> {
   try {
     const supabase = createAdminClient();
+    const configId = appType === 'fitness' ? 'fitness_pricing_config' : 'pricing_config';
+    
     const { data, error } = await supabase
       .from("plan_pricing")
       .select("prices")
-      .eq("id", "pricing_config")
+      .eq("id", configId)
       .single();
 
     if (error || !data || !data.prices) {
@@ -56,12 +58,13 @@ export async function getPlanPricesAction(): Promise<PlanPricingConfig> {
   }
 }
 
-export async function updatePlanPricesAction(newPricing: PlanPricingConfig) {
+export async function updatePlanPricesAction(newPricing: PlanPricingConfig, appType: 'grindlog' | 'fitness' = 'grindlog') {
   try {
     const supabase = createAdminClient();
+    const configId = appType === 'fitness' ? 'fitness_pricing_config' : 'pricing_config';
 
     const { error } = await supabase.from("plan_pricing").upsert({
-      id: "pricing_config",
+      id: configId,
       prices: newPricing,
       updated_at: new Date().toISOString(),
     });

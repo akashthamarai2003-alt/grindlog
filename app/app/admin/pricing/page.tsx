@@ -4,7 +4,8 @@ import PricingClientForm from "./client-form";
 export const revalidate = 0;
 
 export default async function AdminPricingPage() {
-  const pricing = await getPlanPricesAction();
+  const grindlogPricing = await getPlanPricesAction("grindlog");
+  const fitnessPricing = await getPlanPricesAction("fitness");
 
   return (
     <div className="space-y-6">
@@ -15,7 +16,7 @@ export default async function AdminPricingPage() {
         </p>
       </div>
 
-      <PricingClientForm initialPricing={pricing} />
+      <PricingClientForm grindlogPricing={grindlogPricing} fitnessPricing={fitnessPricing} />
     </div>
   );
 }

@@ -104,7 +104,7 @@ export default function FitnessPaymentPage() {
 
   // Fetch dynamic pricing on mount
   useEffect(() => {
-    getPlanPricesAction().then((res) => {
+    getPlanPricesAction("fitness").then((res) => {
       if (res) setPricingConfig(res);
     });
   }, []);

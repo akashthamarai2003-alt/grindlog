@@ -6,9 +6,22 @@ import { toast } from "sonner";
 import { updatePlanPricesAction } from "@/app/actions/admin-pricing";
 import { PlanPricingConfig } from "@/lib/constants/pricing";
 
-export default function PricingClientForm({ initialPricing }: { initialPricing: PlanPricingConfig }) {
-  const [pricing, setPricing] = useState<PlanPricingConfig>(initialPricing);
+export default function PricingClientForm({ 
+  grindlogPricing, 
+  fitnessPricing 
+}: { 
+  grindlogPricing: PlanPricingConfig;
+  fitnessPricing: PlanPricingConfig;
+}) {
+  const [appFilter, setAppFilter] = useState<"grindlog" | "fitness">("grindlog");
+  const [pricing, setPricing] = useState<PlanPricingConfig>(grindlogPricing);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync pricing state when filter changes
+  const handleFilterChange = (filter: "grindlog" | "fitness") => {
+    setAppFilter(filter);
+    setPricing(filter === "grindlog" ? grindlogPricing : fitnessPricing);
+  };
 
   const handlePriceChange = (
     tier: "monthly" | "six_months" | "lifetime",
@@ -34,7 +47,7 @@ export default function PricingClientForm({ initialPricing }: { initialPricing: 
     setIsSaving(true);
 
     try {
-      const res = await updatePlanPricesAction(pricing);
+      const res = await updatePlanPricesAction(pricing, appFilter);
       if (res.success) {
         toast.success("Plan offer prices saved successfully!");
       } else {
@@ -67,11 +80,37 @@ export default function PricingClientForm({ initialPricing }: { initialPricing: 
           </p>
         </div>
 
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-green-700 font-bold text-xs hover:bg-green-50 active:scale-95 shadow-sm transition-all disabled:opacity-50 shrink-0"
-        >
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex bg-white/20 p-1 rounded-lg backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={() => handleFilterChange("grindlog")}
+              className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${
+                appFilter === "grindlog"
+                  ? "bg-white text-green-700 shadow-sm"
+                  : "text-white hover:bg-white/10"
+              }`}
+            >
+              GrindLog App
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterChange("fitness")}
+              className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${
+                appFilter === "fitness"
+                  ? "bg-white text-green-700 shadow-sm"
+                  : "text-white hover:bg-white/10"
+              }`}
+            >
+              Fitness App
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-green-700 font-bold text-xs hover:bg-green-50 active:scale-95 shadow-sm transition-all disabled:opacity-50 shrink-0"
+          >
           {isSaving ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
