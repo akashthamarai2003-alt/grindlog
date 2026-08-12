@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Activity, Droplets, Moon, Flame } from "lucide-react";
+import Link from "next/link";
 
 interface DailyActivityCardProps {
   lifestyle?: any;
