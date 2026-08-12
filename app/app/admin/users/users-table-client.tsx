@@ -282,12 +282,12 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
               {filteredUsers.map((user) => {
                 const isFitness = appFilter === "fitness";
                 
-                // Switch between GrindLog and Fitness OS premium statuses dynamically
-                const isPremium = isFitness ? user.fitness_is_premium : user.is_premium;
-                const premiumTier = isFitness ? user.fitness_premium_tier : user.premium_tier;
-                const premiumLevel = isFitness ? user.fitness_premium_level : user.premium_level;
+                // Use shared premium status from profiles table for both GrindLog and Fitness OS
+                const isPremium = user.is_premium;
+                const premiumTier = user.premium_tier;
+                const premiumLevel = user.premium_level;
                 
-                const premiumExpiresAt = isFitness ? (user as any).fitness_premium_expires_at : user.premium_expires_at;
+                const premiumExpiresAt = user.premium_expires_at;
                 
                 const planName = premiumTier ? getPlanName(premiumTier, premiumLevel) : 'Pro';
                 const paymentId = user.paymentId;
