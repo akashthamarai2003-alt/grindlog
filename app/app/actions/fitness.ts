@@ -90,6 +90,38 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
   }
 
   revalidatePath("/fitness");
+  revalidatePath("/fitness/profile");
+  return { success: true };
+}
+
+export async function updateFitnessProfilePartialAction(payload: Record<string, any>) {
+  const supabase = await createServerSupabase();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Calculate BMI if height and weight updated
+  let updates: Record<string, any> = { ...payload };
+  if (updates.height && updates.weight) {
+    const heightInMeters = updates.height / 100;
+    updates.bmi = parseFloat((updates.weight / (heightInMeters * heightInMeters)).toFixed(1));
+  }
+
+  updates.updated_at = new Date().toISOString();
+
+  const { error: updateError } = await supabase
+    .from("fitness_os_profiles")
+    .update(updates)
+    .eq("user_id", user.id);
+
+  if (updateError) {
+    console.error("Failed to update profile:", updateError);
+    return { success: false, error: "Failed to update details" };
+  }
+
+  revalidatePath("/fitness");
+  revalidatePath("/fitness/profile");
   return { success: true };
 }
 

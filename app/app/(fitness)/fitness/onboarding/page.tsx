@@ -4,7 +4,14 @@ import { OnboardingFlow } from "@/components/fitness/onboarding/onboarding-flow"
 
 export const dynamic = "force-dynamic";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string; edit?: string }>;
+}) {
+  const params = await searchParams;
+  const isEditing = params?.mode === "edit" || params?.edit === "true";
+
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -12,13 +19,14 @@ export default async function OnboardingPage() {
 
   const { data: profile } = await supabase
     .from("fitness_os_profiles")
-    .select("onboarding_completed")
+    .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (profile?.onboarding_completed) {
+  // Only redirect to dashboard if onboarding is completed AND user is NOT explicitly trying to edit/retake it
+  if (profile?.onboarding_completed && !isEditing) {
     redirect("/fitness");
   }
 
-  return <OnboardingFlow />;
+  return <OnboardingFlow initialData={profile || {}} />;
 }

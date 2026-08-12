@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/services/supabase/client";
+import { updateFitnessProfilePartialAction } from "@/app/actions/fitness";
 import { 
   ArrowLeft, 
   User, 
@@ -24,8 +25,10 @@ import {
   RefreshCw, 
   CreditCard, 
   ShieldCheck, 
-  Heart,
-  CheckCircle2
+  X,
+  Check,
+  Loader2,
+  Edit3
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,7 +51,7 @@ interface ProfileContentProps {
 
 export function ProfileContent({
   user,
-  fitnessProfile,
+  fitnessProfile: initialFitnessProfile,
   mainProfile,
   activePlan,
   aiLimitInfo
@@ -56,6 +59,23 @@ export function ProfileContent({
   const router = useRouter();
   const supabase = createClient();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [fitnessProfile, setFitnessProfile] = useState(initialFitnessProfile);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Edit Modal Form State
+  const [formData, setFormData] = useState({
+    weight: initialFitnessProfile?.weight || "",
+    target_weight: initialFitnessProfile?.target_weight || "",
+    height: initialFitnessProfile?.height || "",
+    fitness_level: initialFitnessProfile?.fitness_level || "Intermediate",
+    training_days_per_week: initialFitnessProfile?.training_days_per_week || 4,
+    goal: initialFitnessProfile?.goal || "Lose Fat + Build Muscle",
+    waist_cm: initialFitnessProfile?.waist_cm || "",
+    chest_cm: initialFitnessProfile?.chest_cm || "",
+    arm_cm: initialFitnessProfile?.arm_cm || "",
+    thigh_cm: initialFitnessProfile?.thigh_cm || ""
+  });
 
   const name = fitnessProfile?.name || mainProfile?.name || user.email?.split("@")[0] || "Athlete";
   const email = user.email || "";
@@ -67,7 +87,7 @@ export function ProfileContent({
   const premiumLevel = mainProfile?.premium_level || (isPremium ? "core" : "free");
   const isPro = premiumLevel === "pro";
 
-  // Calculate BMI if height and weight exist
+  // Calculate BMI
   const heightM = fitnessProfile?.height ? fitnessProfile.height / 100 : null;
   const weight = fitnessProfile?.weight || null;
   const bmi = (heightM && weight) ? (weight / (heightM * heightM)).toFixed(1) : null;
@@ -94,6 +114,36 @@ export function ProfileContent({
     }
   };
 
+  const handleSavePhysicals = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    const payload = {
+      weight: formData.weight ? parseFloat(String(formData.weight)) : null,
+      target_weight: formData.target_weight ? parseFloat(String(formData.target_weight)) : null,
+      height: formData.height ? parseFloat(String(formData.height)) : null,
+      fitness_level: formData.fitness_level,
+      training_days_per_week: parseInt(String(formData.training_days_per_week)),
+      goal: formData.goal,
+      waist_cm: formData.waist_cm ? parseFloat(String(formData.waist_cm)) : null,
+      chest_cm: formData.chest_cm ? parseFloat(String(formData.chest_cm)) : null,
+      arm_cm: formData.arm_cm ? parseFloat(String(formData.arm_cm)) : null,
+      thigh_cm: formData.thigh_cm ? parseFloat(String(formData.thigh_cm)) : null,
+    };
+
+    const res = await updateFitnessProfilePartialAction(payload);
+    setIsSaving(false);
+
+    if (res.success) {
+      toast.success("Profile baseline updated successfully!");
+      setFitnessProfile((prev: any) => ({ ...prev, ...payload }));
+      setShowEditModal(false);
+      router.refresh();
+    } else {
+      toast.error(res.error || "Failed to update profile details");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0A1108] text-white pb-32">
       {/* Top Ambient Glow */}
@@ -114,7 +164,7 @@ export function ProfileContent({
             <span className="text-xs font-bold text-gray-200 uppercase tracking-wider">Profile & Account</span>
           </div>
           <Link 
-            href="/fitness/onboarding" 
+            href="/fitness/onboarding?mode=edit" 
             className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center text-gray-300 hover:text-[#ADFF00] hover:border-[#ADFF00]/50 transition-all active:scale-95"
             title="Retake Onboarding"
           >
@@ -129,7 +179,6 @@ export function ProfileContent({
           transition={{ duration: 0.4 }}
           className="relative bg-[#121E12] border border-[#1A2619] rounded-3xl p-6 shadow-xl overflow-hidden"
         >
-          {/* Subtle card glow */}
           <div className="absolute -top-12 -right-12 w-36 h-36 bg-[#ADFF00]/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex flex-col items-center text-center relative z-10">
@@ -185,9 +234,13 @@ export function ProfileContent({
               <Scale className="w-4 h-4 text-[#ADFF00]" />
               <span>Physical Baseline</span>
             </h2>
-            <Link href="/fitness/onboarding" className="text-xs font-semibold text-[#ADFF00] hover:underline">
-              Edit Details
-            </Link>
+            <button 
+              onClick={() => setShowEditModal(true)} 
+              className="text-xs font-semibold text-[#ADFF00] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Edit Details</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -371,7 +424,7 @@ export function ProfileContent({
             
             {/* Re-take Onboarding */}
             <Link 
-              href="/fitness/onboarding"
+              href="/fitness/onboarding?mode=edit"
               className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
             >
               <div className="flex items-center gap-3">
@@ -407,7 +460,7 @@ export function ProfileContent({
             <button 
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="w-full p-4 flex items-center justify-between hover:bg-red-500/10 transition-colors text-left group"
+              className="w-full p-4 flex items-center justify-between hover:bg-red-500/10 transition-colors text-left group cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
@@ -425,6 +478,180 @@ export function ProfileContent({
         </motion.div>
 
       </div>
+
+      {/* Edit Details Modal */}
+      <AnimatePresence>
+        {showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-md bg-[#121E12] border border-[#1A2619] rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#1A2619]">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center text-[#ADFF00]">
+                    <Edit3 className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-lg font-black text-white tracking-tight">Edit Physical Baseline</h2>
+                </div>
+                <button 
+                  onClick={() => setShowEditModal(false)}
+                  className="w-8 h-8 rounded-full bg-[#1A2619] flex items-center justify-center text-gray-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSavePhysicals} className="space-y-4">
+                
+                {/* Weight & Target Weight */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Current Weight (kg)</label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      value={formData.weight}
+                      onChange={(e) => setFormData(prev => ({ ...prev, weight: e.target.value }))}
+                      className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold"
+                      placeholder="e.g. 70"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Target Weight (kg)</label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      value={formData.target_weight}
+                      onChange={(e) => setFormData(prev => ({ ...prev, target_weight: e.target.value }))}
+                      className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold"
+                      placeholder="e.g. 65"
+                    />
+                  </div>
+                </div>
+
+                {/* Height & Training Days */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Height (cm)</label>
+                    <input 
+                      type="number"
+                      value={formData.height}
+                      onChange={(e) => setFormData(prev => ({ ...prev, height: e.target.value }))}
+                      className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold"
+                      placeholder="e.g. 175"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Training Days / Wk</label>
+                    <select
+                      value={formData.training_days_per_week}
+                      onChange={(e) => setFormData(prev => ({ ...prev, training_days_per_week: parseInt(e.target.value) }))}
+                      className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold appearance-none"
+                    >
+                      {[3, 4, 5, 6, 7].map(d => (
+                        <option key={d} value={d} className="bg-[#0A1108] text-white">{d} Days / week</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Primary Goal */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Primary Goal</label>
+                  <select
+                    value={formData.goal}
+                    onChange={(e) => setFormData(prev => ({ ...prev, goal: e.target.value }))}
+                    className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold appearance-none"
+                  >
+                    <option value="Lose Fat" className="bg-[#0A1108] text-white">Lose Fat</option>
+                    <option value="Build Muscle" className="bg-[#0A1108] text-white">Build Muscle</option>
+                    <option value="Lose Fat + Build Muscle" className="bg-[#0A1108] text-white">Lose Fat + Build Muscle</option>
+                    <option value="Build Strength" className="bg-[#0A1108] text-white">Build Strength</option>
+                    <option value="Maintain" className="bg-[#0A1108] text-white">Maintain</option>
+                  </select>
+                </div>
+
+                {/* Fitness Level */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Fitness Level</label>
+                  <select
+                    value={formData.fitness_level}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fitness_level: e.target.value }))}
+                    className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold appearance-none"
+                  >
+                    <option value="Beginner" className="bg-[#0A1108] text-white">Beginner</option>
+                    <option value="Intermediate" className="bg-[#0A1108] text-white">Intermediate</option>
+                    <option value="Advanced" className="bg-[#0A1108] text-white">Advanced</option>
+                  </select>
+                </div>
+
+                {/* Optional Body Measurements */}
+                <div className="pt-2 border-t border-[#1A2619]">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Optional Measurements (cm)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-bold block mb-1">Waist</span>
+                      <input 
+                        type="number"
+                        value={formData.waist_cm}
+                        onChange={(e) => setFormData(prev => ({ ...prev, waist_cm: e.target.value }))}
+                        className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
+                        placeholder="80"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-bold block mb-1">Chest</span>
+                      <input 
+                        type="number"
+                        value={formData.chest_cm}
+                        onChange={(e) => setFormData(prev => ({ ...prev, chest_cm: e.target.value }))}
+                        className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
+                        placeholder="95"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="pt-4 flex flex-col gap-2">
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="w-full py-3.5 bg-[#ADFF00] text-black font-extrabold text-sm rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.3)] hover:bg-[#b8ff1a] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+
+                  <Link
+                    href="/fitness/onboarding?mode=edit"
+                    className="w-full py-3 bg-[#1A2619] text-gray-300 hover:text-white font-bold text-xs rounded-xl transition-colors text-center flex items-center justify-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Retake Full AI Onboarding Flow</span>
+                  </Link>
+                </div>
+
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
