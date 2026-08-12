@@ -161,18 +161,54 @@ Output ONLY valid JSON matching this schema.`;
 
     const weight_trend_baseline = data.weight || null;
 
+    // Remove massive base64 images before saving
+    const {
+      body_scan_front,
+      body_scan_left,
+      body_scan_right,
+      body_scan_back,
+      body_scan_inspiration,
+      goal_physique_image,
+      ...safeData
+    } = data;
+
     // Save to database
     const { error: upsertError } = await supabase
       .from("fitness_os_profiles")
       .upsert(
         { 
           user_id: user.id, 
-          ...data,
+          
+          // Basic Info
+          goal: data.goal,
+          fitness_level: data.fitness_level,
+          age: data.age,
+          height: data.height,
+          weight: data.weight,
+          target_weight: data.target_weight,
+          gender: data.gender,
+          
+          // Training
+          training_location: data.training_location,
+          equipment: data.equipment,
+          training_days_per_week: data.training_days_per_week,
+          workout_duration_minutes: data.workout_duration_minutes,
+          preferred_training_days: data.preferred_training_days,
+          preferred_training_time: data.preferred_training_time || data.workout_time,
+          
+          // Nutrition & Lifestyle
+          diet_preference: data.food_type,
+          nutrition_budget: data.nutrition_budget,
+          activity_level: data.activity_level,
+          lifestyle_description: data.lifestyle_description,
+          
+          // Computed Data
           bmi,
           baseline_calories,
           initial_protein_target,
           weight_trend_baseline,
           ai_strategy: aiStrategy,
+          onboarding_data: safeData,
           onboarding_completed: true,
           updated_at: new Date().toISOString()
         },
