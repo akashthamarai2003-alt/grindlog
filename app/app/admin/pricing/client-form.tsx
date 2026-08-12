@@ -60,11 +60,15 @@ export default function PricingClientForm({
     }
   };
 
-  const PLAN_METADATA = [
+  const ALL_PLANS = [
     { key: "monthly" as const, title: "Monthly Plan", emoji: "🌱", period: "/month" },
     { key: "six_months" as const, title: "6 Months Plan", emoji: "🌿", period: "/6 months" },
     { key: "lifetime" as const, title: "Lifetime Access", emoji: "🌳", period: "one-time" },
   ];
+
+  const PLAN_METADATA = appFilter === "fitness" 
+    ? ALL_PLANS.filter(p => p.key === "monthly")
+    : ALL_PLANS;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
