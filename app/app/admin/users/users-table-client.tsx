@@ -259,10 +259,12 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                     }}
                   />
                 </th>
-                <th className="px-6 py-3">User</th>
-                <th className="px-6 py-3">Stats</th>
-                <th className="px-6 py-3">Plan</th>
-                <th className="px-6 py-3">Duration</th>
+                <th className="px-6 py-4 rounded-tl-xl w-[250px]">User</th>
+                {appFilter !== "fitness" && (
+                  <th className="px-6 py-4">Stats</th>
+                )}
+                <th className="px-6 py-4">Plan</th>
+                <th className="px-6 py-4">Duration</th>
                 <th className="px-6 py-3">Payment ID</th>
                 <th className="px-6 py-3">Paid Amount</th>
                 <th className="px-6 py-3">Joined</th>
@@ -302,12 +304,14 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col text-xs space-y-1">
-                        <span>XP: {user.xp || 0}</span>
-                        <span>Level: {user.level || 1}</span>
-                      </div>
-                    </td>
+                    {appFilter !== "fitness" && (
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col text-xs space-y-1">
+                          <span>XP: {user.xp || 0}</span>
+                          <span>Level: {user.level || 1}</span>
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       {user.is_premium ? (
                         <div className="flex flex-col gap-1.5">
@@ -317,8 +321,8 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                             </span>
                           </div>
                           
-                          {/* Render AI Message Top Ups if they exist */}
-                          {user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
+                          {/* Render AI Message Top Ups if they exist, but hide for Fitness OS filter */}
+                          {appFilter !== "fitness" && user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
                              <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
                                + AI Messages (₹10)
                              </span>
@@ -331,8 +335,8 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                             Unpaid
                           </span>
                           
-                          {/* Render AI Message Top Ups if they exist */}
-                          {user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
+                          {/* Render AI Message Top Ups if they exist, but hide for Fitness OS filter */}
+                          {appFilter !== "fitness" && user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
                              <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
                                + AI Messages (₹10)
                              </span>
