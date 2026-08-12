@@ -87,15 +87,13 @@ export function NutritionView() {
           <div className="w-16 h-16 bg-[#ADFF00]/10 rounded-full flex items-center justify-center mx-auto mb-4 text-[#ADFF00]">
             <Apple size={32} />
           </div>
-          <h2 className="text-lg font-black text-white uppercase tracking-widest mb-2">No Plan Found</h2>
-          <p className="text-white/50 text-sm mb-6">You don't have active nutrition targets or a meal plan for today.</p>
+          <h2 className="text-lg font-black text-white uppercase tracking-widest mb-2">Targets Missing</h2>
+          <p className="text-white/50 text-sm mb-6">You need to set your daily nutrition targets before you can generate a meal plan.</p>
           <button 
-            disabled={isGenerating}
-            onClick={handleGeneratePlan}
-            className="w-full py-4 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black rounded-xl text-xs font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2 disabled:opacity-50"
+            onClick={() => window.location.href = '/fitness/profile'}
+            className="w-full py-4 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black rounded-xl text-xs font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2"
           >
-            {isGenerating ? <Loader2 className="animate-spin" size={16} /> : "Generate My Plan"}
-            {isGenerating && "Generating..."}
+            Set Daily Targets
           </button>
         </div>
       );
