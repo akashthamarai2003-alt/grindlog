@@ -1,30 +1,29 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Dumbbell, X, Check, Filter, RotateCcw, Mail } from "lucide-react";
+import { Search, Dumbbell, X, Check, Filter, RotateCcw } from "lucide-react";
 import { grantFitnessOSAction, revokeFitnessOSAction } from "../users/grant-fitness-action";
 
 interface FitnessUser {
   id: string;
-  user_id: string;
   display_name?: string;
   email?: string;
   is_premium?: boolean;
   premium_tier?: string;
   premium_level?: string;
   premium_expires_at?: string;
-  fitness_joined_at: string;
+  profile_created_at: string;
+  // Fitness OS fields
+  has_started_fitness: boolean;
   onboarding_completed?: boolean;
   goal?: string;
   fitness_level?: string;
-  age?: number;
-  weight?: number;
-  target_weight?: number;
+  fitness_joined_at?: string;
 }
 
 export default function FitnessUsersTableClient({ users }: { users: FitnessUser[] }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "started">("all");
   const [grantingId, setGrantingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ userId: string; text: string; ok: boolean } | null>(null);
 
@@ -36,11 +35,10 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
       }
       if (statusFilter === "active" && !u.is_premium) return false;
       if (statusFilter === "inactive" && u.is_premium) return false;
+      if (statusFilter === "started" && !u.has_started_fitness) return false;
       return true;
     });
   }, [users, searchQuery, statusFilter]);
-
-  const activeCount = users.filter((u) => u.is_premium).length;
 
   const handleGrant = async (userId: string) => {
     setGrantingId(userId);
@@ -76,9 +74,12 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
       <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
           <Filter className="w-4 h-4 text-gray-400" />
-          <span className="text-sm font-bold text-gray-700">Filter Fitness Users</span>
+          <span className="text-sm font-bold text-gray-700">Filter Users</span>
           <span className="text-xs bg-lime-100 text-lime-700 font-bold px-2 py-0.5 rounded-full">
-            {users.filter(u => u.is_premium).length} Active
+            {users.filter(u => u.is_premium).length} Premium
+          </span>
+          <span className="text-xs bg-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">
+            {users.filter(u => u.has_started_fitness).length} On Fitness App
           </span>
           <span className="text-xs bg-gray-100 text-gray-500 font-semibold px-2 py-0.5 rounded-full">
             {filteredUsers.length} of {users.length}
@@ -101,8 +102,9 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
             className="px-3 py-2 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-lime-500 text-gray-700"
           >
             <option value="all">All Users</option>
-            <option value="active">Active Fitness OS</option>
-            <option value="inactive">No Access</option>
+            <option value="active">Fitness OS Active (Premium)</option>
+            <option value="started">Started Fitness Onboarding</option>
+            <option value="inactive">No Fitness Access</option>
           </select>
           {(searchQuery || statusFilter !== "all") && (
             <button
@@ -122,12 +124,12 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
             <thead className="text-xs uppercase bg-gray-50 text-gray-600 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3">User</th>
-                <th className="px-6 py-3">Fitness Status</th>
-                <th className="px-6 py-3">Goal & Level</th>
+                <th className="px-6 py-3">Fitness OS</th>
+                <th className="px-6 py-3">Goal</th>
                 <th className="px-6 py-3">Onboarded</th>
                 <th className="px-6 py-3">Plan</th>
-                <th className="px-6 py-3">Access Expires</th>
-                <th className="px-6 py-3">Fitness Joined</th>
+                <th className="px-6 py-3">Expires</th>
+                <th className="px-6 py-3">Signed Up</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -137,9 +139,10 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
                 const isExpired = daysLeft === "Expired";
                 return (
                   <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    {/* User */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#ADFF00]/20 border-2 border-[#ADFF00]/40 flex items-center justify-center text-lime-700 font-black text-sm shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-lime-100 border-2 border-lime-200 flex items-center justify-center text-lime-700 font-black text-sm shrink-0">
                           {user.display_name?.charAt(0).toUpperCase() || "?"}
                         </div>
                         <div>
@@ -148,45 +151,79 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
                         </div>
                       </div>
                     </td>
+
+                    {/* Fitness OS Status */}
                     <td className="px-6 py-4">
                       {user.is_premium && !isExpired ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-lime-100 text-lime-700 border border-lime-200">
-                          <Check className="w-3 h-3" /> Active
+                          <Check className="w-3 h-3" /> Premium
                         </span>
                       ) : isExpired ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-600 border border-orange-200">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-600 border border-orange-200">
                           Expired
                         </span>
+                      ) : user.has_started_fitness ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600 border border-blue-200">
+                          <Dumbbell className="w-3 h-3" /> On App
+                        </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
-                          No Access
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-400 border border-gray-200">
+                          Not Started
                         </span>
                       )}
                     </td>
+
+                    {/* Goal */}
                     <td className="px-6 py-4">
                       <div className="text-xs text-gray-600 space-y-0.5">
-                        {user.goal && <div className="font-semibold capitalize">{user.goal.replace(/_/g, ' ')}</div>}
-                        {user.fitness_level && <div className="text-gray-400 capitalize">{user.fitness_level}</div>}
-                        {!user.goal && <span className="text-gray-300">—</span>}
+                        {user.goal ? (
+                          <>
+                            <div className="font-semibold capitalize">{user.goal.replace(/_/g, ' ')}</div>
+                            {user.fitness_level && <div className="text-gray-400 capitalize">{user.fitness_level}</div>}
+                          </>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </div>
                     </td>
+
+                    {/* Onboarded */}
                     <td className="px-6 py-4">
-                      {user.onboarding_completed ? (
+                      {!user.has_started_fitness ? (
+                        <span className="text-xs text-gray-300">—</span>
+                      ) : user.onboarding_completed ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
                           <Check className="w-3 h-3" /> Done
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-400">In Progress</span>
+                        <span className="text-xs text-orange-400 font-semibold">In Progress</span>
                       )}
                     </td>
+
+                    {/* Plan */}
+                    <td className="px-6 py-4">
+                      {user.is_premium ? (
+                        <div className="text-xs font-semibold text-gray-700 capitalize">
+                          {user.premium_tier?.replace("_", " ")} · {user.premium_level?.toUpperCase()}
+                        </div>
+                      ) : (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )}
+                    </td>
+
+                    {/* Expires */}
                     <td className="px-6 py-4">
                       <span className={`text-xs font-semibold ${isExpired ? "text-orange-500" : "text-gray-600"}`}>
                         {daysLeft || "—"}
                       </span>
                     </td>
+
+                    {/* Signed Up */}
                     <td className="px-6 py-4 text-xs text-gray-500">
-                      {new Date(user.created_at).toLocaleDateString()}
+                      {new Date(user.profile_created_at).toLocaleDateString()}
                     </td>
+
+                    {/* Actions */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex flex-col items-end gap-1.5">
                         {!user.is_premium || isExpired ? (
@@ -220,7 +257,7 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
               })}
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-400 text-sm">
                     No users match your filter.
                   </td>
                 </tr>
