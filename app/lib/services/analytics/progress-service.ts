@@ -16,11 +16,11 @@ import {
 
 export class ProgressAnalyticsService {
   
-  static async getAggregatedProgress(userId: string, period: AnalyticsPeriod = '30D'): Promise<AggregatedProgressPayload> {
+  static async getAggregatedProgress(userId: string, period: AnalyticsPeriod = '30D', referenceDate?: Date): Promise<AggregatedProgressPayload> {
     const supabase = await createServerSupabase();
 
-    const now = new Date();
-    const startDate = new Date();
+    const now = referenceDate || new Date();
+    const startDate = new Date(now.getTime());
     switch (period) {
       case '7D': startDate.setDate(now.getDate() - 7); break;
       case '30D': startDate.setDate(now.getDate() - 30); break;

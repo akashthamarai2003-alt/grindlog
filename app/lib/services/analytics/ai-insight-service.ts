@@ -1,0 +1,193 @@
+import { createServerSupabase } from "@/lib/services/supabase/server";
+import { ProgressAnalyticsService } from "./progress-service";
+import { generateAIResponseJSON, generateAIResponse } from "@/lib/services/groq/client";
+import { AnalyticsPeriod, AIProgressReview, AggregatedProgressPayload } from "@/types/fitness/analytics";
+
+interface RawAIReview {
+  summary: string;
+  status: "on_track" | "improving" | "plateau" | "inconsistent";
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: {
+    title: string;
+    description: string;
+    priority: "high" | "medium" | "low";
+  }[];
+  metrics: {
+    weight_change: number;
+    workout_consistency: number;
+    protein_consistency: number;
+  };
+}
+
+export class AIInsightService {
+  
+  static async generateWeeklyReview(userId: string, period: AnalyticsPeriod = '30D', forceRefresh = false): Promise<AIProgressReview | null> {
+    const supabase = await createServerSupabase();
+    const now = new Date();
+    const startDate = new Date(now.getTime());
+    
+    // Calculate period length
+    let periodDays = 30;
+    switch (period) {
+      case '7D': startDate.setDate(now.getDate() - 7); periodDays = 7; break;
+      case '30D': startDate.setDate(now.getDate() - 30); periodDays = 30; break;
+      case '3M': startDate.setMonth(now.getMonth() - 3); periodDays = 90; break;
+      case '6M': startDate.setMonth(now.getMonth() - 6); periodDays = 180; break;
+      case 'ALL': startDate.setFullYear(2000); periodDays = 365; break;
+    }
+
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const nowStr = now.toISOString().split('T')[0];
+
+    // Check cache
+    if (!forceRefresh) {
+      const { data: cached } = await supabase
+        .from('fitness_os_ai_insights')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('period_start', startDateStr)
+        .eq('period_end', nowStr)
+        .eq('insight_type', 'progress_review')
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cached) {
+        // Only return if it's less than 24 hours old
+        const ageHours = (now.getTime() - new Date(cached.generated_at).getTime()) / (1000 * 60 * 60);
+        if (ageHours < 24) {
+          return {
+            summary: cached.summary,
+            strengths: cached.strengths || [],
+            weaknesses: cached.weaknesses || [],
+            recommendations: cached.recommendations || [],
+            generatedAt: cached.generated_at
+          };
+        }
+      }
+    }
+
+    // Fetch Analytics for Current Period
+    const current = await ProgressAnalyticsService.getAggregatedProgress(userId, period);
+    
+    // Fetch Analytics for Previous Period
+    const previousDate = new Date(startDate.getTime());
+    const previous = await ProgressAnalyticsService.getAggregatedProgress(userId, period, previousDate);
+
+    // Build Context String
+    const contextPrompt = `
+      USER GOAL:
+      Starting Weight: ${current.transformation.startingWeight || 'N/A'} kg
+      Current Weight: ${current.transformation.currentWeight || 'N/A'} kg
+      Target Weight: ${current.transformation.targetWeight || 'N/A'} kg
+      Transformation Day: ${current.transformation.transformationDay}
+
+      CURRENT PERIOD (${periodDays} days):
+      Workouts: ${current.workout.completedWorkouts}/${current.workout.totalWorkouts} (${current.workout.completionRate.toFixed(0)}%)
+      Volume: ${current.workout.trainingVolumeKg} kg
+      Nutrition: ${current.nutrition.averageCalories} avg cals, ${current.nutrition.averageProtein}g protein (Target: ${current.nutrition.proteinTarget}g)
+      Steps: ${current.activity.averageDailySteps} (Target: ${current.activity.stepTarget})
+      Sleep: ${current.recovery.averageSleepHours} hrs/night (Quality: ${current.recovery.averageSleepQuality}%)
+
+      PREVIOUS PERIOD DELTAS (vs previous ${periodDays} days):
+      Weight Change vs Prev: ${((current.transformation.currentWeight || 0) - (previous.transformation.currentWeight || 0)).toFixed(1)} kg
+      Workout Volume Diff: ${current.workout.trainingVolumeKg - previous.workout.trainingVolumeKg} kg
+      Steps Diff: ${current.activity.averageDailySteps - previous.activity.averageDailySteps} steps
+    `;
+
+    const systemPrompt = `You are GrindLog's elite AI Fitness Coach. 
+You are reviewing the user's progress analytics.
+Your job is to identify what is going well, what is limiting progress, and what they should prioritize next.
+Keep recommendations concise, highly actionable, and grounded ONLY in the provided metrics.
+Do NOT invent numbers. Do NOT make medical claims or diagnose injuries. If the user reports pain (not provided here, but generally), recommend stopping the activity.
+You MUST output perfectly formatted JSON matching this exact structure:
+{
+  "summary": "2-3 sentences summarizing progress.",
+  "status": "on_track | improving | plateau | inconsistent",
+  "strengths": ["string", "string"],
+  "weaknesses": ["string"],
+  "recommendations": [
+    { "title": "...", "description": "...", "priority": "high | medium | low" }
+  ],
+  "metrics": {
+    "weight_change": number,
+    "workout_consistency": number,
+    "protein_consistency": number
+  }
+}`;
+
+    try {
+      const response = await generateAIResponseJSON<RawAIReview>({
+        systemPrompt,
+        userPrompt: contextPrompt,
+        model: "fast"
+      });
+
+      // Map recommendations back to string format for the DB array
+      const recommendationsList = response.recommendations.map(r => `${r.title}: ${r.description}`);
+
+      // Save to database
+      const { data: inserted, error } = await supabase
+        .from('fitness_os_ai_insights')
+        .insert({
+          user_id: userId,
+          period_start: startDateStr,
+          period_end: nowStr,
+          insight_type: 'progress_review',
+          summary: response.summary,
+          strengths: response.strengths,
+          weaknesses: response.weaknesses,
+          recommendations: recommendationsList
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Failed to save AI insight:", error);
+      }
+
+      return {
+        summary: response.summary,
+        strengths: response.strengths,
+        weaknesses: response.weaknesses,
+        recommendations: recommendationsList,
+        generatedAt: inserted?.generated_at || new Date().toISOString()
+      };
+    } catch (error) {
+      console.error("AI Insight Generation Failed:", error);
+      return null;
+    }
+  }
+
+  static async askProgressQuestion(userId: string, question: string): Promise<string> {
+    const current = await ProgressAnalyticsService.getAggregatedProgress(userId, '30D');
+    
+    const contextPrompt = `
+      USER CONTEXT (Last 30 Days):
+      Weight: ${current.transformation.currentWeight || 'N/A'} kg (Target: ${current.transformation.targetWeight || 'N/A'} kg)
+      Workouts: ${current.workout.completedWorkouts}/${current.workout.totalWorkouts} (${current.workout.completionRate.toFixed(0)}%)
+      Volume: ${current.workout.trainingVolumeKg} kg
+      Nutrition: ${current.nutrition.averageCalories} avg cals, ${current.nutrition.averageProtein}g protein (Target: ${current.nutrition.proteinTarget}g)
+      Steps: ${current.activity.averageDailySteps} (Target: ${current.activity.stepTarget})
+      Sleep: ${current.recovery.averageSleepHours} hrs/night
+    `;
+
+    const systemPrompt = `You are GrindLog's elite AI Fitness Coach answering a specific user question about their progress.
+    Use the provided analytics context to inform your answer. 
+    Keep your response supportive, highly specific, and actionable. Do not use markdown headers (e.g. # or ##), just plain text with occasional bolding (**bold**) or bullet points.
+    Do NOT give medical advice or diagnose injuries.`;
+
+    try {
+      const responseText = await generateAIResponse({
+        systemPrompt,
+        userPrompt: `Context:\n${contextPrompt}\n\nUser Question:\n${question}`,
+        model: "primary"
+      });
+      return responseText;
+    } catch (error) {
+      console.error("Ask Progress AI Failed:", error);
+      return "I'm having trouble analyzing your progress right now. Please try again in a moment.";
+    }
+  }
+}

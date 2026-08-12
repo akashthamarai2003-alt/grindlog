@@ -61,7 +61,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
             <WorkoutAnalyticsCard metrics={data.workout} />
             <NutritionAnalyticsCard metrics={data.nutrition} />
             <ActivityRecoveryAnalyticsCard activity={data.activity} recovery={data.recovery} />
-            <AIProgressReviewCard review={data.aiReview} />
+            <AIProgressReviewCard initialReview={data.aiReview} period={data.period} />
             <AchievementsShowcase achievements={data.achievements} />
           </div>
         )}
