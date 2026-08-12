@@ -21,6 +21,7 @@ interface UserWithDetails {
   paymentId?: string;
   actualPaidAmount: number;
   has_fitness_profile?: boolean;
+  fitness_onboarding_completed?: boolean;
 }
 
 export default function UsersTableClient({ users }: { users: UserWithDetails[] }) {
@@ -264,6 +265,9 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                   <th className="px-6 py-4">Stats</th>
                 )}
                 <th className="px-6 py-4">Plan</th>
+                {appFilter === "fitness" && (
+                  <th className="px-6 py-4">Onboarding</th>
+                )}
                 <th className="px-6 py-4">Duration</th>
                 <th className="px-6 py-3">Payment ID</th>
                 <th className="px-6 py-3">Paid Amount</th>
@@ -344,6 +348,19 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                         </div>
                       )}
                     </td>
+                    {appFilter === "fitness" && (
+                      <td className="px-6 py-4">
+                        {user.fitness_onboarding_completed ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700">
+                            ✓ Completed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">
+                            Pending
+                          </span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="text-xs font-semibold text-gray-700">
                         {durationString}

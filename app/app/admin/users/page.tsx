@@ -33,9 +33,9 @@ export default async function AdminUsersPage() {
   // Fetch fitness profiles separately to avoid PostgREST relationship ambiguity errors
   const { data: fitnessProfiles } = await supabase
     .from("fitness_os_profiles")
-    .select("user_id");
+    .select("user_id, onboarding_completed");
 
-  const fitnessUserIds = new Set((fitnessProfiles || []).map(fp => fp.user_id));
+  const fitnessUsersMap = new Map((fitnessProfiles || []).map(fp => [fp.user_id, fp]));
 
   // Helper to estimate paid amount since it wasn't historically tracked in DB
   const getPaidAmount = (tier?: string, level?: string, isPremium?: boolean) => {
@@ -122,7 +122,8 @@ export default async function AdminUsersPage() {
       
       return {
         ...user,
-        has_fitness_profile: fitnessUserIds.has(user.id),
+        has_fitness_profile: fitnessUsersMap.has(user.id),
+        fitness_onboarding_completed: fitnessUsersMap.get(user.id)?.onboarding_completed || false,
         actualPaidAmount,
         paymentHistory,
         paymentId: validPaymentIds.length > 0 ? validPaymentIds.join(", ") : "-"
