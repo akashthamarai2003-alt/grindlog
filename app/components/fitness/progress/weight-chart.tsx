@@ -1,0 +1,82 @@
+"use client";
+
+import { WeightPoint } from "@/types/fitness/analytics";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Plus } from "lucide-react";
+
+export function WeightChart({ data, targetWeight }: { data: WeightPoint[], targetWeight: number | null }) {
+  if (data.length === 0) {
+    return (
+      <div className="w-full flex flex-col gap-3">
+        <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
+          Weight History
+        </h2>
+        <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center text-center h-48">
+          <p className="text-sm font-bold text-white/60 mb-2">No weight history yet</p>
+          <button className="flex items-center gap-2 px-4 py-2 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-xs uppercase tracking-widest border border-[#ADFF00]/20">
+            <Plus className="w-3 h-3" /> Log Weight
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Find min and max for chart domain
+  const weights = data.map(d => d.weight);
+  if (targetWeight) weights.push(targetWeight);
+  const minWeight = Math.min(...weights) - 2;
+  const maxWeight = Math.max(...weights) + 2;
+
+  return (
+    <div className="w-full flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
+          Weight History
+        </h2>
+        <button className="flex items-center gap-1 text-[#ADFF00] font-black text-[10px] uppercase tracking-widest">
+          <Plus className="w-3 h-3" /> Log
+        </button>
+      </div>
+
+      <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-4 pt-6 h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+            <XAxis 
+              dataKey="date" 
+              tickFormatter={(val) => {
+                const date = new Date(val);
+                return `${date.getDate()}/${date.getMonth() + 1}`;
+              }}
+              stroke="rgba(255,255,255,0.1)"
+              tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700 }}
+              axisLine={false}
+              tickLine={false}
+              dy={10}
+            />
+            <YAxis 
+              domain={[minWeight, maxWeight]}
+              stroke="rgba(255,255,255,0.1)"
+              tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700 }}
+              axisLine={false}
+              tickLine={false}
+              dx={-5}
+            />
+            <Tooltip
+              contentStyle={{ backgroundColor: '#0A1108', border: '1px solid rgba(173,255,0,0.3)', borderRadius: '12px', color: '#fff', fontSize: '12px', fontWeight: 700 }}
+              itemStyle={{ color: '#ADFF00' }}
+              labelStyle={{ color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="weight" 
+              stroke="#ADFF00" 
+              strokeWidth={3}
+              dot={{ fill: '#0A1108', stroke: '#ADFF00', strokeWidth: 2, r: 4 }}
+              activeDot={{ fill: '#ADFF00', stroke: '#0A1108', strokeWidth: 2, r: 6 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
