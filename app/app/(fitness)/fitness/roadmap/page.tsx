@@ -11,13 +11,17 @@ export default function RoadmapPage() {
   const supabase = createClient();
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<any>(null);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        if (data) setProfile(data);
+        const { data: fitnessProfile } = await supabase.from('fitness_os_profiles').select('*').eq('user_id', user.id).single();
+        if (fitnessProfile) setProfile(fitnessProfile);
+        
+        const { data: mainProfile } = await supabase.from('profiles').select('is_premium').eq('id', user.id).single();
+        if (mainProfile) setIsPremium(!!mainProfile.is_premium);
       }
     };
     fetchProfile();
@@ -221,7 +225,13 @@ export default function RoadmapPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.2 }}
-                onClick={() => router.push('/fitness')}
+                onClick={() => {
+                  if (isPremium) {
+                    router.push('/fitness');
+                  } else {
+                    router.push('/payment?returnTo=/fitness');
+                  }
+                }}
                 className="w-full bg-[#ADFF00] text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#9BE600] transition-colors"
               >
                 Start My Transformation <ArrowRight size={18} />

@@ -15,8 +15,18 @@ export async function FitnessGuard({ children }: { children: React.ReactNode }) 
     .eq("user_id", user.id)
     .maybeSingle();
 
+  const { data: mainProfile } = await supabase
+    .from("profiles")
+    .select("is_premium")
+    .eq("id", user.id)
+    .maybeSingle();
+
   if (!profile?.onboarding_completed) {
     redirect("/fitness/onboarding");
+  }
+
+  if (!mainProfile?.is_premium) {
+    redirect("/payment?returnTo=/fitness");
   }
 
   return <>{children}</>;

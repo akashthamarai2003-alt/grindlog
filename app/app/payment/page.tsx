@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
 import Image from "next/image";
 import {
@@ -83,6 +83,8 @@ const basePlans = [
 
 export default function PaymentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
   const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -101,9 +103,13 @@ export default function PaymentPage() {
   // Reliable redirect effect
   useEffect(() => {
     if (isSuccess) {
-      window.location.href = "/dashboard?success=true&t=" + Date.now();
+      if (returnTo) {
+        window.location.href = `${returnTo}?success=true&t=${Date.now()}`;
+      } else {
+        window.location.href = "/dashboard?success=true&t=" + Date.now();
+      }
     }
-  }, [isSuccess]);
+  }, [isSuccess, returnTo]);
 
   // Robust polling that survives modal dismissal
   useEffect(() => {

@@ -20,6 +20,12 @@ async function DashboardContent() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  const { data: mainProfile } = await supabase
+    .from("profiles")
+    .select("is_premium")
+    .eq("id", user.id)
+    .maybeSingle();
+
   if (!profile?.onboarding_completed) {
     redirect("/fitness/onboarding");
   }
@@ -33,6 +39,14 @@ async function DashboardContent() {
     .eq("user_id", user.id)
     .eq("status", "active")
     .maybeSingle();
+
+  if (profile?.onboarding_completed && !plan) {
+    redirect("/fitness/report");
+  }
+
+  if (!mainProfile?.is_premium) {
+    redirect("/payment?returnTo=/fitness");
+  }
 
   // Fetch today's workout
   const { data: workout } = await supabase
