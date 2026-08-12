@@ -295,36 +295,9 @@ export default function PlanSetupPage() {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50 pointer-events-none">
         <div className="max-w-md mx-auto space-y-3 pointer-events-auto">
           
-          {modulating && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center mb-2">
-               <span className="text-xs bg-[#ADFF00]/20 text-[#ADFF00] px-3 py-1 rounded-full animate-pulse border border-[#ADFF00]/30 font-semibold">
-                 AI is adjusting your plan...
-               </span>
-            </motion.div>
-          )}
-          
-          <form onSubmit={handleModulate} className="relative">
-            <input 
-              type="text" 
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="e.g., I only have 30 mins today"
-              disabled={modulating || saving}
-              className="w-full bg-[#121E12] border border-[#1A2619] rounded-full py-4 pl-12 pr-12 text-sm focus:outline-none focus:border-[#ADFF00] text-white disabled:opacity-50"
-            />
-            <Brain className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-            <button 
-              type="submit" 
-              disabled={!chatInput.trim() || modulating || saving}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-[#ADFF00] rounded-full flex items-center justify-center text-black disabled:opacity-50 disabled:bg-gray-700 transition-colors"
-            >
-              {modulating ? <Loader2 size={16} className="animate-spin text-black" /> : <Send size={16} />}
-            </button>
-          </form>
-
           <button 
             onClick={handleSave}
-            disabled={saving || modulating}
+            disabled={saving}
             className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#c4ff33] disabled:opacity-70 transition-colors"
           >
             {saving ? (
