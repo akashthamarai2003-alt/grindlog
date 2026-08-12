@@ -123,6 +123,7 @@ export default function PricingClientForm({
             </>
           )}
         </button>
+        </div>
       </div>
 
       {/* Plan Cards Grid */}
