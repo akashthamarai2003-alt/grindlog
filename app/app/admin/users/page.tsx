@@ -33,7 +33,7 @@ export default async function AdminUsersPage() {
   // Fetch fitness profiles separately to avoid PostgREST relationship ambiguity errors
   const { data: fitnessProfiles } = await supabase
     .from("fitness_os_profiles")
-    .select("user_id, onboarding_completed");
+    .select("user_id, onboarding_completed, fitness_is_premium, fitness_premium_tier, fitness_premium_level, fitness_premium_expires_at");
 
   const fitnessUsersMap = new Map((fitnessProfiles || []).map(fp => [fp.user_id, fp]));
 
@@ -124,6 +124,10 @@ export default async function AdminUsersPage() {
         ...user,
         has_fitness_profile: fitnessUsersMap.has(user.id),
         fitness_onboarding_completed: fitnessUsersMap.get(user.id)?.onboarding_completed || false,
+        fitness_is_premium: fitnessUsersMap.get(user.id)?.fitness_is_premium || false,
+        fitness_premium_tier: fitnessUsersMap.get(user.id)?.fitness_premium_tier || null,
+        fitness_premium_level: fitnessUsersMap.get(user.id)?.fitness_premium_level || null,
+        fitness_premium_expires_at: fitnessUsersMap.get(user.id)?.fitness_premium_expires_at || null,
         actualPaidAmount,
         paymentHistory,
         paymentId: validPaymentIds.length > 0 ? validPaymentIds.join(", ") : "-"

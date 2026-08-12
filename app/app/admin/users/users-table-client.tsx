@@ -22,6 +22,9 @@ interface UserWithDetails {
   actualPaidAmount: number;
   has_fitness_profile?: boolean;
   fitness_onboarding_completed?: boolean;
+  fitness_is_premium?: boolean;
+  fitness_premium_tier?: string;
+  fitness_premium_level?: string;
 }
 
 export default function UsersTableClient({ users }: { users: UserWithDetails[] }) {
@@ -90,24 +93,24 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
     return `${baseName} - ${levelName}`;
   };
 
-  const getDurationString = (user: UserWithDetails) => {
-    if (!user.is_premium) return "-";
-    if (user.premium_tier === 'lifetime') return "Lifetime";
-    if (!user.premium_expires_at) return "-";
+  const getDurationString = (isPremium?: boolean, premiumTier?: string, premiumExpiresAt?: string) => {
+    if (!isPremium) return "-";
+    if (premiumTier === 'lifetime') return "Lifetime";
+    if (!premiumExpiresAt) return "-";
 
-    const expiresAt = new Date(user.premium_expires_at);
+    const expiresAt = new Date(premiumExpiresAt);
     const now = new Date();
     
     // Invert the month addition to find the exact start date
     const startDate = new Date(expiresAt);
-    if (user.premium_tier === "monthly") {
+    if (premiumTier === "monthly") {
       startDate.setMonth(startDate.getMonth() - 1);
-    } else if (user.premium_tier === "six_months") {
+    } else if (premiumTier === "six_months") {
       startDate.setMonth(startDate.getMonth() - 6);
     }
     
     let totalDays = 30;
-    if (user.premium_tier === 'six_months') totalDays = 180;
+    if (premiumTier === 'six_months') totalDays = 180;
     
     // Calculate actual days passed since they paid
     const daysElapsed = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
@@ -277,10 +280,19 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                const planName = user.premium_tier ? getPlanName(user.premium_tier, user.premium_level) : 'Pro';
+                const isFitness = appFilter === "fitness";
+                
+                // Switch between GrindLog and Fitness OS premium statuses dynamically
+                const isPremium = isFitness ? user.fitness_is_premium : user.is_premium;
+                const premiumTier = isFitness ? user.fitness_premium_tier : user.premium_tier;
+                const premiumLevel = isFitness ? user.fitness_premium_level : user.premium_level;
+                
+                const premiumExpiresAt = isFitness ? (user as any).fitness_premium_expires_at : user.premium_expires_at;
+                
+                const planName = premiumTier ? getPlanName(premiumTier, premiumLevel) : 'Pro';
                 const paymentId = user.paymentId;
                 const paidAmount = user.actualPaidAmount;
-                const durationString = getDurationString(user);
+                const durationString = getDurationString(isPremium, premiumTier, premiumExpiresAt);
 
                 return (
                   <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
@@ -317,7 +329,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                       </td>
                     )}
                     <td className="px-6 py-4">
-                      {user.is_premium ? (
+                      {isPremium ? (
                         <div className="flex flex-col gap-1.5">
                           <div className="flex items-center gap-2">
                             <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
