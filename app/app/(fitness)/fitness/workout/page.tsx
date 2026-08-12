@@ -1,10 +1,11 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
-import { WorkoutSummaryCard } from "@/components/fitness/workout/workout-summary-card";
 import { TodaysExercisesList } from "@/components/fitness/workout/todays-exercises-list";
 import { ActiveWorkoutResumeCard } from "@/components/fitness/workout/active-workout-resume-card";
 import { AiCoachNote } from "@/components/fitness/workout/ai-coach-note";
+import { WeeklyWorkoutView } from "@/components/fitness/workout/weekly-workout-view";
+import { WorkoutSummaryCard } from "@/components/fitness/workout/workout-summary-card";
 import { redirect } from "next/navigation";
 
 export default async function WorkoutIndexPage() {
@@ -60,6 +61,8 @@ export default async function WorkoutIndexPage() {
           />
           
           <div className="mt-2">
+            <WeeklyWorkoutView />
+
             {workout.status === "in_progress" ? (
               <ActiveWorkoutResumeCard 
                 workoutId={workout.id} 
