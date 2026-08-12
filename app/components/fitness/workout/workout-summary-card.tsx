@@ -18,7 +18,12 @@ export function WorkoutSummaryCard({ workout, exerciseCount }: WorkoutSummaryCar
   const handleStart = async () => {
     if (isStarting) return;
     setIsStarting(true);
-    
+    if (workout.id === "mock") {
+      await new Promise(r => setTimeout(r, 500));
+      router.push(`/fitness/workout/${workout.id}`);
+      return;
+    }
+
     try {
       const res = await fetch("/api/workouts/sessions", {
         method: "POST",
