@@ -42,7 +42,7 @@ export class AINutritionService {
     const supabase = await createServerSupabase();
     const localDate = await NutritionService.getLocalDateString(userId);
 
-    // 1. Check idempotency: does a meal plan already exist for today?
+    // 1. Cleanup existing meal plans for today to allow fresh generation
     const { data: existingPlans } = await supabase
       .from('meal_plans')
       .select('id')
@@ -50,7 +50,7 @@ export class AINutritionService {
       .eq('date', localDate);
 
     if (existingPlans && existingPlans.length > 0) {
-      return { existing: true, message: "Meal plan already exists for today." };
+      await supabase.from('meal_plans').delete().eq('user_id', userId).eq('date', localDate);
     }
 
     // 2. Rate Limiting Check
@@ -240,7 +240,11 @@ Generate the meal plan.
       throw new Error("AI returned a plan with no valid foods.");
     }
 
-    // 7. Database Transaction (Simulated with manual rollback)
+    // 7. Database Cleanup & Insertion
+    // Delete any previous meal plans for today to prevent duplicates or constraint collisions
+    await supabase.from('meal_plans').delete().eq('user_id', userId).eq('date', localDate);
+
+    // Try inserting individual meal_type plans
     const { data: insertedPlans, error: plansError } = await supabase
       .from('meal_plans')
       .insert(mealPlansToInsert.map(p => {
@@ -250,11 +254,55 @@ Generate the meal plan.
       .select();
 
     if (plansError) {
+      // Fallback for database instances where unique_user_date is ON (user_id, date) instead of (user_id, date, meal_type)
+      if (plansError.message?.includes("unique_user_date") || plansError.code === '23505') {
+        const combinedCals = mealPlansToInsert.reduce((a, b) => a + b.calories, 0);
+        const combinedPro = mealPlansToInsert.reduce((a, b) => a + b.protein, 0);
+        const combinedCarbs = mealPlansToInsert.reduce((a, b) => a + b.carbs, 0);
+        const combinedFat = mealPlansToInsert.reduce((a, b) => a + b.fat, 0);
+        const combinedCost = mealPlansToInsert.reduce((a, b) => a + b.estimated_cost, 0);
+
+        const { data: singlePlan, error: singleErr } = await supabase
+          .from('meal_plans')
+          .insert({
+            user_id: userId,
+            date: localDate,
+            meal_type: 'daily',
+            name: 'Daily AI Nutrition Plan',
+            calories: combinedCals,
+            protein: combinedPro,
+            carbs: combinedCarbs,
+            fat: combinedFat,
+            estimated_cost: combinedCost,
+            ai_generated: true
+          })
+          .select()
+          .single();
+
+        if (singleErr || !singlePlan) {
+          await this.logUsage(userId, 'failed_db_insert', model);
+          throw singleErr || plansError;
+        }
+
+        const allItems = mealPlansToInsert.flatMap(p => p._items);
+        const singlePlanItems = allItems.map(item => ({
+          meal_plan_id: singlePlan.id,
+          food_id: item.food_id,
+          quantity: item.quantity
+        }));
+
+        await supabase.from('meal_plan_items').insert(singlePlanItems);
+
+        await this.logUsage(userId, 'success', model);
+        await NutritionService.updateDailySummary(userId);
+        return { existing: false, success: true };
+      }
+
       await this.logUsage(userId, 'failed_db_insert', model);
       throw plansError;
     }
 
-    // Prepare items
+    // Prepare items for multi-meal plan insertion
     for (let i = 0; i < insertedPlans.length; i++) {
       const plan = insertedPlans[i];
       const items = mealPlansToInsert[i]._items;
@@ -280,8 +328,6 @@ Generate the meal plan.
 
     // 8. Success Logging
     await this.logUsage(userId, 'success', model);
-    
-    // Also update daily summary to reflect the new meal plan target denominator
     await NutritionService.updateDailySummary(userId);
 
     return { existing: false, success: true };
