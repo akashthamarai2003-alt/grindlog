@@ -35,31 +35,11 @@ const basePlans = [
     id: "monthly",
     name: "Monthly",
     emoji: "🔥",
-    basePrices: { core: 49, pro: 69 },
+    basePrices: { core: 29, pro: 99 },
     period: "/month",
     originalPrice: null,
     badge: null,
-  },
-  {
-    id: "six_months",
-    name: "6 Months",
-    emoji: "⚡",
-    basePrices: { core: 199, pro: 249 },
-    period: "/6 months",
-    originalPrice: "₹294",
-    badge: "⭐ Most Popular",
-    savings: "Save 32%",
-  },
-  {
-    id: "lifetime",
-    name: "Lifetime",
-    emoji: "💎",
-    basePrices: { core: 599, pro: 799 },
-    period: "one-time",
-    originalPrice: null,
-    badge: "👑 Best Value",
-    savings: null,
-  },
+  }
 ];
 
 export default function FitnessPaymentPage() {
@@ -67,7 +47,7 @@ export default function FitnessPaymentPage() {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo');
   
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("monthly");
   // Fitness OS relies on Pro features
   const level = "pro"; 
   const [isProcessing, setIsProcessing] = useState(false);
