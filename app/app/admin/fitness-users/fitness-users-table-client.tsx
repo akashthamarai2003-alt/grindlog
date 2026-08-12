@@ -6,14 +6,20 @@ import { grantFitnessOSAction, revokeFitnessOSAction } from "../users/grant-fitn
 
 interface FitnessUser {
   id: string;
+  user_id: string;
   display_name?: string;
   email?: string;
   is_premium?: boolean;
   premium_tier?: string;
   premium_level?: string;
   premium_expires_at?: string;
-  created_at: string;
-  subscriptions?: any[];
+  fitness_joined_at: string;
+  onboarding_completed?: boolean;
+  goal?: string;
+  fitness_level?: string;
+  age?: number;
+  weight?: number;
+  target_weight?: number;
 }
 
 export default function FitnessUsersTableClient({ users }: { users: FitnessUser[] }) {
@@ -72,7 +78,7 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
           <Filter className="w-4 h-4 text-gray-400" />
           <span className="text-sm font-bold text-gray-700">Filter Fitness Users</span>
           <span className="text-xs bg-lime-100 text-lime-700 font-bold px-2 py-0.5 rounded-full">
-            {activeCount} Active
+            {users.filter(u => u.is_premium).length} Active
           </span>
           <span className="text-xs bg-gray-100 text-gray-500 font-semibold px-2 py-0.5 rounded-full">
             {filteredUsers.length} of {users.length}
@@ -116,10 +122,12 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
             <thead className="text-xs uppercase bg-gray-50 text-gray-600 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3">User</th>
-                <th className="px-6 py-3">Fitness OS Status</th>
+                <th className="px-6 py-3">Fitness Status</th>
+                <th className="px-6 py-3">Goal & Level</th>
+                <th className="px-6 py-3">Onboarded</th>
                 <th className="px-6 py-3">Plan</th>
                 <th className="px-6 py-3">Access Expires</th>
-                <th className="px-6 py-3">Joined</th>
+                <th className="px-6 py-3">Fitness Joined</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -156,12 +164,19 @@ export default function FitnessUsersTableClient({ users }: { users: FitnessUser[
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      {user.is_premium ? (
-                        <div className="text-xs font-semibold text-gray-700 capitalize">
-                          {user.premium_tier?.replace("_", " ")} · {user.premium_level?.toUpperCase()}
-                        </div>
+                      <div className="text-xs text-gray-600 space-y-0.5">
+                        {user.goal && <div className="font-semibold capitalize">{user.goal.replace(/_/g, ' ')}</div>}
+                        {user.fitness_level && <div className="text-gray-400 capitalize">{user.fitness_level}</div>}
+                        {!user.goal && <span className="text-gray-300">—</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.onboarding_completed ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                          <Check className="w-3 h-3" /> Done
+                        </span>
                       ) : (
-                        <span className="text-gray-400 text-xs">—</span>
+                        <span className="text-xs text-gray-400">In Progress</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
