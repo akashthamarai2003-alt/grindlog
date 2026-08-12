@@ -37,25 +37,10 @@ const basePlans = [
     id: "monthly",
     name: "Monthly",
     emoji: "🔥",
-    basePrices: { core: 49, pro: 99 },
+    basePrices: { core: 29, pro: 99 },
     period: "/month",
+    originalPrice: null,
     badge: null,
-  },
-  {
-    id: "six_months",
-    name: "6 Months",
-    emoji: "⚡",
-    basePrices: { core: 199, pro: 299 },
-    period: "/6 months",
-    badge: "MOST POPULAR",
-  },
-  {
-    id: "lifetime",
-    name: "Lifetime Access",
-    emoji: "👑",
-    basePrices: { core: 599, pro: 799 },
-    period: "one-time",
-    badge: "BEST VALUE",
   }
 ];
 
@@ -64,8 +49,8 @@ export default function FitnessPaymentPage() {
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo');
   
-  // State for plan and tier
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
+  // In Fitness OS, the duration is always monthly, but we let them choose the tier
+  const selectedPlan = "monthly";
   const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
@@ -310,89 +295,71 @@ export default function FitnessPaymentPage() {
           </div>
         </div>
 
-        {/* Tier Selector */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-gray-300">
-            Choose Your Tier
-          </h3>
-          
-          <div className="flex items-center rounded-full bg-[#121E12] p-0.5 border border-[#1A2619]">
-            <button
-              onClick={() => setLevel("core")}
-              className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
-                level === "core"
-                  ? "bg-white text-black shadow-sm"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              Core
-            </button>
-            <button
-              onClick={() => setLevel("pro")}
-              className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
-                level === "pro"
-                  ? "bg-[#ADFF00] text-black shadow-sm shadow-[#ADFF00]/20"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              Pro
-            </button>
-          </div>
-        </div>
-
         {/* Plan Selector */}
         <div className="space-y-3 mb-10">
-          {basePlans.map((plan) => {
-            const planPricing = pricingConfig[plan.id as keyof PlanPricingConfig]?.[level] || { price: plan.basePrices[level] };
-            const offerPrice = planPricing.price;
-            const originalPrice = planPricing.originalPrice;
-            const isCurrentActivePlan = currentPremiumInfo?.premium_tier === plan.id && currentPremiumInfo?.premium_level === level;
+          {/* Core Plan */}
+          <button
+            onClick={() => setLevel("core")}
+            className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
+              level === "core" 
+                ? "border-[#ADFF00] bg-[#ADFF00]/5" 
+                : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${level === "core" ? "border-[#ADFF00]" : "border-gray-600"}`}>
+                {level === "core" && <div className="w-3 h-3 rounded-full bg-[#ADFF00]" />}
+              </div>
+              
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">⚡</span>
+                  <h3 className={`font-bold ${level === "core" ? "text-white" : "text-gray-300"}`}>Core</h3>
+                </div>
+                
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>
+                    ₹29
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">/month</span>
+                </div>
+              </div>
+            </div>
+          </button>
 
-            return (
-              <button
-                key={plan.id}
-                onClick={() => setSelectedPlan(plan.id as any)}
-                className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden flex items-center gap-4 ${
-                  selectedPlan === plan.id 
-                    ? "border-[#ADFF00] bg-[#ADFF00]/5" 
-                    : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
-                }`}
-              >
-                {isCurrentActivePlan ? (
-                  <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-wider uppercase">
-                    ✓ Current Plan
-                  </div>
-                ) : plan.badge && (
-                  <div className="absolute top-0 right-0 bg-[#ADFF00] text-black text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-wider uppercase">
-                    ⭐ {plan.badge}
-                  </div>
-                )}
-                
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${selectedPlan === plan.id ? "border-[#ADFF00]" : "border-gray-600"}`}>
-                  {selectedPlan === plan.id && <div className="w-3 h-3 rounded-full bg-[#ADFF00]" />}
+          {/* Pro Plan */}
+          <button
+            onClick={() => setLevel("pro")}
+            className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
+              level === "pro" 
+                ? "border-[#ADFF00] bg-[#ADFF00]/5" 
+                : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
+            }`}
+          >
+            <div className="absolute top-0 right-0 bg-[#ADFF00] text-black text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-wider uppercase">
+              ⭐ Recommended
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${level === "pro" ? "border-[#ADFF00]" : "border-gray-600"}`}>
+                {level === "pro" && <div className="w-3 h-3 rounded-full bg-[#ADFF00]" />}
+              </div>
+              
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xl">🔥</span>
+                  <h3 className={`font-bold ${level === "pro" ? "text-white" : "text-gray-300"}`}>Pro</h3>
                 </div>
                 
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xl">{plan.emoji}</span>
-                    <h3 className={`font-bold ${selectedPlan === plan.id ? "text-white" : "text-gray-300"}`}>{plan.name}</h3>
-                  </div>
-                  
-                  <div className="flex items-baseline gap-2">
-                    {originalPrice && originalPrice > offerPrice && (
-                      <span className="text-sm text-gray-500 line-through font-semibold">
-                        ₹{originalPrice}
-                      </span>
-                    )}
-                    <span className={`text-2xl font-black ${selectedPlan === plan.id ? "text-[#ADFF00]" : "text-white"}`}>
-                      ₹{offerPrice}
-                    </span>
-                    <span className="text-xs text-gray-500 font-medium">{plan.period}</span>
-                  </div>
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>
+                    ₹99
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">/month</span>
                 </div>
-              </button>
-            );
-          })}
+              </div>
+            </div>
+          </button>
         </div>
       </div>
 
