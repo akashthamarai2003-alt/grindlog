@@ -45,7 +45,7 @@ async function DashboardContent() {
   }
 
   if (!mainProfile?.is_premium) {
-    redirect("/payment?returnTo=/fitness");
+    redirect("/fitness/payment?returnTo=/fitness");
   }
 
   // Fetch today's workout

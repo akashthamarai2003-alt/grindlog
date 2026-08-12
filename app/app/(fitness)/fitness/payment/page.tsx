@@ -1,0 +1,378 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
+import Script from "next/script";
+import {
+  ChevronLeft,
+  Check,
+  Zap,
+  Target,
+  Flame,
+  ShoppingCart,
+  Activity,
+  Brain,
+  ShieldCheck,
+  Dumbbell
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { createRazorpayOrder, verifyRazorpayPayment, checkUserPremiumStatusAction, getUserPremiumDetailsAction } from "@/app/actions/payment";
+import { getPlanPricesAction } from "@/app/actions/admin-pricing";
+import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
+
+const features = [
+  { icon: Target, label: "Personalized Workout Strategy", core: false, pro: true },
+  { icon: Flame, label: "Personalized Diet Plan", core: false, pro: true },
+  { icon: ShoppingCart, label: "Smart Grocery Strategy", core: false, pro: true },
+  { icon: Activity, label: "Automated Progress Tracking", core: false, pro: true },
+  { icon: Brain, label: "AI Coach Support", core: false, pro: true },
+  { icon: ShieldCheck, label: "Weekly AI Reviews", core: false, pro: true },
+];
+
+const basePlans = [
+  {
+    id: "monthly",
+    name: "Monthly",
+    emoji: "🔥",
+    basePrices: { core: 49, pro: 69 },
+    period: "/month",
+    originalPrice: null,
+    badge: null,
+  },
+  {
+    id: "six_months",
+    name: "6 Months",
+    emoji: "⚡",
+    basePrices: { core: 199, pro: 249 },
+    period: "/6 months",
+    originalPrice: "₹294",
+    badge: "⭐ Most Popular",
+    savings: "Save 32%",
+  },
+  {
+    id: "lifetime",
+    name: "Lifetime",
+    emoji: "💎",
+    basePrices: { core: 599, pro: 799 },
+    period: "one-time",
+    originalPrice: null,
+    badge: "👑 Best Value",
+    savings: null,
+  },
+];
+
+export default function FitnessPaymentPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
+  
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
+  // Fitness OS relies on Pro features
+  const level = "pro"; 
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
+  const [currentPremiumInfo, setCurrentPremiumInfo] = useState<{ premium_tier?: string; premium_level?: string } | null>(null);
+
+  // Fetch current premium status
+  useEffect(() => {
+    getUserPremiumDetailsAction().then((res) => {
+      if (res) setCurrentPremiumInfo(res as any);
+    });
+  }, []);
+
+  // Reliable redirect effect
+  useEffect(() => {
+    if (isSuccess) {
+      if (returnTo) {
+        window.location.href = `${returnTo}?success=true&t=${Date.now()}`;
+      } else {
+        window.location.href = "/fitness?success=true&t=" + Date.now();
+      }
+    }
+  }, [isSuccess, returnTo]);
+
+  // Robust polling that survives modal dismissal
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    let attempts = 0;
+
+    const pollPremiumStatus = () => {
+      attempts++;
+      if (!isPolling || attempts > 30) return; // Stop polling after ~2 minutes
+      
+      checkUserPremiumStatusAction(selectedPlan, level).then((isPremium) => {
+        if (isPremium) {
+          setIsSuccess(true);
+          setIsPolling(false);
+        } else {
+          timeoutId = setTimeout(pollPremiumStatus, 4000);
+        }
+      });
+    };
+
+    if (isPolling) {
+      pollPremiumStatus();
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [isPolling, selectedPlan, level]);
+
+  // Fetch dynamic pricing on mount
+  useEffect(() => {
+    getPlanPricesAction().then((res) => {
+      if (res) setPricingConfig(res);
+    });
+  }, []);
+
+  // Check if user is already premium on mount ONLY IF they initiated a payment in this session (e.g., returning from UPI)
+  useEffect(() => {
+    if (sessionStorage.getItem("payment_in_progress") === "true") {
+      checkUserPremiumStatusAction().then((isPremium) => {
+        if (isPremium) {
+          setIsSuccess(true);
+          sessionStorage.removeItem("payment_in_progress");
+        }
+      });
+    }
+  }, []);
+
+  const handlePayment = async () => {
+    try {
+      setIsProcessing(true);
+      sessionStorage.setItem("payment_in_progress", "true");
+      setIsPolling(true);
+
+      const orderResponse = await createRazorpayOrder(selectedPlan, level, undefined);
+
+      if (!orderResponse.success) {
+        throw new Error(orderResponse.error || "Failed to create order");
+      }
+
+      if (orderResponse.bypassRazorpay) {
+        const verifyRes = await verifyRazorpayPayment(
+          "bypass",
+          "bypass",
+          "bypass",
+          selectedPlan,
+          level,
+          undefined,
+          true
+        );
+        if (verifyRes.success) {
+          setIsSuccess(true);
+        } else {
+          throw new Error("Failed to activate free tier");
+        }
+        return;
+      }
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderResponse.amount,
+        currency: orderResponse.currency,
+        name: "Fitness OS",
+        description: `Upgrade to ${level.toUpperCase()} - ${selectedPlan.replace('_', ' ').toUpperCase()}`,
+        order_id: orderResponse.orderId,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await verifyRazorpayPayment(
+              response.razorpay_order_id,
+              response.razorpay_payment_id,
+              response.razorpay_signature,
+              selectedPlan,
+              level,
+              undefined
+            );
+
+            if (verifyRes.success) {
+              setIsSuccess(true);
+              setIsPolling(false);
+            } else {
+              throw new Error("Payment verification failed");
+            }
+          } catch (err: any) {
+            console.error("Verification error:", err);
+            setIsPolling(true);
+            alert("Payment verification delayed. Please wait a moment while we confirm your payment.");
+          }
+        },
+        prefill: {
+          name: "GrindLog Athlete",
+        },
+        theme: {
+          color: "#ADFF00",
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+            setTimeout(() => {
+              checkUserPremiumStatusAction().then((isPremium) => {
+                if (isPremium) {
+                  setIsSuccess(true);
+                }
+              });
+            }, 3000);
+          },
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      
+      rzp.on('payment.failed', function (response: any) {
+        console.error("Payment failed event:", response.error);
+        setIsProcessing(false);
+      });
+      
+      rzp.open();
+    } catch (error: any) {
+      console.error("Payment Error:", error);
+      alert(error.message || "Failed to initiate payment");
+      setIsProcessing(false);
+      setIsPolling(false);
+    }
+  };
+
+  const isCurrentPlan = currentPremiumInfo?.premium_tier === selectedPlan && currentPremiumInfo?.premium_level === level;
+
+  return (
+    <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col relative overflow-hidden pb-[100px]">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+
+      {/* Background glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60" />
+
+      {/* Header */}
+      <div className="sticky top-0 z-50 px-4 py-4 flex items-center justify-between bg-[#0A1108]/80 backdrop-blur-lg">
+        <button
+          onClick={() => returnTo ? router.push(returnTo) : router.back()}
+          className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center hover:bg-[#1A2619] transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5 text-gray-300" />
+        </button>
+        <div className="font-bold tracking-widest text-[10px] uppercase text-[#ADFF00]">
+          Fitness OS Pro
+        </div>
+        <div className="w-10 h-10" />
+      </div>
+
+      <div className="px-6 pt-6 pb-12 z-10 max-w-lg mx-auto w-full">
+        {/* Hero Section */}
+        <div className="text-center mb-10">
+          <motion.div 
+            initial={{ scale: 0, rotate: -45 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", bounce: 0.5, duration: 0.8 }}
+            className="w-16 h-16 bg-[#ADFF00] rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-[0_0_30px_rgba(173,255,0,0.3)]"
+          >
+            <Dumbbell className="text-black" size={32} />
+          </motion.div>
+          <h1 className="text-3xl font-black mb-2 tracking-tight">Unlock Fitness OS</h1>
+          <p className="text-gray-400 text-sm max-w-sm mx-auto">
+            Get the ultimate AI transformation protocol. Includes full access to GrindLog Premium.
+          </p>
+        </div>
+
+        {/* Plan Selector */}
+        <div className="space-y-3 mb-10">
+          {basePlans.map((plan) => {
+            const isSelected = selectedPlan === plan.id;
+            const price = pricingConfig[plan.id as keyof PlanPricingConfig]?.[level]?.price ?? plan.basePrices[level as "core" | "pro"];
+            
+            return (
+              <button
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id as any)}
+                className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
+                  isSelected 
+                    ? "border-[#ADFF00] bg-[#ADFF00]/5" 
+                    : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
+                }`}
+              >
+                {plan.badge && (
+                  <div className="absolute top-0 right-0 bg-[#ADFF00] text-black text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-wider uppercase">
+                    {plan.badge}
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-4">
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? "border-[#ADFF00]" : "border-gray-600"}`}>
+                    {isSelected && <div className="w-3 h-3 rounded-full bg-[#ADFF00]" />}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">{plan.emoji}</span>
+                      <h3 className={`font-bold ${isSelected ? "text-white" : "text-gray-300"}`}>{plan.name}</h3>
+                    </div>
+                    
+                    <div className="flex items-baseline gap-2">
+                      <span className={`text-2xl font-black ${isSelected ? "text-[#ADFF00]" : "text-white"}`}>
+                        ₹{price}
+                      </span>
+                      {plan.originalPrice && (
+                        <span className="text-sm text-gray-500 line-through">{plan.originalPrice}</span>
+                      )}
+                      <span className="text-xs text-gray-500 font-medium">{plan.period}</span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Features Comparison */}
+        <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-6 mb-10 overflow-hidden">
+          <div className="flex items-center justify-between mb-6 border-b border-[#1A2619] pb-4">
+            <h3 className="font-bold text-gray-200">Feature</h3>
+            <div className="font-black text-[#ADFF00] tracking-wider uppercase text-sm bg-[#ADFF00]/10 px-3 py-1 rounded-full border border-[#ADFF00]/20">Pro</div>
+          </div>
+          
+          <div className="space-y-5">
+            {features.map((feature, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#1A2619] flex items-center justify-center text-gray-400">
+                    <feature.icon size={16} />
+                  </div>
+                  <span className="text-sm font-medium text-gray-300">{feature.label}</span>
+                </div>
+                <div className="flex items-center justify-center w-12 text-[#ADFF00]">
+                  <Check size={18} strokeWidth={3} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Floating CTA */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50">
+        <div className="max-w-lg mx-auto">
+          <button
+            onClick={handlePayment}
+            disabled={isProcessing || isCurrentPlan || isPolling}
+            className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] disabled:opacity-70 disabled:shadow-none transition-all"
+          >
+            {isProcessing || isPolling ? (
+              <span className="flex items-center gap-2 animate-pulse">
+                <Zap size={20} className="animate-spin" /> Processing Payment...
+              </span>
+            ) : isCurrentPlan ? (
+              <span className="flex items-center gap-2">
+                <Check size={20} /> Current Active Plan
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                Get Fitness OS Pro <ChevronLeft className="w-5 h-5 rotate-180" />
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -26,7 +26,7 @@ export async function FitnessGuard({ children }: { children: React.ReactNode }) 
   }
 
   if (!mainProfile?.is_premium) {
-    redirect("/payment?returnTo=/fitness");
+    redirect("/fitness/payment?returnTo=/fitness");
   }
 
   return <>{children}</>;

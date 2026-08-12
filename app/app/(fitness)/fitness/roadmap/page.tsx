@@ -229,7 +229,7 @@ export default function RoadmapPage() {
                   if (isPremium) {
                     router.push('/fitness');
                   } else {
-                    router.push('/payment?returnTo=/fitness');
+                    router.push('/fitness/payment?returnTo=/fitness');
                   }
                 }}
                 className="w-full bg-[#ADFF00] text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#9BE600] transition-colors"
