@@ -31,7 +31,7 @@ function CircularProgress({ percentage, color, icon, label }: { percentage: numb
       </div>
       <div className="flex flex-col items-center text-center">
         <span className="text-[10px] font-black text-white/70 tracking-widest uppercase">{label}</span>
-        <span className="text-[9px] font-bold text-white/40">{percentage}%</span>
+        <span className="text-[9px] font-bold text-white/40">{Math.round(percentage)}%</span>
       </div>
     </div>
   );
