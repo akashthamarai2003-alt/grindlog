@@ -56,7 +56,10 @@ export function TransformationOverview({ metrics }: { metrics: TransformationMet
             </div>
 
             {/* Bottom Button */}
-            <button className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 active:scale-[0.98] transition-all">
+            <button 
+              onClick={() => document.getElementById('transformation-details')?.scrollIntoView({ behavior: 'smooth' })}
+              className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 active:scale-[0.98] transition-all"
+            >
               <span className="text-xs font-bold uppercase tracking-wider text-white/80">View Transformation Details</span>
               <ChevronRight className="w-4 h-4 text-white/40" />
             </button>

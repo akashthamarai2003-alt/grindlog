@@ -55,9 +55,12 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
           <div className="flex flex-col gap-8 pb-8">
             <TransformationOverview metrics={data.transformation} />
             <WeeklyConsistency metrics={data.consistency} />
-            <WeightChart data={data.weightHistory} targetWeight={data.transformation.targetWeight} />
-            <BodyMeasurementsList measurements={data.measurements} />
-            <BodyProgressPhotos first={data.scans.first} latest={data.scans.latest} />
+            
+            <div id="transformation-details" className="flex flex-col gap-8 scroll-mt-6">
+              <WeightChart data={data.weightHistory} targetWeight={data.transformation.targetWeight} />
+              <BodyMeasurementsList measurements={data.measurements} />
+              <BodyProgressPhotos first={data.scans.first} latest={data.scans.latest} />
+            </div>
             <WorkoutAnalyticsCard metrics={data.workout} />
             <NutritionAnalyticsCard metrics={data.nutrition} />
             <ActivityRecoveryAnalyticsCard activity={data.activity} recovery={data.recovery} />
