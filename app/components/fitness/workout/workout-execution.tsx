@@ -52,6 +52,7 @@ export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) 
         <WorkoutSummaryCard 
           workout={workout as any} 
           exerciseCount={workout.fitness_os_exercises?.length || 6} 
+          hideStartButton={true}
         />
         <AiCoachNote />
         <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises as any} />

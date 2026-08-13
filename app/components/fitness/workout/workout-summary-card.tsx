@@ -9,9 +9,10 @@ import { toast } from "sonner";
 interface WorkoutSummaryCardProps {
   workout: any;
   exerciseCount: number;
+  hideStartButton?: boolean;
 }
 
-export function WorkoutSummaryCard({ workout, exerciseCount }: WorkoutSummaryCardProps) {
+export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = false }: WorkoutSummaryCardProps) {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
 
@@ -117,13 +118,15 @@ export function WorkoutSummaryCard({ workout, exerciseCount }: WorkoutSummaryCar
         </div>
 
         {/* Action Button */}
-        <button
-          onClick={handleStart}
-          disabled={isStarting}
-          className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#bfff33] transition-colors shadow-[0_0_20px_rgba(173,255,0,0.2)] active:scale-[0.98] disabled:opacity-70"
-        >
-          {isStarting ? "STARTING..." : "START WORKOUT"} <ArrowRight className="w-5 h-5" />
-        </button>
+        {!hideStartButton && (
+          <button
+            onClick={handleStart}
+            disabled={isStarting}
+            className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#bfff33] transition-colors shadow-[0_0_20px_rgba(173,255,0,0.2)] active:scale-[0.98] disabled:opacity-70"
+          >
+            {isStarting ? "STARTING..." : "START WORKOUT"} <ArrowRight className="w-5 h-5" />
+          </button>
+        )}
 
       </div>
     </motion.div>
