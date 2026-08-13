@@ -73,19 +73,19 @@ export function TodaysExercisesList({ workoutId, exercises }: TodaysExercisesLis
                   <div className="flex items-center gap-3 mt-1">
                     <div className="flex flex-col">
                       <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Target</span>
-                      <span className="text-xs font-semibold text-white/80">{exercise.muscle}</span>
+                      <span className="text-xs font-semibold text-white/80">{exercise.muscle || "Muscle"}</span>
                     </div>
                     <div className="w-px h-6 bg-white/10" />
                     <div className="flex flex-col">
                       <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Sets × Reps</span>
-                      <span className="text-xs font-semibold text-white/80">{exercise.sets} × {exercise.reps}</span>
+                      <span className="text-xs font-semibold text-white/80">{(exercise as any).target_sets || exercise.sets} × {(exercise as any).target_reps || exercise.reps}</span>
                     </div>
-                    {exercise.targetWeight && (
+                    {((exercise as any).targetWeight || exercise.targetWeight) && (
                       <>
                         <div className="w-px h-6 bg-white/10" />
                         <div className="flex flex-col">
                           <span className="text-[9px] font-bold text-[#ADFF00]/60 uppercase tracking-widest">Weight</span>
-                          <span className="text-xs font-black text-[#ADFF00]">{exercise.targetWeight}</span>
+                          <span className="text-xs font-black text-[#ADFF00]">{(exercise as any).targetWeight || exercise.targetWeight}</span>
                         </div>
                       </>
                     )}
