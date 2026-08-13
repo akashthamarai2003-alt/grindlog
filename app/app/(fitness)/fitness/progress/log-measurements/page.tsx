@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Ruler } from "lucide-react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function LogMeasurementsPage() {
   const [measurements, setMeasurements] = useState({
@@ -38,7 +39,6 @@ export default function LogMeasurementsPage() {
     } catch (error) {
       console.error(error);
       alert("Failed to save measurements. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -61,7 +61,28 @@ export default function LogMeasurementsPage() {
   );
 
   return (
-    <div className="w-full flex flex-col h-full bg-[#0A1108] p-5 pb-32 overflow-y-auto">
+    <div className="w-full flex flex-col h-full bg-[#0A1108] p-5 pb-32 overflow-y-auto relative">
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-[#0A1108]/90 backdrop-blur-md flex flex-col items-center justify-center"
+          >
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="mb-6"
+            >
+              <Loader2 className="w-12 h-12 text-[#ADFF00]" />
+            </motion.div>
+            <h2 className="text-xl font-black text-white uppercase tracking-widest">Saving...</h2>
+            <p className="text-sm text-white/50 mt-2 font-medium">Updating measurements</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <Link href="/fitness/progress" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors">
@@ -92,9 +113,9 @@ export default function LogMeasurementsPage() {
       <button 
         onClick={handleSave}
         disabled={isLoading || Object.values(measurements).every(val => !val)}
-        className="w-full h-14 mt-6 bg-[#ADFF00] text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full h-14 mt-6 bg-[#ADFF00] text-black font-black uppercase tracking-widest rounded-2xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95"
       >
-        {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Save Measurements"}
+        {isLoading ? "Saving..." : "Save Measurements"}
       </button>
     </div>
   );
