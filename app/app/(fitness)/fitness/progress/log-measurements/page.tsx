@@ -25,22 +25,19 @@ export default function LogMeasurementsPage() {
     if (Object.values(measurements).every(val => !val)) return;
     
     setIsLoading(true);
-    try {
-      const res = await fetch("/api/fitness/log-measurements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(measurements),
-      });
+    
+    // 1. Fire the request in the background (Optimistic UI - do not await!)
+    fetch("/api/fitness/log-measurements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(measurements),
+    }).catch(error => console.error("Background save error:", error));
 
-      if (!res.ok) throw new Error("Failed to save measurements");
-      
+    // 2. Play the beautiful loading animation for exactly 600ms, then instantly navigate back
+    setTimeout(() => {
       router.push("/fitness/progress");
-      router.refresh();
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save measurements. Please try again.");
-      setIsLoading(false);
-    }
+      router.refresh(); // Tell Next.js to pull the new data when we get there
+    }, 600);
   };
 
   const InputField = ({ label, field }: { label: string, field: keyof typeof measurements }) => (
