@@ -20,16 +20,7 @@ export function WorkoutAnalyticsCard({ metrics }: { metrics: WorkoutAnalytics })
     );
   }
 
-  // Generate fake chart data if empty for demo purposes, since the backend doesn't have it yet
-  const chartData = metrics.weeklyChart.length > 0 ? metrics.weeklyChart : [
-    { day: "Mon", volume: 4500, completed: true },
-    { day: "Tue", volume: 5200, completed: true },
-    { day: "Wed", volume: 0, completed: false },
-    { day: "Thu", volume: 3800, completed: true },
-    { day: "Fri", volume: 4100, completed: true },
-    { day: "Sat", volume: 0, completed: false },
-    { day: "Sun", volume: 0, completed: false },
-  ];
+  const chartData = metrics.weeklyChart || [];
 
   return (
     <div className="w-full flex flex-col gap-3">

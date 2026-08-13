@@ -5,15 +5,7 @@ import { Footprints, Moon } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, Cell } from "recharts";
 
 export function ActivityRecoveryAnalyticsCard({ activity, recovery }: { activity: ActivityAnalytics, recovery: RecoveryAnalytics }) {
-  const stepsData = activity.stepsChart.length > 0 ? activity.stepsChart : [
-    { day: "M", steps: 8500, target: 10000 },
-    { day: "T", steps: 11000, target: 10000 },
-    { day: "W", steps: 9500, target: 10000 },
-    { day: "T", steps: 10500, target: 10000 },
-    { day: "F", steps: 7200, target: 10000 },
-    { day: "S", steps: 12000, target: 10000 },
-    { day: "S", steps: 5000, target: 10000 },
-  ];
+  const stepsData = activity.stepsChart || [];
 
   return (
     <div className="w-full flex flex-col gap-3">
