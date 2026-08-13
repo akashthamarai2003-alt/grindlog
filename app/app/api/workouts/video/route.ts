@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   try {
     const sanitizedQuery = query.replace(/\s*\(.*?\)\s*/g, '').trim();
-    const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(sanitizedQuery + " exercise tutorial short");
+    const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(sanitizedQuery + " exercise tutorial");
     
     // Simulate browser request to avoid 403s
     const res = await fetch(url, {
