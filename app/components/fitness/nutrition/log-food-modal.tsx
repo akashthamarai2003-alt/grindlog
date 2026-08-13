@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { toast } from "sonner";
-import { getFoodImage } from "@/lib/utils/food-images";
+import { getFoodImage, DEFAULT_FOOD_IMAGE } from "@/lib/utils/food-images";
 
 interface Food {
   id: string;
@@ -159,6 +159,7 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
                         <img 
                           src={getFoodImage(food.name, food.category, food.image_url)} 
                           alt={food.name} 
+                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_FOOD_IMAGE; }}
                           className="w-12 h-12 rounded-xl object-cover border border-white/10 shrink-0"
                         />
                         <div>
@@ -189,6 +190,7 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
                 <img 
                   src={getFoodImage(selectedFood.name, selectedFood.category, selectedFood.image_url)} 
                   alt={selectedFood.name} 
+                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_FOOD_IMAGE; }}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-3 flex flex-col justify-end">
