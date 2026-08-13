@@ -58,7 +58,7 @@ export default function LogWeightPage() {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="relative z-10 flex items-center justify-between mb-10">
         <Link href="/fitness/progress" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
