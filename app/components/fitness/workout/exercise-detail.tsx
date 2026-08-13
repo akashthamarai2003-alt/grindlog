@@ -23,7 +23,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
   const [submittingSetId, setSubmittingSetId] = useState<string | null>(null);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   
-  const [videoId, setVideoId] = useState<string | null>(null);
+  const [gifUrl, setGifUrl] = useState<string | null>(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
 
   // Local state to track input values for sets so they are easily updatable
@@ -95,13 +95,13 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
   const skipRest = () => setActiveRestSeconds(null);
 
   const handleLoadVideo = async () => {
-    if (videoId || isVideoLoading) return;
+    if (gifUrl || isVideoLoading) return;
     setIsVideoLoading(true);
     try {
       const res = await fetch(`/api/workouts/video?query=${encodeURIComponent(exercise.name)}`);
       const data = await res.json();
-      if (res.ok && data.videoId) {
-        setVideoId(data.videoId);
+      if (res.ok && data.gifUrl) {
+        setGifUrl(data.gifUrl);
       } else {
         toast.error(data.error || "Could not find a video");
         // Fallback: open in new tab if embed fails
@@ -146,12 +146,11 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
 
       {/* Video Player / Placeholder */}
       <div className="w-full h-48 bg-[#111A10] rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden group">
-        {videoId ? (
-          <iframe 
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`} 
-            className="w-full h-full absolute inset-0 z-20 border-0"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
+        {gifUrl ? (
+          <img 
+            src={gifUrl} 
+            alt={exercise.name}
+            className="w-full h-full object-cover absolute inset-0 z-20"
           />
         ) : (
           <button 

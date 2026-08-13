@@ -9,32 +9,29 @@ export async function GET(request: Request) {
   }
 
   try {
-    const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(query + " exercise tutorial short");
+    const url = `https://oss.exercisedb.dev/api/v1/exercises?name=${encodeURIComponent(query)}`;
     
-    // Simulate browser request to avoid 403s
     const res = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9"
-      },
-      next: { revalidate: 86400 } // Cache for 24 hours to avoid rate limiting
+      next: { revalidate: 86400 } // Cache for 24 hours
     });
 
     if (!res.ok) {
-      throw new Error(`YouTube responded with ${res.status}`);
+      throw new Error(`ExerciseDB responded with ${res.status}`);
     }
 
-    const text = await res.text();
-    // YouTube's internal state usually contains videoId
-    const match = text.match(/"videoId":"([^"]{11})"/);
-
-    if (match) {
-      return NextResponse.json({ videoId: match[1] });
+    const json = await res.json();
+    
+    if (json.data && json.data.length > 0) {
+      // Find the exact match or the first one
+      const exactMatch = json.data.find((ex: any) => ex.name.toLowerCase() === query.toLowerCase());
+      const bestMatch = exactMatch || json.data[0];
+      
+      return NextResponse.json({ gifUrl: bestMatch.gifUrl });
     } else {
-      return NextResponse.json({ error: "Video not found" }, { status: 404 });
+      return NextResponse.json({ error: "Exercise not found in database" }, { status: 404 });
     }
   } catch (error: any) {
-    console.error("YouTube scraper error:", error);
+    console.error("ExerciseDB fetch error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
