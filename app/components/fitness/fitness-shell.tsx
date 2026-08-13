@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { BottomNav } from "./dashboard/bottom-nav";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function FitnessShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,9 +18,18 @@ export function FitnessShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex justify-center min-h-screen bg-[#0A1108]">
       <div className="w-full min-h-[100dvh] relative flex flex-col overflow-x-hidden">
-        <main className={`flex-1 ${isSetupFlow ? '' : 'pb-24'}`}>
-          {children}
-        </main>
+        <AnimatePresence mode="wait">
+          <motion.main 
+            key={pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className={`flex-1 ${isSetupFlow ? '' : 'pb-24'}`}
+          >
+            {children}
+          </motion.main>
+        </AnimatePresence>
         {!isSetupFlow && <BottomNav />}
       </div>
     </div>
