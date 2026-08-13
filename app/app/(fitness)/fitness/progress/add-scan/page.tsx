@@ -63,7 +63,7 @@ export default function AddScanPage() {
     }
   };
 
-  const PhotoSlot = ({ title, field, inputRef }: { title: string, field: 'front' | 'side' | 'back', inputRef: React.RefObject<HTMLInputElement> }) => {
+  const PhotoSlot = ({ title, field, inputRef }: { title: string, field: 'front' | 'side' | 'back', inputRef: React.RefObject<HTMLInputElement | null> }) => {
     const hasImage = !!images[field];
     
     return (
