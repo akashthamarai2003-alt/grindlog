@@ -15,6 +15,15 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
     { day: "S", calories: 2800, target: 2500 },
     { day: "S", calories: 2400, target: 2500 },
   ];
+  const proteinData = metrics.proteinChart.length > 0 ? metrics.proteinChart : [
+    { day: "M", protein: 120, target: 130 },
+    { day: "T", protein: 140, target: 130 },
+    { day: "W", protein: 110, target: 130 },
+    { day: "T", protein: 135, target: 130 },
+    { day: "F", protein: 150, target: 130 },
+    { day: "S", protein: 125, target: 130 },
+    { day: "S", protein: 130, target: 130 },
+  ];
 
   return (
     <div className="w-full flex flex-col gap-3">
@@ -62,14 +71,14 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
           
           <div className="w-full h-16 mt-auto">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={calorieData}> {/* Using calorieData structure for demo */}
+              <AreaChart data={proteinData}>
                 <defs>
                   <linearGradient id="proColor" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f87171" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#f87171" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <Area type="monotone" dataKey="calories" stroke="#f87171" strokeWidth={2} fillOpacity={1} fill="url(#proColor)" />
+                <Area type="monotone" dataKey="protein" stroke="#f87171" strokeWidth={2} fillOpacity={1} fill="url(#proColor)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

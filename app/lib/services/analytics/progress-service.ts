@@ -202,8 +202,21 @@ export class ProgressAnalyticsService {
       if (data) nutritionTarget = data;
     } catch(e) {}
     
-    const targetCalories = nutritionTarget?.calories || 2000;
-    const targetProtein = nutritionTarget?.protein || 130;
+    // Check fitness_os_profiles if target not found
+    let profileTargetCals = null;
+    let profileTargetPro = null;
+    if (!nutritionTarget) {
+      try {
+        const { data: profile } = await supabase.from('fitness_os_profiles').select('baseline_calories, initial_protein_target').eq('user_id', userId).maybeSingle();
+        if (profile) {
+          profileTargetCals = profile.baseline_calories;
+          profileTargetPro = profile.initial_protein_target;
+        }
+      } catch(e) {}
+    }
+
+    const targetCalories = nutritionTarget?.calories || profileTargetCals || 2000;
+    const targetProtein = nutritionTarget?.protein || profileTargetPro || 130;
     const targetWater = nutritionTarget?.water_ml || 3000;
 
     // 5. Nutrition & Water Logs (from nutrition_daily_summary)
@@ -223,14 +236,26 @@ export class ProgressAnalyticsService {
     const totalWater = dailySummaries.reduce((acc, m) => acc + (Number(m.water_ml) || 0), 0);
     const totalNutScore = dailySummaries.reduce((acc, m) => acc + (Number(m.nutrition_score) || 0), 0);
 
+    const calorieChart = dailySummaries.map((m: any) => ({
+      day: new Date(m.date).toLocaleDateString('en-US', { weekday: 'short' }).charAt(0),
+      calories: m.calories || 0,
+      target: targetCalories
+    })).slice(-7); // Last 7 days for the chart
+
+    const proteinChart = dailySummaries.map((m: any) => ({
+      day: new Date(m.date).toLocaleDateString('en-US', { weekday: 'short' }).charAt(0),
+      protein: m.protein || 0,
+      target: targetProtein
+    })).slice(-7);
+
     const nutrition: NutritionAnalytics = {
       averageCalories: nutritionDays > 0 ? Math.round(totalCals / nutritionDays) : 0,
       calorieTarget: targetCalories,
       averageProtein: nutritionDays > 0 ? Math.round(totalPro / nutritionDays) : 0,
       proteinTarget: targetProtein,
       nutritionConsistency: nutritionDays > 0 ? Math.round(totalNutScore / nutritionDays) : 0,
-      calorieChart: [],
-      proteinChart: []
+      calorieChart,
+      proteinChart
     };
     
     const averageWater = nutritionDays > 0 ? Math.round(totalWater / nutritionDays) : 0;
