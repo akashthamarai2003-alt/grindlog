@@ -145,8 +145,8 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
       <div className="w-full aspect-video bg-[#111A10] rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden group">
         {videoId ? (
           <iframe 
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1`} 
-            className="w-[120%] h-[120%] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 border-0 pointer-events-none"
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&playsinline=1`} 
+            className="w-[120%] h-[120%] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 border-0"
             allow="autoplay; encrypted-media"
             allowFullScreen
           />
