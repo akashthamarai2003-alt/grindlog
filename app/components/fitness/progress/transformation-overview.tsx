@@ -1,10 +1,42 @@
 "use client";
 
+import { useEffect } from "react";
 import { TransformationMetrics } from "@/types/fitness/analytics";
 import { ArrowRight, ChevronRight, Target } from "lucide-react";
+import confetti from "canvas-confetti";
 
 export function TransformationOverview({ metrics }: { metrics: TransformationMetrics }) {
   const hasData = metrics.startingWeight !== null && metrics.currentWeight !== null && metrics.targetWeight !== null;
+
+  useEffect(() => {
+    if (hasData && metrics.completionPercentage >= 100) {
+      // Fire confetti when goal is reached!
+      const duration = 3000;
+      const end = Date.now() + duration;
+
+      const frame = () => {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#ADFF00', '#FFFFFF']
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#ADFF00', '#FFFFFF']
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+      frame();
+    }
+  }, [hasData, metrics.completionPercentage]);
 
   return (
     <div className="w-full flex flex-col gap-3">
