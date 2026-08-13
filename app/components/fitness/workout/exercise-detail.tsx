@@ -120,14 +120,19 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
         {exercise.name}
       </h2>
 
-      {/* Video Placeholder */}
-      <div className="w-full h-48 bg-[#111A10] rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden group cursor-pointer">
+      {/* Video Placeholder (YouTube Link) */}
+      <a 
+        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + " exercise tutorial")}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full h-48 bg-[#111A10] rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden group cursor-pointer block"
+      >
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10" />
         <PlayCircle className="w-12 h-12 text-[#ADFF00] z-20 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
         <span className="absolute bottom-4 left-4 text-xs font-black tracking-widest uppercase text-white z-20">
-          Exercise Video
+          Search Tutorial on YouTube
         </span>
-      </div>
+      </a>
 
       {/* Metadata */}
       <div className="flex flex-col gap-1 mb-8">
