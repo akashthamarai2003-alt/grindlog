@@ -195,32 +195,45 @@ export class ProgressAnalyticsService {
       weeklyChart: [] // Placeholder for chart data grouping
     };
 
-    // 5. Nutrition Logs
-    let mealLogs: any[] = [];
+    // 4.5 Fetch Nutrition Target
+    let nutritionTarget: any = null;
+    try {
+      const { data } = await supabase.from('nutrition_targets').select('*').eq('user_id', userId).order('effective_date', { ascending: false }).limit(1).maybeSingle();
+      if (data) nutritionTarget = data;
+    } catch(e) {}
+    
+    const targetCalories = nutritionTarget?.calories || 2000;
+    const targetProtein = nutritionTarget?.protein || 130;
+    const targetWater = nutritionTarget?.water_ml || 3000;
+
+    // 5. Nutrition & Water Logs (from nutrition_daily_summary)
+    let dailySummaries: any[] = [];
     try {
       const { data } = await supabase
-        .from('fitness_os_meal_logs')
-        .select('calories, protein, carbohydrates, fat, meal_date')
+        .from('nutrition_daily_summary')
+        .select('*')
         .eq('user_id', userId)
-        .gte('meal_date', startDateStr.split('T')[0]);
-      if (data) mealLogs = data;
+        .gte('date', startDateStr.split('T')[0]);
+      if (data) dailySummaries = data;
     } catch(e) {}
 
-    const nutritionDays = new Set(mealLogs.map(m => m.meal_date)).size;
-    const totalCals = mealLogs.reduce((acc, m) => acc + (m.calories || 0), 0);
-    const totalPro = mealLogs.reduce((acc, m) => acc + (Number(m.protein) || 0), 0);
-    const totalCarb = mealLogs.reduce((acc, m) => acc + (Number(m.carbohydrates) || 0), 0);
-    const totalFat = mealLogs.reduce((acc, m) => acc + (Number(m.fat) || 0), 0);
+    const nutritionDays = dailySummaries.length;
+    const totalCals = dailySummaries.reduce((acc, m) => acc + (m.calories || 0), 0);
+    const totalPro = dailySummaries.reduce((acc, m) => acc + (Number(m.protein) || 0), 0);
+    const totalWater = dailySummaries.reduce((acc, m) => acc + (Number(m.water_ml) || 0), 0);
+    const totalNutScore = dailySummaries.reduce((acc, m) => acc + (Number(m.nutrition_score) || 0), 0);
 
     const nutrition: NutritionAnalytics = {
       averageCalories: nutritionDays > 0 ? Math.round(totalCals / nutritionDays) : 0,
-      calorieTarget: 2500, // Hardcoded target for now
+      calorieTarget: targetCalories,
       averageProtein: nutritionDays > 0 ? Math.round(totalPro / nutritionDays) : 0,
-      proteinTarget: 150, // Hardcoded
-      nutritionConsistency: nutritionDays > 0 ? 80 : 0, // Placeholder
+      proteinTarget: targetProtein,
+      nutritionConsistency: nutritionDays > 0 ? Math.round(totalNutScore / nutritionDays) : 0,
       calorieChart: [],
       proteinChart: []
     };
+    
+    const averageWater = nutritionDays > 0 ? Math.round(totalWater / nutritionDays) : 0;
 
     // 6. Activity & Sleep
     let activityLogs: any[] = [];
@@ -262,12 +275,12 @@ export class ProgressAnalyticsService {
       workout: workoutAnalytics.completionRate,
       nutrition: nutrition.nutritionConsistency,
       protein: nutrition.averageProtein >= nutrition.proteinTarget ? 100 : (nutrition.averageProtein / nutrition.proteinTarget) * 100,
-      water: 0, // Need water logs
+      water: averageWater >= targetWater ? 100 : (averageWater / targetWater) * 100,
       steps: activity.averageDailySteps >= activity.stepTarget ? 100 : (activity.averageDailySteps / activity.stepTarget) * 100,
       sleep: recovery.averageSleepHours >= recovery.sleepTargetHours ? 100 : (recovery.averageSleepHours / recovery.sleepTargetHours) * 100,
       overallScore: 0
     };
-    consistency.overallScore = (consistency.workout + consistency.nutrition + consistency.protein + consistency.steps + consistency.sleep) / 5;
+    consistency.overallScore = (consistency.workout + consistency.nutrition + consistency.protein + consistency.water + consistency.steps + consistency.sleep) / 6;
 
     // 8. AI Review Cache
     let aiReview: AIProgressReview | null = null;
