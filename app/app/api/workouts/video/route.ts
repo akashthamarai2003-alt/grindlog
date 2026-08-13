@@ -9,7 +9,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const url = `https://oss.exercisedb.dev/api/v1/exercises?name=${encodeURIComponent(query)}`;
+    // Remove anything in parentheses (e.g. "(using a bench or chair)") to improve search match rate
+    const sanitizedQuery = query.replace(/\s*\(.*?\)\s*/g, '').trim();
+    const url = `https://oss.exercisedb.dev/api/v1/exercises?name=${encodeURIComponent(sanitizedQuery)}`;
     
     const res = await fetch(url, {
       next: { revalidate: 86400 } // Cache for 24 hours
@@ -23,7 +25,7 @@ export async function GET(request: Request) {
     
     if (json.data && json.data.length > 0) {
       // Find the exact match or the first one
-      const exactMatch = json.data.find((ex: any) => ex.name.toLowerCase() === query.toLowerCase());
+      const exactMatch = json.data.find((ex: any) => ex.name.toLowerCase() === sanitizedQuery.toLowerCase());
       const bestMatch = exactMatch || json.data[0];
       
       return NextResponse.json({ gifUrl: bestMatch.gifUrl });
