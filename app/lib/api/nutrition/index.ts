@@ -45,6 +45,17 @@ export const nutritionApi = {
     return json.data;
   },
 
+  async swapMeal(mealType: string) {
+    const res = await fetch('/api/nutrition/swap-meal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meal_type: mealType })
+    });
+    const json = await res.json();
+    if (!res.ok) throw json.error;
+    return json;
+  },
+
   async searchFoods(query: string) {
     const res = await fetch(`/api/nutrition/foods?search=${encodeURIComponent(query)}`);
     const json = await res.json();

@@ -403,7 +403,7 @@ export class NutritionService {
       waters.forEach(w => consumed.water_ml += w.amount_ml);
     }
 
-    // Monthly spent
+    // Monthly spent calculation
     const firstDayOfMonth = localDate.substring(0, 8) + '01'; // YYYY-MM-01
     const tz = await this.getUserTimezone(userId);
     const mFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset', year: 'numeric' });
@@ -421,6 +421,78 @@ export class NutritionService {
 
     const monthSpent = monthFoods ? monthFoods.reduce((acc, f) => acc + Number(f.estimated_cost), 0) : 0;
 
+    // Fetch user profile budget preference
+    const { data: fitProfile } = await supabase
+      .from('fitness_os_profiles')
+      .select('nutrition_budget')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    let monthlyLimit = 3000;
+    if (fitProfile?.nutrition_budget) {
+      const bStr = fitProfile.nutrition_budget;
+      if (bStr.includes('5,000+')) monthlyLimit = 6000;
+      else if (bStr.includes('2,000') || bStr.includes('5,000')) monthlyLimit = 3500;
+      else if (bStr.includes('1,000')) monthlyLimit = 1500;
+      else if (bStr.includes('0–1,000')) monthlyLimit = 800;
+    }
+    const dailyLimit = Math.round(monthlyLimit / 30);
+
+    // Format & structure meals: Ensure 4 clean meal cards (Breakfast, Lunch, Snack, Dinner)
+    let formattedMeals: any[] = [];
+    if (plans && plans.length > 0) {
+      if (plans.length === 1 && plans[0].meal_type === 'daily') {
+        const dailyPlan = plans[0];
+        const allItems = dailyPlan.meal_plan_items || [];
+        
+        const mealTypes = ['breakfast', 'lunch', 'snack', 'dinner'];
+        const itemsByType: Record<string, any[]> = {
+          breakfast: [],
+          lunch: [],
+          snack: [],
+          dinner: []
+        };
+
+        allItems.forEach((item: any, idx: number) => {
+          const cat = (item.foods?.category || '').toLowerCase();
+          const name = (item.foods?.name || '').toLowerCase();
+
+          if (cat.includes('breakfast') || name.includes('idli') || name.includes('dosa') || name.includes('poha') || name.includes('upma') || name.includes('oats') || name.includes('coffee') || name.includes('milk') || name.includes('egg')) {
+            itemsByType.breakfast.push(item);
+          } else if (cat.includes('fruit') || cat.includes('snack') || name.includes('banana') || name.includes('apple') || name.includes('peanut')) {
+            itemsByType.snack.push(item);
+          } else if (idx % 2 === 0) {
+            itemsByType.lunch.push(item);
+          } else {
+            itemsByType.dinner.push(item);
+          }
+        });
+
+        formattedMeals = mealTypes
+          .filter(mType => itemsByType[mType].length > 0)
+          .map((mType) => {
+            const mItems = itemsByType[mType];
+            const mCals = mItems.reduce((acc, it) => acc + Math.round((it.foods?.calories || 0) * it.quantity), 0);
+            const mPro = mItems.reduce((acc, it) => acc + Number((it.foods?.protein || 0) * it.quantity), 0);
+
+            return {
+              id: `${dailyPlan.id}-${mType}`,
+              meal_type: mType,
+              name: mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan",
+              calories: mCals,
+              protein: mPro,
+              meal_plan_items: mItems
+            };
+          });
+
+        if (formattedMeals.length === 0) {
+          formattedMeals = plans;
+        }
+      } else {
+        formattedMeals = plans;
+      }
+    }
+
     // Remaining
     const remaining = {
       calories: Math.max(targets.calories - consumed.calories, 0),
@@ -437,11 +509,8 @@ export class NutritionService {
       water_percent: Math.min(100, (consumed.water_ml / targets.water_ml) * 100)
     };
 
-    const totalMeals = plans && plans.length > 0 ? plans.length : 0;
-    let mealsCompleted = 0;
-    if (plans) {
-       mealsCompleted = plans.filter(p => completedMealTypes.has(p.meal_type)).length;
-    }
+    const totalMeals = formattedMeals.length > 0 ? formattedMeals.length : 4;
+    let mealsCompleted = formattedMeals.filter(p => completedMealTypes.has(p.meal_type)).length;
 
     const score = this.computeNutritionScore(consumed, targets, mealsCompleted, totalMeals);
 
@@ -450,13 +519,13 @@ export class NutritionService {
       targets,
       consumed,
       remaining,
-      meals: plans || [],
+      meals: formattedMeals,
       logged_foods: foods || [],
       budget: {
-        daily_limit: 100, // Hardcoded for now unless specified in targets
+        daily_limit: dailyLimit,
         spent: consumed.spent,
-        remaining: Math.max(100 - consumed.spent, 0),
-        monthly_limit: 3000,
+        remaining: Math.max(dailyLimit - consumed.spent, 0),
+        monthly_limit: monthlyLimit,
         monthly_spent: monthSpent
       },
       progress,

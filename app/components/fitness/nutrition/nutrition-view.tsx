@@ -66,6 +66,15 @@ export function NutritionView() {
     } finally {
       setIsGenerating(false);
     }
+  const handleSwapMeal = async (mealType: string) => {
+    try {
+      toast.loading("Swapping meal...", { id: "swap" });
+      const res = await nutritionApi.swapMeal(mealType);
+      toast.success(res.message || `Swapped ${mealType} meal!`, { id: "swap" });
+      await fetchToday();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to swap meal", { id: "swap" });
+    }
   };
 
   const handleGeneratePlan = async () => {
@@ -326,8 +335,10 @@ export function NutritionView() {
                     </ul>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <button className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 transition-all flex justify-center items-center gap-2">
+                    <button 
+                      onClick={() => handleSwapMeal(meal.meal_type)} 
+                      className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 transition-all flex justify-center items-center gap-2 cursor-pointer"
+                    >
                       <RefreshCw size={14} /> Swap
                     </button>
                     {!completed ? (
