@@ -98,15 +98,36 @@ export function NutritionView() {
   };
 
   const handleAddWater = async (amount: number) => {
-    setIsWaterLoading(true);
+    if (!data) return;
+    
+    // 1. Optimistic UI Update - Instant feedback
+    const previousWater = data.consumed?.water_ml || 0;
+    const newWater = previousWater + amount;
+    
+    setData((prev: any) => ({
+      ...prev,
+      consumed: { ...prev.consumed, water_ml: newWater }
+    }));
+    
+    // Optional: light haptic feedback/toast for instant gratification
+    toast.success(`Logged ${amount}ml of water`);
+
     try {
+      // 2. Fire API in background
       await nutritionApi.logWater(amount);
-      await fetchToday();
-      toast.success(`Logged ${amount}ml of water`);
+      
+      // 3. Quietly sync with server to ensure consistency
+      nutritionApi.getToday().then(res => {
+        if (res) setData(res);
+      }).catch(() => {});
+      
     } catch (err: any) {
-      toast.error(err?.message || "Failed to log water");
-    } finally {
-      setIsWaterLoading(false);
+      // 4. Revert if the API call fails
+      setData((prev: any) => ({
+        ...prev,
+        consumed: { ...prev.consumed, water_ml: previousWater }
+      }));
+      toast.error(err?.message || "Failed to log water. Please check your connection.");
     }
   };
 
