@@ -129,7 +129,7 @@ export class ProgressAnalyticsService {
       if (data) scansData = data;
     } catch(e) {}
 
-    const scans = {
+    const scans: { first: any | null; latest: any | null; shouldPromptForScan?: boolean } = {
       first: scansData.length > 0 ? {
         id: scansData[0].id,
         frontUrl: scansData[0].front_image_url,
