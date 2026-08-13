@@ -39,20 +39,21 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
   useEffect(() => {
     if (isOpen) {
       setSearch("");
-      setResults([]);
       setSelectedFood(null);
       setQuantity(1);
       setMealType(defaultMealType);
       
-      // If we're preloading a meal plan
+      // Always load food database catalog in background
+      fetchFoods("");
+
+      // If preselectedFoods exist, auto-select the planned meal food so user can log directly
       if (preselectedFoods && preselectedFoods.length > 0) {
-        // We can jump straight to confirming the foods. 
-        // For now, if one is preselected, just pick the first one for simplicity 
-        // in this single-food-logging modal. A multi-food logger would iterate.
-        // The user asked to "preserve the existing UI but structure the modal so it can support both workflows later."
-      } else {
-        // load default list
-        fetchFoods("");
+        const firstItem = preselectedFoods[0];
+        const foodObj = firstItem?.foods || firstItem;
+        if (foodObj && foodObj.name) {
+          setSelectedFood(foodObj);
+          setQuantity(Number(firstItem.quantity) || 1);
+        }
       }
     }
   }, [isOpen, defaultMealType, preselectedFoods]);
@@ -70,7 +71,7 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
     setIsSearching(true);
     try {
       const data = await nutritionApi.searchFoods(q);
-      setResults(data);
+      setResults(data || []);
     } catch (err: any) {
       toast.error(err?.message || "Failed to search foods");
     } finally {
@@ -82,12 +83,26 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
     if (!selectedFood) return;
     setIsLogging(true);
     try {
-      await nutritionApi.logFood({
-        food_id: selectedFood.id,
-        meal_type: mealType,
-        quantity: quantity
-      });
-      toast.success(`Logged ${quantity}x ${selectedFood.name}`);
+      if (preselectedFoods && preselectedFoods.length > 0 && selectedFood?.id === (preselectedFoods[0]?.foods?.id || preselectedFoods[0]?.id)) {
+        for (const item of preselectedFoods) {
+          const foodObj = item.foods || item;
+          if (foodObj?.id) {
+            await nutritionApi.logFood({
+              food_id: foodObj.id,
+              meal_type: mealType,
+              quantity: Number(item.quantity) || 1
+            });
+          }
+        }
+        toast.success(`Logged ${mealType} meal!`);
+      } else {
+        await nutritionApi.logFood({
+          food_id: selectedFood.id,
+          meal_type: mealType,
+          quantity: quantity
+        });
+        toast.success(`Logged ${quantity}x ${selectedFood.name}`);
+      }
       onSuccess();
       onClose();
     } catch (err: any) {
