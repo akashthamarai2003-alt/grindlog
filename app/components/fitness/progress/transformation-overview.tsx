@@ -84,7 +84,11 @@ export function TransformationOverview({ metrics }: { metrics: TransformationMet
             <div className="w-full flex flex-col gap-2 mb-6">
               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                 <span className="text-[#ADFF00]">{metrics.totalChange}kg Changed</span>
-                <span className="text-white/40">{metrics.remainingChange}kg Left</span>
+                {metrics.completionPercentage >= 100 ? (
+                  <span className="text-[#ADFF00] drop-shadow-[0_0_8px_rgba(173,255,0,0.5)]">Goal Achieved 🏆</span>
+                ) : (
+                  <span className="text-white/40">{metrics.remainingChange}kg Left</span>
+                )}
               </div>
               <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden relative">
                 <div 
