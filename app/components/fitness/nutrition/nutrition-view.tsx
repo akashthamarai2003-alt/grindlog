@@ -116,6 +116,16 @@ export function NutritionView() {
     setModalOpen(true);
   };
 
+  const getMealTiming = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'breakfast': return '8:00 AM - 9:30 AM';
+      case 'lunch': return '1:00 PM - 2:30 PM';
+      case 'snack': return '5:00 PM - 6:30 PM';
+      case 'dinner': return '8:30 PM - 10:00 PM';
+      default: return '';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4 animate-pulse pt-4">
@@ -303,8 +313,15 @@ export function NutritionView() {
                         {getMealIcon(meal.meal_type)}
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-white capitalize">{meal.meal_type}</h3>
-                        <p className="text-xs text-white/50 font-medium">{completed ? 'Logged' : 'Planned'}</p>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-white capitalize">{meal.meal_type}</h3>
+                          <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/20">
+                            {getMealTiming(meal.meal_type)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-white/50 font-medium mt-0.5">
+                          {completed ? 'Logged' : (meal.meal_plan_items?.length > 0 ? 'Planned' : 'Not planned yet')}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -337,8 +354,8 @@ export function NutritionView() {
                             <span className="text-xs font-black text-[#ADFF00]">{f.calories} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
                           </li>
                         ))
-                      ) : (
-                        meal.meal_plan_items?.map((item: any) => (
+                      ) : (meal.meal_plan_items && meal.meal_plan_items.length > 0) ? (
+                        meal.meal_plan_items.map((item: any) => (
                            <li key={item.id} className="flex justify-between items-center">
                             <span className="flex items-center gap-2.5 text-white/80">
                               <img 
@@ -354,6 +371,10 @@ export function NutritionView() {
                             <span className="text-xs font-black text-white/70">{Math.round(item.foods?.calories * item.quantity)} <span className="text-[9px] text-white/40 uppercase">kcal</span></span>
                           </li>
                         ))
+                      ) : (
+                        <li className="text-center py-2 text-white/40 text-xs">
+                          No foods planned yet. Tap <span className="text-[#ADFF00] font-bold">Log Meal</span> to add foods!
+                        </li>
                       )}
                     </ul>
                   </div>

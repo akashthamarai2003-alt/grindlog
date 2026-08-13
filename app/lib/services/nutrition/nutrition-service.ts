@@ -438,14 +438,15 @@ export class NutritionService {
     }
     const dailyLimit = Math.round(monthlyLimit / 30);
 
-    // Format & structure meals: Ensure 4 clean meal cards (Breakfast, Lunch, Snack, Dinner)
-    let formattedMeals: any[] = [];
+    // Format & structure meals: Ensure ALL 4 meal cards (Breakfast, Lunch, Snack, Dinner) are always present
+    const ALL_MEAL_TYPES = ['breakfast', 'lunch', 'snack', 'dinner'];
+    const plansByMealType = new Map<string, any>();
+
     if (plans && plans.length > 0) {
       if (plans.length === 1 && plans[0].meal_type === 'daily') {
         const dailyPlan = plans[0];
         const allItems = dailyPlan.meal_plan_items || [];
         
-        const mealTypes = ['breakfast', 'lunch', 'snack', 'dinner'];
         const itemsByType: Record<string, any[]> = {
           breakfast: [],
           lunch: [],
@@ -468,30 +469,39 @@ export class NutritionService {
           }
         });
 
-        formattedMeals = mealTypes
-          .filter(mType => itemsByType[mType].length > 0)
-          .map((mType) => {
-            const mItems = itemsByType[mType];
-            const mCals = mItems.reduce((acc, it) => acc + Math.round((it.foods?.calories || 0) * it.quantity), 0);
-            const mPro = mItems.reduce((acc, it) => acc + Number((it.foods?.protein || 0) * it.quantity), 0);
-
-            return {
-              id: `${dailyPlan.id}-${mType}`,
-              meal_type: mType,
-              name: mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan",
-              calories: mCals,
-              protein: mPro,
-              meal_plan_items: mItems
-            };
+        ALL_MEAL_TYPES.forEach(mType => {
+          const mItems = itemsByType[mType];
+          const mCals = mItems.reduce((acc, it) => acc + Math.round((it.foods?.calories || 0) * it.quantity), 0);
+          const mPro = mItems.reduce((acc, it) => acc + Number((it.foods?.protein || 0) * it.quantity), 0);
+          plansByMealType.set(mType, {
+            id: `${dailyPlan.id}-${mType}`,
+            meal_type: mType,
+            name: mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan",
+            calories: mCals,
+            protein: mPro,
+            meal_plan_items: mItems
           });
-
-        if (formattedMeals.length === 0) {
-          formattedMeals = plans;
-        }
+        });
       } else {
-        formattedMeals = plans;
+        plans.forEach(p => {
+          if (p.meal_type) plansByMealType.set(p.meal_type.toLowerCase(), p);
+        });
       }
     }
+
+    // Always output Breakfast, Lunch, Snack, Dinner cards
+    let formattedMeals = ALL_MEAL_TYPES.map(mType => {
+      const existing = plansByMealType.get(mType);
+      if (existing) return existing;
+      return {
+        id: `empty-${mType}`,
+        meal_type: mType,
+        name: mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan",
+        calories: 0,
+        protein: 0,
+        meal_plan_items: []
+      };
+    });
 
     // Remaining
     const remaining = {
