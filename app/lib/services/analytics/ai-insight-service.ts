@@ -68,12 +68,12 @@ export class AIInsightService {
       }
     }
 
-    // Fetch Analytics for Current Period
-    const current = await ProgressAnalyticsService.getAggregatedProgress(userId, period);
-    
-    // Fetch Analytics for Previous Period
+    // Fetch Analytics for Current and Previous Period in parallel
     const previousDate = new Date(startDate.getTime());
-    const previous = await ProgressAnalyticsService.getAggregatedProgress(userId, period, previousDate);
+    const [current, previous] = await Promise.all([
+      ProgressAnalyticsService.getAggregatedProgress(userId, period),
+      ProgressAnalyticsService.getAggregatedProgress(userId, period, previousDate)
+    ]);
 
     // Build Context String
     const contextPrompt = `

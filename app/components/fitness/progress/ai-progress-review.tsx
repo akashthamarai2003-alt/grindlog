@@ -16,6 +16,10 @@ export function AIProgressReviewCard({ initialReview, period = '30D' }: { initia
 
   const generateReview = async (forceRefresh = false) => {
     setIsGenerating(true);
+    if (forceRefresh) {
+      setReview(null);
+    }
+    
     try {
       const res = await fetch("/api/fitness-ai/generate-review", {
         method: "POST",
