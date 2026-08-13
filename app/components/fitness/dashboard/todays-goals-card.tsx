@@ -17,21 +17,15 @@ export function TodaysGoalsCard({ lifestyle, nutrition, workoutCompleted = false
   const sleepTarget = lifestyle?.sleep_target_hours || 8;
   const proteinTarget = nutrition?.protein_grams || 120;
 
-  // Use real data to determine if completed (everything false initially except workout if it's done)
-  const initialGoals = [
+  // Use real data to determine if completed
+  const goals = [
     { id: 'workout', text: "Complete workout", completed: workoutCompleted },
-    { id: 'breakfast', text: "Eat breakfast", completed: false },
-    { id: 'protein', text: `Hit ${proteinTarget}g protein target`, completed: false },
-    { id: 'steps', text: `${stepsTarget.toLocaleString()} steps`, completed: false },
-    { id: 'water', text: `${waterTarget}L water`, completed: false },
-    { id: 'sleep', text: `Sleep before 11 PM (Target ${sleepTarget}h)`, completed: false },
+    { id: 'breakfast', text: "Eat breakfast", completed: nutrition?.calories_consumed > 100 }, // Approximation
+    { id: 'protein', text: `Hit ${proteinTarget}g protein target`, completed: (nutrition?.protein_consumed || 0) >= proteinTarget },
+    { id: 'steps', text: `${stepsTarget.toLocaleString()} steps`, completed: (lifestyle?.steps || 0) >= stepsTarget },
+    { id: 'water', text: `${waterTarget}L water`, completed: (nutrition?.water_ml || 0) >= (waterTarget * 1000) },
+    { id: 'sleep', text: `Sleep before 11 PM (Target ${sleepTarget}h)`, completed: (lifestyle?.sleep_hours || 0) >= sleepTarget },
   ];
-
-  const [goals, setGoals] = useState(initialGoals);
-
-  const toggleGoal = (id: string) => {
-    setGoals(goals.map(g => g.id === id ? { ...g, completed: !g.completed } : g));
-  };
 
   return (
     <motion.div
@@ -57,8 +51,7 @@ export function TodaysGoalsCard({ lifestyle, nutrition, workoutCompleted = false
           {goals.map((goal) => (
             <div 
               key={goal.id} 
-              onClick={() => toggleGoal(goal.id)}
-              className="flex items-center gap-3 cursor-pointer group/item"
+              className="flex items-center gap-3 group/item"
             >
               <div className="shrink-0 flex items-center justify-center">
                 {goal.completed ? (

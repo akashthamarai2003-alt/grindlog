@@ -72,6 +72,47 @@ export class ProgressAnalyticsService {
       }
     }
 
+    // 1.5 Calculate True Streak
+    let trueStreak = 0;
+    try {
+      const d = new Date();
+      d.setDate(d.getDate() - 100);
+      const lookbackDateStr = d.toISOString().split('T')[0];
+
+      const [workoutRes, nutritionRes, activityRes] = await Promise.all([
+        supabase.from('fitness_os_workout_sessions').select('start_time').eq('user_id', userId).eq('status', 'completed').gte('start_time', lookbackDateStr),
+        supabase.from('nutrition_daily_summary').select('date').eq('user_id', userId).gte('date', lookbackDateStr),
+        supabase.from('fitness_os_activity_logs').select('activity_date').eq('user_id', userId).gte('activity_date', lookbackDateStr)
+      ]);
+
+      const activeDates = new Set<string>();
+      if (workoutRes.data) workoutRes.data.forEach((w: any) => activeDates.add(w.start_time.split('T')[0]));
+      if (nutritionRes.data) nutritionRes.data.forEach((n: any) => activeDates.add(n.date));
+      if (activityRes.data) activityRes.data.forEach((a: any) => activeDates.add(a.activity_date));
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      let currentDate = yesterday;
+      
+      if (activeDates.has(todayStr)) {
+        trueStreak = 1;
+      }
+      
+      while (true) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        if (activeDates.has(dateStr)) {
+          trueStreak++;
+          currentDate.setDate(currentDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+    } catch(e) {
+      console.error("Error calculating streak", e);
+    }
+
     const transformation: TransformationMetrics = {
       startingWeight: startW,
       currentWeight: currW,
@@ -80,7 +121,7 @@ export class ProgressAnalyticsService {
       remainingChange,
       completionPercentage,
       transformationDay,
-      streak: 1, // Computed from recent consecutive workout days (simplified for now)
+      streak: trueStreak,
     };
 
     const weightHistory: WeightPoint[] = periodBodyMetrics
