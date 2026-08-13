@@ -4,7 +4,7 @@ import { BodyMeasurement } from "@/types/fitness/analytics";
 import { ChevronRight, Ruler } from "lucide-react";
 import Link from "next/link";
 
-export function BodyMeasurementsList({ measurements }: { measurements: BodyMeasurement[] }) {
+export function BodyMeasurementsList({ measurements, isBulking = false }: { measurements: BodyMeasurement[], isBulking?: boolean }) {
   if (measurements.length === 0) {
     return (
       <div className="w-full flex flex-col gap-3">
@@ -43,16 +43,22 @@ export function BodyMeasurementsList({ measurements }: { measurements: BodyMeasu
         
         {/* List */}
         <div className="flex flex-col">
-          {measurements.map((m, idx) => (
-            <div key={m.id} className={`grid grid-cols-4 p-3.5 items-center text-center ${idx !== measurements.length - 1 ? 'border-b border-white/5' : ''}`}>
-              <div className="text-xs font-bold text-white/80 text-left pl-2 uppercase tracking-wider">{m.name}</div>
-              <div className="text-xs font-medium text-white/50">{m.startValue ? `${m.startValue}${m.unit}` : '-'}</div>
-              <div className="text-xs font-black text-white">{m.currentValue ? `${m.currentValue}${m.unit}` : '-'}</div>
-              <div className={`text-xs font-black ${m.change < 0 ? 'text-[#ADFF00]' : m.change > 0 ? 'text-red-400' : 'text-white/30'}`}>
-                {m.change > 0 ? '+' : ''}{m.change !== 0 ? `${m.change}${m.unit}` : '-'}
+          {measurements.map((m, idx) => {
+            const isGood = isBulking ? m.change > 0 : m.change < 0;
+            const isBad = isBulking ? m.change < 0 : m.change > 0;
+            const textColorClass = isGood ? 'text-[#ADFF00]' : isBad ? 'text-red-400' : 'text-white/30';
+
+            return (
+              <div key={m.id} className={`grid grid-cols-4 p-3.5 items-center text-center ${idx !== measurements.length - 1 ? 'border-b border-white/5' : ''}`}>
+                <div className="text-xs font-bold text-white/80 text-left pl-2 uppercase tracking-wider">{m.name}</div>
+                <div className="text-xs font-medium text-white/50">{m.startValue ? `${m.startValue}${m.unit}` : '-'}</div>
+                <div className="text-xs font-black text-white">{m.currentValue ? `${m.currentValue}${m.unit}` : '-'}</div>
+                <div className={`text-xs font-black ${textColorClass}`}>
+                  {m.change > 0 ? '+' : ''}{m.change !== 0 ? `${m.change}${m.unit}` : '-'}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

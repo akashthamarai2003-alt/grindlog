@@ -75,7 +75,10 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
             
             <div id="transformation-details" className="flex flex-col gap-8 scroll-mt-6">
               <WeightChart data={data.weightHistory} targetWeight={data.transformation.targetWeight} />
-              <BodyMeasurementsList measurements={data.measurements} />
+              <BodyMeasurementsList 
+                measurements={data.measurements} 
+                isBulking={(data.transformation.targetWeight || 0) > (data.transformation.startingWeight || 0)} 
+              />
               <BodyProgressPhotos first={data.scans.first} latest={data.scans.latest} />
             </div>
             <WorkoutAnalyticsCard metrics={data.workout} />
