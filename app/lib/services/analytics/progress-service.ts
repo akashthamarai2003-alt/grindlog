@@ -38,8 +38,9 @@ export class ProgressAnalyticsService {
       .eq('user_id', userId)
       .maybeSingle();
 
+    const { differenceInCalendarDays } = require("date-fns");
     const createdDate = fitProfile?.created_at ? new Date(fitProfile.created_at) : new Date();
-    const transformationDay = Math.max(1, Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)));
+    const transformationDay = Math.max(1, differenceInCalendarDays(now, createdDate) + 1);
     
     // 2. Fetch Body Metrics
     let bodyMetrics: any[] = [];

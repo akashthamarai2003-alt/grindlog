@@ -68,10 +68,8 @@ async function DashboardContent() {
 
   let dayNumber = 1;
   if (plan?.created_at) {
-    const start = new Date(plan.created_at);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - start.getTime());
-    dayNumber = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const { differenceInCalendarDays } = require("date-fns");
+    dayNumber = Math.max(1, differenceInCalendarDays(new Date(), new Date(plan.created_at)) + 1);
   }
 
   return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} premiumLevel={mainProfile?.premium_level || 'core'} />;
