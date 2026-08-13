@@ -349,32 +349,57 @@ export class NutritionService {
     const localDate = await this.getLocalDateString(userId);
     const { start, end } = await this.getLocalDateBoundaries(userId);
 
-    // 1. Targets
-    const targets = await this.getEffectiveTargets(userId);
+    // Monthly spent calculation
+    const firstDayOfMonth = localDate.substring(0, 8) + '01'; // YYYY-MM-01
+    const tz = await this.getUserTimezone(userId);
+    const mFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset', year: 'numeric' });
+    let mOffsetStr = mFormatter.formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value;
+    if (!mOffsetStr || mOffsetStr === 'GMT') mOffsetStr = 'GMT+00:00';
+    mOffsetStr = mOffsetStr.replace('GMT', '');
+    const monthStartISO = new Date(`${firstDayOfMonth}T00:00:00.000${mOffsetStr}`).toISOString();
+
+    // Parallelize all data fetching
+    const [targets, foodsRes, watersRes, plansRes, monthFoodsRes, fitProfileRes] = await Promise.all([
+      this.getEffectiveTargets(userId),
+      supabase
+        .from('food_logs')
+        .select('*, foods(name, category)')
+        .eq('user_id', userId)
+        .gte('logged_at', start)
+        .lte('logged_at', end),
+      supabase
+        .from('water_logs')
+        .select('amount_ml')
+        .eq('user_id', userId)
+        .gte('logged_at', start)
+        .lte('logged_at', end),
+      supabase
+        .from('meal_plans')
+        .select('*, meal_plan_items(*, foods(*))')
+        .eq('user_id', userId)
+        .eq('date', localDate),
+      supabase
+        .from('food_logs')
+        .select('estimated_cost')
+        .eq('user_id', userId)
+        .gte('logged_at', monthStartISO)
+        .lte('logged_at', end),
+      supabase
+        .from('fitness_os_profiles')
+        .select('nutrition_budget')
+        .eq('user_id', userId)
+        .maybeSingle()
+    ]);
+
     if (!targets) {
       throw new Error("TARGET_NOT_FOUND");
     }
 
-    // 2. Fetch logged data
-    const { data: foods } = await supabase
-      .from('food_logs')
-      .select('*, foods(name, category)')
-      .eq('user_id', userId)
-      .gte('logged_at', start)
-      .lte('logged_at', end);
-
-    const { data: waters } = await supabase
-      .from('water_logs')
-      .select('amount_ml')
-      .eq('user_id', userId)
-      .gte('logged_at', start)
-      .lte('logged_at', end);
-
-    const { data: plans } = await supabase
-      .from('meal_plans')
-      .select('*, meal_plan_items(*, foods(*))')
-      .eq('user_id', userId)
-      .eq('date', localDate);
+    const foods = foodsRes.data;
+    const waters = watersRes.data;
+    const plans = plansRes.data;
+    const monthFoods = monthFoodsRes.data;
+    const fitProfile = fitProfileRes.data;
 
     // 3. Compute consumed
     let consumed = {
@@ -403,30 +428,7 @@ export class NutritionService {
       waters.forEach(w => consumed.water_ml += w.amount_ml);
     }
 
-    // Monthly spent calculation
-    const firstDayOfMonth = localDate.substring(0, 8) + '01'; // YYYY-MM-01
-    const tz = await this.getUserTimezone(userId);
-    const mFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset', year: 'numeric' });
-    let mOffsetStr = mFormatter.formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value;
-    if (!mOffsetStr || mOffsetStr === 'GMT') mOffsetStr = 'GMT+00:00';
-    mOffsetStr = mOffsetStr.replace('GMT', '');
-    const monthStartISO = new Date(`${firstDayOfMonth}T00:00:00.000${mOffsetStr}`).toISOString();
-
-    const { data: monthFoods } = await supabase
-      .from('food_logs')
-      .select('estimated_cost')
-      .eq('user_id', userId)
-      .gte('logged_at', monthStartISO)
-      .lte('logged_at', end);
-
     const monthSpent = monthFoods ? monthFoods.reduce((acc, f) => acc + Number(f.estimated_cost), 0) : 0;
-
-    // Fetch user profile budget preference
-    const { data: fitProfile } = await supabase
-      .from('fitness_os_profiles')
-      .select('nutrition_budget')
-      .eq('user_id', userId)
-      .maybeSingle();
 
     let monthlyLimit = 3000;
     if (fitProfile?.nutrition_budget) {
