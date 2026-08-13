@@ -34,18 +34,13 @@ export class ProgressAnalyticsService {
     // 1. Profile Data
     const { data: fitProfile } = await supabase
       .from('fitness_os_profiles')
-      .select('created_at, target_weight, weight')
+      .select('created_at, target_weight, weight, weight_trend_baseline')
       .eq('user_id', userId)
       .maybeSingle();
 
     const createdDate = fitProfile?.created_at ? new Date(fitProfile.created_at) : new Date();
     const transformationDay = Math.max(1, Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)));
     
-    // Fallback: Calculate starting weight from first body metrics if missing
-    let startW = fitProfile?.weight || null;
-    let currW = fitProfile?.weight || null;
-    const targetW = fitProfile?.target_weight || null;
-
     // 2. Fetch Body Metrics
     let bodyMetrics: any[] = [];
     try {
@@ -59,10 +54,10 @@ export class ProgressAnalyticsService {
 
     const periodBodyMetrics = bodyMetrics.filter(m => new Date(m.recorded_at) >= startDate && new Date(m.recorded_at) <= now);
 
-    if (bodyMetrics.length > 0) {
-      if (!startW) startW = bodyMetrics[0].weight;
-      if (!currW) currW = bodyMetrics[bodyMetrics.length - 1].weight;
-    }
+    // Calculate start and current weights properly
+    let startW = fitProfile?.weight_trend_baseline || (bodyMetrics.length > 0 ? bodyMetrics[0].weight : fitProfile?.weight) || null;
+    let currW = bodyMetrics.length > 0 ? bodyMetrics[bodyMetrics.length - 1].weight : (fitProfile?.weight || null);
+    const targetW = fitProfile?.target_weight || null;
 
     let totalChange = 0;
     let remainingChange = 0;
