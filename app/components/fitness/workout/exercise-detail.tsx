@@ -22,6 +22,9 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
   const [activeRestSeconds, setActiveRestSeconds] = useState<number | null>(null);
   const [submittingSetId, setSubmittingSetId] = useState<string | null>(null);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  
+  const [videoId, setVideoId] = useState<string | null>(null);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
 
   // Local state to track input values for sets so they are easily updatable
   const [setInputs, setSetInputs] = useState<Record<string, { weight: string, reps: string }>>(
@@ -91,6 +94,27 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
 
   const skipRest = () => setActiveRestSeconds(null);
 
+  const handleLoadVideo = async () => {
+    if (videoId || isVideoLoading) return;
+    setIsVideoLoading(true);
+    try {
+      const res = await fetch(`/api/workouts/video?query=${encodeURIComponent(exercise.name)}`);
+      const data = await res.json();
+      if (res.ok && data.videoId) {
+        setVideoId(data.videoId);
+      } else {
+        toast.error(data.error || "Could not find a video");
+        // Fallback: open in new tab if embed fails
+        window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + " exercise tutorial")}`, "_blank");
+      }
+    } catch (e: any) {
+      toast.error("Failed to load video");
+      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + " exercise tutorial")}`, "_blank");
+    } finally {
+      setIsVideoLoading(false);
+    }
+  };
+
   return (
     <div className="w-full flex flex-col pb-32">
       {/* Header */}
@@ -120,19 +144,33 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
         {exercise.name}
       </h2>
 
-      {/* Video Placeholder (YouTube Link) */}
-      <a 
-        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + " exercise tutorial")}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="w-full h-48 bg-[#111A10] rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden group cursor-pointer block"
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10" />
-        <PlayCircle className="w-12 h-12 text-[#ADFF00] z-20 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
-        <span className="absolute bottom-4 left-4 text-xs font-black tracking-widest uppercase text-white z-20">
-          Search Tutorial on YouTube
-        </span>
-      </a>
+      {/* Video Player / Placeholder */}
+      <div className="w-full h-48 bg-[#111A10] rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden group">
+        {videoId ? (
+          <iframe 
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`} 
+            className="w-full h-full absolute inset-0 z-20 border-0"
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+          />
+        ) : (
+          <button 
+            onClick={handleLoadVideo}
+            disabled={isVideoLoading}
+            className="w-full h-full absolute inset-0 z-20 flex items-center justify-center flex-col focus:outline-none"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10" />
+            {isVideoLoading ? (
+              <Loader2 className="w-12 h-12 text-[#ADFF00] animate-spin z-20" strokeWidth={1.5} />
+            ) : (
+              <PlayCircle className="w-12 h-12 text-[#ADFF00] z-20 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            )}
+            <span className="absolute bottom-4 left-4 text-xs font-black tracking-widest uppercase text-white z-20">
+              {isVideoLoading ? "LOADING VIDEO..." : "WATCH EXERCISE VIDEO"}
+            </span>
+          </button>
+        )}
+      </div>
 
       {/* Metadata */}
       <div className="flex flex-col gap-1 mb-8">
