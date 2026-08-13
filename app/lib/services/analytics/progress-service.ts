@@ -64,11 +64,21 @@ export class ProgressAnalyticsService {
     let completionPercentage = 0;
 
     if (startW && currW && targetW) {
-      totalChange = Number(Math.abs(currW - startW).toFixed(1));
-      remainingChange = Number(Math.abs(targetW - currW).toFixed(1));
       const totalGoal = Math.abs(startW - targetW);
       if (totalGoal > 0) {
-        completionPercentage = Math.min(100, Math.max(0, (totalChange / totalGoal) * 100));
+        const isBulking = targetW > startW;
+        let progressMade = isBulking ? (currW - startW) : (startW - currW);
+        progressMade = Math.max(0, progressMade); // Floor at 0 if moving wrong direction
+        
+        const remaining = isBulking ? (targetW - currW) : (currW - targetW);
+        
+        totalChange = Number(progressMade.toFixed(1));
+        remainingChange = Number(Math.max(0, remaining).toFixed(1));
+        completionPercentage = Math.min(100, Math.max(0, (progressMade / totalGoal) * 100));
+      } else {
+        totalChange = 0;
+        remainingChange = 0;
+        completionPercentage = 100; // Goal is already equal to start
       }
     }
 
