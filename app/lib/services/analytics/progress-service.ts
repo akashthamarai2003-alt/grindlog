@@ -43,7 +43,7 @@ export class ProgressAnalyticsService {
     
     // Fallback: Calculate starting weight from first body metrics if missing
     let startW = fitProfile?.weight || null;
-    let currW = null;
+    let currW = fitProfile?.weight || null;
     const targetW = fitProfile?.target_weight || null;
 
     // 2. Fetch Body Metrics
