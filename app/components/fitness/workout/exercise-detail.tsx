@@ -104,12 +104,9 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
         setGifUrl(data.gifUrl);
       } else {
         toast.error(data.error || "Could not find a video");
-        // Fallback: open in new tab if embed fails
-        window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + " exercise tutorial")}`, "_blank");
       }
     } catch (e: any) {
       toast.error("Failed to load video");
-      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + " exercise tutorial")}`, "_blank");
     } finally {
       setIsVideoLoading(false);
     }
@@ -147,22 +144,13 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
       {/* Video Player / Placeholder */}
       <div className="w-full h-48 bg-[#111A10] rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden group">
         {gifUrl ? (
-          <a 
-            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + " exercise tutorial")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full h-full absolute inset-0 z-20 cursor-pointer block"
-            title="Search on YouTube"
-          >
+          <div className="w-full h-full absolute inset-0 z-20 block">
             <img 
               src={gifUrl} 
               alt={exercise.name}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <PlayCircle className="w-12 h-12 text-white/80" strokeWidth={1.5} />
-            </div>
-          </a>
+          </div>
         ) : (
           <button 
             onClick={handleLoadVideo}
