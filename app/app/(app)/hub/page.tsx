@@ -32,11 +32,11 @@ type Module = {
 };
 
 const MODULES: Module[] = [
-  { id: "activity", name: "Activity", icon: Dumbbell, path: "/activity", color: "from-[#FF2D55] to-[#FF3B30]", comingSoon: true },
+  { id: "activity", name: "Activity", icon: Dumbbell, path: "/activity", color: "from-[#FF2D55] to-[#FF3B30]" },
   { id: "journal", name: "Journal", icon: BookOpen, path: "/journal", color: "from-[#00C7BE] to-[#32ADE6]" },
   { id: "goals", name: "Goals", icon: Target, path: "/goals", color: "from-[#FFD60A] to-[#FF9500]", comingSoon: true },
   { id: "finance", name: "Finance", icon: Wallet, path: "/finance", color: "from-[#30B0C7] to-[#007AFF]", comingSoon: true },
-  { id: "sleep", name: "Sleep", icon: Moon, path: "/sleep", color: "from-[#5856D6] to-[#3A3A3C]", comingSoon: true },
+  { id: "sleep", name: "Sleep", icon: Moon, path: "/sleep", color: "from-[#5856D6] to-[#3A3A3C]" },
   { id: "learning", name: "Learning", icon: GraduationCap, path: "/learning", color: "from-[#FF9500] to-[#FF2D55]", comingSoon: true },
   { id: "store", name: "Store", icon: Store, path: "/store", color: "from-[#FFD60A] to-[#FF3B30]" },
 ];

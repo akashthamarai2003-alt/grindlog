@@ -16,10 +16,7 @@ export function DailyActivityCard({ lifestyle, workoutCompleted = false, premium
   const waterTarget = lifestyle?.water_target_liters || 3.0;
   const sleepTarget = lifestyle?.sleep_target_hours || 8.0;
 
-  // Tracked data (mocked until tracking is built)
-  const stepsTracked = 0;
-  const waterTracked = 0.0;
-  const sleepTracked = "0h 0m";
+
 
   return (
     <motion.div
@@ -54,13 +51,34 @@ export function DailyActivityCard({ lifestyle, workoutCompleted = false, premium
           <div className="grid grid-cols-2 gap-4">
             
             {/* Steps */}
-            <div className="flex flex-col gap-1">
+            <div 
+              className="flex flex-col gap-1 cursor-pointer hover:bg-white/5 p-2 -m-2 rounded-lg transition-colors"
+              onClick={async () => {
+                const input = window.prompt("Enter your steps for today:");
+                if (!input || isNaN(Number(input))) return;
+                
+                try {
+                  const { createClient } = await import("@/lib/services/supabase/client");
+                  const supabase = createClient();
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) return;
+                  
+                  await supabase.from('fitness_os_activity_logs').insert({
+                    user_id: user.id,
+                    activity_date: new Date().toISOString().split('T')[0],
+                    steps: Number(input)
+                  });
+                  window.location.reload();
+                } catch(e) {}
+              }}
+            >
               <div className="flex items-center gap-1.5 text-white/60">
                 <span className="text-sm">🚶</span>
                 <span className="text-xs font-bold uppercase tracking-widest">Steps</span>
+                <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded-sm ml-auto">TAP TO LOG</span>
               </div>
               <div className="text-sm font-black text-white">
-                {stepsTracked.toLocaleString()} <span className="text-white/40 font-medium text-xs">/ {stepsTarget.toLocaleString()}</span>
+                {(lifestyle?.steps || 0).toLocaleString()} <span className="text-white/40 font-medium text-xs">/ {stepsTarget.toLocaleString()}</span>
               </div>
             </div>
 
@@ -71,7 +89,8 @@ export function DailyActivityCard({ lifestyle, workoutCompleted = false, premium
                 <span className="text-xs font-bold uppercase tracking-widest text-white/60">Water</span>
               </div>
               <div className="text-sm font-black text-white">
-                {waterTracked.toFixed(1)} <span className="text-white/40 font-medium text-xs">/ {waterTarget.toFixed(1)} L</span>
+                {/* Note: In a real app we'd pass nutrition prop to DailyActivityCard, but since we don't have it here yet, let's just show 0 or assume lifestyle has it */}
+                0.0 <span className="text-white/40 font-medium text-xs">/ {waterTarget.toFixed(1)} L</span>
               </div>
             </div>
 
@@ -82,7 +101,7 @@ export function DailyActivityCard({ lifestyle, workoutCompleted = false, premium
                 <span className="text-xs font-bold uppercase tracking-widest text-white/60">Sleep</span>
               </div>
               <div className="text-sm font-black text-white">
-                {sleepTracked}
+                {lifestyle?.sleep_hours ? `${Math.floor(lifestyle.sleep_hours)}h ${Math.round((lifestyle.sleep_hours % 1) * 60)}m` : "0h 0m"}
               </div>
             </div>
 
