@@ -344,6 +344,23 @@ export class ProgressAnalyticsService {
       target: 100 // placeholder
     }));
 
+    // 10. Smart Prompt Logic
+    let shouldPromptForScan = false;
+    const isConsistent = consistency.overallScore > 70; // Highly consistent
+    
+    let daysSinceLastScan = 999;
+    if (scans.latest?.date) {
+      const lastScanDate = new Date(scans.latest.date);
+      const today = new Date();
+      const diffTime = Math.abs(today.getTime() - lastScanDate.getTime());
+      daysSinceLastScan = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    if (isConsistent && daysSinceLastScan >= 14) {
+      shouldPromptForScan = true;
+    }
+    scans.shouldPromptForScan = shouldPromptForScan;
+
     return {
       period,
       transformation,

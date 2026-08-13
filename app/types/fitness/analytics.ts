@@ -105,7 +105,7 @@ export interface AggregatedProgressPayload {
   consistency: ConsistencyMetrics;
   weightHistory: WeightPoint[];
   measurements: BodyMeasurement[];
-  scans: { first: BodyPhotoScan | null; latest: BodyPhotoScan | null };
+  scans: { first: BodyPhotoScan | null; latest: BodyPhotoScan | null; shouldPromptForScan?: boolean };
   workout: WorkoutAnalytics;
   nutrition: NutritionAnalytics;
   activity: ActivityAnalytics;

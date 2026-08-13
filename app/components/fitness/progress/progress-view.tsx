@@ -14,6 +14,7 @@ import { ActivityRecoveryAnalyticsCard } from "./activity-recovery-analytics";
 import { AIProgressReviewCard } from "./ai-progress-review";
 import { AchievementsShowcase } from "./achievements-showcase";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 
 export function ProgressView({ initialData }: { initialData: AggregatedProgressPayload }) {
   const [data, setData] = useState<AggregatedProgressPayload>(initialData);
@@ -53,6 +54,22 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
           </div>
         ) : (
           <div className="flex flex-col gap-8 pb-8">
+            {data.scans.shouldPromptForScan && (
+              <div className="w-full bg-gradient-to-br from-[#ADFF00]/20 to-[#ADFF00]/5 border border-[#ADFF00]/30 rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden">
+                <div className="absolute -right-10 -top-10 text-8xl opacity-10 blur-sm pointer-events-none">🔥</div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse" />
+                  <h3 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">Smart Coach</h3>
+                </div>
+                <p className="text-sm font-medium text-white/90">
+                  You've been highly consistent with your workouts and diet! Your body is actively transforming. It's time to capture your new physique.
+                </p>
+                <Link href="/fitness/progress/add-scan" className="mt-2 w-full py-3 bg-[#ADFF00] text-black font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center hover:bg-[#baff22] transition-colors">
+                  Take Progress Photo 📸
+                </Link>
+              </div>
+            )}
+            
             <TransformationOverview metrics={data.transformation} />
             <WeeklyConsistency metrics={data.consistency} />
             
