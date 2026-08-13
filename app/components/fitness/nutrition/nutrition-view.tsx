@@ -66,6 +66,8 @@ export function NutritionView() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
   const handleSwapMeal = async (mealType: string) => {
     try {
       toast.loading("Swapping meal...", { id: "swap" });
