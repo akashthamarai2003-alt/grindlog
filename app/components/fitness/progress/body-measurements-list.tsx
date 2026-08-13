@@ -27,9 +27,9 @@ export function BodyMeasurementsList({ measurements }: { measurements: BodyMeasu
         <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
           Body Measurements
         </h2>
-        <button className="text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-white transition-colors">
-          History <ChevronRight className="inline w-3 h-3 -mt-0.5" />
-        </button>
+        <Link href="/fitness/progress/log-measurements" className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest hover:text-white transition-colors">
+          Add +
+        </Link>
       </div>
 
       <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl overflow-hidden flex flex-col">
