@@ -14,6 +14,7 @@ import {
   Edit2,
   Sparkles,
   Award,
+  Watch,
 } from "lucide-react";
 import { springs } from "@/animations/springs";
 import { useUIStore } from "@/store/ui-store";
@@ -98,6 +99,7 @@ export default function ProfilePage() {
     },
     {
       items: [
+        { icon: Watch, label: "Connected Devices", hasChevron: true, action: "devices" },
         { icon: Download, label: "Export Data", hasChevron: true, action: "export" },
         { 
           icon: Star, 
@@ -363,6 +365,7 @@ export default function ProfilePage() {
                     else if (item.action === "premium") window.location.href = "/payment";
                     else if (item.action === "export") handleExportData();
                     else if (item.action === "support") window.location.href = "/support";
+                    else if (item.action === "devices") window.location.href = "/settings/devices";
                     else alert("This feature is coming soon!");
                   }}
                   className="group relative flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]/30 active:bg-[var(--color-bg-tertiary)]/50 disabled:opacity-50"
