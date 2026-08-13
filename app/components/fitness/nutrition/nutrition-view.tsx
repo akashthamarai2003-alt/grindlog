@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check } from "lucide-react";
+import { getFoodImage } from "@/lib/utils/food-images";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
 import { toast } from "sonner";
@@ -316,21 +317,41 @@ export function NutritionView() {
                     </div>
                   </div>
                   
-                  {/* Show planned or logged foods */}
+                  {/* Show planned or logged foods with image reference */}
                   <div className="bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
-                    <ul className="text-[13px] font-medium text-white/80 space-y-2">
+                    <ul className="text-[13px] font-medium text-white/80 space-y-2.5">
                       {loggedFoods.length > 0 ? (
                         loggedFoods.map((f: any) => (
-                          <li key={f.id} className="flex justify-between">
-                            <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#ADFF00]/50"/> {f.foods?.name || 'Unknown'} <span className="text-xs text-white/30">x{f.quantity}</span></span>
-                            <span className="text-white/40">{f.calories} kcal</span>
+                          <li key={f.id} className="flex justify-between items-center">
+                            <span className="flex items-center gap-2.5 text-white/90">
+                              <img 
+                                src={getFoodImage(f.foods?.name, f.foods?.category, f.foods?.image_url)} 
+                                alt={f.foods?.name || 'Food'} 
+                                className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
+                              />
+                              <div>
+                                <span className="font-bold block">{f.foods?.name || 'Logged food'}</span>
+                                <span className="text-[10px] text-white/40 font-medium">x{f.quantity} serving</span>
+                              </div>
+                            </span>
+                            <span className="text-xs font-black text-[#ADFF00]">{f.calories} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
                           </li>
                         ))
                       ) : (
                         meal.meal_plan_items?.map((item: any) => (
-                           <li key={item.id} className="flex justify-between">
-                            <span className="flex items-center gap-2 text-white/50"><div className="w-1.5 h-1.5 rounded-full bg-white/10"/> {item.foods?.name || 'Food item'}</span>
-                            <span className="text-white/30">{Math.round(item.foods?.calories * item.quantity)} kcal</span>
+                           <li key={item.id} className="flex justify-between items-center">
+                            <span className="flex items-center gap-2.5 text-white/80">
+                              <img 
+                                src={getFoodImage(item.foods?.name, item.foods?.category, item.foods?.image_url)} 
+                                alt={item.foods?.name || 'Food'} 
+                                className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
+                              />
+                              <div>
+                                <span className="font-bold block text-white/90">{item.foods?.name || 'Food item'}</span>
+                                <span className="text-[10px] text-white/40 font-medium">{item.foods?.serving_size || '1 serving'}</span>
+                              </div>
+                            </span>
+                            <span className="text-xs font-black text-white/70">{Math.round(item.foods?.calories * item.quantity)} <span className="text-[9px] text-white/40 uppercase">kcal</span></span>
                           </li>
                         ))
                       )}

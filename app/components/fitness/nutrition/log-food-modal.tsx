@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { toast } from "sonner";
+import { getFoodImage } from "@/lib/utils/food-images";
 
 interface Food {
   id: string;
@@ -15,6 +16,7 @@ interface Food {
   carbs: number;
   fat: number;
   estimated_cost: number;
+  image_url?: string;
 }
 
 interface LogFoodModalProps {
@@ -151,13 +153,20 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
                     <button 
                       key={food.id}
                       onClick={() => setSelectedFood(food)}
-                      className="w-full text-left bg-black/40 hover:bg-white/5 border border-transparent hover:border-white/10 rounded-xl p-4 transition-all flex justify-between items-center"
+                      className="w-full text-left bg-black/40 hover:bg-white/5 border border-transparent hover:border-white/10 rounded-2xl p-3 transition-all flex justify-between items-center gap-3"
                     >
-                      <div>
-                        <h4 className="font-bold text-white text-sm">{food.name}</h4>
-                        <p className="text-xs text-white/50 mt-1">{food.serving_size} • ₹{food.estimated_cost}</p>
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={getFoodImage(food.name, food.category, food.image_url)} 
+                          alt={food.name} 
+                          className="w-12 h-12 rounded-xl object-cover border border-white/10 shrink-0"
+                        />
+                        <div>
+                          <h4 className="font-bold text-white text-sm">{food.name}</h4>
+                          <p className="text-xs text-white/50 mt-0.5">{food.serving_size} • ₹{food.estimated_cost}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <p className="text-sm font-black text-[#ADFF00]">{food.calories} <span className="text-[10px] text-[#ADFF00]/70 uppercase">kcal</span></p>
                         <p className="text-xs text-white/60 font-medium">{food.protein}g protein</p>
                       </div>
@@ -174,10 +183,19 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
             </div>
           </div>
         ) : (
-          <div className="p-5">
-            <div className="bg-black/40 rounded-2xl p-5 mb-6 border border-white/5">
-              <h3 className="text-lg font-black text-white mb-1">{selectedFood.name}</h3>
-              <p className="text-sm text-white/50 mb-4">{selectedFood.serving_size}</p>
+          <div className="p-5 overflow-y-auto">
+            <div className="bg-black/40 rounded-2xl p-4 mb-6 border border-white/5 overflow-hidden">
+              <div className="relative h-32 rounded-xl overflow-hidden mb-4 border border-white/10">
+                <img 
+                  src={getFoodImage(selectedFood.name, selectedFood.category, selectedFood.image_url)} 
+                  alt={selectedFood.name} 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-3 flex flex-col justify-end">
+                  <h3 className="text-lg font-black text-white">{selectedFood.name}</h3>
+                  <p className="text-xs text-[#ADFF00] font-bold">{selectedFood.serving_size}</p>
+                </div>
+              </div>
               
               <div className="grid grid-cols-4 gap-2">
                 <div className="text-center p-2 bg-white/5 rounded-xl">
