@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Loader2, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "ai";
@@ -98,9 +99,13 @@ export function ProgressChatModal({ isOpen, onClose }: ProgressChatModalProps) {
                   <div className={`p-4 rounded-[20px] text-[13px] leading-relaxed font-medium ${
                     msg.role === "user" 
                       ? "bg-[#ADFF00] text-black rounded-tr-sm" 
-                      : "bg-[#111A10] text-white/90 border border-white/5 rounded-tl-sm"
+                      : "bg-[#111A10] text-white/90 border border-white/5 rounded-tl-sm prose prose-sm prose-invert prose-p:leading-relaxed prose-strong:text-[#ADFF00] max-w-none"
                   }`}>
-                    {msg.content}
+                    {msg.role === "user" ? (
+                      msg.content
+                    ) : (
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    )}
                   </div>
                 </div>
               ))}

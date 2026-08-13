@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@plugin "@tailwindcss/typography";
 /* ============================================
    GrindLog Design System v1.0
    Mobile-Only AI Habit Tracker PWA
