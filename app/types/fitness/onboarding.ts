@@ -31,6 +31,7 @@ export const OnboardingSchema = z.object({
   height: z.number().min(50, "Height seems too low").max(300, "Height seems too high").optional(),
   weight: z.number().min(30, "Weight seems too low").max(400, "Weight seems too high").optional(),
   target_weight: z.number().min(30).max(400).optional(),
+  target_deadline_days: z.number().min(1).max(3650).optional(),
   waist_cm: z.number().min(20).max(300).optional(),
   chest_cm: z.number().min(20).max(300).optional(),
   arm_cm: z.number().min(10).max(100).optional(),

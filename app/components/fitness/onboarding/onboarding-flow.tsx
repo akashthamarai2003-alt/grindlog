@@ -354,8 +354,8 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             </div>
 
             <div className="mt-8 p-5 bg-[#0D150D] border border-[#1A2619] rounded-2xl">
-              <h3 className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">Target</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <h3 className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">Target & Deadline</h3>
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-2">Current Weight</label>
                   <div className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#121E12] text-gray-400 font-medium">
@@ -373,9 +373,38 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                   />
                 </div>
               </div>
+
+              <div className="w-full mt-4">
+                <label className="block text-xs font-semibold text-[#ADFF00] mb-2 flex items-center justify-between">
+                  <span>Days to Achieve Goal</span>
+                  <span className="text-gray-500 font-medium">{data.target_deadline_days ? `${data.target_deadline_days} Days` : ''}</span>
+                </label>
+                <div className="flex gap-2 mb-3">
+                  {[30, 60, 90, 180].map(days => (
+                    <button
+                      key={days}
+                      onClick={() => handleUpdate({ target_deadline_days: days })}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                        data.target_deadline_days === days
+                          ? "bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]"
+                          : "bg-[#121E12] border-[#1A2619] text-gray-400 hover:border-gray-700"
+                      }`}
+                    >
+                      {days} Days
+                    </button>
+                  ))}
+                </div>
+                <input 
+                  type="number" 
+                  value={data.target_deadline_days || ""} 
+                  onChange={e => handleUpdate({ target_deadline_days: parseInt(e.target.value) || undefined })}
+                  className="w-full p-3 rounded-xl border border-[#1A2619] bg-[#121E12] text-white focus:border-[#ADFF00]/50 transition-colors outline-none placeholder:text-gray-600 font-bold" 
+                  placeholder="Or enter custom days (e.g. 45)"
+                />
+              </div>
             </div>
 
-            <BottomBar canProceed={!!data.goal && !!data.target_weight} onProceed={handleNext} />
+            <BottomBar canProceed={!!data.goal && !!data.target_weight && !!data.target_deadline_days} onProceed={handleNext} />
           </div>
         );
             case 5:

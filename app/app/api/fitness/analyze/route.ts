@@ -82,12 +82,14 @@ Height: ${data.height ? data.height + 'cm' : 'Not specified'}
 Weight: ${data.weight ? data.weight + 'kg' : 'Not specified'}
 Goal: ${data.goal || 'Not specified'}
 Target Weight: ${data.target_weight ? data.target_weight + 'kg' : 'Not specified'}
+Target Deadline: ${data.target_deadline_days ? `${data.target_deadline_days} days` : 'Not specified'}
 Target Physique: ${data.target_physique || 'Not specified'}
 Fitness Level: ${data.fitness_level || 'Not specified'}
 Training Days: ${data.training_days_per_week || 'Not specified'}
 Training Location: ${data.training_location || 'Not specified'}
 Equipment: ${data.equipment?.join(', ') || 'Not specified'}
 Diet Type: ${data.food_type || 'Not specified'}
+Nutrition Budget: ${data.nutrition_budget || 'Not specified'}
 Allergies: ${data.food_allergies || 'None'}
 Injuries/Health Issues: ${data.physical_problems?.join(', ') || 'None'}
 
