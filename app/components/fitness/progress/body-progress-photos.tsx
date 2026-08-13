@@ -62,17 +62,22 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
           )}
 
           {/* Before Image (Clipped) */}
-          <div 
-            className="absolute inset-0 h-full overflow-hidden pointer-events-none"
-            style={{ width: `${sliderPos}%` }}
-          >
-            {beforeImg ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={beforeImg} alt="First Scan" className="absolute top-0 left-0 h-full object-cover w-[100vw]" style={{ minWidth: '100%', maxWidth: 'none' }} />
-            ) : (
-              <div className="absolute top-0 left-0 w-screen h-full bg-[#111A10] flex items-center justify-center text-white/20 text-xs font-bold uppercase tracking-widest">No Image</div>
-            )}
-          </div>
+          {beforeImg ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img 
+              src={beforeImg} 
+              alt="First Scan" 
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none" 
+              style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
+            />
+          ) : (
+            <div 
+              className="absolute inset-0 flex items-center justify-center bg-[#111A10] text-white/20 text-xs font-bold uppercase tracking-widest pointer-events-none" 
+              style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
+            >
+              No Image
+            </div>
+          )}
 
           {/* Slider Handle */}
           <div 
