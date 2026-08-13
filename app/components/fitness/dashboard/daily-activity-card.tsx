@@ -34,21 +34,7 @@ export function DailyActivityCard({ lifestyle, workoutCompleted = false, premium
           <h3 className="text-sm font-semibold tracking-wide text-white/90 uppercase">Today</h3>
         </div>
 
-        {premiumLevel === "core" ? (
-          <div className="flex flex-col items-center justify-center p-4 text-center">
-            <Activity className="w-8 h-8 text-white/20 mb-2" />
-            <h4 className="text-sm font-bold text-white mb-1">Advanced Tracking Locked</h4>
-            <p className="text-[10px] text-white/50 max-w-[200px] mb-3">
-              Upgrade to Pro for Water, Sleep, and automated activity tracking.
-            </p>
-            <Link href="/fitness/payment?returnTo=/fitness">
-              <button className="bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 text-[#ADFF00] text-[10px] font-black uppercase px-4 py-2 rounded-full border border-[#ADFF00]/20 transition-all flex items-center gap-1.5">
-                Unlock Pro Tracking
-              </button>
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
             
             {/* Steps */}
             <div 
@@ -117,7 +103,6 @@ export function DailyActivityCard({ lifestyle, workoutCompleted = false, premium
             </div>
 
           </div>
-        )}
       </div>
     </motion.div>
   );
