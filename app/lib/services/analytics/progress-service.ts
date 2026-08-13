@@ -32,19 +32,19 @@ export class ProgressAnalyticsService {
     const nowStr = now.toISOString();
 
     // 1. Profile Data
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('created_at, target_weight, current_weight, starting_weight')
-      .eq('id', userId)
-      .single();
+    const { data: fitProfile } = await supabase
+      .from('fitness_os_profiles')
+      .select('created_at, target_weight, weight')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    const createdDate = profile?.created_at ? new Date(profile.created_at) : new Date();
+    const createdDate = fitProfile?.created_at ? new Date(fitProfile.created_at) : new Date();
     const transformationDay = Math.max(1, Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)));
     
     // Fallback: Calculate starting weight from first body metrics if missing
-    let startW = profile?.starting_weight || null;
-    let currW = profile?.current_weight || null;
-    const targetW = profile?.target_weight || null;
+    let startW = fitProfile?.weight || null;
+    let currW = null;
+    const targetW = fitProfile?.target_weight || null;
 
     // 2. Fetch Body Metrics
     let bodyMetrics: any[] = [];
