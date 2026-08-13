@@ -35,7 +35,11 @@ The user is performing: ${workout.name}.
 Write a single, highly motivating and technical 1-2 sentence tip (under 120 characters) focused on form, intensity, or breathing.
 Example: "Keep your core tight and control the negative on every rep to maximize hypertrophy."`;
 
-      note = await generateAIResponse({ userPrompt: prompt, model: "fast" });
+      note = await generateAIResponse({ 
+        systemPrompt: "You are an elite AI fitness coach analyzing workout performance.",
+        userPrompt: prompt, 
+        model: "fast" 
+      });
     } catch (e) {
       console.error("Groq generation failed for AI Coach Note:", e);
       // Fail gracefully
