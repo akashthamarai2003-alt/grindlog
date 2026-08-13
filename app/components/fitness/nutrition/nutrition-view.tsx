@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check } from "lucide-react";
-import { getFoodImage, DEFAULT_FOOD_IMAGE } from "@/lib/utils/food-images";
+import { getFoodImage, getFoodSvgAvatar } from "@/lib/utils/food-images";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
 import { toast } from "sonner";
@@ -344,7 +344,7 @@ export function NutritionView() {
                               <img 
                                 src={getFoodImage(f.foods?.name, f.foods?.category, f.foods?.image_url)} 
                                 alt={f.foods?.name || 'Food'} 
-                                onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_FOOD_IMAGE; }}
+                                onError={(e) => { (e.target as HTMLImageElement).src = getFoodSvgAvatar(f.foods?.name); }}
                                 className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
                               />
                               <div>
@@ -362,7 +362,7 @@ export function NutritionView() {
                               <img 
                                 src={getFoodImage(item.foods?.name, item.foods?.category, item.foods?.image_url)} 
                                 alt={item.foods?.name || 'Food'} 
-                                onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_FOOD_IMAGE; }}
+                                onError={(e) => { (e.target as HTMLImageElement).src = getFoodSvgAvatar(item.foods?.name); }}
                                 className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
                               />
                               <div>
