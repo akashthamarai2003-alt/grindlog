@@ -334,7 +334,7 @@ export function NutritionView() {
                       )}
                     </ul>
                   </div>
-                  
+                  <div className="flex gap-2">
                     <button 
                       onClick={() => handleSwapMeal(meal.meal_type)} 
                       className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 transition-all flex justify-center items-center gap-2 cursor-pointer"
