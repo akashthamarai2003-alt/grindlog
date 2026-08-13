@@ -5,7 +5,7 @@
  */
 
 // 1. Map of specific Unsplash photos
-const EXACT_FOOD_IMAGE_MAP: Record<string, string> = {
+const FOOD_PHOTO_MAP: Record<string, string> = {
   // Indian Tiffin & Breakfast
   "poha": "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=300&auto=format&fit=crop&q=80",
   "upma": "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=300&auto=format&fit=crop&q=80",
