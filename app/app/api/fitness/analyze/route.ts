@@ -260,6 +260,7 @@ Output ONLY valid JSON matching this schema.`;
           exercise_limitations: data.exercise_limitations,
           medical_guidance: data.medical_guidance,
           additional_health_notes: data.additional_health_notes,
+          safety_acknowledged: data.safety_acknowledged,
           
           // Computed Data
           bmi,

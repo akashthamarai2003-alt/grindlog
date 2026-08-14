@@ -51,5 +51,42 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
     }
   }
 
+  // 4. Physical Limitation Safety (Basic Keyword Checks)
+  const limitations = (profile.exercise_limitations || []).map(l => l.toLowerCase());
+  
+  if (limitations.length > 0 && !limitations.includes("none")) {
+    for (const workout of plan.workouts) {
+      for (const exercise of workout.exercises) {
+        const name = exercise.name.toLowerCase();
+        
+        // Basic mapping of limitations to common exercise keywords
+        if (limitations.includes("squatting") && (name.includes("squat") || name.includes("leg press"))) {
+          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Squatting.` };
+        }
+        if (limitations.includes("running") && (name.includes("run") || name.includes("treadmill") || name.includes("sprint") || name.includes("jog"))) {
+          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Running.` };
+        }
+        if (limitations.includes("jumping") && (name.includes("jump") || name.includes("plyo") || name.includes("box") || name.includes("burpee"))) {
+          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Jumping.` };
+        }
+        if (limitations.includes("overhead movements") && (name.includes("overhead") || name.includes("military press") || name.includes("shoulder press") || name.includes("push press"))) {
+          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Overhead movements.` };
+        }
+        if (limitations.includes("push-ups") && name.includes("push-up")) {
+          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Push-ups.` };
+        }
+        if (limitations.includes("pull-ups") && (name.includes("pull-up") || name.includes("chin-up"))) {
+          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Pull-ups.` };
+        }
+        if (limitations.includes("lunges") && name.includes("lunge")) {
+          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Lunges.` };
+        }
+        if (limitations.includes("bending") && (name.includes("deadlift") || name.includes("good morning") || name.includes("bent"))) {
+          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Bending.` };
+        }
+      }
+    }
+  }
+
   return { safe: true };
 }
