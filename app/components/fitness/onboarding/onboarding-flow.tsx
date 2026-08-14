@@ -1387,47 +1387,29 @@ case 11:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader 
-              title="Target Physique & Body Scan" 
-              subtitle="Select your goal physique and show your AI coach where you're starting." 
+              title="AI Body Scan & Goal Physique" 
+              subtitle="Show your AI coach where you're starting and choose what you want to achieve." 
             />
             
             <div className="space-y-8">
-              {/* Target Physique Choice */}
+              {/* 1. CURRENT BODY SCAN PHOTOS */}
               <div>
-                <label className="block text-xs font-bold text-[#ADFF00] mb-3 uppercase tracking-wider">Target Physique Preference</label>
-                <div className="space-y-3">
-                  {[
-                    "Lean Athletic",
-                    "Muscular",
-                    "Six Pack",
-                    "Men's Physique",
-                    "Bodybuilder",
-                    "Sporty",
-                    "Strong & Functional"
-                  ].map(opt => (
-                    <OptionCard
-                      key={opt}
-                      title={opt}
-                      selected={data.target_physique === opt}
-                      onClick={() => handleUpdate({ target_physique: opt as any })}
-                    />
-                  ))}
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-0.5 rounded-full border border-[#ADFF00]/20 uppercase tracking-wider">Step 1</span>
+                  <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">Current Body Scan Photos</h3>
                 </div>
-              </div>
+                <p className="text-xs text-gray-400 mb-4">Upload photos for AI body fat, posture, and muscle distribution analysis.</p>
 
-              {/* Current Body Scan Photos */}
-              <div className="pt-4 border-t border-[#1A2619]">
-                <label className="block text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Current Body Scan Photos (Optional)</label>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: "FRONT", field: "body_scan_front" },
+                    { label: "FRONT VIEW", field: "body_scan_front" },
                     { label: "LEFT SIDE", field: "body_scan_left" },
                     { label: "RIGHT SIDE", field: "body_scan_right" },
-                    { label: "BACK", field: "body_scan_back" },
+                    { label: "BACK VIEW", field: "body_scan_back" },
                   ].map(item => (
                     <div key={item.field} className="relative">
-                      <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider text-center">{item.label}</label>
-                      <div className={`w-full aspect-[3/4] rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
+                      <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider text-center">{item.label}</label>
+                      <div className={`w-full aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
                         <input type="file" accept="image/*" onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
@@ -1437,13 +1419,13 @@ case 11:
                           }
                         }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                         {(data as any)[item.field] ? (
-                          <img src={(data as any)[item.field]} className="w-full h-full object-cover" />
+                          <img src={(data as any)[item.field]} className="w-full h-full object-cover rounded-xl" />
                         ) : (
                           <>
-                            <div className="w-8 h-8 bg-[#1A2619] rounded-full flex items-center justify-center mb-2">
-                              <User className="w-4 h-4 text-gray-400" />
+                            <div className="w-9 h-9 bg-[#1A2619] rounded-full flex items-center justify-center mb-2 text-[#ADFF00]">
+                              <User className="w-4 h-4" />
                             </div>
-                            <span className="text-xs font-semibold text-gray-300">+ Upload</span>
+                            <span className="text-xs font-bold text-gray-300">+ Upload</span>
                           </>
                         )}
                       </div>
@@ -1452,62 +1434,135 @@ case 11:
                 </div>
               </div>
 
-              {/* Goal Inspiration Photo */}
-              <div className="pt-4 border-t border-[#1A2619]">
-                <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Inspiration Photo (Optional)</label>
-                <p className="text-xs text-gray-500 mb-3">Upload a photo of your goal physique for AI comparison.</p>
-                <div className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
-                  <input type="file" accept="image/*" onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (ev) => handleUpdate({ body_scan_inspiration: ev.target?.result as string, goal_physique_image: ev.target?.result as string });
-                      reader.readAsDataURL(file);
-                    }
-                  }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                  {data.body_scan_inspiration || data.goal_physique_image ? (
-                    <img src={data.body_scan_inspiration || data.goal_physique_image} className="w-full h-full object-cover" />
-                  ) : (
-                    <>
-                      <div className="w-10 h-10 bg-[#1A2619] rounded-full flex items-center justify-center mb-2">
-                        <User className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-300">+ Upload Inspiration Photo</span>
-                    </>
-                  )}
+              {/* 2. GOAL PHYSIQUE TARGET SECTION */}
+              <div className="pt-6 border-t border-[#1A2619] space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-0.5 rounded-full border border-[#ADFF00]/20 uppercase tracking-wider">Step 2</span>
+                    <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">Your Goal Physique Target</h3>
+                  </div>
+                  <p className="text-xs text-gray-400">Upload your goal inspiration photo <b>OR</b> select a target physique model below.</p>
+                </div>
+
+                {/* Option A: Inspiration Photo Upload */}
+                <div className="bg-[#0D150D] border border-[#1A2619] p-4 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-300 flex items-center gap-1.5">
+                      <span>📸</span> Goal Inspiration Photo <span className="text-gray-500 font-normal">(Optional)</span>
+                    </span>
+                    {(data.body_scan_inspiration || data.goal_physique_image) && (
+                      <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/30">Uploaded</span>
+                    )}
+                  </div>
+                  <div className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => handleUpdate({ body_scan_inspiration: ev.target?.result as string, goal_physique_image: ev.target?.result as string });
+                        reader.readAsDataURL(file);
+                      }
+                    }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                    {data.body_scan_inspiration || data.goal_physique_image ? (
+                      <img src={data.body_scan_inspiration || data.goal_physique_image} className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 bg-[#1A2619] rounded-full flex items-center justify-center mb-2 text-[#ADFF00]">
+                          <User className="w-5 h-5" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-300">+ Click to Upload Goal Inspiration Photo</span>
+                        <span className="text-[10px] text-gray-500 mt-0.5">Celebrity, athlete, or physique model photo</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 my-2">
+                  <div className="flex-1 h-px bg-[#1A2619]" />
+                  <span className="text-xs font-black text-gray-500 uppercase tracking-widest">OR SELECT A MODEL PRESET</span>
+                  <div className="flex-1 h-px bg-[#1A2619]" />
+                </div>
+
+                {/* Option B: Target Physique Picture Cards */}
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Select Target Physique Type</label>
+                  <div className="space-y-3">
+                    {[
+                      { id: "Lean Athletic", icon: "⚡", tag: "Low Fat & Toned", desc: "Low body fat, defined core & lean athletic conditioning" },
+                      { id: "Muscular", icon: "💪", tag: "High Muscle Mass", desc: "Solid muscle mass, broad chest, biceps & powerful build" },
+                      { id: "Six Pack", icon: "🔥", tag: "Shredded Core", desc: "Defined 6-pack abs, tight waist & sculpted upper body" },
+                      { id: "Men's Physique", icon: "🏆", tag: "Aesthetic V-Taper", desc: "Classic V-taper, wide lats & aesthetic proportions" },
+                      { id: "Bodybuilder", icon: "🏋️", tag: "Maximum Mass", desc: "Maximum muscle volume, thickness & hyper-density" },
+                      { id: "Sporty", icon: "🏃", tag: "Agile & Active", desc: "Functional, energetic, fit & overall athletic endurance" },
+                      { id: "Strong & Functional", icon: "⚙️", tag: "Power & Strength", desc: "Thick core, heavy lifting build & functional strength" }
+                    ].map(opt => {
+                      const isSelected = data.target_physique === opt.id;
+                      return (
+                        <motion.button
+                          key={opt.id}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          onClick={() => handleUpdate({ target_physique: opt.id as any })}
+                          className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                            isSelected 
+                              ? "border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_20px_rgba(173,255,0,0.15)]" 
+                              : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${
+                              isSelected ? "bg-[#ADFF00] text-black font-black" : "bg-[#121E12] border border-[#1A2619] text-gray-300"
+                            }`}>
+                              {opt.icon}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className={`font-extrabold text-base ${isSelected ? "text-[#ADFF00]" : "text-white"}`}>{opt.id}</h4>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                  isSelected ? "bg-[#ADFF00]/20 text-[#ADFF00] border-[#ADFF00]/30" : "bg-[#1A2619] text-gray-400 border-gray-800"
+                                }`}>
+                                  {opt.tag}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-400 mt-0.5 font-medium leading-normal">{opt.desc}</p>
+                            </div>
+                          </div>
+
+                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 ml-3 ${
+                            isSelected ? "bg-[#ADFF00] border-[#ADFF00] text-black" : "border-gray-700"
+                          }`}>
+                            {isSelected && <Check size={14} strokeWidth={3} />}
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-[#121E12] border border-[#1A2619] rounded-xl p-4 space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Info size={16} className="text-[#ADFF00]" />
-                  <span className="text-sm font-semibold text-white">Photo Instructions</span>
+              {/* Photo Privacy Note */}
+              <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-4 text-center space-y-2">
+                <div className="flex items-center justify-center gap-2 text-xs font-semibold text-gray-300">
+                  <Info size={14} className="text-[#ADFF00]" />
+                  <span>Your photos are encrypted & private</span>
                 </div>
-                <ul className="text-xs text-gray-400 space-y-2">
-                  <li className="flex items-center gap-2"><span>✅</span> Full body in natural standing position</li>
-                  <li className="flex items-center gap-2"><span>✅</span> Good lighting & plain background</li>
-                  <li className="flex items-center gap-2"><span>✅</span> Camera at approx waist/chest height</li>
-                  <li className="flex items-center gap-2"><span>❌</span> Don't flex</li>
-                </ul>
-              </div>
-
-              <div className="text-center px-4 space-y-3">
                 <p className="text-[11px] text-gray-500 leading-relaxed">
-                  Your photos are private and are only used according to your selected AI analysis and privacy settings.
+                  Used solely by Groq Vision AI to analyze body composition, posture, and timeframe projections.
                 </p>
                 <button 
                   onClick={handleNext}
-                  className="text-xs font-bold text-[#ADFF00] hover:underline"
+                  className="text-xs font-bold text-[#ADFF00] hover:underline block mx-auto pt-1"
                 >
-                  Skip photo upload & continue →
+                  Skip photos and analyze profile →
                 </button>
               </div>
 
             </div>
+
             <BottomBar 
-              canProceed={Boolean(data.target_physique)} 
+              canProceed={Boolean(data.target_physique || data.goal_physique_image || data.body_scan_inspiration || data.body_scan_front)} 
               onProceed={handleNext} 
-              label="Analyze" 
+              label="Analyze & Generate Plan" 
             />
           </div>
         );
