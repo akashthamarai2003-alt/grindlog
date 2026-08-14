@@ -762,13 +762,36 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-1">Preferred Time for Auto Reminder</label>
+                <label className="block text-sm font-semibold text-gray-300 mb-3">Preferred Time of Day</label>
+                <div className="grid grid-cols-2 gap-3 mb-8">
+                  {["Morning", "Afternoon", "Evening", "Night"].map(opt => (
+                    <button 
+                      key={opt}
+                      onClick={() => handleUpdate({ preferred_training_time: opt })}
+                      className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
+                        data.preferred_training_time === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-sm">{opt}</span>
+                    </button>
+                  ))}
+                  <button 
+                      onClick={() => handleUpdate({ preferred_training_time: "Anytime" })}
+                      className={`col-span-2 py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
+                        data.preferred_training_time === "Anytime" ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-sm">Anytime</span>
+                  </button>
+                </div>
+
+                <label className="block text-sm font-semibold text-gray-300 mb-1">Exact Auto-Reminder <span className="text-gray-500 font-normal">(Optional)</span></label>
                 <p className="text-xs text-gray-500 mb-3">We'll remind you exactly at this time to crush your workout.</p>
                 <div className="relative">
                   <input 
                     type="time"
-                    value={data.preferred_training_time || ""} 
-                    onChange={e => handleUpdate({ preferred_training_time: e.target.value })}
+                    value={data.workout_time || ""} 
+                    onChange={e => handleUpdate({ workout_time: e.target.value })}
                     className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </div>
