@@ -138,9 +138,10 @@ Generate a comprehensive Transformation Strategy JSON containing exactly these t
     - "achievable_in_timeframe": (array of strings) 3-5 realistic accomplishments achievable within their requested timeframe.
 - "budget_breakdown": (object) Detail how their budget aligns with extra food costs:
     - "monthly_budget": (string) E.g. "₹2,000/month".
-    - "recommended_add_ons": (array of exactly 4 objects with fields "item", "daily_qty", "daily_cost", "monthly_cost", "protein_provided_g"). E.g. [{"item": "Boiled Eggs", "daily_qty": "6 eggs", "daily_cost": "₹36", "monthly_cost": "₹1080", "protein_provided_g": "36g"}]. Must generate exactly 4 cheap, high-protein add-ons (e.g. eggs, soya chunks, roasted chana, peanuts).
+    - "recommended_add_ons": (array of exactly 4 objects with fields "item", "daily_qty", "daily_cost", "monthly_cost", "protein_provided_g").
     - "total_estimated_monthly_cost": (string) E.g. "₹2,100/month".
-    - "budget_verdict": (string) Explanation of how it fits their food environment (PG/Hostel/Home) and budget.
+    - "budget_verdict": (string) Explanation of how it fits their food environment and budget.
+    CRITICAL BUDGET RULE: The mathematically calculated sum of the 4 items' "monthly_cost" MUST strictly be equal to or less than their requested Nutrition Budget (${data.nutrition_budget || 'Not specified'}). Do NOT exceed their budget. If their budget is extremely low (e.g. ₹0–1,000), drastically lower the "daily_qty" of the items to ensure the total monthly cost stays under ₹1,000!
 - "timeline_projection": (array of objects with fields "timeframe" (e.g. "Week 1-2", "Week 3-4"), "target_weight_kg" (string or number), "expected_changes" (string)).
 Output ONLY valid JSON matching this schema.`;
 
