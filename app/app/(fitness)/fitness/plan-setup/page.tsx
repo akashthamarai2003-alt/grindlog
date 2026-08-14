@@ -11,6 +11,7 @@ export default function PlanSetupPage() {
   const router = useRouter();
   const [planData, setPlanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   
   const [selectedDay, setSelectedDay] = useState(0); // 0 = Mon, 6 = Sun
   const [activeTab, setActiveTab] = useState<"workout" | "diet" | "grocery">("workout");
@@ -29,6 +30,7 @@ export default function PlanSetupPage() {
         if (res.success) {
           setPlanData(res.data);
         } else {
+          setGenerationError(res.error || "Failed to generate plan");
           toast.error(res.error || "Failed to generate plan");
         }
         setLoading(false);
@@ -108,9 +110,42 @@ export default function PlanSetupPage() {
   if (!planData) {
     return (
       <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center p-6 text-center">
-        <AlertTriangle size={48} className="text-red-500 mb-4" />
-        <h2 className="text-2xl font-bold">Failed to load plan</h2>
-        <button onClick={() => window.location.reload()} className="mt-6 px-6 py-3 bg-[#ADFF00] text-black font-bold rounded-full">Try Again</button>
+        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/20">
+          <AlertTriangle size={32} className="text-red-500" />
+        </div>
+        <h2 className="text-2xl font-black mb-3">AI Safety Reject</h2>
+        
+        {generationError ? (
+          <div className="bg-[#121E12] border border-red-500/30 p-4 rounded-2xl mb-6 max-w-sm">
+            <p className="text-sm text-red-400 font-semibold mb-2">Our backend safety validator blocked the AI from generating a dangerous plan.</p>
+            <p className="text-xs text-gray-300">{generationError}</p>
+          </div>
+        ) : (
+          <p className="text-gray-400 mb-6">Failed to load plan data.</p>
+        )}
+        
+        <button 
+          onClick={() => {
+            setLoading(true);
+            setGenerationError(null);
+            // Trigger a fresh generation
+            fetch('/api/fitness-ai/generate-draft', { method: 'POST' })
+              .then(res => res.json())
+              .then(res => {
+                if (res.success) setPlanData(res.data);
+                else setGenerationError(res.error || "Failed to generate plan");
+                setLoading(false);
+              })
+              .catch(() => {
+                setGenerationError("Network error");
+                setLoading(false);
+              });
+          }} 
+          className="px-8 py-3 bg-[#ADFF00] text-black font-extrabold rounded-full flex items-center gap-2 hover:bg-[#c4ff33] transition-colors"
+        >
+          <span>Force AI to Try Again</span>
+          <ArrowRight size={16} />
+        </button>
       </div>
     );
   }
