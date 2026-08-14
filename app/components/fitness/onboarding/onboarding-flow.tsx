@@ -603,7 +603,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     id: "Gym", 
                     emoji: "🏋️", 
                     desc: "Commercial Gym (Barbells, Dumbbells, Machines, Cables & Cardio)",
-                    defaultEq: ["Full Commercial Gym", "Barbells", "Dumbbells", "Cable Machines", "Squat Rack", "Treadmill / Cardio"]
+                    defaultEq: ["Full Commercial Gym", "Barbells", "Dumbbells", "Cable Machines", "Machines", "Squat Rack", "Bench", "Treadmill / Cardio"]
                   },
                   { 
                     id: "Home", 
@@ -701,12 +701,20 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                                 newEq = newEq.filter(e => e !== "No Equipment / Bodyweight");
                                 if (isSelected) {
                                   newEq = newEq.filter(e => e !== opt);
+                                  if (opt === "Full Commercial Gym") {
+                                    newEq = [];
+                                  }
                                 } else {
                                   newEq.push(opt);
+                                  if (opt === "Full Commercial Gym") {
+                                    newEq = ["Full Commercial Gym", "Barbells", "Dumbbells", "Cable Machines", "Machines", "Squat Rack", "Bench", "Treadmill / Cardio"];
+                                  }
                                 }
                               }
-                              if (newEq.length === 0) newEq = [opt];
-                              handleUpdate({ equipment: newEq });
+                              if (newEq.length === 0 && opt !== "Full Commercial Gym") {
+                                newEq = [opt];
+                              }
+                              handleUpdate({ equipment: Array.from(new Set(newEq)) });
                             }}
                             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
                               isSelected 
