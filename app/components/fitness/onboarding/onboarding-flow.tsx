@@ -762,19 +762,16 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-3">Preferred Time</label>
-                <select 
-                  value={data.preferred_training_time || ""} 
-                  onChange={e => handleUpdate({ preferred_training_time: e.target.value })}
-                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none appearance-none"
-                >
-                  <option value="" disabled className="text-gray-500">Select time</option>
-                  <option value="Morning">Morning</option>
-                  <option value="Afternoon">Afternoon</option>
-                  <option value="Evening">Evening</option>
-                  <option value="Night">Night</option>
-                  <option value="Anytime">Anytime</option>
-                </select>
+                <label className="block text-sm font-semibold text-gray-300 mb-1">Preferred Time for Auto Reminder</label>
+                <p className="text-xs text-gray-500 mb-3">We'll remind you exactly at this time to crush your workout.</p>
+                <div className="relative">
+                  <input 
+                    type="time"
+                    value={data.preferred_training_time || ""} 
+                    onChange={e => handleUpdate({ preferred_training_time: e.target.value })}
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                  />
+                </div>
               </div>
             </div>
             <BottomBar 
