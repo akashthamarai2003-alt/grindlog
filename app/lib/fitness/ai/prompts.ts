@@ -65,7 +65,16 @@ Instructions:
 1. Generate a 'plan' object with a highly motivating name, description, and goal.
 2. Generate an array of 'workouts' matching my 'training_days_per_week'. Each workout should have a 'workout_date' (YYYY-MM-DD) distributed across the next 7 days, starting from ${todayDateStr}.
 3. Generate 'exercises' for each workout that fit within my ${profile.workout_duration_minutes} minute duration and match my ${profile.training_location} / ${Array.isArray(profile.equipment) ? profile.equipment.join(", ") : "None"} constraints. 
-   - CRITICAL SAFETY RULE: You MUST strictly respect all my 'Physical Problems', 'Exercise Limitations', 'Previous Injuries', and 'Medical Guidance'. Do NOT prescribe movements that I cannot comfortably perform (e.g. if I cannot perform 'Squatting', do not prescribe Barbell Squats). Adapt the workout to be 100% safe for my specific injury profile. If I report high pain severity, prescribe very gentle rehab/mobility work.
+   - CRITICAL SAFETY RULE: You MUST strictly respect all my 'Physical Problems', 'Exercise Limitations', 'Previous Injuries', and 'Medical Guidance'. Do NOT prescribe movements that I cannot comfortably perform. You must strictly obey these mapping rules to prevent safety rejection:
+     - If limitation includes 'Squatting', do NOT prescribe any squats OR 'leg press'.
+     - If limitation includes 'Running', do NOT prescribe running, jogging, sprinting, or treadmill.
+     - If limitation includes 'Jumping', do NOT prescribe jumping, plyometrics, box jumps, or burpees.
+     - If limitation includes 'Overhead movements', do NOT prescribe overhead press, military press, shoulder press, or push press.
+     - If limitation includes 'Push-ups', do NOT prescribe any push-ups.
+     - If limitation includes 'Pull-ups', do NOT prescribe pull-ups or chin-ups.
+     - If limitation includes 'Lunges', do NOT prescribe any lunges.
+     - If limitation includes 'Bending', do NOT prescribe deadlifts, good mornings, or bent-over rows.
+     Adapt the workout to be 100% safe for my specific injury profile. If I report high pain severity, prescribe very gentle rehab/mobility work.
 4. Generate 'nutrition' providing a safe daily_calories target and protein_grams. Create a 'meals' array reflecting my ${profile.meals_per_day || "3 meals"} preference. For each meal, provide specific, realistic food items that fit my Budget (${profile.nutrition_budget || "Not specified"}), Diet (${profile.food_type || profile.diet_preference}), and Lifestyle (${profile.lifestyle_description}). 
    - CRITICAL FOOD ENVIRONMENT RULE: If Food Environment is 'PG', 'Hostel', or 'Office/Canteen', DO NOT assume I can cook complex recipes! State that I should eat whatever carb/meal is provided at the PG/hostel (e.g. Idli, Upma, Dosa, Rice, Sambar), and ADD low-cost/no-cook protein add-ons (such as 4 boiled eggs, 50g roasted chana, peanuts, curd, or soya) to hit protein targets without exceeding my budget.
    - Ensure prep_instructions are practical. Strictly avoid my allergies (${profile.food_allergies || "None"}) and disliked/avoided foods (${[profile.foods_disliked, profile.foods_avoided].filter(Boolean).join(", ") || "None"}).
