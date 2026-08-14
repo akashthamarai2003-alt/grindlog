@@ -44,8 +44,10 @@ User Profile:
 - Allergies: ${profile.food_allergies || "None"}
 - Disliked/Avoided Foods: ${[profile.foods_disliked, profile.foods_avoided].filter(Boolean).join(", ") || "None"}
 - Meals per day: ${profile.meals_per_day || "3 meals"}
-- Activity Level: ${profile.activity_level}
-- Sleep Target: ${profile.sleep_duration} hours
+- Activity Level: ${profile.activity_level || "Not specified"}
+- Daily Steps: ${profile.daily_steps || "Not specified"}
+- Current Sleep Duration: ${profile.sleep_duration || "Not specified"}
+- Daily Schedule: Wake up at ${profile.wake_time || "N/A"}, Work/College at ${profile.work_time || "N/A"}, Workout at ${profile.workout_time || profile.preferred_training_time || "N/A"}, Sleep at ${profile.sleep_time || "N/A"}
 - Lifestyle Context: ${profile.lifestyle_description || "N/A"}
 
 ${geminiAnalysis ? `AI Body Scan Analysis (Gemini Vision):\n${geminiAnalysis}\n` : ''}
@@ -59,7 +61,7 @@ Instructions:
    - CRITICAL FOOD ENVIRONMENT RULE: If Food Environment is 'PG', 'Hostel', or 'Office/Canteen', DO NOT assume I can cook complex recipes! State that I should eat whatever carb/meal is provided at the PG/hostel (e.g. Idli, Upma, Dosa, Rice, Sambar), and ADD low-cost/no-cook protein add-ons (such as 4 boiled eggs, 50g roasted chana, peanuts, curd, or soya) to hit protein targets without exceeding my budget.
    - Ensure prep_instructions are practical. Strictly avoid my allergies (${profile.food_allergies || "None"}) and disliked/avoided foods (${[profile.foods_disliked, profile.foods_avoided].filter(Boolean).join(", ") || "None"}).
 5. Generate a practical monthly 'grocery_list' based directly on the generated nutrition plan. Prioritize foods already available to me (${Array.isArray(profile.available_foods) ? profile.available_foods.join(", ") : "None"}). Do not recommend purchasing foods already provided by my ${profile.food_environment} environment. Respect my monthly food budget (${profile.nutrition_budget || "Not specified"}). Quantities should represent realistic approximately 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.
-6. Generate 'lifestyle' targets suitable for my profile.
+6. Generate 'lifestyle' targets suitable for my profile. If a 'Daily Schedule' is provided (Wake, Work, Workout, Sleep times), tailor the lifestyle advice, meal timings, and workout timing to fit seamlessly into that specific schedule.
 
 Respond entirely in JSON format matching this exact schema:
 {

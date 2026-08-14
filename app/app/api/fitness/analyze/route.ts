@@ -242,6 +242,12 @@ Output ONLY valid JSON matching this schema.`;
           foods_avoided: data.foods_avoided,
           nutrition_budget: data.nutrition_budget,
           activity_level: data.activity_level,
+          daily_steps: data.daily_steps,
+          sleep_duration: data.sleep_duration,
+          wake_time: data.wake_time,
+          workout_time: data.workout_time,
+          work_time: data.work_time,
+          sleep_time: data.sleep_time,
           lifestyle_description: data.lifestyle_description,
           
           // Computed Data
