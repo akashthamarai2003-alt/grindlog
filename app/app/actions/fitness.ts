@@ -45,6 +45,7 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     }
 
     const activityMultipliers: Record<string, number> = {
+      "Mostly sitting": 1.2,
       "Mostly sedentary": 1.2,
       "Lightly active": 1.375,
       "Moderately active": 1.55,
@@ -52,6 +53,21 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     };
     const multiplier = validData.activity_level ? (activityMultipliers[validData.activity_level] || 1.2) : 1.2;
     baseline_calories = Math.round(bmr * multiplier);
+  }
+
+  let estimated_body_fat = null;
+  if (validData.height && validData.waist_cm) {
+    if (validData.gender === "Female") {
+      const logVal = Math.log10(validData.waist_cm + (validData.waist_cm + 15) - 35);
+      const logHeight = Math.log10(validData.height);
+      estimated_body_fat = Math.max(10, Math.min(50, parseFloat((495 / (1.29579 - 0.35004 * logVal + 0.22100 * logHeight) - 450).toFixed(1))));
+    } else {
+      const neck = 38;
+      const diff = Math.max(10, validData.waist_cm - neck);
+      const logDiff = Math.log10(diff);
+      const logHeight = Math.log10(validData.height);
+      estimated_body_fat = Math.max(5, Math.min(50, parseFloat((495 / (1.0324 - 0.19077 * logDiff + 0.15456 * logHeight) - 450).toFixed(1))));
+    }
   }
 
   let initial_protein_target = null;

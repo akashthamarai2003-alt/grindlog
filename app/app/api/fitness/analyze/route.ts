@@ -70,6 +70,28 @@ export async function POST(req: Request) {
       }
     }
 
+    // Calculate baseline math metrics (BMI, Body Fat %, BMR)
+    let bmi = null;
+    if (data.height && data.weight) {
+      const heightInMeters = data.height / 100;
+      bmi = parseFloat((data.weight / (heightInMeters * heightInMeters)).toFixed(1));
+    }
+
+    let estimated_body_fat = null;
+    if (data.height && data.waist_cm) {
+      if (data.gender === "Female") {
+        const logVal = Math.log10(data.waist_cm + (data.waist_cm + 15) - 35);
+        const logHeight = Math.log10(data.height);
+        estimated_body_fat = Math.max(10, Math.min(50, parseFloat((495 / (1.29579 - 0.35004 * logVal + 0.22100 * logHeight) - 450).toFixed(1))));
+      } else {
+        const neck = 38;
+        const diff = Math.max(10, data.waist_cm - neck);
+        const logDiff = Math.log10(diff);
+        const logHeight = Math.log10(data.height);
+        estimated_body_fat = Math.max(5, Math.min(50, parseFloat((495 / (1.0324 - 0.19077 * logDiff + 0.15456 * logHeight) - 450).toFixed(1))));
+      }
+    }
+
     // Now, call Groq Text for the final strategy
     console.log("Generating fitness reasoning...");
     let aiStrategy = {};
@@ -80,10 +102,16 @@ Gender: ${data.gender || 'Not specified'}
 Age: ${data.age || 'Not specified'}
 Height: ${data.height ? data.height + 'cm' : 'Not specified'}
 Weight: ${data.weight ? data.weight + 'kg' : 'Not specified'}
+Waist: ${data.waist_cm ? data.waist_cm + 'cm' : 'Not specified'}
+Chest: ${data.chest_cm ? data.chest_cm + 'cm' : 'Not specified'}
+Arm: ${data.arm_cm ? data.arm_cm + 'cm' : 'Not specified'}
+Thigh: ${data.thigh_cm ? data.thigh_cm + 'cm' : 'Not specified'}
+Calculated BMI: ${bmi || 'Not computed'}
+Formula Estimated Body Fat % (US Navy Method): ${estimated_body_fat ? estimated_body_fat + '%' : 'Not computed (Waist measurement missing)'}
 Goal: ${data.goal || 'Not specified'}
 Target Weight: ${data.target_weight ? data.target_weight + 'kg' : 'Not specified'}
 Target Deadline: ${data.target_deadline_days ? `${data.target_deadline_days} days` : 'Not specified'}
-Target Physique: ${data.target_physique || 'Not specified'}
+Target Physique Preference: ${data.target_physique || 'Not specified'}
 Fitness Level: ${data.fitness_level || 'Not specified'}
 Training Days: ${data.training_days_per_week || 'Not specified'}
 Training Location: ${data.training_location || 'Not specified'}
@@ -95,7 +123,7 @@ Available Foods: ${data.available_foods?.join(', ') || 'None specified'}
 Allergies: ${data.food_allergies || 'None'}
 Injuries/Health Issues: ${data.physical_problems?.join(', ') || 'None'}
 
-Visual Observations (from our Vision AI):
+Visual Observations (from our Groq Vision AI on uploaded body scan & goal inspiration photos):
 ${visualObservations}
 
 Generate a comprehensive Transformation Strategy JSON containing exactly these top-level keys:
@@ -132,13 +160,6 @@ Output ONLY valid JSON matching this schema.`;
     } catch (err) {
       console.error("Groq Reasoning API Error:", err);
       aiStrategy = { error: "Failed to generate strategy." };
-    }
-
-    // Now calculate baseline data
-    let bmi = null;
-    if (data.height && data.weight) {
-      const heightInMeters = data.height / 100;
-      bmi = parseFloat((data.weight / (heightInMeters * heightInMeters)).toFixed(1));
     }
 
     let baseline_calories = null;
