@@ -442,6 +442,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
               {[
                 { id: "Lose Fat", emoji: "🔥" },
                 { id: "Build Muscle", emoji: "💪" },
+                { id: "Gain Weight", emoji: "📈" },
                 { id: "Lose Fat + Build Muscle", emoji: "🔥💪" },
                 { id: "Build Strength", emoji: "🏋️" },
                 { id: "Improve Fitness", emoji: "🏃" },

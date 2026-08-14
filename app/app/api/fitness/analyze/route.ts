@@ -165,7 +165,7 @@ Output ONLY valid JSON matching this schema.`;
     let initial_protein_target = null;
     if (data.weight) {
       let proteinMultiplier = 1.6;
-      if (data.goal === "Build Muscle" || data.goal === "Lose Fat + Build Muscle") {
+      if (data.goal === "Build Muscle" || data.goal === "Gain Weight" || data.goal === "Lose Fat + Build Muscle") {
         proteinMultiplier = 2.0;
       } else if (data.goal === "Build Strength") {
         proteinMultiplier = 1.8;

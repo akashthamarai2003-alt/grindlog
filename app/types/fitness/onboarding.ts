@@ -8,6 +8,7 @@ export const OnboardingSchema = z.object({
   goal: z.enum([
     "Lose Fat", 
     "Build Muscle", 
+    "Gain Weight",
     "Lose Fat + Build Muscle", 
     "Build Strength", 
     "Improve Fitness", 

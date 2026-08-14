@@ -570,6 +570,7 @@ export function ProfileContent({
                   >
                     <option value="Lose Fat" className="bg-[#0A1108] text-white">Lose Fat</option>
                     <option value="Build Muscle" className="bg-[#0A1108] text-white">Build Muscle</option>
+                    <option value="Gain Weight" className="bg-[#0A1108] text-white">Gain Weight</option>
                     <option value="Lose Fat + Build Muscle" className="bg-[#0A1108] text-white">Lose Fat + Build Muscle</option>
                     <option value="Build Strength" className="bg-[#0A1108] text-white">Build Strength</option>
                     <option value="Maintain" className="bg-[#0A1108] text-white">Maintain</option>
