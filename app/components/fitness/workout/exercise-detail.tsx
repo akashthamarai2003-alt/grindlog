@@ -23,7 +23,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
   const [submittingSetId, setSubmittingSetId] = useState<string | null>(null);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   
-  const [gifUrl, setGifUrl] = useState<string | null>(null);
+  const [videoId, setVideoId] = useState<string | null>(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
 
   // Local state to track input values for sets so they are easily updatable
@@ -95,13 +95,13 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
   const skipRest = () => setActiveRestSeconds(null);
 
   const handleLoadVideo = async () => {
-    if (gifUrl || isVideoLoading) return;
+    if (videoId || isVideoLoading) return;
     setIsVideoLoading(true);
     try {
       const res = await fetch(`/api/workouts/video?query=${encodeURIComponent(exercise.name)}`);
       const data = await res.json();
-      if (res.ok && data.gifUrl) {
-        setGifUrl(data.gifUrl);
+      if (res.ok && data.videoId) {
+        setVideoId(data.videoId);
       } else {
         toast.error(data.error || "Could not find a video");
       }
@@ -141,18 +141,15 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
         {exercise.name}
       </h2>
 
-      {/* Clean GIF Player */}
-      <div className="w-full h-56 bg-white rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden group">
-        {gifUrl ? (
-          <div className="w-full h-full absolute inset-0 z-20 flex items-center justify-center bg-white">
-            <img 
-              src={gifUrl} 
-              alt={exercise.name}
-              className="w-full h-full object-contain mix-blend-multiply scale-[1.35]"
-            />
-            {/* Dark overlay to blend into the app theme */}
-            <div className="absolute inset-0 bg-[#0A1108]/90 mix-blend-normal pointer-events-none" style={{ mixBlendMode: 'darken' }} />
-          </div>
+      {/* Clean HD Video Player (Cropped YouTube) */}
+      <div className="w-full aspect-video bg-[#111A10] rounded-2xl border border-white/5 flex items-center justify-center mb-6 shadow-xl relative overflow-hidden group">
+        {videoId ? (
+          <iframe 
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&playsinline=1`} 
+            className="w-[140%] h-[140%] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 border-0"
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+          />
         ) : (
           <button 
             onClick={handleLoadVideo}
