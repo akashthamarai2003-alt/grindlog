@@ -31,7 +31,9 @@ User Profile:
 - Training Days per week: ${profile.training_days_per_week}
 - Workout Duration: ${profile.workout_duration_minutes} minutes
 - Diet Preference: ${profile.diet_preference}
+- Food Environment: ${profile.food_environment || "Home"}
 - Budget: ${profile.nutrition_budget || "Not specified"}
+- Available Foods: ${profile.available_foods?.join(", ") || "None"}
 - Allergies: ${profile.allergies?.join(", ") || "None"}
 - Food Avoidances: ${profile.food_avoidances?.join(", ") || "None"}
 - Meals per day: ${profile.meals_per_day}
@@ -46,7 +48,9 @@ Instructions:
 1. Generate a 'plan' object with a highly motivating name, description, and goal.
 2. Generate an array of 'workouts' matching my 'training_days_per_week'. Each workout should have a 'workout_date' (YYYY-MM-DD) distributed across the next 7 days, starting from ${todayDateStr}.
 3. Generate 'exercises' for each workout that fit within my ${profile.workout_duration_minutes} minute duration and match my ${profile.training_location} / ${profile.equipment?.join(", ") || "None"} constraints.
-4. Generate 'nutrition' providing a safe daily_calories target and protein_grams. Create a 'meals' array with exactly ${profile.meals_per_day} meals. For each meal, provide specific, realistic food items that fit my Budget (${profile.nutrition_budget || "Not specified"}), Diet (${profile.diet_preference}), and Lifestyle (${profile.lifestyle_description}). If my lifestyle implies I am a student/in a hostel, prioritize NO-COOK or LOW-PREP meals. Ensure prep_instructions are practical. Avoid ${profile.allergies?.join(", ")} and ${profile.food_avoidances?.join(", ")}.
+4. Generate 'nutrition' providing a safe daily_calories target and protein_grams. Create a 'meals' array with exactly ${profile.meals_per_day} meals. For each meal, provide specific, realistic food items that fit my Budget (${profile.nutrition_budget || "Not specified"}), Diet (${profile.diet_preference}), and Lifestyle (${profile.lifestyle_description}). 
+   - CRITICAL FOOD ENVIRONMENT RULE: If Food Environment is 'PG', 'Hostel', or 'Office/Canteen', DO NOT assume I can cook complex recipes! State that I should eat whatever carb/meal is provided at the PG/hostel (e.g. Idli, Upma, Dosa, Rice, Sambar), and ADD low-cost/no-cook protein add-ons (such as 4 boiled eggs, 50g roasted chana, peanuts, curd, or soya) to hit protein targets without exceeding my budget (${profile.nutrition_budget}).
+   - Ensure prep_instructions are practical. Avoid ${profile.allergies?.join(", ")} and ${profile.food_avoidances?.join(", ")}.
 5. Generate a practical monthly 'grocery_list' based directly on the generated nutrition plan. Prioritize foods already available to me (${profile.available_foods?.join(", ") || "None"}). Do not recommend purchasing foods already provided by my ${profile.food_environment} environment. Respect my monthly food budget (${profile.nutrition_budget || "Not specified"}). Quantities should represent realistic approximately 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.
 6. Generate 'lifestyle' targets suitable for my profile.
 

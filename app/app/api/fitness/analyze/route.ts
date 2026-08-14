@@ -51,7 +51,7 @@ export async function POST(req: Request) {
               content: [
                 { 
                   type: "text", 
-                  text: "You are an expert fitness coach and physique analyst. Analyze these photos of the user (and possibly their target inspiration physique). Output a structured JSON response with your visual observations including: estimated body fat percentage range, muscle mass distribution, posture assessment, and what needs to change to achieve the target physique. Output ONLY valid JSON." 
+                  text: "You are an expert fitness coach and physique analyst. Analyze these photos of the user (and their target inspiration physique, if provided). Output a structured JSON response with your visual observations including: estimated body fat percentage range, muscle mass distribution, posture assessment, fat distribution, visual strengths/weaknesses, and what physically needs to change to approach the target physique. Output ONLY valid JSON." 
                 },
                 ...images
               ],
@@ -89,7 +89,9 @@ Training Days: ${data.training_days_per_week || 'Not specified'}
 Training Location: ${data.training_location || 'Not specified'}
 Equipment: ${data.equipment?.join(', ') || 'Not specified'}
 Diet Type: ${data.food_type || 'Not specified'}
+Food Environment: ${data.food_environment || 'Home'}
 Nutrition Budget: ${data.nutrition_budget || 'Not specified'}
+Available Foods: ${data.available_foods?.join(', ') || 'None specified'}
 Allergies: ${data.food_allergies || 'None'}
 Injuries/Health Issues: ${data.physical_problems?.join(', ') || 'None'}
 
@@ -98,10 +100,20 @@ ${visualObservations}
 
 Generate a comprehensive Transformation Strategy JSON containing exactly these top-level keys:
 - "training_strategy": (string) A summary of the workout approach they should take.
-- "nutrition_strategy": (string) A summary of the diet approach.
-- "progress_roadmap": (array of strings) 3-4 key milestones they will hit in the next 3-6 months.
+- "nutrition_strategy": (string) A summary of the diet approach. If PG/Hostel is selected, explicitly advise on supplementing PG meals with cheap high-protein add-ons (e.g. boiled eggs, roasted chana, soya chunks).
+- "progress_roadmap": (array of strings) 3-4 key milestones they will hit in their journey.
 - "focus_areas": (array of exactly 5 short strings) Top 5 areas they need to focus on (e.g. 'Reduce waist/body fat', 'Develop shoulders', etc).
 - "fitness_score": (number 0-100) A coach-assigned starting fitness score based on their current stats vs goal.
+- "reality_check": (object) Containing:
+    - "is_timeframe_realistic": (boolean) Whether target_deadline_days is realistic for the target physique / weight loss.
+    - "honest_assessment": (string) Blunt, realistic breakdown of what the target physique actually requires vs what can be achieved in their specified timeframe.
+    - "achievable_in_timeframe": (array of strings) 3-5 realistic accomplishments achievable within their requested timeframe.
+- "budget_breakdown": (object) Detail how their budget aligns with extra food costs:
+    - "monthly_budget": (string) E.g. "₹2,000/month".
+    - "recommended_add_ons": (array of objects with fields "item", "daily_qty", "daily_cost", "monthly_cost", "protein_provided_g"). E.g. [{"item": "Boiled Eggs", "daily_qty": "10 eggs", "daily_cost": "₹60", "monthly_cost": "₹1,800", "protein_provided_g": "60g"}].
+    - "total_estimated_monthly_cost": (string) E.g. "₹2,100/month".
+    - "budget_verdict": (string) Explanation of how it fits their food environment (PG/Hostel/Home) and budget.
+- "timeline_projection": (array of objects with fields "timeframe" (e.g. "Week 1-2", "Week 3-4"), "target_weight_kg" (string or number), "expected_changes" (string)).
 Output ONLY valid JSON matching this schema.`;
 
       const reasoningResponse = await groq.chat.completions.create({
