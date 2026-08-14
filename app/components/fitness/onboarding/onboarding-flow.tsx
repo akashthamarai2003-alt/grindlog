@@ -1557,12 +1557,20 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                       const file = e.target.files?.[0];
                       if (file) {
                         const reader = new FileReader();
-                        reader.onload = (ev) => handleUpdate({ body_scan_inspiration: ev.target?.result as string, goal_physique_image: ev.target?.result as string });
+                        reader.onload = (ev) => handleUpdate({ body_scan_inspiration: ev.target?.result as string, goal_physique_image: ev.target?.result as string, target_physique: undefined });
                         reader.readAsDataURL(file);
                       }
                     }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                     {data.body_scan_inspiration || data.goal_physique_image ? (
-                      <img src={data.body_scan_inspiration || data.goal_physique_image} className="w-full h-full object-cover" />
+                      <>
+                        <img src={data.body_scan_inspiration || data.goal_physique_image} className="w-full h-full object-cover" />
+                        <button 
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdate({ body_scan_inspiration: undefined, goal_physique_image: undefined }); }}
+                          className="absolute top-2 right-2 z-20 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center hover:bg-red-500/80 transition-colors"
+                        >
+                          <Trash2 size={14} className="text-white" />
+                        </button>
+                      </>
                     ) : (
                       <>
                         <div className="absolute inset-0 z-0 flex items-center justify-center opacity-30">
@@ -1605,7 +1613,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                           key={opt.id}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          onClick={() => handleUpdate({ target_physique: opt.id as any })}
+                          onClick={() => handleUpdate({ target_physique: opt.id as any, body_scan_inspiration: undefined, goal_physique_image: undefined })}
                           className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
                             isSelected 
                               ? "border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_20px_rgba(173,255,0,0.15)]" 
