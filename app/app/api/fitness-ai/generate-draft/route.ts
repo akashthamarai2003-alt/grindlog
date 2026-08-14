@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     const parsed = GeneratedPlanSchema.safeParse(aiResponse);
     if (!parsed.success) {
       console.error("Fitness AI Zod validation failed:", parsed.error);
-      return NextResponse.json({ success: false, error: "We couldn't build your plan right now. Please try again." }, { status: 500 });
+      return NextResponse.json({ success: false, errorType: "SYSTEM", error: "We couldn't build your plan right now. Please try again." }, { status: 500 });
     }
 
     const planData: GeneratedPlanData = parsed.data;
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     const safetyCheck = runFitnessAISafetyCheck(planData, profile);
     if (!safetyCheck.safe) {
       console.warn("Fitness AI safety check failed:", safetyCheck.reason);
-      return NextResponse.json({ success: false, error: safetyCheck.reason || "Generated plan violated safety checks." }, { status: 400 });
+      return NextResponse.json({ success: false, errorType: "SAFETY", error: safetyCheck.reason || "Generated plan violated safety checks." }, { status: 400 });
     }
 
     // 9. Log Usage
@@ -84,6 +84,6 @@ export async function POST(req: Request) {
     
   } catch (error: any) {
     console.error("Fitness AI Generation Error:", error);
-    return NextResponse.json({ success: false, error: "We couldn't build your plan right now. Please try again." }, { status: 500 });
+    return NextResponse.json({ success: false, errorType: "SYSTEM", error: "We couldn't build your plan right now. Please try again." }, { status: 500 });
   }
 }

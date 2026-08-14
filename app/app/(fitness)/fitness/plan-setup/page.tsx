@@ -12,6 +12,7 @@ export default function PlanSetupPage() {
   const [planData, setPlanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationErrorType, setGenerationErrorType] = useState<"SAFETY" | "SYSTEM" | null>(null);
   
   const [selectedDay, setSelectedDay] = useState(0); // 0 = Mon, 6 = Sun
   const [activeTab, setActiveTab] = useState<"workout" | "diet" | "grocery">("workout");
@@ -31,6 +32,7 @@ export default function PlanSetupPage() {
           setPlanData(res.data);
         } else {
           setGenerationError(res.error || "Failed to generate plan");
+          setGenerationErrorType(res.errorType || "SYSTEM");
           toast.error(res.error || "Failed to generate plan");
         }
         setLoading(false);
@@ -108,16 +110,20 @@ export default function PlanSetupPage() {
   }
 
   if (!planData) {
+    const isSafetyError = generationErrorType === "SAFETY";
+    
     return (
       <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/20">
-          <AlertTriangle size={32} className="text-red-500" />
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 border ${isSafetyError ? 'bg-red-500/10 border-red-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+          <AlertTriangle size={32} className={isSafetyError ? "text-red-500" : "text-amber-500"} />
         </div>
-        <h2 className="text-2xl font-black mb-3">AI Safety Reject</h2>
+        <h2 className="text-2xl font-black mb-3">{isSafetyError ? "AI Safety Reject" : "Plan Generation Failed"}</h2>
         
         {generationError ? (
-          <div className="bg-[#121E12] border border-red-500/30 p-4 rounded-2xl mb-6 max-w-sm">
-            <p className="text-sm text-red-400 font-semibold mb-2">Our backend safety validator blocked the AI from generating a dangerous plan.</p>
+          <div className={`bg-[#121E12] border p-4 rounded-2xl mb-6 max-w-sm ${isSafetyError ? 'border-red-500/30' : 'border-amber-500/30'}`}>
+            <p className={`text-sm font-semibold mb-2 ${isSafetyError ? 'text-red-400' : 'text-amber-400'}`}>
+              {isSafetyError ? "Our backend safety validator blocked the AI from generating a dangerous plan." : "The AI encountered an issue while building your custom plan."}
+            </p>
             <p className="text-xs text-gray-300">{generationError}</p>
           </div>
         ) : (
@@ -128,16 +134,21 @@ export default function PlanSetupPage() {
           onClick={() => {
             setLoading(true);
             setGenerationError(null);
+            setGenerationErrorType(null);
             // Trigger a fresh generation
             fetch('/api/fitness-ai/generate-draft', { method: 'POST' })
               .then(res => res.json())
               .then(res => {
                 if (res.success) setPlanData(res.data);
-                else setGenerationError(res.error || "Failed to generate plan");
+                else {
+                  setGenerationError(res.error || "Failed to generate plan");
+                  setGenerationErrorType(res.errorType || "SYSTEM");
+                }
                 setLoading(false);
               })
               .catch(() => {
                 setGenerationError("Network error");
+                setGenerationErrorType("SYSTEM");
                 setLoading(false);
               });
           }} 
