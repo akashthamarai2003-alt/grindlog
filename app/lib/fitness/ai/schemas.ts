@@ -46,9 +46,9 @@ export const GeneratedNutritionSchema = z.object({
 });
 
 export const GeneratedLifestyleSchema = z.object({
-  sleep_target_hours: z.number().min(4).max(12).nullable(),
-  water_target_liters: z.number().min(1).max(6).nullable(),
-  daily_steps_target: z.number().int().min(1000).max(30000).nullable()
+  sleep_target_hours: z.number().nullable().optional(),
+  water_target_liters: z.number().nullable().optional(),
+  daily_steps_target: z.number().nullable().optional()
 });
 
 export const GeneratedPlanSchema = z.object({

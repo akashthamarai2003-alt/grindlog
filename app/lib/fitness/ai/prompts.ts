@@ -81,6 +81,7 @@ Instructions:
    - Ensure prep_instructions are practical. Strictly avoid my allergies (${profile.food_allergies || "None"}) and disliked/avoided foods (${[profile.foods_disliked, profile.foods_avoided].filter(Boolean).join(", ") || "None"}).
 5. Generate a practical monthly 'grocery_list' based directly on the generated nutrition plan. Prioritize foods already available to me (${Array.isArray(profile.available_foods) ? profile.available_foods.join(", ") : "None"}). Do not recommend purchasing foods already provided by my ${profile.food_environment} environment. Respect my monthly food budget (${profile.nutrition_budget || "Not specified"}). Quantities should represent realistic approximately 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.
 6. Generate 'lifestyle' targets suitable for my profile. If a 'Daily Schedule' is provided (Wake, Work, Workout, Sleep times), tailor the lifestyle advice, meal timings, and workout timing to fit seamlessly into that specific schedule.
+7. CRITICAL: Keep all string fields (notes, description, guidance, reasons, prep_instructions) EXTREMELY short and concise (1-2 very short sentences max). This is critical to prevent JSON truncation and system crashes!
 
 Respond entirely in JSON format matching this exact schema:
 {
