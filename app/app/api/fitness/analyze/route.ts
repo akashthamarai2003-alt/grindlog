@@ -233,6 +233,13 @@ Output ONLY valid JSON matching this schema.`;
           
           // Nutrition & Lifestyle
           diet_preference: data.food_type,
+          food_type: data.food_type,
+          food_environment: data.food_environment,
+          meals_per_day: data.meals_per_day,
+          available_foods: data.available_foods,
+          food_allergies: data.food_allergies,
+          foods_disliked: data.foods_disliked,
+          foods_avoided: data.foods_avoided,
           nutrition_budget: data.nutrition_budget,
           activity_level: data.activity_level,
           lifestyle_description: data.lifestyle_description,
