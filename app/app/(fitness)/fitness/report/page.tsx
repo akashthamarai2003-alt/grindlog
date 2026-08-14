@@ -22,7 +22,7 @@ export default async function AIStartingReportPage() {
   }
 
   const aiStrategy = profile.ai_strategy || {};
-  const focusAreas = aiStrategy.focus_areas || [
+  const focusAreas = Array.isArray(aiStrategy.focus_areas) ? aiStrategy.focus_areas : [
     "Reduce waist/body fat",
     "Develop shoulders",
     "Develop chest",
@@ -33,7 +33,15 @@ export default async function AIStartingReportPage() {
   const fitnessScore = aiStrategy.fitness_score || 68;
   const realityCheck = aiStrategy.reality_check;
   const budgetBreakdown = aiStrategy.budget_breakdown;
-  const timelineProjection = aiStrategy.timeline_projection;
+  const timelineProjection = Array.isArray(aiStrategy.timeline_projection) ? aiStrategy.timeline_projection : [];
+
+  const achievableList = realityCheck && Array.isArray(realityCheck.achievable_in_timeframe) 
+    ? realityCheck.achievable_in_timeframe 
+    : [];
+
+  const recommendedAddOns = budgetBreakdown && Array.isArray(budgetBreakdown.recommended_add_ons) 
+    ? budgetBreakdown.recommended_add_ons 
+    : [];
 
   return (
     <div className="min-h-screen bg-[#0A1108] text-white p-6 pb-28">
@@ -67,12 +75,12 @@ export default async function AIStartingReportPage() {
         {/* REALITY CHECK SECTION */}
         {realityCheck && (
           <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4 relative overflow-hidden">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xl">⚡</span>
-                <h2 className="text-lg font-black tracking-tight text-white">Timeframe & Reality Check</h2>
+                <h2 className="text-lg font-black tracking-tight text-white leading-tight">Timeframe & Reality Check</h2>
               </div>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
+              <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider text-center shrink-0 ${
                 realityCheck.is_timeframe_realistic 
                   ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
                   : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
@@ -85,11 +93,11 @@ export default async function AIStartingReportPage() {
               {realityCheck.honest_assessment}
             </p>
 
-            {realityCheck.achievable_in_timeframe?.length > 0 && (
+            {achievableList.length > 0 && (
               <div>
                 <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-2">What you WILL achieve in this period:</p>
                 <ul className="space-y-2">
-                  {realityCheck.achievable_in_timeframe.map((item: string, idx: number) => (
+                  {achievableList.map((item: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-2 text-xs text-gray-300">
                       <span className="text-[#ADFF00] font-bold mt-0.5">✓</span>
                       <span>{item}</span>
@@ -104,12 +112,12 @@ export default async function AIStartingReportPage() {
         {/* BUDGET & DIET ENVIRONMENT BREAKDOWN */}
         {budgetBreakdown && (
           <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xl">💰</span>
-                <h2 className="text-lg font-black tracking-tight text-white">Budget & Diet Plan</h2>
+                <h2 className="text-lg font-black tracking-tight text-white leading-tight">Budget & Diet Plan</h2>
               </div>
-              <span className="text-xs font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-3 py-1 rounded-full border border-[#ADFF00]/20">
+              <span className="text-[10px] sm:text-xs font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-3 py-1 rounded-full border border-[#ADFF00]/20 shrink-0 text-center">
                 {budgetBreakdown.total_estimated_monthly_cost || budgetBreakdown.monthly_budget}
               </span>
             </div>
@@ -118,11 +126,11 @@ export default async function AIStartingReportPage() {
               {budgetBreakdown.budget_verdict}
             </p>
 
-            {budgetBreakdown.recommended_add_ons?.length > 0 && (
+            {recommendedAddOns.length > 0 && (
               <div className="space-y-2 pt-2">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Affordable Protein Add-ons:</p>
                 <div className="space-y-2">
-                  {budgetBreakdown.recommended_add_ons.map((addon: any, idx: number) => (
+                  {recommendedAddOns.map((addon: any, idx: number) => (
                     <div key={idx} className="flex items-center justify-between bg-[#0D150D] p-3 rounded-xl border border-white/5 text-xs">
                       <div>
                         <p className="font-bold text-white">{addon.item} <span className="text-gray-400 font-normal">({addon.daily_qty})</span></p>
@@ -141,7 +149,7 @@ export default async function AIStartingReportPage() {
         )}
 
         {/* TIMELINE PROJECTION */}
-        {timelineProjection?.length > 0 && (
+        {timelineProjection.length > 0 && (
           <div>
             <h2 className="text-lg font-black mb-4 flex items-center gap-2">
               <span>📅</span> Expected Progress Roadmap
@@ -151,7 +159,11 @@ export default async function AIStartingReportPage() {
                 <div key={index} className="bg-[#121E12] p-4 rounded-2xl border border-[#1A2619] space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider">{phase.timeframe}</span>
-                    <span className="text-xs font-extrabold text-white bg-black/40 px-2.5 py-0.5 rounded-full">{phase.target_weight_kg} kg</span>
+                    {phase.target_weight_kg && (
+                      <span className="text-xs font-extrabold text-white bg-black/40 px-2.5 py-0.5 rounded-full">
+                        {phase.target_weight_kg} kg
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-gray-300 font-medium">{phase.expected_changes}</p>
                 </div>
