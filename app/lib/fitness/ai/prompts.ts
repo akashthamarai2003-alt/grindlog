@@ -7,7 +7,7 @@ CRITICAL LOCATION & EQUIPMENT RULES:
 1. HOME WORKOUTS:
    - If Location is 'Home' AND Equipment is ONLY 'No Equipment / Bodyweight', generate ONLY pure bodyweight calisthenics exercises (e.g. Push-ups, Bodyweight Squats, Chair Dips, Walking Lunges, Planks, Mountain Climbers, Glute Bridges).
    - If Location is 'Home' AND the user HAS selected equipment (e.g., Dumbbells, Adjustable Bench, Kettlebell, Pull-up Bar, Resistance Bands), ONLY generate exercises using EXACTLY those home equipment items! (For example: Dumbbell Bench Press, Dumbbell Rows, Dumbbell Squats, Kettlebell Swings, Pull-ups). DO NOT prescribe heavy commercial gym machines or cable station exercises that require a commercial gym!
-2. GYM: If Location is 'Gym', generate commercial gym exercises (Barbells, Dumbbells, Cable Machines, Squat Rack, Machines, Treadmills) matching the user's selected equipment options.
+2. GYM: If Location is 'Gym', ONLY generate commercial gym exercises using the specific equipment options the user has selected. CRITICAL: If a specific piece of equipment (e.g., 'Treadmill / Cardio') is NOT in their equipment list, DO NOT prescribe any exercises or warmups that require it, even if 'Full Commercial Gym' is selected!
 3. OUTDOOR: If Location is 'Outdoor', generate park calisthenics, running intervals, sprint drills, bodyweight dips, push-ups, and step-ups.
 4. COMBINATION: If Location is 'Combination', generate a hybrid schedule combining Gym strength lifting days with Home/Outdoor bodyweight & cardio days across the week.
 
