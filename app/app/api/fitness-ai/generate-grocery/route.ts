@@ -42,12 +42,12 @@ CRITICAL RULES:
 
     const userPrompt = `Here is my existing nutrition plan and profile:
 Profile:
-- Food Environment: ${profile.food_environment}
+- Food Environment: ${profile.food_environment || "Home"}
 - Budget: ${profile.nutrition_budget || "Not specified"}
-- Diet Preference: ${profile.diet_preference}
-- Allergies: ${profile.allergies?.join(", ") || "None"}
-- Food Avoidances: ${profile.food_avoidances?.join(", ") || "None"}
-- Available Foods: ${profile.available_foods?.join(", ") || "None"}
+- Diet Preference (Food Type): ${profile.food_type || profile.diet_preference || "Balanced"}
+- Allergies: ${profile.food_allergies || "None"}
+- Disliked/Avoided Foods: ${[profile.foods_disliked, profile.foods_avoided].filter(Boolean).join(", ") || "None"}
+- Available Foods: ${Array.isArray(profile.available_foods) ? profile.available_foods.join(", ") : "None"}
 
 Current Nutrition Plan:
 ${JSON.stringify(currentNutritionPlan, null, 2)}
