@@ -165,7 +165,7 @@ export default function PlanSetupPage() {
   const workouts = planData.workouts || [];
   const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
   
-  const activeWorkout = workouts[selectedDay] || workouts[workouts.length - 1];
+  const activeWorkout = selectedDay < workouts.length ? workouts[selectedDay] : null;
 
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[140px]">
