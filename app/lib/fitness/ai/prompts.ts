@@ -27,6 +27,7 @@ export function buildFitnessPlanPrompt(profileData: any, todayDateStr: string, g
   
 User Profile:
 - Goal: ${profile.goal}
+- Target Physique: ${profile.target_physique || "Not specified"}
 - Fitness Level: ${profile.fitness_level}
 - Age: ${profile.age}
 - Gender: ${profile.gender}
@@ -57,6 +58,7 @@ User Profile:
 - Health Notes: ${profile.additional_health_notes || "None"}
 
 ${geminiAnalysis ? `AI Body Scan Analysis (Gemini Vision):\n${geminiAnalysis}\n` : ''}
+${profile.ai_strategy && Object.keys(profile.ai_strategy).length > 0 ? `Coach's Initial Strategy & Assessment:\n${JSON.stringify(profile.ai_strategy, null, 2)}\n` : ''}
 Current Date: ${todayDateStr}
 
 Instructions:

@@ -262,6 +262,9 @@ Output ONLY valid JSON matching this schema.`;
           additional_health_notes: data.additional_health_notes,
           safety_acknowledged: data.safety_acknowledged,
           
+          // Body Scans & Physique
+          target_physique: data.target_physique,
+          
           // Computed Data
           bmi,
           baseline_calories,
@@ -278,6 +281,20 @@ Output ONLY valid JSON matching this schema.`;
     if (upsertError) {
       console.error("Failed to save fitness profile:", upsertError);
       return NextResponse.json({ success: false, error: "Failed to save profile." }, { status: 500 });
+    }
+
+    // Save visual observations to scans table so generate-draft can use it
+    if (images.length > 0 && visualObservations !== "No photos provided.") {
+      await supabase
+        .from("fitness_os_scans")
+        .upsert(
+          {
+            user_id: user.id,
+            gemini_analysis: visualObservations,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: "user_id" }
+        );
     }
 
     return NextResponse.json({ success: true, ai_strategy: aiStrategy });
