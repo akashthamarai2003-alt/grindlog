@@ -73,6 +73,7 @@ export async function generateAIResponse({
 
     for (const targetModel of modelsToTry) {
       try {
+        const isLlama = targetModel.includes("llama") || targetModel.includes("mixtral");
         const completion = await groq.chat.completions.create({
           model: targetModel,
           messages: [
@@ -81,7 +82,7 @@ export async function generateAIResponse({
           ],
           max_tokens: maxTokens,
           temperature,
-          response_format: responseFormat ? { type: responseFormat } : undefined,
+          response_format: responseFormat && isLlama ? { type: responseFormat } : undefined,
         });
 
         // Advance counter on success so subsequent requests rotate keys evenly
