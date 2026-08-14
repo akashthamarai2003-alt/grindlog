@@ -202,8 +202,10 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
     if (data.target_weight !== undefined && (isNaN(data.target_weight) || data.target_weight < 30 || data.target_weight > 350)) {
       errs.target_weight = "Target weight must be between 30 and 350 kg.";
     }
-    if (data.target_deadline_days !== undefined && (isNaN(data.target_deadline_days) || data.target_deadline_days < 7 || data.target_deadline_days > 365)) {
-      errs.target_deadline_days = "Deadline must be between 7 and 365 days.";
+    if (data.target_deadline_days !== undefined && data.target_deadline_days !== null && !isNaN(data.target_deadline_days)) {
+      if (data.target_deadline_days < 7 || data.target_deadline_days > 365) {
+        errs.target_deadline_days = "Deadline must be between 7 and 365 days (or leave blank).";
+      }
     }
     return errs;
   })();
@@ -211,7 +213,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const isStep4Valid = Boolean(
     data.goal &&
     data.target_weight && data.target_weight >= 30 && data.target_weight <= 350 &&
-    data.target_deadline_days && data.target_deadline_days >= 7 && data.target_deadline_days <= 365 &&
+    (data.target_deadline_days === undefined || data.target_deadline_days === null || (data.target_deadline_days >= 7 && data.target_deadline_days <= 365)) &&
     Object.keys(step4Errors).length === 0
   );
 
@@ -495,14 +497,14 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
 
               <div className="w-full mt-4">
                 <label className="block text-xs font-semibold text-[#ADFF00] mb-2 flex items-center justify-between">
-                  <span>Days to Achieve Goal</span>
-                  <span className="text-gray-500 font-medium">{data.target_deadline_days ? `${data.target_deadline_days} Days` : ''}</span>
+                  <span>Days to Achieve Goal <span className="text-gray-500 font-normal ml-1">(Optional)</span></span>
+                  <span className="text-gray-500 font-medium">{data.target_deadline_days ? `${data.target_deadline_days} Days` : 'Not specified'}</span>
                 </label>
                 <div className="flex gap-2 mb-3">
                   {[30, 60, 90, 180].map(days => (
                     <button
                       key={days}
-                      onClick={() => handleUpdate({ target_deadline_days: days })}
+                      onClick={() => handleUpdate({ target_deadline_days: data.target_deadline_days === days ? undefined : days })}
                       className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
                         data.target_deadline_days === days
                           ? "bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]"
@@ -520,7 +522,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                   className={`w-full p-3 rounded-xl border bg-[#121E12] text-white transition-colors outline-none placeholder:text-gray-600 font-bold ${
                     step4Errors.target_deadline_days ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]/50'
                   }`}
-                  placeholder="Or enter custom days (e.g. 45)"
+                  placeholder="Or enter custom days (e.g. 45, or leave blank)"
                 />
                 <FieldError error={step4Errors.target_deadline_days} />
               </div>
