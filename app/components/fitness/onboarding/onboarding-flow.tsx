@@ -597,53 +597,97 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Workout Environment" subtitle="Where will you train?" />
             <div className="space-y-8">
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[
-                  { id: "Gym", emoji: "🏋️" },
-                  { id: "Home", emoji: "🏠" },
-                  { id: "Outdoor", emoji: "🌳" },
-                  { id: "Combination", emoji: "🔄" }
-                ].map(opt => (
-                  <motion.button
-                    key={opt.id}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      handleUpdate({ training_location: opt.id as any, equipment: [] });
-                    }}
-                    className={`w-full flex items-center p-4 rounded-2xl border-2 text-left transition-all ${
-                      data.training_location === opt.id ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
-                    }`}
-                  >
-                    <div className={`text-2xl mr-4 ${data.training_location === opt.id ? "" : "opacity-70 grayscale"}`}>
-                      {opt.emoji}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`font-semibold text-lg ${data.training_location === opt.id ? "text-[#ADFF00]" : "text-gray-200"}`}>{opt.id}</h3>
-                    </div>
-                    {data.training_location === opt.id && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[#ADFF00] ml-4">
-                        <Check size={24} />
-                      </motion.div>
-                    )}
-                  </motion.button>
-                ))}
+                  { 
+                    id: "Gym", 
+                    emoji: "🏋️", 
+                    desc: "Commercial Gym (Barbells, Dumbbells, Machines, Cables & Cardio)",
+                    defaultEq: ["Full Commercial Gym", "Barbells", "Dumbbells", "Cable Machines", "Squat Rack", "Treadmill / Cardio"]
+                  },
+                  { 
+                    id: "Home", 
+                    emoji: "🏠", 
+                    desc: "Home workouts (Bodyweight / Calisthenics or personal equipment)",
+                    defaultEq: ["No Equipment / Bodyweight"]
+                  },
+                  { 
+                    id: "Outdoor", 
+                    emoji: "🌳", 
+                    desc: "Parks & Track (Bodyweight calisthenics, running & sprint drills)",
+                    defaultEq: ["Bodyweight & Outdoor Running"]
+                  },
+                  { 
+                    id: "Combination", 
+                    emoji: "🔄", 
+                    desc: "Hybrid plan — Mix of Gym lifting + Home bodyweight / Outdoor sessions",
+                    defaultEq: ["Hybrid Gym & Home Equipment"]
+                  }
+                ].map(opt => {
+                  const isSelected = data.training_location === opt.id;
+                  return (
+                    <motion.button
+                      key={opt.id}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => {
+                        handleUpdate({ 
+                          training_location: opt.id as any, 
+                          equipment: opt.defaultEq 
+                        });
+                      }}
+                      className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                        isSelected ? "border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_15px_rgba(173,255,0,0.15)]" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`text-2xl ${isSelected ? "" : "opacity-70 grayscale"}`}>
+                            {opt.emoji}
+                          </div>
+                          <div>
+                            <h3 className={`font-extrabold text-base ${isSelected ? "text-[#ADFF00]" : "text-gray-100"}`}>{opt.id}</h3>
+                            <p className="text-xs text-gray-400 mt-0.5 font-medium leading-relaxed">{opt.desc}</p>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[#ADFF00] ml-2 shrink-0">
+                            <Check size={22} strokeWidth={3} />
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.button>
+                  );
+                })}
               </div>
 
               <AnimatePresence>
-                {data.training_location && data.training_location !== "Outdoor" && (
+                {data.training_location && (
                   <motion.div
                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: "auto", marginTop: 32 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 24 }}
                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    className="overflow-hidden"
+                    className="overflow-hidden bg-[#0D150D] border border-[#1A2619] p-4 rounded-2xl space-y-3"
                   >
-                    <label className="block text-sm font-semibold text-gray-300 mb-3">Available Equipment</label>
-                    <div className="flex flex-wrap gap-3">
-                      {(data.training_location === "Gym" || data.training_location === "Combination" ? [
-                        "Dumbbells", "Barbells", "Machines", "Cable", "Bench", "Squat Rack"
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
+                        {data.training_location === "Gym" && "Gym Equipment Options"}
+                        {data.training_location === "Home" && "Home Equipment Available"}
+                        {data.training_location === "Outdoor" && "Outdoor Facilities"}
+                        {data.training_location === "Combination" && "Combination Equipment"}
+                      </label>
+                      <span className="text-[10px] text-gray-500">Tap to toggle</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {(data.training_location === "Gym" ? [
+                        "Full Commercial Gym", "Barbells", "Dumbbells", "Cable Machines", "Machines", "Squat Rack", "Bench", "Treadmill / Cardio"
+                      ] : data.training_location === "Home" ? [
+                        "No Equipment / Bodyweight", "Dumbbells", "Resistance Bands", "Pull-up Bar", "Treadmill / Bike", "Mat"
+                      ] : data.training_location === "Outdoor" ? [
+                        "Bodyweight & Outdoor Running", "Park Benches & Bars", "Sprinting Track"
                       ] : [
-                        "Dumbbells", "Resistance Bands", "Pull-up Bar", "Mat", "No Equipment"
+                        "Hybrid Gym & Home Equipment", "Full Commercial Gym", "No Equipment / Bodyweight", "Dumbbells", "Treadmill / Cardio"
                       ]).map(opt => {
                         const isSelected = data.equipment?.includes(opt) || false;
                         return (
@@ -651,25 +695,26 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                             key={opt}
                             onClick={() => {
                               let newEq = [...(data.equipment || [])];
-                              if (opt === "No Equipment") {
-                                newEq = ["No Equipment"];
+                              if (opt === "No Equipment / Bodyweight") {
+                                newEq = ["No Equipment / Bodyweight"];
                               } else {
-                                newEq = newEq.filter(e => e !== "No Equipment");
+                                newEq = newEq.filter(e => e !== "No Equipment / Bodyweight");
                                 if (isSelected) {
                                   newEq = newEq.filter(e => e !== opt);
                                 } else {
                                   newEq.push(opt);
                                 }
                               }
+                              if (newEq.length === 0) newEq = [opt];
                               handleUpdate({ equipment: newEq });
                             }}
-                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
                               isSelected 
                                 ? "bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]" 
                                 : "bg-[#121E12] border-[#1A2619] text-gray-400 hover:border-[#ADFF00]/50 hover:text-gray-200"
                             }`}
                           >
-                            {opt}
+                            {isSelected ? `✓ ${opt}` : opt}
                           </button>
                         );
                       })}
@@ -678,8 +723,9 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                 )}
               </AnimatePresence>
             </div>
+
             <BottomBar 
-              canProceed={Boolean(data.training_location && (data.training_location === "Outdoor" || (data.equipment && data.equipment.length > 0)))} 
+              canProceed={Boolean(data.training_location && data.equipment && data.equipment.length > 0)} 
               onProceed={handleNext} 
             />
           </div>
