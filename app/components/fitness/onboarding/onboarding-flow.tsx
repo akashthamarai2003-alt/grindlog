@@ -683,7 +683,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                       {(data.training_location === "Gym" ? [
                         "Full Commercial Gym", "Barbells", "Dumbbells", "Cable Machines", "Machines", "Squat Rack", "Bench", "Treadmill / Cardio"
                       ] : data.training_location === "Home" ? [
-                        "No Equipment / Bodyweight", "Dumbbells", "Resistance Bands", "Pull-up Bar", "Treadmill / Bike", "Mat"
+                        "No Equipment / Bodyweight", "Dumbbells", "Adjustable Bench", "Kettlebell", "Pull-up Bar", "Resistance Bands", "Home Barbell", "Treadmill / Exercise Bike", "Yoga Mat"
                       ] : data.training_location === "Outdoor" ? [
                         "Bodyweight & Outdoor Running", "Park Benches & Bars", "Sprinting Track"
                       ] : [
