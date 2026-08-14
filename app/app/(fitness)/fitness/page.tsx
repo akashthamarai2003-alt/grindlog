@@ -40,10 +40,13 @@ async function DashboardContent() {
     .eq("status", "active")
     .maybeSingle();
 
-
-
-
-
+  if (!mainProfile?.is_premium) {
+    if (plan) {
+      redirect("/fitness/payment?returnTo=/fitness");
+    } else {
+      redirect("/fitness/plan-setup");
+    }
+  }
   // Fetch today's workout
   const { data: workout } = await supabase
     .from("fitness_os_workouts")
