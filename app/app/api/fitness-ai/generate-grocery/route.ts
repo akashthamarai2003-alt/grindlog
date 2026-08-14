@@ -55,7 +55,21 @@ ${JSON.stringify(currentNutritionPlan, null, 2)}
 Instructions:
 Generate a practical monthly 'grocery_list' based directly on the nutrition plan above. Prioritize foods already available to me. Do not recommend purchasing foods already provided by my food environment. Respect my monthly food budget. Quantities should represent realistic 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.
 
-Respond entirely in JSON format matching this schema: { "grocery_list": [ { "name": string, "monthly_quantity": number, "unit": string, "estimated_price": number, "category": string, "is_optional": boolean, "reason": string } ] }`;
+Respond entirely in JSON format matching this schema: 
+{ 
+  "grocery_list": [ 
+    { 
+      "name": string, 
+      "monthly_quantity": number, 
+      "unit": string, // MUST be one of: "kg", "grams", "liters", "pieces", "units", "packets", "bunches", "tins"
+      "estimated_price": number, 
+      "category": string, 
+      "is_optional": boolean, 
+      "reason": string 
+    } 
+  ] 
+}
+Example: If you recommend 60 eggs for the month, use {"monthly_quantity": 60, "unit": "pieces"} DO NOT use "dozen" as a unit.`;
 
     const groq = getGroqClient();
     
