@@ -49,6 +49,12 @@ User Profile:
 - Current Sleep Duration: ${profile.sleep_duration || "Not specified"}
 - Daily Schedule: Wake up at ${profile.wake_time || "N/A"}, Work/College at ${profile.work_time || "N/A"}, Workout at ${profile.workout_time || profile.preferred_training_time || "N/A"}, Sleep at ${profile.sleep_time || "N/A"}
 - Lifestyle Context: ${profile.lifestyle_description || "N/A"}
+- Physical Problems: ${Array.isArray(profile.physical_problems) ? profile.physical_problems.join(", ") : "None"} ${profile.current_pain_severity ? `(Severity: ${profile.current_pain_severity}/10)` : ""}
+- Pain Triggers: ${Array.isArray(profile.current_pain_triggers) ? profile.current_pain_triggers.join(", ") : "None"}
+- Previous Injuries: ${profile.previous_injuries ? `Yes (${Array.isArray(profile.previous_injury_areas) ? profile.previous_injury_areas.join(", ") : "Unspecified"} - ${profile.previous_injury_timeline || "Timeline unknown"})` : "No"}
+- Exercise Limitations: ${Array.isArray(profile.exercise_limitations) ? profile.exercise_limitations.join(", ") : "None"}
+- Medical Guidance: ${profile.medical_guidance || "None"}
+- Health Notes: ${profile.additional_health_notes || "None"}
 
 ${geminiAnalysis ? `AI Body Scan Analysis (Gemini Vision):\n${geminiAnalysis}\n` : ''}
 Current Date: ${todayDateStr}
@@ -56,7 +62,8 @@ Current Date: ${todayDateStr}
 Instructions:
 1. Generate a 'plan' object with a highly motivating name, description, and goal.
 2. Generate an array of 'workouts' matching my 'training_days_per_week'. Each workout should have a 'workout_date' (YYYY-MM-DD) distributed across the next 7 days, starting from ${todayDateStr}.
-3. Generate 'exercises' for each workout that fit within my ${profile.workout_duration_minutes} minute duration and match my ${profile.training_location} / ${Array.isArray(profile.equipment) ? profile.equipment.join(", ") : "None"} constraints.
+3. Generate 'exercises' for each workout that fit within my ${profile.workout_duration_minutes} minute duration and match my ${profile.training_location} / ${Array.isArray(profile.equipment) ? profile.equipment.join(", ") : "None"} constraints. 
+   - CRITICAL SAFETY RULE: You MUST strictly respect all my 'Physical Problems', 'Exercise Limitations', 'Previous Injuries', and 'Medical Guidance'. Do NOT prescribe movements that I cannot comfortably perform (e.g. if I cannot perform 'Squatting', do not prescribe Barbell Squats). Adapt the workout to be 100% safe for my specific injury profile. If I report high pain severity, prescribe very gentle rehab/mobility work.
 4. Generate 'nutrition' providing a safe daily_calories target and protein_grams. Create a 'meals' array reflecting my ${profile.meals_per_day || "3 meals"} preference. For each meal, provide specific, realistic food items that fit my Budget (${profile.nutrition_budget || "Not specified"}), Diet (${profile.food_type || profile.diet_preference}), and Lifestyle (${profile.lifestyle_description}). 
    - CRITICAL FOOD ENVIRONMENT RULE: If Food Environment is 'PG', 'Hostel', or 'Office/Canteen', DO NOT assume I can cook complex recipes! State that I should eat whatever carb/meal is provided at the PG/hostel (e.g. Idli, Upma, Dosa, Rice, Sambar), and ADD low-cost/no-cook protein add-ons (such as 4 boiled eggs, 50g roasted chana, peanuts, curd, or soya) to hit protein targets without exceeding my budget.
    - Ensure prep_instructions are practical. Strictly avoid my allergies (${profile.food_allergies || "None"}) and disliked/avoided foods (${[profile.foods_disliked, profile.foods_avoided].filter(Boolean).join(", ") || "None"}).

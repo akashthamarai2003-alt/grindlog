@@ -250,6 +250,17 @@ Output ONLY valid JSON matching this schema.`;
           sleep_time: data.sleep_time,
           lifestyle_description: data.lifestyle_description,
           
+          // Physical Concerns & Injuries
+          physical_problems: data.physical_problems,
+          current_pain_severity: data.current_pain_severity,
+          current_pain_triggers: data.current_pain_triggers,
+          previous_injuries: data.previous_injuries,
+          previous_injury_areas: data.previous_injury_areas,
+          previous_injury_timeline: data.previous_injury_timeline,
+          exercise_limitations: data.exercise_limitations,
+          medical_guidance: data.medical_guidance,
+          additional_health_notes: data.additional_health_notes,
+          
           // Computed Data
           bmi,
           baseline_calories,
