@@ -1,65 +1,65 @@
 import { z } from "zod";
 
 export const GeneratedExerciseSchema = z.object({
-  name: z.string(),
-  exercise_order: z.number().optional(),
-  sets: z.number().optional().default(3),
-  reps_string: z.string().describe("e.g. '8-12' or '10'").optional().default(""),
-  target_reps_num: z.number().nullable().optional(),
-  rest_seconds: z.number().optional().default(60),
-  notes: z.string().nullable().optional()
+  name: z.coerce.string(),
+  exercise_order: z.coerce.number().optional(),
+  sets: z.coerce.number().optional().default(3),
+  reps_string: z.coerce.string().describe("e.g. '8-12' or '10'").optional().default(""),
+  target_reps_num: z.coerce.number().nullable().optional(),
+  rest_seconds: z.coerce.number().optional().default(60),
+  notes: z.coerce.string().nullable().optional()
 });
 
 export const GeneratedWorkoutSchema = z.object({
-  title: z.string(),
-  workout_date: z.string().describe("YYYY-MM-DD").optional().default(""),
-  duration_minutes: z.number().optional().default(45),
+  title: z.coerce.string(),
+  workout_date: z.coerce.string().describe("YYYY-MM-DD").optional().default(""),
+  duration_minutes: z.coerce.number().optional().default(45),
   exercises: z.array(GeneratedExerciseSchema).default([])
 });
 
 export const GeneratedMealSchema = z.object({
-  meal_name: z.string().describe("e.g., Breakfast, Lunch, Snack").optional().default(""),
-  time_of_day: z.string().describe("e.g., 08:00 AM").optional().default(""),
-  items: z.array(z.string()).describe("List of food items with quantities").default([]),
-  total_calories: z.number().nullable().optional(),
-  protein_grams: z.number().nullable().optional(),
-  prep_instructions: z.string().describe("Brief prep instructions, highlighting if it's no-cook or hostel-friendly").optional().default("")
+  meal_name: z.coerce.string().describe("e.g., Breakfast, Lunch, Snack").optional().default(""),
+  time_of_day: z.coerce.string().describe("e.g., 08:00 AM").optional().default(""),
+  items: z.array(z.coerce.string()).describe("List of food items with quantities").default([]),
+  total_calories: z.coerce.number().nullable().optional(),
+  protein_grams: z.coerce.number().nullable().optional(),
+  prep_instructions: z.coerce.string().describe("Brief prep instructions, highlighting if it's no-cook or hostel-friendly").optional().default("")
 });
 
 export const GeneratedGroceryItemSchema = z.object({
-  name: z.string(),
-  monthly_quantity: z.number().optional().default(1),
-  unit: z.string().describe("e.g. pieces, kg, liters, grams").optional().default(""),
-  estimated_price: z.number().optional().default(0),
-  category: z.string().optional().default("Other"),
-  is_optional: z.boolean().optional().default(false),
-  reason: z.string().optional().default("")
+  name: z.coerce.string(),
+  monthly_quantity: z.coerce.number().optional().default(1),
+  unit: z.coerce.string().describe("e.g. pieces, kg, liters, grams").optional().default(""),
+  estimated_price: z.coerce.number().optional().default(0),
+  category: z.coerce.string().optional().default("Other"),
+  is_optional: z.coerce.boolean().optional().default(false),
+  reason: z.coerce.string().optional().default("")
 });
 
 export const GeneratedNutritionSchema = z.object({
-  daily_calories: z.number().nullable().optional(),
-  protein_grams: z.number().nullable().optional(),
-  meals_per_day: z.number().nullable().optional(),
+  daily_calories: z.coerce.number().nullable().optional(),
+  protein_grams: z.coerce.number().nullable().optional(),
+  meals_per_day: z.coerce.number().nullable().optional(),
   meals: z.array(GeneratedMealSchema).default([]),
   grocery_list: z.array(GeneratedGroceryItemSchema).default([]),
-  guidance: z.string().describe("General healthy eating tips reflecting allergies and preferences").optional().default("")
+  guidance: z.coerce.string().describe("General healthy eating tips reflecting allergies and preferences").optional().default("")
 });
 
 export const GeneratedLifestyleSchema = z.object({
-  sleep_target_hours: z.number().nullable().optional(),
-  water_target_liters: z.number().nullable().optional(),
-  daily_steps_target: z.number().nullable().optional()
+  sleep_target_hours: z.coerce.number().nullable().optional(),
+  water_target_liters: z.coerce.number().nullable().optional(),
+  daily_steps_target: z.coerce.number().nullable().optional()
 });
 
 export const GeneratedPlanSchema = z.object({
   plan: z.object({
-    name: z.string(),
-    description: z.string(),
-    goal: z.string()
+    name: z.coerce.string(),
+    description: z.coerce.string(),
+    goal: z.coerce.string()
   }),
-  workouts: z.array(GeneratedWorkoutSchema),
-  nutrition: GeneratedNutritionSchema.nullable(),
-  lifestyle: GeneratedLifestyleSchema.nullable()
+  workouts: z.array(GeneratedWorkoutSchema).default([]),
+  nutrition: GeneratedNutritionSchema.nullable().optional(),
+  lifestyle: GeneratedLifestyleSchema.nullable().optional()
 });
 
 export type GeneratedPlanData = z.infer<typeof GeneratedPlanSchema>;
