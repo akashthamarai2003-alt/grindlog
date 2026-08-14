@@ -17,8 +17,8 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   const [showRestrictions, setShowRestrictions] = useState(false);
   const router = useRouter();
 
-  const totalSteps = 17;
-  const showProgress = step > 1 && step < 17;
+  const totalSteps = 16;
+  const showProgress = step > 1 && step < 16;
 
   const handleNext = () => {
     setDirection(1);
@@ -532,68 +532,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={isStep4Valid} onProceed={handleNext} />
           </div>
         );
-            case 5:
-        return (
-          <div className="px-6 pt-6 pb-36">
-            <StepHeader title="Target Physique" subtitle="What do you want your body to look like?" />
-            <div className="space-y-4">
-              {[
-                "Lean Athletic",
-                "Muscular",
-                "Six Pack",
-                "Men's Physique",
-                "Bodybuilder",
-                "Sporty",
-                "Strong & Functional"
-              ].map(opt => (
-                <OptionCard
-                  key={opt}
-                  title={opt}
-                  selected={data.target_physique === opt}
-                  onClick={() => handleUpdate({ target_physique: opt as any })}
-                />
-              ))}
-            </div>
-
-            <div className="mt-8 p-5 bg-[#0D150D] border border-[#1A2619] rounded-2xl">
-              <h3 className="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Upload Inspiration</h3>
-              <p className="text-xs text-gray-500 mb-4">We'll use this visual reference for AI comparison. We don't guarantee exact results.</p>
-              
-              <div className="relative">
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        handleUpdate({ goal_physique_image: reader.result as string });
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                />
-                <div className={`w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
-                  {data.goal_physique_image ? (
-                    <img src={data.goal_physique_image} alt="Inspiration" className="w-full h-full object-cover rounded-xl" />
-                  ) : (
-                    <>
-                      <div className="w-10 h-10 bg-[#1A2619] rounded-full flex items-center justify-center mb-2">
-                        <User className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-300">+ Upload Photo</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <BottomBar canProceed={!!data.target_physique} onProceed={handleNext} />
-          </div>
-        );
-        case 6:
+      case 5:
         return (
           <div className="px-6 pt-6 pb-28">
             <StepHeader title="What's your training experience?" />
@@ -1444,64 +1383,96 @@ case 11:
           </div>
         );
 
-      case 15:
+      case 14:
         return (
           <div className="px-6 pt-6 pb-36">
-            <StepHeader title="Current Body Scan" subtitle="Show your AI coach where you're starting." />
+            <StepHeader 
+              title="Target Physique & Body Scan" 
+              subtitle="Select your goal physique and show your AI coach where you're starting." 
+            />
             
             <div className="space-y-8">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: "FRONT", field: "body_scan_front" },
-                  { label: "LEFT SIDE", field: "body_scan_left" },
-                  { label: "RIGHT SIDE", field: "body_scan_right" },
-                  { label: "BACK", field: "body_scan_back" },
-                ].map(item => (
-                  <div key={item.field} className="relative">
-                    <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider text-center">{item.label}</label>
-                    <div className={`w-full aspect-[3/4] rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
-                      <input type="file" accept="image/*" onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (ev) => handleUpdate({ [item.field]: ev.target?.result as string });
-                          reader.readAsDataURL(file);
-                        }
-                      }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                      {(data as any)[item.field] ? (
-                        <img src={(data as any)[item.field]} className="w-full h-full object-cover" />
-                      ) : (
-                        <>
-                          <div className="w-8 h-8 bg-[#1A2619] rounded-full flex items-center justify-center mb-2">
-                            <User className="w-4 h-4 text-gray-400" />
-                          </div>
-                          <span className="text-xs font-semibold text-gray-300">+ Upload</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              {/* Target Physique Choice */}
+              <div>
+                <label className="block text-xs font-bold text-[#ADFF00] mb-3 uppercase tracking-wider">Target Physique Preference</label>
+                <div className="space-y-3">
+                  {[
+                    "Lean Athletic",
+                    "Muscular",
+                    "Six Pack",
+                    "Men's Physique",
+                    "Bodybuilder",
+                    "Sporty",
+                    "Strong & Functional"
+                  ].map(opt => (
+                    <OptionCard
+                      key={opt}
+                      title={opt}
+                      selected={data.target_physique === opt}
+                      onClick={() => handleUpdate({ target_physique: opt as any })}
+                    />
+                  ))}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider text-center">Inspiration (Optional)</label>
-                <div className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
+              {/* Current Body Scan Photos */}
+              <div className="pt-4 border-t border-[#1A2619]">
+                <label className="block text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Current Body Scan Photos (Optional)</label>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: "FRONT", field: "body_scan_front" },
+                    { label: "LEFT SIDE", field: "body_scan_left" },
+                    { label: "RIGHT SIDE", field: "body_scan_right" },
+                    { label: "BACK", field: "body_scan_back" },
+                  ].map(item => (
+                    <div key={item.field} className="relative">
+                      <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider text-center">{item.label}</label>
+                      <div className={`w-full aspect-[3/4] rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
+                        <input type="file" accept="image/*" onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => handleUpdate({ [item.field]: ev.target?.result as string });
+                            reader.readAsDataURL(file);
+                          }
+                        }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                        {(data as any)[item.field] ? (
+                          <img src={(data as any)[item.field]} className="w-full h-full object-cover" />
+                        ) : (
+                          <>
+                            <div className="w-8 h-8 bg-[#1A2619] rounded-full flex items-center justify-center mb-2">
+                              <User className="w-4 h-4 text-gray-400" />
+                            </div>
+                            <span className="text-xs font-semibold text-gray-300">+ Upload</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Goal Inspiration Photo */}
+              <div className="pt-4 border-t border-[#1A2619]">
+                <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Inspiration Photo (Optional)</label>
+                <p className="text-xs text-gray-500 mb-3">Upload a photo of your goal physique for AI comparison.</p>
+                <div className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00]' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
                   <input type="file" accept="image/*" onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
                       const reader = new FileReader();
-                      reader.onload = (ev) => handleUpdate({ body_scan_inspiration: ev.target?.result as string });
+                      reader.onload = (ev) => handleUpdate({ body_scan_inspiration: ev.target?.result as string, goal_physique_image: ev.target?.result as string });
                       reader.readAsDataURL(file);
                     }
                   }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                  {data.body_scan_inspiration ? (
-                    <img src={data.body_scan_inspiration} className="w-full h-full object-cover" />
+                  {data.body_scan_inspiration || data.goal_physique_image ? (
+                    <img src={data.body_scan_inspiration || data.goal_physique_image} className="w-full h-full object-cover" />
                   ) : (
                     <>
                       <div className="w-10 h-10 bg-[#1A2619] rounded-full flex items-center justify-center mb-2">
                         <User className="w-5 h-5 text-gray-400" />
                       </div>
-                      <span className="text-sm font-semibold text-gray-300">+ Upload Photo</span>
+                      <span className="text-sm font-semibold text-gray-300">+ Upload Inspiration Photo</span>
                     </>
                   )}
                 </div>
@@ -1534,21 +1505,20 @@ case 11:
 
             </div>
             <BottomBar 
-              canProceed={Boolean(data.body_scan_front || data.body_scan_left || data.body_scan_right || data.body_scan_back)} 
+              canProceed={Boolean(data.target_physique)} 
               onProceed={handleNext} 
               label="Analyze" 
             />
           </div>
         );
 
-case 16:
+      case 15:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Review Your Profile" subtitle="Make sure everything looks good." />
             <div className="space-y-4">
               {[
-                { label: "Body Scan", value: data.body_scan_front ? "4 Photos uploaded" : "Not set", stepIndex: 15 },
-                { label: "Personal", value: `${data.name}, ${data.age} yrs, ${data.country}`, stepIndex: 2 },
+                { label: "Personal Profile", value: data.name ? `${data.name}, ${data.age} yrs, ${data.country}` : null, stepIndex: 2 },
                 { label: "Body Details", value: [
                     data.height ? `${data.height}cm` : null,
                     data.weight ? `${data.weight}kg` : null,
@@ -1557,15 +1527,15 @@ case 16:
                     data.arm_cm ? `A:${data.arm_cm}cm` : null,
                     data.thigh_cm ? `T:${data.thigh_cm}cm` : null
                   ].filter(Boolean).join(", "), stepIndex: 3 },
-                { label: "Goal", value: data.goal ? `${data.goal} (Target: ${data.target_weight}kg)` : null, stepIndex: 4 },
-                { label: "Target Physique", value: data.target_physique, stepIndex: 5 },
-                { label: "Experience", value: data.fitness_level ? `${data.fitness_level} (${data.training_days_per_week} days/wk)` : null, stepIndex: 6 },
-                { label: "Environment", value: data.training_location ? `${data.training_location}${data.equipment?.length ? ` (${data.equipment.join(", ")})` : ''}` : null, stepIndex: 7 },
-                { label: "Schedule", value: data.workout_duration_minutes ? `${data.workout_duration_minutes} min, ${data.preferred_training_time}` : null, stepIndex: 8 },
-                { label: "Nutrition", value: `${data.food_type || "Not set"}, ${data.meals_per_day || "Not set"}, ${data.food_environment || "Not set"}`, stepIndex: 9 },
-                { label: "Health & Safety", value: data.physical_problems?.includes("None") && data.previous_injuries === false ? "No concerns" : "Concerns noted", stepIndex: 13 },
-                { label: "Food & Budget", value: data.nutrition_budget ? `${data.nutrition_budget}, ${data.available_foods?.length || 0} foods` : null, stepIndex: 10 },
-                { label: "Lifestyle", value: `${data.activity_level || "Not set"}, ${data.daily_steps || "Not set"} steps, ${data.sleep_duration || "Not set"} sleep`, stepIndex: 11 }
+                { label: "Goal & Target", value: data.goal ? `${data.goal} (Target: ${data.target_weight}kg)` : null, stepIndex: 4 },
+                { label: "Experience", value: data.fitness_level ? `${data.fitness_level} (${data.training_days_per_week} days/wk)` : null, stepIndex: 5 },
+                { label: "Environment", value: data.training_location ? `${data.training_location}${data.equipment?.length ? ` (${data.equipment.join(", ")})` : ''}` : null, stepIndex: 6 },
+                { label: "Schedule", value: data.workout_duration_minutes ? `${data.workout_duration_minutes} min, ${data.preferred_training_time}` : null, stepIndex: 7 },
+                { label: "Nutrition", value: `${data.food_type || "Not set"}, ${data.meals_per_day || "Not set"}, ${data.food_environment || "Not set"}`, stepIndex: 8 },
+                { label: "Food & Budget", value: data.nutrition_budget ? `${data.nutrition_budget}, ${data.available_foods?.length || 0} foods` : null, stepIndex: 9 },
+                { label: "Lifestyle", value: `${data.activity_level || "Not set"}, ${data.daily_steps || "Not set"} steps, ${data.sleep_duration || "Not set"} sleep`, stepIndex: 10 },
+                { label: "Health & Safety", value: data.physical_problems?.includes("None") && data.previous_injuries === false ? "No concerns" : "Concerns noted", stepIndex: 12 },
+                { label: "Target Physique & Scan", value: data.target_physique ? `${data.target_physique} (${data.body_scan_front ? 'Photos uploaded' : 'No photos'})` : "Not set", stepIndex: 14 }
               ].map((section, idx) => (
                 <div key={idx} className="bg-[#0D150D] p-4 rounded-2xl border border-[#1A2619] flex justify-between items-center">
                   <div className="pr-4">
@@ -1583,7 +1553,9 @@ case 16:
             </div>
             <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
           </div>
-        );      case 17:
+        );
+
+      case 16:
         return <AIAnalysisScreen onComplete={handleComplete} data={data} />;
 
       default:
@@ -1596,7 +1568,7 @@ case 16:
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
         <div className="h-16 flex items-center px-4 relative z-10">
-          {step > 1 && step < 17 && (
+          {step > 1 && step < 16 && (
             <button 
               onClick={handleBack}
               className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"
