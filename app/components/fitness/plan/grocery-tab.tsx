@@ -201,7 +201,7 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex items-center bg-[#1A2619] rounded-lg p-1">
                         <button onClick={() => handleUpdateItem(globalIdx, { monthly_quantity: Math.max(0, item.monthly_quantity - 1) })} className="p-1 text-gray-400 hover:text-white"><Minus size={14} /></button>
-                        <span className="text-xs font-bold w-12 text-center">{item.monthly_quantity} {item.unit}</span>
+                        <span className="text-xs font-bold min-w-[3rem] whitespace-nowrap px-1 text-center">{item.monthly_quantity} {item.unit}</span>
                         <button onClick={() => handleUpdateItem(globalIdx, { monthly_quantity: item.monthly_quantity + 1 })} className="p-1 text-gray-400 hover:text-white"><Plus size={14} /></button>
                       </div>
                     </div>
