@@ -63,8 +63,9 @@ Current Date: ${todayDateStr}
 
 Instructions:
 1. Generate a 'plan' object with a highly motivating name, description, and goal.
-2. Generate an array of 'workouts' matching my 'training_days_per_week'. Each workout should have a 'workout_date' (YYYY-MM-DD) distributed across the next 7 days, starting from ${todayDateStr}.
-3. Generate 'exercises' for each workout that fit within my ${profile.workout_duration_minutes} minute duration and match my ${profile.training_location} / ${Array.isArray(profile.equipment) ? profile.equipment.join(", ") : "None"} constraints. 
+2. Generate an array of 'workouts' matching my '${profile.training_days_per_week || 4}' training days per week. Each workout should have a 'workout_date' (YYYY-MM-DD) distributed logically across the next 7 days, starting from ${todayDateStr}.
+3. Generate 'exercises' for each workout that fit within my '${profile.workout_duration_minutes || 45} minute' duration and match my ${profile.training_location} / ${Array.isArray(profile.equipment) ? profile.equipment.join(", ") : "None"} constraints. 
+   - CRITICAL DURATION RULE: You MUST generate enough exercises to realistically fill the duration! For 10-20 mins: ~3 exercises. For 30-45 mins: ~5-6 exercises. For 60+ mins: ~7-8 exercises. Do not be lazy.
    - CRITICAL SAFETY RULE: You MUST strictly respect all my 'Physical Problems', 'Exercise Limitations', 'Previous Injuries', and 'Medical Guidance'. Do NOT prescribe movements that I cannot comfortably perform. You must strictly obey these mapping rules to prevent safety rejection:
      - If limitation includes 'Squatting', do NOT prescribe any squats OR 'leg press'.
      - If limitation includes 'Running', do NOT prescribe running, jogging, sprinting, or treadmill.
