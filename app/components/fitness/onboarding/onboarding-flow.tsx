@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
 import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown } from "lucide-react";
+import { BodySilhouette } from "./body-silhouette";
 import { toast } from "sonner";
 
 export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<OnboardingData> }) {
@@ -1511,10 +1512,18 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                           <img src={(data as any)[item.field]} className="w-full h-full object-cover rounded-xl" />
                         ) : (
                           <>
-                            <div className="w-9 h-9 bg-[#1A2619] rounded-full flex items-center justify-center mb-2 text-[#ADFF00]">
-                              <User className="w-4 h-4" />
+                            <div className="absolute inset-0 z-0">
+                              <BodySilhouette 
+                                view={item.field === 'body_scan_front' ? 'front' : item.field === 'body_scan_back' ? 'back' : item.field === 'body_scan_left' ? 'left' : 'right'} 
+                                className="w-full h-full"
+                              />
                             </div>
-                            <span className="text-xs font-bold text-gray-300">+ Upload</span>
+                            <div className="z-10 flex flex-col items-center justify-center p-3 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+                              <div className="w-9 h-9 bg-[#ADFF00] rounded-full flex items-center justify-center mb-2 text-black shadow-[0_0_15px_rgba(173,255,0,0.4)]">
+                                <User className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-black text-white">+ Upload</span>
+                            </div>
                           </>
                         )}
                       </div>
@@ -1556,11 +1565,16 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                       <img src={data.body_scan_inspiration || data.goal_physique_image} className="w-full h-full object-cover" />
                     ) : (
                       <>
-                        <div className="w-10 h-10 bg-[#1A2619] rounded-full flex items-center justify-center mb-2 text-[#ADFF00]">
-                          <User className="w-5 h-5" />
+                        <div className="absolute inset-0 z-0 flex items-center justify-center opacity-30">
+                          <BodySilhouette view="front" className="h-[120%] w-auto" />
                         </div>
-                        <span className="text-xs font-bold text-gray-300">+ Click to Upload Goal Inspiration Photo</span>
-                        <span className="text-[10px] text-gray-500 mt-0.5">Celebrity, athlete, or physique model photo</span>
+                        <div className="z-10 flex flex-col items-center justify-center p-4 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
+                          <div className="w-10 h-10 bg-[#ADFF00] rounded-full flex items-center justify-center mb-2 text-black shadow-[0_0_15px_rgba(173,255,0,0.4)]">
+                            <Sparkles className="w-5 h-5" />
+                          </div>
+                          <span className="text-xs font-black text-white">+ Click to Upload Goal Inspiration Photo</span>
+                          <span className="text-[10px] text-gray-300 mt-1 font-semibold">Celebrity, athlete, or physique model photo</span>
+                        </div>
                       </>
                     )}
                   </div>
