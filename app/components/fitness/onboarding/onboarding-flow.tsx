@@ -129,6 +129,92 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
     </div>
   );
 
+  const FieldError = ({ error }: { error?: string }) => {
+    if (!error) return null;
+    return (
+      <p className="text-xs text-red-400 font-semibold mt-1.5 flex items-center gap-1">
+        <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+        <span>{error}</span>
+      </p>
+    );
+  };
+
+  // Step 2 validation helper
+  const step2Errors = (() => {
+    const errs: Record<string, string> = {};
+    if (data.name !== undefined && (!data.name.trim() || data.name.trim().length < 2)) {
+      errs.name = "Name must be at least 2 characters.";
+    }
+    if (data.age !== undefined && (isNaN(data.age) || data.age < 16 || data.age > 120)) {
+      errs.age = "Age must be between 16 and 120.";
+    }
+    if (data.country !== undefined && (!data.country.trim() || data.country.trim().length < 2)) {
+      errs.country = "Please enter a valid country.";
+    }
+    if (data.preferred_language !== undefined && (!data.preferred_language.trim() || data.preferred_language.trim().length < 2)) {
+      errs.preferred_language = "Please enter your preferred language.";
+    }
+    return errs;
+  })();
+
+  const isStep2Valid = Boolean(
+    data.name && data.name.trim().length >= 2 &&
+    data.age && data.age >= 16 && data.age <= 120 &&
+    data.gender &&
+    data.country && data.country.trim().length >= 2 &&
+    data.preferred_language && data.preferred_language.trim().length >= 2 &&
+    Object.keys(step2Errors).length === 0
+  );
+
+  // Step 3 validation helper
+  const step3Errors = (() => {
+    const errs: Record<string, string> = {};
+    if (data.height !== undefined && (isNaN(data.height) || data.height < 50 || data.height > 250)) {
+      errs.height = "Height must be between 50 and 250 cm.";
+    }
+    if (data.weight !== undefined && (isNaN(data.weight) || data.weight < 30 || data.weight > 350)) {
+      errs.weight = "Weight must be between 30 and 350 kg.";
+    }
+    if (data.waist_cm !== undefined && (isNaN(data.waist_cm) || data.waist_cm < 40 || data.waist_cm > 200)) {
+      errs.waist_cm = "Waist must be between 40 and 200 cm.";
+    }
+    if (data.chest_cm !== undefined && (isNaN(data.chest_cm) || data.chest_cm < 40 || data.chest_cm > 200)) {
+      errs.chest_cm = "Chest must be between 40 and 200 cm.";
+    }
+    if (data.arm_cm !== undefined && (isNaN(data.arm_cm) || data.arm_cm < 15 || data.arm_cm > 80)) {
+      errs.arm_cm = "Arm must be between 15 and 80 cm.";
+    }
+    if (data.thigh_cm !== undefined && (isNaN(data.thigh_cm) || data.thigh_cm < 20 || data.thigh_cm > 120)) {
+      errs.thigh_cm = "Thigh must be between 20 and 120 cm.";
+    }
+    return errs;
+  })();
+
+  const isStep3Valid = Boolean(
+    data.height && data.height >= 50 && data.height <= 250 &&
+    data.weight && data.weight >= 30 && data.weight <= 350 &&
+    Object.keys(step3Errors).length === 0
+  );
+
+  // Step 4 validation helper
+  const step4Errors = (() => {
+    const errs: Record<string, string> = {};
+    if (data.target_weight !== undefined && (isNaN(data.target_weight) || data.target_weight < 30 || data.target_weight > 350)) {
+      errs.target_weight = "Target weight must be between 30 and 350 kg.";
+    }
+    if (data.target_deadline_days !== undefined && (isNaN(data.target_deadline_days) || data.target_deadline_days < 7 || data.target_deadline_days > 365)) {
+      errs.target_deadline_days = "Deadline must be between 7 and 365 days.";
+    }
+    return errs;
+  })();
+
+  const isStep4Valid = Boolean(
+    data.goal &&
+    data.target_weight && data.target_weight >= 30 && data.target_weight <= 350 &&
+    data.target_deadline_days && data.target_deadline_days >= 7 && data.target_deadline_days <= 365 &&
+    Object.keys(step4Errors).length === 0
+  );
+
   const renderStep = () => {
     switch(step) {
       case 1:
@@ -178,9 +264,12 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                   type="text" 
                   value={data.name || ""} 
                   onChange={e => handleUpdate({ name: e.target.value })}
-                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                  className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                    step2Errors.name ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                  }`} 
                   placeholder="Your Name"
                 />
+                <FieldError error={step2Errors.name} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -190,16 +279,19 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     min={16} max={120}
                     value={data.age || ""} 
                     onChange={e => handleUpdate({ age: parseInt(e.target.value) || undefined })}
-                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                      step2Errors.age ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                    }`} 
                     placeholder="25"
                   />
+                  <FieldError error={step2Errors.age} />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-2">Gender</label>
                   <select 
                     value={data.gender || ""} 
                     onChange={e => handleUpdate({ gender: e.target.value as any })}
-                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none appearance-none"
+                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] transition-colors outline-none appearance-none"
                   >
                     <option value="" disabled className="text-gray-500">Select</option>
                     <option value="Male">Male</option>
@@ -215,9 +307,12 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                   type="text" 
                   value={data.country || ""} 
                   onChange={e => handleUpdate({ country: e.target.value })}
-                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                  className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                    step2Errors.country ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                  }`} 
                   placeholder="e.g. United States"
                 />
+                <FieldError error={step2Errors.country} />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-2">Preferred Language</label>
@@ -225,13 +320,16 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                   type="text" 
                   value={data.preferred_language || ""} 
                   onChange={e => handleUpdate({ preferred_language: e.target.value })}
-                  className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                  className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                    step2Errors.preferred_language ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                  }`} 
                   placeholder="e.g. English"
                 />
+                <FieldError error={step2Errors.preferred_language} />
               </div>
             </div>
             <BottomBar 
-              canProceed={!!(data.name && data.age && data.age >= 16 && data.gender && data.country && data.preferred_language)} 
+              canProceed={isStep2Valid} 
               onProceed={handleNext} 
             />
           </div>
@@ -248,9 +346,12 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     type="number" 
                     value={data.height || ""} 
                     onChange={e => handleUpdate({ height: parseFloat(e.target.value) || undefined })}
-                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                      step3Errors.height ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                    }`}
                     placeholder="173"
                   />
+                  <FieldError error={step3Errors.height} />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-2">Weight (kg)</label>
@@ -258,9 +359,12 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     type="number" 
                     value={data.weight || ""} 
                     onChange={e => handleUpdate({ weight: parseFloat(e.target.value) || undefined })}
-                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                      step3Errors.weight ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                    }`}
                     placeholder="73"
                   />
+                  <FieldError error={step3Errors.weight} />
                 </div>
               </div>
               
@@ -271,9 +375,12 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     type="number" 
                     value={data.waist_cm || ""} 
                     onChange={e => handleUpdate({ waist_cm: parseFloat(e.target.value) || undefined })}
-                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                      step3Errors.waist_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                    }`}
                     placeholder="80"
                   />
+                  <FieldError error={step3Errors.waist_cm} />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-2">Chest (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
@@ -281,9 +388,12 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     type="number" 
                     value={data.chest_cm || ""} 
                     onChange={e => handleUpdate({ chest_cm: parseFloat(e.target.value) || undefined })}
-                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                      step3Errors.chest_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                    }`}
                     placeholder="95"
                   />
+                  <FieldError error={step3Errors.chest_cm} />
                 </div>
               </div>
 
@@ -294,9 +404,12 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     type="number" 
                     value={data.arm_cm || ""} 
                     onChange={e => handleUpdate({ arm_cm: parseFloat(e.target.value) || undefined })}
-                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                      step3Errors.arm_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                    }`}
                     placeholder="35"
                   />
+                  <FieldError error={step3Errors.arm_cm} />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-2">Thigh (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
@@ -304,14 +417,17 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     type="number" 
                     value={data.thigh_cm || ""} 
                     onChange={e => handleUpdate({ thigh_cm: parseFloat(e.target.value) || undefined })}
-                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600" 
+                    className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                      step3Errors.thigh_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                    }`}
                     placeholder="55"
                   />
+                  <FieldError error={step3Errors.thigh_cm} />
                 </div>
               </div>
             </div>
             <BottomBar 
-              canProceed={!!(data.height && data.weight)} 
+              canProceed={isStep3Valid} 
               onProceed={handleNext} 
             />
           </div>
@@ -368,9 +484,12 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     type="number" 
                     value={data.target_weight || ""} 
                     onChange={e => handleUpdate({ target_weight: parseFloat(e.target.value) || undefined })}
-                    className="w-full p-4 rounded-xl border border-[#ADFF00]/30 bg-[#ADFF00]/5 text-white focus:border-[#ADFF00] focus:ring-1 focus:ring-[#ADFF00] transition-colors outline-none placeholder:text-gray-600 font-bold" 
+                    className={`w-full p-4 rounded-xl border bg-[#ADFF00]/5 text-white transition-colors outline-none placeholder:text-gray-600 font-bold ${
+                      step4Errors.target_weight ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                    }`}
                     placeholder={data.weight ? `${Math.round(data.weight * 0.9)}` : "68"}
                   />
+                  <FieldError error={step4Errors.target_weight} />
                 </div>
               </div>
 
@@ -398,13 +517,16 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                   type="number" 
                   value={data.target_deadline_days || ""} 
                   onChange={e => handleUpdate({ target_deadline_days: parseInt(e.target.value) || undefined })}
-                  className="w-full p-3 rounded-xl border border-[#1A2619] bg-[#121E12] text-white focus:border-[#ADFF00]/50 transition-colors outline-none placeholder:text-gray-600 font-bold" 
+                  className={`w-full p-3 rounded-xl border bg-[#121E12] text-white transition-colors outline-none placeholder:text-gray-600 font-bold ${
+                    step4Errors.target_deadline_days ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]/50'
+                  }`}
                   placeholder="Or enter custom days (e.g. 45)"
                 />
+                <FieldError error={step4Errors.target_deadline_days} />
               </div>
             </div>
 
-            <BottomBar canProceed={!!data.goal && !!data.target_weight && !!data.target_deadline_days} onProceed={handleNext} />
+            <BottomBar canProceed={isStep4Valid} onProceed={handleNext} />
           </div>
         );
             case 5:
@@ -1264,6 +1386,10 @@ case 11:
               canProceed={
                 data.physical_problems !== undefined && data.physical_problems.length > 0 &&
                 data.previous_injuries !== undefined &&
+                (data.previous_injuries === false || (
+                  data.previous_injury_areas !== undefined && data.previous_injury_areas.length > 0 &&
+                  Boolean(data.previous_injury_timeline)
+                )) &&
                 data.exercise_limitations !== undefined && data.exercise_limitations.length > 0
               } 
               onProceed={handleNext} 
@@ -1391,15 +1517,21 @@ case 11:
                 </ul>
               </div>
 
-              <div className="text-center px-4">
+              <div className="text-center px-4 space-y-3">
                 <p className="text-[11px] text-gray-500 leading-relaxed">
                   Your photos are private and are only used according to your selected AI analysis and privacy settings.
                 </p>
+                <button 
+                  onClick={handleNext}
+                  className="text-xs font-bold text-[#ADFF00] hover:underline"
+                >
+                  Skip photo upload & continue →
+                </button>
               </div>
 
             </div>
             <BottomBar 
-              canProceed={!!(data.body_scan_front && data.body_scan_left && data.body_scan_right && data.body_scan_back)} 
+              canProceed={Boolean(data.body_scan_front || data.body_scan_left || data.body_scan_right || data.body_scan_back)} 
               onProceed={handleNext} 
               label="Analyze" 
             />
