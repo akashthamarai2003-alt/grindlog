@@ -340,6 +340,21 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Body Details" subtitle="Let's understand your starting point." />
+            
+            <div className="mb-6 bg-[#0D150D] border border-[#1A2619] p-4 rounded-2xl space-y-2.5">
+              <div className="flex items-center gap-2">
+                <Info size={16} className="text-[#ADFF00] shrink-0" />
+                <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Why Honest Details Matter</h4>
+              </div>
+              <p className="text-xs text-gray-300 leading-relaxed">
+                Please enter your exact measurements honestly. We calculate an estimated body-fat range using an established formula based on your metrics.
+              </p>
+              <div className="pt-2 border-t border-[#1A2619] text-[11px] text-gray-400 leading-relaxed flex items-start gap-1.5">
+                <span>📸</span>
+                <span><b>Photos & Goal Physique:</b> Photos can be used for visual progress comparison and AI Goal Physique photo analysis.</span>
+              </div>
+            </div>
+
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
