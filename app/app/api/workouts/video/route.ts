@@ -27,8 +27,8 @@ export async function GET(request: Request) {
     }
 
     const text = await res.text();
-    // YouTube's internal state usually contains videoId
-    const match = text.match(/"videoId":"([^"]{11})"/);
+    // Match only 'videoRenderer' to guarantee we get a standard horizontal video, skipping 'reelItemRenderer' (Shorts)
+    const match = text.match(/"videoRenderer":\{"videoId":"([^"]{11})"/);
 
     if (match) {
       return NextResponse.json({ videoId: match[1] });
