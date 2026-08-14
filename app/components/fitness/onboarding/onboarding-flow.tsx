@@ -592,7 +592,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar canProceed={!!data.fitness_level && !!data.training_days_per_week} onProceed={handleNext} />
           </div>
         );
-      case 7:
+      case 6:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Workout Environment" subtitle="Where will you train?" />
@@ -685,7 +685,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           </div>
         );
 
-      case 8:
+      case 7:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Training Schedule" subtitle="How much time can you commit?" />
@@ -729,7 +729,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             />
           </div>
         );
-      case 9:
+      case 8:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Nutrition Profile" subtitle="Help us understand your eating habits." />
@@ -809,7 +809,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           </div>
         );
 
-            case 10:
+            case 9:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Food & Budget" subtitle="Let's make sure the plan fits your wallet." />
@@ -921,7 +921,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
           </div>
         );
 
-case 11:
+      case 10:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Lifestyle Profile" subtitle="How do you spend your days?" />
@@ -1053,7 +1053,7 @@ case 11:
           </div>
         );
 
-            case 12:
+      case 11:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 relative text-center">
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center">
@@ -1086,7 +1086,7 @@ case 11:
           </div>
         );
 
-      case 13:
+      case 12:
         return (
           <div className="px-6 pt-6 pb-36">
             <StepHeader title="Physical Concerns" subtitle="Help us build a safe plan for you." />
@@ -1354,7 +1354,7 @@ case 11:
           </div>
         );
 
-      case 14:
+      case 13:
         return (
           <div className="flex flex-col h-[85vh] justify-center px-6 relative">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center text-center">
