@@ -45,21 +45,14 @@ export async function POST(req: Request) {
     const todayStr = new Date().toISOString().split('T')[0];
     const userPrompt = buildFitnessPlanPrompt(profile, todayStr, scan?.gemini_analysis);
     
-    // Using groq client directly for better control
-    const groq = getGroqClient();
+    const { generateAIResponseJSON } = await import("@/lib/services/groq/client");
     
-    const response = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: FITNESS_PLAN_SYSTEM_PROMPT },
-        { role: "user", content: userPrompt }
-      ],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.3,
-      max_tokens: 8000,
-      response_format: { type: "json_object" }
+    const aiResponse = await generateAIResponseJSON({
+      systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
+      userPrompt,
+      model: "primary",
+      maxTokens: 8000,
     });
-    
-    const aiResponse = JSON.parse(response.choices[0]?.message?.content || "{}");
 
     // 6. Validate AI JSON
     const parsed = GeneratedPlanSchema.safeParse(aiResponse);

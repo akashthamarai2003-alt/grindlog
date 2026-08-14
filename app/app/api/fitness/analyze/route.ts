@@ -145,18 +145,14 @@ Generate a comprehensive Transformation Strategy JSON containing exactly these t
 - "timeline_projection": (array of objects with fields "timeframe" (e.g. "Week 1-2", "Week 3-4"), "target_weight_kg" (string or number), "expected_changes" (string)).
 Output ONLY valid JSON matching this schema.`;
 
-      const reasoningResponse = await groq.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: "Generate my strategy now." }
-        ],
-        model: "llama-3.3-70b-versatile",
-        temperature: 0.3,
-        response_format: { type: "json_object" }
+      const { generateAIResponseJSON } = await import("@/lib/services/groq/client");
+      
+      aiStrategy = await generateAIResponseJSON({
+        systemPrompt,
+        userPrompt: "Generate my strategy now.",
+        model: "primary",
+        maxTokens: 8000,
       });
-
-      const reasoningJson = reasoningResponse.choices[0]?.message?.content || "{}";
-      aiStrategy = JSON.parse(reasoningJson);
       console.log("AI Strategy Generated:", aiStrategy);
     } catch (err) {
       console.error("Groq Reasoning API Error:", err);

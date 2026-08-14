@@ -45,19 +45,14 @@ User request: "${prompt}"
 
 Modify the JSON appropriately and return the full updated JSON.`;
 
-    const groq = getGroqClient();
+    const { generateAIResponseJSON } = await import("@/lib/services/groq/client");
     
-    const response = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.3,
-      response_format: { type: "json_object" }
+    const aiResponse = await generateAIResponseJSON({
+      systemPrompt,
+      userPrompt,
+      model: "primary",
+      maxTokens: 8000,
     });
-
-    const aiResponse = JSON.parse(response.choices[0]?.message?.content || "{}");
 
     // Validate
     const parsed = GeneratedPlanSchema.safeParse(aiResponse);
