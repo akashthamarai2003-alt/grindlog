@@ -215,6 +215,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       } catch (err) {
         console.error("Failed to load logs for date:", err);
       }
+    }
 
     loadLogs();
 
