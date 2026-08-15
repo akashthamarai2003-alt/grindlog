@@ -494,7 +494,17 @@ export class NutritionService {
         });
       } else {
         plans.forEach(p => {
-          if (p.meal_type) plansByMealType.set(p.meal_type.toLowerCase(), p);
+          if (p.meal_type) {
+            const mItems = p.meal_plan_items || [];
+            const mCals = mItems.reduce((acc: number, it: any) => acc + Math.round((it.foods?.calories || 0) * it.quantity), 0);
+            const mPro = mItems.reduce((acc: number, it: any) => acc + Number((it.foods?.protein || 0) * it.quantity), 0);
+            plansByMealType.set(p.meal_type.toLowerCase(), {
+              ...p,
+              calories: mCals,
+              protein: mPro,
+              meal_plan_items: mItems
+            });
+          }
         });
       }
     }
