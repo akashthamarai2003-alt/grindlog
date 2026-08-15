@@ -174,17 +174,6 @@ export default function NewJournalPage() {
 
 
 
-        {/* AI Summary hint */}
-        <div className="rounded-2xl border border-[var(--color-accent-blue)]/10 bg-gradient-to-br from-[var(--color-accent-blue-light)] to-[var(--color-bg-secondary)] p-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[var(--color-accent-blue)]" />
-            <span className="text-xs font-semibold text-[var(--color-accent-blue)]">
-              {todayEntry?.ai_summary
-                ? todayEntry.ai_summary
-                : "AI summary will be generated when you save"}
-            </span>
-          </div>
-        </div>
       </motion.div>
 
       {/* Save button */}

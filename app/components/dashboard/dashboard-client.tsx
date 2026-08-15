@@ -8,7 +8,6 @@ import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, Quote, Trophy, Flame, Plus, Sparkles, Target, Medal, Gift, CircleDollarSign, MessageCircle } from "lucide-react";
 import { HabitCard } from "@/components/habits/habit-card";
-import { AiInspiration } from "@/components/dashboard/ai-inspiration";
 import { Confetti } from "@/components/gamification/confetti";
 import { toggleHabitCompletion, getHabitLogsForDate, updateHabitRemark } from "@/app/actions/habits";
 import { isHabitScheduled } from "@/lib/habit-utils";
@@ -617,8 +616,7 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         </div>
       </div>
       
-      {/* AI Inspiration */}
-      <AiInspiration isPro={profile.premium_level === "pro"} />
+
 
       {/* Notification Prompt (only shows if not enabled) */}
       <NotificationPrompt variant="modal" />

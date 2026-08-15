@@ -36,9 +36,7 @@ const features = [
   { icon: TreeDeciduous, label: "Virtual Growth Tree", value: "" },
   { icon: LayoutGrid, label: "Full Life Tracking", value: "Full Suite" },
   { icon: Trophy, label: "Gamified Quests", value: "Unlimited" },
-  { icon: Notebook, label: "Daily AI Journaling", value: "" },
   { icon: BarChart3, label: "Advanced Analytics", value: "" },
-  { icon: Brain, label: "Personal AI Coach", value: "" },
   { icon: BellRing, label: "Smart Reminders", value: "" },
   { icon: Table, label: "Smart Track Sheet", value: "" },
 ];
@@ -352,7 +350,7 @@ export default function PaymentPage() {
           Full Potential
         </h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-xs mx-auto">
-          Premium features, unlimited habits, and an AI coach that actually knows you.
+          Premium features, unlimited habits, and everything you need to hit your goals.
         </p>
       </motion.div>
 
