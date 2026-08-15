@@ -1921,6 +1921,7 @@ const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: 
   const [phase, setPhase] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState("");
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 2000);
@@ -1955,6 +1956,11 @@ const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: 
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
     };
   }, [data]);
+
+  const handleCompleteClick = () => {
+    setIsNavigating(true);
+    onComplete();
+  };
 
   return (
     <div className="flex flex-col min-h-[100dvh] justify-center px-6 relative overflow-hidden bg-[#0A1108]">
@@ -2007,8 +2013,8 @@ const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: 
                 animate={{ opacity: 1, y: 0 }} 
               >
                 <button 
-                  onClick={onComplete} 
-                  disabled={!isDone && !error}
+                  onClick={handleCompleteClick} 
+                  disabled={(!isDone && !error) || isNavigating}
                   className={`w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center ${error ? 'bg-red-500/20 text-red-500 border border-red-500' : 'bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33]'} disabled:opacity-70 disabled:cursor-not-allowed`}
                 >
                   {error ? (
@@ -2017,6 +2023,11 @@ const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: 
                     <div className="flex items-center gap-2">
                       <Loader2 className="animate-spin w-5 h-5" />
                       <span>Finalizing Strategy...</span>
+                    </div>
+                  ) : isNavigating ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="animate-spin w-5 h-5" />
+                      <span>Loading Plan...</span>
                     </div>
                   ) : (
                     "View Transformation Plan"
