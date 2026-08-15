@@ -1436,13 +1436,23 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
               <div className="w-16 h-16 bg-[#121E12] border border-[#1E2E1D] rounded-full flex items-center justify-center mb-6 text-gray-400">
                 <Stethoscope size={28} />
               </div>
-              <h2 className="text-3xl font-black text-white tracking-tight mb-4">Your safety comes first</h2>
+              <h2 className="text-3xl font-black text-white tracking-tight mb-4">Assumption of Risk</h2>
               <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-                Your answers help personalize your fitness recommendations. The AI cannot diagnose injuries or medical conditions.
+                This app generates workouts using Artificial Intelligence. It is not a doctor, physical therapist, or medical professional. The AI cannot diagnose injuries or provide medical treatment.
               </p>
-              <p className="text-gray-400 text-sm leading-relaxed mb-8">
-                If you have significant pain, a serious injury, or have been advised by a healthcare professional to restrict exercise, follow professional guidance before starting or changing your workout.
-              </p>
+              
+              {data.pain_severity === 'Severe/debilitating pain' ? (
+                <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl mb-8">
+                  <p className="text-red-400 font-bold text-sm mb-2">⚠️ CRITICAL MEDICAL WARNING</p>
+                  <p className="text-red-400/80 text-xs leading-relaxed">
+                    You indicated that you have severe/debilitating pain. You must consult a doctor or physical therapist. The AI will strictly refuse to generate exercises for injured areas.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                  If you have significant pain, a serious injury, or have been advised by a healthcare professional to restrict exercise, follow professional guidance before starting or changing your workout.
+                </p>
+              )}
               
               <button 
                 onClick={() => handleUpdate({ safety_acknowledged: !data.safety_acknowledged })}
@@ -1450,13 +1460,13 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                   data.safety_acknowledged ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D]"
                 }`}
               >
-                <div className={`w-6 h-6 rounded flex items-center justify-center border ${
+                <div className={`w-6 h-6 rounded flex items-center justify-center border shrink-0 ${
                   data.safety_acknowledged ? "bg-[#ADFF00] border-[#ADFF00] text-black" : "border-gray-600"
                 }`}>
                   {data.safety_acknowledged && <Check size={16} strokeWidth={3} />}
                 </div>
-                <span className={`font-semibold text-left ${data.safety_acknowledged ? "text-[#ADFF00]" : "text-gray-300"}`}>
-                  I understand
+                <span className={`font-semibold text-left text-sm ${data.safety_acknowledged ? "text-[#ADFF00]" : "text-gray-300"}`}>
+                  I Accept All Risks & Release Liability
                 </span>
               </button>
             </motion.div>
