@@ -22,13 +22,17 @@ export async function POST(req: Request) {
 
     const data = result.data;
 
-    // Optional: Extract images
+    // Optional: Extract images for Gemini Vision
     const images: any[] = [];
     const addImage = (base64Str?: string) => {
       if (base64Str && base64Str.startsWith('data:image')) {
+        const [meta, data] = base64Str.split(',');
+        const mimeType = meta.split(';')[0].split(':')[1];
         images.push({
-          type: "image_url",
-          image_url: { url: base64Str }
+          inlineData: {
+            data,
+            mimeType
+          }
         });
       }
     };
@@ -42,30 +46,32 @@ export async function POST(req: Request) {
     let visualObservations = "No photos provided.";
 
     if (images.length > 0) {
-      console.log(`Sending ${images.length} images to Groq Vision...`);
+      console.log(`Sending ${images.length} images to Google Gemini Vision...`);
       try {
-        const visionResponse = await groq.chat.completions.create({
-          messages: [
-            {
-              role: "user",
-              content: [
-                { 
-                  type: "text", 
-                  text: "You are an expert fitness coach and physique analyst. Analyze these photos of the user (and their target inspiration physique, if provided). Output a structured JSON response with your visual observations including: estimated body fat percentage range, muscle mass distribution, posture assessment, fat distribution, visual strengths/weaknesses, and what physically needs to change to approach the target physique. Output ONLY valid JSON." 
-                },
-                ...images
-              ],
-            }
-          ],
-          model: "llama-3.2-90b-vision-preview",
-          temperature: 0.2,
-          response_format: { type: "json_object" }
+        const { GoogleGenAI } = await import("@google/genai");
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error("GEMINI_API_KEY missing");
+        
+        const gemini = new GoogleGenAI({ apiKey });
+        const response = await gemini.models.generateContent({
+          model: "gemini-1.5-flash",
+          contents: [{
+            role: "user",
+            parts: [
+              { text: "You are an expert fitness coach and physique analyst. Analyze these photos of the user (and their target inspiration physique, if provided). Output a structured JSON response with your visual observations including: estimated body fat percentage range, muscle mass distribution, posture assessment, fat distribution, visual strengths/weaknesses, and what physically needs to change to approach the target physique. Output ONLY valid JSON." },
+              ...images
+            ]
+          }],
+          config: {
+            temperature: 0.2,
+            responseMimeType: "application/json"
+          }
         });
 
-        visualObservations = visionResponse.choices[0]?.message?.content || "{}";
-        console.log("Vision Observations:", visualObservations);
+        visualObservations = response.text || "{}";
+        console.log("Gemini Vision Observations:", visualObservations);
       } catch (err) {
-        console.error("Groq Vision API Error:", err);
+        console.error("Gemini Vision API Error:", err);
         visualObservations = JSON.stringify({ error: "Failed to analyze images due to API error." });
       }
     }
