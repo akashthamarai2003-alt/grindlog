@@ -52,6 +52,7 @@ export const GeneratedLifestyleSchema = z.object({
 });
 
 export const GeneratedPlanSchema = z.object({
+  safety_acknowledgment: z.coerce.string().describe("Explicit acknowledgment of all limitations and forbidden exercises").optional(),
   plan: z.object({
     name: z.coerce.string(),
     description: z.coerce.string(),

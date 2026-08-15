@@ -99,6 +99,7 @@ Instructions:
 
 Respond entirely in JSON format matching this exact schema:
 {
+  "safety_acknowledgment": "string (CRITICAL: You MUST write this field FIRST. Acknowledge all my Physical Problems and Exercise Limitations. State EXACTLY what exercises you are strictly forbidden from generating, based on the SAFETY RULE mappings. e.g. 'Since the user has a Running limitation, I am strictly forbidden from prescribing any running, jogging, or treadmill work.')",
   "plan": {
     "name": "string",
     "description": "string",
