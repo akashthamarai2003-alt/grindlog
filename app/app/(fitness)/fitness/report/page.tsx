@@ -67,9 +67,13 @@ export default async function AIStartingReportPage() {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Goal</p>
             <p className="text-2xl font-black text-white">{profile.target_weight || '--'} kg</p>
           </div>
-          <div className="col-span-2 bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
+          <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Target</p>
-            <p className="text-xl font-bold text-[#ADFF00]">{profile.goal || 'Not specified'}</p>
+            <p className="text-lg font-bold text-[#ADFF00] leading-tight">{profile.goal || 'Not specified'}</p>
+          </div>
+          <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Physique</p>
+            <p className="text-lg font-bold text-[#ADFF00] leading-tight">{profile.target_physique || 'Not specified'}</p>
           </div>
         </div>
 
