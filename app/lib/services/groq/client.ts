@@ -1,12 +1,11 @@
 import Groq from "groq-sdk";
 import OpenAI from "openai";
-import { GoogleGenAI } from "@google/genai";
 
 // ------------------------------------------------------------------
 // 1. PROVIDER INITIALIZATION
 // ------------------------------------------------------------------
 
-// A. GROQ SETUP (Tier 2 Fallback)
+// A. GROQ SETUP (Tier 1 Primary)
 const groqClients = new Map<string, Groq>();
 let globalKeyCounter = 0;
 
@@ -23,7 +22,7 @@ function getGroqClientForKey(apiKey: string): Groq {
   return groqClients.get(apiKey)!;
 }
 
-// B. NVIDIA SETUP (Tier 3 Emergency Fallback)
+// B. NVIDIA SETUP (Tier 2 Emergency Fallback)
 let nvidiaClient: OpenAI | null = null;
 function getNvidiaClient(): OpenAI | null {
   if (nvidiaClient) return nvidiaClient;
@@ -34,16 +33,6 @@ function getNvidiaClient(): OpenAI | null {
     baseURL: "https://integrate.api.nvidia.com/v1",
   });
   return nvidiaClient;
-}
-
-// C. GOOGLE GEMINI SETUP (Tier 1 Primary)
-let geminiClient: GoogleGenAI | null = null;
-function getGeminiClient(): GoogleGenAI | null {
-  if (geminiClient) return geminiClient;
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  geminiClient = new GoogleGenAI({ apiKey });
-  return geminiClient;
 }
 
 // ------------------------------------------------------------------
@@ -58,7 +47,7 @@ export const GROQ_MODELS = {
 export type RouteModel = keyof typeof GROQ_MODELS;
 
 // ------------------------------------------------------------------
-// 3. MASTER ROUTING LOGIC (The 3-Tier Tag-Team)
+// 3. MASTER ROUTING LOGIC (2-Tier Tag-Team for Text)
 // ------------------------------------------------------------------
 export async function generateAIResponse({
   systemPrompt,
@@ -78,36 +67,11 @@ export async function generateAIResponse({
   const errors: string[] = [];
 
   // ==================================================================
-  // TIER 1: GOOGLE GEMINI (The 1 Million TPM Heavy Lifter)
-  // ==================================================================
-  const gemini = getGeminiClient();
-  if (gemini) {
-    try {
-      console.log(`[AI ROUTER] Tier 1: Attempting Google Gemini...`);
-      const response = await gemini.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        config: {
-          systemInstruction: systemPrompt,
-          temperature,
-          responseMimeType: responseFormat === "json_object" ? "application/json" : "text/plain",
-        },
-      });
-
-      const content = response.text;
-      if (content) return content;
-    } catch (err: any) {
-      console.warn(`[AI ROUTER] Tier 1 Gemini Failed:`, err.message);
-      errors.push(`Gemini: ${err.message}`);
-    }
-  }
-
-  // ==================================================================
-  // TIER 2: GROQ (The High-Speed Round-Robin Fallback)
+  // TIER 1: GROQ (The High-Speed Round-Robin Primary)
   // ==================================================================
   const groqKeys = getGroqApiKeys();
   if (groqKeys.length > 0) {
-    console.log(`[AI ROUTER] Tier 2: Falling back to Groq (${groqKeys.length} keys)...`);
+    console.log(`[AI ROUTER] Tier 1: Attempting Groq (${groqKeys.length} keys)...`);
     
     // We'll try the requested model, then gracefully degrade to instant if needed
     const requestedGroqModel = GROQ_MODELS[model] || "llama-3.1-8b-instant";
@@ -137,7 +101,7 @@ export async function generateAIResponse({
           const content = completion.choices[0]?.message?.content;
           if (content) return content;
         } catch (err: any) {
-          console.warn(`[AI ROUTER] Tier 2 Groq (Key ${selectedKeyIndex}, Model ${targetModel}) Failed:`, err.message);
+          console.warn(`[AI ROUTER] Tier 1 Groq (Key ${selectedKeyIndex}, Model ${targetModel}) Failed:`, err.message);
           errors.push(`Groq [${targetModel}]: ${err.message}`);
         }
       }
@@ -145,12 +109,12 @@ export async function generateAIResponse({
   }
 
   // ==================================================================
-  // TIER 3: NVIDIA NIM (The Emergency Net)
+  // TIER 2: NVIDIA NIM (The Emergency Net)
   // ==================================================================
   const nvidia = getNvidiaClient();
   if (nvidia) {
     try {
-      console.log(`[AI ROUTER] Tier 3: Attempting NVIDIA NIM Emergency Backup...`);
+      console.log(`[AI ROUTER] Tier 2: Attempting NVIDIA NIM Emergency Backup...`);
       const completion = await nvidia.chat.completions.create({
         model: "meta/llama-3.1-8b-instruct",
         messages: [
@@ -164,7 +128,7 @@ export async function generateAIResponse({
       const content = completion.choices[0]?.message?.content;
       if (content) return content;
     } catch (err: any) {
-      console.warn(`[AI ROUTER] Tier 3 NVIDIA Failed:`, err.message);
+      console.warn(`[AI ROUTER] Tier 2 NVIDIA Failed:`, err.message);
       errors.push(`NVIDIA: ${err.message}`);
     }
   }
