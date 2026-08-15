@@ -60,6 +60,7 @@ export async function POST(req: Request) {
           userPrompt,
           model: "primary",
           maxTokens: 8000,
+          temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
         });
 
         // 6. Validate AI JSON

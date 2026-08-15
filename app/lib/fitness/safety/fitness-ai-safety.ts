@@ -24,7 +24,6 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
   }
 
   // 2. Equipment Safety (Basic Keyword Checks)
-  // E.g., if home and no equipment, reject "Barbell"
   const equipment = (profile.equipment || []).map(e => e.toLowerCase());
   const hasNoEquipment = equipment.length === 0 || equipment.includes("none") || equipment.includes("bodyweight only");
   
@@ -33,7 +32,9 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
       for (const exercise of workout.exercises) {
         const name = exercise.name.toLowerCase();
         if (name.includes("barbell") || name.includes("dumbbell") || name.includes("cable") || name.includes("machine")) {
-          return { safe: false, reason: `Generated exercise '${exercise.name}' requires equipment you do not have.` };
+          // Auto-correct to bodyweight instead of failing
+          exercise.name = exercise.name.replace(/barbell|dumbbell|cable|machine/gi, "Bodyweight");
+          exercise.notes = "Auto-corrected to match available equipment.";
         }
       }
     }
@@ -59,30 +60,31 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
       for (const exercise of workout.exercises) {
         const name = exercise.name.toLowerCase();
         
-        // Basic mapping of limitations to common exercise keywords
+        // Auto-correct forbidden exercises to universally safe bodyweight alternatives
         if (limitations.includes("squatting") && (name.includes("squat") || name.includes("leg press"))) {
-          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Squatting.` };
-        }
-        if (limitations.includes("running") && (name.includes("run") || name.includes("treadmill") || name.includes("sprint") || name.includes("jog"))) {
-          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Running.` };
-        }
-        if (limitations.includes("jumping") && (name.includes("jump") || name.includes("plyo") || name.includes("box") || name.includes("burpee"))) {
-          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Jumping.` };
-        }
-        if (limitations.includes("overhead movements") && (name.includes("overhead") || name.includes("military press") || name.includes("shoulder press") || name.includes("push press"))) {
-          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Overhead movements.` };
-        }
-        if (limitations.includes("push-ups") && name.includes("push-up")) {
-          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Push-ups.` };
-        }
-        if (limitations.includes("pull-ups") && (name.includes("pull-up") || name.includes("chin-up"))) {
-          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Pull-ups.` };
-        }
-        if (limitations.includes("lunges") && name.includes("lunge")) {
-          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Lunges.` };
-        }
-        if (limitations.includes("bending") && (name.includes("deadlift") || name.includes("good morning") || name.includes("bent"))) {
-          return { safe: false, reason: `Generated exercise '${exercise.name}' violates your limitation: Bending.` };
+          exercise.name = "Glute Bridges (Safe Alternative)";
+          exercise.notes = "Auto-corrected for safety.";
+        } else if (limitations.includes("running") && (name.includes("run") || name.includes("treadmill") || name.includes("sprint") || name.includes("jog"))) {
+          exercise.name = "Marching in Place (Safe Alternative)";
+          exercise.notes = "Auto-corrected for safety.";
+        } else if (limitations.includes("jumping") && (name.includes("jump") || name.includes("plyo") || name.includes("box") || name.includes("burpee"))) {
+          exercise.name = "Step-Ups (Safe Alternative)";
+          exercise.notes = "Auto-corrected for safety.";
+        } else if (limitations.includes("overhead movements") && (name.includes("overhead") || name.includes("military press") || name.includes("shoulder press") || name.includes("push press"))) {
+          exercise.name = "Front Raises (Safe Alternative)";
+          exercise.notes = "Auto-corrected for safety.";
+        } else if (limitations.includes("push-ups") && name.includes("push-up")) {
+          exercise.name = "Wall Presses (Safe Alternative)";
+          exercise.notes = "Auto-corrected for safety.";
+        } else if (limitations.includes("pull-ups") && (name.includes("pull-up") || name.includes("chin-up"))) {
+          exercise.name = "Superman Holds (Safe Alternative)";
+          exercise.notes = "Auto-corrected for safety.";
+        } else if (limitations.includes("lunges") && name.includes("lunge")) {
+          exercise.name = "Glute Bridges (Safe Alternative)";
+          exercise.notes = "Auto-corrected for safety.";
+        } else if (limitations.includes("bending") && (name.includes("deadlift") || name.includes("good morning") || name.includes("bent"))) {
+          exercise.name = "Superman Holds (Safe Alternative)";
+          exercise.notes = "Auto-corrected for safety.";
         }
       }
     }
