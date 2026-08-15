@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { getGroqClient } from "@/lib/services/groq/client";
 import { createAdminClient } from "@/lib/services/supabase/admin";
+import { GoogleGenAI } from "@google/genai";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,8 +19,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Ensure Gemini API key is present
-
-    // (We don't need GEMINI_API_KEY anymore as getGroqClient handles GROQ_API_KEY)
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ success: false, error: "GEMINI_API_KEY is not configured on the server." }, { status: 500 });
+    }
 
     // 3. Download images as Base64 using Supabase Admin client
     const adminClient = createAdminClient();
@@ -47,52 +49,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Could not process uploaded images" }, { status: 400 });
     }
 
-    // 4. Construct Groq Payload (Limit to 2 images max to avoid Groq 8k TPM limit)
-    const priority = ["front", "side", "goal", "back"];
-    const sortedImages = base64Images.sort((a, b) => {
-      const idxA = priority.indexOf(a.view);
-      const idxB = priority.indexOf(b.view);
-      // Fallback for unknown views
-      return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
-    });
+    // 4. Construct Gemini Payload
+    const geminiClient = new GoogleGenAI({ apiKey });
 
-    const imageContents = sortedImages.slice(0, 2).map(img => ({
-      type: "image_url",
-      image_url: {
-        url: `data:${img.mimeType};base64,${img.data}`
+    // Format images for Gemini
+    const imageParts = base64Images.map(img => ({
+      inlineData: {
+        data: img.data,
+        mimeType: img.mimeType
       }
     }));
 
-    const promptText = `You are a professional fitness coach and biomechanics expert. Analyze these body scan photos of a client. 
-      Identify general visual characteristics (e.g., broad shoulders, narrow waist, apparent postural imbalances like forward head posture or anterior pelvic tilt). 
-      If a goal physique photo is included, identify the focus areas needed to bridge the gap.
-      CRITICAL INSTRUCTIONS:
-      - DO NOT make any medical diagnoses.
-      - DO NOT guess or state exact body-fat percentages.
-      - Keep the analysis concise, structured, and focused on physical traits that will influence workout programming.
-      Respond in plain text.`;
+    const promptText = `You are an elite, world-class fitness coach and biomechanics expert. 
+You are presented with body scan photos of a client, which may include Front, Side, and Back views, as well as an optional Goal Physique target photo.
 
-    const groq = getGroqClient();
-    
-    const response = await groq.chat.completions.create({
-      model: "qwen/qwen3.6-27b",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: promptText },
-            ...imageContents
-          ] as any
-        }
-      ],
-      temperature: 0.2,
-      max_tokens: 1024,
+Your task is to analyze these photos and provide a highly personalized, structured physical assessment.
+
+ANALYSIS REQUIREMENTS:
+1. Current Physique Assessment: Identify general visual characteristics (e.g., broad shoulders, narrow waist, relative muscle mass, apparent postural imbalances like forward head posture or anterior pelvic tilt).
+2. Gap Analysis: If a goal physique photo is included, compare their current state to the goal. Explicitly identify the specific muscle groups or focus areas they need to prioritize to bridge that gap.
+3. Workout Implications: Briefly translate your findings into practical programming advice (e.g., "Due to anterior pelvic tilt, prioritize core strengthening and hip flexor stretching").
+
+CRITICAL SAFETY & COMPLIANCE INSTRUCTIONS:
+- DO NOT make any medical diagnoses (e.g., "you have scoliosis"). Use observational language (e.g., "there appears to be a slight spinal curvature").
+- DO NOT guess or state exact body-fat percentages (e.g., "you are 15% body fat").
+- Keep the analysis empowering, professional, concise, and highly structured.
+Respond in clear, readable plain text using bullet points where appropriate.`;
+
+    // 5. Call Gemini 1.5 Flash Server-Side
+    const response = await geminiClient.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: [{
+        role: "user",
+        parts: [
+          { text: promptText },
+          ...imageParts
+        ]
+      }]
     });
 
-    const analysisText = response.choices[0]?.message?.content;
+    const analysisText = response.text;
 
     if (!analysisText) {
-      throw new Error("No analysis generated from Groq.");
+      throw new Error("No analysis generated from Gemini.");
     }
 
     // 5.5 Delete images from Supabase Storage immediately for privacy
@@ -128,6 +127,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error("Scanner API Error:", error);
-    return NextResponse.json({ success: false, error: `Groq Error: ${error.message || "Unknown error"}` }, { status: 500 });
+    return NextResponse.json({ success: false, error: `Vision AI Error: ${error.message || "Unknown error"}` }, { status: 500 });
   }
 }
