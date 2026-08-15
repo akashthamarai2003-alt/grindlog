@@ -1574,7 +1574,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                       <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/30">Uploaded</span>
                     )}
                   </div>
-                  <div className={`relative w-full aspect-[4/5] rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
+                  <div className={`relative w-full sm:w-2/3 md:w-1/2 mx-auto aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
                     <input type="file" accept="image/*" onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
