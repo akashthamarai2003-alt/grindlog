@@ -34,6 +34,10 @@ User Profile:
 - Current Weight: ${profile.weight} kg
 - Target Weight: ${profile.target_weight} kg
 - Height: ${profile.height} cm
+- Waist: ${profile.waist_cm ? profile.waist_cm + ' cm' : 'Not specified'}
+- Chest: ${profile.chest_cm ? profile.chest_cm + ' cm' : 'Not specified'}
+- Arms: ${profile.arm_cm ? profile.arm_cm + ' cm' : 'Not specified'}
+- Thighs: ${profile.thigh_cm ? profile.thigh_cm + ' cm' : 'Not specified'}
 - Training Location: ${profile.training_location}
 - Available Equipment: ${profile.equipment?.join(", ") || "None specified"}
 - Training Days per week: ${profile.training_days_per_week}
