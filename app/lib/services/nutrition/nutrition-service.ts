@@ -568,7 +568,9 @@ export class NutritionService {
         const proportion = mType === 'lunch' || mType === 'dinner' ? 0.35 : 0.15;
         const estCals = Math.round(targets.calories * proportion);
         const estPro = Math.round(targets.protein * proportion);
-        const estCost = Math.round(dailyLimit * proportion);
+        
+        // Real-world estimate: ~₹0.20 per calorie for average Indian meals
+        const estCost = Math.round(estCals * 0.20);
 
         return {
           id: `ai-${mType}`,
