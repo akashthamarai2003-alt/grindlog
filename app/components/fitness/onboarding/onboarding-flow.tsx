@@ -1175,13 +1175,16 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
               {/* 2. Current Physical Problems */}
               <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-3">Do you currently have any physical problems? <span className="text-xs text-gray-500 font-normal ml-2">Select all that apply</span></label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {[
                     "Back pain", "Neck pain", "Shoulder pain", "Knee pain", "Hip pain", 
                     "Ankle/foot pain", "Wrist pain", "Elbow pain", "Muscle/joint pain", 
                     "Mobility limitation", "None", "Other"
                   ].map(opt => {
-                    const isSelected = data.physical_problems?.includes(opt) || false;
+                    const isSelected = opt === "Other" 
+                      ? data.physical_problems?.some(p => p.startsWith("Other")) 
+                      : data.physical_problems?.includes(opt) || false;
+                      
                     return (
                       <button
                         key={opt}
@@ -1191,10 +1194,18 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                             newProbs = ["None"];
                           } else {
                             newProbs = newProbs.filter(e => e !== "None");
-                            if (isSelected) {
-                              newProbs = newProbs.filter(e => e !== opt);
+                            if (opt === "Other") {
+                              if (isSelected) {
+                                newProbs = newProbs.filter(e => !e.startsWith("Other"));
+                              } else {
+                                newProbs.push("Other: ");
+                              }
                             } else {
-                              newProbs.push(opt);
+                              if (isSelected) {
+                                newProbs = newProbs.filter(e => e !== opt);
+                              } else {
+                                newProbs.push(opt);
+                              }
                             }
                           }
                           handleUpdate({ physical_problems: newProbs });
@@ -1214,6 +1225,29 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     );
                   })}
                 </div>
+                
+                <AnimatePresence>
+                  {data.physical_problems?.some(p => p.startsWith("Other")) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <input 
+                        type="text" 
+                        value={data.physical_problems.find(p => p.startsWith("Other"))?.replace("Other: ", "") || ""}
+                        onChange={e => {
+                          const newProbs = (data.physical_problems || []).filter(p => !p.startsWith("Other"));
+                          newProbs.push(`Other: ${e.target.value}`);
+                          handleUpdate({ physical_problems: newProbs });
+                        }}
+                        placeholder="Please specify your physical problem..."
+                        className="w-full p-4 rounded-xl border border-red-500/50 bg-red-950/10 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors outline-none placeholder:text-red-400/50" 
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* 4. Current Pain (Conditional based on step 2) */}
@@ -1359,12 +1393,15 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
               {/* 5. Exercise Limitations */}
               <div className="pt-4 border-t border-[#1A2619]">
                 <label className="block text-sm font-semibold text-gray-300 mb-3">Are there any movements you cannot comfortably perform?</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {[
                     "Squatting", "Running", "Jumping", "Bending", "Overhead movements", 
                     "Push-ups", "Pull-ups", "Lunges", "None", "Other"
                   ].map(opt => {
-                    const isSelected = data.exercise_limitations?.includes(opt) || false;
+                    const isSelected = opt === "Other"
+                      ? data.exercise_limitations?.some(p => p.startsWith("Other"))
+                      : data.exercise_limitations?.includes(opt) || false;
+                      
                     return (
                       <button
                         key={opt}
@@ -1374,10 +1411,18 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                             newLims = ["None"];
                           } else {
                             newLims = newLims.filter(e => e !== "None");
-                            if (isSelected) {
-                              newLims = newLims.filter(e => e !== opt);
+                            if (opt === "Other") {
+                              if (isSelected) {
+                                newLims = newLims.filter(e => !e.startsWith("Other"));
+                              } else {
+                                newLims.push("Other: ");
+                              }
                             } else {
-                              newLims.push(opt);
+                              if (isSelected) {
+                                newLims = newLims.filter(e => e !== opt);
+                              } else {
+                                newLims.push(opt);
+                              }
                             }
                           }
                           handleUpdate({ exercise_limitations: newLims });
@@ -1393,6 +1438,29 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     );
                   })}
                 </div>
+
+                <AnimatePresence>
+                  {data.exercise_limitations?.some(p => p.startsWith("Other")) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <input 
+                        type="text" 
+                        value={data.exercise_limitations.find(p => p.startsWith("Other"))?.replace("Other: ", "") || ""}
+                        onChange={e => {
+                          const newLims = (data.exercise_limitations || []).filter(p => !p.startsWith("Other"));
+                          newLims.push(`Other: ${e.target.value}`);
+                          handleUpdate({ exercise_limitations: newLims });
+                        }}
+                        placeholder="Please specify your limitation..."
+                        className="w-full p-4 rounded-xl border border-yellow-500/50 bg-yellow-950/10 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors outline-none placeholder:text-yellow-400/50" 
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* 6. Medical Guidance & 7. Additional Notes */}
