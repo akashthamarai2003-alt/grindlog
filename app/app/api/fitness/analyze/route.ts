@@ -133,9 +133,9 @@ Generate a comprehensive Transformation Strategy JSON containing exactly these t
 - "focus_areas": (array of exactly 5 short strings) Top 5 areas they need to focus on (e.g. 'Reduce waist/body fat', 'Develop shoulders', etc).
 - "fitness_score": (number 0-100) A coach-assigned starting fitness score based on their current stats vs goal.
 - "reality_check": (object) Containing:
-    - "is_timeframe_realistic": (boolean) Whether target_deadline_days is realistic for the target physique / weight loss.
-    - "honest_assessment": (string) Blunt, realistic breakdown of what the target physique actually requires vs what can be achieved in their specified timeframe.
-    - "achievable_in_timeframe": (array of strings) 3-5 realistic accomplishments achievable within their requested timeframe.
+    - "is_timeframe_realistic": (boolean) If target deadline is specified, evaluate if it's realistic for the weight loss/physique goal. If not specified, set to true.
+    - "honest_assessment": (string) If a deadline is provided, assess what can actually be achieved in that time vs the goal. If NO deadline is provided (Not specified), you must calculate and state the MOST REALISTIC timeframe required to achieve their goal safely (e.g. 'To safely lose 15kg, you will need approximately 4 to 6 months of consistency.').
+    - "achievable_in_timeframe": (array of strings) 3-5 realistic accomplishments achievable in the provided timeframe (or your calculated timeframe).
 - "budget_breakdown": (object) Detail how their budget aligns with extra food costs:
     - "monthly_budget": (string) E.g. "₹2,000/month".
     - "recommended_add_ons": (array of exactly 4 objects with fields "item", "daily_qty", "daily_cost", "monthly_cost", "protein_provided_g").
