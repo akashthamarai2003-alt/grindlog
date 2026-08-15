@@ -16,7 +16,7 @@ export default async function CoachPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   return (
-    <FitnessGuard>
+    <FitnessGuard requirePro={true}>
       <FitnessShell>
         <div className="flex flex-col h-[100dvh] max-w-[600px] mx-auto bg-gray-50 shadow-sm relative">
           <CoachHeader />

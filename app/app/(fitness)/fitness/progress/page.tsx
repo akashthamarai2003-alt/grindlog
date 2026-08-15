@@ -20,7 +20,7 @@ export default async function ProgressPage() {
   const initialData = await ProgressAnalyticsService.getAggregatedProgress(user.id, '30D');
 
   return (
-    <FitnessGuard>
+    <FitnessGuard requirePro={true}>
       <FitnessShell>
         <ProgressView initialData={initialData} />
       </FitnessShell>
