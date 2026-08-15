@@ -1,9 +1,17 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
 
 export interface LogFoodInput {
-  food_id: string;
+  food_id?: string;
   meal_type: string;
   quantity: number;
+  custom_food?: {
+    name: string;
+    category: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
 }
 
 export class NutritionService {
@@ -195,19 +203,56 @@ export class NutritionService {
 
   static async logFood(userId: string, input: LogFoodInput) {
     if (input.quantity <= 0) throw new Error("Quantity must be greater than zero");
+    if (!input.food_id && !input.custom_food) throw new Error("Must provide food_id or custom_food");
     
     const supabase = await createServerSupabase();
-    
-    // 1. Fetch canonical food
-    const { data: food, error: foodErr } = await supabase
-      .from('foods')
-      .select('*')
-      .eq('id', input.food_id)
-      .eq('is_active', true)
-      .single();
-      
-    if (foodErr || !food) {
-      throw new Error("FOOD_NOT_FOUND");
+    let finalFoodId = input.food_id;
+    let food: any = null;
+
+    if (finalFoodId) {
+      // 1. Fetch canonical food
+      const { data, error } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('id', finalFoodId)
+        .eq('is_active', true)
+        .single();
+      if (error || !data) throw new Error("FOOD_NOT_FOUND");
+      food = data;
+    } else if (input.custom_food) {
+      // Search for existing custom food by exact name
+      const { data: existing } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('name', input.custom_food.name)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        food = existing;
+        finalFoodId = existing.id;
+      } else {
+        // Create new food
+        const { data: newFood, error: newFoodErr } = await supabase
+          .from('foods')
+          .insert({
+            name: input.custom_food.name,
+            category: input.custom_food.category,
+            serving_size: '1 serving',
+            calories: input.custom_food.calories,
+            protein: input.custom_food.protein,
+            carbs: input.custom_food.carbs,
+            fat: input.custom_food.fat,
+            estimated_cost: 0,
+            is_active: true
+          })
+          .select()
+          .single();
+        if (newFoodErr || !newFood) throw new Error("FAILED_TO_CREATE_CUSTOM_FOOD");
+        food = newFood;
+        finalFoodId = newFood.id;
+      }
     }
 
     // 2. Calculate scaled values
@@ -222,7 +267,7 @@ export class NutritionService {
       .from('food_logs')
       .insert({
         user_id: userId,
-        food_id: input.food_id,
+        food_id: finalFoodId,
         meal_type: input.meal_type,
         quantity: input.quantity,
         calories: scaledCalories,

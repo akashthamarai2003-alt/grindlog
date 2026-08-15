@@ -15,9 +15,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { food_id, meal_type, quantity } = body;
+    const { food_id, meal_type, quantity, custom_food } = body;
 
-    if (!food_id || !meal_type || quantity === undefined) {
+    if ((!food_id && !custom_food) || !meal_type || quantity === undefined) {
       return NextResponse.json(
         { success: false, error: { code: 'INVALID_INPUT', message: 'Missing required fields.' } },
         { status: 400 }
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const log = await NutritionService.logFood(user.id, { food_id, meal_type, quantity });
+    const log = await NutritionService.logFood(user.id, { food_id, meal_type, quantity, custom_food });
 
     return NextResponse.json({ success: true, data: log });
   } catch (error: any) {

@@ -85,7 +85,12 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
     if (!selectedFood) return;
     setIsLogging(true);
     try {
-      if (preselectedFoods && preselectedFoods.length > 0 && selectedFood?.id === (preselectedFoods[0]?.foods?.id || preselectedFoods[0]?.id)) {
+      // We use the selectedFood's name as a fallback check for synthetic AI meals which lack an ID
+      const isPreselectedMatch = preselectedFoods && preselectedFoods.length > 0 && 
+        ((selectedFood?.id && selectedFood.id === (preselectedFoods[0]?.foods?.id || preselectedFoods[0]?.id)) ||
+         (!selectedFood?.id && selectedFood?.name === (preselectedFoods[0]?.foods?.name || preselectedFoods[0]?.name)));
+
+      if (isPreselectedMatch) {
         for (const item of preselectedFoods) {
           const foodObj = item.foods || item;
           if (foodObj?.id) {
@@ -94,15 +99,34 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
               meal_type: mealType,
               quantity: Number(item.quantity) || 1
             });
+          } else if (foodObj?.name) {
+            await nutritionApi.logFood({
+              meal_type: mealType,
+              quantity: Number(item.quantity) || 1,
+              custom_food: {
+                name: foodObj.name,
+                category: foodObj.category || mealType,
+                calories: foodObj.calories || 0,
+                protein: foodObj.protein || 0,
+                carbs: foodObj.carbs || 0,
+                fat: foodObj.fat || 0
+              }
+            });
           }
         }
         toast.success(`Logged ${mealType} meal!`);
       } else {
-        await nutritionApi.logFood({
-          food_id: selectedFood.id,
-          meal_type: mealType,
-          quantity: quantity
-        });
+        const payload: any = { meal_type: mealType, quantity };
+        if (selectedFood.id) payload.food_id = selectedFood.id;
+        else payload.custom_food = {
+          name: selectedFood.name,
+          category: selectedFood.category || mealType,
+          calories: selectedFood.calories || 0,
+          protein: selectedFood.protein || 0,
+          carbs: selectedFood.carbs || 0,
+          fat: selectedFood.fat || 0
+        };
+        await nutritionApi.logFood(payload);
         toast.success(`Logged ${quantity}x ${selectedFood.name}`);
       }
       onSuccess();
