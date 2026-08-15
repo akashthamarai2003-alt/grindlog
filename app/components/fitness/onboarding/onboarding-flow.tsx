@@ -1584,8 +1584,12 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                       </>
                     ) : (
                       <>
-                        <div className="absolute inset-0 z-0 flex items-center justify-center opacity-30">
-                          <BodySilhouette view="front" className="h-[120%] w-auto" />
+                        <div className="absolute inset-0 z-0 overflow-hidden">
+                          <img 
+                            src="/images/ref-goal.png"
+                            alt="Goal Reference"
+                            className="w-full h-full object-cover opacity-60 transition-opacity hover:opacity-100"
+                          />
                         </div>
                         <div className="z-10 flex flex-col items-center justify-center p-4 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
                           <div className="w-10 h-10 bg-[#ADFF00] rounded-full flex items-center justify-center mb-2 text-black shadow-[0_0_15px_rgba(173,255,0,0.4)]">
