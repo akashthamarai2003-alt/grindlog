@@ -128,6 +128,7 @@ Meals per day: ${data.meals_per_day || 'Not specified'}
 Nutrition Budget: ${data.nutrition_budget || 'Not specified'}
 Available Foods: ${data.available_foods?.join(', ') || 'None specified'}
 Allergies: ${data.food_allergies || 'None'}
+Disliked/Avoided Foods: ${[data.foods_disliked, data.foods_avoided].filter(Boolean).join(', ') || 'None'}
 Injuries/Health Issues: ${data.physical_problems?.join(', ') || 'None'}
 
 Visual Observations (from our Groq Vision AI on uploaded body scan & goal inspiration photos):
