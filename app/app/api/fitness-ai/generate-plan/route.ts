@@ -58,33 +58,54 @@ export async function POST(req: Request) {
     const userPrompt = buildFitnessPlanPrompt(profile, todayStr, scan?.gemini_analysis);
     
     const groq = getGroqClient();
-    const response = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: FITNESS_PLAN_SYSTEM_PROMPT },
-        { role: "user", content: userPrompt }
-      ],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.3,
-      max_tokens: 8000,
-      response_format: { type: "json_object" }
-    });
 
-    const aiResponse = JSON.parse(response.choices[0].message.content || "{}");
+    let planData: GeneratedPlanData | null = null;
+    let lastErrorMessage = "We couldn't build your plan right now.";
 
-    // 6. Validate AI JSON
-    const parsed = GeneratedPlanSchema.safeParse(aiResponse);
-    if (!parsed.success) {
-      console.error("Fitness AI Zod validation failed:", parsed.error);
-      return NextResponse.json({ success: false, error: "We couldn't build your plan right now. Please try again." }, { status: 500 });
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`Fitness AI Generation Attempt ${attempt}...`);
+        const response = await groq.chat.completions.create({
+          messages: [
+            { role: "system", content: FITNESS_PLAN_SYSTEM_PROMPT },
+            { role: "user", content: userPrompt }
+          ],
+          model: "llama-3.3-70b-versatile",
+          temperature: 0.3,
+          max_tokens: 8000,
+          response_format: { type: "json_object" }
+        });
+
+        const aiResponse = JSON.parse(response.choices[0].message.content || "{}");
+
+        // 6. Validate AI JSON
+        const parsed = GeneratedPlanSchema.safeParse(aiResponse);
+        if (!parsed.success) {
+          console.warn(`Attempt ${attempt} Zod validation failed:`, parsed.error);
+          lastErrorMessage = "Failed to parse AI output.";
+          continue;
+        }
+
+        const candidatePlan = parsed.data;
+
+        // 7. Safety Validation
+        const safetyCheck = runFitnessAISafetyCheck(candidatePlan, profile);
+        if (!safetyCheck.safe) {
+          console.warn(`Attempt ${attempt} Safety check failed:`, safetyCheck.reason);
+          lastErrorMessage = safetyCheck.reason || "Generated plan violated safety checks.";
+          continue;
+        }
+
+        planData = candidatePlan;
+        break; // Success!
+      } catch (err: any) {
+        console.error(`Attempt ${attempt} caught error:`, err);
+        lastErrorMessage = err.message || "Network or API error.";
+      }
     }
 
-    const planData: GeneratedPlanData = parsed.data;
-
-    // 7. Safety Validation
-    const safetyCheck = runFitnessAISafetyCheck(planData, profile);
-    if (!safetyCheck.safe) {
-      console.warn("Fitness AI safety check failed:", safetyCheck.reason);
-      return NextResponse.json({ success: false, error: safetyCheck.reason || "Generated plan violated safety checks." }, { status: 400 });
+    if (!planData) {
+      return NextResponse.json({ success: false, error: lastErrorMessage }, { status: 400 });
     }
 
     // 8. Atomic Database Transaction via RPC
