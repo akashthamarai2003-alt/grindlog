@@ -6,9 +6,10 @@ import Image from "next/image";
 interface DashboardHeaderProps {
   name: string;
   dayNumber: number;
+  avatarUrl?: string;
 }
 
-export function DashboardHeader({ name, dayNumber }: DashboardHeaderProps) {
+export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderProps) {
   // Determine time of day for greeting
   const hour = new Date().getHours();
   let greeting = "Good Evening";
@@ -20,8 +21,9 @@ export function DashboardHeader({ name, dayNumber }: DashboardHeaderProps) {
       <div className="flex items-center gap-3">
         {/* Placeholder Avatar - matching the aesthetic */}
         <div className="w-12 h-12 rounded-full overflow-hidden bg-[#1A2619] border border-[#ADFF00]/30 shadow-[0_0_15px_rgba(173,255,0,0.1)] shrink-0">
-          <Image 
-            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${name}&backgroundColor=ADFF00`}
+          {/* Using native img to avoid next/image domain restrictions for Google profiles */}
+          <img 
+            src={avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${name}&backgroundColor=ADFF00`}
             alt="Profile Avatar"
             width={48}
             height={48}

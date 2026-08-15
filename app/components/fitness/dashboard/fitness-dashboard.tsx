@@ -35,8 +35,13 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
       
       <main className="flex-1 flex flex-col w-full max-w-md mx-auto pt-6 pb-28 px-5 z-10 relative gap-6">
         
-        {/* 1. Dashboard Header */}
-        <DashboardHeader name={firstName} dayNumber={dayNumber} />
+        <div className="mb-6 relative z-10">
+        <DashboardHeader 
+          name={profile.name || user.user_metadata?.full_name || "Athlete"} 
+          dayNumber={dayNumber} 
+          avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
+        />
+      </div>
 
         {!hasPlan && (
           <div className="bg-[#121E12] border border-[#ADFF00]/50 p-4 rounded-2xl flex items-center justify-between shadow-[0_0_15px_rgba(173,255,0,0.1)]">
