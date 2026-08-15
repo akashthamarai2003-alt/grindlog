@@ -56,6 +56,7 @@ export default function FitnessPaymentPage() {
   const [isPolling, setIsPolling] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [currentPremiumInfo, setCurrentPremiumInfo] = useState<{ premium_tier?: string; premium_level?: string } | null>(null);
 
   // Fetch current premium status
@@ -106,6 +107,7 @@ export default function FitnessPaymentPage() {
   useEffect(() => {
     getPlanPricesAction("fitness").then((res) => {
       if (res) setPricingConfig(res);
+      setIsLoadingPrices(false);
     });
   }, []);
 
@@ -319,13 +321,19 @@ export default function FitnessPaymentPage() {
                 
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
-                    {pricingConfig.monthly?.core?.originalPrice && pricingConfig.monthly.core.originalPrice > (pricingConfig.monthly?.core?.price || 29) && (
+                    {isLoadingPrices ? (
+                      <span className="animate-pulse bg-[#1A2619] text-transparent rounded px-2 text-sm">₹00</span>
+                    ) : (pricingConfig.monthly?.core?.originalPrice && pricingConfig.monthly.core.originalPrice > (pricingConfig.monthly?.core?.price || 29)) ? (
                       <span className="text-sm text-gray-500 line-through font-semibold">
                         ₹{pricingConfig.monthly.core.originalPrice}
                       </span>
-                    )}
+                    ) : null}
                     <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>
-                      ₹{pricingConfig.monthly?.core?.price || 29}
+                      {isLoadingPrices ? (
+                        <span className="animate-pulse bg-[#1A2619] text-transparent rounded px-2">₹00</span>
+                      ) : (
+                        `₹${pricingConfig.monthly?.core?.price || 29}`
+                      )}
                     </span>
                     <span className="text-xs text-gray-500 font-medium">/month</span>
                   </div>
@@ -360,13 +368,19 @@ export default function FitnessPaymentPage() {
                 
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
-                    {pricingConfig.monthly?.pro?.originalPrice && pricingConfig.monthly.pro.originalPrice > (pricingConfig.monthly?.pro?.price || 99) && (
+                    {isLoadingPrices ? (
+                      <span className="animate-pulse bg-[#1A2619] text-transparent rounded px-2 text-sm">₹00</span>
+                    ) : (pricingConfig.monthly?.pro?.originalPrice && pricingConfig.monthly.pro.originalPrice > (pricingConfig.monthly?.pro?.price || 99)) ? (
                       <span className="text-sm text-gray-500 line-through font-semibold">
                         ₹{pricingConfig.monthly.pro.originalPrice}
                       </span>
-                    )}
+                    ) : null}
                     <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>
-                      ₹{pricingConfig.monthly?.pro?.price || 99}
+                      {isLoadingPrices ? (
+                        <span className="animate-pulse bg-[#1A2619] text-transparent rounded px-2">₹00</span>
+                      ) : (
+                        `₹${pricingConfig.monthly?.pro?.price || 99}`
+                      )}
                     </span>
                     <span className="text-xs text-gray-500 font-medium">/month</span>
                   </div>
