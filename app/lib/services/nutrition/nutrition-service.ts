@@ -11,6 +11,7 @@ export interface LogFoodInput {
     protein: number;
     carbs: number;
     fat: number;
+    estimated_cost?: number;
   };
 }
 
@@ -245,7 +246,7 @@ export class NutritionService {
             protein: input.custom_food.protein,
             carbs: input.custom_food.carbs,
             fat: input.custom_food.fat,
-            estimated_cost: 0,
+            estimated_cost: input.custom_food.estimated_cost || 0,
             is_active: true
           })
           .select()
@@ -564,8 +565,11 @@ export class NutritionService {
       const aiMeal = aiMeals.find((m: any) => m.meal_name?.toLowerCase().includes(mType) || (mType === 'snack' && m.meal_name?.toLowerCase().includes('snack')));
 
       if (aiMeal) {
-        const estCals = Math.round(targets.calories * (mType === 'lunch' || mType === 'dinner' ? 0.35 : 0.15));
-        const estPro = Math.round(targets.protein * (mType === 'lunch' || mType === 'dinner' ? 0.35 : 0.15));
+        const proportion = mType === 'lunch' || mType === 'dinner' ? 0.35 : 0.15;
+        const estCals = Math.round(targets.calories * proportion);
+        const estPro = Math.round(targets.protein * proportion);
+        const estCost = Math.round(dailyLimit * proportion);
+
         return {
           id: `ai-${mType}`,
           meal_type: mType,
@@ -583,7 +587,7 @@ export class NutritionService {
                 protein: estPro,
                 carbs: 0,
                 fat: 0,
-                estimated_cost: 0
+                estimated_cost: estCost
               }
             }
           ]

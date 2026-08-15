@@ -109,7 +109,8 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
                 calories: foodObj.calories || 0,
                 protein: foodObj.protein || 0,
                 carbs: foodObj.carbs || 0,
-                fat: foodObj.fat || 0
+                fat: foodObj.fat || 0,
+                estimated_cost: foodObj.estimated_cost || 0
               }
             });
           }
@@ -124,7 +125,8 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
           calories: selectedFood.calories || 0,
           protein: selectedFood.protein || 0,
           carbs: selectedFood.carbs || 0,
-          fat: selectedFood.fat || 0
+          fat: selectedFood.fat || 0,
+          estimated_cost: selectedFood.estimated_cost || 0
         };
         await nutritionApi.logFood(payload);
         toast.success(`Logged ${quantity}x ${selectedFood.name}`);
