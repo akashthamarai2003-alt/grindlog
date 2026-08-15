@@ -12,14 +12,7 @@ interface TodaysNutritionCardProps {
 
 export function TodaysNutritionCard({ nutrition, premiumLevel = "core" }: TodaysNutritionCardProps) {
   const targetCalories = nutrition?.daily_calories || 2100;
-  // TODO: Fetch from actual consumption logs
-  const currentCalories = 0; 
-  const caloriesPercent = Math.min((currentCalories / targetCalories) * 100, 100);
-
   const targetProtein = nutrition?.protein_grams || 120;
-  // TODO: Fetch from actual consumption logs
-  const currentProtein = 0;
-  const proteinPercent = Math.min((currentProtein / targetProtein) * 100, 100);
 
   const meals = nutrition?.meals && nutrition.meals.length > 0 
     ? nutrition.meals.map((m: any, idx: number) => ({
@@ -29,12 +22,19 @@ export function TodaysNutritionCard({ nutrition, premiumLevel = "core" }: Todays
         completed: false // Default to not completed unless we track it
       }))
     : [];
-  // Remove early return so we can render an empty state if no meals exist
 
-  // We can add simple local state just for the UI interaction of ticking meals
   const [completedMeals, setCompletedMeals] = useState<Record<number, boolean>>(
     meals.reduce((acc: any, m: any) => ({ ...acc, [m.id]: m.completed }), {})
   );
+
+  const totalMeals = meals.length || 1;
+  const completedCount = Object.values(completedMeals).filter(Boolean).length;
+
+  const currentCalories = Math.round((targetCalories / totalMeals) * completedCount);
+  const caloriesPercent = Math.min((currentCalories / targetCalories) * 100, 100);
+
+  const currentProtein = Math.round((targetProtein / totalMeals) * completedCount);
+  const proteinPercent = Math.min((currentProtein / targetProtein) * 100, 100);
 
   const toggleMeal = (id: number) => {
     setCompletedMeals(prev => ({ ...prev, [id]: !prev[id] }));
