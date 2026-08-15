@@ -73,7 +73,7 @@ export default async function AIStartingReportPage() {
           </div>
           <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Physique</p>
-            <p className="text-lg font-bold text-[#ADFF00] leading-tight">{profile.target_physique || 'Not specified'}</p>
+            <p className="text-lg font-bold text-[#ADFF00] leading-tight">{profile.target_physique || (profile.goal_physique_image ? 'Custom Photo' : 'Not specified')}</p>
           </div>
         </div>
 

@@ -27,7 +27,7 @@ export function buildFitnessPlanPrompt(profileData: any, todayDateStr: string, g
   
 User Profile:
 - Goal: ${profile.goal}
-- Target Physique: ${profile.target_physique || "Not specified"}
+- Target Physique: ${profile.target_physique || (profile.goal_physique_image ? "Custom user-provided photo (Analyzed by Gemini Vision below)" : "Not specified")}
 - Fitness Level: ${profile.fitness_level}
 - Age: ${profile.age}
 - Gender: ${profile.gender}
