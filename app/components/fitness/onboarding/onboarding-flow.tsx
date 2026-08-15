@@ -1602,12 +1602,13 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                             className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
                           />
                         </div>
-                        <div className="absolute z-10 flex flex-col items-center justify-center p-5 bg-white/5 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl max-w-[85%] text-center transition-all hover:bg-white/10">
-                          <div className="w-12 h-12 bg-[#ADFF00] rounded-full flex items-center justify-center mb-3 text-black shadow-[0_0_20px_rgba(173,255,0,0.5)]">
-                            <Sparkles className="w-6 h-6" />
+                        <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/20 shadow-xl transition-all hover:bg-white/10">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_10px_rgba(173,255,0,0.4)]">
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-[11px] font-black text-white uppercase tracking-wider">+ Upload Goal</span>
                           </div>
-                          <span className="text-sm font-black text-white">+ Click to Upload Inspiration</span>
-                          <span className="text-[10px] text-gray-200 mt-1.5 font-medium leading-tight">Celebrity, athlete, or physique model photo</span>
                         </div>
                       </>
                     )}
