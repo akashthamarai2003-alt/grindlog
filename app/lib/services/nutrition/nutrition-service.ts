@@ -221,7 +221,8 @@ export class NutritionService {
       food = data;
     } else if (input.custom_food) {
       // Search for existing custom food by exact name
-      const { data: existing } = await supabase
+      const adminClient = require('@/lib/services/supabase/admin').createAdminClient();
+      const { data: existing } = await adminClient
         .from('foods')
         .select('*')
         .eq('name', input.custom_food.name)
@@ -233,8 +234,8 @@ export class NutritionService {
         food = existing;
         finalFoodId = existing.id;
       } else {
-        // Create new food
-        const { data: newFood, error: newFoodErr } = await supabase
+        // Create new food using admin client to bypass RLS restrictions on foods table
+        const { data: newFood, error: newFoodErr } = await adminClient
           .from('foods')
           .insert({
             name: input.custom_food.name,
@@ -249,7 +250,7 @@ export class NutritionService {
           })
           .select()
           .single();
-        if (newFoodErr || !newFood) throw new Error("FAILED_TO_CREATE_CUSTOM_FOOD");
+        if (newFoodErr || !newFood) throw new Error("FAILED_TO_CREATE_CUSTOM_FOOD: " + JSON.stringify(newFoodErr));
         food = newFood;
         finalFoodId = newFood.id;
       }

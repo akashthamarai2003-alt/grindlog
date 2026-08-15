@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
     console.error("Error in POST /api/nutrition/log-food:", error);
     return NextResponse.json(
-      { success: false, error: { code: 'DATABASE_ERROR', message: 'Failed to log food.' } },
+      { success: false, error: { code: 'DATABASE_ERROR', message: error?.message || 'Failed to log food.' } },
       { status: 500 }
     );
   }
