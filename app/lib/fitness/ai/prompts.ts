@@ -75,18 +75,18 @@ Instructions:
    - CRITICAL DURATION RULE: You MUST generate enough exercises to realistically fill the duration! For 10-20 mins: ~3 exercises. For 30-45 mins: ~5-6 exercises. For 60+ mins: ~7-8 exercises. Do not be lazy.
    - CRITICAL PHYSIQUE RULE: You MUST customize the workout split to match my Target Physique: '${profile.target_physique || "Not specified"}'. If 'Men's Physique', explicitly program heavy Lateral Deltoids and Lats for a V-Taper (include a dedicated Shoulder Day or high-frequency lateral raises). If 'Six Pack', emphasize core isolation. If 'Bodybuilder', ensure a comprehensive 5-day split hitting every muscle including calves and rear delts. If 'Lean Athletic' or 'Sporty', include functional/plyometric movements.
    - CRITICAL SAFETY RULE: You MUST strictly respect all my 'Physical Problems', 'Exercise Limitations', 'Previous Injuries', and 'Medical Guidance'. Do NOT prescribe movements that I cannot comfortably perform. You must strictly obey these mapping rules to prevent safety rejection:
-     - If limitation includes 'Squatting', do NOT prescribe any squats OR 'leg press'.
-     - If limitation includes 'Running', do NOT prescribe running, jogging, sprinting, or treadmill.
-     - If limitation includes 'Jumping', do NOT prescribe jumping, plyometrics, box jumps, or burpees.
+     - If limitation includes 'Squatting', do NOT prescribe ANY squats (back squat, front squat, goblet squat, split squat, hack squat), leg press, or anything requiring deep knee bending under load.
+     - If limitation includes 'Running', do NOT prescribe ANY running, jogging, sprinting, treadmill work, or high-impact cardio.
+     - If limitation includes 'Jumping', do NOT prescribe ANY jumping, plyometrics, box jumps, broad jumps, jump rope, or burpees.
      - If limitation includes 'Overhead movements', do NOT prescribe ANY overhead movements (including overhead press, military press, shoulder press, push press, overhead triceps extensions, lat pulldowns, or anything requiring raising arms above the head).
-     - If limitation includes 'Push-ups', do NOT prescribe any push-ups.
-     - If limitation includes 'Pull-ups', do NOT prescribe pull-ups or chin-ups.
-     - If limitation includes 'Lunges', do NOT prescribe any lunges.
-     - If limitation includes 'Bending', do NOT prescribe deadlifts, good mornings, or bent-over rows.
-     - If Physical Problems include 'Back pain', do NOT prescribe deadlifts, good mornings, or heavy barbell squats.
-     - If Physical Problems include 'Knee pain', do NOT prescribe heavy barbell squats, lunges, or plyometric jumping.
-     - If Physical Problems include 'Shoulder pain', do NOT prescribe ANY overhead presses, overhead triceps extensions, dips, or upright rows.
-     - If Physical Problems include 'Wrist pain' or 'Elbow pain', avoid heavy straight-bar pressing and skull crushers; prefer dumbbell or cable variations.
+     - If limitation includes 'Push-ups', do NOT prescribe ANY push-ups (standard, incline, decline, knee, or diamond).
+     - If limitation includes 'Pull-ups', do NOT prescribe ANY pull-ups, chin-ups, or muscle-ups.
+     - If limitation includes 'Lunges', do NOT prescribe ANY lunges (forward, reverse, walking, lateral) or Bulgarian split squats.
+     - If limitation includes 'Bending', do NOT prescribe ANY deadlifts (conventional, RDL, stiff-leg), good mornings, bent-over rows, or heavy kettlebell swings.
+     - If Physical Problems include 'Back pain', do NOT prescribe ANY deadlifts, good mornings, heavy barbell squats, bent-over rows, or exercises that heavily load the lower back.
+     - If Physical Problems include 'Knee pain', do NOT prescribe ANY heavy barbell squats, lunges, leg extensions, or high-impact plyometric jumping.
+     - If Physical Problems include 'Shoulder pain', do NOT prescribe ANY overhead presses, overhead triceps extensions, lat pulldowns behind the neck, dips, upright rows, or heavy barbell bench press.
+     - If Physical Problems include 'Wrist pain' or 'Elbow pain', do NOT prescribe ANY heavy straight-bar pressing (barbell bench press, barbell overhead press) or skull crushers. You MUST substitute with dumbbell, cable, or machine variations that allow neutral grips.
      - ABSOLUTE SAFETY INSTRUCTION: Double check every exercise name before outputting. If an exercise violates my limitations, replace it with a safe alternative targeting the same muscle group.
      CRITICAL MEDICAL BLOCKADE: You are an AI, not a doctor. If I report 'Severe/debilitating pain' as my pain severity, you MUST explicitly refuse to generate any workouts. In this case, you must return an EMPTY 'workouts' array ([]), and set the plan 'description' to a strict medical warning instructing me to consult a physical therapist before training.
 4. Generate 'nutrition' providing a safe daily_calories target and protein_grams. Create a 'meals' array reflecting my ${profile.meals_per_day || "3 meals"} preference. For each meal, provide specific, realistic food items that fit my Budget (${profile.nutrition_budget || "Not specified"}), Diet (${profile.food_type || profile.diet_preference}), and Lifestyle (${profile.lifestyle_description}). 
