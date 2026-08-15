@@ -77,6 +77,37 @@ export default async function AIStartingReportPage() {
           </div>
         </div>
 
+        {/* Profile Configuration */}
+        <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">⚙️</span>
+            <h2 className="text-lg font-black tracking-tight text-white leading-tight">Your Settings</h2>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.training_location || 'Gym'}
+            </span>
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.training_days_per_week || 4} Days/Week
+            </span>
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.workout_duration_minutes || 45} Mins
+            </span>
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.food_type || profile.diet_preference || 'Balanced Diet'}
+            </span>
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.food_environment || 'Home'}
+            </span>
+            {profile.experience_level && (
+              <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+                {profile.experience_level}
+              </span>
+            )}
+          </div>
+        </div>
+
         {/* REALITY CHECK SECTION */}
         {realityCheck && (
           <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4 relative overflow-hidden">
