@@ -66,9 +66,7 @@ export default function PricingClientForm({
     { key: "lifetime" as const, title: "Lifetime Access", emoji: "🌳", period: "one-time" },
   ];
 
-  const PLAN_METADATA = appFilter === "fitness" 
-    ? ALL_PLANS.filter(p => p.key === "monthly")
-    : ALL_PLANS;
+  const PLAN_METADATA = ALL_PLANS.filter(p => p.key === "monthly");
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -149,74 +147,78 @@ export default function PricingClientForm({
                 </div>
               </div>
 
-              {/* Core Tier Section */}
-              <div className="p-5 border-b border-gray-100 space-y-3 bg-white">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-700 flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                    Core Tier
-                  </span>
-                  <span className="text-[10px] font-semibold text-gray-400">Base Features</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-500 block mb-1">
-                      Original Price (~~₹~~)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
-                      <input
-                        type="number"
-                        value={coreData.originalPrice ?? ""}
-                        onChange={(e) => handlePriceChange(plan.key, "core", "originalPrice", e.target.value)}
-                        placeholder="e.g. 99"
-                        className="w-full pl-6 pr-2 py-1.5 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg text-gray-500 line-through outline-none focus:border-green-500 focus:bg-white transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold text-green-700 block mb-1">
-                      Offer Price (₹)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-green-600">₹</span>
-                      <input
-                        type="number"
-                        value={coreData.price ?? ""}
-                        onChange={(e) => handlePriceChange(plan.key, "core", "price", e.target.value)}
-                        placeholder="e.g. 49"
-                        className="w-full pl-6 pr-2 py-1.5 text-xs font-extrabold bg-green-50/50 border border-green-300 rounded-lg text-green-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:bg-white transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Core Live Preview Badge */}
-                <div className="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-gray-500">Preview (Core):</span>
-                  <div className="flex items-center gap-1.5">
-                    {coreData.originalPrice && coreData.originalPrice > coreData.price && (
-                      <span className="text-[10px] font-bold text-gray-400 line-through">
-                        ₹{coreData.originalPrice}
-                      </span>
-                    )}
-                    <span className="text-xs font-extrabold text-green-600">
-                      ₹{coreData.price}
+              {/* Core Tier Section - Only show for fitness */}
+              {appFilter === "fitness" && (
+                <div className="p-5 border-b border-gray-100 space-y-3 bg-white">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                      Core Tier
                     </span>
+                    <span className="text-[10px] font-semibold text-gray-400">Base Features</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 block mb-1">
+                        Original Price (~~₹~~)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
+                        <input
+                          type="number"
+                          value={coreData.originalPrice ?? ""}
+                          onChange={(e) => handlePriceChange(plan.key, "core", "originalPrice", e.target.value)}
+                          placeholder="e.g. 99"
+                          className="w-full pl-6 pr-2 py-1.5 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg text-gray-500 line-through outline-none focus:border-green-500 focus:bg-white transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-green-700 block mb-1">
+                        Offer Price (₹)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-green-600">₹</span>
+                        <input
+                          type="number"
+                          value={coreData.price ?? ""}
+                          onChange={(e) => handlePriceChange(plan.key, "core", "price", e.target.value)}
+                          placeholder="e.g. 49"
+                          className="w-full pl-6 pr-2 py-1.5 text-xs font-extrabold bg-green-50/50 border border-green-300 rounded-lg text-green-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:bg-white transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Core Live Preview Badge */}
+                  <div className="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold text-gray-500">Preview (Core):</span>
+                    <div className="flex items-center gap-1.5">
+                      {coreData.originalPrice && coreData.originalPrice > coreData.price && (
+                        <span className="text-[10px] font-bold text-gray-400 line-through">
+                          ₹{coreData.originalPrice}
+                        </span>
+                      )}
+                      <span className="text-xs font-extrabold text-green-600">
+                        ₹{coreData.price}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Pro Tier Section */}
               <div className="p-5 space-y-3 bg-purple-50/30 flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-purple-900 flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                    Pro Tier
+                    {appFilter === "grindlog" ? "Plan Price" : "Pro Tier"}
                   </span>
-                  <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">AI Unlocked</span>
+                  {appFilter === "fitness" && (
+                    <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">AI Unlocked</span>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
