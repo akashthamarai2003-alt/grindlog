@@ -215,7 +215,6 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
       } catch (err) {
         console.error("Failed to load logs for date:", err);
       }
-    }
 
     loadLogs();
 
@@ -616,7 +615,21 @@ export function DashboardClient({ profile, initialHabits, todayDateStr }: Dashbo
         </div>
       </div>
       
-
+      {/* Daily Motivation Quote */}
+      <div className="rounded-[24px] bg-gradient-to-br from-[var(--color-bg-elevated)] to-[var(--color-bg-secondary)] p-6 shadow-sm ring-1 ring-[var(--color-bg-tertiary)]/50 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+        <Quote className="absolute -top-2 -left-2 h-16 w-16 text-[var(--color-bg-tertiary)] opacity-30 -rotate-12" />
+        <div className="relative z-10 flex flex-col gap-3">
+          <h3 className="text-[11px] font-black text-[var(--color-text-tertiary)] uppercase tracking-widest flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-[#FF9500]" /> Daily Motivation
+          </h3>
+          <p className="text-[15px] font-bold leading-relaxed text-[var(--color-text-primary)] italic">
+            "{QUOTES[quoteIdx]?.text}"
+          </p>
+          <p className="text-xs font-bold text-[var(--color-text-secondary)] self-end mt-1">
+            — {QUOTES[quoteIdx]?.author}
+          </p>
+        </div>
+      </div>
 
       {/* Notification Prompt (only shows if not enabled) */}
       <NotificationPrompt variant="modal" />
