@@ -4,7 +4,6 @@ import { User } from "@supabase/supabase-js";
 import { OnboardingData } from "@/types/fitness/onboarding";
 import Link from "next/link";
 import { DashboardHeader } from "./dashboard-header";
-import { AIMessageCard } from "./ai-message-card";
 import { HorizontalCalendar } from "./horizontal-calendar";
 import { TodaysWorkoutCard } from "./todays-workout-card";
 import { TransformationCard } from "./transformation-card";
@@ -54,9 +53,6 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
             </Link>
           </div>
         )}
-
-        {/* 2. AI Target / Message Card */}
-        <AIMessageCard premiumLevel={premiumLevel} />
 
         {/* 3. Transformation Card */}
         <TransformationCard profile={profile} premiumLevel={premiumLevel} />
