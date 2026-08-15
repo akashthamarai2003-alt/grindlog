@@ -31,16 +31,16 @@ import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 
 const features = [
-  { icon: InfinityIcon, label: "Active Habits", core: "Limited", pro: "Unlimited" },
-  { icon: Calendar, label: "Smart Planner", core: true, pro: true },
-  { icon: TreeDeciduous, label: "Virtual Growth Tree", core: false, pro: true },
-  { icon: LayoutGrid, label: "Full Life Tracking", core: "Basic", pro: "Full Suite" },
-  { icon: Trophy, label: "Gamified Quests", core: "Limited", pro: "Unlimited" },
-  { icon: Notebook, label: "Daily AI Journaling", core: false, pro: true },
-  { icon: BarChart3, label: "Advanced Analytics", core: false, pro: true },
-  { icon: Brain, label: "Personal AI Coach", core: false, pro: true },
-  { icon: BellRing, label: "Mobile Push Notifications", core: true, pro: "Smart Reminders" },
-  { icon: Table, label: "Smart Track Sheet", core: false, pro: true },
+  { icon: InfinityIcon, label: "Unlimited Active Habits", value: "" },
+  { icon: Calendar, label: "Smart Planner", value: "" },
+  { icon: TreeDeciduous, label: "Virtual Growth Tree", value: "" },
+  { icon: LayoutGrid, label: "Full Life Tracking", value: "Full Suite" },
+  { icon: Trophy, label: "Gamified Quests", value: "Unlimited" },
+  { icon: Notebook, label: "Daily AI Journaling", value: "" },
+  { icon: BarChart3, label: "Advanced Analytics", value: "" },
+  { icon: Brain, label: "Personal AI Coach", value: "" },
+  { icon: BellRing, label: "Smart Reminders", value: "" },
+  { icon: Table, label: "Smart Track Sheet", value: "" },
 ];
 
 const reviews = [
@@ -58,34 +58,14 @@ const basePlans = [
     period: "/month",
     originalPrice: null,
     badge: null,
-  },
-  {
-    id: "six_months",
-    name: "6 Months",
-    emoji: "🌿",
-    basePrices: { core: 199, pro: 249 },
-    period: "/6 months",
-    originalPrice: "₹294",
-    badge: "⭐ Most Popular",
-    savings: "Save 32%",
-  },
-  {
-    id: "lifetime",
-    name: "Lifetime",
-    emoji: "🌳",
-    basePrices: { core: 599, pro: 799 },
-    period: "one-time",
-    originalPrice: null,
-    badge: "👑 Best Value",
-    savings: null,
-  },
+  }
 ];
 
 export default function PaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo');
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("six_months");
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "six_months" | "lifetime">("monthly");
   const [level, setLevel] = useState<"core" | "pro">("pro");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
@@ -376,47 +356,29 @@ export default function PaymentPage() {
         </p>
       </motion.div>
 
-      {/* Feature Comparison */}
-      <div className="rounded-2xl bg-[var(--color-bg-secondary)] overflow-hidden">
-        <div className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-[var(--color-bg-tertiary)]">
-          <span className="text-xs font-semibold text-[var(--color-text-primary)]">Feature</span>
-          <span className="text-xs font-semibold text-[var(--color-text-tertiary)] text-center">Core</span>
-          <span className="text-xs font-semibold text-[var(--color-accent-green)] text-center">Pro</span>
-        </div>
+      {/* Feature List */}
+      <div className="rounded-2xl bg-[var(--color-bg-secondary)] overflow-hidden py-1 border border-[var(--color-bg-tertiary)]">
         {features.map((f, i) => (
           <div
             key={f.label}
             className={cn(
-              "grid grid-cols-3 gap-2 px-4 py-3 items-center",
+              "flex items-center justify-between gap-2 px-5 py-3.5",
               i < features.length - 1 && "border-b border-[var(--color-bg-tertiary)]"
             )}
           >
-            <div className="flex items-center gap-2">
-              <f.icon className="h-4 w-4 text-[var(--color-text-secondary)] shrink-0" />
-              <span className="text-xs font-medium text-[var(--color-text-primary)] leading-tight">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent-green)]/10 text-[var(--color-accent-green)]">
+                <f.icon className="h-4 w-4" />
+              </div>
+              <span className="text-sm font-semibold text-[var(--color-text-primary)] leading-tight">
                 {f.label}
               </span>
             </div>
             <div className="flex justify-center">
-              {typeof f.core === "boolean" ? (
-                f.core ? (
-                  <Check className="h-4 w-4 text-[var(--color-text-primary)]" />
-                ) : (
-                  <X className="h-4 w-4 text-[var(--color-text-tertiary)] opacity-50" />
-                )
+              {f.value ? (
+                <span className="text-xs font-bold text-[var(--color-accent-green)] bg-[var(--color-accent-green)]/10 px-2 py-1 rounded-md">{f.value}</span>
               ) : (
-                <span className="text-xs text-center text-[var(--color-text-tertiary)]">{f.core}</span>
-              )}
-            </div>
-            <div className="flex justify-center">
-              {typeof f.pro === "boolean" ? (
-                f.pro ? (
-                  <Check className="h-4 w-4 text-[var(--color-accent-green)]" />
-                ) : (
-                  <X className="h-4 w-4 text-[var(--color-text-tertiary)] opacity-50" />
-                )
-              ) : (
-                <span className="text-xs text-center text-[var(--color-accent-green)] font-medium">{f.pro}</span>
+                <Check className="h-5 w-5 text-[var(--color-accent-green)]" />
               )}
             </div>
           </div>
@@ -454,33 +416,8 @@ export default function PaymentPage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-[var(--color-text-primary)]">
-            Choose Your Plan
+            Your Plan
           </h3>
-          
-          <div className="flex items-center rounded-full bg-[var(--color-bg-secondary)] p-0.5 border border-[var(--color-bg-tertiary)]">
-            <button
-              onClick={() => handleLevelChange("core")}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
-                level === "core"
-                  ? "bg-white text-[var(--color-text-primary)] shadow-sm"
-                  : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
-              )}
-            >
-              Core
-            </button>
-            <button
-              onClick={() => handleLevelChange("pro")}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
-                level === "pro"
-                  ? "bg-[var(--color-accent-green)] text-white shadow-sm shadow-[var(--color-accent-green)]/25"
-                  : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
-              )}
-            >
-              Pro
-            </button>
-          </div>
         </div>
 
         <div className="flex flex-col gap-3">
