@@ -8,6 +8,11 @@ import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
 import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2 } from "lucide-react";
 import { BodySilhouette } from "./body-silhouette";
 import { toast } from "sonner";
+import frontImg from "../../../assets/images/placeholder-front.png";
+import backImg from "../../../assets/images/placeholder-back.png";
+import leftImg from "../../../assets/images/placeholder-left.png";
+import rightImg from "../../../assets/images/placeholder-right.png";
+import goalImg from "../../../assets/images/placeholder-goal.png";
 
 export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<OnboardingData> }) {
   const [step, setStep] = useState(1);
@@ -1524,7 +1529,11 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                           <>
                             <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
                               <img 
-                                src={`/images/placeholder-${item.field === 'body_scan_front' ? 'front' : item.field === 'body_scan_back' ? 'back' : item.field === 'body_scan_left' ? 'left' : 'right'}.png`}
+                                src={
+                                  typeof (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg) === 'string'
+                                    ? (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg as string)
+                                    : (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : (rightImg as any)).src
+                                }
                                 alt={`${item.label} Reference`}
                                 className="w-full h-full object-cover opacity-60 transition-opacity hover:opacity-100"
                               />
@@ -1586,7 +1595,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                       <>
                         <div className="absolute inset-0 z-0 overflow-hidden">
                           <img 
-                            src="/images/placeholder-goal.png"
+                            src={typeof goalImg === 'string' ? goalImg : (goalImg as any).src}
                             alt="Goal Reference"
                             className="w-full h-full object-cover opacity-60 transition-opacity hover:opacity-100"
                           />
