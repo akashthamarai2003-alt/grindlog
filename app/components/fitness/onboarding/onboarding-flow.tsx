@@ -1514,7 +1514,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                   ].map(item => (
                     <div key={item.field} className="relative">
                       <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider text-center">{item.label}</label>
-                      <div className={`w-full aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
+                      <div className={`relative w-full aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
                         <input type="file" accept="image/*" onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
