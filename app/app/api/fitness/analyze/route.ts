@@ -130,6 +130,11 @@ Available Foods: ${data.available_foods?.join(', ') || 'None specified'}
 Allergies: ${data.food_allergies || 'None'}
 Disliked/Avoided Foods: ${[data.foods_disliked, data.foods_avoided].filter(Boolean).join(', ') || 'None'}
 Injuries/Health Issues: ${data.physical_problems?.join(', ') || 'None'}
+Activity Level: ${data.activity_level || 'Not specified'}
+Daily Steps: ${data.daily_steps || 'Not specified'}
+Sleep Duration: ${data.sleep_duration || 'Not specified'}
+Daily Schedule: Wake: ${data.wake_time || 'N/A'}, Work: ${data.work_time || 'N/A'}, Workout: ${data.workout_time || 'N/A'}, Sleep: ${data.sleep_time || 'N/A'}
+Lifestyle Context: ${data.lifestyle_description || 'N/A'}
 
 Visual Observations (from our Groq Vision AI on uploaded body scan & goal inspiration photos):
 ${visualObservations}
