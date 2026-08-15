@@ -1522,10 +1522,11 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                           <img src={(data as any)[item.field]} className="w-full h-full object-cover rounded-xl" />
                         ) : (
                           <>
-                            <div className="absolute inset-0 z-0">
-                              <BodySilhouette 
-                                view={item.field === 'body_scan_front' ? 'front' : item.field === 'body_scan_back' ? 'back' : item.field === 'body_scan_left' ? 'left' : 'right'} 
-                                className="w-full h-full"
+                            <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
+                              <img 
+                                src={`/images/ref-${item.field === 'body_scan_front' ? 'front' : item.field === 'body_scan_back' ? 'back' : item.field === 'body_scan_left' ? 'left' : 'right'}.jpg`}
+                                alt={`${item.label} Reference`}
+                                className="w-full h-full object-cover opacity-20 filter grayscale"
                               />
                             </div>
                             <div className="z-10 flex flex-col items-center justify-center p-3 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
