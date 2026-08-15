@@ -52,12 +52,28 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .eq('date', localDate);
 
+    let targetPlan;
     if (existingPlans && existingPlans.length > 0) {
-      const targetPlan = existingPlans.find(p => p.meal_type === mealType) || existingPlans[0];
+      targetPlan = existingPlans.find(p => p.meal_type === mealType) || existingPlans[0];
       
       // Delete old items for this plan
       await supabase.from('meal_plan_items').delete().eq('meal_plan_id', targetPlan.id);
+    } else {
+      // Create a new meal plan row for this specific meal type
+      const { data: newPlan } = await supabase
+        .from('meal_plans')
+        .insert({
+          user_id: user.id,
+          date: localDate,
+          meal_type: mealType
+        })
+        .select()
+        .single();
+        
+      targetPlan = newPlan;
+    }
 
+    if (targetPlan) {
       // Insert new swapped items
       const newItems = selectedFoods.map(f => ({
         meal_plan_id: targetPlan.id,
