@@ -61,28 +61,28 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
         const name = exercise.name.toLowerCase();
         
         // Auto-correct forbidden exercises to universally safe rehab/bodyweight alternatives
-        if (limitations.includes("squatting") && (name.includes("squat") || name.includes("leg press"))) {
+        if (limitations.includes("squatting") && (/squat|leg press|hack press/i.test(name))) {
           exercise.name = "Glute Bridges (Safe Alternative)";
           exercise.notes = "Auto-corrected for safety to avoid deep knee bending.";
-        } else if (limitations.includes("running") && (name.includes("run") || name.includes("treadmill") || name.includes("sprint") || name.includes("jog"))) {
+        } else if (limitations.includes("running") && (/run|treadmill|sprint|jog/i.test(name))) {
           exercise.name = "Marching in Place (Safe Alternative)";
           exercise.notes = "Auto-corrected for safety to avoid high-impact cardio.";
-        } else if (limitations.includes("jumping") && (name.includes("jump") || name.includes("plyo") || name.includes("box") || name.includes("burpee"))) {
+        } else if (limitations.includes("jumping") && (/jump|plyo|box|burpee/i.test(name))) {
           exercise.name = "Step-Ups (Safe Alternative)";
           exercise.notes = "Auto-corrected for safety to avoid impact.";
-        } else if (limitations.includes("overhead movements") && (name.includes("overhead") || name.includes("military press") || name.includes("shoulder press") || name.includes("push press"))) {
+        } else if (limitations.includes("overhead movements") && (/overhead|military press|shoulder press|push press/i.test(name))) {
           exercise.name = "Front Raises (Safe Alternative)";
           exercise.notes = "Auto-corrected for safety to avoid vertical pressing.";
-        } else if (limitations.includes("push-ups") && name.includes("push-up")) {
+        } else if (limitations.includes("push-ups") && (/push[-\s]?up/i.test(name))) {
           exercise.name = "Wall Presses (Safe Alternative)";
           exercise.notes = "Auto-corrected for safety to reduce chest/wrist load.";
-        } else if (limitations.includes("pull-ups") && (name.includes("pull-up") || name.includes("chin-up"))) {
+        } else if (limitations.includes("pull-ups") && (/pull[-\s]?up|chin[-\s]?up|muscle[-\s]?up/i.test(name))) {
           exercise.name = "Reverse Snow Angels (Safe Alternative)";
           exercise.notes = "Auto-corrected for safety to avoid vertical pulling.";
-        } else if (limitations.includes("lunges") && name.includes("lunge")) {
+        } else if (limitations.includes("lunges") && (/lunge|split squat/i.test(name))) {
           exercise.name = "Glute Bridges (Safe Alternative)";
           exercise.notes = "Auto-corrected for safety to avoid unilateral knee strain.";
-        } else if (limitations.includes("bending") && (name.includes("deadlift") || name.includes("good morning") || name.includes("bent"))) {
+        } else if (limitations.includes("bending") && (/deadlift|good morning|bent[-\s]?over/i.test(name))) {
           exercise.name = "Bird-Dog (Safe Alternative)";
           exercise.notes = "Auto-corrected for safety to avoid spinal loading.";
         }
