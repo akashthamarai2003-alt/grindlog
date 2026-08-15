@@ -11,6 +11,7 @@ export default function PlanSetupPage() {
   const router = useRouter();
   const [planData, setPlanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generationErrorType, setGenerationErrorType] = useState<"SAFETY" | "SYSTEM" | null>(null);
   
@@ -20,6 +21,19 @@ export default function PlanSetupPage() {
   const [chatInput, setChatInput] = useState("");
   const [modulating, setModulating] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => {
+      setProgress(p => {
+        if (p < 80) return p + Math.floor(Math.random() * 5) + 1;
+        if (p < 95) return p + 1;
+        if (p < 99) return p + (Math.random() > 0.5 ? 1 : 0);
+        return 99;
+      });
+    }, 400);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   useEffect(() => {
     // Generate draft on mount
@@ -102,9 +116,47 @@ export default function PlanSetupPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center p-6 text-center">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }} className="w-16 h-16 border-4 border-[#1A2619] border-t-[#ADFF00] rounded-full mb-8" />
+        <div className="relative w-32 h-32 flex items-center justify-center mb-8">
+          <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+            <circle cx="64" cy="64" r="60" className="stroke-[#1A2619] fill-none" strokeWidth="8" />
+            <motion.circle 
+              cx="64" cy="64" r="60" 
+              className="stroke-[#ADFF00] fill-none" 
+              strokeWidth="8" 
+              strokeDasharray={2 * Math.PI * 60}
+              strokeDashoffset={2 * Math.PI * 60 * (1 - progress / 100)}
+              strokeLinecap="round"
+              initial={{ strokeDashoffset: 2 * Math.PI * 60 }}
+              animate={{ strokeDashoffset: 2 * Math.PI * 60 * (1 - progress / 100) }}
+              transition={{ duration: 0.5 }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center flex-col">
+            <span className="text-3xl font-black">{progress}%</span>
+          </div>
+        </div>
         <h2 className="text-2xl font-black">Building your perfect plan...</h2>
         <p className="text-gray-400 mt-2">AI is analyzing your body scan and fitness profile...</p>
+        
+        <div className="mt-8 text-xs text-gray-500 font-bold tracking-widest uppercase h-4">
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={
+                progress < 30 ? "analyzing" :
+                progress < 60 ? "designing" :
+                progress < 85 ? "calculating" : "finalizing"
+              }
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+            >
+              {progress < 30 ? "Analyzing profile constraints..." : 
+               progress < 60 ? "Designing custom workout splits..." : 
+               progress < 85 ? "Calculating macro requirements..." : 
+               "Finalizing safety checks..."}
+            </motion.span>
+          </AnimatePresence>
+        </div>
       </div>
     );
   }
