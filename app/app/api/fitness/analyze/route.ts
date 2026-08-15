@@ -124,6 +124,7 @@ Training Location: ${data.training_location || 'Not specified'}
 Equipment: ${data.equipment?.join(', ') || 'Not specified'}
 Diet Type: ${data.food_type || 'Not specified'}
 Food Environment: ${data.food_environment || 'Home'}
+Meals per day: ${data.meals_per_day || 'Not specified'}
 Nutrition Budget: ${data.nutrition_budget || 'Not specified'}
 Available Foods: ${data.available_foods?.join(', ') || 'None specified'}
 Allergies: ${data.food_allergies || 'None'}
