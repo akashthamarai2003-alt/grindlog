@@ -200,9 +200,36 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
                     
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex items-center bg-[#1A2619] rounded-lg p-1">
-                        <button onClick={() => handleUpdateItem(globalIdx, { monthly_quantity: Math.max(0, item.monthly_quantity - 1) })} className="p-1 text-gray-400 hover:text-white"><Minus size={14} /></button>
-                        <span className="text-xs font-bold min-w-[3rem] whitespace-nowrap px-1 text-center">{item.monthly_quantity} {item.unit}</span>
-                        <button onClick={() => handleUpdateItem(globalIdx, { monthly_quantity: item.monthly_quantity + 1 })} className="p-1 text-gray-400 hover:text-white"><Plus size={14} /></button>
+                        <button 
+                          onClick={() => {
+                            const newQty = Math.max(0, item.monthly_quantity - 1);
+                            if (newQty === item.monthly_quantity) return;
+                            const unitPrice = item.monthly_quantity > 0 ? (item.estimated_price || 0) / item.monthly_quantity : 0;
+                            handleUpdateItem(globalIdx, { 
+                              monthly_quantity: newQty, 
+                              estimated_price: Math.round(unitPrice * newQty) 
+                            });
+                          }} 
+                          className="p-1 text-gray-400 hover:text-white"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="text-xs font-bold min-w-[4rem] whitespace-nowrap px-1 text-center">
+                          {item.monthly_quantity} <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{item.unit}</span>
+                        </span>
+                        <button 
+                          onClick={() => {
+                            const newQty = item.monthly_quantity + 1;
+                            const unitPrice = item.monthly_quantity > 0 ? (item.estimated_price || 0) / item.monthly_quantity : 0;
+                            handleUpdateItem(globalIdx, { 
+                              monthly_quantity: newQty, 
+                              estimated_price: Math.round(unitPrice * newQty) 
+                            });
+                          }} 
+                          className="p-1 text-gray-400 hover:text-white"
+                        >
+                          <Plus size={14} />
+                        </button>
                       </div>
                     </div>
                   </div>
