@@ -33,6 +33,7 @@ export default async function AIStartingReportPage() {
   const fitnessScore = aiStrategy.fitness_score || 68;
   const realityCheck = aiStrategy.reality_check;
   const budgetBreakdown = aiStrategy.budget_breakdown;
+  const healthAndSafety = aiStrategy.health_and_safety;
   const timelineProjection = Array.isArray(aiStrategy.timeline_projection) ? aiStrategy.timeline_projection : [];
 
   const achievableList = realityCheck && Array.isArray(realityCheck.achievable_in_timeframe) 
@@ -143,6 +144,41 @@ export default async function AIStartingReportPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* HEALTH & SAFETY PROTOCOL */}
+        {healthAndSafety && healthAndSafety.has_concerns && (
+          <div className="bg-[#121E12] border border-red-900/30 rounded-3xl p-5 space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl" />
+            
+            <div className="flex items-center justify-between gap-3 relative z-10">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🏥</span>
+                <h2 className="text-lg font-black tracking-tight text-white leading-tight">Safety Protocol</h2>
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold text-red-400 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20 shrink-0 text-center uppercase tracking-wider">
+                Active Restrictions
+              </span>
+            </div>
+
+            <p className="text-xs text-gray-300 leading-relaxed font-medium bg-[#0D150D] p-4 rounded-2xl border border-red-900/20 relative z-10">
+              {healthAndSafety.safety_verdict}
+            </p>
+
+            {healthAndSafety.medical_focus_areas && healthAndSafety.medical_focus_areas.length > 0 && (
+              <div className="relative z-10 pt-2">
+                <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">Medical Focus Areas:</p>
+                <ul className="space-y-2">
+                  {healthAndSafety.medical_focus_areas.map((item: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-gray-300">
+                      <span className="text-red-400 font-bold mt-0.5">⚕️</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>

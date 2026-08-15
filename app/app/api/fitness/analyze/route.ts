@@ -158,6 +158,10 @@ Generate a comprehensive Transformation Strategy JSON containing exactly these t
     - "budget_verdict": (string) Explanation of how it fits their food environment and budget.
     CRITICAL BUDGET RULE: The mathematically calculated sum of the 4 items' "monthly_cost" MUST strictly be equal to or less than their requested Nutrition Budget (${data.nutrition_budget || 'Not specified'}). Do NOT exceed their budget. If their budget is extremely low (e.g. ₹0–1,000), drastically lower the "daily_qty" of the items to ensure the total monthly cost stays under ₹1,000!
 - "timeline_projection": (array of objects with fields "timeframe" (e.g. "Week 1-2", "Week 3-4"), "target_weight_kg" (string or number), "expected_changes" (string)).
+- "health_and_safety": (object) Containing:
+    - "has_concerns": (boolean) True if they have ANY injuries, pain, or exercise limitations.
+    - "safety_verdict": (string) A concise 2-sentence summary of how the upcoming workout plan will be adapted to protect their specific injuries (e.g. knee pain) and avoid their limited movements (e.g. squatting). If no concerns, state they are cleared for standard programming.
+    - "medical_focus_areas": (array of strings) 1-3 specific medical/rehab goals (e.g. "Strengthen lower back", "Improve knee mobility"). Omit if no concerns.
 Output ONLY valid JSON matching this schema.`;
 
       const { generateAIResponseJSON } = await import("@/lib/services/groq/client");
