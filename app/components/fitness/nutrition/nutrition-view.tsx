@@ -370,7 +370,13 @@ export function NutritionView() {
                               />
                               <div>
                                 <span className="font-bold block">{f.foods?.name || 'Logged food'}</span>
-                                <span className="text-[10px] text-white/40 font-medium">x{f.quantity} serving</span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] text-white/40 font-medium">x{f.quantity} serving</span>
+                                  <span className="text-[10px] text-white/30">•</span>
+                                  <span className="text-[10px] text-[#ADFF00]/70 font-medium">{f.protein}g P</span>
+                                  <span className="text-[10px] text-blue-400/70 font-medium">{f.carbs}g C</span>
+                                  <span className="text-[10px] text-orange-400/70 font-medium">{f.fat}g F</span>
+                                </div>
                               </div>
                             </span>
                             <span className="text-xs font-black text-[#ADFF00]">{f.calories} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
@@ -388,7 +394,13 @@ export function NutritionView() {
                               />
                               <div>
                                 <span className="font-bold block text-white/90">{item.foods?.name || 'Food item'}</span>
-                                <span className="text-[10px] text-white/40 font-medium">{item.foods?.serving_size || '1 serving'}</span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] text-white/40 font-medium">{item.foods?.serving_size || '1 serving'}</span>
+                                  <span className="text-[10px] text-white/30">•</span>
+                                  <span className="text-[10px] text-[#ADFF00]/70 font-medium">{Math.round(item.foods?.protein * item.quantity)}g P</span>
+                                  <span className="text-[10px] text-blue-400/70 font-medium">{Math.round(item.foods?.carbs * item.quantity)}g C</span>
+                                  <span className="text-[10px] text-orange-400/70 font-medium">{Math.round(item.foods?.fat * item.quantity)}g F</span>
+                                </div>
                               </div>
                             </span>
                             <span className="text-xs font-black text-white/70">{Math.round(item.foods?.calories * item.quantity)} <span className="text-[9px] text-white/40 uppercase">kcal</span></span>
