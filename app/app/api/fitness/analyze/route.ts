@@ -130,6 +130,8 @@ Available Foods: ${data.available_foods?.join(', ') || 'None specified'}
 Allergies: ${data.food_allergies || 'None'}
 Disliked/Avoided Foods: ${[data.foods_disliked, data.foods_avoided].filter(Boolean).join(', ') || 'None'}
 Injuries/Health Issues: ${data.physical_problems?.join(', ') || 'None'}
+Previous Injuries: ${data.previous_injuries ? 'Yes' : 'No'}
+Exercise Limitations: ${data.exercise_limitations?.join(', ') || 'None'}
 Activity Level: ${data.activity_level || 'Not specified'}
 Daily Steps: ${data.daily_steps || 'Not specified'}
 Sleep Duration: ${data.sleep_duration || 'Not specified'}
