@@ -102,8 +102,6 @@ export default function ClientCouponForm() {
         >
           <option value="any">Any Plan (Valid for all)</option>
           <option value="monthly">Monthly Plan Only</option>
-          <option value="six_months">6 Months Plan Only</option>
-          <option value="lifetime">Lifetime Plan Only</option>
         </select>
       </div>
 
