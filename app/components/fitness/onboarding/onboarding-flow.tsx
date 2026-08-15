@@ -14,6 +14,42 @@ import leftImg from "../../../assets/images/placeholder-left.png";
 import rightImg from "../../../assets/images/placeholder-right.png";
 import goalImg from "../../../assets/images/placeholder-goal.png";
 
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.6));
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<OnboardingData> }) {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
@@ -1583,12 +1619,15 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     <div key={item.field} className="relative">
                       <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider text-center">{item.label}</label>
                       <div className={`relative w-full aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
-                        <input type="file" accept="image/*" onChange={(e) => {
+                        <input type="file" accept="image/*" onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => handleUpdate({ [item.field]: ev.target?.result as string });
-                            reader.readAsDataURL(file);
+                            try {
+                              const compressedBase64 = await compressImage(file);
+                              handleUpdate({ [item.field]: compressedBase64 });
+                            } catch (err) {
+                              console.error("Compression failed", err);
+                            }
                           }
                         }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                         {(data as any)[item.field] ? (
@@ -1643,12 +1682,15 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                     )}
                   </div>
                   <div className={`relative w-full sm:w-2/3 md:w-1/2 mx-auto aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
-                    <input type="file" accept="image/*" onChange={(e) => {
+                    <input type="file" accept="image/*" onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => handleUpdate({ body_scan_inspiration: ev.target?.result as string, goal_physique_image: ev.target?.result as string, target_physique: undefined });
-                        reader.readAsDataURL(file);
+                        try {
+                          const compressedBase64 = await compressImage(file);
+                          handleUpdate({ body_scan_inspiration: compressedBase64, goal_physique_image: compressedBase64, target_physique: undefined });
+                        } catch (err) {
+                          console.error("Compression failed", err);
+                        }
                       }
                     }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                     {data.body_scan_inspiration || data.goal_physique_image ? (
