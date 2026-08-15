@@ -359,7 +359,7 @@ export class NutritionService {
     const monthStartISO = new Date(`${firstDayOfMonth}T00:00:00.000${mOffsetStr}`).toISOString();
 
     // Parallelize all data fetching
-    const [targets, foodsRes, watersRes, plansRes, monthFoodsRes, fitProfileRes] = await Promise.all([
+    const [targets, foodsRes, watersRes, plansRes, monthFoodsRes, fitProfileRes, activePlanRes] = await Promise.all([
       this.getEffectiveTargets(userId),
       supabase
         .from('food_logs')
@@ -388,6 +388,12 @@ export class NutritionService {
         .from('fitness_os_profiles')
         .select('nutrition_budget')
         .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('fitness_os_workout_plans')
+        .select('plan_data')
+        .eq('user_id', userId)
+        .eq('status', 'active')
         .maybeSingle()
     ]);
 
@@ -400,6 +406,8 @@ export class NutritionService {
     const plans = plansRes.data;
     const monthFoods = monthFoodsRes.data;
     const fitProfile = fitProfileRes.data;
+    const activePlan = activePlanRes.data;
+    const aiMeals = activePlan?.plan_data?.nutrition?.meals || [];
 
     // 3. Compute consumed
     let consumed = {
@@ -495,6 +503,37 @@ export class NutritionService {
     let formattedMeals = ALL_MEAL_TYPES.map(mType => {
       const existing = plansByMealType.get(mType);
       if (existing) return existing;
+
+      // Fallback to AI generated meals from fitness_os_workout_plans
+      const aiMeal = aiMeals.find((m: any) => m.meal_name?.toLowerCase().includes(mType) || (mType === 'snack' && m.meal_name?.toLowerCase().includes('snack')));
+
+      if (aiMeal) {
+        const estCals = Math.round(targets.calories * (mType === 'lunch' || mType === 'dinner' ? 0.35 : 0.15));
+        const estPro = Math.round(targets.protein * (mType === 'lunch' || mType === 'dinner' ? 0.35 : 0.15));
+        return {
+          id: `ai-${mType}`,
+          meal_type: mType,
+          name: mType.charAt(0).toUpperCase() + mType.slice(1),
+          calories: estCals,
+          protein: estPro,
+          meal_plan_items: [
+            {
+              id: `ai-item-${mType}`,
+              quantity: 1,
+              foods: {
+                name: aiMeal.items?.join(" + ") || aiMeal.meal_name,
+                category: mType,
+                calories: estCals,
+                protein: estPro,
+                carbs: 0,
+                fat: 0,
+                estimated_cost: 0
+              }
+            }
+          ]
+        };
+      }
+
       return {
         id: `empty-${mType}`,
         meal_type: mType,
