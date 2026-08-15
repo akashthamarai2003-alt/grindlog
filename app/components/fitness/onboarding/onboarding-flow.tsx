@@ -1527,23 +1527,25 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                           <img src={(data as any)[item.field]} className="w-full h-full object-cover rounded-xl" />
                         ) : (
                           <>
-                            <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
-                              <img 
-                                src={
-                                  typeof (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg) === 'string'
-                                    ? (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg as string)
-                                    : (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : (rightImg as any)).src
-                                }
-                                alt={`${item.label} Reference`}
-                                className="w-full h-full object-cover opacity-60 transition-opacity hover:opacity-100"
-                              />
+                        <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
+                          <img 
+                            src={
+                              typeof (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg) === 'string'
+                                ? (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg as string)
+                                : (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : (rightImg as any)).src
+                            }
+                            alt={`${item.label} Reference`}
+                            className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
+                          />
+                        </div>
+                        <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/20 shadow-xl transition-all hover:bg-white/10">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_10px_rgba(173,255,0,0.4)]">
+                              <User className="w-3.5 h-3.5" />
                             </div>
-                            <div className="z-10 flex flex-col items-center justify-center p-3 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
-                              <div className="w-9 h-9 bg-[#ADFF00] rounded-full flex items-center justify-center mb-2 text-black shadow-[0_0_15px_rgba(173,255,0,0.4)]">
-                                <User className="w-5 h-5" />
-                              </div>
-                              <span className="text-xs font-black text-white">+ Upload</span>
-                            </div>
+                            <span className="text-[11px] font-black text-white uppercase tracking-wider">+ Upload</span>
+                          </div>
+                        </div>
                           </>
                         )}
                       </div>
@@ -1572,7 +1574,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                       <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/30">Uploaded</span>
                     )}
                   </div>
-                  <div className={`relative w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#121E12] hover:border-[#ADFF00]/50'}`}>
+                  <div className={`relative w-full aspect-[4/5] rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
                     <input type="file" accept="image/*" onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -1597,15 +1599,15 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                           <img 
                             src={typeof goalImg === 'string' ? goalImg : (goalImg as any).src}
                             alt="Goal Reference"
-                            className="w-full h-full object-cover opacity-60 transition-opacity hover:opacity-100"
+                            className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
                           />
                         </div>
-                        <div className="z-10 flex flex-col items-center justify-center p-4 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg">
-                          <div className="w-10 h-10 bg-[#ADFF00] rounded-full flex items-center justify-center mb-2 text-black shadow-[0_0_15px_rgba(173,255,0,0.4)]">
-                            <Sparkles className="w-5 h-5" />
+                        <div className="absolute z-10 flex flex-col items-center justify-center p-5 bg-white/5 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl max-w-[85%] text-center transition-all hover:bg-white/10">
+                          <div className="w-12 h-12 bg-[#ADFF00] rounded-full flex items-center justify-center mb-3 text-black shadow-[0_0_20px_rgba(173,255,0,0.5)]">
+                            <Sparkles className="w-6 h-6" />
                           </div>
-                          <span className="text-xs font-black text-white">+ Click to Upload Goal Inspiration Photo</span>
-                          <span className="text-[10px] text-gray-300 mt-1 font-semibold">Celebrity, athlete, or physique model photo</span>
+                          <span className="text-sm font-black text-white">+ Click to Upload Inspiration</span>
+                          <span className="text-[10px] text-gray-200 mt-1.5 font-medium leading-tight">Celebrity, athlete, or physique model photo</span>
                         </div>
                       </>
                     )}
