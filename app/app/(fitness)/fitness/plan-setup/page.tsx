@@ -26,12 +26,14 @@ export default function PlanSetupPage() {
     if (!loading) return;
     const interval = setInterval(() => {
       setProgress(p => {
-        if (p < 80) return p + Math.floor(Math.random() * 5) + 1;
-        if (p < 95) return p + 1;
-        if (p < 99) return p + (Math.random() > 0.5 ? 1 : 0);
+        // Slow down the progress significantly to account for up to 3 retries (approx 30-45 seconds)
+        if (p < 60) return p + Math.floor(Math.random() * 3) + 1; // Fast to 60%
+        if (p < 85) return p + 1; // 1% every 0.8s
+        if (p < 95) return p + (Math.random() > 0.5 ? 1 : 0); // Very slow
+        if (p < 99) return p + (Math.random() > 0.9 ? 1 : 0); // Crawl
         return 99;
       });
-    }, 400);
+    }, 800);
     return () => clearInterval(interval);
   }, [loading]);
 

@@ -7,6 +7,8 @@ import { FITNESS_PLAN_SYSTEM_PROMPT, buildFitnessPlanPrompt } from "@/lib/fitnes
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { getGroqClient } from "@/lib/services/groq/client";
 
+export const maxDuration = 60; // Set to 60 seconds to accommodate auto-retries
+
 export async function POST(req: Request) {
   try {
     const supabase = await createServerSupabase();
