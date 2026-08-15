@@ -78,15 +78,16 @@ Instructions:
      - If limitation includes 'Squatting', do NOT prescribe any squats OR 'leg press'.
      - If limitation includes 'Running', do NOT prescribe running, jogging, sprinting, or treadmill.
      - If limitation includes 'Jumping', do NOT prescribe jumping, plyometrics, box jumps, or burpees.
-     - If limitation includes 'Overhead movements', do NOT prescribe overhead press, military press, shoulder press, or push press.
+     - If limitation includes 'Overhead movements', do NOT prescribe ANY overhead movements (including overhead press, military press, shoulder press, push press, overhead triceps extensions, lat pulldowns, or anything requiring raising arms above the head).
      - If limitation includes 'Push-ups', do NOT prescribe any push-ups.
      - If limitation includes 'Pull-ups', do NOT prescribe pull-ups or chin-ups.
      - If limitation includes 'Lunges', do NOT prescribe any lunges.
      - If limitation includes 'Bending', do NOT prescribe deadlifts, good mornings, or bent-over rows.
      - If Physical Problems include 'Back pain', do NOT prescribe deadlifts, good mornings, or heavy barbell squats.
      - If Physical Problems include 'Knee pain', do NOT prescribe heavy barbell squats, lunges, or plyometric jumping.
-     - If Physical Problems include 'Shoulder pain', do NOT prescribe heavy overhead barbell presses, dips, or upright rows.
+     - If Physical Problems include 'Shoulder pain', do NOT prescribe ANY overhead presses, overhead triceps extensions, dips, or upright rows.
      - If Physical Problems include 'Wrist pain' or 'Elbow pain', avoid heavy straight-bar pressing and skull crushers; prefer dumbbell or cable variations.
+     - ABSOLUTE SAFETY INSTRUCTION: Double check every exercise name before outputting. If an exercise violates my limitations, replace it with a safe alternative targeting the same muscle group.
      CRITICAL MEDICAL BLOCKADE: You are an AI, not a doctor. If I report 'Severe/debilitating pain' as my pain severity, you MUST explicitly refuse to generate any workouts. In this case, you must return an EMPTY 'workouts' array ([]), and set the plan 'description' to a strict medical warning instructing me to consult a physical therapist before training.
 4. Generate 'nutrition' providing a safe daily_calories target and protein_grams. Create a 'meals' array reflecting my ${profile.meals_per_day || "3 meals"} preference. For each meal, provide specific, realistic food items that fit my Budget (${profile.nutrition_budget || "Not specified"}), Diet (${profile.food_type || profile.diet_preference}), and Lifestyle (${profile.lifestyle_description}). 
    - CRITICAL FOOD ENVIRONMENT RULE: If Food Environment is 'PG', 'Hostel', or 'Office/Canteen', DO NOT assume I can cook complex recipes! State that I should eat whatever carb/meal is provided at the PG/hostel (e.g. Idli, Upma, Dosa, Rice, Sambar), and ADD low-cost/no-cook protein add-ons (such as 4 boiled eggs, 50g roasted chana, peanuts, curd, or soya) to hit protein targets without exceeding my budget.
