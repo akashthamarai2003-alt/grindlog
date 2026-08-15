@@ -6,7 +6,7 @@ export interface LogFoodRequest {
 
 export const nutritionApi = {
   async getToday() {
-    const res = await fetch('/api/nutrition/today');
+    const res = await fetch(`/api/nutrition/today?t=${Date.now()}`);
     const json = await res.json();
     if (!res.ok) throw json.error;
     return json.data;

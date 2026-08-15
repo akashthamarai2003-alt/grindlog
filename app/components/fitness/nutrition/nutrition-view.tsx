@@ -13,6 +13,7 @@ export function NutritionView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<any>(null);
   const [isWaterLoading, setIsWaterLoading] = useState(false);
+  const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
   
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMealType, setModalMealType] = useState("lunch");
@@ -71,12 +72,15 @@ export function NutritionView() {
 
   const handleSwapMeal = async (mealType: string) => {
     try {
+      setSwappingMeal(mealType);
       toast.loading("Swapping meal...", { id: "swap" });
       const res = await nutritionApi.swapMeal(mealType);
       toast.success(res.message || `Swapped ${mealType} meal!`, { id: "swap" });
       await fetchToday();
     } catch (err: any) {
       toast.error(err?.message || "Failed to swap meal", { id: "swap" });
+    } finally {
+      setSwappingMeal(null);
     }
   };
 
@@ -415,10 +419,12 @@ export function NutritionView() {
                   </div>
                   <div className="flex gap-2">
                     <button 
+                      disabled={swappingMeal === meal.meal_type}
                       onClick={() => handleSwapMeal(meal.meal_type)} 
-                      className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 transition-all flex justify-center items-center gap-2 cursor-pointer"
+                      className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 transition-all flex justify-center items-center gap-2 cursor-pointer disabled:opacity-50"
                     >
-                      <RefreshCw size={14} /> Swap
+                      {swappingMeal === meal.meal_type ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} 
+                      Swap
                     </button>
                     {!completed ? (
                       <button onClick={() => openLogModal(meal.meal_type, meal.meal_plan_items)} className="flex-[2] py-2.5 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2">
