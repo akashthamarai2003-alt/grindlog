@@ -1524,7 +1524,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                           <>
                             <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
                               <img 
-                                src={`/images/ref-${item.field === 'body_scan_front' ? 'front' : item.field === 'body_scan_back' ? 'back' : item.field === 'body_scan_left' ? 'left' : 'right'}.png`}
+                                src={`/images/placeholder-${item.field === 'body_scan_front' ? 'front' : item.field === 'body_scan_back' ? 'back' : item.field === 'body_scan_left' ? 'left' : 'right'}.png`}
                                 alt={`${item.label} Reference`}
                                 className="w-full h-full object-cover opacity-60 transition-opacity hover:opacity-100"
                               />
@@ -1586,7 +1586,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                       <>
                         <div className="absolute inset-0 z-0 overflow-hidden">
                           <img 
-                            src="/images/ref-goal.png"
+                            src="/images/placeholder-goal.png"
                             alt="Goal Reference"
                             className="w-full h-full object-cover opacity-60 transition-opacity hover:opacity-100"
                           />
