@@ -138,7 +138,7 @@ Sleep Duration: ${data.sleep_duration || 'Not specified'}
 Daily Schedule: Wake: ${data.wake_time || 'N/A'}, Work: ${data.work_time || 'N/A'}, Workout: ${data.workout_time || 'N/A'}, Sleep: ${data.sleep_time || 'N/A'}
 Lifestyle Context: ${data.lifestyle_description || 'N/A'}
 
-Visual Observations (from our Groq Vision AI on uploaded body scan & goal inspiration photos):
+Visual Observations (from our Google Gemini Vision AI on uploaded body scan & goal inspiration photos):
 ${visualObservations}
 
 Generate a comprehensive Transformation Strategy JSON containing exactly these top-level keys:
