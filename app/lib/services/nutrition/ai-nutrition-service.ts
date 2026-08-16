@@ -72,8 +72,12 @@ export class AINutritionService {
     const targets = await NutritionService.getEffectiveTargets(userId);
     if (!targets) throw new Error("TARGET_NOT_FOUND");
 
-    // Fetch user profile for dietary restrictions (mocking preference fetch if not in profile)
-    // Assume profile doesn't have detailed diet yet, we'll keep it simple as requested.
+    // Fetch user profile for dietary restrictions
+    const { data: profile } = await supabase
+      .from('fitness_os_profiles')
+      .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, nutrition_budget, food_environment, available_foods')
+      .eq('user_id', userId)
+      .single();
     
     // Fetch food catalog (Active foods only)
     const { data: allFoods } = await supabase
@@ -85,13 +89,15 @@ export class AINutritionService {
       throw new Error("Food catalog is empty. Cannot generate a plan.");
     }
 
-    // Send a compact version of foods
+    // Send a compact version of foods, including diet_type and pg_friendly status
     const compactFoods = allFoods.map(f => ({
       id: f.id,
       n: f.name,
       c: f.calories,
       p: f.protein,
-      cost: f.estimated_cost
+      cost: f.estimated_cost,
+      dt: f.diet_type, // Crucial for Vegan/Veg matching
+      pg: f.is_pg_friendly
     }));
 
     // 4. Prompt Construction
@@ -99,6 +105,9 @@ export class AINutritionService {
 Your task is to select foods from the provided DATABASE to construct a 1-day meal plan that hits the user's nutritional targets.
 You MUST ONLY return the exact 4 meal types: breakfast, lunch, snack, dinner.
 You MUST ONLY use foods that exist in the provided DATABASE.
+CRITICAL DIETARY RESTRICTIONS:
+- You MUST strictly follow the user's Diet Preference. For example, if they are Vegan, you CANNOT pick any foods with 'dt' (diet_type) containing meat, eggs, or dairy.
+- You MUST avoid their listed allergies and disliked foods.
 Return the food_id and the quantity (number of servings). 
 Do NOT invent foods, calories, or macros.
 Do NOT provide medical advice.
@@ -120,16 +129,22 @@ Return ONLY valid JSON matching this schema:
 }`;
 
     const userPrompt = `
+User Profile & Constraints:
+- Diet Preference: ${profile?.diet_preference || profile?.food_type || "Balanced"}
+- Allergies: ${profile?.food_allergies || "None"}
+- Disliked/Avoided Foods: ${[profile?.foods_disliked, profile?.foods_avoided].filter(Boolean).join(", ") || "None"}
+- Food Environment: ${profile?.food_environment || "Home"} (If PG/Hostel, prioritize foods with pg:true)
+
 User Targets:
 - Calories: ${targets.calories} kcal
 - Protein: ${targets.protein} g
 - Carbs: ${targets.carbs} g
 - Fat: ${targets.fat} g
 
-Available Food DATABASE:
+Available Food DATABASE (dt = diet_type, pg = pg_friendly):
 ${JSON.stringify(compactFoods)}
 
-Generate the meal plan.
+Generate the meal plan strictly adhering to the Diet Preference and Constraints.
 `;
 
     // 5. Call Groq with 1 retry logic for JSON formatting
