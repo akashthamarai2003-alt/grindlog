@@ -310,9 +310,9 @@ export function NutritionView() {
           <h2 className="text-[13px] font-black tracking-widest text-white uppercase px-1">Today&apos;s Meals</h2>
         </div>
         
-        {meals.every((m: any) => !m.meal_plan_items || m.meal_plan_items.length === 0) ? (
+        {meals.every((m: any) => m.id.startsWith('empty-') || m.id.startsWith('ai-')) ? (
           <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-8 text-center opacity-70">
-             <p className="text-white/50 text-sm mb-4">No meal plan generated for today.</p>
+             <p className="text-white/50 text-sm mb-4">Your baseline AI strategy is active, but you haven't generated today's specific meal plan.</p>
              <button 
                disabled={isGenerating}
                onClick={handleGeneratePlan}
