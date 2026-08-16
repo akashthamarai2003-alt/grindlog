@@ -18,6 +18,17 @@ export async function POST(request: Request) {
     const mealType = (body.meal_type || 'lunch').toLowerCase();
     const localDate = await NutritionService.getLocalDateString(user.id);
 
+    // Fetch user profile for dietary restrictions
+    const { data: profile } = await supabase
+      .from('fitness_os_profiles')
+      .select('diet_preference, food_type')
+      .eq('user_id', user.id)
+      .single();
+
+    const dietPref = (profile?.diet_preference || profile?.food_type || "").toLowerCase();
+    const isVegan = dietPref.includes('vegan');
+    const isVeg = dietPref.includes('veg') && !isVegan; // e.g. vegetarian
+
     // Fetch active food catalog
     const { data: allFoods } = await supabase
       .from('foods')
@@ -31,15 +42,29 @@ export async function POST(request: Request) {
       );
     }
 
-    // Filter foods matching meal category or diet
-    let altFoods = allFoods.filter(f => {
+    // Filter foods matching diet preference
+    let allowedFoods = allFoods;
+    if (isVegan) {
+      allowedFoods = allFoods.filter(f => {
+        const dt = (f.diet_type || "").toLowerCase();
+        return dt.includes('vegan') || (!dt.includes('non-veg') && !dt.includes('dairy') && !dt.includes('egg') && !dt.includes('meat'));
+      });
+    } else if (isVeg) {
+      allowedFoods = allFoods.filter(f => {
+        const dt = (f.diet_type || "").toLowerCase();
+        return !dt.includes('non-veg') && !dt.includes('meat') && !dt.includes('egg'); // some vegetarians eat eggs, but generally in India veg = no egg.
+      });
+    }
+
+    // Filter foods matching meal category
+    let altFoods = allowedFoods.filter(f => {
       const cat = (f.category || '').toLowerCase();
       if (mealType === 'breakfast') return cat.includes('breakfast') || cat.includes('dairy') || cat.includes('fruit');
       if (mealType === 'snack') return cat.includes('snack') || cat.includes('fruit');
       return cat.includes('curry') || cat.includes('protein') || cat.includes('staple');
     });
 
-    if (altFoods.length < 2) altFoods = allFoods;
+    if (altFoods.length < 2) altFoods = allowedFoods;
 
     // Pick 2 random foods for the swapped meal
     const shuffled = [...altFoods].sort(() => 0.5 - Math.random());
