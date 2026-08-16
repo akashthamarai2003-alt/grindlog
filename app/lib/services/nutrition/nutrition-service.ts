@@ -489,10 +489,10 @@ export class NutritionService {
     let monthlyLimit = 3000;
     if (fitProfile?.nutrition_budget) {
       const bStr = fitProfile.nutrition_budget;
-      if (bStr.includes('5,000+')) monthlyLimit = 6000;
-      else if (bStr.includes('2,000') || bStr.includes('5,000')) monthlyLimit = 3500;
-      else if (bStr.includes('1,000')) monthlyLimit = 1500;
-      else if (bStr.includes('0–1,000')) monthlyLimit = 800;
+      if (bStr === '₹5,000+') monthlyLimit = 6000;
+      else if (bStr === '₹2,000–5,000' || bStr === '₹2,000-5,000') monthlyLimit = 3500;
+      else if (bStr === '₹1,000–2,000' || bStr === '₹1,000-2,000') monthlyLimit = 1500;
+      else if (bStr === '₹0–1,000' || bStr === '₹0-1,000') monthlyLimit = 800;
     }
     const dailyLimit = Math.round(monthlyLimit / 30);
 
