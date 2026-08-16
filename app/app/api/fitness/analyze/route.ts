@@ -279,7 +279,7 @@ Output ONLY valid JSON matching this schema.`;
           safety_acknowledged: data.safety_acknowledged,
           
           // Body Scans & Physique
-          target_physique: data.target_physique,
+          target_physique: data.target_physique || (data.goal_physique_image ? 'Custom Photo' : 'Not specified'),
           
           // Computed Data
           bmi,
