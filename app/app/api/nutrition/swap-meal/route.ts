@@ -106,7 +106,9 @@ export async function POST(request: Request) {
         quantity: 1
       }));
 
-      await supabase.from('meal_plan_items').insert(newItems);
+      if (newItems.length > 0) {
+        await supabase.from('meal_plan_items').insert(newItems);
+      }
     }
 
     await NutritionService.updateDailySummary(user.id);
