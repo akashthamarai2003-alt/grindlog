@@ -207,7 +207,7 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
                       <div className="flex items-center bg-[#1A2619] rounded-lg p-1">
                         <button 
                           onClick={() => {
-                            const newQty = Math.max(0, item.monthly_quantity - 1);
+                            const newQty = Math.max(1, item.monthly_quantity - 1);
                             if (newQty === item.monthly_quantity) return;
                             const unitPrice = item.monthly_quantity > 0 ? (item.estimated_price || 0) / item.monthly_quantity : 0;
                             handleUpdateItem(globalIdx, { 
