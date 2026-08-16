@@ -65,6 +65,6 @@ export async function canUseFitnessFeature(userId: string, feature: FitnessFeatu
  */
 export async function getFitnessAILimit(userId: string): Promise<number> {
   const plan = await getFitnessPlan(userId);
-  // Default to 50 free AI requests per day for users without a subscription during beta/testing
-  return plan ? plan.aiDailyLimit : 50;
+  // Default to 5 free AI requests per day for users without a subscription (needed for onboarding generation)
+  return plan ? plan.aiDailyLimit : 5;
 }
