@@ -143,7 +143,7 @@ ${visualObservations}
 
 Generate a comprehensive Transformation Strategy JSON containing exactly these top-level keys:
 - "training_strategy": (string) A summary of the workout approach they should take.
-- "nutrition_strategy": (string) A summary of the diet approach. If PG/Hostel is selected, explicitly advise on supplementing PG meals with cheap high-protein add-ons (e.g. boiled eggs, roasted chana, soya chunks).
+- "nutrition_strategy": (string) A summary of the diet approach. If PG/Hostel is selected, explicitly advise on supplementing PG meals with cheap high-protein add-ons (e.g. roasted chana, soya chunks, whey/plant protein). CRITICAL: All suggested add-ons (including in the budget breakdown) MUST strictly align with the user's Diet Type (${data.food_type || 'Not specified'}). Do NOT suggest eggs or dairy if they are Vegan! Do NOT suggest meat if they are Vegetarian!
 - "progress_roadmap": (array of strings) 3-4 key milestones they will hit in their journey.
 - "focus_areas": (array of exactly 5 short strings) Top 5 areas they need to focus on (e.g. 'Reduce waist/body fat', 'Develop shoulders', etc).
 - "fitness_score": (number 0-100) A coach-assigned starting fitness score based on their current stats vs goal.
