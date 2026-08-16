@@ -310,7 +310,7 @@ export function NutritionView() {
           <h2 className="text-[13px] font-black tracking-widest text-white uppercase px-1">Today&apos;s Meals</h2>
         </div>
         
-        {meals.length === 0 ? (
+        {meals.every((m: any) => !m.meal_plan_items || m.meal_plan_items.length === 0) ? (
           <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-8 text-center opacity-70">
              <p className="text-white/50 text-sm mb-4">No meal plan generated for today.</p>
              <button 
@@ -319,7 +319,7 @@ export function NutritionView() {
                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
              >
                {isGenerating ? <Loader2 className="animate-spin" size={14} /> : null}
-               {isGenerating ? "Generating..." : "Generate Plan"}
+               {isGenerating ? "Generating..." : "Generate AI Meal Plan"}
              </button>
           </div>
         ) : (
