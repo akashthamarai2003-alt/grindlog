@@ -35,10 +35,11 @@ Your goal is to generate a structured, highly personalized monthly grocery list 
 CRITICAL RULES:
 1. OUTPUT JSON ONLY. You must strictly follow the JSON schema provided.
 2. NO MEDICAL ADVICE.
-3. Use the user's food environment context to determine what foods they actually need to buy vs what is already provided (e.g. by a PG/Hostel/Office).
+3. Use the user's food environment context to determine what foods they actually need to buy vs what is already provided.
 4. Do not recommend foods they are allergic to or avoiding.
 5. The quantities should reflect approximately 30 days of consumption.
-6. The prices must be estimated in the local currency.`;
+6. The estimated_price MUST ALWAYS be greater than 0 for every single item. NEVER output 0 for eggs, meat, or staple foods.
+7. NEVER use "dozen" or "dozens" as a unit. You MUST use "pieces". Example: 30 pieces.`;
 
     const userPrompt = `Here is my existing nutrition plan and profile:
 Profile:
@@ -71,7 +72,7 @@ Respond entirely in JSON format matching this schema:
     } 
   ] 
 }
-Example: If you recommend 60 eggs for the month, use {"monthly_quantity": 60, "unit": "pieces"} DO NOT use "dozen" as a unit.`;
+CRITICAL: For eggs, NEVER use "dozen" or "dozens". If you want 36 eggs, use {"monthly_quantity": 36, "unit": "pieces"}. Every single item MUST have a realistic estimated_price > 0. Never output 0 for prices.`;
 
     const groq = getGroqClient();
     
