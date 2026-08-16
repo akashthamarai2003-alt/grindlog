@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { profile, currentNutritionPlan } = body;
+    const { profile, currentNutritionPlan, optimizeBudgetMode, currentTotalCost } = body;
 
     if (!profile || !currentNutritionPlan) {
       return NextResponse.json({ success: false, error: "Missing profile or nutrition plan." }, { status: 400 });
@@ -53,7 +53,9 @@ Current Nutrition Plan:
 ${JSON.stringify(currentNutritionPlan, null, 2)}
 
 Instructions:
-Generate a practical monthly 'grocery_list' based directly on the nutrition plan above. Prioritize foods already available to me. Do not recommend purchasing foods already provided by my food environment. Respect my monthly food budget. Quantities should represent realistic 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.
+${optimizeBudgetMode 
+  ? `My current estimated grocery cost is ₹${currentTotalCost}, but my budget is only ${profile.nutrition_budget}. Your previous list was OVER BUDGET. You MUST strictly reduce the estimated_price totals by substituting expensive items with cheaper alternatives (like replacing expensive meats/supplements with affordable whole foods) or slightly reducing quantities while ensuring adequate nutrition. Return the newly optimized grocery_list.` 
+  : `Generate a practical monthly 'grocery_list' based directly on the nutrition plan above. Prioritize foods already available to me. Do not recommend purchasing foods already provided by my food environment. Respect my monthly food budget. Quantities should represent realistic 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.`}
 
 Respond entirely in JSON format matching this schema: 
 { 

@@ -100,17 +100,22 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
     if (!budgetLimit) return toast.error("No budget set in profile.");
     setOptimizing(true);
     try {
-      // In a real implementation we would call a specific optimize endpoint, but for now we can use modulate
-      const prompt = `My estimated grocery cost is ₹${totalCost}, but my budget is ₹${budgetLimit}. Please suggest lower-cost alternative ingredients while maintaining protein adequacy and my dietary preferences. Modify my grocery_list accordingly.`;
-      
-      const res = await fetch('/api/fitness-ai/modulate-draft', {
+      const res = await fetch('/api/fitness-ai/generate-grocery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPlan: planData, prompt })
+        body: JSON.stringify({ 
+          profile, 
+          currentNutritionPlan: planData.nutrition,
+          optimizeBudgetMode: true,
+          currentTotalCost: totalCost 
+        })
       });
       const data = await res.json();
       if (data.success) {
-        setPlanData(data.data);
+        setPlanData({
+          ...planData,
+          nutrition: { ...planData.nutrition, grocery_list: data.data.grocery_list }
+        });
         toast.success("Budget optimized!");
       } else {
         toast.error(data.error || "Failed to optimize budget");
