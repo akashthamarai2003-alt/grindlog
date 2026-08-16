@@ -367,9 +367,8 @@ export function NutritionView() {
                           <li key={f.id} className="flex justify-between items-center">
                             <span className="flex items-center gap-2.5 text-white/90">
                               <img 
-                                src={getFoodImage(f.foods?.name, f.foods?.category, f.foods?.image_url)} 
+                                src={getFoodSvgAvatar(f.foods?.name || '')} 
                                 alt={f.foods?.name || 'Food'} 
-                                onError={(e) => { (e.target as HTMLImageElement).src = getFoodSvgAvatar(f.foods?.name); }}
                                 className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
                               />
                               <div>
@@ -391,9 +390,8 @@ export function NutritionView() {
                            <li key={item.id} className="flex justify-between items-center">
                             <span className="flex items-center gap-2.5 text-white/80">
                               <img 
-                                src={getFoodImage(item.foods?.name, item.foods?.category, item.foods?.image_url)} 
+                                src={getFoodSvgAvatar(item.foods?.name || '')} 
                                 alt={item.foods?.name || 'Food'} 
-                                onError={(e) => { (e.target as HTMLImageElement).src = getFoodSvgAvatar(item.foods?.name); }}
                                 className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
                               />
                               <div>
