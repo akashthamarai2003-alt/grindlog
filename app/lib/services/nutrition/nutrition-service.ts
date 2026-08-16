@@ -247,7 +247,8 @@ export class NutritionService {
             carbs: input.custom_food.carbs,
             fat: input.custom_food.fat,
             estimated_cost: input.custom_food.estimated_cost || 0,
-            is_active: true
+            is_active: false // Critical: Keep custom foods out of the public AI database pool!
+
           })
           .select()
           .single();
