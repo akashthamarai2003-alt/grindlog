@@ -257,7 +257,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
               )}
 
               {/* Active Rest Overlay if this set was just completed and timer is running */}
-              {isCompleted && activeRestSeconds !== null && idx === sortedSets.filter(s => s.completed).length - 1 && (
+              {isCompleted && activeRestSeconds !== null && idx === sortedSets.filter(s => s.completed).length - 1 && idx < sortedSets.length - 1 && (
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -277,6 +277,33 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
                   >
                     Skip Rest
                   </button>
+                </motion.div>
+              )}
+
+              {/* Final Set Completion State */}
+              {isCompleted && idx === sortedSets.length - 1 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="w-full mt-6"
+                >
+                  {activeRestSeconds !== null && activeRestSeconds > 0 && (
+                    <div className="w-full flex justify-center mb-3">
+                      <div className="bg-[#111A10] border border-white/10 rounded-full px-4 py-1.5 flex items-center gap-2">
+                        <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Rest:</span>
+                        <span className="text-sm font-black text-[#ADFF00]">
+                          {Math.floor(activeRestSeconds / 60).toString().padStart(2, '0')}:{(activeRestSeconds % 60).toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <Link 
+                    href={`/fitness/workout/${workoutId}`}
+                    className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98] transition-transform"
+                  >
+                    <Check className="w-5 h-5" />
+                    Back to Workout
+                  </Link>
                 </motion.div>
               )}
             </motion.div>
