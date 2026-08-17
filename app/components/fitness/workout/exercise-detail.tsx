@@ -47,11 +47,22 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
 
   const handleCompleteSet = async (setRecord: FitnessSet) => {
     if (setRecord.completed || submittingSetId) return;
+    const input = setInputs[setRecord.id];
+    
+    if (!input.reps || input.reps.trim() === "") {
+      toast.error("Please enter the number of reps.");
+      return;
+    }
+    
+    if (!input.weight || input.weight.trim() === "") {
+      toast.error("Please enter the weight (use 0 for bodyweight).");
+      return;
+    }
+
     setSubmittingSetId(setRecord.id);
 
-    const input = setInputs[setRecord.id];
-    const reps = input.reps ? parseInt(input.reps, 10) : null;
-    const weight = input.weight ? parseFloat(input.weight) : null;
+    const reps = parseInt(input.reps, 10);
+    const weight = parseFloat(input.weight);
 
     // If it's the mock workout, just simulate a successful save
     if (workoutId === "mock") {
