@@ -23,6 +23,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
   
   const [videoId, setVideoId] = useState<string | null>(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
 
   const [isEditingRest, setIsEditingRest] = useState(false);
   const [isUpdatingRest, setIsUpdatingRest] = useState(false);
@@ -148,9 +149,16 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Link href={`/fitness/workout/${workoutId}`} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-white/70 hover:text-white" />
-          </Link>
+          <button 
+            onClick={() => {
+              setIsNavigatingBack(true);
+              router.push(`/fitness/workout/${workoutId}`);
+            }}
+            disabled={isNavigatingBack}
+            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50"
+          >
+            {isNavigatingBack ? <Loader2 className="w-5 h-5 text-white/70 animate-spin" /> : <ArrowLeft className="w-5 h-5 text-white/70 hover:text-white" />}
+          </button>
           <h1 className="text-xl font-black text-white tracking-tight uppercase">BACK</h1>
         </div>
       </div>
@@ -346,13 +354,17 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
                       </div>
                     </div>
                   )}
-                  <Link 
-                    href={`/fitness/workout/${workoutId}`}
-                    className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98] transition-transform"
+                  <button 
+                    onClick={() => {
+                      setIsNavigatingBack(true);
+                      router.push(`/fitness/workout/${workoutId}`);
+                    }}
+                    disabled={isNavigatingBack}
+                    className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98] transition-transform disabled:opacity-50"
                   >
-                    <Check className="w-5 h-5" />
-                    Back to Workout
-                  </Link>
+                    {isNavigatingBack ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                    {isNavigatingBack ? "Navigating..." : "Back to Workout"}
+                  </button>
                 </motion.div>
               )}
             </motion.div>
