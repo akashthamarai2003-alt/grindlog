@@ -5,7 +5,7 @@ import { useState } from "react";
 import { TodaysExercisesList } from "./todays-exercises-list";
 import { AiCoachNote } from "./ai-coach-note";
 import { WorkoutSummaryCard } from "./workout-summary-card";
-import { Pause, CheckCircle, Loader2 } from "lucide-react";
+import { Pause, Play, CheckCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
@@ -20,6 +20,10 @@ interface WorkoutExecutionProps {
 export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) {
   const router = useRouter();
   const [isFinishing, setIsFinishing] = useState(false);
+  const [isPausing, setIsPausing] = useState(false);
+  
+  const currentSession = (workout as any).fitness_os_workout_sessions?.find((s: any) => s.id === sessionId);
+  const [isPaused, setIsPaused] = useState(currentSession?.status === "paused");
 
   const handleFinish = async () => {
     if (isFinishing) return;
@@ -46,6 +50,36 @@ export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) 
     }
   };
 
+  const handlePauseToggle = async () => {
+    if (isPausing) return;
+    setIsPausing(true);
+    
+    if (workout.id === "mock") {
+      await new Promise(r => setTimeout(r, 500));
+      setIsPaused(!isPaused);
+      setIsPausing(false);
+      return;
+    }
+
+    try {
+      const newStatus = isPaused ? "active" : "paused";
+      const res = await fetch(`/api/workouts/sessions/${sessionId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      
+      setIsPaused(!isPaused);
+      router.refresh();
+      toast.success(isPaused ? "Workout resumed!" : "Workout paused.");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to pause/resume workout");
+    } finally {
+      setIsPausing(false);
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col pb-32">
       <div className="mt-2">
@@ -62,11 +96,20 @@ export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) 
 
       <div className="flex flex-col gap-3 px-2">
         <button 
-          onClick={() => toast("Workout paused.")}
-          className="w-full py-4 bg-[#111A10] border border-white/10 hover:bg-white/5 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2"
+          onClick={handlePauseToggle}
+          disabled={isPausing}
+          className="w-full py-4 bg-[#111A10] border border-white/10 hover:bg-white/5 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          <Pause className="w-4 h-4 text-white/50" />
-          <span className="text-[11px] font-black text-white/70 uppercase tracking-widest">Pause Workout</span>
+          {isPausing ? (
+            <Loader2 className="w-4 h-4 text-white/50 animate-spin" />
+          ) : isPaused ? (
+            <Play className="w-4 h-4 text-[#ADFF00]" />
+          ) : (
+            <Pause className="w-4 h-4 text-white/50" />
+          )}
+          <span className={`text-[11px] font-black uppercase tracking-widest ${isPaused ? "text-[#ADFF00]" : "text-white/70"}`}>
+            {isPausing ? "Processing..." : isPaused ? "Resume Workout" : "Pause Workout"}
+          </span>
         </button>
 
         <button 
