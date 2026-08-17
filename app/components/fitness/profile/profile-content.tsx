@@ -242,13 +242,6 @@ export function ProfileContent({
               <Scale className="w-4 h-4 text-[#ADFF00]" />
               <span>Physical Baseline</span>
             </h2>
-            <button 
-              onClick={() => setShowEditModal(true)} 
-              className="text-xs font-semibold text-[#ADFF00] hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Edit Details</span>
-            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
