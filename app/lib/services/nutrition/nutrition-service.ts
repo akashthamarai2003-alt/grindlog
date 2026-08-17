@@ -434,7 +434,7 @@ export class NutritionService {
         .lte('logged_at', end),
       supabase
         .from('fitness_os_profiles')
-        .select('nutrition_budget')
+        .select('nutrition_budget, food_environment')
         .eq('user_id', userId)
         .maybeSingle(),
       supabase
@@ -493,6 +493,15 @@ export class NutritionService {
       else if (bStr === '₹2,000–5,000' || bStr === '₹2,000-5,000') monthlyLimit = 3500;
       else if (bStr === '₹1,000–2,000' || bStr === '₹1,000-2,000') monthlyLimit = 1500;
       else if (bStr === '₹0–1,000' || bStr === '₹0-1,000') monthlyLimit = 800;
+
+      // Logic Error Fix: If user is in PG, Hostel, or Home, their main meals are already covered.
+      // The budget they selected is just their pocket money for add-ons (like whey, snacks).
+      // Since the app tracks the cost of ALL meals (including the core ones), we must add
+      // a base cost (e.g., ₹6000/month) to their monthly limit so the logic holds up.
+      const env = fitProfile.food_environment?.toLowerCase() || '';
+      if (env === 'pg' || env === 'hostel' || env === 'home') {
+        monthlyLimit += 6000;
+      }
     }
     const dailyLimit = Math.round(monthlyLimit / 30);
 
