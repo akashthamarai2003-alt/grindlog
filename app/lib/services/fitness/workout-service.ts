@@ -269,7 +269,7 @@ export class WorkoutService {
     // 1. Fetch session
     const { data: session, error: sessErr } = await supabase
       .from("fitness_os_workout_sessions")
-      .select("user_id, status, started_at, workout_id")
+      .select("user_id, status, started_at, paused_at, workout_id")
       .eq("id", sessionId)
       .single();
 
@@ -286,9 +286,15 @@ export class WorkoutService {
     }
 
     // Calculate duration
+    let durationSec = 0;
     const started = new Date(session.started_at).getTime();
-    const now = new Date().getTime();
-    let durationSec = Math.floor((now - started) / 1000);
+    if (session.status === "paused" && session.paused_at) {
+      const pausedAt = new Date(session.paused_at).getTime();
+      durationSec = Math.floor((pausedAt - started) / 1000);
+    } else {
+      const now = new Date().getTime();
+      durationSec = Math.floor((now - started) / 1000);
+    }
     if (durationSec < 0) durationSec = 0;
 
     // Calculate Volume (SUM(weight * reps)) for this session
