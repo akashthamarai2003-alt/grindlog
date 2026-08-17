@@ -247,6 +247,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
       <div className="flex flex-col gap-6">
         {sortedSets.map((setRecord, idx) => {
           const isCompleted = setRecord.completed;
+          const allSetsCompleted = sortedSets.every(s => s.completed);
           const isSubmitting = submittingSetId === setRecord.id;
 
           return (
@@ -338,7 +339,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
               )}
 
               {/* Final Set Completion State */}
-              {isCompleted && idx === sortedSets.length - 1 && (
+              {allSetsCompleted && idx === sortedSets.length - 1 && (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -357,7 +358,10 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
                   <button 
                     onClick={() => {
                       setIsNavigatingBack(true);
-                      router.push(`/fitness/workout/${workoutId}`);
+                      router.refresh();
+                      setTimeout(() => {
+                        router.push(`/fitness/workout/${workoutId}`);
+                      }, 100);
                     }}
                     disabled={isNavigatingBack}
                     className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98] transition-transform disabled:opacity-50"
