@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Trophy, Activity, Save, Bot, ChevronRight, AlertCircle } from "lucide-react";
-import Link from "next/link";
+import { Flame, Trophy, Activity, Save, Bot, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { FitnessWorkout } from "@/types/fitness/workout";
 
 interface WorkoutCompleteProps {
@@ -38,8 +38,66 @@ export function WorkoutComplete({
   const [feel, setFeel] = useState<string | null>(null);
   const [pain, setPain] = useState<string | null>(null);
   const [painLocation, setPainLocation] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
 
   const isFeedbackComplete = difficulty && feel && (pain === "No" || (pain === "Yes" && painLocation));
+
+  // Dynamic AI Recommendations
+  const getDynamicReview = () => {
+    const exercises = (workout as any)?.fitness_os_exercises || [];
+    const firstEx = exercises.length > 0 ? exercises[0].name : "main compound lifts";
+    const lastEx = exercises.length > 0 ? exercises[exercises.length - 1].name : "accessories";
+
+    const recs: string[] = [];
+    
+    if (pain === "Yes" && painLocation) {
+      recs.push(`Monitor ${painLocation.toLowerCase()} discomfort, warm up thoroughly next session`);
+    }
+
+    if (difficulty === "Easy") {
+      recs.push(`Increase working weight by 2.5-5kg on ${firstEx}`);
+    } else if (difficulty === "Very Hard") {
+      recs.push(`Maintain current weights, prioritize protein and sleep recovery`);
+    } else {
+      recs.push(`Maintain current weight on ${firstEx}, focus on perfect form`);
+    }
+
+    if (feel === "Tired") {
+      recs.push("Ensure adequate carbohydrate intake post-workout for energy replenishment");
+    } else if (feel === "Great" || feel === "Good") {
+      recs.push(`Try pushing for 1-2 more reps on ${lastEx} next week`);
+    } else {
+      recs.push("Keep consistency high, you are on track");
+    }
+
+    return recs.slice(0, 3);
+  };
+
+  const handleSaveWorkout = async () => {
+    if (!isFeedbackComplete) return;
+    setIsSaving(true);
+    
+    try {
+      // Find the active session for this workout
+      const session = (workout as any).fitness_os_workout_sessions?.[0];
+      const sessionId = session?.id;
+
+      if (sessionId) {
+        await fetch(`/api/workouts/sessions/${sessionId}/feedback`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ difficulty, feel, pain, painLocation })
+        });
+      }
+      
+      router.push("/fitness");
+      router.refresh();
+    } catch (e) {
+      console.error("Failed to save feedback", e);
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-md mx-auto px-5 py-12 flex flex-col items-center pb-32">
@@ -247,11 +305,7 @@ export function WorkoutComplete({
                 Next Session Recommendations
               </span>
               <ul className="flex flex-col gap-2">
-                {[
-                  "Keep current weights",
-                  "Increase reps on lateral raises",
-                  "Maintain current recovery"
-                ].map((rec, i) => (
+                {getDynamicReview().map((rec, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm font-medium text-white/70">
                     <ChevronRight className="w-4 h-4 text-[#ADFF00] shrink-0" />
                     {rec}
@@ -269,15 +323,18 @@ export function WorkoutComplete({
         transition={{ delay: 0.7 }}
         className="w-full"
       >
-        <Link href="/fitness" className="w-full">
-          <button 
-            disabled={!isFeedbackComplete}
-            className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
-          >
+        <button 
+          onClick={handleSaveWorkout}
+          disabled={!isFeedbackComplete || isSaving}
+          className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+        >
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
             <Save className="w-4 h-4" />
-            Save Workout
-          </button>
-        </Link>
+          )}
+          {isSaving ? "Saving..." : "Save Workout"}
+        </button>
       </motion.div>
       
     </div>
