@@ -20,9 +20,10 @@ interface FitnessDashboardProps {
   lifestyle?: any;
   dayNumber?: number;
   premiumLevel?: string;
+  targetDateStr?: string;
 }
 
-export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestReview, nutrition, lifestyle, dayNumber = 1, premiumLevel = "core" }: FitnessDashboardProps) {
+export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestReview, nutrition, lifestyle, dayNumber = 1, premiumLevel = "core", targetDateStr }: FitnessDashboardProps) {
   // Extract user's first name, defaulting to "User" if missing
   const firstName = profile?.name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || "User";
 
@@ -61,7 +62,7 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
         <HorizontalCalendar />
 
         {/* 5. Today's Workout Card */}
-        <TodaysWorkoutCard workout={todayWorkout} />
+        <TodaysWorkoutCard workout={todayWorkout} targetDateStr={targetDateStr} />
 
         {/* 6. Today's Nutrition Card */}
         <TodaysNutritionCard nutrition={nutrition} premiumLevel={premiumLevel} />

@@ -77,7 +77,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     dayNumber = Math.max(1, differenceInCalendarDays(new Date(), new Date(plan.created_at)) + 1);
   }
 
-  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} premiumLevel={mainProfile?.premium_level || 'core'} />;
+  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} premiumLevel={mainProfile?.premium_level || 'core'} targetDateStr={targetDateStr} />;
 }
 
 export default async function FitnessHome({ searchParams }: { searchParams: Promise<{ date?: string }> }) {

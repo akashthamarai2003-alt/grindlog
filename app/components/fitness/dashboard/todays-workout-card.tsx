@@ -7,9 +7,10 @@ import { useState } from "react";
 
 interface TodaysWorkoutCardProps {
   workout?: any; // To receive today's workout plan
+  targetDateStr?: string;
 }
 
-export function TodaysWorkoutCard({ workout }: TodaysWorkoutCardProps) {
+export function TodaysWorkoutCard({ workout, targetDateStr }: TodaysWorkoutCardProps) {
   // Use real data if available, fallback to mock data for the aesthetic
   const title = workout?.name || "Chest + Triceps";
   const exercises = workout?.fitness_os_exercises || [];
@@ -23,6 +24,11 @@ export function TodaysWorkoutCard({ workout }: TodaysWorkoutCardProps) {
   ).length;
 
   const isCompleted = workout?.status === "completed";
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  const cardDateStr = workout?.workout_date || targetDateStr || todayStr;
+  const isFuture = cardDateStr > todayStr;
+  const isRestDay = title.toLowerCase().includes("rest");
   
   return (
     <motion.div
@@ -87,6 +93,19 @@ export function TodaysWorkoutCard({ workout }: TodaysWorkoutCardProps) {
               <span className="text-base font-black text-[#ADFF00] uppercase tracking-wide">View Summary</span>
             </button>
           </Link>
+        ) : isFuture ? (
+          <div className="w-full mt-2">
+            <button disabled className="w-full py-4 px-4 bg-[#121E12] border border-white/5 opacity-50 cursor-not-allowed rounded-xl flex items-center justify-center gap-2">
+              <Clock className="w-5 h-5 text-white/40" />
+              <span className="text-base font-black text-white/40 uppercase tracking-wide">Scheduled</span>
+            </button>
+          </div>
+        ) : isRestDay ? (
+          <div className="w-full mt-2">
+            <button disabled className="w-full py-4 px-4 bg-[#121E12] border border-white/5 opacity-50 cursor-not-allowed rounded-xl flex items-center justify-center gap-2">
+              <span className="text-base font-black text-white/40 uppercase tracking-wide">Rest Day</span>
+            </button>
+          </div>
         ) : (
           <Link href={workout ? `/fitness/workout` : "#"} className="w-full mt-2">
             <button className="w-full py-4 px-4 bg-[#ADFF00] hover:bg-[#bfff33] active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)]">
