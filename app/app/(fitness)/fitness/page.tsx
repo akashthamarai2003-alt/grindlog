@@ -6,7 +6,7 @@ import { Suspense } from "react";
 
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
 
-async function DashboardContent() {
+async function DashboardContent({ searchParams }: { searchParams?: { date?: string } }) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -30,8 +30,8 @@ async function DashboardContent() {
     redirect("/fitness/onboarding");
   }
 
-  // Get today's local date string
-  const today = new Date().toISOString().split('T')[0];
+  // Get target local date string
+  const targetDateStr = searchParams?.date || new Date().toISOString().split('T')[0];
 
   const { data: plan } = await supabase
     .from("fitness_os_workout_plans")
@@ -47,7 +47,7 @@ async function DashboardContent() {
       redirect("/fitness/plan-setup");
     }
   }
-  // Fetch today's workout
+  // Fetch the target date's workout
   const { data: workout } = await supabase
     .from("fitness_os_workouts")
     .select(`
@@ -58,7 +58,7 @@ async function DashboardContent() {
       )
     `)
     .eq("user_id", user.id)
-    .eq("workout_date", today)
+    .eq("workout_date", targetDateStr)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -80,7 +80,8 @@ async function DashboardContent() {
   return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} premiumLevel={mainProfile?.premium_level || 'core'} />;
 }
 
-export default function FitnessHome() {
+export default async function FitnessHome({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
+  const params = await searchParams;
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Suspense fallback={
@@ -88,7 +89,7 @@ export default function FitnessHome() {
           <DashboardSkeleton />
         </div>
       }>
-        <DashboardContent />
+        <DashboardContent searchParams={params} />
       </Suspense>
     </div>
   );

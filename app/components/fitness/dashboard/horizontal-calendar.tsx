@@ -1,17 +1,23 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { format, addDays, startOfWeek } from "date-fns";
+import { format, addDays, startOfWeek, parseISO } from "date-fns";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 export function HorizontalCalendar() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const today = new Date();
+  const searchParams = useSearchParams();
+  const dateParam = searchParams.get('date');
   
-  // Generate the current week (Sunday to Saturday)
-  const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // 0 = Sunday
+  const today = new Date();
+  const activeDate = dateParam ? parseISO(dateParam) : today;
+  
+  // Generate the week based on the currently active date (Sunday to Saturday)
+  const weekStart = startOfWeek(activeDate, { weekStartsOn: 0 }); // 0 = Sunday
   const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
-  // Auto-scroll to today if needed
+  // Auto-scroll to active if needed
   useEffect(() => {
     if (scrollRef.current) {
       const activeElement = scrollRef.current.querySelector('[data-active="true"]');
@@ -19,7 +25,7 @@ export function HorizontalCalendar() {
         activeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }
     }
-  }, []);
+  }, [dateParam]);
 
   return (
     <div className="w-full">
@@ -29,27 +35,30 @@ export function HorizontalCalendar() {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {days.map((date, idx) => {
-          const isToday = date.toDateString() === today.toDateString();
+          const isActive = date.toDateString() === activeDate.toDateString();
           const dayName = format(date, "EEE"); // "Sun", "Mon"
           const dayNum = format(date, "d");   // "13", "14"
+          const dateString = format(date, "yyyy-MM-dd");
 
           return (
-            <div 
+            <Link 
               key={idx}
-              data-active={isToday}
+              href={`/fitness?date=${dateString}`}
+              scroll={false}
+              data-active={isActive}
               className="flex flex-col items-center gap-2 snap-center shrink-0 cursor-pointer group"
             >
-              <span className={`text-[10px] font-bold uppercase transition-colors ${isToday ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`}>
+              <span className={`text-[10px] font-bold uppercase transition-colors ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`}>
                 {dayName}
               </span>
               <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${
-                isToday 
+                isActive 
                   ? 'border-[#ADFF00] text-white shadow-[0_0_15px_rgba(173,255,0,0.3)]' 
                   : 'border-[#1A2619] text-gray-400 bg-[#121E12] group-hover:border-gray-700'
               }`}>
-                <span className={`text-sm ${isToday ? 'font-black' : 'font-medium'}`}>{dayNum}</span>
+                <span className={`text-sm ${isActive ? 'font-black' : 'font-medium'}`}>{dayNum}</span>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
