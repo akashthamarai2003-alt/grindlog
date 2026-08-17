@@ -3,9 +3,10 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 
 export async function POST(
   req: Request,
-  { params }: { params: { sessionId: string; exerciseId: string } }
+  { params }: { params: Promise<{ sessionId: string; exerciseId: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -17,7 +18,7 @@ export async function POST(
     const { data: existingSets, error: setsErr } = await supabase
       .from("fitness_os_sets")
       .select("set_number, target_reps, weight_kg")
-      .eq("exercise_id", params.exerciseId)
+      .eq("exercise_id", resolvedParams.exerciseId)
       .order("set_number", { ascending: false })
       .limit(1);
 
@@ -31,7 +32,7 @@ export async function POST(
     const { data: newSet, error: insertErr } = await supabase
       .from("fitness_os_sets")
       .insert({
-        exercise_id: params.exerciseId,
+        exercise_id: resolvedParams.exerciseId,
         set_number: nextSetNumber,
         target_reps: targetReps,
         weight_kg: weightKg,

@@ -4,9 +4,10 @@ import { generateAIResponse } from "@/lib/services/groq/client";
 
 export async function POST(
   req: Request,
-  { params }: { params: { sessionId: string; exerciseId: string } }
+  { params }: { params: Promise<{ sessionId: string; exerciseId: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -23,7 +24,7 @@ export async function POST(
       const { data: exercise } = await supabase
         .from("fitness_os_exercises")
         .select("name")
-        .eq("id", params.exerciseId)
+        .eq("id", resolvedParams.exerciseId)
         .single();
         
       const { data: profile } = await supabase
@@ -74,7 +75,7 @@ Return ONLY the JSON array.`;
       const { error: updateErr } = await supabase
         .from("fitness_os_exercises")
         .update({ name: newExerciseName })
-        .eq("id", params.exerciseId);
+        .eq("id", resolvedParams.exerciseId);
 
       if (updateErr) throw updateErr;
 

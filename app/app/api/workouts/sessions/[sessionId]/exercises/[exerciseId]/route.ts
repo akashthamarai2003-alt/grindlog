@@ -3,9 +3,10 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { sessionId: string; exerciseId: string } }
+  { params }: { params: Promise<{ sessionId: string; exerciseId: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -17,7 +18,7 @@ export async function DELETE(
     const { error: setsErr } = await supabase
       .from("fitness_os_sets")
       .delete()
-      .eq("exercise_id", params.exerciseId);
+      .eq("exercise_id", resolvedParams.exerciseId);
 
     if (setsErr) throw setsErr;
 
@@ -25,7 +26,7 @@ export async function DELETE(
     const { error: deleteErr } = await supabase
       .from("fitness_os_exercises")
       .delete()
-      .eq("id", params.exerciseId);
+      .eq("id", resolvedParams.exerciseId);
 
     if (deleteErr) throw deleteErr;
 
@@ -38,9 +39,10 @@ export async function DELETE(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { sessionId: string; exerciseId: string } }
+  { params }: { params: Promise<{ sessionId: string; exerciseId: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -57,7 +59,7 @@ export async function PATCH(
     const { error: updateErr } = await supabase
       .from("fitness_os_exercises")
       .update({ rest_seconds: body.rest_seconds })
-      .eq("id", params.exerciseId);
+      .eq("id", resolvedParams.exerciseId);
 
     if (updateErr) throw updateErr;
 
