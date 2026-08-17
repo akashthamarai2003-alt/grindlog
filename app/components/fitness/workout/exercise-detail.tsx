@@ -7,7 +7,6 @@ import Link from "next/link";
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { ExerciseOptionsModal } from "./exercise-options-modal";
 
 interface ExerciseDetailProps {
   exercise: FitnessExercise & { fitness_os_sets: FitnessSet[] };
@@ -21,7 +20,6 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
   
   const [activeRestSeconds, setActiveRestSeconds] = useState<number | null>(null);
   const [submittingSetId, setSubmittingSetId] = useState<string | null>(null);
-  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   
   const [videoId, setVideoId] = useState<string | null>(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
@@ -133,23 +131,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
           </Link>
           <h1 className="text-xl font-black text-white tracking-tight uppercase">BACK</h1>
         </div>
-        
-        <button 
-          onClick={() => setIsOptionsOpen(true)}
-          className="p-2 -mr-2 rounded-full hover:bg-white/10 transition-colors"
-        >
-          <MoreHorizontal className="w-6 h-6 text-white/70 hover:text-white" />
-        </button>
       </div>
-
-      <ExerciseOptionsModal 
-        isOpen={isOptionsOpen}
-        onClose={() => setIsOptionsOpen(false)}
-        exerciseName={exercise.name}
-        exerciseId={exercise.id}
-        sessionId={sessionId}
-        workoutId={workoutId}
-      />
 
       <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-4">
         {exercise.name}
