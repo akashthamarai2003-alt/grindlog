@@ -11,15 +11,27 @@ interface WorkoutCompleteProps {
   exerciseCount: number;
   completedSets: number;
   totalSets: number;
+  actualVolume?: number;
+  actualCalories?: number;
+  recordsBroken?: number;
 }
 
-export function WorkoutComplete({ workout, exerciseCount, completedSets, totalSets }: WorkoutCompleteProps) {
+export function WorkoutComplete({ 
+  workout, 
+  exerciseCount, 
+  completedSets, 
+  totalSets,
+  actualVolume,
+  actualCalories,
+  recordsBroken
+}: WorkoutCompleteProps) {
   const workoutName = workout?.name || "Upper Body";
   const duration = workout?.duration_minutes || 48;
   
-  // Fake math just for visual aesthetics based on sets
-  const volume = (totalSets * 10 * 25).toLocaleString(); // ex: 18 * 250 = 4,500
-  const calories = Math.round(duration * 6.5); // ex: 48 * 6.5 = 312
+  // Real math or fallback
+  const volume = actualVolume !== undefined ? actualVolume.toLocaleString() : (totalSets * 10 * 25).toLocaleString();
+  const calories = actualCalories !== undefined ? actualCalories : Math.round(duration * 6.5);
+  const records = recordsBroken !== undefined ? recordsBroken : 1;
 
   // Feedback State
   const [difficulty, setDifficulty] = useState<string | null>(null);
@@ -95,7 +107,7 @@ export function WorkoutComplete({ workout, exerciseCount, completedSets, totalSe
             <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 z-10">Records</span>
             <div className="flex items-center gap-1.5 z-10">
               <Trophy className="w-4 h-4 text-amber-400" />
-              <span className="text-lg font-black text-white">1</span>
+              <span className="text-lg font-black text-white">{records}</span>
             </div>
           </div>
 

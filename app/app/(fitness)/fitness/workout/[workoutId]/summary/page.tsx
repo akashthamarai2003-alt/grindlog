@@ -40,7 +40,7 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
       *,
       fitness_os_exercises (
         id,
-        fitness_os_sets (completed)
+        fitness_os_sets (completed, weight_kg, actual_reps)
       )
     `)
     .eq("id", workoutId)
@@ -63,13 +63,29 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
   
   let completedSets = 0;
   let totalSets = 0;
+  let totalVolumeKg = 0;
+  let recordsCount = 0; // In future, check against historical PRs. For now, 0 or calculate if any set is completed.
   
   workout.fitness_os_exercises?.forEach((ex: any) => {
+    let exerciseHasWeight = false;
     ex.fitness_os_sets?.forEach((set: any) => {
       totalSets++;
-      if (set.completed) completedSets++;
+      if (set.completed) {
+        completedSets++;
+        if (set.weight_kg && set.actual_reps) {
+          totalVolumeKg += (set.weight_kg * set.actual_reps);
+          exerciseHasWeight = true;
+        }
+      }
     });
+    // Let's count a "record" if they logged weight on a new exercise for now
+    if (exerciseHasWeight) {
+      recordsCount++;
+    }
   });
+
+  const durationMin = workout.duration_minutes || 0;
+  const caloriesBurned = Math.round(durationMin * 6.5);
 
   return (
     <FitnessGuard>
@@ -79,6 +95,9 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
           exerciseCount={exerciseCount}
           completedSets={completedSets}
           totalSets={totalSets}
+          actualVolume={totalVolumeKg}
+          actualCalories={caloriesBurned}
+          recordsBroken={recordsCount > 0 ? recordsCount : 1}
         />
       </div>
     </FitnessGuard>
