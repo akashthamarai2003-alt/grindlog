@@ -105,6 +105,14 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     return { success: false, error: "Failed to save profile. Please try again." };
   }
 
+  // Also update the main profile's display_name if a name was provided
+  if (validData.name) {
+    await supabase
+      .from("profiles")
+      .update({ display_name: validData.name })
+      .eq("id", user.id);
+  }
+
   revalidatePath("/fitness");
   revalidatePath("/fitness/profile");
   return { success: true };
@@ -134,6 +142,14 @@ export async function updateFitnessProfilePartialAction(payload: Record<string, 
   if (updateError) {
     console.error("Failed to update profile:", updateError);
     return { success: false, error: "Failed to update details" };
+  }
+
+  // Also update the main profile's display_name if a name was updated
+  if (updates.name) {
+    await supabase
+      .from("profiles")
+      .update({ display_name: updates.name })
+      .eq("id", user.id);
   }
 
   revalidatePath("/fitness");

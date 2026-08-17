@@ -77,7 +77,7 @@ export function ProfileContent({
     thigh_cm: initialFitnessProfile?.thigh_cm || ""
   });
 
-  const name = fitnessProfile?.name || mainProfile?.name || user.email?.split("@")[0] || "Athlete";
+  const name = fitnessProfile?.name || mainProfile?.display_name || mainProfile?.name || user.email?.split("@")[0] || "Athlete";
   const email = user.email || "";
   const joinedDate = user.created_at 
     ? new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
