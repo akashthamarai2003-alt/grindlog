@@ -217,20 +217,42 @@ export class ProgressAnalyticsService {
     let totalTrainingTimeMinutes = completedWorkouts.reduce((acc, w) => acc + (w.duration_seconds ? w.duration_seconds / 60 : 45), 0);
     
     // In a real optimized system, we'd do a sum/aggregate query, but fetching logs for the period is okay if scoped
-    let exerciseLogs: any[] = [];
+    let completedSets: any[] = [];
     try {
-      const { data } = await supabase
-        .from('fitness_os_exercise_logs')
-        .select('weight, reps, completed')
+      const { data: workoutsWithSets } = await supabase
+        .from('fitness_os_workouts')
+        .select(`
+          id,
+          fitness_os_exercises (
+            fitness_os_sets (
+              weight_kg,
+              actual_reps,
+              completed
+            )
+          )
+        `)
         .eq('user_id', userId)
-        .gte('created_at', startDateStr);
-      if (data) exerciseLogs = data;
-    } catch(e) {}
+        .gte('created_at', startDateStr)
+        .eq('status', 'completed');
+        
+      if (workoutsWithSets) {
+        workoutsWithSets.forEach(w => {
+          w.fitness_os_exercises?.forEach((ex: any) => {
+            ex.fitness_os_sets?.forEach((set: any) => {
+              if (set.completed) {
+                completedSets.push(set);
+              }
+            });
+          });
+        });
+      }
+    } catch(e) {
+      console.error("Failed to fetch sets data for analytics", e);
+    }
 
-    const completedSets = exerciseLogs.filter(e => e.completed);
     const totalSets = completedSets.length;
-    const totalReps = completedSets.reduce((acc, e) => acc + (e.reps || 0), 0);
-    const trainingVolumeKg = completedSets.reduce((acc, e) => acc + ((e.reps || 0) * (e.weight || 0)), 0);
+    const totalReps = completedSets.reduce((acc, e) => acc + (e.actual_reps || 0), 0);
+    const trainingVolumeKg = completedSets.reduce((acc, e) => acc + ((e.actual_reps || 0) * (e.weight_kg || 0)), 0);
 
     const workoutAnalytics: WorkoutAnalytics = {
       totalWorkouts,
