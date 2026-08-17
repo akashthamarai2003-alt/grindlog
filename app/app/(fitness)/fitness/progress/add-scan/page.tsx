@@ -6,8 +6,8 @@ import { Camera, ArrowLeft, ImagePlus, Loader2, X, User } from "lucide-react";
 import Link from "next/link";
 import frontImg from "@/assets/images/placeholder-front.png";
 import backImg from "@/assets/images/placeholder-back.png";
-import leftImg from "@/assets/images/placeholder-side-left.png";
-import rightImg from "@/assets/images/placeholder-side-right.png";
+import leftImg from "@/assets/images/placeholder-left.png";
+import rightImg from "@/assets/images/placeholder-right.png";
 
 export default function AddScanPage() {
   const [images, setImages] = useState<{ front?: string, left?: string, right?: string, back?: string }>({});
