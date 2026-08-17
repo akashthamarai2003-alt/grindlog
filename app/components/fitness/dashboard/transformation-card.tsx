@@ -11,9 +11,21 @@ interface TransformationCardProps {
 }
 
 export function TransformationCard({ profile, premiumLevel = "core" }: TransformationCardProps) {
+  const startWeight = (profile as any).weight_trend_baseline || profile.weight || 73;
   const currentWeight = profile.weight || 73;
   const targetWeight = profile.target_weight || 68;
-  const progressPercentage = 0; // Defaulting to 0 as requested
+  
+  // Calculate Progress Percentage
+  let progressPercentage = 0;
+  const totalGoal = Math.abs(startWeight - targetWeight);
+  if (totalGoal > 0) {
+    const isBulking = targetWeight > startWeight;
+    let progressMade = isBulking ? (currentWeight - startWeight) : (startWeight - currentWeight);
+    progressMade = Math.max(0, progressMade); // Floor at 0 if moving wrong direction
+    progressPercentage = Math.round(Math.min(100, Math.max(0, (progressMade / totalGoal) * 100)));
+  } else {
+    progressPercentage = 100;
+  }
 
   return (
     <motion.div
@@ -45,7 +57,7 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
         <div className="flex items-center justify-between mt-2 px-2">
           <div className="flex flex-col items-center">
             <span className="text-xs text-white/50 uppercase tracking-wider mb-1">Start</span>
-            <span className="text-2xl font-black tracking-tight text-white">{currentWeight} <span className="text-sm font-medium text-white/50">kg</span></span>
+            <span className="text-2xl font-black tracking-tight text-white">{startWeight} <span className="text-sm font-medium text-white/50">kg</span></span>
           </div>
 
           <div className="flex flex-col items-center justify-center pt-4">
