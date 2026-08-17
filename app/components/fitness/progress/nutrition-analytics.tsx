@@ -39,8 +39,8 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
             <span className="text-[10px] font-black tracking-widest text-white/50 uppercase">Calories</span>
           </div>
           <div className="flex items-end gap-1 mb-4">
-            <span className="text-xl font-black text-white leading-none">{metrics.averageCalories}</span>
-            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-0.5">/ {metrics.calorieTarget}</span>
+            <span className="text-xl font-black text-white leading-none">{metrics.averageCalories}<span className="text-[10px] text-white/60 font-bold ml-0.5">kcal</span></span>
+            <span className="text-[9px] font-bold text-white/40 tracking-widest mb-0.5">/ {metrics.calorieTarget} kcal</span>
           </div>
           
           <div className="w-full h-16 mt-auto">
@@ -65,8 +65,8 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
             <span className="text-[10px] font-black tracking-widest text-white/50 uppercase">Protein</span>
           </div>
           <div className="flex items-end gap-1 mb-4">
-            <span className="text-xl font-black text-white leading-none">{metrics.averageProtein}g</span>
-            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-0.5">/ {metrics.proteinTarget}g</span>
+            <span className="text-xl font-black text-white leading-none">{metrics.averageProtein}<span className="text-[10px] text-white/60 font-bold ml-0.5">g</span></span>
+            <span className="text-[9px] font-bold text-white/40 tracking-widest mb-0.5">/ {metrics.proteinTarget}g</span>
           </div>
           
           <div className="w-full h-16 mt-auto">
