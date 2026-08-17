@@ -139,8 +139,6 @@ export class NutritionService {
         carbs,
         fat,
         water_ml,
-        daily_budget: dailyBudget,
-        monthly_budget: monthlyBudget,
         effective_date: localDate
       })
       .select()
