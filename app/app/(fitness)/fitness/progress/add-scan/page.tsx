@@ -12,6 +12,7 @@ import rightImg from "@/assets/images/placeholder-right.png";
 export default function AddScanPage() {
   const [images, setImages] = useState<{ front?: string, left?: string, right?: string, back?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [processingField, setProcessingField] = useState<'front' | 'left' | 'right' | 'back' | null>(null);
   const router = useRouter();
   
   const frontInputRef = useRef<HTMLInputElement>(null);
@@ -19,16 +20,55 @@ export default function AddScanPage() {
   const rightInputRef = useRef<HTMLInputElement>(null);
   const backInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (field: 'front' | 'left' | 'right' | 'back') => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.6));
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = (field: 'front' | 'left' | 'right' | 'back') => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Read as Data URL (base64)
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setImages(prev => ({ ...prev, [field]: event.target?.result as string }));
-    };
-    reader.readAsDataURL(file);
+    setProcessingField(field);
+    try {
+      const compressedBase64 = await compressImage(file);
+      setImages(prev => ({ ...prev, [field]: compressedBase64 }));
+    } catch (err) {
+      console.error("Compression failed", err);
+    } finally {
+      setProcessingField(null);
+    }
   };
 
   const removeImage = (field: 'front' | 'left' | 'right' | 'back') => {
@@ -77,12 +117,13 @@ export default function AddScanPage() {
   const PhotoSlot = ({ title, field, inputRef }: { title: string, field: 'front' | 'left' | 'right' | 'back', inputRef: React.RefObject<HTMLInputElement> }) => {
     const placeholderSrc = field === 'front' ? frontImg : field === 'back' ? backImg : field === 'left' ? leftImg : rightImg;
     const resolvedSrc = typeof placeholderSrc === 'string' ? placeholderSrc : (placeholderSrc as any).src;
+    const isProcessing = processingField === field;
 
     return (
       <div className="relative">
         <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider text-center">{title}</label>
         <div 
-          onClick={() => !images[field] && triggerUpload(field)}
+          onClick={() => !images[field] && !isProcessing && triggerUpload(field)}
           className={`relative w-full aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${images[field] ? 'border-[#ADFF00] bg-[#ADFF00]/10 cursor-default' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50 cursor-pointer'}`}
         >
           <input 
@@ -91,6 +132,7 @@ export default function AddScanPage() {
             accept="image/*" 
             onChange={handleFileChange(field)} 
             className="hidden" 
+            disabled={isProcessing}
           />
           
           {images[field] ? (
@@ -111,15 +153,15 @@ export default function AddScanPage() {
                 <img 
                   src={resolvedSrc}
                   alt={`${title} Reference`}
-                  className="w-full h-full object-cover object-top opacity-30 transition-opacity hover:opacity-60"
+                  className={`w-full h-full object-cover object-top transition-opacity duration-300 ${isProcessing ? 'opacity-10 blur-sm' : 'opacity-30 hover:opacity-60'}`}
                 />
               </div>
               <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/20 shadow-xl transition-all hover:bg-white/10">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_10px_rgba(173,255,0,0.4)]">
-                    <User className="w-3.5 h-3.5" />
+                    {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <User className="w-3.5 h-3.5" />}
                   </div>
-                  <span className="text-[11px] font-black text-white uppercase tracking-wider">+ Upload</span>
+                  <span className="text-[11px] font-black text-white uppercase tracking-wider">{isProcessing ? "Loading" : "+ Upload"}</span>
                 </div>
               </div>
             </>
