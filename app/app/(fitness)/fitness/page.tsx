@@ -14,17 +14,13 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     return <FitnessLandingPage />;
   }
 
-  const { data: profile } = await supabase
-    .from("fitness_os_profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  const { data: mainProfile } = await supabase
-    .from("profiles")
-    .select("is_premium, premium_level")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [
+    { data: profile },
+    { data: mainProfile }
+  ] = await Promise.all([
+    supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
+    supabase.from("profiles").select("is_premium, premium_level").eq("id", user.id).maybeSingle()
+  ]);
 
   if (!profile?.onboarding_completed) {
     redirect("/fitness/onboarding");
@@ -33,12 +29,21 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
   // Get target local date string
   const targetDateStr = searchParams?.date || new Date().toISOString().split('T')[0];
 
-  const { data: plan } = await supabase
-    .from("fitness_os_workout_plans")
-    .select("id, plan_data, created_at")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
+  const [
+    { data: plan },
+    { data: workout },
+    { data: latestReview }
+  ] = await Promise.all([
+    supabase.from("fitness_os_workout_plans").select("id, plan_data, created_at").eq("user_id", user.id).eq("status", "active").maybeSingle(),
+    supabase.from("fitness_os_workouts").select(`
+      *,
+      fitness_os_exercises (
+        id,
+        fitness_os_sets (completed)
+      )
+    `).eq("user_id", user.id).eq("workout_date", targetDateStr).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("fitness_os_progress_reviews").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
+  ]);
 
   if (!mainProfile?.is_premium) {
     if (plan) {
@@ -47,29 +52,6 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       redirect("/fitness/plan-setup");
     }
   }
-  // Fetch the target date's workout
-  const { data: workout } = await supabase
-    .from("fitness_os_workouts")
-    .select(`
-      *,
-      fitness_os_exercises (
-        id,
-        fitness_os_sets (completed)
-      )
-    `)
-    .eq("user_id", user.id)
-    .eq("workout_date", targetDateStr)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const { data: latestReview } = await supabase
-    .from("fitness_os_progress_reviews")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
 
   let dayNumber = 1;
   if (plan?.created_at) {

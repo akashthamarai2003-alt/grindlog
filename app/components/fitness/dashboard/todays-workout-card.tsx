@@ -56,34 +56,38 @@ export function TodaysWorkoutCard({ workout, targetDateStr }: TodaysWorkoutCardP
             {title}
           </h2>
           
-          <div className="flex items-center gap-4 text-white/60">
-            <div className="flex items-center gap-1.5">
-              <Activity className="w-4 h-4 text-[#ADFF00]" />
-              <span className="text-sm font-medium">{numExercises} Exercises</span>
+          {!isRestDay && (
+            <div className="flex items-center gap-4 text-white/60">
+              <div className="flex items-center gap-1.5">
+                <Activity className="w-4 h-4 text-[#ADFF00]" />
+                <span className="text-sm font-medium">{numExercises} Exercises</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-[#ADFF00]" />
+                <span className="text-sm font-medium">{totalDuration}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-[#ADFF00]" />
-              <span className="text-sm font-medium">{totalDuration}</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Progress Tracker */}
-        <div className="flex flex-col gap-1.5 pt-2">
-          <div className="flex justify-between text-[10px] font-medium text-white/40 uppercase tracking-wider px-1">
-            <span>Progress</span>
-            <span className="text-[#ADFF00]">{completedCount} / {numExercises}</span>
+        {!isRestDay && (
+          <div className="flex flex-col gap-1.5 pt-2">
+            <div className="flex justify-between text-[10px] font-medium text-white/40 uppercase tracking-wider px-1">
+              <span>Progress</span>
+              <span className="text-[#ADFF00]">{completedCount} / {numExercises}</span>
+            </div>
+            <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(completedCount / Math.max(1, numExercises)) * 100}%` }}
+                transition={{ duration: 1.5, ease: "easeOut", delay: 0.6 }}
+                className="h-full bg-gradient-to-r from-[#ADFF00]/50 to-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)] rounded-full relative"
+              >
+              </motion.div>
+            </div>
           </div>
-          <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${(completedCount / Math.max(1, numExercises)) * 100}%` }}
-              transition={{ duration: 1.5, ease: "easeOut", delay: 0.6 }}
-              className="h-full bg-gradient-to-r from-[#ADFF00]/50 to-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)] rounded-full relative"
-            >
-            </motion.div>
-          </div>
-        </div>
+        )}
 
         {/* Start Button */}
         {isCompleted ? (
