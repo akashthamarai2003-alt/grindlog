@@ -548,25 +548,25 @@ export class NutritionService {
         const dailyPlan = plans[0];
         const allItems = dailyPlan.meal_plan_items || [];
         
-        const itemsByType: Record<string, any[]> = {
-          breakfast: [],
-          lunch: [],
-          snack: [],
-          dinner: []
-        };
+        const itemsByType: Record<string, any[]> = {};
+        ALL_MEAL_TYPES.forEach(mt => { itemsByType[mt] = []; });
 
         allItems.forEach((item: any, idx: number) => {
           const cat = (item.foods?.category || '').toLowerCase();
           const name = (item.foods?.name || '').toLowerCase();
 
-          if (cat.includes('breakfast') || name.includes('idli') || name.includes('dosa') || name.includes('poha') || name.includes('upma') || name.includes('oats') || name.includes('coffee') || name.includes('milk') || name.includes('egg')) {
+          if (itemsByType.breakfast && (cat.includes('breakfast') || name.includes('idli') || name.includes('dosa') || name.includes('poha') || name.includes('upma') || name.includes('oats') || name.includes('coffee') || name.includes('milk') || name.includes('egg'))) {
             itemsByType.breakfast.push(item);
-          } else if (cat.includes('fruit') || cat.includes('snack') || name.includes('banana') || name.includes('apple') || name.includes('peanut')) {
-            itemsByType.snack.push(item);
-          } else if (idx % 2 === 0) {
+          } else if ((itemsByType.snack || itemsByType.evening_snack) && (cat.includes('fruit') || cat.includes('snack') || name.includes('banana') || name.includes('apple') || name.includes('peanut'))) {
+            (itemsByType.snack || itemsByType.evening_snack).push(item);
+          } else if (itemsByType.lunch && idx % 2 === 0) {
             itemsByType.lunch.push(item);
-          } else {
+          } else if (itemsByType.dinner) {
             itemsByType.dinner.push(item);
+          } else {
+            // Fallback: push to the first available meal type
+            const firstType = ALL_MEAL_TYPES[0];
+            if (itemsByType[firstType]) itemsByType[firstType].push(item);
           }
         });
 
