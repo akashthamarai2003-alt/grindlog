@@ -18,9 +18,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { frontImage, sideImage, backImage } = await req.json();
+    const { frontImage, sideImage, leftImage, rightImage, backImage } = await req.json();
 
-    if (!frontImage && !sideImage && !backImage) {
+    if (!frontImage && !sideImage && !leftImage && !rightImage && !backImage) {
       return NextResponse.json({ success: false, error: 'At least one image is required' }, { status: 400 });
     }
 
@@ -42,9 +42,11 @@ export async function POST(req: Request) {
 
     const frontUrl = await uploadImage(frontImage, 'front');
     const sideUrl = await uploadImage(sideImage, 'side');
+    const leftUrl = await uploadImage(leftImage, 'left');
+    const rightUrl = await uploadImage(rightImage, 'right');
     const backUrl = await uploadImage(backImage, 'back');
 
-    if (!frontUrl && !sideUrl && !backUrl) {
+    if (!frontUrl && !sideUrl && !leftUrl && !rightUrl && !backUrl) {
        return NextResponse.json({ success: false, error: 'Failed to upload images' }, { status: 500 });
     }
 
@@ -54,13 +56,15 @@ export async function POST(req: Request) {
         user_id: user.id,
         front_image_url: frontUrl,
         side_image_url: sideUrl,
+        left_image_url: leftUrl,
+        right_image_url: rightUrl,
         back_image_url: backUrl,
         scan_date: new Date().toISOString().split('T')[0]
       });
 
     if (scanError) throw scanError;
 
-    return NextResponse.json({ success: true, frontUrl, sideUrl, backUrl });
+    return NextResponse.json({ success: true, frontUrl, sideUrl, leftUrl, rightUrl, backUrl });
 
   } catch (err: any) {
     console.error("Add Scan Error:", err);

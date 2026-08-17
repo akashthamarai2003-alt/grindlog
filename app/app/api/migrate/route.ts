@@ -59,6 +59,10 @@ export async function GET() {
         ADD COLUMN IF NOT EXISTS baseline_calories INTEGER,
         ADD COLUMN IF NOT EXISTS initial_protein_target INTEGER,
         ADD COLUMN IF NOT EXISTS weight_trend_baseline REAL;
+        
+      ALTER TABLE public.fitness_os_body_scans
+        ADD COLUMN IF NOT EXISTS left_image_url TEXT,
+        ADD COLUMN IF NOT EXISTS right_image_url TEXT;
     `;
     const { data, error } = await supabase.rpc('execute_sql', { sql_query: sqlQuery });
     if (error) throw error;

@@ -39,7 +39,8 @@ export interface BodyPhotoScan {
   id: string;
   date: string;
   frontUrl: string | null;
-  sideUrl: string | null;
+  leftUrl: string | null;
+  rightUrl: string | null;
   backUrl: string | null;
 }
 

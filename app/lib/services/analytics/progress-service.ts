@@ -185,14 +185,16 @@ export class ProgressAnalyticsService {
       first: scansData.length > 0 ? {
         id: scansData[0].id,
         frontUrl: scansData[0].front_image_url,
-        sideUrl: scansData[0].side_image_url,
+        leftUrl: scansData[0].left_image_url || scansData[0].side_image_url,
+        rightUrl: scansData[0].right_image_url,
         backUrl: scansData[0].back_image_url,
         date: scansData[0].scan_date
       } : null,
       latest: scansData.length > 0 ? {
         id: scansData[scansData.length - 1].id,
         frontUrl: scansData[scansData.length - 1].front_image_url,
-        sideUrl: scansData[scansData.length - 1].side_image_url,
+        leftUrl: scansData[scansData.length - 1].left_image_url || scansData[scansData.length - 1].side_image_url,
+        rightUrl: scansData[scansData.length - 1].right_image_url,
         backUrl: scansData[scansData.length - 1].back_image_url,
         date: scansData[scansData.length - 1].scan_date
       } : null

@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 
 export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | null, latest: BodyPhotoScan | null }) {
-  const [view, setView] = useState<'front' | 'side' | 'back'>('front');
+  const [view, setView] = useState<'front' | 'left' | 'right' | 'back'>('front');
   const [sliderPos, setSliderPos] = useState(50);
 
   if (!first || !latest) {
@@ -28,8 +28,8 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
     );
   }
 
-  const beforeImg = view === 'front' ? first.frontUrl : view === 'side' ? first.sideUrl : first.backUrl;
-  const afterImg = view === 'front' ? latest.frontUrl : view === 'side' ? latest.sideUrl : latest.backUrl;
+  const beforeImg = view === 'front' ? first.frontUrl : view === 'left' ? first.leftUrl : view === 'right' ? first.rightUrl : first.backUrl;
+  const afterImg = view === 'front' ? latest.frontUrl : view === 'left' ? latest.leftUrl : view === 'right' ? latest.rightUrl : latest.backUrl;
 
   return (
     <div className="w-full flex flex-col gap-3">
@@ -38,7 +38,7 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
           Body Progress
         </h2>
         <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/5">
-          {['front', 'side', 'back'].map(v => (
+          {['front', 'left', 'right', 'back'].map(v => (
             <button
               key={v}
               onClick={() => setView(v as any)}
