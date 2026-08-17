@@ -41,7 +41,7 @@ export class WorkoutService {
       .select(`
         *,
         fitness_os_exercises (
-          id, name, target_sets, target_reps, target_muscles, rest_seconds,
+          id, name, target_sets, target_reps, rest_seconds,
           fitness_os_sets(completed)
         )
       `)
