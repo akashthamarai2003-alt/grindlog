@@ -72,7 +72,7 @@ export function WeeklyWorkoutView({ weekDays = [] }: { weekDays?: any[] }) {
               <div className="flex items-center justify-between mb-8">
                 <div className="flex flex-col">
                   <h3 className="text-xl font-black text-white uppercase tracking-tight">
-                    Your 6-Day Plan
+                    Your Weekly Plan
                   </h3>
                 </div>
                 <button 

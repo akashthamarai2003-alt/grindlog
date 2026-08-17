@@ -113,12 +113,14 @@ export class WorkoutService {
       const iterStr = iterDate.toISOString().split('T')[0];
       
       const dayWorkout = workouts?.find(w => w.workout_date === iterStr);
-      let status = "upcoming";
       let name = dayWorkout ? dayWorkout.name : "Rest";
+      let status = "upcoming";
+      
+      const isRestDay = name.toLowerCase().includes("rest");
 
       if (iterStr === todayStr) {
         status = "today";
-      } else if (dayWorkout) {
+      } else if (dayWorkout && !isRestDay) {
         if (dayWorkout.status === "completed") {
           status = "completed";
         } else if (iterStr < todayStr) {
