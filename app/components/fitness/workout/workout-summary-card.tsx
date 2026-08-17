@@ -43,7 +43,12 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
     }
   };
 
-  const completedCount = 0; // Mock progress for now
+  const exercises = workout?.fitness_os_exercises || [];
+  const completedCount = exercises.filter((ex: any) => 
+    ex.fitness_os_sets && 
+    ex.fitness_os_sets.length > 0 && 
+    ex.fitness_os_sets.every((set: any) => set.completed)
+  ).length;
   
   // Extract target muscles from plan_data if available, otherwise fallback
   const targetMuscles = workout?.plan_data?.target_muscles || ["Chest", "Back", "Shoulders", "Arms"];

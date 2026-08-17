@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Dumbbell, Play, Loader2 } from "lucide-react";
+import { Dumbbell, Play, Loader2, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -12,6 +12,7 @@ interface Exercise {
   sets: number;
   reps: string;
   targetWeight?: string;
+  fitness_os_sets?: any[];
 }
 
 interface TodaysExercisesListProps {
@@ -46,6 +47,9 @@ export function TodaysExercisesList({ workoutId, exercises }: TodaysExercisesLis
       <div className="flex flex-col gap-3">
         {displayExercises.map((exercise, index) => {
           const numStr = (index + 1).toString().padStart(2, '0');
+          const isCompleted = exercise.fitness_os_sets && 
+            exercise.fitness_os_sets.length > 0 && 
+            exercise.fitness_os_sets.every((set: any) => set.completed);
 
           return (
             <motion.div
@@ -53,7 +57,9 @@ export function TodaysExercisesList({ workoutId, exercises }: TodaysExercisesLis
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.4 + (index * 0.1) }}
-              className="bg-[#111A10] border border-white/5 rounded-2xl p-4 relative overflow-hidden group"
+              className={`bg-[#111A10] border border-white/5 rounded-2xl p-4 relative overflow-hidden group ${
+                isCompleted ? 'opacity-70' : ''
+              }`}
             >
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/5 group-hover:bg-[#ADFF00]/50 transition-colors" />
               
@@ -95,13 +101,22 @@ export function TodaysExercisesList({ workoutId, exercises }: TodaysExercisesLis
                   </div>
                 </div>
 
-                {/* Right side: Start button */}
+                {/* Right side: Start / Completed button */}
                 <button 
-                  onClick={() => handleStartExercise(exercise.id)}
-                  disabled={navigatingExerciseId !== null}
-                  className="shrink-0 h-10 px-4 bg-white/5 hover:bg-[#ADFF00] hover:text-black active:scale-95 transition-all duration-300 rounded-xl flex items-center justify-center gap-1.5 border border-white/5 group/btn disabled:opacity-50"
+                  onClick={() => !isCompleted && handleStartExercise(exercise.id)}
+                  disabled={navigatingExerciseId !== null || isCompleted}
+                  className={`shrink-0 h-10 px-4 transition-all duration-300 rounded-xl flex items-center justify-center gap-1.5 border group/btn disabled:opacity-50 ${
+                    isCompleted 
+                      ? "bg-white/5 border-white/10 text-white/50 cursor-default"
+                      : "bg-white/5 border-white/5 hover:bg-[#ADFF00] hover:text-black active:scale-95"
+                  }`}
                 >
-                  {navigatingExerciseId === exercise.id ? (
+                  {isCompleted ? (
+                    <>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Completed</span>
+                      <Check className="w-3 h-3 text-[#ADFF00]" />
+                    </>
+                  ) : navigatingExerciseId === exercise.id ? (
                     <>
                       <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Loading</span>
                       <Loader2 className="w-3 h-3 text-white/50 animate-spin" />
