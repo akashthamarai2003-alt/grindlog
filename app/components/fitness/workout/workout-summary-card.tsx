@@ -16,8 +16,16 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
 
+  const isCompleted = workout?.status === "completed";
+
   const handleStart = async () => {
     if (isStarting) return;
+    
+    if (isCompleted) {
+      router.push(`/fitness/workout/${workout.id}/summary`);
+      return;
+    }
+    
     setIsStarting(true);
     if (workout.id === "mock") {
       await new Promise(r => setTimeout(r, 500));
@@ -127,9 +135,9 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
           <button
             onClick={handleStart}
             disabled={isStarting}
-            className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#bfff33] transition-colors shadow-[0_0_20px_rgba(173,255,0,0.2)] active:scale-[0.98] disabled:opacity-70"
+            className={`w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-70 ${isCompleted ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-[#ADFF00] text-black hover:bg-[#bfff33] shadow-[0_0_20px_rgba(173,255,0,0.2)]'}`}
           >
-            {isStarting ? "STARTING..." : "START WORKOUT"} <ArrowRight className="w-5 h-5" />
+            {isStarting ? "STARTING..." : isCompleted ? "VIEW WORKOUT SUMMARY" : "START WORKOUT"} <ArrowRight className="w-5 h-5" />
           </button>
         )}
 
