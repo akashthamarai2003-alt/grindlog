@@ -185,9 +185,17 @@ export function ProfileContent({
             {/* Avatar Circle with Neon Ring */}
             <div className="relative mb-4">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#1A2619] via-[#0A1108] to-[#121E12] border-2 border-[#ADFF00] p-1 flex items-center justify-center shadow-[0_0_20px_rgba(173,255,0,0.25)]">
-                <div className="w-full h-full rounded-full bg-[#121E12] flex items-center justify-center text-3xl font-black text-[#ADFF00] tracking-wider uppercase">
-                  {name.charAt(0)}
-                </div>
+                {mainProfile?.avatar_url || (user as any).user_metadata?.avatar_url ? (
+                  <img 
+                    src={mainProfile?.avatar_url || (user as any).user_metadata?.avatar_url} 
+                    alt={name} 
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-[#121E12] flex items-center justify-center text-3xl font-black text-[#ADFF00] tracking-wider uppercase">
+                    {name.charAt(0)}
+                  </div>
+                )}
               </div>
               <div className="absolute -bottom-1 right-0 p-1.5 rounded-full bg-[#0A1108] border border-[#ADFF00]/50 text-[#ADFF00]">
                 {isPro ? <Crown className="w-4 h-4 fill-[#ADFF00]" /> : <Sparkles className="w-4 h-4" />}
