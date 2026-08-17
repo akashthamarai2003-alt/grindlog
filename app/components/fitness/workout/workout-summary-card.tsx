@@ -58,8 +58,25 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
     ex.fitness_os_sets.every((set: any) => set.completed)
   ).length;
   
-  // Extract target muscles from plan_data if available, otherwise fallback
-  const targetMuscles = workout?.plan_data?.target_muscles || ["Chest", "Back", "Shoulders", "Arms"];
+  // Extract target muscles from plan_data if available, otherwise infer from name
+  let targetMuscles = workout?.plan_data?.target_muscles;
+  
+  if (!targetMuscles || targetMuscles.length === 0) {
+    targetMuscles = [];
+    const workoutName = (workout?.name || "").toLowerCase();
+    const allMuscles = ["Chest", "Back", "Shoulders", "Arms", "Biceps", "Triceps", "Legs", "Core", "Glutes", "Quads", "Hamstrings", "Calves", "Full Body"];
+    
+    allMuscles.forEach(muscle => {
+      if (workoutName.includes(muscle.toLowerCase())) {
+        targetMuscles.push(muscle);
+      }
+    });
+
+    if (targetMuscles.length === 0) {
+      targetMuscles = ["Full Body"]; // Ultimate fallback
+    }
+  }
+
   const muscleString = targetMuscles.join(" • ");
 
   return (
