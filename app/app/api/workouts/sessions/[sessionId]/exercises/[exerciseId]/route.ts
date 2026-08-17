@@ -35,3 +35,35 @@ export async function DELETE(
     return NextResponse.json({ error: error.message || "Failed to skip exercise" }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { sessionId: string; exerciseId: string } }
+) {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+
+    if (typeof body.rest_seconds !== 'number') {
+      return NextResponse.json({ error: "Invalid rest_seconds" }, { status: 400 });
+    }
+
+    const { error: updateErr } = await supabase
+      .from("fitness_os_exercises")
+      .update({ rest_seconds: body.rest_seconds })
+      .eq("id", params.exerciseId);
+
+    if (updateErr) throw updateErr;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error(`PATCH /api/workouts/sessions/[sessionId]/exercises/[exerciseId] error:`, error);
+    return NextResponse.json({ error: error.message || "Failed to update exercise" }, { status: 500 });
+  }
+}

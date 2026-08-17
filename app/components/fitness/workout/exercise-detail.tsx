@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, PlayCircle, Bot, Check, Loader2, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, PlayCircle, Bot, Check, Loader2, MoreHorizontal, Pencil, X } from "lucide-react";
 import Link from "next/link";
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { toast } from "sonner";
@@ -23,6 +23,28 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
   
   const [videoId, setVideoId] = useState<string | null>(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
+
+  const [isEditingRest, setIsEditingRest] = useState(false);
+  const [isUpdatingRest, setIsUpdatingRest] = useState(false);
+
+  const handleUpdateRest = async (newRest: number) => {
+    setIsUpdatingRest(true);
+    try {
+      const res = await fetch(`/api/workouts/sessions/${sessionId}/exercises/${exercise.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rest_seconds: newRest })
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("Rest time updated");
+      setIsEditingRest(false);
+      router.refresh();
+    } catch (e) {
+      toast.error("Could not update rest time");
+    } finally {
+      setIsUpdatingRest(false);
+    }
+  };
 
   // Local state to track input values for sets so they are easily updatable
   const [setInputs, setSetInputs] = useState<Record<string, { weight: string, reps: string }>>(
@@ -175,9 +197,40 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
             <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5">Target</span>
             <span className="text-sm font-semibold text-white/90">{exercise.target_sets} Sets × {exercise.target_reps} Reps</span>
           </div>
-          <div className="flex flex-col text-right">
-            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5">Rest</span>
-            <span className="text-sm font-semibold text-white/90">{exercise.rest_seconds} sec</span>
+          <div className="flex flex-col text-right relative">
+            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5 flex items-center justify-end gap-1.5">
+              Rest
+              {!isEditingRest && (
+                <button onClick={() => setIsEditingRest(true)} className="hover:text-white transition-colors">
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
+            </span>
+            
+            {isEditingRest ? (
+              <div className="flex items-center gap-2 mt-1">
+                <select 
+                  className="bg-[#111A10] border border-white/10 rounded-lg text-sm text-white px-2 py-1 outline-none focus:border-[#ADFF00]"
+                  disabled={isUpdatingRest}
+                  value={exercise.rest_seconds || 90}
+                  onChange={(e) => handleUpdateRest(Number(e.target.value))}
+                >
+                  <option value={30}>30 sec</option>
+                  <option value={45}>45 sec</option>
+                  <option value={60}>60 sec</option>
+                  <option value={90}>90 sec</option>
+                  <option value={120}>120 sec</option>
+                  <option value={150}>150 sec</option>
+                  <option value={180}>180 sec</option>
+                </select>
+                <button onClick={() => setIsEditingRest(false)} className="p-1 hover:bg-white/10 rounded-md">
+                  <X className="w-4 h-4 text-white/50" />
+                </button>
+                {isUpdatingRest && <Loader2 className="w-3 h-3 animate-spin text-[#ADFF00]" />}
+              </div>
+            ) : (
+              <span className="text-sm font-semibold text-white/90">{exercise.rest_seconds} sec</span>
+            )}
           </div>
         </div>
       </div>
