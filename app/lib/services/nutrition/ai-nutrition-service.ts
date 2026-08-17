@@ -121,10 +121,10 @@ export class AINutritionService {
     } else if (mealsPerDay === '3 meals') {
       mealTypesToGenerate = ['breakfast', 'lunch', 'dinner'];
     } else if (mealsPerDay === '5+ meals') {
-      mealTypesToGenerate = ['breakfast', 'lunch', 'snack', 'evening_snack', 'dinner'];
+      mealTypesToGenerate = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner'];
     } else {
       // 4 meals (default)
-      mealTypesToGenerate = ['breakfast', 'lunch', 'snack', 'dinner'];
+      mealTypesToGenerate = ['breakfast', 'lunch', 'pre_workout', 'dinner'];
     }
 
     const systemPrompt = `You are a strict, expert Indian nutritionist AI meal-selection assistant.
@@ -140,7 +140,7 @@ CRITICAL FOOD ENVIRONMENT RULES:
 ${isCoreProvided ? `- The user lives in a ${profile?.food_environment || 'Home'} environment where CORE MEALS (breakfast, lunch, dinner) are ALREADY PROVIDED for free.
 - For core meals (breakfast, lunch, dinner): Select ONLY cheap protein ADD-ONS from the database (items marked pg:true with low cost like roasted peanuts, soy chunks, curd, chana, banana). These are supplements the user buys with their pocket money to boost protein.
 - Do NOT select expensive or complex foods for core meals. The PG/Home already provides rice, dal, chapati, sambar etc.
-- For snack meals: Select affordable snack items that fit the budget.` 
+- For pre/post-workout or snack meals: Select affordable snack items that fit the budget.` 
 : `- The user cooks their own meals ('I Cook' or 'Mixed' environment).
 - Select complete meals from the database that provide full nutrition.
 - All food costs count against their budget.`}
@@ -231,8 +231,8 @@ Strictly adhere to the Diet Preference, Budget, and Food Environment constraints
 
     // 6. Canonical Validation & Math Calculation
     const foodMap = new Map(allFoods.map(f => [f.id, f]));
-    const validMealTypes = mealTypesToGenerate.includes('evening_snack') 
-      ? ['breakfast', 'lunch', 'snack', 'evening_snack', 'dinner']
+    const validMealTypes = mealTypesToGenerate.includes('post_workout') 
+      ? ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner']
       : mealTypesToGenerate;
     
     // Validate meal types

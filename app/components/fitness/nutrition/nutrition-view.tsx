@@ -145,10 +145,16 @@ export function NutritionView() {
     switch (type.toLowerCase()) {
       case 'breakfast': return '8:00 AM - 9:30 AM';
       case 'lunch': return '1:00 PM - 2:30 PM';
+      case 'pre_workout': return '4:00 PM - 5:00 PM';
       case 'snack': return '5:00 PM - 6:30 PM';
+      case 'post_workout': return '7:00 PM - 8:00 PM';
       case 'dinner': return '8:30 PM - 10:00 PM';
       default: return '';
     }
+  };
+
+  const formatMealType = (type: string) => {
+    return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   if (isLoading) {
@@ -339,7 +345,7 @@ export function NutritionView() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-white capitalize">{meal.meal_type}</h3>
+                          <h3 className="text-sm font-bold text-white">{formatMealType(meal.meal_type)}</h3>
                           <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/20">
                             {getMealTiming(meal.meal_type)}
                           </span>

@@ -534,10 +534,10 @@ export class NutritionService {
     } else if (mealsPerDay === '3 meals') {
       ALL_MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
     } else if (mealsPerDay === '5+ meals') {
-      ALL_MEAL_TYPES = ['breakfast', 'lunch', 'snack', 'evening_snack', 'dinner'];
+      ALL_MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner'];
     } else {
       // 4 meals (default)
-      ALL_MEAL_TYPES = ['breakfast', 'lunch', 'snack', 'dinner'];
+      ALL_MEAL_TYPES = ['breakfast', 'lunch', 'pre_workout', 'dinner'];
     }
     const plansByMealType = new Map<string, any>();
 
@@ -555,8 +555,9 @@ export class NutritionService {
 
           if (itemsByType.breakfast && (cat.includes('breakfast') || name.includes('idli') || name.includes('dosa') || name.includes('poha') || name.includes('upma') || name.includes('oats') || name.includes('coffee') || name.includes('milk') || name.includes('egg'))) {
             itemsByType.breakfast.push(item);
-          } else if ((itemsByType.snack || itemsByType.evening_snack) && (cat.includes('fruit') || cat.includes('snack') || name.includes('banana') || name.includes('apple') || name.includes('peanut'))) {
-            (itemsByType.snack || itemsByType.evening_snack).push(item);
+          } else if ((itemsByType.pre_workout || itemsByType.post_workout || itemsByType.snack) && (cat.includes('fruit') || cat.includes('snack') || name.includes('banana') || name.includes('apple') || name.includes('peanut'))) {
+            const bucket = itemsByType.pre_workout || itemsByType.snack || itemsByType.post_workout;
+            if (bucket) bucket.push(item);
           } else if (itemsByType.lunch && idx % 2 === 0) {
             itemsByType.lunch.push(item);
           } else if (itemsByType.dinner) {
@@ -604,7 +605,10 @@ export class NutritionService {
       if (existing) return existing;
 
       // Fallback to AI generated meals from fitness_os_workout_plans
-      const aiMeal = aiMeals.find((m: any) => m.meal_name?.toLowerCase().includes(mType) || (mType === 'snack' && m.meal_name?.toLowerCase().includes('snack')));
+      const aiMeal = aiMeals.find((m: any) => {
+        const name = (m.meal_name || '').toLowerCase();
+        return name.includes(mType) || name.includes(mType.replace('_', '-')) || name.includes(mType.replace('_', ' ')) || (mType === 'snack' && name.includes('snack'));
+      });
 
       if (aiMeal) {
         const proportion = mType === 'lunch' || mType === 'dinner' ? 0.35 : 0.15;
@@ -614,7 +618,7 @@ export class NutritionService {
         // Real-world estimate: ~₹0.20 per calorie for average Indian meals
         let estCost = Math.round(estCals * 0.20);
         const envStr = fitProfile?.food_environment?.toLowerCase() || '';
-        if ((envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen') && mType !== 'snack') {
+        if ((envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen') && (mType === 'breakfast' || mType === 'lunch' || mType === 'dinner')) {
           estCost = 0; // Core meals are provided
         }
 
