@@ -52,12 +52,14 @@ async function DashboardContent() {
     .from("fitness_os_workouts")
     .select(`
       *,
-      fitness_os_exercises (id)
+      fitness_os_exercises (
+        id,
+        fitness_os_sets (completed)
+      )
     `)
     .eq("user_id", user.id)
     .eq("workout_date", today)
-    .in("status", ["scheduled", "in_progress"])
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 

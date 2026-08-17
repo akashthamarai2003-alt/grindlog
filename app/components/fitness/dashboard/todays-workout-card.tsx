@@ -12,8 +12,17 @@ interface TodaysWorkoutCardProps {
 export function TodaysWorkoutCard({ workout }: TodaysWorkoutCardProps) {
   // Use real data if available, fallback to mock data for the aesthetic
   const title = workout?.name || "Chest + Triceps";
-  const numExercises = workout?.fitness_os_exercises?.length || 6;
+  const exercises = workout?.fitness_os_exercises || [];
+  const numExercises = exercises.length || 6;
   const totalDuration = workout?.duration_minutes ? `${workout.duration_minutes} min` : "45–55 min";
+  
+  const completedCount = exercises.filter((ex: any) => 
+    ex.fitness_os_sets && 
+    ex.fitness_os_sets.length > 0 && 
+    ex.fitness_os_sets.every((set: any) => set.completed)
+  ).length;
+
+  const isCompleted = workout?.status === "completed";
   
   return (
     <motion.div
@@ -57,12 +66,12 @@ export function TodaysWorkoutCard({ workout }: TodaysWorkoutCardProps) {
         <div className="flex flex-col gap-1.5 pt-2">
           <div className="flex justify-between text-[10px] font-medium text-white/40 uppercase tracking-wider px-1">
             <span>Progress</span>
-            <span className="text-[#ADFF00]">0 / {numExercises}</span>
+            <span className="text-[#ADFF00]">{completedCount} / {numExercises}</span>
           </div>
           <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `0%` }}
+              animate={{ width: `${(completedCount / Math.max(1, numExercises)) * 100}%` }}
               transition={{ duration: 1.5, ease: "easeOut", delay: 0.6 }}
               className="h-full bg-gradient-to-r from-[#ADFF00]/50 to-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)] rounded-full relative"
             >
@@ -71,12 +80,21 @@ export function TodaysWorkoutCard({ workout }: TodaysWorkoutCardProps) {
         </div>
 
         {/* Start Button */}
-        <Link href="/fitness/workout" className="w-full mt-2">
-          <button className="w-full py-4 px-4 bg-[#ADFF00] hover:bg-[#bfff33] active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)]">
-            <Play className="w-5 h-5 text-black fill-black" />
-            <span className="text-base font-black text-black uppercase tracking-wide">Start Workout</span>
-          </button>
-        </Link>
+        {isCompleted ? (
+          <Link href={`/fitness/workout/${workout.id}/summary`} className="w-full mt-2">
+            <button className="w-full py-4 px-4 bg-[#1A2619] border border-[#ADFF00]/30 hover:bg-[#ADFF00]/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2">
+              <Dumbbell className="w-5 h-5 text-[#ADFF00]" />
+              <span className="text-base font-black text-[#ADFF00] uppercase tracking-wide">View Summary</span>
+            </button>
+          </Link>
+        ) : (
+          <Link href={workout ? `/fitness/workout` : "#"} className="w-full mt-2">
+            <button className="w-full py-4 px-4 bg-[#ADFF00] hover:bg-[#bfff33] active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)]">
+              <Play className="w-5 h-5 text-black fill-black" />
+              <span className="text-base font-black text-black uppercase tracking-wide">Start Workout</span>
+            </button>
+          </Link>
+        )}
         
       </div>
     </motion.div>
