@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Dumbbell, Play } from "lucide-react";
+import { Dumbbell, Play, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface Exercise {
   id: string;
@@ -20,6 +21,7 @@ interface TodaysExercisesListProps {
 
 export function TodaysExercisesList({ workoutId, exercises }: TodaysExercisesListProps) {
   const router = useRouter();
+  const [navigatingExerciseId, setNavigatingExerciseId] = useState<string | null>(null);
 
   // Mock exercises if none provided
   const displayExercises = exercises && exercises.length > 0 ? exercises : [
@@ -30,6 +32,7 @@ export function TodaysExercisesList({ workoutId, exercises }: TodaysExercisesLis
   ];
 
   const handleStartExercise = (exerciseId: string) => {
+    setNavigatingExerciseId(exerciseId);
     // Navigate to the specific exercise in the workout session
     router.push(`/fitness/workout/${workoutId}?exercise=${exerciseId}`);
   };
@@ -95,10 +98,20 @@ export function TodaysExercisesList({ workoutId, exercises }: TodaysExercisesLis
                 {/* Right side: Start button */}
                 <button 
                   onClick={() => handleStartExercise(exercise.id)}
-                  className="shrink-0 h-10 px-4 bg-white/5 hover:bg-[#ADFF00] hover:text-black active:scale-95 transition-all duration-300 rounded-xl flex items-center justify-center gap-1.5 border border-white/5 group/btn"
+                  disabled={navigatingExerciseId !== null}
+                  className="shrink-0 h-10 px-4 bg-white/5 hover:bg-[#ADFF00] hover:text-black active:scale-95 transition-all duration-300 rounded-xl flex items-center justify-center gap-1.5 border border-white/5 group/btn disabled:opacity-50"
                 >
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/70 group-hover/btn:text-black transition-colors">Start</span>
-                  <Play className="w-3 h-3 text-white/50 group-hover/btn:text-black fill-current transition-colors" />
+                  {navigatingExerciseId === exercise.id ? (
+                    <>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Loading</span>
+                      <Loader2 className="w-3 h-3 text-white/50 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/70 group-hover/btn:text-black transition-colors">Start</span>
+                      <Play className="w-3 h-3 text-white/50 group-hover/btn:text-black fill-current transition-colors" />
+                    </>
+                  )}
                 </button>
 
               </div>

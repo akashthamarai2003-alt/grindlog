@@ -5,7 +5,7 @@ import { useState } from "react";
 import { TodaysExercisesList } from "./todays-exercises-list";
 import { AiCoachNote } from "./ai-coach-note";
 import { WorkoutSummaryCard } from "./workout-summary-card";
-import { Pause, CheckCircle } from "lucide-react";
+import { Pause, CheckCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
@@ -71,10 +71,11 @@ export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) 
 
         <button 
           onClick={handleFinish}
-          className="w-full py-4 bg-[#ADFF00] text-black active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)]"
+          disabled={isFinishing}
+          className="w-full py-4 bg-[#ADFF00] text-black active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] disabled:opacity-50"
         >
-          <CheckCircle className="w-4 h-4" />
-          <span className="text-[11px] font-black uppercase tracking-widest">Finish Workout</span>
+          {isFinishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+          <span className="text-[11px] font-black uppercase tracking-widest">{isFinishing ? "Finishing..." : "Finish Workout"}</span>
         </button>
       </div>
     </div>
