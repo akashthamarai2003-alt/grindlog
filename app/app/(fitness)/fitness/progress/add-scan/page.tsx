@@ -2,8 +2,12 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Camera, ImagePlus, X } from "lucide-react";
+import { Camera, ArrowLeft, ImagePlus, Loader2, X, User } from "lucide-react";
 import Link from "next/link";
+import frontImg from "@/assets/images/placeholder-front.png";
+import backImg from "@/assets/images/placeholder-back.png";
+import leftImg from "@/assets/images/placeholder-side-left.png";
+import rightImg from "@/assets/images/placeholder-side-right.png";
 
 export default function AddScanPage() {
   const [images, setImages] = useState<{ front?: string, left?: string, right?: string, back?: string }>({});
@@ -70,41 +74,60 @@ export default function AddScanPage() {
     if (field === 'back') backInputRef.current?.click();
   };
 
-  const PhotoSlot = ({ title, field, inputRef }: { title: string, field: 'front' | 'left' | 'right' | 'back', inputRef: React.RefObject<HTMLInputElement> }) => (
-    <div className="relative">
-      <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider text-center">{title}</label>
-      <div 
-        onClick={() => !images[field] && triggerUpload(field)}
-        className={`relative w-full aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${images[field] ? 'border-[#ADFF00] bg-[#ADFF00]/10 cursor-default' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50 cursor-pointer'}`}
-      >
-        <input 
-          ref={inputRef}
-          type="file" 
-          accept="image/*" 
-          onChange={handleFileChange(field)} 
-          className="hidden" 
-        />
-        
-        {images[field] ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={images[field]} className="w-full h-full object-cover rounded-xl" alt={title} />
-            <button 
-              onClick={(e) => { e.stopPropagation(); removeImage(field); }}
-              className="absolute top-2 right-2 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-red-500/80 transition-colors z-20 backdrop-blur-sm"
-            >
-              <X size={14} strokeWidth={3} />
-            </button>
-          </>
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <ImagePlus size={24} className="text-gray-500" />
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tap to Add</span>
-          </div>
-        )}
+  const PhotoSlot = ({ title, field, inputRef }: { title: string, field: 'front' | 'left' | 'right' | 'back', inputRef: React.RefObject<HTMLInputElement> }) => {
+    const placeholderSrc = field === 'front' ? frontImg : field === 'back' ? backImg : field === 'left' ? leftImg : rightImg;
+    const resolvedSrc = typeof placeholderSrc === 'string' ? placeholderSrc : (placeholderSrc as any).src;
+
+    return (
+      <div className="relative">
+        <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider text-center">{title}</label>
+        <div 
+          onClick={() => !images[field] && triggerUpload(field)}
+          className={`relative w-full aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${images[field] ? 'border-[#ADFF00] bg-[#ADFF00]/10 cursor-default' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50 cursor-pointer'}`}
+        >
+          <input 
+            ref={inputRef}
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileChange(field)} 
+            className="hidden" 
+          />
+          
+          {images[field] ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={images[field]} className="w-full h-full object-cover rounded-xl" alt={title} />
+              <button 
+                onClick={(e) => { e.stopPropagation(); removeImage(field); }}
+                className="absolute top-2 right-2 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-red-500/80 transition-colors z-20 backdrop-blur-sm"
+              >
+                <X size={14} strokeWidth={3} />
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src={resolvedSrc}
+                  alt={`${title} Reference`}
+                  className="w-full h-full object-cover object-top opacity-30 transition-opacity hover:opacity-60"
+                />
+              </div>
+              <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/20 shadow-xl transition-all hover:bg-white/10">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_10px_rgba(173,255,0,0.4)]">
+                    <User className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-[11px] font-black text-white uppercase tracking-wider">+ Upload</span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#0A1108] text-white p-6 pb-24">
