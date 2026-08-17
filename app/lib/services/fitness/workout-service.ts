@@ -40,7 +40,10 @@ export class WorkoutService {
       .from("fitness_os_workouts")
       .select(`
         *,
-        fitness_os_exercises (id, fitness_os_sets(completed))
+        fitness_os_exercises (
+          id, name, target_sets, target_reps, target_muscles, rest_seconds,
+          fitness_os_sets(completed)
+        )
       `)
       .eq("user_id", userId)
       .eq("workout_date", today)

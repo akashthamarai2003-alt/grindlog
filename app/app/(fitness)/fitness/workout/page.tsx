@@ -68,7 +68,7 @@ export default async function WorkoutIndexPage() {
                 
                 <AiCoachNote workoutId={workout.id} />
                 
-                <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises || []} />
+                <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises || []} readonly={true} />
               </>
             )}
           </div>

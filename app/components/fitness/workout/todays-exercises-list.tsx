@@ -18,9 +18,10 @@ interface Exercise {
 interface TodaysExercisesListProps {
   workoutId: string;
   exercises?: Exercise[];
+  readonly?: boolean;
 }
 
-export function TodaysExercisesList({ workoutId, exercises }: TodaysExercisesListProps) {
+export function TodaysExercisesList({ workoutId, exercises = [], readonly = false }: TodaysExercisesListProps) {
   const router = useRouter();
   const [navigatingExerciseId, setNavigatingExerciseId] = useState<string | null>(null);
 
@@ -101,33 +102,35 @@ export function TodaysExercisesList({ workoutId, exercises }: TodaysExercisesLis
                   </div>
                 </div>
 
-                {/* Right side: Start / Completed button */}
-                <button 
-                  onClick={() => !isCompleted && handleStartExercise(exercise.id)}
-                  disabled={navigatingExerciseId !== null || isCompleted}
-                  className={`shrink-0 h-10 px-4 transition-all duration-300 rounded-xl flex items-center justify-center gap-1.5 border group/btn disabled:opacity-50 ${
-                    isCompleted 
-                      ? "bg-white/5 border-white/10 text-white/50 cursor-default"
-                      : "bg-white/5 border-white/5 hover:bg-[#ADFF00] hover:text-black active:scale-95"
-                  }`}
-                >
-                  {isCompleted ? (
-                    <>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Completed</span>
-                      <Check className="w-3 h-3 text-[#ADFF00]" />
-                    </>
-                  ) : navigatingExerciseId === exercise.id ? (
-                    <>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Loading</span>
-                      <Loader2 className="w-3 h-3 text-white/50 animate-spin" />
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/70 group-hover/btn:text-black transition-colors">Start</span>
-                      <Play className="w-3 h-3 text-white/50 group-hover/btn:text-black fill-current transition-colors" />
-                    </>
-                  )}
-                </button>
+                {/* Right side: Start / Completed button (Hidden if readonly) */}
+                {!readonly && (
+                  <button 
+                    onClick={() => !isCompleted && handleStartExercise(exercise.id)}
+                    disabled={navigatingExerciseId !== null || isCompleted}
+                    className={`shrink-0 h-10 px-4 transition-all duration-300 rounded-xl flex items-center justify-center gap-1.5 border group/btn disabled:opacity-50 ${
+                      isCompleted 
+                        ? "bg-white/5 border-white/10 text-white/50 cursor-default"
+                        : "bg-white/5 border-white/5 hover:bg-[#ADFF00] hover:text-black active:scale-95"
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Completed</span>
+                        <Check className="w-3 h-3 text-[#ADFF00]" />
+                      </>
+                    ) : navigatingExerciseId === exercise.id ? (
+                      <>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Loading</span>
+                        <Loader2 className="w-3 h-3 text-white/50 animate-spin" />
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/70 group-hover/btn:text-black transition-colors">Start</span>
+                        <Play className="w-3 h-3 text-white/50 group-hover/btn:text-black fill-current transition-colors" />
+                      </>
+                    )}
+                  </button>
+                )}
 
               </div>
             </motion.div>
