@@ -184,16 +184,16 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   // Step 2 validation helper
   const step2Errors = (() => {
     const errs: Record<string, string> = {};
-    if (data.name !== undefined && (!data.name.trim() || data.name.trim().length < 2)) {
+    if (typeof data.name === 'string' && (!data.name.trim() || data.name.trim().length < 2)) {
       errs.name = "Name must be at least 2 characters.";
     }
-    if (data.age !== undefined && (isNaN(data.age) || data.age < 16 || data.age > 120)) {
+    if (data.age !== undefined && data.age !== null && (isNaN(data.age) || data.age < 16 || data.age > 120)) {
       errs.age = "Age must be between 16 and 120.";
     }
-    if (data.country !== undefined && (!data.country.trim() || data.country.trim().length < 2)) {
+    if (typeof data.country === 'string' && (!data.country.trim() || data.country.trim().length < 2)) {
       errs.country = "Please enter a valid country.";
     }
-    if (data.preferred_language !== undefined && (!data.preferred_language.trim() || data.preferred_language.trim().length < 2)) {
+    if (typeof data.preferred_language === 'string' && (!data.preferred_language.trim() || data.preferred_language.trim().length < 2)) {
       errs.preferred_language = "Please enter your preferred language.";
     }
     return errs;
@@ -211,22 +211,22 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   // Step 3 validation helper
   const step3Errors = (() => {
     const errs: Record<string, string> = {};
-    if (data.height !== undefined && (isNaN(data.height) || data.height < 50 || data.height > 250)) {
+    if (data.height !== undefined && data.height !== null && (isNaN(data.height) || data.height < 50 || data.height > 250)) {
       errs.height = "Height must be between 50 and 250 cm.";
     }
-    if (data.weight !== undefined && (isNaN(data.weight) || data.weight < 30 || data.weight > 350)) {
+    if (data.weight !== undefined && data.weight !== null && (isNaN(data.weight) || data.weight < 30 || data.weight > 350)) {
       errs.weight = "Weight must be between 30 and 350 kg.";
     }
-    if (data.waist_cm !== undefined && (isNaN(data.waist_cm) || data.waist_cm < 40 || data.waist_cm > 200)) {
+    if (data.waist_cm !== undefined && data.waist_cm !== null && (isNaN(data.waist_cm) || data.waist_cm < 40 || data.waist_cm > 200)) {
       errs.waist_cm = "Waist must be between 40 and 200 cm.";
     }
-    if (data.chest_cm !== undefined && (isNaN(data.chest_cm) || data.chest_cm < 40 || data.chest_cm > 200)) {
+    if (data.chest_cm !== undefined && data.chest_cm !== null && (isNaN(data.chest_cm) || data.chest_cm < 40 || data.chest_cm > 200)) {
       errs.chest_cm = "Chest must be between 40 and 200 cm.";
     }
-    if (data.arm_cm !== undefined && (isNaN(data.arm_cm) || data.arm_cm < 15 || data.arm_cm > 80)) {
+    if (data.arm_cm !== undefined && data.arm_cm !== null && (isNaN(data.arm_cm) || data.arm_cm < 15 || data.arm_cm > 80)) {
       errs.arm_cm = "Arm must be between 15 and 80 cm.";
     }
-    if (data.thigh_cm !== undefined && (isNaN(data.thigh_cm) || data.thigh_cm < 20 || data.thigh_cm > 120)) {
+    if (data.thigh_cm !== undefined && data.thigh_cm !== null && (isNaN(data.thigh_cm) || data.thigh_cm < 20 || data.thigh_cm > 120)) {
       errs.thigh_cm = "Thigh must be between 20 and 120 cm.";
     }
     return errs;
@@ -241,7 +241,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
   // Step 4 validation helper
   const step4Errors = (() => {
     const errs: Record<string, string> = {};
-    if (data.target_weight !== undefined && (isNaN(data.target_weight) || data.target_weight < 30 || data.target_weight > 350)) {
+    if (data.target_weight !== undefined && data.target_weight !== null && (isNaN(data.target_weight) || data.target_weight < 30 || data.target_weight > 350)) {
       errs.target_weight = "Target weight must be between 30 and 350 kg.";
     }
     if (data.target_deadline_days !== undefined && data.target_deadline_days !== null && !isNaN(data.target_deadline_days)) {
