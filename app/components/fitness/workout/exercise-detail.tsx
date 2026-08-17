@@ -242,8 +242,13 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
                 </div>
               ) : (
                 <button
-                  onClick={() => handleCompleteSet(setRecord)}
-                  disabled={isSubmitting || activeRestSeconds !== null}
+                  onClick={() => {
+                    if (activeRestSeconds !== null) {
+                      setActiveRestSeconds(null);
+                    }
+                    handleCompleteSet(setRecord);
+                  }}
+                  disabled={isSubmitting}
                   className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] disabled:opacity-50 transition-transform active:scale-[0.98]"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
