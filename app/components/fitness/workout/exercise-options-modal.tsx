@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Replace, FileText, PlaySquare, Weight, 
-  PlusSquare, SkipForward, AlertTriangle, ChevronRight, Check
+  PlusSquare, SkipForward, AlertTriangle, ChevronRight, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -13,18 +13,26 @@ interface ExerciseOptionsModalProps {
   isOpen: boolean;
   onClose: () => void;
   exerciseName: string;
+  exerciseId?: string;
+  sessionId?: string;
+  workoutId?: string;
 }
 
 type ModalView = 'options' | 'replace_reason' | 'replace_alternatives' | 'pain_warning';
 
-export function ExerciseOptionsModal({ isOpen, onClose, exerciseName }: ExerciseOptionsModalProps) {
+export function ExerciseOptionsModal({ isOpen, onClose, exerciseName, exerciseId, sessionId, workoutId }: ExerciseOptionsModalProps) {
   const router = useRouter();
   const [view, setView] = useState<ModalView>('options');
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [alternatives, setAlternatives] = useState<{name: string, target: string, match: string}[]>([]);
 
   const resetAndClose = () => {
     setView('options');
     setSelectedReason(null);
+    setAlternatives([]);
+    setIsLoading(false);
     onClose();
   };
 
@@ -36,25 +44,113 @@ export function ExerciseOptionsModal({ isOpen, onClose, exerciseName }: Exercise
     "Other"
   ];
 
-  const alternatives = [
-    { name: "Incline Push-up", target: "Chest", match: "95%" },
-    { name: "Machine Chest Press", target: "Chest", match: "90%" },
-    { name: "Dumbbell Press", target: "Chest", match: "85%" },
-  ];
-
-  const handleReasonSelect = (reason: string) => {
+  const handleReasonSelect = async (reason: string) => {
     setSelectedReason(reason);
     if (reason === "Pain/discomfort") {
       setView('pain_warning');
-    } else {
-      setView('replace_alternatives');
+      return;
+    } 
+    
+    // Fetch alternatives
+    setView('replace_alternatives');
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/workouts/sessions/${sessionId}/exercises/${exerciseId}/replace`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "generate", reason })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setAlternatives(data.alternatives);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to generate alternatives");
+      setView('options'); // Go back on error
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleAlternativeSelect = (alt: string) => {
-    toast.success(`${alt} has replaced ${exerciseName}`);
+  const handleAlternativeSelect = async (altName: string) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/workouts/sessions/${sessionId}/exercises/${exerciseId}/replace`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "replace", newExerciseName: altName })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      toast.success(`${altName} replaced successfully`);
+      resetAndClose();
+      router.refresh();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to replace exercise");
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddSet = async () => {
+    if (!sessionId || !exerciseId) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/workouts/sessions/${sessionId}/exercises/${exerciseId}/sets`, {
+        method: "POST"
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      toast.success("New set added!");
+      resetAndClose();
+      router.refresh();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to add set");
+      setIsLoading(false);
+    }
+  };
+
+  const handleSkipExercise = async () => {
+    if (!sessionId || !exerciseId) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/workouts/sessions/${sessionId}/exercises/${exerciseId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      toast.success("Exercise skipped for today");
+      resetAndClose();
+      router.push(`/fitness/workout/${workoutId}`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to skip exercise");
+      setIsLoading(false);
+    }
+  };
+
+  const scrollToSection = (id: string) => {
     resetAndClose();
-    router.refresh();
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 300);
+  };
+
+  const focusWeightInput = () => {
+    resetAndClose();
+    setTimeout(() => {
+      // Find the first uncompleted weight input
+      const inputs = document.querySelectorAll('input[type="number"][placeholder="-"]');
+      for (let i = 0; i < inputs.length; i++) {
+        if (!inputs[i].hasAttribute('disabled')) {
+          (inputs[i] as HTMLInputElement).focus();
+          break;
+        }
+      }
+    }, 300);
   };
 
   return (
@@ -65,7 +161,7 @@ export function ExerciseOptionsModal({ isOpen, onClose, exerciseName }: Exercise
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={resetAndClose}
+            onClick={isLoading ? undefined : resetAndClose}
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
           
@@ -85,13 +181,13 @@ export function ExerciseOptionsModal({ isOpen, onClose, exerciseName }: Exercise
                   <h2 className="text-sm font-black text-white tracking-widest uppercase">
                     Exercise Options
                   </h2>
-                  <button onClick={resetAndClose} className="p-2 rounded-full hover:bg-white/5">
+                  <button onClick={resetAndClose} disabled={isLoading} className="p-2 rounded-full hover:bg-white/5">
                     <X className="w-4 h-4 text-white/70" />
                   </button>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <button onClick={() => setView('replace_reason')} className="w-full flex items-center justify-between p-4 bg-[#111A10] border border-white/5 hover:border-[#ADFF00]/50 rounded-2xl group transition-all">
+                  <button onClick={() => setView('replace_reason')} disabled={isLoading} className="w-full flex items-center justify-between p-4 bg-[#111A10] border border-white/5 hover:border-[#ADFF00]/50 rounded-2xl group transition-all">
                     <div className="flex items-center gap-3">
                       <Replace className="w-5 h-5 text-[#ADFF00]" />
                       <span className="text-sm font-bold text-white uppercase tracking-wider">Replace Exercise</span>
@@ -99,30 +195,30 @@ export function ExerciseOptionsModal({ isOpen, onClose, exerciseName }: Exercise
                     <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-[#ADFF00] transition-colors" />
                   </button>
                   
-                  <button onClick={() => toast("Instructions coming soon")} className="w-full flex items-center gap-3 p-4 bg-[#111A10] border border-white/5 hover:bg-white/5 rounded-2xl transition-all">
+                  <button onClick={() => scrollToSection("how-to-perform")} disabled={isLoading} className="w-full flex items-center gap-3 p-4 bg-[#111A10] border border-white/5 hover:bg-white/5 rounded-2xl transition-all">
                     <FileText className="w-5 h-5 text-white/50" />
                     <span className="text-sm font-bold text-white/80 uppercase tracking-wider">View Instructions</span>
                   </button>
                   
-                  <button onClick={() => toast("Demo coming soon")} className="w-full flex items-center gap-3 p-4 bg-[#111A10] border border-white/5 hover:bg-white/5 rounded-2xl transition-all">
+                  <button onClick={() => scrollToSection("watch-demo")} disabled={isLoading} className="w-full flex items-center gap-3 p-4 bg-[#111A10] border border-white/5 hover:bg-white/5 rounded-2xl transition-all">
                     <PlaySquare className="w-5 h-5 text-white/50" />
                     <span className="text-sm font-bold text-white/80 uppercase tracking-wider">Watch Demo</span>
                   </button>
 
                   <div className="w-full h-px bg-white/5 my-2" />
 
-                  <button onClick={() => toast("Weight settings opened")} className="w-full flex items-center gap-3 p-4 hover:bg-white/5 rounded-2xl transition-all">
+                  <button onClick={focusWeightInput} disabled={isLoading} className="w-full flex items-center gap-3 p-4 hover:bg-white/5 rounded-2xl transition-all">
                     <Weight className="w-5 h-5 text-white/50" />
                     <span className="text-sm font-bold text-white/80 uppercase tracking-wider">Change Weight</span>
                   </button>
                   
-                  <button onClick={() => toast("Set added")} className="w-full flex items-center gap-3 p-4 hover:bg-white/5 rounded-2xl transition-all">
-                    <PlusSquare className="w-5 h-5 text-white/50" />
+                  <button onClick={handleAddSet} disabled={isLoading} className="w-full flex items-center gap-3 p-4 hover:bg-white/5 rounded-2xl transition-all">
+                    {isLoading ? <Loader2 className="w-5 h-5 text-white/50 animate-spin" /> : <PlusSquare className="w-5 h-5 text-white/50" />}
                     <span className="text-sm font-bold text-white/80 uppercase tracking-wider">Add Set</span>
                   </button>
                   
-                  <button onClick={() => {toast("Exercise skipped"); resetAndClose();}} className="w-full flex items-center gap-3 p-4 hover:bg-red-500/10 rounded-2xl transition-all group">
-                    <SkipForward className="w-5 h-5 text-red-500/70 group-hover:text-red-500" />
+                  <button onClick={handleSkipExercise} disabled={isLoading} className="w-full flex items-center gap-3 p-4 hover:bg-red-500/10 rounded-2xl transition-all group">
+                    {isLoading ? <Loader2 className="w-5 h-5 text-red-500/70 animate-spin" /> : <SkipForward className="w-5 h-5 text-red-500/70 group-hover:text-red-500" />}
                     <span className="text-sm font-bold text-red-500/80 group-hover:text-red-500 uppercase tracking-wider">Skip Exercise</span>
                   </button>
                 </div>
@@ -176,14 +272,16 @@ export function ExerciseOptionsModal({ isOpen, onClose, exerciseName }: Exercise
                   </p>
 
                   <button 
-                    onClick={() => {toast("Exercise skipped for safety."); resetAndClose();}}
-                    className="w-full bg-red-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.3)] active:scale-[0.98] transition-all"
+                    onClick={handleSkipExercise}
+                    disabled={isLoading}
+                    className="w-full bg-red-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.3)] active:scale-[0.98] transition-all flex justify-center"
                   >
-                    Skip Exercise
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Skip Exercise"}
                   </button>
                   
                   <button 
-                    onClick={() => setView('replace_alternatives')}
+                    onClick={() => handleReasonSelect("Other")} // Fetch alternatives bypassing warning
+                    disabled={isLoading}
                     className="w-full mt-3 bg-transparent text-white/50 font-bold uppercase tracking-wider py-4 rounded-xl hover:bg-white/5 transition-colors"
                   >
                     Show Alternatives Anyway
@@ -204,30 +302,38 @@ export function ExerciseOptionsModal({ isOpen, onClose, exerciseName }: Exercise
                       AI Alternatives
                     </h3>
                   </div>
-                  <button onClick={() => setView('replace_reason')} className="p-2 rounded-full hover:bg-white/5">
+                  <button onClick={() => { setView('replace_reason'); setIsLoading(false); }} disabled={isLoading} className="p-2 rounded-full hover:bg-white/5">
                     <X className="w-4 h-4 text-white/70" />
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  {alternatives.map((alt, idx) => (
-                    <div key={idx} className="w-full flex flex-col p-4 bg-[#111A10] border border-white/5 rounded-2xl group">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-black text-white uppercase tracking-wide">{alt.name}</span>
-                          <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Target: {alt.target}</span>
-                        </div>
-                        <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-1 rounded-md">{alt.match} Match</span>
-                      </div>
-                      
-                      <button 
-                        onClick={() => handleAlternativeSelect(alt.name)}
-                        className="w-full bg-white/5 hover:bg-[#ADFF00] hover:text-black text-white/70 font-black uppercase tracking-widest py-3 rounded-xl transition-all duration-300 text-xs mt-2"
-                      >
-                        Select
-                      </button>
+                <div className="flex flex-col gap-3 min-h-[200px]">
+                  {isLoading && alternatives.length === 0 ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center py-10">
+                      <Loader2 className="w-8 h-8 text-[#ADFF00] animate-spin mb-4" />
+                      <p className="text-sm font-bold text-white/50 tracking-wider">Generating alternatives...</p>
                     </div>
-                  ))}
+                  ) : (
+                    alternatives.map((alt, idx) => (
+                      <div key={idx} className="w-full flex flex-col p-4 bg-[#111A10] border border-white/5 rounded-2xl group">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-black text-white uppercase tracking-wide">{alt.name}</span>
+                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Target: {alt.target}</span>
+                          </div>
+                          <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-1 rounded-md">{alt.match || "High"} Match</span>
+                        </div>
+                        
+                        <button 
+                          onClick={() => handleAlternativeSelect(alt.name)}
+                          disabled={isLoading}
+                          className="w-full bg-white/5 hover:bg-[#ADFF00] hover:text-black text-white/70 font-black uppercase tracking-widest py-3 rounded-xl transition-all duration-300 text-xs mt-2 disabled:opacity-50"
+                        >
+                          {isLoading ? "Replacing..." : "Select"}
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </>
             )}

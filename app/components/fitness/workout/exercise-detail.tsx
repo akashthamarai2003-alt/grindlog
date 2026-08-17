@@ -146,6 +146,9 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
         isOpen={isOptionsOpen}
         onClose={() => setIsOptionsOpen(false)}
         exerciseName={exercise.name}
+        exerciseId={exercise.id}
+        sessionId={sessionId}
+        workoutId={workoutId}
       />
 
       <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-4">
