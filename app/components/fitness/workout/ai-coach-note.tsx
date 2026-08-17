@@ -12,9 +12,9 @@ export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
   const [note, setNote] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const defaultNote = "Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.";
+  const [dynamicInsights, setDynamicInsights] = useState<any[]>([]);
 
-  const aiInsights = [
+  const defaultInsights = [
     { icon: Target, label: "Goal", value: "Hypertrophy (Muscle Growth)" },
     { icon: Activity, label: "Fitness Level", value: "Intermediate" },
     { icon: Dumbbell, label: "Available Equipment", value: "Full Gym Access" },
@@ -24,9 +24,23 @@ export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
     { icon: Settings2, label: "Preferences", value: "Free weights prioritized" },
   ];
 
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case "Target": return Target;
+      case "Activity": return Activity;
+      case "Dumbbell": return Dumbbell;
+      case "Clock": return Clock;
+      case "HeartPulse": return HeartPulse;
+      case "TrendingUp": return TrendingUp;
+      case "Settings2": return Settings2;
+      default: return Target;
+    }
+  };
+
   useEffect(() => {
     if (!workoutId || workoutId === "mock") {
       setNote("Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.");
+      setDynamicInsights(defaultInsights);
       setIsLoading(false);
       return;
     }
@@ -36,8 +50,15 @@ export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
         const res = await fetch(`/api/workouts/${workoutId}/ai-coach-note`);
         const data = await res.json();
         setNote(data.note || "Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.");
+        
+        if (data.insights && data.insights.length > 0) {
+          setDynamicInsights(data.insights.map((i: any) => ({ ...i, icon: getIcon(i.icon) })));
+        } else {
+          setDynamicInsights(defaultInsights);
+        }
       } catch (err) {
         setNote("Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.");
+        setDynamicInsights(defaultInsights);
       } finally {
         setIsLoading(false);
       }
@@ -126,10 +147,10 @@ export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
               </p>
 
               <div className="flex flex-col gap-3">
-                {aiInsights.map((insight, idx) => (
+                {dynamicInsights.map((insight, idx) => (
                   <div key={idx} className="flex items-start gap-4 p-4 bg-[#111A10] border border-white/5 rounded-2xl">
                     <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                      <insight.icon className="w-4 h-4 text-[#ADFF00]" />
+                      {insight.icon && <insight.icon className="w-4 h-4 text-[#ADFF00]" />}
                     </div>
                     <div className="flex flex-col pt-0.5">
                       <span className="text-[10px] font-bold text-white/40 tracking-widest uppercase mb-1">
