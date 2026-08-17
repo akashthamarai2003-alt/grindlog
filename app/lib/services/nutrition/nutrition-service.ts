@@ -475,7 +475,15 @@ export class NutritionService {
         consumed.protein += Number(f.protein);
         consumed.carbs += Number(f.carbs);
         consumed.fat += Number(f.fat);
-        consumed.spent += Number(f.estimated_cost);
+        
+        let cost = Number(f.estimated_cost || 0);
+        const env = fitProfile?.food_environment?.toLowerCase() || '';
+        const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home';
+        if (isCoreProvided && f.meal_type && f.meal_type !== 'snack' && f.meal_type !== 'daily') {
+          cost = 0; // core meals are free from PG/Home
+        }
+        consumed.spent += cost;
+        
         if (f.meal_type) completedMealTypes.add(f.meal_type);
       });
     }
@@ -484,7 +492,19 @@ export class NutritionService {
       waters.forEach(w => consumed.water_ml += w.amount_ml);
     }
 
-    const monthSpent = monthFoods ? monthFoods.reduce((acc, f) => acc + Number(f.estimated_cost), 0) : 0;
+    const env = fitProfile?.food_environment?.toLowerCase() || '';
+    const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home';
+
+    let monthSpent = 0;
+    if (monthFoods) {
+      monthFoods.forEach(f => {
+        let cost = Number(f.estimated_cost || 0);
+        if (isCoreProvided && f.meal_type && f.meal_type !== 'snack' && f.meal_type !== 'daily') {
+          cost = 0; // core meals are free from PG/Home
+        }
+        monthSpent += cost;
+      });
+    }
 
     let monthlyLimit = 3000;
     if (fitProfile?.nutrition_budget) {
@@ -493,15 +513,6 @@ export class NutritionService {
       else if (bStr === '₹2,000–5,000' || bStr === '₹2,000-5,000') monthlyLimit = 3500;
       else if (bStr === '₹1,000–2,000' || bStr === '₹1,000-2,000') monthlyLimit = 1500;
       else if (bStr === '₹0–1,000' || bStr === '₹0-1,000') monthlyLimit = 800;
-
-      // Logic Error Fix: If user is in PG, Hostel, or Home, their main meals are already covered.
-      // The budget they selected is just their pocket money for add-ons (like whey, snacks).
-      // Since the app tracks the cost of ALL meals (including the core ones), we must add
-      // a base cost (e.g., ₹6000/month) to their monthly limit so the logic holds up.
-      const env = fitProfile.food_environment?.toLowerCase() || '';
-      if (env === 'pg' || env === 'hostel' || env === 'home') {
-        monthlyLimit += 6000;
-      }
     }
     const dailyLimit = Math.round(monthlyLimit / 30);
 
@@ -580,7 +591,11 @@ export class NutritionService {
         const estPro = Math.round(targets.protein * proportion);
         
         // Real-world estimate: ~₹0.20 per calorie for average Indian meals
-        const estCost = Math.round(estCals * 0.20);
+        let estCost = Math.round(estCals * 0.20);
+        const envStr = fitProfile?.food_environment?.toLowerCase() || '';
+        if ((envStr === 'pg' || envStr === 'hostel' || envStr === 'home') && mType !== 'snack') {
+          estCost = 0; // Core meals are provided
+        }
 
         return {
           id: `ai-${mType}`,
