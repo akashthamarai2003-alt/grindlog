@@ -117,6 +117,18 @@ export class NutritionService {
     const fat = Math.round((calories * 0.25) / 9);
     const water_ml = 3000;
 
+    // Compute budget from fitness profile
+    let monthlyBudget = 3000;
+    let dailyBudget = 100;
+    if (fitProfile?.nutrition_budget) {
+      const bStr = fitProfile.nutrition_budget;
+      if (bStr.includes('5,000+') || bStr === '₹5,000+') monthlyBudget = 6000;
+      else if ((bStr.includes('2,000') && bStr.includes('5,000')) || bStr === '₹2,000–5,000' || bStr === '₹2,000-5,000') monthlyBudget = 3500;
+      else if ((bStr.includes('1,000') && bStr.includes('2,000')) || bStr === '₹1,000–2,000' || bStr === '₹1,000-2,000') monthlyBudget = 1500;
+      else if ((bStr.includes('0') && bStr.includes('1,000')) || bStr === '₹0–1,000' || bStr === '₹0-1,000') monthlyBudget = 800;
+      dailyBudget = Math.round(monthlyBudget / 30);
+    }
+
     // Save auto-generated target row into database
     const { data: newTarget } = await supabase
       .from('nutrition_targets')
@@ -127,8 +139,8 @@ export class NutritionService {
         carbs,
         fat,
         water_ml,
-        daily_budget: 300,
-        monthly_budget: 6000,
+        daily_budget: dailyBudget,
+        monthly_budget: monthlyBudget,
         effective_date: localDate
       })
       .select()
@@ -144,8 +156,8 @@ export class NutritionService {
       carbs,
       fat,
       water_ml,
-      daily_budget: 300,
-      monthly_budget: 6000,
+      daily_budget: dailyBudget,
+      monthly_budget: monthlyBudget,
       effective_date: localDate
     };
   }
@@ -428,13 +440,13 @@ export class NutritionService {
         .eq('date', localDate),
       supabase
         .from('food_logs')
-        .select('estimated_cost')
+        .select('estimated_cost, meal_type')
         .eq('user_id', userId)
         .gte('logged_at', monthStartISO)
         .lte('logged_at', end),
       supabase
         .from('fitness_os_profiles')
-        .select('nutrition_budget, food_environment')
+        .select('nutrition_budget, food_environment, meals_per_day')
         .eq('user_id', userId)
         .maybeSingle(),
       supabase
@@ -478,7 +490,7 @@ export class NutritionService {
         
         let cost = Number(f.estimated_cost || 0);
         const env = fitProfile?.food_environment?.toLowerCase() || '';
-        const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home';
+        const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home' || env === 'office/canteen';
         if (isCoreProvided && f.meal_type && f.meal_type !== 'snack' && f.meal_type !== 'daily') {
           cost = 0; // core meals are free from PG/Home
         }
@@ -493,7 +505,7 @@ export class NutritionService {
     }
 
     const env = fitProfile?.food_environment?.toLowerCase() || '';
-    const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home';
+    const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home' || env === 'office/canteen';
 
     let monthSpent = 0;
     if (monthFoods) {
@@ -516,8 +528,19 @@ export class NutritionService {
     }
     const dailyLimit = Math.round(monthlyLimit / 30);
 
-    // Format & structure meals: Ensure ALL 4 meal cards (Breakfast, Lunch, Snack, Dinner) are always present
-    const ALL_MEAL_TYPES = ['breakfast', 'lunch', 'snack', 'dinner'];
+    // Determine meal types based on user's meals_per_day preference
+    const mealsPerDay = fitProfile?.meals_per_day || '4 meals';
+    let ALL_MEAL_TYPES: string[];
+    if (mealsPerDay === '2 meals') {
+      ALL_MEAL_TYPES = ['lunch', 'dinner'];
+    } else if (mealsPerDay === '3 meals') {
+      ALL_MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
+    } else if (mealsPerDay === '5+ meals') {
+      ALL_MEAL_TYPES = ['breakfast', 'lunch', 'snack', 'evening_snack', 'dinner'];
+    } else {
+      // 4 meals (default)
+      ALL_MEAL_TYPES = ['breakfast', 'lunch', 'snack', 'dinner'];
+    }
     const plansByMealType = new Map<string, any>();
 
     if (plans && plans.length > 0) {
@@ -593,7 +616,7 @@ export class NutritionService {
         // Real-world estimate: ~₹0.20 per calorie for average Indian meals
         let estCost = Math.round(estCals * 0.20);
         const envStr = fitProfile?.food_environment?.toLowerCase() || '';
-        if ((envStr === 'pg' || envStr === 'hostel' || envStr === 'home') && mType !== 'snack') {
+        if ((envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen') && mType !== 'snack') {
           estCost = 0; // Core meals are provided
         }
 

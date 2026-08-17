@@ -75,7 +75,7 @@ export class AINutritionService {
     // Fetch user profile for dietary restrictions
     const { data: profile } = await supabase
       .from('fitness_os_profiles')
-      .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, nutrition_budget, food_environment, available_foods')
+      .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, nutrition_budget, food_environment, available_foods, meals_per_day')
       .eq('user_id', userId)
       .single();
     
@@ -101,13 +101,55 @@ export class AINutritionService {
     }));
 
     // 4. Prompt Construction
-    const systemPrompt = `You are a strict, expert nutritionist AI meal-selection assistant.
+    const foodEnv = (profile?.food_environment || 'Home').toLowerCase();
+    const isCoreProvided = foodEnv === 'pg' || foodEnv === 'hostel' || foodEnv === 'home' || foodEnv === 'office/canteen';
+    const budgetStr = profile?.nutrition_budget || '₹2,000–5,000';
+    
+    // Parse monthly budget to a number
+    let monthlyBudgetNum = 3000;
+    if (budgetStr.includes('5,000+')) monthlyBudgetNum = 6000;
+    else if (budgetStr.includes('2,000') && budgetStr.includes('5,000')) monthlyBudgetNum = 3500;
+    else if (budgetStr.includes('1,000') && budgetStr.includes('2,000')) monthlyBudgetNum = 1500;
+    else if (budgetStr.includes('0') && budgetStr.includes('1,000')) monthlyBudgetNum = 800;
+    const dailyBudgetNum = Math.round(monthlyBudgetNum / 30);
+
+    // Determine which meal types to generate based on meals_per_day
+    const mealsPerDay = profile?.meals_per_day || '3 meals';
+    let mealTypesToGenerate: string[];
+    if (mealsPerDay === '2 meals') {
+      mealTypesToGenerate = ['lunch', 'dinner'];
+    } else if (mealsPerDay === '3 meals') {
+      mealTypesToGenerate = ['breakfast', 'lunch', 'dinner'];
+    } else if (mealsPerDay === '5+ meals') {
+      mealTypesToGenerate = ['breakfast', 'lunch', 'snack', 'evening_snack', 'dinner'];
+    } else {
+      // 4 meals (default)
+      mealTypesToGenerate = ['breakfast', 'lunch', 'snack', 'dinner'];
+    }
+
+    const systemPrompt = `You are a strict, expert Indian nutritionist AI meal-selection assistant.
 Your task is to select foods from the provided DATABASE to construct a 1-day meal plan that hits the user's nutritional targets.
-You MUST ONLY return the exact 4 meal types: breakfast, lunch, snack, dinner.
+You MUST ONLY return these exact meal types: ${mealTypesToGenerate.join(', ')}.
 You MUST ONLY use foods that exist in the provided DATABASE.
+
 CRITICAL DIETARY RESTRICTIONS:
-- You MUST strictly follow the user's Diet Preference. For example, if they are Vegan, you CANNOT pick any foods with 'dt' (diet_type) containing meat, eggs, or dairy.
+- You MUST strictly follow the user's Diet Preference. If Vegetarian, CANNOT pick any foods with 'dt' containing 'non-veg'. If Vegan, CANNOT pick dairy, eggs, or meat.
 - You MUST avoid their listed allergies and disliked foods.
+
+CRITICAL FOOD ENVIRONMENT RULES:
+${isCoreProvided ? `- The user lives in a ${profile?.food_environment || 'Home'} environment where CORE MEALS (breakfast, lunch, dinner) are ALREADY PROVIDED for free.
+- For core meals (breakfast, lunch, dinner): Select ONLY cheap protein ADD-ONS from the database (items marked pg:true with low cost like roasted peanuts, soy chunks, curd, chana, banana). These are supplements the user buys with their pocket money to boost protein.
+- Do NOT select expensive or complex foods for core meals. The PG/Home already provides rice, dal, chapati, sambar etc.
+- For snack meals: Select affordable snack items that fit the budget.` 
+: `- The user cooks their own meals ('I Cook' or 'Mixed' environment).
+- Select complete meals from the database that provide full nutrition.
+- All food costs count against their budget.`}
+
+CRITICAL BUDGET RULES:
+- The user's monthly food budget is ${budgetStr} (approximately ₹${dailyBudgetNum}/day).
+- The TOTAL estimated_cost of ALL selected foods across ALL meals MUST NOT exceed ₹${dailyBudgetNum}/day.
+${isCoreProvided ? `- Remember: Core meals are FREE. Only add-on items count against the budget.` : `- All food items count against the budget.`}
+
 Return the food_id and the quantity (number of servings). 
 Do NOT invent foods, calories, or macros.
 Do NOT provide medical advice.
@@ -115,7 +157,7 @@ Return ONLY valid JSON matching this schema:
 {
   "meals": [
     {
-      "meal_type": "breakfast", // or lunch, snack, dinner
+      "meal_type": "breakfast", // one of: ${mealTypesToGenerate.join(', ')}
       "name": "string (e.g. High Protein Morning)",
       "foods": [
         {
@@ -133,7 +175,10 @@ User Profile & Constraints:
 - Diet Preference: ${profile?.diet_preference || profile?.food_type || "Balanced"}
 - Allergies: ${profile?.food_allergies || "None"}
 - Disliked/Avoided Foods: ${[profile?.foods_disliked, profile?.foods_avoided].filter(Boolean).join(", ") || "None"}
-- Food Environment: ${profile?.food_environment || "Home"} (If PG/Hostel, prioritize foods with pg:true)
+- Food Environment: ${profile?.food_environment || "Home"}
+- Monthly Budget: ${budgetStr} (≈₹${dailyBudgetNum}/day)
+- Meals Per Day: ${mealsPerDay}
+- Available Foods User Selected: ${Array.isArray(profile?.available_foods) ? profile.available_foods.join(", ") : "Not specified"}
 
 User Targets:
 - Calories: ${targets.calories} kcal
@@ -141,10 +186,13 @@ User Targets:
 - Carbs: ${targets.carbs} g
 - Fat: ${targets.fat} g
 
-Available Food DATABASE (dt = diet_type, pg = pg_friendly):
+${isCoreProvided ? `IMPORTANT: This user is in a ${profile?.food_environment} environment. Core meals are provided free. Only select cheap protein add-ons (prioritize foods with pg:true and low cost). Total add-on cost must stay under ₹${dailyBudgetNum}/day.` : `IMPORTANT: This user cooks their own meals. Select complete, budget-friendly meals. Total cost must stay under ₹${dailyBudgetNum}/day.`}
+
+Available Food DATABASE (dt = diet_type, pg = pg_friendly, cost = estimated cost per serving in ₹):
 ${JSON.stringify(compactFoods)}
 
-Generate the meal plan strictly adhering to the Diet Preference and Constraints.
+Generate the meal plan with EXACTLY these meal types: ${mealTypesToGenerate.join(', ')}.
+Strictly adhere to the Diet Preference, Budget, and Food Environment constraints.
 `;
 
     // 5. Call Groq with 1 retry logic for JSON formatting
@@ -183,7 +231,9 @@ Generate the meal plan strictly adhering to the Diet Preference and Constraints.
 
     // 6. Canonical Validation & Math Calculation
     const foodMap = new Map(allFoods.map(f => [f.id, f]));
-    const validMealTypes = ['breakfast', 'lunch', 'snack', 'dinner'];
+    const validMealTypes = mealTypesToGenerate.includes('evening_snack') 
+      ? ['breakfast', 'lunch', 'snack', 'evening_snack', 'dinner']
+      : mealTypesToGenerate;
     
     // Validate meal types
     const planMeals = aiResult.meals.filter(m => validMealTypes.includes(m.meal_type.toLowerCase()));
