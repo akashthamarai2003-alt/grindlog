@@ -13,9 +13,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { paths } = await req.json();
-    if (!paths || Object.keys(paths).length === 0) {
-      return NextResponse.json({ success: false, error: "No image paths provided" }, { status: 400 });
+    const { images } = await req.json();
+    if (!images || Object.keys(images).length === 0) {
+      return NextResponse.json({ success: false, error: "No images provided" }, { status: 400 });
     }
 
     // 2. Ensure Gemini API key is present
@@ -24,41 +24,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "GEMINI_API_KEY is not configured on the server." }, { status: 500 });
     }
 
-    // 3. Download images as Base64 using Supabase Admin client
-    const adminClient = createAdminClient();
-    const base64Images: { view: string; mimeType: string; data: string }[] = [];
-
-    for (const [view, path] of Object.entries(paths)) {
-      const { data: blob, error: downloadError } = await adminClient.storage
-        .from('fitness_os_scans')
-        .download(path as string);
-        
-      if (downloadError || !blob) {
-        console.error(`Failed to download ${view} image:`, downloadError);
-        continue;
-      }
-
-      const buffer = Buffer.from(await blob.arrayBuffer());
-      const base64Data = buffer.toString('base64');
-      const mimeType = blob.type || "image/jpeg";
-      
-      base64Images.push({ view, mimeType, data: base64Data });
-    }
-
-    if (base64Images.length === 0) {
-      return NextResponse.json({ success: false, error: "Could not process uploaded images" }, { status: 400 });
-    }
-
-    // 4. Construct Gemini Payload
+    // 3. Construct Gemini Payload
     const geminiClient = new GoogleGenAI({ apiKey });
 
-    // Format images for Gemini
-    const imageParts = base64Images.map(img => ({
-      inlineData: {
-        data: img.data,
-        mimeType: img.mimeType
+    // Format base64 images for Gemini
+    const imageParts: any[] = [];
+    for (const [view, base64Str] of Object.entries(images as Record<string, string>)) {
+      if (base64Str && base64Str.startsWith('data:image')) {
+        const [meta, data] = base64Str.split(',');
+        const mimeType = meta.split(';')[0].split(':')[1];
+        imageParts.push({
+          inlineData: {
+            data,
+            mimeType
+          }
+        });
       }
-    }));
+    }
+
+    if (imageParts.length === 0) {
+      return NextResponse.json({ success: false, error: "Could not process uploaded images" }, { status: 400 });
+    }
 
     const promptText = `You are an elite, world-class fitness coach and biomechanics expert. 
 You are presented with body scan photos of a client, which may include Front, Side, and Back views, as well as an optional Goal Physique target photo.
@@ -94,18 +80,8 @@ Respond in clear, readable plain text using bullet points where appropriate.`;
       throw new Error("No analysis generated from Gemini.");
     }
 
-    // 5.5 Delete images from Supabase Storage immediately for privacy
-    const filePaths = Object.values(paths) as string[];
-    const { error: deleteError } = await adminClient.storage
-      .from('fitness_os_scans')
-      .remove(filePaths);
-
-    if (deleteError) {
-      console.error("Failed to delete temporary scan images:", deleteError);
-      // We log the error but don't fail the request, since the analysis succeeded.
-    }
-
-    // 6. Save to Database (Text Analysis ONLY)
+    // 5. Save to Database (Text Analysis ONLY)
+    const adminClient = createAdminClient();
     const { error: dbError } = await adminClient
       .from('fitness_os_scans')
       .upsert({

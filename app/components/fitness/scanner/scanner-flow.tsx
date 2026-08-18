@@ -10,7 +10,42 @@ import { motion } from "framer-motion";
 type ScanImage = {
   file: File;
   previewUrl: string;
-  path?: string; // Path in supabase storage
+};
+
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.9));
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
 };
 
 export function ScannerFlow() {
@@ -61,29 +96,15 @@ export function ScannerFlow() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload images to Supabase Storage
-      const uploadedPaths: Record<string, string> = {};
+      // Compress images to Base64
+      const base64Images: Record<string, string> = {};
       const views: (keyof typeof images)[] = ['front', 'side', 'back', 'goal'];
 
       for (const view of views) {
         const img = images[view];
         if (img) {
-          const fileExt = img.file.name.split('.').pop();
-          const fileName = `${user.id}/${Date.now()}-${view}.${fileExt}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('fitness_os_scans')
-            .upload(fileName, img.file, { 
-              upsert: true,
-              contentType: img.file.type
-            });
-
-          if (uploadError) {
-            console.error(`Upload error for ${view}:`, uploadError);
-            throw new Error(`Failed to upload ${view} photo.`);
-          }
-          
-          uploadedPaths[view] = fileName;
+          const compressed = await compressImage(img.file);
+          base64Images[view] = compressed;
         }
       }
 
@@ -91,7 +112,7 @@ export function ScannerFlow() {
       const res = await fetch("/api/fitness-ai/scanner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paths: uploadedPaths })
+        body: JSON.stringify({ images: base64Images })
       });
 
       const data = await res.json();
