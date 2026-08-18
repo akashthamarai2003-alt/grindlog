@@ -3,11 +3,15 @@
 import { motion, AnimatePresence } from "framer-motion";
 
 export const REMINDER_TYPES = [
+  { id: "Workout", icon: "🏋️‍♂️" },
   { id: "Breakfast", icon: "🥣" },
   { id: "Mid-Morning", icon: "🍞" },
   { id: "Lunch", icon: "🍱" },
   { id: "Afternoon", icon: "🍏" },
   { id: "Dinner", icon: "🍛" },
+  { id: "Protein Target", icon: "🥩" },
+  { id: "Hydration", icon: "💧" },
+  { id: "Steps Goal", icon: "🚶‍♂️" },
   { id: "Bed Time", icon: "🛌" },
 ];
 
@@ -28,7 +32,7 @@ export function ReminderTypeSheet({ isOpen, onClose, onSelect }: ReminderTypeShe
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/60 z-[100] backdrop-blur-sm"
           />
 
           {/* Bottom Sheet */}
@@ -37,7 +41,7 @@ export function ReminderTypeSheet({ isOpen, onClose, onSelect }: ReminderTypeShe
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-[#111A10] rounded-t-3xl border-t border-white/5 pb-8 overflow-hidden"
+            className="fixed bottom-0 left-0 right-0 z-[100] bg-[#111A10] rounded-t-3xl border-t border-white/5 pb-24 overflow-hidden"
           >
             <div className="flex items-center justify-between p-5 border-b border-white/5">
               <button 

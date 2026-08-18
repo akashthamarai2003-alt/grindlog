@@ -107,11 +107,15 @@ export async function GET(req: Request) {
 
     const getEmojiForType = (type: string) => {
       const map: Record<string, string> = {
+        "Workout": "🏋️‍♂️",
         "Breakfast": "🥣",
         "Mid-Morning": "🍞",
         "Lunch": "🍱",
         "Afternoon": "🍏",
         "Dinner": "🍛",
+        "Protein Target": "🥩",
+        "Hydration": "💧",
+        "Steps Goal": "🚶‍♂️",
         "Bed Time": "🛌"
       };
       return map[type] || "⏰";
