@@ -138,7 +138,8 @@ CRITICAL DIETARY RESTRICTIONS:
 
 CRITICAL FOOD ENVIRONMENT RULES:
 ${isCoreProvided ? `- The user lives in a ${profile?.food_environment || 'Home'} environment where CORE MEALS (breakfast, lunch, dinner) are ALREADY PROVIDED for free.
-- For core meals (breakfast, lunch, dinner): Select ONLY cheap protein ADD-ONS from the database (items marked pg:true with low cost like roasted peanuts, soy chunks, curd, chana, banana). These are supplements the user buys with their pocket money to boost protein.
+- For EVERY core meal (breakfast, lunch, dinner), you MUST select the food named "PG/Hostel/Home Provided Core Meal (Free)" from the database first!
+- Then, ONLY select cheap protein ADD-ONS from the database (items marked pg:true with low cost like roasted peanuts, soy chunks, curd, chana, banana) to boost protein.
 - Do NOT select expensive or complex foods for core meals. The PG/Home already provides rice, dal, chapati, sambar etc.
 - For pre/post-workout or snack meals: Select affordable snack items that fit the budget.` 
 : `- The user cooks their own meals ('I Cook' or 'Mixed' environment).

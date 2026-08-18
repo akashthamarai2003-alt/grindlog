@@ -23,19 +23,31 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
     }
   }
 
-  // 2. Equipment Safety (Basic Keyword Checks)
+  // 3. Equipment Safety (Basic Keyword Checks)
   const equipment = (profile.equipment || []).map(e => e.toLowerCase());
   const hasNoEquipment = equipment.length === 0 || equipment.includes("none") || equipment.includes("bodyweight only");
+  const hasTreadmill = equipment.some(e => e.includes("treadmill"));
   
-  if (hasNoEquipment) {
-    for (const workout of plan.workouts) {
-      for (const exercise of workout.exercises) {
-        const name = exercise.name.toLowerCase();
+  for (const workout of plan.workouts) {
+    // Check workout titles for cardio terminology if they lack a treadmill
+    if (!hasTreadmill && /cardio/i.test(workout.title)) {
+      workout.title = workout.title.replace(/cardio/ig, "Active Recovery");
+    }
+
+    for (const exercise of workout.exercises) {
+      const name = exercise.name.toLowerCase();
+      
+      if (hasNoEquipment) {
         if (name.includes("barbell") || name.includes("dumbbell") || name.includes("cable") || name.includes("machine")) {
           // Auto-correct to bodyweight instead of failing
           exercise.name = exercise.name.replace(/barbell|dumbbell|cable|machine/gi, "Bodyweight");
           exercise.notes = "Auto-corrected to match available equipment.";
         }
+      }
+
+      if (!hasTreadmill && name.includes("treadmill")) {
+        exercise.name = exercise.name.replace(/treadmill/ig, "Brisk Walking (Outdoors)");
+        exercise.notes = "Auto-corrected to outdoor walking as no treadmill is available.";
       }
     }
   }
