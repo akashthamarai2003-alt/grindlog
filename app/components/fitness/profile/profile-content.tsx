@@ -352,6 +352,102 @@ export function ProfileContent({
           </div>
         </motion.div>
 
+        {/* Detailed Lifestyle & Nutrition Options */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
+          className="space-y-3"
+        >
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+            <Utensils className="w-4 h-4 text-[#ADFF00]" />
+            <span>Lifestyle & Nutrition Details</span>
+          </h2>
+
+          <div className="bg-[#121E12] border border-[#1A2619] p-5 rounded-3xl space-y-3">
+            <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Food Environment</span>
+              <span className="text-xs font-extrabold text-white">{fitnessProfile?.food_environment || "Not specified"}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Nutrition Budget</span>
+              <span className="text-xs font-extrabold text-white">{fitnessProfile?.nutrition_budget || "Not specified"}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Activity Level</span>
+              <span className="text-xs font-extrabold text-white">{fitnessProfile?.activity_level || "Not specified"}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Allergies</span>
+              <span className="text-xs font-bold text-red-400 truncate max-w-[150px] text-right">{fitnessProfile?.food_allergies || "None"}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Foods Disliked</span>
+              <span className="text-xs font-medium text-gray-300 truncate max-w-[150px] text-right">{fitnessProfile?.foods_disliked || "None"}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Sleep Duration</span>
+              <span className="text-xs font-extrabold text-white">{fitnessProfile?.sleep_duration || "Not specified"}</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Physical Limitations & Medical */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.28 }}
+          className="space-y-3"
+        >
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-red-400" />
+            <span>Physical & Medical Profile</span>
+          </h2>
+
+          <div className="bg-[#121E12] border border-[#1A2619] p-5 rounded-3xl space-y-3">
+            <div className="flex flex-col gap-1 pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Physical Problems</span>
+              <span className="text-xs font-medium text-white">{fitnessProfile?.physical_problems?.length > 0 ? fitnessProfile.physical_problems.join(", ") : "None reported"}</span>
+            </div>
+            <div className="flex flex-col gap-1 pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Exercise Limitations</span>
+              <span className="text-xs font-medium text-white">{fitnessProfile?.exercise_limitations?.length > 0 ? fitnessProfile.exercise_limitations.join(", ") : "None"}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Previous Injuries</span>
+              <span className="text-xs font-medium text-white">{fitnessProfile?.previous_injuries || "None"}</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Equipment & Schedule */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.29 }}
+          className="space-y-3"
+        >
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+            <Dumbbell className="w-4 h-4 text-cyan-400" />
+            <span>Equipment & Schedule</span>
+          </h2>
+
+          <div className="bg-[#121E12] border border-[#1A2619] p-5 rounded-3xl space-y-3">
+            <div className="flex flex-col gap-1 pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Available Equipment</span>
+              <span className="text-xs font-medium text-white">{fitnessProfile?.equipment?.length > 0 ? fitnessProfile.equipment.join(", ") : "Not specified"}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Preferred Days</span>
+              <span className="text-xs font-extrabold text-white text-right max-w-[200px] truncate">{fitnessProfile?.preferred_training_days || "Not specified"}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Preferred Time</span>
+              <span className="text-xs font-extrabold text-white">{fitnessProfile?.preferred_training_time || fitnessProfile?.workout_time || "Not specified"}</span>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Subscription & AI Usage Meter */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
