@@ -135,7 +135,7 @@ export function RemindersClient({
       </div>
 
       {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pointer-events-none">
+      <div className="fixed bottom-[90px] left-0 right-0 p-5 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pointer-events-none z-40">
         <div className="max-w-md mx-auto pointer-events-auto">
           <button
             onClick={handleUpdate}
