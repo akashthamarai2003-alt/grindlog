@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import Image from "next/image";
+import { toast } from "sonner";
 
 interface DashboardHeaderProps {
   name: string;
@@ -42,7 +42,10 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
       </div>
 
       <div className="flex items-center gap-3">
-        <button className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center relative hover:bg-[#1A2619] transition-colors">
+        <button 
+          onClick={() => toast("You're all caught up!", { description: "No new notifications at the moment." })}
+          className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center relative hover:bg-[#1A2619] transition-colors"
+        >
           <Bell size={18} className="text-gray-300" />
           {/* Notification Dot */}
           <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#121E12]" />
