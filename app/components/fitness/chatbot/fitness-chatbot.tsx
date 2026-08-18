@@ -79,7 +79,7 @@ export function FitnessChatbot() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-[80px] right-6 p-4 rounded-full border-2 border-fitness-primary bg-[#0A1108] text-fitness-primary shadow-lg shadow-fitness-primary/20 z-50 hover:scale-105 transition-transform"
+            className="fixed bottom-[110px] right-6 p-4 rounded-full border-2 border-[#ADFF00] bg-[#0A1108] text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.4)] z-[60] hover:scale-105 transition-transform"
           >
             <Bot className="w-6 h-6" />
           </motion.button>
@@ -92,17 +92,17 @@ export function FitnessChatbot() {
             initial={{ opacity: 0, y: 100, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.95 }}
-            className="fixed bottom-[80px] right-6 w-[calc(100vw-48px)] sm:w-[400px] h-[500px] max-h-[70vh] bg-[#0A1108] border border-fitness-primary/20 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
+            className="fixed bottom-[110px] right-6 w-[calc(100vw-48px)] sm:w-[400px] h-[500px] max-h-[70vh] bg-[#0A1108] border border-[#ADFF00]/20 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] z-[60] flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-fitness-primary/20 bg-[#0A1108]/95 backdrop-blur-sm shrink-0">
+            <div className="flex items-center justify-between p-4 border-b border-[#ADFF00]/20 bg-[#0A1108]/95 backdrop-blur-sm shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-fitness-primary/20 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-fitness-primary" />
+                <div className="w-8 h-8 rounded-full bg-[#ADFF00]/20 flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-[#ADFF00]" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white">AI Coach</h3>
-                  <p className="text-[10px] text-fitness-primary uppercase tracking-widest font-bold">Online</p>
+                  <p className="text-[10px] text-[#ADFF00] uppercase tracking-widest font-bold">Online</p>
                 </div>
               </div>
               <button
@@ -123,7 +123,7 @@ export function FitnessChatbot() {
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
                       msg.role === "user"
-                        ? "bg-fitness-primary text-black rounded-tr-sm"
+                        ? "bg-[#ADFF00] text-black rounded-tr-sm"
                         : "bg-white/5 text-gray-200 border border-white/10 rounded-tl-sm"
                     }`}
                   >
@@ -134,7 +134,7 @@ export function FitnessChatbot() {
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 text-fitness-primary animate-spin" />
+                    <Loader2 className="w-4 h-4 text-[#ADFF00] animate-spin" />
                     <span className="text-xs text-gray-400">Thinking...</span>
                   </div>
                 </div>
@@ -143,20 +143,20 @@ export function FitnessChatbot() {
             </div>
 
             {/* Input */}
-            <form onSubmit={sendMessage} className="p-3 border-t border-fitness-primary/20 bg-[#0A1108] shrink-0">
+            <form onSubmit={sendMessage} className="p-3 border-t border-[#ADFF00]/20 bg-[#0A1108] shrink-0">
               <div className="relative">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about your progress..."
-                  className="w-full bg-white/5 border border-white/10 rounded-full pl-4 pr-12 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-fitness-primary/50 transition-colors"
+                  className="w-full bg-white/5 border border-white/10 rounded-full pl-4 pr-12 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ADFF00]/50 transition-colors"
                   disabled={isLoading}
                 />
                 <button
                   type="submit"
                   disabled={!input.trim() || isLoading}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-fitness-primary text-black disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-[#ADFF00] text-black disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
                 >
                   <Send className="w-4 h-4" />
                 </button>
