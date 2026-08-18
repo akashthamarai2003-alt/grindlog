@@ -163,13 +163,7 @@ export function ProfileContent({
             <User className="w-4 h-4 text-[#ADFF00]" />
             <span className="text-xs font-bold text-gray-200 uppercase tracking-wider">Profile & Account</span>
           </div>
-          <Link 
-            href="/fitness/onboarding?mode=edit" 
-            className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center text-gray-300 hover:text-[#ADFF00] hover:border-[#ADFF00]/50 transition-all active:scale-95"
-            title="Retake Onboarding"
-          >
-            <RefreshCw className="w-4.5 h-4.5" />
-          </Link>
+          <div className="w-10 h-10" />
         </div>
 
         {/* User Hero Avatar Card */}
