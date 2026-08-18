@@ -99,40 +99,78 @@ export async function GET(req: Request) {
     const currentMinute = istTime.getUTCMinutes();
     const currentTotalMinutes = currentHour * 60 + currentMinute;
 
-    // Fitness Workout Reminders
+    // Fitness Workout & Custom Reminders
     const { data: profiles, error: profilesError } = await supabase
       .from("fitness_os_profiles")
-      .select("user_id, workout_time")
-      .not("workout_time", "is", null);
+      .select("user_id, workout_time, reminders_enabled, custom_reminders")
+      .or("workout_time.not.is.null,custom_reminders.not.eq.[]");
+
+    const getEmojiForType = (type: string) => {
+      const map: Record<string, string> = {
+        "Breakfast": "🥣",
+        "Mid-Morning": "🍞",
+        "Lunch": "🍱",
+        "Afternoon": "🍏",
+        "Dinner": "🍛",
+        "Bed Time": "🛌"
+      };
+      return map[type] || "⏰";
+    };
 
     if (!profilesError && profiles) {
       for (const profile of profiles) {
-        if (!profile.workout_time) continue;
-        
-        const [hStr, mStr] = profile.workout_time.split(":");
-        const workoutMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
-        const timeDiff = currentTotalMinutes - workoutMinutes;
+        if (profile.workout_time) {
+          const [hStr, mStr] = profile.workout_time.split(":");
+          const workoutMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+          const timeDiff = currentTotalMinutes - workoutMinutes;
 
-        // Check if workout time is within the last 15 minutes
-        if (timeDiff >= 0 && timeDiff < 15) {
-          const { data: workout } = await supabase
-            .from("fitness_os_workouts")
-            .select("id, status")
-            .eq("user_id", profile.user_id)
-            .eq("workout_date", istDateKey)
-            .maybeSingle();
+          // Check if workout time is within the last 15 minutes
+          if (timeDiff >= 0 && timeDiff < 15) {
+            const { data: workout } = await supabase
+              .from("fitness_os_workouts")
+              .select("id, status")
+              .eq("user_id", profile.user_id)
+              .eq("workout_date", istDateKey)
+              .maybeSingle();
 
-          if (workout && workout.status !== "completed") {
-            const userTokens = usersTokens.get(profile.user_id);
-            if (userTokens) {
-              notificationsToSend.push({
-                userId: profile.user_id,
-                tokens: userTokens,
-                title: `Time to sweat! 🏋️‍♂️`,
-                body: `Your daily workout is scheduled for ${profile.workout_time}. Let's get to work!`,
-                tag: `workout:${profile.user_id}:${istDateKey}`,
-                url: "/fitness/workout",
-              });
+            if (workout && workout.status !== "completed") {
+              const userTokens = usersTokens.get(profile.user_id);
+              if (userTokens) {
+                notificationsToSend.push({
+                  userId: profile.user_id,
+                  tokens: userTokens,
+                  title: `Time to sweat! 🏋️‍♂️`,
+                  body: `Your daily workout is scheduled for ${profile.workout_time}. Let's get to work!`,
+                  tag: `workout:${profile.user_id}:${istDateKey}`,
+                  url: "/fitness/workout",
+                });
+              }
+            }
+          }
+        }
+
+        // Process Custom Reminders
+        if (profile.reminders_enabled && Array.isArray(profile.custom_reminders)) {
+          for (const reminder of profile.custom_reminders) {
+            if (!reminder.time) continue;
+
+            const [hStr, mStr] = reminder.time.split(":");
+            const remMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+            const timeDiff = currentTotalMinutes - remMinutes;
+
+            // Check if reminder time is within the last 15 minutes
+            if (timeDiff >= 0 && timeDiff < 15) {
+              const userTokens = usersTokens.get(profile.user_id);
+              if (userTokens) {
+                notificationsToSend.push({
+                  userId: profile.user_id,
+                  tokens: userTokens,
+                  title: `Time for ${reminder.type}! ${getEmojiForType(reminder.type)}`,
+                  body: `Your ${reminder.type} is scheduled for ${reminder.time}. Stay on track!`,
+                  tag: `custom_reminder:${profile.user_id}:${reminder.type}:${istDateKey}`,
+                  url: "/fitness",
+                });
+              }
             }
           }
         }
