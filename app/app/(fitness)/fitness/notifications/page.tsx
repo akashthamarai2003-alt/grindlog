@@ -22,6 +22,7 @@ export default function FitnessNotificationsPage() {
       const { data, error } = await supabase
         .from("in_app_notifications")
         .select("*")
+        .like("type", "fitness_%")
         .order("created_at", { ascending: false })
         .limit(30);
 
