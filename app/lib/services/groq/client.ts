@@ -52,19 +52,26 @@ export type RouteModel = keyof typeof GROQ_MODELS;
 export async function generateAIResponse({
   systemPrompt,
   userPrompt,
+  messages,
   model = "fast",
   maxTokens = 8000,
   temperature = 0.7,
   responseFormat,
 }: {
-  systemPrompt: string;
-  userPrompt: string;
+  systemPrompt?: string;
+  userPrompt?: string;
+  messages?: { role: "system" | "user" | "assistant"; content: string }[];
   model?: RouteModel;
   maxTokens?: number;
   temperature?: number;
   responseFormat?: "json_object" | "text";
 }): Promise<string> {
   const errors: string[] = [];
+
+  const finalMessages = messages || [
+    ...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
+    ...(userPrompt ? [{ role: "user" as const, content: userPrompt }] : []),
+  ];
 
   // ==================================================================
   // TIER 1: GROQ (The High-Speed Round-Robin Primary)
@@ -86,10 +93,7 @@ export async function generateAIResponse({
         try {
           const completion = await groq.chat.completions.create({
             model: targetModel,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
+            messages: finalMessages,
             max_tokens: maxTokens,
             temperature,
             response_format: responseFormat ? { type: responseFormat } : undefined,
@@ -117,10 +121,7 @@ export async function generateAIResponse({
       console.log(`[AI ROUTER] Tier 2: Attempting NVIDIA NIM Emergency Backup...`);
       const completion = await nvidia.chat.completions.create({
         model: "meta/llama-3.1-8b-instruct",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        messages: finalMessages,
         max_tokens: maxTokens,
         temperature,
       });

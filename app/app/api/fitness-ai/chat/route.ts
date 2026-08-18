@@ -13,12 +13,15 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const question: string = body.question;
+    const messages: {role: "user"|"assistant", content: string}[] = body.messages || [];
 
-    if (!question) {
-      return NextResponse.json({ error: "Question is required" }, { status: 400 });
+    if (!question && messages.length === 0) {
+      return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
-    const responseText = await AIInsightService.askProgressQuestion(user.id, question);
+    const chatMessages = messages.length > 0 ? messages : [{ role: "user" as const, content: question }];
+
+    const responseText = await AIInsightService.askProgressQuestion(user.id, chatMessages);
 
     return NextResponse.json({ reply: responseText });
   } catch (error: any) {

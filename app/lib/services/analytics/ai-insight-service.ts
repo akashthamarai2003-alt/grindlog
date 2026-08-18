@@ -160,7 +160,7 @@ You MUST output perfectly formatted JSON matching this exact structure:
     }
   }
 
-  static async askProgressQuestion(userId: string, question: string): Promise<string> {
+  static async askProgressQuestion(userId: string, messages: {role: "user"|"assistant", content: string}[]): Promise<string> {
     const current = await ProgressAnalyticsService.getAggregatedProgress(userId, '30D');
     
     const contextPrompt = `
@@ -178,12 +178,21 @@ You MUST output perfectly formatted JSON matching this exact structure:
     Keep your response extremely concise, conversational, and direct (1-3 sentences max unless the user asks for a detailed plan). 
     Do NOT list out all metrics or provide a full review unless specifically asked. If the user just says "hi", greet them back briefly.
     Keep your response supportive, highly specific, and actionable. Use markdown for bolding (**bold**) or bullet points if needed.
-    Do NOT give medical advice or diagnose injuries.`;
+    Do NOT give medical advice or diagnose injuries.\n\n${contextPrompt}`;
 
     try {
+      const formattedMessages = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })) as { role: "system" | "user" | "assistant"; content: string }[];
+
+      const finalMessages = [
+        { role: "system" as const, content: systemPrompt },
+        ...formattedMessages
+      ];
+
       const responseText = await generateAIResponse({
-        systemPrompt,
-        userPrompt: `Context:\n${contextPrompt}\n\nUser Question:\n${question}`,
+        messages: finalMessages,
         model: "primary"
       });
       return responseText;

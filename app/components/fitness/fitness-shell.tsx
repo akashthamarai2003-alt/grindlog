@@ -3,11 +3,12 @@
 import { usePathname } from "next/navigation";
 import { BottomNav } from "./dashboard/bottom-nav";
 import { motion, AnimatePresence } from "framer-motion";
+import { FitnessChatbot } from "./chatbot/fitness-chatbot";
 
 export function FitnessShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  // Pages that are part of the onboarding/setup flow should NOT have the bottom nav
+  // Pages that are part of the onboarding/setup flow should NOT have the bottom nav or chatbot
   const isSetupFlow = pathname?.includes("/onboarding") || 
                       pathname?.includes("/report") || 
                       pathname?.includes("/plan-setup") || 
@@ -30,7 +31,12 @@ export function FitnessShell({ children }: { children: React.ReactNode }) {
             {children}
           </motion.main>
         </AnimatePresence>
-        {!isSetupFlow && <BottomNav />}
+        {!isSetupFlow && (
+          <>
+            <FitnessChatbot />
+            <BottomNav />
+          </>
+        )}
       </div>
     </div>
   );
