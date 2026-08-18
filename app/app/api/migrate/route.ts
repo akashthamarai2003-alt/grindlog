@@ -58,7 +58,10 @@ export async function GET() {
         ADD COLUMN IF NOT EXISTS bmi REAL,
         ADD COLUMN IF NOT EXISTS baseline_calories INTEGER,
         ADD COLUMN IF NOT EXISTS initial_protein_target INTEGER,
-        ADD COLUMN IF NOT EXISTS weight_trend_baseline REAL;
+        ADD COLUMN IF NOT EXISTS weight_trend_baseline REAL,
+        
+        ADD COLUMN IF NOT EXISTS reminders_enabled BOOLEAN DEFAULT TRUE,
+        ADD COLUMN IF NOT EXISTS custom_reminders JSONB DEFAULT '[]'::jsonb;
         
       ALTER TABLE public.fitness_os_body_scans
         ADD COLUMN IF NOT EXISTS left_image_url TEXT,

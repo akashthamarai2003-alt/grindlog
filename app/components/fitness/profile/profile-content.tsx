@@ -28,7 +28,8 @@ import {
   X,
   Check,
   Edit3,
-  Clock
+  Clock,
+  Bell
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -584,6 +585,23 @@ export function ProfileContent({
                 <div>
                   <p className="text-sm font-bold text-white">Re-generate AI Plan</p>
                   <p className="text-xs text-gray-400">Re-take questionnaire to update your strategy</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
+            </Link>
+
+            {/* Set Reminders */}
+            <Link 
+              href="/fitness/reminders"
+              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
+                  <Bell className="w-4.5 h-4.5 group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Set Reminders</p>
+                  <p className="text-xs text-gray-400">Configure your daily fitness & nutrition alerts</p>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
