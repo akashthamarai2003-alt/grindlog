@@ -170,7 +170,7 @@ export default function FitnessNotificationsPage() {
                             </span>
                           </div>
                           <p className={`text-xs ${notif.read ? "text-gray-500" : "text-gray-400"} line-clamp-2`}>
-                            {notif.message}
+                            {notif.body}
                           </p>
                         </div>
                       </div>
