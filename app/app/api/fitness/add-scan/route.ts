@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { v2 as cloudinary } from 'cloudinary';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
-// Configure Cloudinary using env variables
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+// Configure R2 using env variables
+const r2Client = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+  },
 });
 
 export async function POST(req: Request) {
@@ -25,17 +28,28 @@ export async function POST(req: Request) {
     }
 
     const uploadImage = async (base64Img: string | undefined, tag: string) => {
-      if (!base64Img) return null;
+      if (!base64Img || !base64Img.startsWith("data:image")) return null;
       try {
-        const uploadResponse = await cloudinary.uploader.upload(base64Img, {
-          folder: `grindlog/${user.id}/body_scans`,
-          tags: ['body_scan', tag],
-          quality: 'auto:good', // optimize quality
-          fetch_format: 'auto', // optimize format
+        const [meta, data] = base64Img.split(",");
+        const mimeType = meta.split(";")[0].split(":")[1];
+        const ext = mimeType.split("/")[1] || "jpeg";
+        const buffer = Buffer.from(data, "base64");
+        const fileName = `grindlog/${user.id}/body_scans/${Date.now()}-${tag}.${ext}`;
+
+        const command = new PutObjectCommand({
+          Bucket: process.env.R2_BUCKET_NAME,
+          Key: fileName,
+          Body: buffer,
+          ContentType: mimeType,
         });
-        return uploadResponse.secure_url;
+
+        await r2Client.send(command);
+
+        // Construct the public URL
+        const publicUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+        return publicUrl;
       } catch (error) {
-        console.error(`Error uploading ${tag} image:`, error);
+        console.error(`Error uploading ${tag} image to R2:`, error);
         return null;
       }
     };
