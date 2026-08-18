@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const APP_ICON = "https://www.grindlog.in/icons/icon-192.png";
 const NOTIFICATION_BADGE = "https://www.grindlog.in/icons/notification-badge.png";
-const NOTIFICATION_URL = "/dashboard";
+const NOTIFICATION_URL = "/fitness";
 
 type ReminderNotification = {
   userId: string;
@@ -17,14 +17,6 @@ type ReminderNotification = {
 
 function getIstDate() {
   return new Date(Date.now() + 5.5 * 60 * 60 * 1000);
-}
-
-function hashTag(value: string) {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
-  }
-  return `gl-${Math.abs(hash).toString(36)}`;
 }
 
 function getIstDayBoundsUtc(istTime: Date) {
@@ -71,7 +63,7 @@ const getServiceSupabase = () => {
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get("type"); // morning, dynamic
+    const type = searchParams.get("type") || "fitness_dynamic";
 
     const authHeader = req.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -99,124 +91,52 @@ export async function GET(req: Request) {
       usersTokens.get(row.user_id)!.push(row.token);
     }
 
-    const userIds = Array.from(usersTokens.keys());
     const istTime = getIstDate();
     const istDateKey = istTime.toISOString().split("T")[0];
     const notificationsToSend: ReminderNotification[] = [];
 
-    if (type === "morning") {
-      for (const userId of userIds) {
-        notificationsToSend.push({
-          userId,
-          tokens: usersTokens.get(userId),
-          title: "Rise and Grind! \u{1F305}",
-          body: "Good morning! Check your planner to see your targets for today.",
-          tag: `morning:${userId}:${istDateKey}`,
-          url: NOTIFICATION_URL,
-        });
-      }
-    } else if (type === "dynamic") {
-      const currentHour = istTime.getUTCHours();
-      const currentMinute = istTime.getUTCMinutes();
-      const currentTotalMinutes = currentHour * 60 + currentMinute;
+    const currentHour = istTime.getUTCHours();
+    const currentMinute = istTime.getUTCMinutes();
+    const currentTotalMinutes = currentHour * 60 + currentMinute;
 
-      const { data: habits, error: habitsError } = await supabase
-        .from("habits")
-        .select("id, user_id, name, reminder_time")
-        .eq("is_active", true)
-        .eq("is_archived", false)
-        .not("reminder_time", "is", null);
+    // Fitness Workout Reminders
+    const { data: profiles, error: profilesError } = await supabase
+      .from("fitness_os_profiles")
+      .select("user_id, workout_time")
+      .not("workout_time", "is", null);
 
-      if (!habitsError && habits) {
-        for (const habit of habits) {
-          if (!habit.reminder_time) continue;
+    if (!profilesError && profiles) {
+      for (const profile of profiles) {
+        if (!profile.workout_time) continue;
+        
+        const [hStr, mStr] = profile.workout_time.split(":");
+        const workoutMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+        const timeDiff = currentTotalMinutes - workoutMinutes;
 
-          const [hStr, mStr] = habit.reminder_time.split(":");
-          const habitMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
-          
-          const timeDiff = currentTotalMinutes - habitMinutes;
-          // Check if habit time is within the last 15 minutes
-          if (timeDiff >= 0 && timeDiff < 15) {
-            const userTokens = usersTokens.get(habit.user_id);
+        // Check if workout time is within the last 15 minutes
+        if (timeDiff >= 0 && timeDiff < 15) {
+          const { data: workout } = await supabase
+            .from("fitness_os_workouts")
+            .select("id, status")
+            .eq("user_id", profile.user_id)
+            .eq("workout_date", istDateKey)
+            .maybeSingle();
+
+          if (workout && workout.status !== "completed") {
+            const userTokens = usersTokens.get(profile.user_id);
             if (userTokens) {
               notificationsToSend.push({
-                userId: habit.user_id,
+                userId: profile.user_id,
                 tokens: userTokens,
-                title: `Time for ${habit.name}! \u23F0`,
-                body: `Your habit is scheduled for ${habit.reminder_time}. Let's get it done!`,
-                tag: `habit:${habit.id}:${istDateKey}:${habit.reminder_time}`,
-                url: NOTIFICATION_URL,
+                title: `Time to sweat! 🏋️‍♂️`,
+                body: `Your daily workout is scheduled for ${profile.workout_time}. Let's get to work!`,
+                tag: `workout:${profile.user_id}:${istDateKey}`,
+                url: "/fitness/workout",
               });
             }
           }
         }
       }
-
-      if (currentHour === 9 && currentMinute === 0) {
-        for (const userId of userIds) {
-          const userTokens = usersTokens.get(userId);
-          if (!userTokens) continue;
-
-          const yesterday = new Date(istTime);
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-          const { data: logs } = await supabase
-            .from("habit_logs")
-            .select("status, streak_after")
-            .eq("user_id", userId)
-            .eq("date", yesterdayStr)
-            .eq("status", "missed");
-
-          if (logs && logs.length > 0) {
-            notificationsToSend.push({
-              userId,
-              tokens: userTokens,
-              title: "Don't Give Up! \u2764\uFE0F\u200D\u{1FA79}",
-              body: "You missed a habit yesterday, but today is a fresh start. Rebuild that streak!",
-              tag: `streak:${userId}:${istDateKey}`,
-              url: NOTIFICATION_URL,
-            });
-            continue;
-          }
-
-          const twoDaysAgo = new Date(istTime);
-          twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-          const twoDaysAgoStr = twoDaysAgo.toISOString();
-
-          const { data: recentLogs } = await supabase
-            .from("habit_logs")
-            .select("id")
-            .eq("user_id", userId)
-            .gte("created_at", twoDaysAgoStr)
-            .limit(1);
-
-          if (!recentLogs || recentLogs.length === 0) {
-            notificationsToSend.push({
-              userId,
-              tokens: userTokens,
-              title: "We miss you! \u{1F331}",
-              body: "You haven't logged any habits in 2 days. Come back and water your tree!",
-              tag: `inactive:${userId}:${istDateKey}`,
-              url: NOTIFICATION_URL,
-            });
-          }
-        }
-      }
-    } else if (type === "test") {
-      // Bypass time checks and send a direct test notification to everyone
-      for (const userId of userIds) {
-        notificationsToSend.push({
-          userId,
-          tokens: usersTokens.get(userId),
-          title: "Test Notification! \uD83D\uDE80",
-          body: "This is a test to verify the background service worker.",
-          tag: `test:${userId}:${Date.now()}`, // Unique tag every time to bypass deduplication
-          url: NOTIFICATION_URL,
-        });
-      }
-    } else {
-      return NextResponse.json({ error: "Invalid reminder type" }, { status: 400 });
     }
 
     let pendingNotifications = uniqueByTag(notificationsToSend);
@@ -287,7 +207,7 @@ export async function GET(req: Request) {
         data: {
           title: String(notif.title),
           body: String(notif.body),
-          type: String(type || 'general'),
+          type: String(type),
           tag: String(notif.tag || 'grindlog-reminder'),
           url: String(notif.url || NOTIFICATION_URL),
           icon: APP_ICON,
