@@ -147,18 +147,20 @@ export async function generateAIResponseJSON<T>({
   userPrompt,
   model = "fast",
   maxTokens = 8000,
+  temperature = 0.2,
 }: {
   systemPrompt: string;
   userPrompt: string;
   model?: RouteModel;
   maxTokens?: number;
+  temperature?: number;
 }): Promise<T> {
   const text = await generateAIResponse({
     systemPrompt: `${systemPrompt}\n\nYou MUST respond with valid JSON only. No markdown formatting, no code blocks like \`\`\`json, no explanation text. Just the raw JSON object.`,
     userPrompt,
     model,
     maxTokens,
-    temperature: 0.5,
+    temperature,
     responseFormat: "json_object", // Note: NVIDIA might ignore this, so the prompt enforces it
   });
 
