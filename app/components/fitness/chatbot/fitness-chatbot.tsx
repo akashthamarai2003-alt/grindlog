@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, X, Send, Bot, User, Loader2 } from "lucide-react";
 
+import ReactMarkdown from "react-markdown";
+
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -79,7 +81,7 @@ export function FitnessChatbot() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-[110px] right-6 p-4 rounded-full border-2 border-[#ADFF00] bg-[#0A1108] text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.4)] z-[60] hover:scale-105 transition-transform"
+            className="fixed bottom-[130px] right-6 p-4 rounded-full border-2 border-[#ADFF00] bg-[#0A1108] text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.4)] z-[60] hover:scale-105 transition-transform"
           >
             <Bot className="w-6 h-6" />
           </motion.button>
@@ -92,7 +94,7 @@ export function FitnessChatbot() {
             initial={{ opacity: 0, y: 100, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.95 }}
-            className="fixed bottom-[110px] right-6 w-[calc(100vw-48px)] sm:w-[400px] h-[500px] max-h-[70vh] bg-[#0A1108] border border-[#ADFF00]/20 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] z-[60] flex flex-col overflow-hidden"
+            className="fixed bottom-[130px] right-6 w-[calc(100vw-48px)] sm:w-[400px] h-[500px] max-h-[70vh] bg-[#0A1108] border border-[#ADFF00]/20 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] z-[60] flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-[#ADFF00]/20 bg-[#0A1108]/95 backdrop-blur-sm shrink-0">
@@ -121,13 +123,20 @@ export function FitnessChatbot() {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm prose prose-invert prose-p:leading-relaxed prose-pre:p-0 ${
                       msg.role === "user"
                         ? "bg-[#ADFF00] text-black rounded-tr-sm"
                         : "bg-white/5 text-gray-200 border border-white/10 rounded-tl-sm"
                     }`}
                   >
-                    {msg.content}
+                    <ReactMarkdown
+                      components={{
+                        p: ({ node, ...props }) => <p className="m-0" {...props} />,
+                        strong: ({ node, ...props }) => <strong className={msg.role === "user" ? "text-black" : "text-[#ADFF00] font-bold"} {...props} />
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
               ))}
