@@ -135,12 +135,12 @@ export function RemindersClient({
       </div>
 
       {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-[90px] left-0 right-0 p-5 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pointer-events-none z-40">
+      <div className="fixed bottom-[90px] left-0 right-0 p-5 pr-20 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pointer-events-none z-40">
         <div className="max-w-md mx-auto pointer-events-auto">
           <button
             onClick={handleUpdate}
             disabled={isSaving}
-            className="w-full py-4 bg-white text-black font-extrabold text-[15px] rounded-full shadow-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-4 bg-[#ADFF00] text-black font-extrabold text-[15px] rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isSaving ? (
               <>

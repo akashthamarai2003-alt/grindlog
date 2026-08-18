@@ -408,3 +408,30 @@ export async function finishWorkoutSessionAction(payload: { sessionId: string })
   
   return { success: true };
 }
+
+export async function updateRemindersAction(enabled: boolean, reminders: any[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: ""Unauthorized"" };
+  }
+
+  const { error } = await supabase
+    .from(""fitness_os_profiles"")
+    .update({
+      reminders_enabled: enabled,
+      custom_reminders: reminders,
+    })
+    .eq(""user_id"", user.id);
+
+  if (error) {
+    console.error(""Error updating reminders:"", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(""/fitness/reminders"");
+  revalidatePath(""/fitness/profile"");
+  
+  return { success: true };
+}
