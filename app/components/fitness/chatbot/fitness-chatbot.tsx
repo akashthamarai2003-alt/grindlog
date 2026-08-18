@@ -81,7 +81,7 @@ export function FitnessChatbot() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-[170px] right-5 p-3 rounded-full border-2 border-[#ADFF00] bg-[#0A1108] text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.4)] z-[60] hover:scale-105 transition-transform"
+            className="fixed bottom-[180px] right-6 p-3 rounded-full border-2 border-[#ADFF00] bg-[#0A1108] text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.4)] z-[60] hover:scale-105 transition-transform"
           >
             <Bot className="w-5 h-5" />
           </motion.button>
@@ -94,7 +94,7 @@ export function FitnessChatbot() {
             initial={{ opacity: 0, y: 100, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.95 }}
-            className="fixed bottom-[130px] right-5 w-[calc(100vw-40px)] sm:w-[400px] h-[500px] max-h-[70vh] bg-[#0A1108] border border-[#ADFF00]/20 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] z-[60] flex flex-col overflow-hidden"
+            className="fixed bottom-[130px] right-6 w-[calc(100vw-48px)] sm:w-[400px] h-[500px] max-h-[70vh] bg-[#0A1108] border border-[#ADFF00]/20 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] z-[60] flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-[#ADFF00]/20 bg-[#0A1108]/95 backdrop-blur-sm shrink-0">
