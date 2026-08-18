@@ -11,7 +11,10 @@ interface ReminderItem {
   id: string;
   type: string;
   time: string;
+  days?: number[];
 }
+
+const WEEK_DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export function RemindersClient({ 
   initialEnabled, 
@@ -30,7 +33,7 @@ export function RemindersClient({
 
   const handleAddReminder = () => {
     const newId = Math.random().toString(36).substr(2, 9);
-    setReminders([...reminders, { id: newId, type: "Breakfast", time: "08:00" }]);
+    setReminders([...reminders, { id: newId, type: "Breakfast", time: "08:00", days: [0, 1, 2, 3, 4, 5, 6] }]);
   };
 
   const handleRemoveReminder = (id: string) => {
@@ -45,6 +48,17 @@ export function RemindersClient({
     if (editingId) {
       setReminders(reminders.map(r => r.id === editingId ? { ...r, type: newType } : r));
     }
+  };
+
+  const handleToggleDay = (id: string, dayIndex: number) => {
+    setReminders(reminders.map(r => {
+      if (r.id !== id) return r;
+      const currentDays = r.days ?? [0, 1, 2, 3, 4, 5, 6];
+      const newDays = currentDays.includes(dayIndex) 
+        ? currentDays.filter(d => d !== dayIndex)
+        : [...currentDays, dayIndex];
+      return { ...r, days: newDays };
+    }));
   };
 
   const handleUpdate = async () => {
@@ -119,6 +133,26 @@ export function RemindersClient({
                   </button>
                 </div>
 
+              </div>
+              
+              {/* Days of Week Selection */}
+              <div className="flex items-center justify-between mt-3 px-1">
+                {WEEK_DAYS.map((dayLabel, dayIndex) => {
+                  const isSelected = (reminder.days ?? [0, 1, 2, 3, 4, 5, 6]).includes(dayIndex);
+                  return (
+                    <button
+                      key={dayIndex}
+                      onClick={() => handleToggleDay(reminder.id, dayIndex)}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                        isSelected 
+                          ? 'bg-[#ADFF00] text-black shadow-[0_0_10px_rgba(173,255,0,0.3)]' 
+                          : 'bg-[#121E12] border border-[#1A2619] text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      {dayLabel}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}

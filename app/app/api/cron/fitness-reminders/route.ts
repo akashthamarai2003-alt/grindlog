@@ -158,6 +158,11 @@ export async function GET(req: Request) {
           for (const reminder of profile.custom_reminders) {
             if (!reminder.time) continue;
 
+            // Day of week check
+            const currentDayOfWeek = istTime.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            const reminderDays = reminder.days ?? [0, 1, 2, 3, 4, 5, 6];
+            if (!reminderDays.includes(currentDayOfWeek)) continue;
+
             const [hStr, mStr] = reminder.time.split(":");
             const remMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
             const timeDiff = currentTotalMinutes - remMinutes;
