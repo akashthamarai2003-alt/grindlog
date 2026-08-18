@@ -152,6 +152,45 @@ export async function GET(req: Request) {
         }
       }
 
+      // Fitness Workout Reminders
+      const { data: profiles, error: profilesError } = await supabase
+        .from("fitness_os_profiles")
+        .select("user_id, workout_time")
+        .not("workout_time", "is", null);
+
+      if (!profilesError && profiles) {
+        for (const profile of profiles) {
+          if (!profile.workout_time) continue;
+          
+          const [hStr, mStr] = profile.workout_time.split(":");
+          const workoutMinutes = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+          const timeDiff = currentTotalMinutes - workoutMinutes;
+
+          // Check if workout time is within the last 15 minutes
+          if (timeDiff >= 0 && timeDiff < 15) {
+            const { data: workout } = await supabase
+              .from("fitness_os_workouts")
+              .select("id, status")
+              .eq("user_id", profile.user_id)
+              .eq("workout_date", istDateKey)
+              .maybeSingle();
+
+            if (workout && workout.status !== "completed") {
+              const userTokens = usersTokens.get(profile.user_id);
+              if (userTokens) {
+                notificationsToSend.push({
+                  userId: profile.user_id,
+                  tokens: userTokens,
+                  title: `Time to sweat! 🏋️‍♂️`,
+                  body: `Your daily workout is scheduled for ${profile.workout_time}. Let's get to work!`,
+                  tag: `workout:${profile.user_id}:${istDateKey}`,
+                  url: "/fitness/workout",
+                });
+              }
+            }
+          }
+        }
+      }
       if (currentHour === 9 && currentMinute === 0) {
         for (const userId of userIds) {
           const userTokens = usersTokens.get(userId);
