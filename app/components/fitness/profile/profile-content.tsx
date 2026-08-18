@@ -27,8 +27,8 @@ import {
   ShieldCheck, 
   X,
   Check,
-  Loader2,
-  Edit3
+  Edit3,
+  Clock
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -218,6 +218,12 @@ export function ProfileContent({
                   <span>{fitnessProfile.country}</span>
                 </div>
               )}
+              
+              {(fitnessProfile?.age || fitnessProfile?.gender) && (
+                <div className="px-3 py-1 rounded-full bg-[#1A2619] border border-gray-800 text-[11px] font-semibold text-gray-300 flex items-center gap-1">
+                  <span>{fitnessProfile.age ? `${fitnessProfile.age} yrs` : ""} {fitnessProfile.gender ? `• ${fitnessProfile.gender}` : ""}</span>
+                </div>
+              )}
             </div>
             
             <p className="text-[11px] text-gray-500 font-medium mt-3">Member since {joinedDate}</p>
@@ -270,6 +276,34 @@ export function ProfileContent({
                     BMI {bmi} ({bmiStatus.text})
                   </p>
                 )}
+              </div>
+            </div>
+
+            {/* Measurements Grid */}
+            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex flex-col justify-between col-span-2">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Ruler className="w-4 h-4 text-[#ADFF00]" />
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Body Measurements</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="bg-[#0A1108] p-2 rounded-xl border border-[#1A2619] text-center">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Waist</p>
+                  <p className="text-sm font-black text-white">{fitnessProfile?.waist_cm ? `${fitnessProfile.waist_cm}cm` : "-"}</p>
+                </div>
+                <div className="bg-[#0A1108] p-2 rounded-xl border border-[#1A2619] text-center">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Chest</p>
+                  <p className="text-sm font-black text-white">{fitnessProfile?.chest_cm ? `${fitnessProfile.chest_cm}cm` : "-"}</p>
+                </div>
+                <div className="bg-[#0A1108] p-2 rounded-xl border border-[#1A2619] text-center">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Arms</p>
+                  <p className="text-sm font-black text-white">{fitnessProfile?.arm_cm ? `${fitnessProfile.arm_cm}cm` : "-"}</p>
+                </div>
+                <div className="bg-[#0A1108] p-2 rounded-xl border border-[#1A2619] text-center">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Thighs</p>
+                  <p className="text-sm font-black text-white">{fitnessProfile?.thigh_cm ? `${fitnessProfile.thigh_cm}cm` : "-"}</p>
+                </div>
               </div>
             </div>
 
@@ -328,6 +362,13 @@ export function ProfileContent({
                 </span>
               )}
             </div>
+            
+            {fitnessProfile?.target_deadline_days && (
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <Clock className="w-4 h-4 text-cyan-400" />
+                <span>Target Deadline: <strong className="text-white">{fitnessProfile.target_deadline_days} days</strong></span>
+              </div>
+            )}
 
             {/* Nutrition Specs */}
             <div className="grid grid-cols-2 gap-3 pt-1">
@@ -385,6 +426,24 @@ export function ProfileContent({
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Foods Disliked</span>
               <span className="text-xs font-medium text-gray-300 truncate max-w-[150px] text-right">{fitnessProfile?.foods_disliked || "None"}</span>
             </div>
+            {fitnessProfile?.daily_steps && (
+              <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+                <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Daily Steps</span>
+                <span className="text-xs font-extrabold text-white">{fitnessProfile.daily_steps}</span>
+              </div>
+            )}
+            {fitnessProfile?.wake_time && fitnessProfile?.sleep_time && (
+              <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+                <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Daily Schedule</span>
+                <span className="text-xs font-medium text-gray-300 text-right">Wake: {fitnessProfile.wake_time} | Sleep: {fitnessProfile.sleep_time}</span>
+              </div>
+            )}
+            {fitnessProfile?.work_time && (
+              <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+                <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Work Hours</span>
+                <span className="text-xs font-medium text-gray-300 text-right">{fitnessProfile.work_time}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Sleep Duration</span>
               <span className="text-xs font-extrabold text-white">{fitnessProfile?.sleep_duration || "Not specified"}</span>
