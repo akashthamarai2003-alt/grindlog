@@ -81,9 +81,9 @@ export function FitnessChatbot() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-[130px] right-6 p-4 rounded-full border-2 border-[#ADFF00] bg-[#0A1108] text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.4)] z-[60] hover:scale-105 transition-transform"
+            className="fixed bottom-[130px] right-6 p-3 rounded-full border-2 border-[#ADFF00] bg-[#0A1108] text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.4)] z-[60] hover:scale-105 transition-transform"
           >
-            <Bot className="w-6 h-6" />
+            <Bot className="w-5 h-5" />
           </motion.button>
         )}
       </AnimatePresence>
