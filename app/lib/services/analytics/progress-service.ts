@@ -219,11 +219,14 @@ export class ProgressAnalyticsService {
     
     // In a real optimized system, we'd do a sum/aggregate query, but fetching logs for the period is okay if scoped
     let completedSets: any[] = [];
+    const volumeByDate: Record<string, number> = {};
+
     try {
       const { data: workoutsWithSets } = await supabase
         .from('fitness_os_workouts')
         .select(`
           id,
+          created_at,
           fitness_os_exercises (
             fitness_os_sets (
               weight_kg,
@@ -238,13 +241,20 @@ export class ProgressAnalyticsService {
         
       if (workoutsWithSets) {
         workoutsWithSets.forEach(w => {
+          const dateStr = w.created_at.split('T')[0];
+          let dailyVolume = 0;
+
           w.fitness_os_exercises?.forEach((ex: any) => {
             ex.fitness_os_sets?.forEach((set: any) => {
               if (set.completed) {
                 completedSets.push(set);
+                dailyVolume += ((set.actual_reps || 0) * (set.weight_kg || 0));
               }
             });
           });
+
+          if (!volumeByDate[dateStr]) volumeByDate[dateStr] = 0;
+          volumeByDate[dateStr] += dailyVolume;
         });
       }
     } catch(e) {
@@ -255,6 +265,25 @@ export class ProgressAnalyticsService {
     const totalReps = completedSets.reduce((acc, e) => acc + (e.actual_reps || 0), 0);
     const trainingVolumeKg = completedSets.reduce((acc, e) => acc + ((e.actual_reps || 0) * (e.weight_kg || 0)), 0);
 
+    // Generate Weekly Chart (Last 7 Days)
+    const weeklyChartData = [];
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime());
+      d.setDate(d.getDate() - i);
+      const dayStr = d.toISOString().split('T')[0];
+      const dayName = daysOfWeek[d.getDay()];
+      
+      const vol = volumeByDate[dayStr] || 0;
+      const isCompleted = completedWorkouts.some(w => w.start_time?.startsWith(dayStr));
+      
+      weeklyChartData.push({
+        day: dayName,
+        volume: vol,
+        completed: isCompleted
+      });
+    }
+
     const workoutAnalytics: WorkoutAnalytics = {
       totalWorkouts,
       completedWorkouts: completedWorkouts.length,
@@ -264,7 +293,7 @@ export class ProgressAnalyticsService {
       totalReps,
       trainingVolumeKg,
       personalRecords: 0, // Placeholder
-      weeklyChart: [] // Placeholder for chart data grouping
+      weeklyChart: weeklyChartData
     };
 
     // 4.5 Fetch Nutrition Target

@@ -60,7 +60,7 @@ export function WorkoutAnalyticsCard({ metrics }: { metrics: WorkoutAnalytics })
                 contentStyle={{ backgroundColor: '#0A1108', border: '1px solid rgba(173,255,0,0.3)', borderRadius: '12px', color: '#fff', fontSize: '12px', fontWeight: 700 }}
                 itemStyle={{ color: '#ADFF00' }}
               />
-              <Bar dataKey="volume" radius={[4, 4, 4, 4]} barSize={24}>
+              <Bar dataKey="volume" radius={[4, 4, 4, 4]} barSize={24} minPointSize={4}>
                 {chartData.map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={entry.completed ? '#ADFF00' : 'rgba(255,255,255,0.05)'} />
                 ))}
