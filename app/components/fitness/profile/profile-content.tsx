@@ -147,7 +147,7 @@ export function ProfileContent({
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1108] text-white pb-32">
+    <div className="min-h-screen bg-[#0A1108] text-white pb-48">
       {/* Top Ambient Glow */}
       <div className="absolute top-0 left-0 right-0 h-72 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-70 z-0" />
 
@@ -232,7 +232,107 @@ export function ProfileContent({
           </div>
         </motion.div>
 
+        {/* Quick Settings & Actions List */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+          className="space-y-3"
+        >
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">
+            Account Options
+          </h2>
 
+          <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl overflow-hidden divide-y divide-[#1A2619]">
+            
+            {/* My Details */}
+            <Link 
+              href="/fitness/profile/details"
+              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
+                  <User className="w-4.5 h-4.5 group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">My Details</p>
+                  <p className="text-xs text-gray-400">View physical baseline, measurements, and training routine</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
+            </Link>
+
+            {/* Re-take Onboarding */}
+            <Link 
+              href="/fitness/onboarding?mode=edit"
+              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
+                  <RefreshCw className="w-4.5 h-4.5 group-hover:rotate-180 transition-transform duration-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Re-generate AI Plan</p>
+                  <p className="text-xs text-gray-400">Re-take questionnaire to update your strategy</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
+            </Link>
+
+            {/* Set Reminders */}
+            <Link 
+              href="/fitness/reminders"
+              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
+                  <Bell className="w-4.5 h-4.5 group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Set Reminders</p>
+                  <p className="text-xs text-gray-400">Configure your daily fitness & nutrition alerts</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
+            </Link>
+
+            {/* Billing */}
+            <Link 
+              href="/fitness/payment"
+              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-cyan-400">
+                  <CreditCard className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Billing & Payment</p>
+                  <p className="text-xs text-gray-400">View pricing, invoices, or upgrade membership</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+            </Link>
+
+            {/* Sign Out Button */}
+            <button 
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+              className="w-full p-4 flex items-center justify-between hover:bg-red-500/10 transition-colors text-left group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                  <LogOut className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-red-400">Sign Out</p>
+                  <p className="text-xs text-gray-400">Log out of your Fitness OS account</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-red-400 transition-colors" />
+            </button>
+
+          </div>
+        </motion.div>
 
       </div>
 
