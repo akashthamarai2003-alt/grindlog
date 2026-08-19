@@ -172,7 +172,7 @@ export function FitnessLandingPage() {
 
           <div className="flex items-center gap-4">
             <Link
-              href="/auth/signin"
+              href="/auth/signin?redirect=/fitness"
               className="text-sm font-semibold text-gray-300 hover:text-white transition-colors px-4 py-2 rounded-full hover:bg-white/5"
             >
               Log in
@@ -254,7 +254,7 @@ export function FitnessLandingPage() {
           className="mt-6 text-sm text-gray-400"
         >
           Already have an account?{" "}
-          <Link href="/auth/signin" className="text-[#ADFF00] font-semibold underline underline-offset-4 hover:text-white transition-colors">
+          <Link href="/auth/signin?redirect=/fitness" className="text-[#ADFF00] font-semibold underline underline-offset-4 hover:text-white transition-colors">
             Log in
           </Link>
         </motion.div>
