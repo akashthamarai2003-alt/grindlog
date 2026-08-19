@@ -103,11 +103,10 @@ export function FitnessChatbot() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 z-[101] flex flex-col bg-[#0A1108] rounded-t-[32px] border-t border-white/10 shadow-2xl"
-              style={{ maxHeight: '85dvh', height: '100%' }}
+              className="fixed inset-0 sm:inset-auto sm:bottom-0 sm:left-0 sm:right-0 z-[101] flex flex-col bg-[#0A1108] sm:rounded-t-[32px] shadow-2xl overflow-hidden h-full sm:max-h-[85dvh]"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
+              <div className="sticky top-0 z-20 flex items-center justify-between p-4 sm:p-5 pt-[calc(1rem+env(safe-area-inset-top))] sm:pt-5 border-b border-white/5 shrink-0 bg-[#0A1108]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[#ADFF00]/10 flex items-center justify-center border border-[#ADFF00]/20">
                     <Bot className="w-5 h-5 text-[#ADFF00]" />
