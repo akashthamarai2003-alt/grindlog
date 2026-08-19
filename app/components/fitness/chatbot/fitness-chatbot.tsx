@@ -90,20 +90,21 @@ export function FitnessChatbot() {
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[100] flex flex-col justify-end">
+          <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-full h-full max-h-[85dvh] bg-[#0A1108] rounded-t-[32px] z-[101] flex flex-col border-t border-white/10 shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 z-[101] flex flex-col bg-[#0A1108] rounded-t-[32px] border-t border-white/10 shadow-2xl"
+              style={{ maxHeight: '85dvh', height: '100%' }}
             >
               {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
@@ -158,13 +159,13 @@ export function FitnessChatbot() {
               {/* Input Area */}
               <form onSubmit={sendMessage} className="p-4 sm:p-5 border-t border-white/5 bg-[#0A1108] shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5">
                 <div className="relative">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask about your progress..."
-                    className="w-full bg-[#111A10] border border-white/10 rounded-full py-4 pl-5 pr-14 text-sm font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#ADFF00]/50 transition-colors"
-                  />
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Ask about your progress..."
+                      className="w-full bg-[#111A10] border border-white/10 rounded-full py-4 pl-5 pr-14 text-[16px] font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#ADFF00]/50 transition-colors"
+                    />
                   <button 
                     type="submit"
                     disabled={!input.trim() || isLoading}
@@ -175,7 +176,7 @@ export function FitnessChatbot() {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </>
         )}
       </AnimatePresence>
     </>
