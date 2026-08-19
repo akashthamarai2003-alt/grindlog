@@ -57,20 +57,36 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
 
   return (
     <div className="w-full flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
-          Body Progress
-        </h2>
-        <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/5">
-          {['front', 'left', 'right', 'back'].map(v => (
-            <button
-              key={v}
-              onClick={() => setView(v as any)}
-              className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md transition-all ${view === v ? 'bg-[#ADFF00] text-black' : 'text-white/40 hover:text-white'}`}
-            >
-              {v}
-            </button>
-          ))}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
+            Body Progress
+          </h2>
+          <Link 
+            href="/fitness/progress/add-scan" 
+            className="sm:hidden flex items-center justify-center w-7 h-7 bg-[#ADFF00]/10 text-[#ADFF00] rounded-full border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors"
+          >
+            <Camera className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/5">
+            {['front', 'left', 'right', 'back'].map(v => (
+              <button
+                key={v}
+                onClick={() => setView(v as any)}
+                className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md transition-all ${view === v ? 'bg-[#ADFF00] text-black' : 'text-white/40 hover:text-white'}`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+          <Link 
+            href="/fitness/progress/add-scan" 
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-[#ADFF00]/10 text-[#ADFF00] rounded-md font-black text-[9px] uppercase tracking-widest border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors"
+          >
+            <Camera className="w-3 h-3" /> Add
+          </Link>
         </div>
       </div>
 
