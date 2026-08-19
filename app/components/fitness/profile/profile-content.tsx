@@ -232,6 +232,58 @@ export function ProfileContent({
           </div>
         </motion.div>
 
+        {/* Subscription & AI Usage Meter */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="space-y-3"
+        >
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-[#ADFF00]" />
+            <span>Subscription & AI Credits</span>
+          </h2>
+
+          <div className="bg-[#121E12] border border-[#1A2619] p-5 rounded-3xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Current Membership</p>
+                <h3 className="text-xl font-black text-white capitalize mt-0.5">
+                  Fitness AI {premiumLevel} Plan
+                </h3>
+              </div>
+              <Link 
+                href="/fitness/payment"
+                className="px-4 py-2 bg-[#ADFF00] text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(173,255,0,0.25)] hover:bg-[#b8ff1a] transition-all active:scale-95 flex items-center gap-1.5"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                <span>{isPremium ? "Manage Plan" : "Upgrade Pro"}</span>
+              </Link>
+            </div>
+
+            {/* AI Usage Bar */}
+            <div className="bg-[#0A1108] p-4 rounded-2xl border border-[#1A2619]">
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="font-bold text-gray-300 flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-[#ADFF00]" />
+                  AI Daily Generations
+                </span>
+                <span className={`font-bold ${aiLimitInfo.remaining === 0 ? "text-red-400" : "text-[#ADFF00]"}`}>
+                  {aiLimitInfo.remaining} / {aiLimitInfo.limit} remaining
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-[#1A2619] overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    aiLimitInfo.remaining === 0 ? "bg-red-500" : "bg-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)]"
+                  }`}
+                  style={{ width: `${Math.min(100, Math.max(0, (aiLimitInfo.used / aiLimitInfo.limit) * 100))}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Quick Settings & Actions List */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
