@@ -3,12 +3,10 @@
 import { useState, useEffect } from "react";
 import { AIProgressReview } from "@/types/fitness/analytics";
 import { Bot, CheckCircle2, ChevronRight, Sparkles, XCircle, Loader2 } from "lucide-react";
-import { ProgressChatModal } from "./progress-chat-modal";
 
 export function AIProgressReviewCard({ initialReview, period = '30D' }: { initialReview: AIProgressReview | null, period?: string }) {
   const [review, setReview] = useState<AIProgressReview | null>(initialReview);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // If there's no initial review, we can optionally auto-generate or wait for user interaction.
   // For safety and rate limits, we'll wait for user interaction if it's completely missing,
@@ -116,17 +114,11 @@ export function AIProgressReviewCard({ initialReview, period = '30D' }: { initia
           </div>
         )}
 
-        <div className="flex items-center gap-2 relative z-10">
-          <button 
-            onClick={() => setIsChatOpen(true)}
-            className="flex-1 flex items-center justify-center gap-2 p-3 bg-[#ADFF00]/10 rounded-xl border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-all"
-          >
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#ADFF00]">Ask AI</span>
-          </button>
+        <div className="flex items-center justify-center relative z-10">
           <button 
             onClick={() => generateReview(true)}
             disabled={isGenerating}
-            className="flex-1 flex items-center justify-center gap-2 p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all disabled:opacity-50"
           >
             {isGenerating ? (
               <Loader2 className="w-3 h-3 text-white/60 animate-spin" />
@@ -136,8 +128,6 @@ export function AIProgressReviewCard({ initialReview, period = '30D' }: { initia
           </button>
         </div>
       </div>
-
-      <ProgressChatModal isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
 }
