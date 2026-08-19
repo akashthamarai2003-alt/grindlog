@@ -2,6 +2,8 @@
 
 import { Bell } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/services/supabase/client";
 
 interface DashboardHeaderProps {
   name: string;
@@ -10,6 +12,27 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderProps) {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchUnreadCount() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count } = await supabase
+        .from('in_app_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+      
+      if (count !== null) {
+        setUnreadCount(count);
+      }
+    }
+    fetchUnreadCount();
+  }, []);
+
   // Determine time of day for greeting
   const hour = new Date().getHours();
   let greeting = "Good Evening";
@@ -48,9 +71,11 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
         <Link href="/fitness/notifications" className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center relative hover:bg-[#1A2619] transition-colors">
           <Bell size={18} className="text-gray-300" />
           {/* Notification Dot */}
-          <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-[#121E12] flex items-center justify-center">
-            <span className="text-[9px] font-bold text-white leading-none">3</span>
-          </div>
+          {unreadCount > 0 && (
+            <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-[#121E12] flex items-center justify-center">
+              <span className="text-[9px] font-bold text-white leading-none">{unreadCount > 9 ? '9+' : unreadCount}</span>
+            </div>
+          )}
         </Link>
       </div>
     </div>
