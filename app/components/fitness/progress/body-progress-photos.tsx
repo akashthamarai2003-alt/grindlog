@@ -34,6 +34,7 @@ function SafeImage({ src, alt, className, style }: { src: string, alt: string, c
 export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | null, latest: BodyPhotoScan | null }) {
   const [view, setView] = useState<'front' | 'left' | 'right' | 'back'>('front');
   const [sliderPos, setSliderPos] = useState(50);
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   const handleAddClick = (e: React.MouseEvent) => {
     if (latest?.date) {
@@ -44,7 +45,7 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
       
       if (days < 14) {
         e.preventDefault();
-        toast.error("Please wait 14 days between progress photos to see real changes.");
+        setShowWarningModal(true);
       }
     }
   };
@@ -159,6 +160,31 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
         </div>
 
       </div>
+
+      {/* Centered Warning Modal */}
+      {showWarningModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#111A10] border border-[#1A2619] rounded-2xl p-6 max-w-xs w-full flex flex-col items-center text-center shadow-2xl relative"
+          >
+            <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mb-4">
+              <Camera className="w-6 h-6" />
+            </div>
+            <h3 className="text-white font-bold text-lg mb-2">Wait! Too Soon.</h3>
+            <p className="text-white/60 text-sm mb-6 leading-relaxed">
+              You need to workout consistently for <strong className="text-white">14 days</strong> before taking a new picture!
+            </p>
+            <button 
+              onClick={() => setShowWarningModal(false)}
+              className="w-full py-3 bg-[#ADFF00] text-black font-black uppercase tracking-widest text-xs rounded-xl hover:bg-[#baff22] transition-colors"
+            >
+              Got it
+            </button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
