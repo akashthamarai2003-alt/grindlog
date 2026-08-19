@@ -93,7 +93,7 @@ export class ProgressAnalyticsService {
 
       const [workoutRes, nutritionRes, activityRes] = await Promise.all([
         supabase.from('fitness_os_workout_sessions').select('start_time').eq('user_id', userId).eq('status', 'completed').gte('start_time', lookbackDateStr),
-        supabase.from('nutrition_daily_summary').select('date').eq('user_id', userId).gte('date', lookbackDateStr),
+        supabase.from('nutrition_daily_summary').select('date').eq('user_id', userId).or('calories.gt.0,water_ml.gt.0').gte('date', lookbackDateStr),
         supabase.from('fitness_os_activity_logs').select('activity_date').eq('user_id', userId).gte('activity_date', lookbackDateStr)
       ]);
 
