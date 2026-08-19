@@ -90,7 +90,7 @@ export function FitnessChatbot() {
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[100] flex flex-col justify-end" style={{ height: '100dvh' }}>
+          <div className="fixed inset-0 z-[100] flex flex-col justify-end">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -103,7 +103,7 @@ export function FitnessChatbot() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-full h-[85dvh] max-h-[100%] bg-[#0A1108] rounded-t-[32px] z-[101] flex flex-col border-t border-white/10 shadow-2xl"
+              className="relative w-full h-full max-h-[85dvh] bg-[#0A1108] rounded-t-[32px] z-[101] flex flex-col border-t border-white/10 shadow-2xl"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
@@ -128,10 +128,10 @@ export function FitnessChatbot() {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "user" ? "bg-white/10" : "bg-[#ADFF00]/10 border border-[#ADFF00]/20"}`}>
                       {msg.role === "user" ? <User className="w-4 h-4 text-white/80" /> : <Bot className="w-4 h-4 text-[#ADFF00]" />}
                     </div>
-                    <div className={`p-4 rounded-[20px] text-[13px] leading-relaxed font-medium ${
+                    <div className={`px-4 py-2.5 rounded-[20px] text-[14px] leading-relaxed font-medium ${
                       msg.role === "user" 
-                        ? "bg-[#ADFF00] text-black rounded-tr-sm" 
-                        : "bg-[#111A10] text-white/90 border border-white/5 rounded-tl-sm prose prose-sm prose-invert prose-p:leading-relaxed prose-strong:text-[#ADFF00] max-w-none"
+                        ? "bg-[#ADFF00] text-black rounded-tr-[4px]" 
+                        : "bg-[#111A10] text-white/90 border border-white/5 rounded-tl-[4px] prose prose-sm prose-invert prose-p:leading-relaxed prose-strong:text-[#ADFF00] max-w-none"
                     }`}>
                       {msg.role === "user" ? (
                         msg.content
