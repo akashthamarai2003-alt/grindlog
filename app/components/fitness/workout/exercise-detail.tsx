@@ -377,33 +377,24 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
       </div>
 
       {/* Instructions & Tips */}
-      <div className="w-full h-px bg-white/10 my-8" />
-      
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col">
-          <h3 className="text-[11px] font-black tracking-[0.2em] text-white/50 uppercase mb-3">
-            How to perform
-          </h3>
-          <ol className="list-decimal list-inside text-sm font-medium text-white/80 space-y-2 leading-relaxed">
-            <li>Lie flat on the bench.</li>
-            <li>Grip the bar slightly wider than shoulders.</li>
-            <li>Lower the bar under control.</li>
-            <li>Press upward without bouncing.</li>
-          </ol>
-        </div>
-
-        <div className="bg-[#111A10] border border-white/5 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-2">
-            <Bot className="w-4 h-4 text-[#ADFF00]" />
-            <h3 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
-              AI Tip
-            </h3>
+      {exercise.notes && (
+        <>
+          <div className="w-full h-px bg-white/10 my-8" />
+          <div className="flex flex-col gap-6">
+            <div className="bg-[#111A10] border border-[#ADFF00]/10 rounded-2xl p-5 shadow-[0_0_15px_rgba(173,255,0,0.02)]">
+              <div className="flex items-center gap-2 mb-2">
+                <Bot className="w-4 h-4 text-[#ADFF00]" />
+                <h3 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
+                  AI Tip
+                </h3>
+              </div>
+              <p className="text-sm font-medium text-white/80 leading-relaxed italic border-l-2 border-[#ADFF00]/50 pl-3">
+                "{exercise.notes}"
+              </p>
+            </div>
           </div>
-          <p className="text-sm font-medium text-white/80 leading-relaxed italic border-l-2 border-[#ADFF00]/50 pl-3">
-            "Keep your shoulder blades stable and control the lowering phase."
-          </p>
-        </div>
-      </div>
+        </>
+      )}
 
     </div>
   );
