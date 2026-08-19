@@ -90,20 +90,20 @@ export function FitnessChatbot() {
 
       <AnimatePresence>
         {isOpen && (
-          <>
+          <div className="fixed inset-0 z-[100] flex flex-col justify-end" style={{ height: '100dvh' }}>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed inset-x-0 bottom-0 h-[85vh] bg-[#0A1108] rounded-t-[32px] z-[101] flex flex-col border-t border-white/10 shadow-2xl"
+              className="relative w-full h-[85dvh] max-h-[100%] bg-[#0A1108] rounded-t-[32px] z-[101] flex flex-col border-t border-white/10 shadow-2xl"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
@@ -156,7 +156,7 @@ export function FitnessChatbot() {
               </div>
 
               {/* Input Area */}
-              <form onSubmit={sendMessage} className="p-5 border-t border-white/5 bg-[#0A1108] shrink-0">
+              <form onSubmit={sendMessage} className="p-4 sm:p-5 border-t border-white/5 bg-[#0A1108] shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5">
                 <div className="relative">
                   <input
                     type="text"
@@ -175,7 +175,7 @@ export function FitnessChatbot() {
                 </div>
               </form>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </>
