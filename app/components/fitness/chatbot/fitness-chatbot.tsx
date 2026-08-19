@@ -21,6 +21,7 @@ export function FitnessChatbot() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [vvh, setVvh] = useState("100dvh");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -30,6 +31,23 @@ export function FitnessChatbot() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading, isOpen]);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (window.visualViewport) {
+        setVvh(`${window.visualViewport.height}px`);
+      }
+    };
+    
+    updateHeight();
+    window.visualViewport?.addEventListener("resize", updateHeight);
+    window.visualViewport?.addEventListener("scroll", updateHeight);
+    
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateHeight);
+      window.visualViewport?.removeEventListener("scroll", updateHeight);
+    };
+  }, []);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,20 +108,21 @@ export function FitnessChatbot() {
 
       <AnimatePresence>
         {isOpen && (
-          <>
+          <div className="fixed inset-0 z-[100] flex flex-col justify-end">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed inset-0 sm:inset-auto sm:bottom-0 sm:left-0 sm:right-0 z-[101] flex flex-col bg-[#0A1108] sm:rounded-t-[32px] shadow-2xl overflow-hidden h-full sm:max-h-[85dvh]"
+              className="fixed bottom-0 left-0 right-0 z-[101] flex flex-col bg-[#0A1108] sm:rounded-t-[32px] shadow-2xl overflow-hidden sm:!h-auto sm:!max-h-[85dvh]"
+              style={{ height: vvh }}
             >
               {/* Header */}
               <div className="sticky top-0 z-20 flex items-center justify-between p-4 sm:p-5 pt-[calc(1rem+env(safe-area-inset-top))] sm:pt-5 border-b border-white/5 shrink-0 bg-[#0A1108]">
