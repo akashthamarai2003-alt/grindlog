@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 // Configure R2 using env variables
 const r2Client = new S3Client({
@@ -64,19 +64,74 @@ export async function POST(req: Request) {
        return NextResponse.json({ success: false, error: 'Failed to upload images' }, { status: 500 });
     }
 
-    const { error: scanError } = await supabase
+    // Check existing scans
+    const { data: existingScans } = await supabase
       .from('fitness_os_body_scans')
-      .insert({
-        user_id: user.id,
-        front_image_url: frontUrl,
-        side_image_url: sideUrl,
-        left_image_url: leftUrl,
-        right_image_url: rightUrl,
-        back_image_url: backUrl,
-        scan_date: new Date().toISOString().split('T')[0]
-      });
+      .select('*')
+      .eq('user_id', user.id)
+      .order('scan_date', { ascending: true });
 
-    if (scanError) throw scanError;
+    if (existingScans && existingScans.length >= 2) {
+      // Replace the latest scan (the last one in the array)
+      const latestScan = existingScans[existingScans.length - 1];
+      
+      // Delete old photos from R2
+      const deleteImage = async (url: string | null) => {
+        if (!url) return;
+        try {
+          const publicUrlBase = process.env.R2_PUBLIC_URL || '';
+          if (url.startsWith(publicUrlBase)) {
+            const key = url.slice(publicUrlBase.length + 1);
+            const command = new DeleteObjectCommand({
+              Bucket: process.env.R2_BUCKET_NAME,
+              Key: key
+            });
+            await r2Client.send(command);
+          }
+        } catch (err) {
+          console.error("Failed to delete old image:", err);
+        }
+      };
+
+      await Promise.all([
+        deleteImage(latestScan.front_image_url),
+        deleteImage(latestScan.side_image_url),
+        deleteImage(latestScan.left_image_url),
+        deleteImage(latestScan.right_image_url),
+        deleteImage(latestScan.back_image_url),
+      ]);
+
+      // Update record
+      const { error: scanError } = await supabase
+        .from('fitness_os_body_scans')
+        .update({
+          front_image_url: frontUrl,
+          side_image_url: sideUrl,
+          left_image_url: leftUrl,
+          right_image_url: rightUrl,
+          back_image_url: backUrl,
+          scan_date: new Date().toISOString().split('T')[0]
+        })
+        .eq('id', latestScan.id);
+        
+      if (scanError) throw scanError;
+
+    } else {
+      // Insert new scan
+      const { error: scanError } = await supabase
+        .from('fitness_os_body_scans')
+        .insert({
+          user_id: user.id,
+          front_image_url: frontUrl,
+          side_image_url: sideUrl,
+          left_image_url: leftUrl,
+          right_image_url: rightUrl,
+          back_image_url: backUrl,
+          scan_date: new Date().toISOString().split('T')[0]
+        });
+
+      if (scanError) throw scanError;
+    }
 
     return NextResponse.json({ success: true, frontUrl, sideUrl, leftUrl, rightUrl, backUrl });
 

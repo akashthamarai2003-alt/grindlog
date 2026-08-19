@@ -5,6 +5,7 @@ import { BodyPhotoScan } from "@/types/fitness/analytics";
 import { Camera, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { toast } from "sonner";
 
 function SafeImage({ src, alt, className, style }: { src: string, alt: string, className?: string, style?: any }) {
   const [error, setError] = useState(false);
@@ -33,6 +34,20 @@ function SafeImage({ src, alt, className, style }: { src: string, alt: string, c
 export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | null, latest: BodyPhotoScan | null }) {
   const [view, setView] = useState<'front' | 'left' | 'right' | 'back'>('front');
   const [sliderPos, setSliderPos] = useState(50);
+
+  const handleAddClick = (e: React.MouseEvent) => {
+    if (latest?.date) {
+      const lastDate = new Date(latest.date);
+      const today = new Date();
+      const diff = Math.abs(today.getTime() - lastDate.getTime());
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      
+      if (days < 14) {
+        e.preventDefault();
+        toast.error("Please wait 14 days between progress photos to see real changes.");
+      }
+    }
+  };
 
   if (!first || !latest) {
     return (
@@ -64,6 +79,7 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
           </h2>
           <Link 
             href="/fitness/progress/add-scan" 
+            onClick={handleAddClick}
             className="sm:hidden flex items-center justify-center w-7 h-7 bg-[#ADFF00]/10 text-[#ADFF00] rounded-full border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors"
           >
             <Camera className="w-3.5 h-3.5" />
@@ -83,6 +99,7 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
           </div>
           <Link 
             href="/fitness/progress/add-scan" 
+            onClick={handleAddClick}
             className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-[#ADFF00]/10 text-[#ADFF00] rounded-md font-black text-[9px] uppercase tracking-widest border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors"
           >
             <Camera className="w-3 h-3" /> Add
