@@ -2,7 +2,7 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { MyDetailsContent } from "@/components/fitness/profile/my-details-content";
 import { redirect } from "next/navigation";
-import { checkFitnessAILimit } from "@/app/actions/fitness";
+import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 
 export default async function MyDetailsPage() {
   const supabase = await createServerSupabase();
