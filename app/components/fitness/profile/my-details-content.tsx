@@ -444,6 +444,7 @@ export function MyDetailsContent({
             </div>
           </div>
         </motion.div>
+      </div>
 
       {/* Edit Details Modal */}
       <AnimatePresence>
