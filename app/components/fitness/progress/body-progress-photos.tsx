@@ -6,6 +6,30 @@ import { Camera, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-rea
 import { motion } from "framer-motion";
 import Link from "next/link";
 
+function SafeImage({ src, alt, className, style }: { src: string, alt: string, className?: string, style?: any }) {
+  const [error, setError] = useState(false);
+  if (error || !src) {
+    return (
+      <div 
+        className={`flex items-center justify-center bg-[#111A10] text-white/20 text-xs font-bold uppercase tracking-widest pointer-events-none ${className}`}
+        style={style}
+      >
+        Image Deleted
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img 
+      src={src} 
+      alt={alt} 
+      className={className} 
+      style={style} 
+      onError={() => setError(true)} 
+    />
+  );
+}
+
 export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | null, latest: BodyPhotoScan | null }) {
   const [view, setView] = useState<'front' | 'left' | 'right' | 'back'>('front');
   const [sliderPos, setSliderPos] = useState(50);
@@ -55,16 +79,14 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
         <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden touch-none">
           {/* After Image (Base) */}
           {afterImg ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={afterImg} alt="Latest Scan" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+            <SafeImage src={afterImg} alt="Latest Scan" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-white/20 text-xs font-bold uppercase tracking-widest">No Image</div>
           )}
 
           {/* Before Image (Clipped) */}
           {beforeImg ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img 
+            <SafeImage 
               src={beforeImg} 
               alt="First Scan" 
               className="absolute inset-0 w-full h-full object-cover pointer-events-none" 
