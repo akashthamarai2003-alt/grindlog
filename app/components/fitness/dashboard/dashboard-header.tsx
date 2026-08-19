@@ -32,11 +32,14 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
         </div>
         
         <div className="flex flex-col">
-          <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-1">
-            {greeting}, {name} <span className="text-xl">👋</span>
+          <p className="text-sm font-medium text-white/60 flex items-center gap-1">
+            {greeting} <span>👋</span>
+          </p>
+          <h1 className="text-xl font-bold text-white tracking-tight leading-tight max-w-[200px] truncate">
+            {name}
           </h1>
-          <p className="text-xs text-gray-400 font-medium">
-            Day {dayNumber} of your transformation
+          <p className="text-[11px] text-gray-400 font-medium tracking-widest uppercase mt-0.5">
+            Day {dayNumber} of transformation
           </p>
         </div>
       </div>
@@ -45,7 +48,9 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
         <Link href="/fitness/notifications" className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center relative hover:bg-[#1A2619] transition-colors">
           <Bell size={18} className="text-gray-300" />
           {/* Notification Dot */}
-          <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#121E12]" />
+          <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-[#121E12] flex items-center justify-center">
+            <span className="text-[9px] font-bold text-white leading-none">3</span>
+          </div>
         </Link>
       </div>
     </div>
