@@ -174,7 +174,7 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
             </div>
             <h3 className="text-white font-bold text-lg mb-2">Wait! Too Soon.</h3>
             <p className="text-white/60 text-sm mb-6 leading-relaxed">
-              You need to workout consistently for <strong className="text-white">14 days</strong> before taking a new picture!
+              You need to workout consistently for <strong className="text-white">14 days</strong> before taking a new picture to see real changes!
             </p>
             <button 
               onClick={() => setShowWarningModal(false)}
