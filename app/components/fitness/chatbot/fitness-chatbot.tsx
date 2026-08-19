@@ -194,7 +194,7 @@ export function FitnessChatbot() {
                 </div>
               </form>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </>
