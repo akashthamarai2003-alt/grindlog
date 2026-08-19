@@ -44,8 +44,25 @@ export function BodyMeasurementsList({ measurements, isBulking = false }: { meas
         {/* List */}
         <div className="flex flex-col">
           {measurements.map((m, idx) => {
-            const isGood = isBulking ? m.change > 0 : m.change < 0;
-            const isBad = isBulking ? m.change < 0 : m.change > 0;
+            const isMuscleGroup = /arm|chest|thigh|calf|shoulder|bicep|tricep|glute|forearm/i.test(m.name);
+            const isFatMarker = /waist|hip|neck|belly|stomach/i.test(m.name);
+
+            let isGood = false;
+            let isBad = false;
+
+            if (isMuscleGroup) {
+              // For muscles: growing is always good, shrinking is bad
+              isGood = m.change > 0;
+              isBad = m.change < 0;
+            } else if (isFatMarker) {
+              // For fat markers (waist/hips): shrinking is good, growing is bad
+              isGood = m.change < 0;
+              isBad = m.change > 0;
+            } else {
+              // Fallback
+              isGood = isBulking ? m.change > 0 : m.change < 0;
+              isBad = isBulking ? m.change < 0 : m.change > 0;
+            }
             const textColorClass = isGood ? 'text-[#ADFF00]' : isBad ? 'text-red-400' : 'text-white/30';
 
             return (
