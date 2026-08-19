@@ -6,7 +6,7 @@ export async function FitnessGuard({ children, requirePro = false }: { children:
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?redirect=/fitness");
   }
 
   const { data: profile } = await supabase

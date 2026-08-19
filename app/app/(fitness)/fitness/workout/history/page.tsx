@@ -9,7 +9,7 @@ export default async function WorkoutHistoryPage() {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?redirect=/fitness");
   }
 
   const { data: workouts, error } = await supabase

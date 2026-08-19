@@ -10,7 +10,7 @@ export default async function ScannerPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?redirect=/fitness");
   }
 
   // Prevent users who already have an active plan from re-scanning unless regenerating

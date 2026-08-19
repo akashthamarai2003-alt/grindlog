@@ -9,7 +9,7 @@ export default async function FitnessProfilePage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?redirect=/fitness");
   }
 
   // 1. Fetch Fitness OS Profile

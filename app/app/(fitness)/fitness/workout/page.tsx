@@ -16,7 +16,7 @@ export default async function WorkoutIndexPage() {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?redirect=/fitness");
   }
 
   const workout = await WorkoutService.getTodayWorkout(user.id);
