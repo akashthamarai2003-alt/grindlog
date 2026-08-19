@@ -147,7 +147,7 @@ export function ProfileContent({
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1108] text-white pb-32">
+    <div className="min-h-screen bg-[#0A1108] text-white pb-48">
       {/* Top Ambient Glow */}
       <div className="absolute top-0 left-0 right-0 h-72 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-70 z-0" />
 

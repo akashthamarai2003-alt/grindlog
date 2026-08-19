@@ -147,7 +147,7 @@ export function MyDetailsContent({
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1108] text-white pb-32">
+    <div className="min-h-screen bg-[#0A1108] text-white pb-48">
       {/* Top Ambient Glow */}
       <div className="absolute top-0 left-0 right-0 h-72 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-70 z-0" />
 
@@ -445,145 +445,6 @@ export function MyDetailsContent({
           </div>
         </motion.div>
 
-        {/* Subscription & AI Usage Meter */}
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="space-y-3"
-        >
-          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[#ADFF00]" />
-            <span>Subscription & AI Credits</span>
-          </h2>
-
-          <div className="bg-[#121E12] border border-[#1A2619] p-5 rounded-3xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Current Membership</p>
-                <h3 className="text-xl font-black text-white capitalize mt-0.5">
-                  Fitness AI {premiumLevel} Plan
-                </h3>
-              </div>
-              <Link 
-                href="/fitness/payment"
-                className="px-4 py-2 bg-[#ADFF00] text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(173,255,0,0.25)] hover:bg-[#b8ff1a] transition-all active:scale-95 flex items-center gap-1.5"
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>{isPremium ? "Manage Plan" : "Upgrade Pro"}</span>
-              </Link>
-            </div>
-
-            {/* AI Usage Bar */}
-            <div className="bg-[#0A1108] p-4 rounded-2xl border border-[#1A2619]">
-              <div className="flex items-center justify-between text-xs mb-2">
-                <span className="font-bold text-gray-300 flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-[#ADFF00]" />
-                  AI Daily Generations
-                </span>
-                <span className={`font-bold ${aiLimitInfo.remaining === 0 ? "text-red-400" : "text-[#ADFF00]"}`}>
-                  {aiLimitInfo.remaining} / {aiLimitInfo.limit} remaining
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-[#1A2619] overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    aiLimitInfo.remaining === 0 ? "bg-red-500" : "bg-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)]"
-                  }`}
-                  style={{ width: `${Math.min(100, Math.max(0, (aiLimitInfo.used / aiLimitInfo.limit) * 100))}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Quick Settings & Actions List */}
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
-          className="space-y-3"
-        >
-          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 px-1">
-            Account Options
-          </h2>
-
-          <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl overflow-hidden divide-y divide-[#1A2619]">
-            
-            {/* Re-take Onboarding */}
-            <Link 
-              href="/fitness/onboarding?mode=edit"
-              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
-                  <RefreshCw className="w-4.5 h-4.5 group-hover:rotate-180 transition-transform duration-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white">Re-generate AI Plan</p>
-                  <p className="text-xs text-gray-400">Re-take questionnaire to update your strategy</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
-            </Link>
-
-            {/* Set Reminders */}
-            <Link 
-              href="/fitness/reminders"
-              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
-                  <Bell className="w-4.5 h-4.5 group-hover:scale-110 transition-transform duration-300" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white">Set Reminders</p>
-                  <p className="text-xs text-gray-400">Configure your daily fitness & nutrition alerts</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
-            </Link>
-
-            {/* Billing */}
-            <Link 
-              href="/fitness/payment"
-              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-cyan-400">
-                  <CreditCard className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white">Billing & Payment</p>
-                  <p className="text-xs text-gray-400">View pricing, invoices, or upgrade membership</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
-            </Link>
-
-            {/* Sign Out Button */}
-            <button 
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-              className="w-full p-4 flex items-center justify-between hover:bg-red-500/10 transition-colors text-left group cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-                  <LogOut className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-red-400">Sign Out</p>
-                  <p className="text-xs text-gray-400">Log out of your Fitness OS account</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-red-400 transition-colors" />
-            </button>
-
-          </div>
-        </motion.div>
-
-      </div>
-
       {/* Edit Details Modal */}
       <AnimatePresence>
         {showEditModal && (
@@ -761,5 +622,6 @@ export function MyDetailsContent({
     </div>
   );
 }
+
 
 
