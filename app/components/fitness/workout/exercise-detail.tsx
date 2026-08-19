@@ -2,20 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, PlayCircle, Bot, Check, Loader2, MoreHorizontal, Pencil, X } from "lucide-react";
+import { ArrowLeft, PlayCircle, Bot, Check, Loader2, MoreHorizontal, Pencil, X, Timer } from "lucide-react";
 import Link from "next/link";
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 
 interface ExerciseDetailProps {
   exercise: FitnessExercise & { fitness_os_sets: FitnessSet[] };
   workoutId: string;
   sessionId: string;
+  startedAt?: string | null;
+  isPaused?: boolean;
 }
 
-export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetailProps) {
+export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused }: ExerciseDetailProps) {
   const router = useRouter();
+  const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
+  
   const sortedSets = [...exercise.fitness_os_sets].sort((a, b) => a.set_number - b.set_number);
   
   const [activeRestSeconds, setActiveRestSeconds] = useState<number | null>(null);
@@ -145,7 +150,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
   };
 
   return (
-    <div className="w-full flex flex-col pb-32">
+    <div className="w-full h-full flex flex-col pb-32">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -161,6 +166,16 @@ export function ExerciseDetail({ exercise, workoutId, sessionId }: ExerciseDetai
           </button>
           <h1 className="text-xl font-black text-white tracking-tight uppercase">BACK</h1>
         </div>
+        
+        {/* Global Workout Timer Display */}
+        {startedAt && (
+          <div className="flex items-center gap-1.5 bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1 rounded-md">
+            <Timer className={`w-3.5 h-3.5 ${isPaused ? 'text-white/50' : 'text-[#ADFF00]'}`} />
+            <span className={`text-xs font-black tracking-widest ${isPaused ? 'text-white/50' : 'text-[#ADFF00]'}`}>
+              {formattedTime}
+            </span>
+          </div>
+        )}
       </div>
 
       <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-4">

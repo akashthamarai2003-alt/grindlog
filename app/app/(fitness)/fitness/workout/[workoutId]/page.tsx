@@ -61,6 +61,9 @@ export default async function ActiveWorkoutPage({
               <WorkoutHeader 
                 title={mockWorkout.name}
                 backUrl="/fitness/workout"
+                startedAt={new Date().toISOString()}
+                isPaused={false}
+                workoutId={mockWorkout.id}
               />
             )}
             
@@ -69,6 +72,8 @@ export default async function ActiveWorkoutPage({
                 exercise={activeExercise as any} 
                 workoutId={mockWorkout.id} 
                 sessionId="mock-session"
+                startedAt={new Date().toISOString()}
+                isPaused={false}
               />
             ) : (
               <WorkoutExecution workout={mockWorkout as any} sessionId="mock-session" />
@@ -128,6 +133,10 @@ export default async function ActiveWorkoutPage({
             <WorkoutHeader 
               title={workout.name}
               backUrl="/fitness/workout"
+              avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
+              startedAt={activeSession.started_at}
+              isPaused={activeSession.status === "paused"}
+              workoutId={workout.id}
             />
           )}
           
@@ -136,6 +145,8 @@ export default async function ActiveWorkoutPage({
               exercise={activeExercise} 
               workoutId={workout.id} 
               sessionId={activeSession.id}
+              startedAt={activeSession.started_at}
+              isPaused={activeSession.status === "paused"}
             />
           ) : (
             <WorkoutExecution workout={workout as any} sessionId={activeSession.id} />
