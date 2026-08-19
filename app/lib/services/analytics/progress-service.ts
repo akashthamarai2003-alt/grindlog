@@ -56,8 +56,9 @@ export class ProgressAnalyticsService {
     const periodBodyMetrics = bodyMetrics.filter(m => new Date(m.recorded_at) >= startDate && new Date(m.recorded_at) <= now);
 
     // Calculate start and current weights properly
-    let startW = fitProfile?.weight_trend_baseline || (bodyMetrics.length > 0 ? bodyMetrics[0].weight : fitProfile?.weight) || null;
-    let currW = bodyMetrics.length > 0 ? bodyMetrics[bodyMetrics.length - 1].weight : (fitProfile?.weight || null);
+    const metricsWithWeight = bodyMetrics.filter(m => m.weight != null);
+    let startW = fitProfile?.weight_trend_baseline || (metricsWithWeight.length > 0 ? metricsWithWeight[0].weight : fitProfile?.weight) || null;
+    let currW = metricsWithWeight.length > 0 ? metricsWithWeight[metricsWithWeight.length - 1].weight : (fitProfile?.weight || null);
     const targetW = fitProfile?.target_weight || null;
 
     let totalChange = 0;
