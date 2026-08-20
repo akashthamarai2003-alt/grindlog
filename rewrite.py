@@ -1,37 +1,23 @@
-import { createServerSupabase } from "@/lib/services/supabase/server";
-import { 
-  AggregatedProgressPayload, 
-  AnalyticsPeriod,
-  TransformationMetrics,
-  ConsistencyMetrics,
-  WeightPoint,
-  BodyMeasurement,
-  WorkoutAnalytics,
-  NutritionAnalytics,
-  ActivityAnalytics,
-  RecoveryAnalytics,
-  AIProgressReview,
-  Achievement
-} from "@/types/fitness/analytics";
+import re
 
-export class ProgressAnalyticsService {
-  
-  static async getAggregatedProgress(userId: string, period: AnalyticsPeriod = '30D', referenceDate?: Date): Promise<AggregatedProgressPayload> {
-    const supabase = await createServerSupabase();
+with open('app/lib/services/analytics/progress-service.ts', 'r', encoding='utf-8') as f:
+    code = f.read()
 
-    const now = referenceDate || new Date();
-    const startDate = new Date(now.getTime());
-    switch (period) {
-      case '7D': startDate.setDate(now.getDate() - 7); break;
-      case '30D': startDate.setDate(now.getDate() - 30); break;
-      case '3M': startDate.setMonth(now.getMonth() - 3); break;
-      case '6M': startDate.setMonth(now.getMonth() - 6); break;
-      case 'ALL': startDate.setFullYear(2000); break;
-    }
-    const startDateStr = startDate.toISOString();
-    const nowStr = now.toISOString();
+# We want to replace the sequential calls with Promise.all
+# Instead of doing complex regex, I will just output the entire file content updated.
+# But it's 400 lines. Let's just output the whole new file content directly in python.
 
-    // --- PARALLEL DATA FETCHING ---
+new_code = code
+
+# Remove the individual try/catch blocks and replace with one big Promise.all block
+start_marker = "// 1. Profile Data"
+end_marker = "// 10. Smart Prompt Logic"
+
+if start_marker in new_code and end_marker in new_code:
+    head = new_code[:new_code.find(start_marker)]
+    tail = new_code[new_code.find(end_marker):]
+    
+    promise_block = '''// --- PARALLEL DATA FETCHING ---
     const [
       { data: fitProfile },
       { data: scansFront },
@@ -254,36 +240,10 @@ export class ProgressAnalyticsService {
       target: 100
     }));
 
-    // 10. Smart Prompt Logic
-    let shouldPromptForScan = false;
-    const isConsistent = consistency.overallScore > 70; // Highly consistent
+    '''
     
-    let daysSinceLastScan = 999;
-    if (scans.latest?.date) {
-      const lastScanDate = new Date(scans.latest.date);
-      const today = new Date();
-      const diffTime = Math.abs(today.getTime() - lastScanDate.getTime());
-      daysSinceLastScan = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    }
-
-    if (isConsistent && daysSinceLastScan >= 14) {
-      shouldPromptForScan = true;
-    }
-    scans.shouldPromptForScan = shouldPromptForScan;
-
-    return {
-      period,
-      transformation,
-      consistency,
-      weightHistory,
-      measurements,
-      scans,
-      workout: workoutAnalytics,
-      nutrition,
-      activity,
-      recovery,
-      aiReview,
-      achievements
-    };
-  }
-}
+    with open('app/lib/services/analytics/progress-service.ts', 'w', encoding='utf-8') as f:
+        f.write(head + promise_block + tail)
+    print("Done rewriting")
+else:
+    print("Failed to find markers")
