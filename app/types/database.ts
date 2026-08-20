@@ -321,6 +321,1038 @@ export interface Database {
         Relationships: [];
       };
     };
+        fitness_os_profiles: {
+          Row: {
+            id: string;
+            user_id: string;
+            fitness_level: string | null;
+            age: number | null;
+            height: number | null;
+            weight: number | null;
+            target_weight: number | null;
+            gender: string | null;
+            equipment: any | null;
+            training_days_per_week: number | null;
+            workout_duration_minutes: number | null;
+            preferred_training_days: any | null;
+            preferred_training_time: string | null;
+            food_avoidances: any | null;
+            allergies: any | null;
+            meals_per_day: number | null;
+            nutrition_budget: string | null;
+            sleep_duration: number | null;
+            wake_time: string | null;
+            sleep_time: string | null;
+            lifestyle_description: string | null;
+            onboarding_completed: boolean | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            fitness_level?: string | null;
+            age?: number | null;
+            height?: number | null;
+            weight?: number | null;
+            target_weight?: number | null;
+            gender?: string | null;
+            equipment?: any | null;
+            training_days_per_week?: number | null;
+            workout_duration_minutes?: number | null;
+            preferred_training_days?: any | null;
+            preferred_training_time?: string | null;
+            food_avoidances?: any | null;
+            allergies?: any | null;
+            meals_per_day?: number | null;
+            nutrition_budget?: string | null;
+            sleep_duration?: number | null;
+            wake_time?: string | null;
+            sleep_time?: string | null;
+            lifestyle_description?: string | null;
+            onboarding_completed?: boolean | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            fitness_level?: string | null;
+            age?: number | null;
+            height?: number | null;
+            weight?: number | null;
+            target_weight?: number | null;
+            gender?: string | null;
+            equipment?: any | null;
+            training_days_per_week?: number | null;
+            workout_duration_minutes?: number | null;
+            preferred_training_days?: any | null;
+            preferred_training_time?: string | null;
+            food_avoidances?: any | null;
+            allergies?: any | null;
+            meals_per_day?: number | null;
+            nutrition_budget?: string | null;
+            sleep_duration?: number | null;
+            wake_time?: string | null;
+            sleep_time?: string | null;
+            lifestyle_description?: string | null;
+            onboarding_completed?: boolean | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_nutrition_plans: {
+          Row: {
+            id: string;
+            plan_id: string;
+            user_id: string;
+            daily_calories: number | null;
+            protein_grams: number | null;
+            meals_per_day: number | null;
+            guidance: string | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            plan_id: string;
+            user_id: string;
+            daily_calories?: number | null;
+            protein_grams?: number | null;
+            meals_per_day?: number | null;
+            guidance?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            plan_id?: string;
+            user_id?: string;
+            daily_calories?: number | null;
+            protein_grams?: number | null;
+            meals_per_day?: number | null;
+            guidance?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_lifestyle_plans: {
+          Row: {
+            id: string;
+            plan_id: string;
+            user_id: string;
+            sleep_target_hours: string | null;
+            water_target_liters: string | null;
+            daily_steps_target: number | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            plan_id: string;
+            user_id: string;
+            sleep_target_hours?: string | null;
+            water_target_liters?: string | null;
+            daily_steps_target?: number | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            plan_id?: string;
+            user_id?: string;
+            sleep_target_hours?: string | null;
+            water_target_liters?: string | null;
+            daily_steps_target?: number | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_ai_sessions: {
+          Row: {
+            id: string;
+            user_id: string;
+            session_type: string;
+            prompt: string | null;
+            response: string | null;
+            model: string | null;
+            tokens_used: number | null;
+            created_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            session_type: string;
+            prompt?: string | null;
+            response?: string | null;
+            model?: string | null;
+            tokens_used?: number | null;
+            created_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            session_type?: string;
+            prompt?: string | null;
+            response?: string | null;
+            model?: string | null;
+            tokens_used?: number | null;
+            created_at?: string | null;
+          };
+        };
+        fitness_grocery_items: {
+          Row: {
+            id: string;
+            user_id: string;
+            plan_id: string;
+            name: string;
+            monthly_quantity: number;
+            unit: string;
+            estimated_price: number;
+            category: string;
+            is_optional: boolean | null;
+            reason: string | null;
+            purchased: boolean | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            plan_id: string;
+            name: string;
+            monthly_quantity: number;
+            unit: string;
+            estimated_price: number;
+            category: string;
+            is_optional?: boolean | null;
+            reason?: string | null;
+            purchased?: boolean | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            plan_id?: string;
+            name?: string;
+            monthly_quantity?: number;
+            unit?: string;
+            estimated_price?: number;
+            category?: string;
+            is_optional?: boolean | null;
+            reason?: string | null;
+            purchased?: boolean | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_coach_sessions: {
+          Row: {
+            id: string;
+            user_id: string;
+            title: string | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            title?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            title?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_coach_messages: {
+          Row: {
+            id: string;
+            session_id: string;
+            user_id: string;
+            role: string | null;
+            content: string;
+            created_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            session_id: string;
+            user_id: string;
+            role?: string | null;
+            content: string;
+            created_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            session_id?: string;
+            user_id?: string;
+            role?: string | null;
+            content?: string;
+            created_at?: string | null;
+          };
+        };
+
+        fitness_os_progress_reviews: {
+          Row: {
+            id: string;
+            user_id: string;
+            week_start: string;
+            week_end: string;
+            workouts_completed: number | null;
+            workouts_planned: number | null;
+            sets_completed: number | null;
+            total_workout_minutes: number | null;
+            ai_summary: string | null;
+            ai_highlights: any | null;
+            ai_recommendations: any | null;
+            created_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            week_start: string;
+            week_end: string;
+            workouts_completed?: number | null;
+            workouts_planned?: number | null;
+            sets_completed?: number | null;
+            total_workout_minutes?: number | null;
+            ai_summary?: string | null;
+            ai_highlights?: any | null;
+            ai_recommendations?: any | null;
+            created_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            week_start?: string;
+            week_end?: string;
+            workouts_completed?: number | null;
+            workouts_planned?: number | null;
+            sets_completed?: number | null;
+            total_workout_minutes?: number | null;
+            ai_summary?: string | null;
+            ai_highlights?: any | null;
+            ai_recommendations?: any | null;
+            created_at?: string | null;
+          };
+        };
+
+        fitness_os_plan_adjustments: {
+          Row: {
+            id: string;
+            user_id: string;
+            plan_id: string;
+            adjustment_type: string | null;
+            reason: string | null;
+            proposed_changes: any;
+            status: string | null;
+            created_at: string | null;
+            approved_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            plan_id: string;
+            adjustment_type?: string | null;
+            reason?: string | null;
+            proposed_changes: any;
+            status?: string | null;
+            created_at?: string | null;
+            approved_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            plan_id?: string;
+            adjustment_type?: string | null;
+            reason?: string | null;
+            proposed_changes?: any;
+            status?: string | null;
+            created_at?: string | null;
+            approved_at?: string | null;
+          };
+        };
+
+        fitness_os_subscriptions: {
+          Row: {
+            id: string;
+            user_id: string;
+            plan: string;
+            status: string;
+            provider: string;
+            provider_order_id: string | null;
+            provider_payment_id: string | null;
+            provider_subscription_id: string | null;
+            current_period_start: string | null;
+            current_period_end: string | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            plan: string;
+            status: string;
+            provider: string;
+            provider_order_id?: string | null;
+            provider_payment_id?: string | null;
+            provider_subscription_id?: string | null;
+            current_period_start?: string | null;
+            current_period_end?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            plan?: string;
+            status?: string;
+            provider?: string;
+            provider_order_id?: string | null;
+            provider_payment_id?: string | null;
+            provider_subscription_id?: string | null;
+            current_period_start?: string | null;
+            current_period_end?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_scans: {
+          Row: {
+            id: string;
+            user_id: string;
+            front_url: string | null;
+            side_url: string | null;
+            back_url: string | null;
+            goal_url: string | null;
+            gemini_analysis: string | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            front_url?: string | null;
+            side_url?: string | null;
+            back_url?: string | null;
+            goal_url?: string | null;
+            gemini_analysis?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            front_url?: string | null;
+            side_url?: string | null;
+            back_url?: string | null;
+            goal_url?: string | null;
+            gemini_analysis?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_workout_plans: {
+          Row: {
+            id: string;
+            user_id: string;
+            name: string;
+            description: string | null;
+            goal: string | null;
+            status: string;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            name: string;
+            description?: string | null;
+            goal?: string | null;
+            status: string;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            name?: string;
+            description?: string | null;
+            goal?: string | null;
+            status?: string;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_workouts: {
+          Row: {
+            id: string;
+            user_id: string;
+            plan_id: string | null;
+            workout_date: string;
+            name: string;
+            status: string;
+            started_at: string | null;
+            completed_at: string | null;
+            duration_minutes: number | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            plan_id?: string | null;
+            workout_date: string;
+            name: string;
+            status: string;
+            started_at?: string | null;
+            completed_at?: string | null;
+            duration_minutes?: number | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            plan_id?: string | null;
+            workout_date?: string;
+            name?: string;
+            status?: string;
+            started_at?: string | null;
+            completed_at?: string | null;
+            duration_minutes?: number | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_exercises: {
+          Row: {
+            id: string;
+            workout_id: string;
+            name: string;
+            exercise_order: number;
+            target_sets: number;
+            target_reps: number | null;
+            target_duration_seconds: number | null;
+            rest_seconds: number;
+            notes: string | null;
+            created_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            workout_id: string;
+            name: string;
+            exercise_order: number;
+            target_sets: number;
+            target_reps?: number | null;
+            target_duration_seconds?: number | null;
+            rest_seconds: number;
+            notes?: string | null;
+            created_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            workout_id?: string;
+            name?: string;
+            exercise_order?: number;
+            target_sets?: number;
+            target_reps?: number | null;
+            target_duration_seconds?: number | null;
+            rest_seconds?: number;
+            notes?: string | null;
+            created_at?: string | null;
+          };
+        };
+
+        fitness_os_sets: {
+          Row: {
+            id: string;
+            exercise_id: string;
+            set_number: number;
+            target_reps: number | null;
+            actual_reps: number | null;
+            weight_kg: string | null;
+            duration_seconds: number | null;
+            completed: boolean | null;
+            completed_at: string | null;
+            created_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            exercise_id: string;
+            set_number: number;
+            target_reps?: number | null;
+            actual_reps?: number | null;
+            weight_kg?: string | null;
+            duration_seconds?: number | null;
+            completed?: boolean | null;
+            completed_at?: string | null;
+            created_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            exercise_id?: string;
+            set_number?: number;
+            target_reps?: number | null;
+            actual_reps?: number | null;
+            weight_kg?: string | null;
+            duration_seconds?: number | null;
+            completed?: boolean | null;
+            completed_at?: string | null;
+            created_at?: string | null;
+          };
+        };
+
+        fitness_os_workout_sessions: {
+          Row: {
+            id: string;
+            user_id: string;
+            workout_id: string;
+            started_at: string;
+            paused_at: string | null;
+            completed_at: string | null;
+            duration_seconds: number | null;
+            status: string;
+            created_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            workout_id: string;
+            started_at: string;
+            paused_at?: string | null;
+            completed_at?: string | null;
+            duration_seconds?: number | null;
+            status: string;
+            created_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            workout_id?: string;
+            started_at?: string;
+            paused_at?: string | null;
+            completed_at?: string | null;
+            duration_seconds?: number | null;
+            status?: string;
+            created_at?: string | null;
+          };
+        };
+        profiles: {
+          Row: {
+            id: string;
+            display_name: string;
+            email: string | null;
+            avatar_url: string | null;
+            timezone: string | null;
+            created_at: string | null;
+            updated_at: string | null;
+            coins: number | null;
+            level: number | null;
+            tree_water_count: number | null;
+            tree_leaves_count: number | null;
+            tree_butterflies_count: number | null;
+            tree_birds_count: number | null;
+            tree_flowers_count: number | null;
+            tree_golden: boolean | null;
+            premium_tier: string | null;
+            premium_expires_at: string | null;
+            trial_used: boolean | null;
+            notifications_enabled: boolean | null;
+            morning_reminder: string | null;
+            afternoon_reminder: string | null;
+            evening_reminder: string | null;
+            ai_plan_created: boolean | null;
+          };
+          Insert: {
+            id?: string;
+            display_name: string;
+            email?: string | null;
+            avatar_url?: string | null;
+            timezone?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+            coins?: number | null;
+            level?: number | null;
+            tree_water_count?: number | null;
+            tree_leaves_count?: number | null;
+            tree_butterflies_count?: number | null;
+            tree_birds_count?: number | null;
+            tree_flowers_count?: number | null;
+            tree_golden?: boolean | null;
+            premium_tier?: string | null;
+            premium_expires_at?: string | null;
+            trial_used?: boolean | null;
+            notifications_enabled?: boolean | null;
+            morning_reminder?: string | null;
+            afternoon_reminder?: string | null;
+            evening_reminder?: string | null;
+            ai_plan_created?: boolean | null;
+          };
+          Update: {
+            id?: string;
+            display_name?: string;
+            email?: string | null;
+            avatar_url?: string | null;
+            timezone?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+            coins?: number | null;
+            level?: number | null;
+            tree_water_count?: number | null;
+            tree_leaves_count?: number | null;
+            tree_butterflies_count?: number | null;
+            tree_birds_count?: number | null;
+            tree_flowers_count?: number | null;
+            tree_golden?: boolean | null;
+            premium_tier?: string | null;
+            premium_expires_at?: string | null;
+            trial_used?: boolean | null;
+            notifications_enabled?: boolean | null;
+            morning_reminder?: string | null;
+            afternoon_reminder?: string | null;
+            evening_reminder?: string | null;
+            ai_plan_created?: boolean | null;
+          };
+        };
+        habits: {
+          Row: {
+            id: string;
+            user_id: string;
+            name: string;
+            description: string | null;
+            emoji: string | null;
+            category: string;
+            frequency: string;
+            custom_days: number | null;
+            preferred_time: string | null;
+            reminder_time: string | null;
+            target_count: number | null;
+            target_unit: string | null;
+            target_value: number | null;
+            is_active: boolean | null;
+            is_archived: boolean | null;
+            color: string | null;
+            sort_order: number | null;
+            longest_streak: number | null;
+            total_completions: number | null;
+            total_skips: number | null;
+            completion_rate: number | null;
+            ai_reasoning: string | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            name: string;
+            description?: string | null;
+            emoji?: string | null;
+            category: string;
+            frequency: string;
+            custom_days?: number | null;
+            preferred_time?: string | null;
+            reminder_time?: string | null;
+            target_count?: number | null;
+            target_unit?: string | null;
+            target_value?: number | null;
+            is_active?: boolean | null;
+            is_archived?: boolean | null;
+            color?: string | null;
+            sort_order?: number | null;
+            longest_streak?: number | null;
+            total_completions?: number | null;
+            total_skips?: number | null;
+            completion_rate?: number | null;
+            ai_reasoning?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            name?: string;
+            description?: string | null;
+            emoji?: string | null;
+            category?: string;
+            frequency?: string;
+            custom_days?: number | null;
+            preferred_time?: string | null;
+            reminder_time?: string | null;
+            target_count?: number | null;
+            target_unit?: string | null;
+            target_value?: number | null;
+            is_active?: boolean | null;
+            is_archived?: boolean | null;
+            color?: string | null;
+            sort_order?: number | null;
+            longest_streak?: number | null;
+            total_completions?: number | null;
+            total_skips?: number | null;
+            completion_rate?: number | null;
+            ai_reasoning?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+        habit_logs: {
+          Row: {
+            id: string;
+            habit_id: string;
+            user_id: string;
+            date: string;
+            status: string;
+            completed_at: string | null;
+            value: number | null;
+            note: string | null;
+            mood: string | null;
+            streak_before: number | null;
+            streak_after: number | null;
+            xp_earned: number | null;
+            coins_earned: number | null;
+            created_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            habit_id: string;
+            user_id: string;
+            date: string;
+            status: string;
+            completed_at?: string | null;
+            value?: number | null;
+            note?: string | null;
+            mood?: string | null;
+            streak_before?: number | null;
+            streak_after?: number | null;
+            xp_earned?: number | null;
+            coins_earned?: number | null;
+            created_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            habit_id?: string;
+            user_id?: string;
+            date?: string;
+            status?: string;
+            completed_at?: string | null;
+            value?: number | null;
+            note?: string | null;
+            mood?: string | null;
+            streak_before?: number | null;
+            streak_after?: number | null;
+            xp_earned?: number | null;
+            coins_earned?: number | null;
+            created_at?: string | null;
+          };
+        };
+        journal_entries: {
+          Row: {
+            id: string;
+            user_id: string;
+            date: string;
+            title: string | null;
+            content: string | null;
+            mood: number | null;
+            energy: number | null;
+            focus: number | null;
+            photo_urls: string | null;
+            voice_note_url: string | null;
+            voice_transcript: string | null;
+            ai_summary: string | null;
+            ai_sentiment: string | null;
+            ai_insights: string | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            date: string;
+            title?: string | null;
+            content?: string | null;
+            mood?: number | null;
+            energy?: number | null;
+            focus?: number | null;
+            photo_urls?: string | null;
+            voice_note_url?: string | null;
+            voice_transcript?: string | null;
+            ai_summary?: string | null;
+            ai_sentiment?: string | null;
+            ai_insights?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            date?: string;
+            title?: string | null;
+            content?: string | null;
+            mood?: number | null;
+            energy?: number | null;
+            focus?: number | null;
+            photo_urls?: string | null;
+            voice_note_url?: string | null;
+            voice_transcript?: string | null;
+            ai_summary?: string | null;
+            ai_sentiment?: string | null;
+            ai_insights?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+        achievements: {
+          Row: {
+            id: string;
+            key: string;
+            name: string;
+            description: string;
+            emoji: string | null;
+            category: string;
+            xp_reward: number | null;
+            coins_reward: number | null;
+            icon_url: string | null;
+            sort_order: number | null;
+          };
+          Insert: {
+            id?: string;
+            key: string;
+            name: string;
+            description: string;
+            emoji?: string | null;
+            category: string;
+            xp_reward?: number | null;
+            coins_reward?: number | null;
+            icon_url?: string | null;
+            sort_order?: number | null;
+          };
+          Update: {
+            id?: string;
+            key?: string;
+            name?: string;
+            description?: string;
+            emoji?: string | null;
+            category?: string;
+            xp_reward?: number | null;
+            coins_reward?: number | null;
+            icon_url?: string | null;
+            sort_order?: number | null;
+          };
+        };
+        user_achievements: {
+          Row: {
+            id: string;
+            user_id: string;
+            achievement_id: string;
+            unlocked_at: string | null;
+            progress_current: number | null;
+            progress_target: number | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            achievement_id: string;
+            unlocked_at?: string | null;
+            progress_current?: number | null;
+            progress_target?: number | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            achievement_id?: string;
+            unlocked_at?: string | null;
+            progress_current?: number | null;
+            progress_target?: number | null;
+          };
+        };
+        ai_sessions: {
+          Row: {
+            id: string;
+            user_id: string;
+            session_type: string;
+            prompt: string | null;
+            response: string | null;
+            model: string | null;
+            tokens_used: number | null;
+            created_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            session_type: string;
+            prompt?: string | null;
+            response?: string | null;
+            model?: string | null;
+            tokens_used?: number | null;
+            created_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            session_type?: string;
+            prompt?: string | null;
+            response?: string | null;
+            model?: string | null;
+            tokens_used?: number | null;
+            created_at?: string | null;
+          };
+        };
+        subscriptions: {
+          Row: {
+            id: string;
+            user_id: string;
+            razorpay_subscription_id: string | null;
+            razorpay_payment_id: string | null;
+            razorpay_order_id: string | null;
+            plan: string;
+            status: string;
+            started_at: string | null;
+            expires_at: string | null;
+            cancelled_at: string | null;
+            created_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            razorpay_subscription_id?: string | null;
+            razorpay_payment_id?: string | null;
+            razorpay_order_id?: string | null;
+            plan: string;
+            status: string;
+            started_at?: string | null;
+            expires_at?: string | null;
+            cancelled_at?: string | null;
+            created_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            razorpay_subscription_id?: string | null;
+            razorpay_payment_id?: string | null;
+            razorpay_order_id?: string | null;
+            plan?: string;
+            status?: string;
+            started_at?: string | null;
+            expires_at?: string | null;
+            cancelled_at?: string | null;
+            created_at?: string | null;
+          };
+        };
+
     Views: {
       [_ in never]: never;
     };
