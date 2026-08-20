@@ -28,5 +28,5 @@ export default async function OnboardingPage({
     redirect("/fitness");
   }
 
-  return <OnboardingFlow initialData={profile || {}} />;
+  return <OnboardingFlow initialData={profile || {}} sessionId={crypto.randomUUID()} />;
 }

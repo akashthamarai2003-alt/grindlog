@@ -50,7 +50,7 @@ const compressImage = (file: File): Promise<string> => {
   });
 };
 
-export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<OnboardingData> }) {
+export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: Partial<OnboardingData>, sessionId?: string }) {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   const [data, setData] = useState<Partial<OnboardingData>>(initialData);
@@ -1862,7 +1862,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
         );
 
       case 16:
-        return <AIAnalysisScreen onComplete={handleComplete} data={data} />;
+        return <AIAnalysisScreen onComplete={handleComplete} data={data} sessionId={sessionId} />;
 
       default:
         return null;
@@ -1920,10 +1920,10 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
 }
 
 
-let lastSubmissionDataStr: string | null = null;
+let lastSubmissionSessionId: string | null = null;
 let lastSubmissionPromise: Promise<any> | null = null;
 
-const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: any }) => {
+const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => void, data: any, sessionId?: string }) => {
   const [phase, setPhase] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState("");
@@ -1936,14 +1936,19 @@ const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: 
     const t4 = setTimeout(() => setPhase(4), 7500);
 
     let isMounted = true;
-    const currentDataStr = JSON.stringify(data);
 
-    if (lastSubmissionDataStr !== currentDataStr || !lastSubmissionPromise) {
-      lastSubmissionDataStr = currentDataStr;
+    // Use sessionId for deduping if provided, otherwise fallback to always fetching
+    // Strict Mode / re-mounts with the same sessionId will reuse the promise.
+    if (sessionId && lastSubmissionSessionId === sessionId && lastSubmissionPromise) {
+      // Reuse existing promise
+    } else {
+      if (sessionId) {
+        lastSubmissionSessionId = sessionId;
+      }
       lastSubmissionPromise = fetch('/api/fitness/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: currentDataStr
+        body: JSON.stringify(data)
       }).then(res => res.json());
     }
 
@@ -1953,7 +1958,7 @@ const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: 
         if (res.success) {
           setIsDone(true);
         } else {
-          lastSubmissionDataStr = null;
+          lastSubmissionSessionId = null;
           lastSubmissionPromise = null;
           setError(res.error || "Analysis failed");
         }
@@ -1961,7 +1966,7 @@ const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: 
     })
     .catch(err => {
       if (isMounted) {
-        lastSubmissionDataStr = null;
+        lastSubmissionSessionId = null;
         lastSubmissionPromise = null;
         setError(err.message);
       }
