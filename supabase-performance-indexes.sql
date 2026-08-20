@@ -1,32 +1,45 @@
--- Performance indexes for user_id to prevent sequential scans
-CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements(user_id);
-CREATE INDEX IF NOT EXISTS idx_ai_sessions_user_id ON ai_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_logs_user_id ON ai_usage_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_fcm_tokens_user_id ON fcm_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_logs_user_id ON fitness_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_ai_sessions_user_id ON fitness_os_ai_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_coach_messages_user_id ON fitness_os_coach_messages(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_coach_sessions_user_id ON fitness_os_coach_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_exercises_workout_id ON fitness_os_exercises(workout_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_plan_adjustments_user_id ON fitness_os_plan_adjustments(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_profiles_user_id ON fitness_os_profiles(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_progress_reviews_user_id ON fitness_os_progress_reviews(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_scans_user_id ON fitness_os_scans(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_sets_exercise_id ON fitness_os_sets(exercise_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_subscriptions_user_id ON fitness_os_subscriptions(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_workout_plans_user_id ON fitness_os_workout_plans(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_workout_sessions_user_id ON fitness_os_workout_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_workouts_user_id ON fitness_os_workouts(user_id);
-CREATE INDEX IF NOT EXISTS idx_fitness_os_workouts_workout_date ON fitness_os_workouts(workout_date);
-CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id);
-CREATE INDEX IF NOT EXISTS idx_habit_logs_user_id ON habit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_habit_logs_date ON habit_logs(date);
-CREATE INDEX IF NOT EXISTS idx_habits_user_id ON habits(user_id);
-CREATE INDEX IF NOT EXISTS idx_in_app_notifications_user_id ON in_app_notifications(user_id);
-CREATE INDEX IF NOT EXISTS idx_journal_entries_user_id ON journal_entries(user_id);
-CREATE INDEX IF NOT EXISTS idx_journal_entries_date ON journal_entries(date);
-CREATE INDEX IF NOT EXISTS idx_season_progress_user_id ON season_progress(user_id);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_quests_user_id ON user_quests(user_id);
-CREATE INDEX IF NOT EXISTS idx_workout_ai_notes_user_id ON workout_ai_notes(user_id);
+DO $ $
+DECLARE
+    t_name text;
+    c_name text := 'user_id';
+    tables_list text[] := ARRAY[
+        'achievements', 'ai_sessions', 'ai_usage_logs', 'fcm_tokens', 'fitness_logs', 'fitness_os_ai_sessions',
+        'fitness_os_coach_messages', 'fitness_os_coach_sessions', 'fitness_os_plan_adjustments',
+        'fitness_os_profiles', 'fitness_os_progress_reviews', 'fitness_os_scans',
+        'fitness_os_subscriptions', 'fitness_os_workout_plans', 'fitness_os_workout_sessions',
+        'fitness_os_workouts', 'goals', 'habit_logs', 'habits', 'in_app_notifications',
+        'journal_entries', 'season_progress', 'subscriptions', 'user_achievements',
+        'user_quests', 'workout_ai_notes', 'texts', 'coupons', 'plan_pricing', 'support_messages'
+    ];
+BEGIN
+    FOR t_name IN SELECT unnest(tables_list) LOOP
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = t_name AND column_name = c_name
+        ) THEN
+            EXECUTE format('CREATE INDEX IF NOT EXISTS idx_%I_user_id ON %I(%I)', t_name, t_name, c_name);
+        END IF;
+    END LOOP;
+    
+    -- Specific Date Indexes
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'fitness_os_workouts' AND column_name = 'workout_date') THEN
+        CREATE INDEX IF NOT EXISTS idx_fitness_os_workouts_workout_date ON fitness_os_workouts(workout_date);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'habit_logs' AND column_name = 'date') THEN
+        CREATE INDEX IF NOT EXISTS idx_habit_logs_date ON habit_logs(date);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'journal_entries' AND column_name = 'date') THEN
+        CREATE INDEX IF NOT EXISTS idx_journal_entries_date ON journal_entries(date);
+    END IF;
+    
+    -- Workout foreign keys
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'fitness_os_exercises' AND column_name = 'workout_id') THEN
+        CREATE INDEX IF NOT EXISTS idx_fitness_os_exercises_workout_id ON fitness_os_exercises(workout_id);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'fitness_os_sets' AND column_name = 'exercise_id') THEN
+        CREATE INDEX IF NOT EXISTS idx_fitness_os_sets_exercise_id ON fitness_os_sets(exercise_id);
+    END IF;
+END $ $;
