@@ -1526,6 +1526,10 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
             <BottomBar 
               canProceed={
                 data.physical_problems !== undefined && data.physical_problems.length > 0 &&
+                (data.physical_problems.includes("None") || (
+                  data.current_pain_severity !== undefined &&
+                  data.current_pain_triggers !== undefined && data.current_pain_triggers.length > 0
+                )) &&
                 data.previous_injuries !== undefined &&
                 (data.previous_injuries === false || (
                   data.previous_injury_areas !== undefined && data.previous_injury_areas.length > 0 &&
