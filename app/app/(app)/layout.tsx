@@ -1,4 +1,4 @@
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { redirect } from "next/navigation";
 import ClientAppLayout from "./client-layout";
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCachedUser();
 
   if (user) {
     const { data: profile } = await supabase

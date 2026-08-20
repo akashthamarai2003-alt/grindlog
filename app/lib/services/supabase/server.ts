@@ -1,5 +1,6 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createServerClient } from ""@supabase/ssr"";
+import { cookies } from ""next/headers"";
+import { cache } from ""react"";
 
 export async function createServerSupabase() {
   const cookieStore = await cookies();
@@ -24,3 +25,8 @@ export async function createServerSupabase() {
 
 // Alias for convenience used in Fitness AI OS
 export const createClient = createServerSupabase;
+
+export const getCachedUser = cache(async () => {
+  const supabase = await createServerSupabase();
+  return await supabase.auth.getUser();
+});

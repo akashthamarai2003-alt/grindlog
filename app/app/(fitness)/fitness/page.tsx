@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
 import { Suspense } from "react";
@@ -8,32 +8,23 @@ import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing
 
 async function DashboardContent({ searchParams }: { searchParams?: { date?: string } }) {
   const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCachedUser();
 
   if (!user) {
     return <FitnessLandingPage />;
   }
 
-  const [
-    { data: profile },
-    { data: mainProfile }
-  ] = await Promise.all([
-    supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-    supabase.from("profiles").select("is_premium, premium_level").eq("id", user.id).maybeSingle()
-  ]);
-
-  if (!profile?.onboarding_completed) {
-    redirect("/fitness/onboarding");
-  }
-
-  // Get target local date string
   const targetDateStr = searchParams?.date || new Date().toISOString().split('T')[0];
 
   const [
+    { data: profile },
+    { data: mainProfile },
     { data: plan },
     { data: workout },
     { data: latestReview }
   ] = await Promise.all([
+    supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
+    supabase.from("profiles").select("is_premium, premium_level").eq("id", user.id).maybeSingle(),
     supabase.from("fitness_os_workout_plans").select("id, plan_data, created_at").eq("user_id", user.id).eq("status", "active").maybeSingle(),
     supabase.from("fitness_os_workouts").select(`
       *,
@@ -44,6 +35,10 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     `).eq("user_id", user.id).eq("workout_date", targetDateStr).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("fitness_os_progress_reviews").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
   ]);
+
+  if (!profile?.onboarding_completed) {
+    redirect("/fitness/onboarding");
+  }
 
   if (!mainProfile?.is_premium) {
     if (plan) {

@@ -1,4 +1,4 @@
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import { redirect } from "next/navigation";
 
@@ -6,7 +6,7 @@ import { syncMissedHabits } from "@/app/actions/habits";
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCachedUser();
 
   if (!user) {
     redirect("/auth/signin");
