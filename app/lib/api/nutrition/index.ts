@@ -1,7 +1,8 @@
 export interface LogFoodRequest {
-  food_id: string;
+  food_id?: string;
   meal_type: string;
   quantity: number;
+  custom_food?: any;
 }
 
 export const nutritionApi = {

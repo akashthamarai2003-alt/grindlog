@@ -56,6 +56,7 @@ const basePlans = [
     period: "/month",
     originalPrice: null,
     badge: null,
+    savings: null,
   }
 ];
 

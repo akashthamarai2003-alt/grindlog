@@ -1549,8 +1549,7 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
               <p className="text-gray-400 text-sm mb-4 leading-relaxed">
                 This app generates workouts using Artificial Intelligence. It is not a doctor, physical therapist, or medical professional. The AI cannot diagnose injuries or provide medical treatment.
               </p>
-              
-              {data.pain_severity === 'Severe/debilitating pain' ? (
+              {(data.current_pain_severity ?? 0) >= 7 ? (
                 <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl mb-8">
                   <p className="text-red-400 font-bold text-sm mb-2">⚠️ CRITICAL MEDICAL WARNING</p>
                   <p className="text-red-400/80 text-xs leading-relaxed">
@@ -1638,8 +1637,8 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
                           <img 
                             src={
                               typeof (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg) === 'string'
-                                ? (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg as string)
-                                : (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : (rightImg as any)).src
+                                ? (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg) as unknown as string
+                                : ((item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg) as any).src
                             }
                             alt={`${item.label} Reference`}
                             className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"

@@ -290,6 +290,36 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["season_progress"]["Insert"]>;
         Relationships: [];
       };
+      fitness_os_sleep_logs: {
+        Row: {
+          id: string; user_id: string; sleep_date: string;
+          duration_hours: number | null; quality_score: number | null;
+          created_at: string; updated_at: string;
+        };
+        Insert: {
+          id?: string; user_id: string; sleep_date?: string;
+          duration_hours?: number | null; quality_score?: number | null;
+          created_at?: string; updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fitness_os_sleep_logs"]["Insert"]>;
+        Relationships: [];
+      };
+      fitness_os_activity_logs: {
+        Row: {
+          id: string; user_id: string; activity_date: string;
+          steps: number | null; active_minutes: number | null;
+          distance_km: number | null; calories_burned: number | null;
+          created_at: string; updated_at: string;
+        };
+        Insert: {
+          id?: string; user_id: string; activity_date?: string;
+          steps?: number | null; active_minutes?: number | null;
+          distance_km?: number | null; calories_burned?: number | null;
+          created_at?: string; updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["fitness_os_activity_logs"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

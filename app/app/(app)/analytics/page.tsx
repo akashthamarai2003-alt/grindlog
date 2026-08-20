@@ -61,17 +61,28 @@ export default async function AnalyticsPage() {
     completionAvg = Math.round(totalRate / allHabits.length);
   }
 
-  const initialData: AnalyticsData = {
-    completionAvg,
-    longestStreak,
-    bestHabit: maxRate > -1 ? { name: bestHabit, emoji: bestHabitEmoji } : undefined,
-    worstHabit: worstHabitRate < 100 ? { name: worstHabit, emoji: worstHabitEmoji } : undefined,
+  const data: AnalyticsData = {
+    highlights: {
+      completion: completionAvg,
+      longestStreak,
+      bestHabit: maxRate > -1 ? bestHabit : "None",
+      bestHabitEmoji: maxRate > -1 ? bestHabitEmoji : "✨",
+      worstHabit: worstHabitRate < 100 ? worstHabit : "None",
+      worstHabitEmoji: worstHabitRate < 100 ? worstHabitEmoji : "✨",
+      worstHabitRate: worstHabitRate < 100 ? worstHabitRate : 0,
+    },
+    totalActiveHabits: allHabits.length,
+    weeklyData: [],
     donutData: Object.entries(donutCategories).map(([name, val]) => ({
-      name,
+      label: name,
       value: val.count,
       color: val.color,
-    }))
+    })),
+    heatmapData: [],
+    trendData: [],
+    timeOfDayData: [],
+    radarData: []
   };
 
-  return <AnalyticsClient initialData={initialData} allHabits={allHabits} />;
+  return <AnalyticsClient data={data} />;
 }

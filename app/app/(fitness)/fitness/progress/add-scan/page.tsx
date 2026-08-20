@@ -114,7 +114,7 @@ export default function AddScanPage() {
     if (field === 'back') backInputRef.current?.click();
   };
 
-  const PhotoSlot = ({ title, field, inputRef }: { title: string, field: 'front' | 'left' | 'right' | 'back', inputRef: React.RefObject<HTMLInputElement> }) => {
+  const PhotoSlot = ({ title, field, inputRef }: { title: string, field: 'front' | 'left' | 'right' | 'back', inputRef: React.RefObject<HTMLInputElement | null> }) => {
     const placeholderSrc = field === 'front' ? frontImg : field === 'back' ? backImg : field === 'left' ? leftImg : rightImg;
     const resolvedSrc = typeof placeholderSrc === 'string' ? placeholderSrc : (placeholderSrc as any).src;
     const isProcessing = processingField === field;

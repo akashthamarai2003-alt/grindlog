@@ -68,23 +68,37 @@ export class ProgressAnalyticsService {
     const targetWeight = fitProfile?.target_weight || 0;
 
     let progressPercentage = 0;
+    let finalAmountLost = 0;
+    let finalAmountGained = 0;
+    let finalTotalToLose = 0;
+    let finalTotalToGain = 0;
+
     if (profileStartWeight > 0 && targetWeight > 0) {
       const totalToLose = profileStartWeight - targetWeight;
       const amountLost = profileStartWeight - currentWeight;
+      finalTotalToLose = totalToLose;
+      finalAmountLost = amountLost;
+
       if (totalToLose > 0) {
         progressPercentage = Math.max(0, Math.min(100, (amountLost / totalToLose) * 100));
       } else if (totalToLose < 0) {
         const totalToGain = targetWeight - profileStartWeight;
         const amountGained = currentWeight - profileStartWeight;
+        finalTotalToGain = totalToGain;
+        finalAmountGained = amountGained;
         progressPercentage = Math.max(0, Math.min(100, (amountGained / totalToGain) * 100));
       }
     }
 
     const transformation: TransformationMetrics = {
-      startWeight: profileStartWeight,
+      startingWeight: profileStartWeight,
       currentWeight,
       targetWeight,
-      progressPercentage: Math.round(progressPercentage)
+      totalChange: finalAmountLost || finalAmountGained || 0,
+      remainingChange: finalTotalToLose || finalTotalToGain || 0,
+      completionPercentage: Math.round(progressPercentage),
+      transformationDay: 0,
+      streak: 0
     };
 
     // 2. Weight History
@@ -106,26 +120,30 @@ export class ProgressAnalyticsService {
       const latest = scansMeasurements[0];
       const previous = scansMeasurements.length > 1 ? scansMeasurements[1] : null;
 
-      if (latest.chest) measurements.push({ part: 'Chest', currentCm: latest.chest, previousCm: previous?.chest || undefined });
-      if (latest.waist) measurements.push({ part: 'Waist', currentCm: latest.waist, previousCm: previous?.waist || undefined });
-      if (latest.hips) measurements.push({ part: 'Hips', currentCm: latest.hips, previousCm: previous?.hips || undefined });
-      if (latest.thighs) measurements.push({ part: 'Thighs', currentCm: latest.thighs, previousCm: previous?.thighs || undefined });
-      if (latest.arms) measurements.push({ part: 'Arms', currentCm: latest.arms, previousCm: previous?.arms || undefined });
+      if (latest.chest) measurements.push({ id: 'chest', name: 'Chest', startValue: previous?.chest || null, currentValue: latest.chest, change: (latest.chest - (previous?.chest || latest.chest)), unit: 'cm' });
+      if (latest.waist) measurements.push({ id: 'waist', name: 'Waist', startValue: previous?.waist || null, currentValue: latest.waist, change: (latest.waist - (previous?.waist || latest.waist)), unit: 'cm' });
+      if (latest.hips) measurements.push({ id: 'hips', name: 'Hips', startValue: previous?.hips || null, currentValue: latest.hips, change: (latest.hips - (previous?.hips || latest.hips)), unit: 'cm' });
+      if (latest.thighs) measurements.push({ id: 'thighs', name: 'Thighs', startValue: previous?.thighs || null, currentValue: latest.thighs, change: (latest.thighs - (previous?.thighs || latest.thighs)), unit: 'cm' });
+      if (latest.arms) measurements.push({ id: 'arms', name: 'Arms', startValue: previous?.arms || null, currentValue: latest.arms, change: (latest.arms - (previous?.arms || latest.arms)), unit: 'cm' });
     }
 
     const scans = {
       latest: scansFront && scansFront.length > 0 ? {
+        id: scansFront[0].id || '1',
         frontUrl: scansFront[0].image_url,
-        sideUrl: undefined,
-        backUrl: undefined,
+        leftUrl: null,
+        rightUrl: null,
+        backUrl: null,
         date: scansFront[0].date
-      } : undefined,
-      previous: scansFront && scansFront.length > 1 ? {
-        frontUrl: scansFront[1].image_url,
-        sideUrl: undefined,
-        backUrl: undefined,
-        date: scansFront[1].date
-      } : undefined,
+      } : null,
+      first: scansFront && scansFront.length > 0 ? {
+        id: scansFront[scansFront.length - 1].id || '2',
+        frontUrl: scansFront[scansFront.length - 1].image_url,
+        leftUrl: null,
+        rightUrl: null,
+        backUrl: null,
+        date: scansFront[scansFront.length - 1].date
+      } : null,
       shouldPromptForScan: false
     };
 
@@ -145,7 +163,8 @@ export class ProgressAnalyticsService {
       const ws = workouts.filter((w: any) => w.workout_date === ds);
       weeklyChartData.push({
         day: d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0),
-        duration: ws.reduce((acc: number, w: any) => acc + (w.duration_minutes || 0), 0)
+        volume: ws.reduce((acc: number, w: any) => acc + (w.total_volume_kg || 0), 0),
+        completed: ws.some((w: any) => w.status === 'completed')
       });
     }
 
