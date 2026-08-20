@@ -33,8 +33,8 @@ export class NutritionService {
   /**
    * Returns a YYYY-MM-DD string for the current date in the user's timezone.
    */
-  static async getLocalDateString(userId: string): Promise<string> {
-    const tz = await this.getUserTimezone(userId);
+  static async getLocalDateString(userId: string, preFetchedTz?: string): Promise<string> {
+    const tz = preFetchedTz || await this.getUserTimezone(userId);
     const formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: tz,
       year: 'numeric',
@@ -48,21 +48,10 @@ export class NutritionService {
    * Returns the start and end of the user's current day in UTC as ISO strings.
    * Useful for querying timestamptz columns (like logged_at).
    */
-  static async getLocalDateBoundaries(userId: string): Promise<{ start: string, end: string }> {
-    const tz = await this.getUserTimezone(userId);
-    const dateStr = await this.getLocalDateString(userId); // YYYY-MM-DD
+  static async getLocalDateBoundaries(userId: string, preFetchedTz?: string): Promise<{ start: string, end: string }> {
+    const tz = preFetchedTz || await this.getUserTimezone(userId);
+    const dateStr = await this.getLocalDateString(userId, tz); // YYYY-MM-DD
     
-    // Create dates assuming the string is in the user's timezone.
-    // However, JS Date constructor parses YYYY-MM-DD as UTC.
-    // Instead, we construct a proper ISO string with timezone offset.
-    // A simpler approach for timestamptz queries is to just use PostgreSQL AT TIME ZONE,
-    // but since we query from PostgREST, we can convert our bounds here.
-    
-    // Note: To perfectly handle timezone offsets dynamically without a robust library in pure JS,
-    // we can format a given hour in that timezone and compare, but simpler is to use PostgREST filters
-    // if possible, OR just parse the local time string into a Date.
-    
-    // We'll use a hack to get the offset for the given timezone.
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: tz,
       timeZoneName: 'longOffset',
@@ -404,12 +393,14 @@ export class NutritionService {
 
   static async getTodaySummaryAndDetails(userId: string) {
     const supabase = await createServerSupabase();
-    const localDate = await this.getLocalDateString(userId);
-    const { start, end } = await this.getLocalDateBoundaries(userId);
+    
+    // Fetch timezone once to avoid 3 redundant DB calls
+    const tz = await this.getUserTimezone(userId);
+    const localDate = await this.getLocalDateString(userId, tz);
+    const { start, end } = await this.getLocalDateBoundaries(userId, tz);
 
     // Monthly spent calculation
     const firstDayOfMonth = localDate.substring(0, 8) + '01'; // YYYY-MM-01
-    const tz = await this.getUserTimezone(userId);
     const mFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset', year: 'numeric' });
     let mOffsetStr = mFormatter.formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value;
     if (!mOffsetStr || mOffsetStr === 'GMT') mOffsetStr = 'GMT+00:00';
