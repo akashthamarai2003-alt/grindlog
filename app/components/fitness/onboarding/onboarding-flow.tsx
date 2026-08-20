@@ -1920,6 +1920,9 @@ export function OnboardingFlow({ initialData = {} }: { initialData?: Partial<Onb
 }
 
 
+let lastSubmissionDataStr: string | null = null;
+let lastSubmissionPromise: Promise<any> | null = null;
+
 const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: any }) => {
   const [phase, setPhase] = useState(0);
   const [isDone, setIsDone] = useState(false);
@@ -1933,23 +1936,33 @@ const AIAnalysisScreen = ({ onComplete, data }: { onComplete: () => void, data: 
     const t4 = setTimeout(() => setPhase(4), 7500);
 
     let isMounted = true;
-    fetch('/api/fitness/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-    .then(res => res.json())
+    const currentDataStr = JSON.stringify(data);
+
+    if (lastSubmissionDataStr !== currentDataStr || !lastSubmissionPromise) {
+      lastSubmissionDataStr = currentDataStr;
+      lastSubmissionPromise = fetch('/api/fitness/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: currentDataStr
+      }).then(res => res.json());
+    }
+
+    lastSubmissionPromise
     .then(res => {
       if (isMounted) {
         if (res.success) {
           setIsDone(true);
         } else {
+          lastSubmissionDataStr = null;
+          lastSubmissionPromise = null;
           setError(res.error || "Analysis failed");
         }
       }
     })
     .catch(err => {
       if (isMounted) {
+        lastSubmissionDataStr = null;
+        lastSubmissionPromise = null;
         setError(err.message);
       }
     });
