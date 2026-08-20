@@ -1,4 +1,4 @@
-DO $ $
+DO $$
 DECLARE
     t_name text;
     c_name text := 'user_id';
@@ -42,4 +42,4 @@ BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'fitness_os_sets' AND column_name = 'exercise_id') THEN
         CREATE INDEX IF NOT EXISTS idx_fitness_os_sets_exercise_id ON fitness_os_sets(exercise_id);
     END IF;
-END $ $;
+END $$;
