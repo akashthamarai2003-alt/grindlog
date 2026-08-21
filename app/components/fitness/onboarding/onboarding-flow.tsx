@@ -13,6 +13,10 @@ import backImg from "../../../assets/images/placeholder-back.png";
 import leftImg from "../../../assets/images/placeholder-left.png";
 import rightImg from "../../../assets/images/placeholder-right.png";
 import goalImg from "../../../assets/images/placeholder-goal.png";
+import frontImgFemale from "../../../assets/images/placeholder-front-female.jpg";
+import backImgFemale from "../../../assets/images/placeholder-back-female.jpg";
+import leftImgFemale from "../../../assets/images/placeholder-left-female.jpg";
+import rightImgFemale from "../../../assets/images/placeholder-right-female.jpg";
 
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve) => {
@@ -1639,11 +1643,17 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                           <>
                         <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
                           <img 
-                            src={
-                              typeof (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg) === 'string'
-                                ? (item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg) as unknown as string
-                                : ((item.field === 'body_scan_front' ? frontImg : item.field === 'body_scan_back' ? backImg : item.field === 'body_scan_left' ? leftImg : rightImg) as any).src
-                            }
+                            src={(() => {
+                              const isFemale = data.gender === 'Female';
+                              const imgMap: Record<string, any> = {
+                                body_scan_front: isFemale ? frontImgFemale : frontImg,
+                                body_scan_back: isFemale ? backImgFemale : backImg,
+                                body_scan_left: isFemale ? leftImgFemale : leftImg,
+                                body_scan_right: isFemale ? rightImgFemale : rightImg,
+                              };
+                              const img = imgMap[item.field];
+                              return typeof img === 'string' ? img : (img as any).src;
+                            })()}
                             alt={`${item.label} Reference`}
                             className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
                           />
