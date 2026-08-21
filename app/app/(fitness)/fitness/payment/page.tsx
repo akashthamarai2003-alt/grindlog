@@ -61,7 +61,7 @@ export default function FitnessPaymentPage() {
 
   // Fetch current premium status
   useEffect(() => {
-    getUserPremiumDetailsAction().then((res) => {
+    getUserPremiumDetailsAction("fitness_os").then((res) => {
       if (res) setCurrentPremiumInfo(res as any);
     });
   }, []);
@@ -86,7 +86,7 @@ export default function FitnessPaymentPage() {
       attempts++;
       if (!isPolling || attempts > 30) return; // Stop polling after ~2 minutes
       
-      checkUserPremiumStatusAction(selectedPlan, level).then((isPremium) => {
+      checkUserPremiumStatusAction(selectedPlan, level, "fitness_os").then((isPremium) => {
         if (isPremium) {
           setIsSuccess(true);
           setIsPolling(false);
@@ -114,7 +114,7 @@ export default function FitnessPaymentPage() {
   // Check if user is already premium on mount ONLY IF they initiated a payment in this session (e.g., returning from UPI)
   useEffect(() => {
     if (sessionStorage.getItem("payment_in_progress") === "true") {
-      checkUserPremiumStatusAction().then((isPremium) => {
+      checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((isPremium) => {
         if (isPremium) {
           setIsSuccess(true);
           sessionStorage.removeItem("payment_in_progress");
@@ -143,7 +143,8 @@ export default function FitnessPaymentPage() {
           selectedPlan,
           level,
           undefined,
-          true
+          true,
+          "fitness_os"
         );
         if (verifyRes.success) {
           setIsSuccess(true);
@@ -163,13 +164,15 @@ export default function FitnessPaymentPage() {
         handler: async function (response: any) {
           try {
             const verifyRes = await verifyRazorpayPayment(
-              response.razorpay_order_id,
-              response.razorpay_payment_id,
-              response.razorpay_signature,
-              selectedPlan,
-              level,
-              undefined
-            );
+                response.razorpay_order_id,
+                response.razorpay_payment_id,
+                response.razorpay_signature,
+                selectedPlan,
+                level,
+                undefined,
+                false,
+                "fitness_os"
+              );
 
             if (verifyRes.success) {
               setIsSuccess(true);
@@ -193,7 +196,7 @@ export default function FitnessPaymentPage() {
           ondismiss: function () {
             setIsProcessing(false);
             setTimeout(() => {
-              checkUserPremiumStatusAction().then((isPremium) => {
+              checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((isPremium) => {
                 if (isPremium) {
                   setIsSuccess(true);
                 }
@@ -418,3 +421,5 @@ export default function FitnessPaymentPage() {
     </div>
   );
 }
+
+

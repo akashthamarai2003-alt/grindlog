@@ -36,14 +36,38 @@ export async function POST(req: Request) {
       const notes = payment.notes;
 
       if (notes && notes.userId) {
-        // Prevent Fitness AI OS payments from being processed by GrindLog webhook
-        if (notes.source === "fitness_ai_os") {
-          return NextResponse.json({ success: true, message: "Ignored by GrindLog, handled by Fitness OS" });
-        }
-
         const adminClient = createAdminClient();
         
-        // Prevent double processing
+        if (notes.source === "fitness_ai_os") {
+          // Process Fitness OS payments
+          await adminClient
+            .from("fitness_os_profiles")
+            .update({ 
+              fitness_is_premium: true,
+              fitness_premium_tier: notes.tier || "lifetime",
+              fitness_premium_level: notes.level || "pro",
+              fitness_premium_expires_at: calculateExpiryDate(notes.tier || "lifetime")
+            })
+            .eq("user_id", notes.userId);
+            
+          try {
+            await adminClient.from("subscriptions").insert({
+              user_id: notes.userId,
+              plan: `fitness_${notes.tier || "lifetime"}_${notes.level || "pro"}`,
+              status: "active",
+              razorpay_order_id: payment.order_id,
+              razorpay_payment_id: payment.id,
+              expires_at: calculateExpiryDate(notes.tier || "lifetime"),
+              started_at: new Date().toISOString(),
+            });
+          } catch (subErr) {
+            console.warn("Webhook fitness subscription insert warning:", subErr);
+          }
+          
+          return NextResponse.json({ success: true, message: "Handled Fitness OS Payment" });
+        }
+        
+        // Prevent double processing for GrindLog
         const { data: profile } = await adminClient
           .from("profiles")
           .select("ai_messages_remaining, is_premium")

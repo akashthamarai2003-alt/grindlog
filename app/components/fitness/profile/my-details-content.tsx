@@ -85,8 +85,8 @@ export function MyDetailsContent({
     ? new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
     : "Recent Member";
 
-  const isPremium = Boolean(mainProfile?.is_premium);
-  const premiumLevel = mainProfile?.premium_level || (isPremium ? "core" : "free");
+  const isPremium = Boolean(fitnessProfile?.fitness_is_premium);
+  const premiumLevel = fitnessProfile?.fitness_premium_level || (isPremium ? "core" : "free");
   const isPro = premiumLevel === "pro";
 
   // Calculate BMI
@@ -623,6 +623,7 @@ export function MyDetailsContent({
     </div>
   );
 }
+
 
 
 

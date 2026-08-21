@@ -24,7 +24,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     { data: latestReview }
   ] = await Promise.all([
     supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-    supabase.from("profiles").select("is_premium, premium_level").eq("id", user.id).maybeSingle(),
+    supabase.from("fitness_os_profiles").select("fitness_is_premium, fitness_premium_level").eq("user_id", user.id).maybeSingle(),
     supabase.from("fitness_os_workout_plans").select("id, plan_data, created_at").eq("user_id", user.id).eq("status", "active").maybeSingle(),
     supabase.from("fitness_os_workouts").select(`
       *,
@@ -40,7 +40,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     redirect("/fitness/onboarding");
   }
 
-  if (!mainProfile?.is_premium) {
+  if (!mainProfile?.fitness_is_premium) {
     if (plan) {
       redirect("/fitness/payment?returnTo=/fitness");
     } else {
@@ -54,7 +54,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     dayNumber = Math.max(1, differenceInCalendarDays(new Date(), new Date(plan.created_at)) + 1);
   }
 
-  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} premiumLevel={mainProfile?.premium_level || 'core'} targetDateStr={targetDateStr} />;
+  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} premiumLevel={mainProfile?.fitness_premium_level || 'core'} targetDateStr={targetDateStr} />;
 }
 
 export default async function FitnessHome({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
@@ -71,3 +71,4 @@ export default async function FitnessHome({ searchParams }: { searchParams: Prom
     </div>
   );
 }
+

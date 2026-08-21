@@ -18,10 +18,10 @@ export default function RoadmapPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: fitnessProfile } = await (supabase.from('fitness_os_profiles' as any) as any).select('*').eq('user_id', user.id).single();
-        if (fitnessProfile) setProfile(fitnessProfile);
-        
-        const { data: mainProfile } = await supabase.from('profiles').select('is_premium').eq('id', user.id).single();
-        if (mainProfile) setIsPremium(!!mainProfile.is_premium);
+        if (fitnessProfile) {
+          setProfile(fitnessProfile);
+          setIsPremium(!!fitnessProfile.fitness_is_premium);
+        }
       }
     };
     fetchProfile();
@@ -240,3 +240,4 @@ export default function RoadmapPage() {
     </div>
   );
 }
+

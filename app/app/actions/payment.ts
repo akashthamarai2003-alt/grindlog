@@ -132,7 +132,8 @@ export async function verifyRazorpayPayment(
   tier: "monthly" | "six_months" | "lifetime", 
   level: "core" | "pro", 
   couponId?: string,
-  isBypass: boolean = false
+  isBypass: boolean = false,
+  appName: "grindlog" | "fitness_os" = "grindlog"
 ) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -194,26 +195,43 @@ export async function verifyRazorpayPayment(
     }
   }
 
-  const { error } = await adminClient
-    .from("profiles")
-    .update({ 
-      is_premium: true,
-      premium_tier: tier,
-      premium_level: level,
-      premium_expires_at: calculateExpiryDate(tier)
-    })
-    .eq("id", user.id);
+  if (appName === "fitness_os") {
+      const { error } = await adminClient
+        .from("fitness_os_profiles")
+        .update({ 
+          fitness_is_premium: true,
+          fitness_premium_tier: tier,
+          fitness_premium_level: level,
+          fitness_premium_expires_at: calculateExpiryDate(tier)
+        })
+        .eq("user_id", user.id);
 
-  if (error) {
-    console.error("Error updating premium status with adminClient:", error);
-    return { success: false, error: error.message };
-  }
+      if (error) {
+        console.error("Error updating fitness premium status: ", error);
+        return { success: false, error: error.message };
+      }
+    } else {
+      const { error } = await adminClient
+        .from("profiles")
+        .update({ 
+          is_premium: true,
+          premium_tier: tier,
+          premium_level: level,
+          premium_expires_at: calculateExpiryDate(tier)
+        })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error("Error updating premium status with adminClient: ", error);
+        return { success: false, error: error.message };
+      }
+    }
 
   // Record subscription entry
   try {
     await adminClient.from("subscriptions").insert({
       user_id: user.id,
-      plan: `${tier}_${level}`,
+      plan: appName === "fitness_os" ? `fitness_${tier}_${level}` : `${tier}_${level}`,
       status: "active",
       razorpay_order_id: razorpayOrderId,
       razorpay_payment_id: razorpayPaymentId,
@@ -319,7 +337,8 @@ export async function verifyMessageTopUpPayment(
 
 export async function checkUserPremiumStatusAction(
   expectedTier?: "monthly" | "six_months" | "lifetime",
-  expectedLevel?: "core" | "pro"
+  expectedLevel?: "core" | "pro",
+  appName: "grindlog" | "fitness_os" = "grindlog"
 ) {
   try {
     const supabase = await createServerSupabase();
@@ -328,18 +347,36 @@ export async function checkUserPremiumStatusAction(
     if (!user) return false;
 
     const adminClient = createAdminClient();
-    const { data: profile } = await adminClient
-      .from("profiles")
-      .select("is_premium, premium_expires_at, premium_tier, premium_level")
-      .eq("id", user.id)
-      .single();
+    
+    if (appName === "fitness_os") {
+      const { data: profile } = await adminClient
+        .from("fitness_os_profiles")
+        .select("fitness_is_premium, fitness_premium_expires_at, fitness_premium_tier, fitness_premium_level")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (profile?.is_premium) {
-      if (!profile.premium_expires_at || new Date(profile.premium_expires_at) > new Date()) {
-        if (expectedTier && expectedLevel) {
-          return profile.premium_tier === expectedTier && profile.premium_level === expectedLevel;
+      if (profile?.fitness_is_premium) {
+        if (!profile.fitness_premium_expires_at || new Date(profile.fitness_premium_expires_at) > new Date()) {
+          if (expectedTier && expectedLevel) {
+            return profile.fitness_premium_tier === expectedTier && profile.fitness_premium_level === expectedLevel;
+          }
+          return true;
         }
-        return true;
+      }
+    } else {
+      const { data: profile } = await adminClient
+        .from("profiles")
+        .select("is_premium, premium_expires_at, premium_tier, premium_level")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.is_premium) {
+        if (!profile.premium_expires_at || new Date(profile.premium_expires_at) > new Date()) {
+          if (expectedTier && expectedLevel) {
+            return profile.premium_tier === expectedTier && profile.premium_level === expectedLevel;
+          }
+          return true;
+        }
       }
     }
     return false;
@@ -349,7 +386,7 @@ export async function checkUserPremiumStatusAction(
   }
 }
 
-export async function getUserPremiumDetailsAction() {
+export async function getUserPremiumDetailsAction(appName: "grindlog" | "fitness_os" = "grindlog") {
   try {
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
@@ -357,15 +394,35 @@ export async function getUserPremiumDetailsAction() {
     if (!user) return null;
 
     const adminClient = createAdminClient();
-    const { data: profile } = await adminClient
-      .from("profiles")
-      .select("is_premium, premium_expires_at, premium_tier, premium_level")
-      .eq("id", user.id)
-      .single();
+    
+    if (appName === "fitness_os") {
+      const { data: profile } = await adminClient
+        .from("fitness_os_profiles")
+        .select("fitness_is_premium, fitness_premium_expires_at, fitness_premium_tier, fitness_premium_level")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (profile?.is_premium) {
-      if (!profile.premium_expires_at || new Date(profile.premium_expires_at) > new Date()) {
-        return profile;
+      if (profile?.fitness_is_premium) {
+        if (!profile.fitness_premium_expires_at || new Date(profile.fitness_premium_expires_at) > new Date()) {
+          return {
+            is_premium: profile.fitness_is_premium,
+            premium_expires_at: profile.fitness_premium_expires_at,
+            premium_tier: profile.fitness_premium_tier,
+            premium_level: profile.fitness_premium_level
+          };
+        }
+      }
+    } else {
+      const { data: profile } = await adminClient
+        .from("profiles")
+        .select("is_premium, premium_expires_at, premium_tier, premium_level")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.is_premium) {
+        if (!profile.premium_expires_at || new Date(profile.premium_expires_at) > new Date()) {
+          return profile;
+        }
       }
     }
     return null;
@@ -374,3 +431,7 @@ export async function getUserPremiumDetailsAction() {
     return null;
   }
 }
+
+
+
+
