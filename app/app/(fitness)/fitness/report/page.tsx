@@ -35,17 +35,42 @@ export default async function AIStartingReportPage() {
     ? rawFitnessScore 
     : 68;
     
-  const realityCheck = aiStrategy.reality_check;
-  const budgetBreakdown = aiStrategy.budget_breakdown;
-  const healthAndSafety = aiStrategy.health_and_safety;
-  const timelineProjection = Array.isArray(aiStrategy.timeline_projection) ? aiStrategy.timeline_projection : [];
+  const rawRealityCheck = aiStrategy.reality_check;
+  const realityCheck = rawRealityCheck || {
+    is_timeframe_realistic: true,
+    honest_assessment: "Your plan has been customized based on your profile. Stay consistent with your training and nutrition to achieve your goals.",
+    achievable_in_timeframe: [
+      "Build a consistent workout habit",
+      "Improve overall strength and endurance",
+      "Achieve visible body composition changes",
+    ],
+  };
 
-  const achievableList = realityCheck && Array.isArray(realityCheck.achievable_in_timeframe) 
-    ? realityCheck.achievable_in_timeframe 
+  const rawBudgetBreakdown = aiStrategy.budget_breakdown;
+  const budgetBreakdown = rawBudgetBreakdown || {
+    total_estimated_monthly_cost: "Varies",
+    monthly_budget: "Varies",
+    budget_verdict: "Focus on whole foods — eggs, rice, lentils, and seasonal vegetables give the best nutrition per rupee. Cook at home as much as possible to stay within budget.",
+    recommended_add_ons: [],
+  };
+
+  const healthAndSafety = aiStrategy.health_and_safety;
+
+  const timelineProjection = Array.isArray(aiStrategy.timeline_projection) && aiStrategy.timeline_projection.length > 0
+    ? aiStrategy.timeline_projection
+    : [
+        { timeframe: "Week 1-2", target_weight_kg: null, expected_changes: "Body adapts to new routine. Focus on form and consistency." },
+        { timeframe: "Week 3-4", target_weight_kg: null, expected_changes: "Strength improves, early body recomposition begins." },
+        { timeframe: "Week 5-8", target_weight_kg: null, expected_changes: "Visible changes in muscle definition and fat loss." },
+        { timeframe: "Week 9-12", target_weight_kg: null, expected_changes: "Significant progress milestone. Reassess and level up." },
+      ];
+
+  const achievableList = Array.isArray(realityCheck.achievable_in_timeframe)
+    ? realityCheck.achievable_in_timeframe
     : [];
 
-  const recommendedAddOns = budgetBreakdown && Array.isArray(budgetBreakdown.recommended_add_ons) 
-    ? budgetBreakdown.recommended_add_ons 
+  const recommendedAddOns = Array.isArray(budgetBreakdown.recommended_add_ons)
+    ? budgetBreakdown.recommended_add_ons
     : [];
 
   return (
@@ -117,80 +142,76 @@ export default async function AIStartingReportPage() {
         </div>
 
         {/* REALITY CHECK SECTION */}
-        {realityCheck && (
-          <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4 relative overflow-hidden">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">⚡</span>
-                <h2 className="text-lg font-black tracking-tight text-white leading-tight">Timeframe & Reality Check</h2>
-              </div>
-              <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider text-center shrink-0 ${
-                realityCheck.is_timeframe_realistic 
-                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
-                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-              }`}>
-                {realityCheck.is_timeframe_realistic ? "Realistic" : "Expectation Adjusted"}
-              </span>
+        <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4 relative overflow-hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">⚡</span>
+              <h2 className="text-lg font-black tracking-tight text-white leading-tight">Timeframe & Reality Check</h2>
             </div>
-
-            <p className="text-sm text-gray-300 leading-relaxed font-medium bg-[#0D150D] p-4 rounded-2xl border border-white/5">
-              {String(realityCheck.honest_assessment || '')}
-            </p>
-
-            {achievableList.length > 0 && (
-              <div>
-                <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-2">What you WILL achieve in this period:</p>
-                <ul className="space-y-2">
-                  {achievableList.map((item: any, idx: number) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-300">
-                      <span className="text-[#ADFF00] font-bold mt-0.5">✓</span>
-                      <span>{String(item)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider text-center shrink-0 ${
+              realityCheck.is_timeframe_realistic 
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
+                : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+            }`}>
+              {realityCheck.is_timeframe_realistic ? "Realistic" : "Expectation Adjusted"}
+            </span>
           </div>
-        )}
+
+          <p className="text-sm text-gray-300 leading-relaxed font-medium bg-[#0D150D] p-4 rounded-2xl border border-white/5">
+            {String(realityCheck.honest_assessment || '')}
+          </p>
+
+          {achievableList.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-2">What you WILL achieve in this period:</p>
+              <ul className="space-y-2">
+                {achievableList.map((item: any, idx: number) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm text-gray-300">
+                    <span className="text-[#ADFF00] font-bold mt-0.5">✓</span>
+                    <span>{String(item)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
 
         {/* BUDGET & DIET ENVIRONMENT BREAKDOWN */}
-        {budgetBreakdown && (
-          <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">💰</span>
-                <h2 className="text-lg font-black tracking-tight text-white leading-tight">Budget & Diet Plan</h2>
-              </div>
-              <span className="text-[10px] sm:text-xs font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-3 py-1 rounded-full border border-[#ADFF00]/20 shrink-0 text-center">
-                {String(budgetBreakdown.total_estimated_monthly_cost || budgetBreakdown.monthly_budget || '')}
-              </span>
+        <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">💰</span>
+              <h2 className="text-lg font-black tracking-tight text-white leading-tight">Budget & Diet Plan</h2>
             </div>
-
-            <p className="text-xs text-gray-400 leading-relaxed">
-              {String(budgetBreakdown.budget_verdict || '')}
-            </p>
-
-            {recommendedAddOns.length > 0 && (
-              <div className="space-y-2 pt-2">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Affordable Protein Add-ons:</p>
-                <div className="space-y-2">
-                  {recommendedAddOns.map((addon: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between bg-[#0D150D] p-3 rounded-xl border border-white/5 text-xs">
-                      <div>
-                        <p className="font-bold text-white">{String(addon.item || '')} <span className="text-gray-400 font-normal">({String(addon.daily_qty || '')})</span></p>
-                        <p className="text-gray-500 text-[11px]">{String(addon.protein_provided_g || '')} protein/day</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-extrabold text-[#ADFF00]">{String(addon.monthly_cost || '')}</p>
-                        <p className="text-gray-500 text-[10px]">{String(addon.daily_cost || '')}/day</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <span className="text-[10px] sm:text-xs font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-3 py-1 rounded-full border border-[#ADFF00]/20 shrink-0 text-center">
+              {String(budgetBreakdown.total_estimated_monthly_cost || budgetBreakdown.monthly_budget || '')}
+            </span>
           </div>
-        )}
+
+          <p className="text-xs text-gray-400 leading-relaxed">
+            {String(budgetBreakdown.budget_verdict || '')}
+          </p>
+
+          {recommendedAddOns.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Affordable Protein Add-ons:</p>
+              <div className="space-y-2">
+                {recommendedAddOns.map((addon: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between bg-[#0D150D] p-3 rounded-xl border border-white/5 text-xs">
+                    <div>
+                      <p className="font-bold text-white">{String(addon.item || '')} <span className="text-gray-400 font-normal">({String(addon.daily_qty || '')})</span></p>
+                      <p className="text-gray-500 text-[11px]">{String(addon.protein_provided_g || '')} protein/day</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-extrabold text-[#ADFF00]">{String(addon.monthly_cost || '')}</p>
+                      <p className="text-gray-500 text-[10px]">{String(addon.daily_cost || '')}/day</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* HEALTH & SAFETY PROTOCOL */}
         {healthAndSafety && healthAndSafety.has_concerns && (
@@ -228,28 +249,26 @@ export default async function AIStartingReportPage() {
         )}
 
         {/* TIMELINE PROJECTION */}
-        {timelineProjection.length > 0 && (
-          <div>
-            <h2 className="text-lg font-black mb-4 flex items-center gap-2">
-              <span>📅</span> Expected Progress Roadmap
-            </h2>
-            <div className="space-y-3">
-              {timelineProjection.map((phase: any, index: number) => (
-                <div key={index} className="bg-[#121E12] p-4 rounded-2xl border border-[#1A2619] space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider">{String(phase.timeframe || '')}</span>
-                    {phase.target_weight_kg && (
-                      <span className="text-xs font-extrabold text-white bg-black/40 px-2.5 py-0.5 rounded-full">
-                        {String(phase.target_weight_kg)} kg
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-300 font-medium">{String(phase.expected_changes || '')}</p>
+        <div>
+          <h2 className="text-lg font-black mb-4 flex items-center gap-2">
+            <span>📅</span> Expected Progress Roadmap
+          </h2>
+          <div className="space-y-3">
+            {timelineProjection.map((phase: any, index: number) => (
+              <div key={index} className="bg-[#121E12] p-4 rounded-2xl border border-[#1A2619] space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider">{String(phase.timeframe || '')}</span>
+                  {phase.target_weight_kg && (
+                    <span className="text-xs font-extrabold text-white bg-black/40 px-2.5 py-0.5 rounded-full">
+                      {String(phase.target_weight_kg)} kg
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
+                <p className="text-xs text-gray-300 font-medium">{String(phase.expected_changes || '')}</p>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* AI Focus Areas */}
         <div>
