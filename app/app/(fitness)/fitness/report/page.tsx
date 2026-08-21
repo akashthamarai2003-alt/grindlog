@@ -30,13 +30,22 @@ export default async function AIStartingReportPage() {
     "Improve overall conditioning"
   ];
   
-  const fitnessScore = aiStrategy.fitness_score || 68;
+  const rawFitnessScore = aiStrategy.fitness_score;
+  const fitnessScore = (typeof rawFitnessScore === 'number' || typeof rawFitnessScore === 'string') 
+    ? rawFitnessScore 
+    : 68;
+    
   const realityCheck = aiStrategy.reality_check;
+  const budgetBreakdown = aiStrategy.budget_breakdown;
   const healthAndSafety = aiStrategy.health_and_safety;
   const timelineProjection = Array.isArray(aiStrategy.timeline_projection) ? aiStrategy.timeline_projection : [];
 
   const achievableList = realityCheck && Array.isArray(realityCheck.achievable_in_timeframe) 
     ? realityCheck.achievable_in_timeframe 
+    : [];
+
+  const recommendedAddOns = budgetBreakdown && Array.isArray(budgetBreakdown.recommended_add_ons) 
+    ? budgetBreakdown.recommended_add_ons 
     : [];
 
   return (
@@ -125,17 +134,17 @@ export default async function AIStartingReportPage() {
             </div>
 
             <p className="text-sm text-gray-300 leading-relaxed font-medium bg-[#0D150D] p-4 rounded-2xl border border-white/5">
-              {realityCheck.honest_assessment}
+              {String(realityCheck.honest_assessment || '')}
             </p>
 
             {achievableList.length > 0 && (
               <div>
                 <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-2">What you WILL achieve in this period:</p>
                 <ul className="space-y-2">
-                  {achievableList.map((item: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-2 text-xs text-gray-300">
+                  {achievableList.map((item: any, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-300">
                       <span className="text-[#ADFF00] font-bold mt-0.5">✓</span>
-                      <span>{item}</span>
+                      <span>{String(item)}</span>
                     </li>
                   ))}
                 </ul>
@@ -144,7 +153,44 @@ export default async function AIStartingReportPage() {
           </div>
         )}
 
+        {/* BUDGET & DIET ENVIRONMENT BREAKDOWN */}
+        {budgetBreakdown && (
+          <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💰</span>
+                <h2 className="text-lg font-black tracking-tight text-white leading-tight">Budget & Diet Plan</h2>
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-3 py-1 rounded-full border border-[#ADFF00]/20 shrink-0 text-center">
+                {String(budgetBreakdown.total_estimated_monthly_cost || budgetBreakdown.monthly_budget || '')}
+              </span>
+            </div>
 
+            <p className="text-xs text-gray-400 leading-relaxed">
+              {String(budgetBreakdown.budget_verdict || '')}
+            </p>
+
+            {recommendedAddOns.length > 0 && (
+              <div className="space-y-2 pt-2">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Affordable Protein Add-ons:</p>
+                <div className="space-y-2">
+                  {recommendedAddOns.map((addon: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between bg-[#0D150D] p-3 rounded-xl border border-white/5 text-xs">
+                      <div>
+                        <p className="font-bold text-white">{String(addon.item || '')} <span className="text-gray-400 font-normal">({String(addon.daily_qty || '')})</span></p>
+                        <p className="text-gray-500 text-[11px]">{String(addon.protein_provided_g || '')} protein/day</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-extrabold text-[#ADFF00]">{String(addon.monthly_cost || '')}</p>
+                        <p className="text-gray-500 text-[10px]">{String(addon.daily_cost || '')}/day</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* HEALTH & SAFETY PROTOCOL */}
         {healthAndSafety && healthAndSafety.has_concerns && (
@@ -162,17 +208,17 @@ export default async function AIStartingReportPage() {
             </div>
 
             <p className="text-xs text-gray-300 leading-relaxed font-medium bg-[#0D150D] p-4 rounded-2xl border border-red-900/20 relative z-10">
-              {healthAndSafety.safety_verdict}
+              {String(healthAndSafety.safety_verdict || '')}
             </p>
 
             {healthAndSafety.medical_focus_areas && healthAndSafety.medical_focus_areas.length > 0 && (
               <div className="relative z-10 pt-2">
                 <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">Medical Focus Areas:</p>
                 <ul className="space-y-2">
-                  {healthAndSafety.medical_focus_areas.map((item: string, idx: number) => (
+                  {healthAndSafety.medical_focus_areas.map((item: any, idx: number) => (
                     <li key={idx} className="flex items-start gap-2 text-xs text-gray-300">
                       <span className="text-red-400 font-bold mt-0.5">⚕️</span>
-                      <span>{item}</span>
+                      <span>{String(item)}</span>
                     </li>
                   ))}
                 </ul>
@@ -191,14 +237,14 @@ export default async function AIStartingReportPage() {
               {timelineProjection.map((phase: any, index: number) => (
                 <div key={index} className="bg-[#121E12] p-4 rounded-2xl border border-[#1A2619] space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider">{phase.timeframe}</span>
+                    <span className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider">{String(phase.timeframe || '')}</span>
                     {phase.target_weight_kg && (
                       <span className="text-xs font-extrabold text-white bg-black/40 px-2.5 py-0.5 rounded-full">
-                        {phase.target_weight_kg} kg
+                        {String(phase.target_weight_kg)} kg
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-300 font-medium">{phase.expected_changes}</p>
+                  <p className="text-xs text-gray-300 font-medium">{String(phase.expected_changes || '')}</p>
                 </div>
               ))}
             </div>
@@ -209,10 +255,10 @@ export default async function AIStartingReportPage() {
         <div>
           <h2 className="text-lg font-black mb-4">AI Focus Areas</h2>
           <div className="space-y-3">
-            {focusAreas.map((area: string, index: number) => (
+            {focusAreas.map((area: any, index: number) => (
               <div key={index} className="flex items-center gap-4 bg-[#121E12] p-4 rounded-2xl border border-[#1A2619]">
                 <span className="text-[#ADFF00] font-black text-lg opacity-50 w-6">0{index + 1}</span>
-                <span className="font-semibold text-gray-200">{area}</span>
+                <span className="font-semibold text-gray-200">{String(area)}</span>
               </div>
             ))}
           </div>
