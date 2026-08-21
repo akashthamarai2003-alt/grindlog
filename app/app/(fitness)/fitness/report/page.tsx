@@ -29,89 +29,226 @@ export default async function AIStartingReportPage() {
     "Improve core strength",
     "Improve overall conditioning"
   ];
+  
+  const fitnessScore = aiStrategy.fitness_score || 68;
+  const realityCheck = aiStrategy.reality_check;
+  const healthAndSafety = aiStrategy.health_and_safety;
+  const timelineProjection = Array.isArray(aiStrategy.timeline_projection) ? aiStrategy.timeline_projection : [];
+
+  const achievableList = realityCheck && Array.isArray(realityCheck.achievable_in_timeframe) 
+    ? realityCheck.achievable_in_timeframe 
+    : [];
 
   return (
-    <div className="min-h-screen bg-[#0A1108] text-white">
-      <div className="max-w-md mx-auto px-5 pt-12 pb-24">
+    <div className="min-h-screen bg-[#0A1108] text-white p-6 pb-28">
+      <div className="max-w-md mx-auto space-y-8 mt-4">
+        
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-[#ADFF00]/10 flex items-center justify-center">
-            <Brain className="w-5 h-5 text-[#ADFF00]" />
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121E12] border border-[#1A2619] mb-4">
+            <Brain size={14} className="text-[#ADFF00]" />
+            <span className="text-xs font-bold text-gray-300 tracking-wider">AI STARTING REPORT</span>
           </div>
-          <div>
-            <h1 className="text-2xl font-black italic tracking-tight">AI STRATEGY</h1>
-            <p className="text-gray-400 text-sm">Custom plan generated</p>
+          <h1 className="text-3xl font-black tracking-tight">Your Starting Point</h1>
+        </div>
+
+        {/* Top Stats Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Weight</p>
+            <p className="text-2xl font-black text-white">{profile.weight || '--'} kg</p>
+          </div>
+          <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Goal</p>
+            <p className="text-2xl font-black text-white">{profile.target_weight || '--'} kg</p>
+          </div>
+          <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Target</p>
+            <p className="text-lg font-bold text-[#ADFF00] leading-tight">{profile.goal || 'Not specified'}</p>
+          </div>
+          <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Physique</p>
+            <p className="text-lg font-bold text-[#ADFF00] leading-tight">
+              {(!profile.target_physique || profile.target_physique === 'Not specified') 
+                ? (profile.goal_physique_image ? 'Custom Photo' : 'Not specified')
+                : profile.target_physique}
+            </p>
           </div>
         </div>
 
-        {/* Phase Timeline */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#ADFF00]/5 blur-3xl -mr-10 -mt-10 rounded-full" />
-          
-          <h2 className="text-sm font-bold text-gray-400 mb-6 uppercase tracking-wider">Transformation Phases</h2>
-          
-          <div className="space-y-6">
-            <div className="flex gap-4 relative">
-              <div className="w-px h-full bg-white/10 absolute left-[15px] top-8" />
-              <div className="w-8 h-8 rounded-full bg-[#ADFF00] flex items-center justify-center shrink-0 z-10 text-black font-bold text-sm">
-                1
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-1">{aiStrategy.phase_1_name || "Foundation & Base"}</h3>
-                <p className="text-sm text-gray-400">Weeks 1-4. Focus on form, consistency, and initial body recomp.</p>
-              </div>
-            </div>
-            
-            <div className="flex gap-4 relative">
-              <div className="w-px h-full bg-white/10 absolute left-[15px] top-8" />
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 z-10 text-gray-400 font-bold text-sm">
-                2
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-1">{aiStrategy.phase_2_name || "Hypertrophy & Cut"}</h3>
-                <p className="text-sm text-gray-400">Weeks 5-8. Progressive overload and targeted fat loss.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 relative">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 z-10 text-gray-400 font-bold text-sm">
-                3
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-1">{aiStrategy.phase_3_name || "Peak & Polish"}</h3>
-                <p className="text-sm text-gray-400">Weeks 9-12. Fine-tuning details and maximizing strength.</p>
-              </div>
-            </div>
+        {/* Profile Configuration */}
+        <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">⚙️</span>
+            <h2 className="text-lg font-black tracking-tight text-white leading-tight">Your Settings</h2>
           </div>
-        </div>
-
-        {/* Focus Areas */}
-        <div className="mb-8">
-          <h2 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Primary Focus</h2>
+          
           <div className="flex flex-wrap gap-2">
-            {focusAreas.map((area: string, idx: number) => (
-              <div key={idx} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm font-medium">
-                {area}
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.training_location || 'Gym'}
+            </span>
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.training_days_per_week || 4} Days/Week
+            </span>
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.workout_duration_minutes || 45} Mins
+            </span>
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.food_type || profile.diet_preference || 'Balanced Diet'}
+            </span>
+            <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+              {profile.food_environment || 'Home'}
+            </span>
+            {profile.experience_level && (
+              <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
+                {profile.experience_level}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* REALITY CHECK SECTION */}
+        {realityCheck && (
+          <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4 relative overflow-hidden">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚡</span>
+                <h2 className="text-lg font-black tracking-tight text-white leading-tight">Timeframe & Reality Check</h2>
+              </div>
+              <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider text-center shrink-0 ${
+                realityCheck.is_timeframe_realistic 
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
+                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+              }`}>
+                {realityCheck.is_timeframe_realistic ? "Realistic" : "Expectation Adjusted"}
+              </span>
+            </div>
+
+            <p className="text-sm text-gray-300 leading-relaxed font-medium bg-[#0D150D] p-4 rounded-2xl border border-white/5">
+              {realityCheck.honest_assessment}
+            </p>
+
+            {achievableList.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-2">What you WILL achieve in this period:</p>
+                <ul className="space-y-2">
+                  {achievableList.map((item: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-gray-300">
+                      <span className="text-[#ADFF00] font-bold mt-0.5">✓</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+
+
+        {/* HEALTH & SAFETY PROTOCOL */}
+        {healthAndSafety && healthAndSafety.has_concerns && (
+          <div className="bg-[#121E12] border border-red-900/30 rounded-3xl p-5 space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl" />
+            
+            <div className="flex items-center justify-between gap-3 relative z-10">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🏥</span>
+                <h2 className="text-lg font-black tracking-tight text-white leading-tight">Safety Protocol</h2>
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold text-red-400 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20 shrink-0 text-center uppercase tracking-wider">
+                Active Restrictions
+              </span>
+            </div>
+
+            <p className="text-xs text-gray-300 leading-relaxed font-medium bg-[#0D150D] p-4 rounded-2xl border border-red-900/20 relative z-10">
+              {healthAndSafety.safety_verdict}
+            </p>
+
+            {healthAndSafety.medical_focus_areas && healthAndSafety.medical_focus_areas.length > 0 && (
+              <div className="relative z-10 pt-2">
+                <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">Medical Focus Areas:</p>
+                <ul className="space-y-2">
+                  {healthAndSafety.medical_focus_areas.map((item: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-gray-300">
+                      <span className="text-red-400 font-bold mt-0.5">⚕️</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TIMELINE PROJECTION */}
+        {timelineProjection.length > 0 && (
+          <div>
+            <h2 className="text-lg font-black mb-4 flex items-center gap-2">
+              <span>📅</span> Expected Progress Roadmap
+            </h2>
+            <div className="space-y-3">
+              {timelineProjection.map((phase: any, index: number) => (
+                <div key={index} className="bg-[#121E12] p-4 rounded-2xl border border-[#1A2619] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider">{phase.timeframe}</span>
+                    {phase.target_weight_kg && (
+                      <span className="text-xs font-extrabold text-white bg-black/40 px-2.5 py-0.5 rounded-full">
+                        {phase.target_weight_kg} kg
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-300 font-medium">{phase.expected_changes}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* AI Focus Areas */}
+        <div>
+          <h2 className="text-lg font-black mb-4">AI Focus Areas</h2>
+          <div className="space-y-3">
+            {focusAreas.map((area: string, index: number) => (
+              <div key={index} className="flex items-center gap-4 bg-[#121E12] p-4 rounded-2xl border border-[#1A2619]">
+                <span className="text-[#ADFF00] font-black text-lg opacity-50 w-6">0{index + 1}</span>
+                <span className="font-semibold text-gray-200">{area}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Key Directive */}
-        <div className="bg-[#ADFF00]/10 border border-[#ADFF00]/20 rounded-2xl p-5 mb-10 flex gap-4 items-start">
-          <Info className="w-5 h-5 text-[#ADFF00] shrink-0 mt-0.5" />
-          <p className="text-sm text-[#ADFF00] leading-relaxed">
-            Your plan requires strict adherence to progressive overload. We will adjust macros bi-weekly based on weigh-ins and visual check-ins.
-          </p>
+        {/* Fitness Score */}
+        <div>
+          <h2 className="text-lg font-black mb-4">Fitness Score</h2>
+          <div className="bg-[#121E12] border border-[#1A2619] p-6 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden">
+            {/* Background Glow */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+              <div className="w-[150px] h-[150px] bg-[#ADFF00] rounded-full blur-[50px]" />
+            </div>
+
+            <div className="flex items-end gap-2 mb-2 relative z-10">
+              <span className="text-6xl font-black text-white tracking-tighter">{fitnessScore}</span>
+              <span className="text-xl font-bold text-gray-500 mb-2">/ 100</span>
+            </div>
+            
+            <p className="text-sm font-semibold text-[#ADFF00] mb-4 relative z-10">App-generated coaching score</p>
+            
+            <div className="flex items-center gap-2 text-xs text-gray-500 relative z-10 bg-black/40 px-3 py-1.5 rounded-full">
+              <Info size={12} />
+              <span>Not a medical measurement.</span>
+            </div>
+          </div>
         </div>
 
-        {/* CTA */}
-        <Link 
-          href="/fitness/payment?returnTo=/fitness"
-          className="w-full flex items-center justify-center gap-2 bg-[#ADFF00] text-black font-bold py-4 rounded-xl hover:bg-[#9BE500] transition-colors"
-        >
-          GENERATE MY PLAN <ArrowRight className="w-5 h-5" />
-        </Link>
+        {/* Continue Button */}
+        <div className="pt-4">
+          <Link href="/fitness/plan-setup" className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg active:scale-[0.98] transition-transform flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33]">
+            <span>Generate My Plan</span>
+            <ArrowRight size={20} />
+          </Link>
+        </div>
+
       </div>
     </div>
   );
