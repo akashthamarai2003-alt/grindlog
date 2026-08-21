@@ -17,6 +17,10 @@ import frontImgFemale from "../../../assets/images/placeholder-front-female.jpg"
 import backImgFemale from "../../../assets/images/placeholder-back-female.jpg";
 import leftImgFemale from "../../../assets/images/placeholder-left-female.jpg";
 import rightImgFemale from "../../../assets/images/placeholder-right-female.jpg";
+import frontImgMaleFat from "../../../assets/images/placeholder-front-male-fat.jpg";
+import backImgMaleFat from "../../../assets/images/placeholder-back-male-fat.jpg";
+import leftImgMaleFat from "../../../assets/images/placeholder-left-male-fat.jpg";
+import rightImgMaleFat from "../../../assets/images/placeholder-right-male-fat.jpg";
 
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve) => {
@@ -1645,11 +1649,12 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                           <img 
                             src={(() => {
                               const isFemale = data.gender === 'Female';
+                              const isMaleFat = !isFemale && data.goal && data.goal.includes('Fat');
                               const imgMap: Record<string, any> = {
-                                body_scan_front: isFemale ? frontImgFemale : frontImg,
-                                body_scan_back: isFemale ? backImgFemale : backImg,
-                                body_scan_left: isFemale ? leftImgFemale : leftImg,
-                                body_scan_right: isFemale ? rightImgFemale : rightImg,
+                                body_scan_front: isFemale ? frontImgFemale : (isMaleFat ? frontImgMaleFat : frontImg),
+                                body_scan_back: isFemale ? backImgFemale : (isMaleFat ? backImgMaleFat : backImg),
+                                body_scan_left: isFemale ? leftImgFemale : (isMaleFat ? leftImgMaleFat : leftImg),
+                                body_scan_right: isFemale ? rightImgFemale : (isMaleFat ? rightImgMaleFat : rightImg),
                               };
                               const img = imgMap[item.field];
                               return typeof img === 'string' ? img : (img as any).src;
