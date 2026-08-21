@@ -25,6 +25,7 @@ interface UserWithDetails {
   fitness_is_premium?: boolean;
   fitness_premium_tier?: string;
   fitness_premium_level?: string;
+  fitness_premium_expires_at?: string;
 }
 
 export default function UsersTableClient({ users }: { users: UserWithDetails[] }) {
@@ -48,22 +49,29 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
         if (!matchName && !matchEmail) return false;
       }
 
-      // Filter by App
+      // Filter by App — a user can be on BOTH apps (same email), so filter by whether they have that profile
       if (appFilter === "fitness" && !user.has_fitness_profile) return false;
-      if (appFilter === "grindlog" && user.has_fitness_profile) return false;
+      if (appFilter === "grindlog" && user.has_fitness_profile && !user.is_premium && !user.fitness_is_premium) {
+        // Show user if they have any activity in grindlog (xp > 0) or just aren't fitness-only
+        // Actually: just show all users if grindlog selected — they all have grindlog profiles
+        // The profiles table IS the grindlog table, so all users here are grindlog users
+      }
 
-      // 2. Status filter
-      if (statusFilter === "paid" && !user.is_premium) return false;
-      if (statusFilter === "unpaid" && user.is_premium) return false;
+      // 2. Status filter — check correct app's premium
+      const effectiveIsPremium = appFilter === "fitness" ? user.fitness_is_premium : user.is_premium;
+      if (statusFilter === "paid" && !effectiveIsPremium) return false;
+      if (statusFilter === "unpaid" && effectiveIsPremium) return false;
 
-      // 3. Level filter
-      if (levelFilter === "pro" && (!user.is_premium || user.premium_level !== "pro")) return false;
-      if (levelFilter === "core" && (!user.is_premium || user.premium_level !== "core")) return false;
+      // 3. Level filter — check correct app's level
+      const effectiveLevel = appFilter === "fitness" ? user.fitness_premium_level : user.premium_level;
+      const effectiveTier = appFilter === "fitness" ? user.fitness_premium_tier : user.premium_tier;
+      if (levelFilter === "pro" && (!effectiveIsPremium || effectiveLevel !== "pro")) return false;
+      if (levelFilter === "core" && (!effectiveIsPremium || effectiveLevel !== "core")) return false;
 
       // 4. Tier filter
-      if (tierFilter === "monthly" && (!user.is_premium || user.premium_tier !== "monthly")) return false;
-      if (tierFilter === "six_months" && (!user.is_premium || user.premium_tier !== "six_months")) return false;
-      if (tierFilter === "lifetime" && (!user.is_premium || user.premium_tier !== "lifetime")) return false;
+      if (tierFilter === "monthly" && (!effectiveIsPremium || effectiveTier !== "monthly")) return false;
+      if (tierFilter === "six_months" && (!effectiveIsPremium || effectiveTier !== "six_months")) return false;
+      if (tierFilter === "lifetime" && (!effectiveIsPremium || effectiveTier !== "lifetime")) return false;
 
       return true;
     });
@@ -282,12 +290,11 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
               {filteredUsers.map((user) => {
                 const isFitness = appFilter === "fitness";
                 
-                // Use shared premium status from profiles table for both GrindLog and Fitness OS
-                const isPremium = user.is_premium;
-                const premiumTier = user.premium_tier;
-                const premiumLevel = user.premium_level;
-                
-                const premiumExpiresAt = user.premium_expires_at;
+                // Show premium info for the relevant app
+                const isPremium = isFitness ? user.fitness_is_premium : user.is_premium;
+                const premiumTier = isFitness ? user.fitness_premium_tier : user.premium_tier;
+                const premiumLevel = isFitness ? user.fitness_premium_level : user.premium_level;
+                const premiumExpiresAt = isFitness ? user.fitness_premium_expires_at : user.premium_expires_at;
                 
                 const planName = premiumTier ? getPlanName(premiumTier, premiumLevel) : 'Pro';
                 const paymentId = user.paymentId;
@@ -329,36 +336,58 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                       </td>
                     )}
                     <td className="px-6 py-4">
-                      {isPremium ? (
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-1.5">
+                        {/* When viewing All Apps, show badges for EACH app the user has paid for */}
+                        {appFilter === "all" ? (
+                          <>
+                            {user.is_premium && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">GL</span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                                  {getPlanName(user.premium_tier, user.premium_level)}
+                                </span>
+                              </div>
+                            )}
+                            {user.fitness_is_premium && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">FIT</span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
+                                  {getPlanName(user.fitness_premium_tier, user.fitness_premium_level)}
+                                </span>
+                              </div>
+                            )}
+                            {!user.is_premium && !user.fitness_is_premium && (
+                              <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                                Unpaid
+                              </span>
+                            )}
+                          </>
+                        ) : isPremium ? (
+                          <div className="flex flex-col gap-1.5">
                             <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
                               {planName}
                             </span>
+                            {/* AI Message Top Ups — Grindlog only */}
+                            {appFilter !== "fitness" && user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
+                               <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                                 + AI Messages (₹10)
+                               </span>
+                            ))}
+                            <span className="text-xs text-gray-400 capitalize mt-0.5">Active</span>
                           </div>
-                          
-                          {/* Render AI Message Top Ups if they exist, but hide for Fitness OS filter */}
-                          {appFilter !== "fitness" && user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
-                             <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-                               + AI Messages (₹10)
-                             </span>
-                          ))}
-                          <span className="text-xs text-gray-400 capitalize mt-0.5">Active</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-1.5">
-                          <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-                            Unpaid
-                          </span>
-                          
-                          {/* Render AI Message Top Ups if they exist, but hide for Fitness OS filter */}
-                          {appFilter !== "fitness" && user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
-                             <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-                               + AI Messages (₹10)
-                             </span>
-                          ))}
-                        </div>
-                      )}
+                        ) : (
+                          <div className="flex flex-col gap-1.5">
+                            <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                              Unpaid
+                            </span>
+                            {appFilter !== "fitness" && user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
+                               <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                                 + AI Messages (₹10)
+                               </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     {appFilter === "fitness" && (
                       <td className="px-6 py-4">
