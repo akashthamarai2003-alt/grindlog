@@ -75,19 +75,9 @@ export function ExerciseBrowser() {
   return (
     <div className="w-full flex flex-col h-full bg-[#0A1108] overflow-y-auto pb-32">
       <div className="px-5 pt-8">
-        <div className="flex items-center justify-between">
-          <WorkoutHeader title="Exercise Library" backUrl="/fitness" />
-          <Link 
-            href="/fitness/exercises/custom"
-            className="flex items-center gap-1.5 bg-[#ADFF00]/10 text-[#ADFF00] border border-[#ADFF00]/20 px-3 py-1.5 rounded-full hover:bg-[#ADFF00]/20 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Custom</span>
-          </Link>
-        </div>
+        <WorkoutHeader title="Exercise Library" backUrl="/fitness" />
         
         {/* Search & Filter Bar */}
-
         <div className="flex flex-col gap-3 mt-6 sticky top-0 bg-[#0A1108]/90 backdrop-blur-xl z-20 py-2">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -100,9 +90,17 @@ export function ExerciseBrowser() {
                 className="w-full bg-[#111A10] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-[#ADFF00] transition-colors placeholder:text-white/30"
               />
             </div>
+            
+            <Link 
+              href="/fitness/exercises/custom"
+              className="p-3 bg-[#ADFF00] text-black rounded-xl border border-[#ADFF00] hover:bg-[#baff22] transition-colors flex items-center justify-center shrink-0"
+            >
+              <Plus className="w-5 h-5" />
+            </Link>
+
             <button 
               onClick={() => setShowFilters(!showFilters)}
-              className={`p-3 rounded-xl border transition-colors ${showFilters ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'bg-[#111A10] border-white/10 text-white/50 hover:bg-white/5'}`}
+              className={`p-3 rounded-xl border transition-colors shrink-0 ${showFilters ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'bg-[#111A10] border-white/10 text-white/50 hover:bg-white/5'}`}
             >
               <Filter className="w-5 h-5" />
             </button>
