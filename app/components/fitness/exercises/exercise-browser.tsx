@@ -23,13 +23,19 @@ function ExerciseBrowserContent() {
   const initialMuscle = searchParams.get("muscle") || "All";
   const initialEquipment = searchParams.get("equipment") || "All";
 
+  const [muscleFilter, setMuscleFilter] = useState(initialMuscle);
+  const [equipmentFilter, setEquipmentFilter] = useState(initialEquipment);
+
+  // Sync state when URL search params change (e.g. clicking a badge)
+  useEffect(() => {
+    setMuscleFilter(searchParams.get("muscle") || "All");
+    setEquipmentFilter(searchParams.get("equipment") || "All");
+  }, [searchParams]);
+
   const [exercises, setExercises] = useState<LibraryExercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 400);
-  
-  const [muscleFilter, setMuscleFilter] = useState(initialMuscle);
-  const [equipmentFilter, setEquipmentFilter] = useState(initialEquipment);
   
   const [showFilters, setShowFilters] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
