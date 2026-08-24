@@ -34,7 +34,18 @@ export async function GET(req: NextRequest) {
       (w.completed_at || w.workout_date || "").split("T")[0]
     ).filter(Boolean);
 
-    return NextResponse.json({ dates }, { status: 200 });
+    // Fetch recent exercises for the muscle map
+    const cutoff30 = new Date();
+    cutoff30.setDate(cutoff30.getDate() - 30);
+    const { data: exercises } = await supabase
+      .from("fitness_os_workout_exercises")
+      .select("name")
+      .eq("user_id", user.id)
+      .gte("created_at", cutoff30.toISOString());
+
+    const exerciseNames = (exercises || []).map(e => e.name);
+
+    return NextResponse.json({ dates, exerciseNames }, { status: 200 });
   } catch (error: any) {
     console.error("GET /api/fitness/workout-dates error:", error);
     return NextResponse.json({ error: error.message || "Server error" }, { status: 500 });

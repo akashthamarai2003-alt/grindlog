@@ -14,6 +14,7 @@ import { ActivityRecoveryAnalyticsCard } from "./activity-recovery-analytics";
 import { AIProgressReviewCard } from "./ai-progress-review";
 import { AchievementsShowcase } from "./achievements-showcase";
 import { WorkoutHeatmap } from "./workout-heatmap";
+import { MuscleMap } from "../workout/muscle-map";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
@@ -22,14 +23,20 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialData.period);
   const [isLoading, setIsLoading] = useState(false);
   const [workoutDates, setWorkoutDates] = useState<string[]>([]);
+  const [recentExercises, setRecentExercises] = useState<string[]>([]);
 
   // Fetch workout dates for the heatmap (last 365 days)
   useEffect(() => {
     fetch("/api/fitness/workout-dates")
       .then(r => r.ok ? r.json() : null)
       .then(json => {
-        if (json && json.dates && Array.isArray(json.dates)) {
-          setWorkoutDates(json.dates);
+        if (json) {
+          if (json.dates && Array.isArray(json.dates)) {
+            setWorkoutDates(json.dates);
+          }
+          if (json.exerciseNames && Array.isArray(json.exerciseNames)) {
+            setRecentExercises(json.exerciseNames);
+          }
         }
       })
       .catch(() => {});
@@ -91,6 +98,12 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
             <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest block mb-4">Training Calendar</span>
               <WorkoutHeatmap completedDates={workoutDates} />
+            </div>
+
+            {/* Muscle Map */}
+            <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
+              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest block mb-4">Muscle Activation Map</span>
+              <MuscleMap exerciseNames={recentExercises} showLabel={true} />
             </div>
             
             <div id="transformation-details" className="flex flex-col gap-8 scroll-mt-6">
