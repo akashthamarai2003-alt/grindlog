@@ -272,7 +272,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     switch(step) {
       case 1:
         return (
-          <div className="absolute inset-0 flex flex-col justify-end bg-[#0A1108] z-50">
+          <div className="absolute inset-0 flex flex-col bg-[#0A1108] z-50 overflow-hidden">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
               <Image 
@@ -284,26 +284,29 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               />
             </div>
             
-            {/* Dark Gradient Overlay - Only on bottom 65% so the top stays bright */}
-            <div className="absolute bottom-0 left-0 right-0 h-[70%] z-10 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/90 to-transparent" />
+            {/* Dark Gradient Overlay - Only on bottom 75% so the top stays bright */}
+            <div className="absolute bottom-0 left-0 right-0 h-[75%] z-10 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/90 to-transparent" />
             
-            {/* Quote Block (Top Left) */}
-            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="absolute top-[8%] left-8 z-20 flex gap-3">
-              <div className="w-[3px] bg-[#ADFF00] rounded-full" />
-              <div className="flex flex-col gap-1.5 py-0.5">
-                <p className="text-white font-bold text-[13px] leading-[1.3] max-w-[160px]">
-                  Discipline today builds the stronger you tomorrow.
-                </p>
-                <p className="text-gray-400 font-bold text-[9px] tracking-widest uppercase mt-0.5">
-                  — TOM HOLLAND
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Content Container */}
-            <div className="relative z-20 px-8 pb-12 w-full flex flex-col h-full justify-end">
+            {/* Interactive Content Layer */}
+            <div className="relative z-20 w-full h-full flex flex-col px-8 pb-8 pt-[12dvh]">
               
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex flex-col mb-8">
+              {/* Quote Block (Top Left) */}
+              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex gap-3">
+                <div className="w-[3px] bg-[#ADFF00] rounded-full" />
+                <div className="flex flex-col gap-1.5 py-0.5">
+                  <p className="text-white font-bold text-[13px] leading-[1.3] max-w-[160px]">
+                    Discipline today builds the stronger you tomorrow.
+                  </p>
+                  <p className="text-gray-400 font-bold text-[9px] tracking-widest uppercase mt-0.5">
+                    — TOM HOLLAND
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Flex Spacer to dynamically push the rest to the bottom */}
+              <div className="flex-1 min-h-[20px]" />
+              
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex flex-col mb-6">
                 <h1 className="text-[3.25rem] leading-[0.85] font-black uppercase tracking-tighter drop-shadow-lg">
                   <span className="block text-[#ADFF00]">PUSH</span>
                   <span className="block text-[#ADFF00]">YOURSELF</span>
@@ -317,15 +320,15 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
               <button 
                 onClick={handleNext} 
-                className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-black text-[14px] tracking-wider uppercase shadow-[0_0_30px_rgba(173,255,0,0.15)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-10"
+                className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-black text-[14px] tracking-wider uppercase shadow-[0_0_30px_rgba(173,255,0,0.15)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-6"
               >
                 <span>GET STARTED</span>
                 <ArrowRight className="w-5 h-5 ml-1" />
               </button>
 
-              <div className="flex items-start justify-between px-1 text-center font-medium border-t border-white/10 pt-6">
+              <div className="flex items-start justify-between px-1 text-center font-medium border-t border-white/10 pt-5">
                 
-                <div className="flex flex-col items-center gap-2.5 w-1/3">
+                <div className="flex flex-col items-center gap-2 w-1/3">
                   <Clock className="w-5 h-5 text-[#ADFF00] font-light" strokeWidth={1.5} />
                   <div className="flex flex-col gap-0.5">
                     <span className="block text-white font-bold text-[10px] tracking-wide">5-7 MINUTES</span>
@@ -335,7 +338,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
                 <div className="w-px h-10 bg-white/10 mt-1" />
 
-                <div className="flex flex-col items-center gap-2.5 w-1/3">
+                <div className="flex flex-col items-center gap-2 w-1/3">
                   <ListChecks className="w-5 h-5 text-[#ADFF00] font-light" strokeWidth={1.5} />
                   <div className="flex flex-col gap-0.5">
                     <span className="block text-white font-bold text-[10px] tracking-wide">12-14 STEPS</span>
@@ -345,7 +348,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
                 <div className="w-px h-10 bg-white/10 mt-1" />
 
-                <div className="flex flex-col items-center gap-2.5 w-1/3">
+                <div className="flex flex-col items-center gap-2 w-1/3">
                   <Target className="w-5 h-5 text-[#ADFF00] font-light" strokeWidth={1.5} />
                   <div className="flex flex-col gap-0.5">
                     <span className="block text-white font-bold text-[10px] tracking-wide">YOUR GOALS</span>
