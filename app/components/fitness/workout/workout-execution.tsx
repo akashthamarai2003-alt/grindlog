@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useWakeLock } from "@/hooks/fitness/useWakeLock";
 
 import { TodaysExercisesList } from "./todays-exercises-list";
 import { AiCoachNote } from "./ai-coach-note";
@@ -24,6 +25,9 @@ export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) 
   
   const currentSession = (workout as any).fitness_os_workout_sessions?.find((s: any) => s.id === sessionId);
   const [isPaused, setIsPaused] = useState(currentSession?.status === "paused");
+
+  // Keep screen awake during workout — released automatically on unmount
+  useWakeLock(!isPaused);
 
   const handleFinish = async () => {
     if (isFinishing) return;

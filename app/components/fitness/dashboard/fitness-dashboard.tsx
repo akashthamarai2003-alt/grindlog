@@ -10,6 +10,8 @@ import { TransformationCard } from "./transformation-card";
 import { TodaysNutritionCard } from "./todays-nutrition-card";
 import { DailyActivityCard } from "./daily-activity-card";
 import { TodaysGoalsCard } from "./todays-goals-card";
+import { ExerciseLibraryCard } from "./exercise-library-card";
+
 interface FitnessDashboardProps {
   user: User;
   profile: Partial<OnboardingData>;
@@ -63,6 +65,9 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
 
         {/* 5. Today's Workout Card */}
         <TodaysWorkoutCard workout={todayWorkout} targetDateStr={targetDateStr} />
+
+        {/* Exercise Library Entry */}
+        <ExerciseLibraryCard />
 
         {/* 6. Today's Nutrition Card */}
         <TodaysNutritionCard nutrition={nutrition} premiumLevel={premiumLevel} />

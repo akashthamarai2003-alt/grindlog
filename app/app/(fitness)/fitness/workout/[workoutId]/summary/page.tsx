@@ -60,6 +60,7 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
   // }
 
   const exerciseCount = workout.fitness_os_exercises?.length || 0;
+  const exerciseNames: string[] = workout.fitness_os_exercises?.map((ex: any) => ex.name).filter(Boolean) || [];
   
   let completedSets = 0;
   let totalSets = 0;
@@ -98,6 +99,7 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
           actualVolume={totalVolumeKg}
           actualCalories={caloriesBurned}
           recordsBroken={recordsCount > 0 ? recordsCount : 1}
+          exerciseNames={exerciseNames}
         />
       </div>
     </FitnessGuard>

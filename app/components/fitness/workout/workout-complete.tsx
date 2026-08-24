@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Trophy, Activity, Save, Bot, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FitnessWorkout } from "@/types/fitness/workout";
+import { MuscleMap } from "@/components/fitness/workout/muscle-map";
 
 interface WorkoutCompleteProps {
   workout: FitnessWorkout;
@@ -14,6 +15,8 @@ interface WorkoutCompleteProps {
   actualVolume?: number;
   actualCalories?: number;
   recordsBroken?: number;
+  exerciseNames?: string[];
+
 }
 
 export function WorkoutComplete({ 
@@ -23,7 +26,8 @@ export function WorkoutComplete({
   totalSets,
   actualVolume,
   actualCalories,
-  recordsBroken
+  recordsBroken,
+  exerciseNames = []
 }: WorkoutCompleteProps) {
   const workoutName = workout?.name || "Upper Body";
   const duration = workout?.duration_minutes || 48;
@@ -178,6 +182,18 @@ export function WorkoutComplete({
           </div>
         </div>
       </motion.div>
+
+      {/* Muscle Map */}
+      {exerciseNames.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
+          className="w-full bg-[#111A10] border border-white/5 rounded-[24px] p-6 mb-8 shrink-0"
+        >
+          <MuscleMap exerciseNames={exerciseNames} showLabel={true} />
+        </motion.div>
+      )}
 
       {/* Post-Workout Feedback */}
       <motion.div
