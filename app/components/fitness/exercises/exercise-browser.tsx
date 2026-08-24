@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { Search, Filter, Loader2, Dumbbell, Target, ChevronRight, Check, Plus } from "lucide-react";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useSearchParams } from "next/navigation";
 
 interface LibraryExercise {
   id: string;
@@ -17,14 +18,18 @@ interface LibraryExercise {
   image_urls: string[];
 }
 
-export function ExerciseBrowser() {
+function ExerciseBrowserContent() {
+  const searchParams = useSearchParams();
+  const initialMuscle = searchParams.get("muscle") || "All";
+  const initialEquipment = searchParams.get("equipment") || "All";
+
   const [exercises, setExercises] = useState<LibraryExercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 400);
   
-  const [muscleFilter, setMuscleFilter] = useState("All");
-  const [equipmentFilter, setEquipmentFilter] = useState("All");
+  const [muscleFilter, setMuscleFilter] = useState(initialMuscle);
+  const [equipmentFilter, setEquipmentFilter] = useState(initialEquipment);
   
   const [showFilters, setShowFilters] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
@@ -204,5 +209,13 @@ export function ExerciseBrowser() {
         </div>
       </div>
     </div>
+  );
+}
+
+export function ExerciseBrowser() {
+  return (
+    <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-[#0A1108]"><Loader2 className="w-8 h-8 animate-spin text-[#ADFF00]" /></div>}>
+      <ExerciseBrowserContent />
+    </Suspense>
   );
 }

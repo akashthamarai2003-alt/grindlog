@@ -5,6 +5,7 @@ import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { redirect } from "next/navigation";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import { Target, Dumbbell, Activity, ShieldAlert, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -48,12 +49,18 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
                   {exercise.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1 rounded-full">
+                  <Link 
+                    href={`/fitness/exercises?muscle=${encodeURIComponent(exercise.target_muscle)}`}
+                    className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1 rounded-full hover:bg-[#ADFF00]/20 transition-colors"
+                  >
                     <Target className="w-3 h-3" /> {exercise.target_muscle}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/70 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                  </Link>
+                  <Link 
+                    href={`/fitness/exercises?equipment=${encodeURIComponent(exercise.equipment)}`}
+                    className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/70 bg-white/5 border border-white/10 px-3 py-1 rounded-full hover:bg-white/10 transition-colors"
+                  >
                     <Dumbbell className="w-3 h-3" /> {exercise.equipment}
-                  </span>
+                  </Link>
                   <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/70 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
                     <Activity className="w-3 h-3" /> {exercise.level}
                   </span>
