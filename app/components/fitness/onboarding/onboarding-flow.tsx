@@ -291,7 +291,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             <div className="relative z-20 w-full h-full flex flex-col px-8 pb-8 pt-[12dvh]">
               
               {/* Quote Block (Top Left) */}
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex gap-3">
+              <motion.div initial={{ x: -30, y: 10, opacity: 0 }} animate={{ x: 0, y: 0, opacity: 1 }} transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.3 }} className="flex gap-3">
                 <div className="w-[3px] bg-[#ADFF00] rounded-full" />
                 <div className="flex flex-col gap-1.5 py-0.5">
                   <p className="text-white font-bold text-[13px] leading-[1.3] max-w-[160px]">
@@ -306,27 +306,30 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               {/* Flex Spacer to dynamically push the rest to the bottom */}
               <div className="flex-1 min-h-[20px]" />
               
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex flex-col mb-6">
+              <div className="flex flex-col mb-6">
                 <h1 className="text-[3.25rem] leading-[0.85] font-black uppercase tracking-tighter drop-shadow-lg">
-                  <span className="block text-[#ADFF00]">PUSH</span>
-                  <span className="block text-[#ADFF00]">YOURSELF</span>
-                  <span className="block text-white">HARDER</span>
+                  <motion.span initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.5 }} className="block text-[#ADFF00]">PUSH</motion.span>
+                  <motion.span initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.6 }} className="block text-[#ADFF00]">YOURSELF</motion.span>
+                  <motion.span initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.7 }} className="block text-white">HARDER</motion.span>
                 </h1>
                 
-                <p className="mt-4 text-gray-200 text-[14px] max-w-[260px] font-medium leading-snug drop-shadow-md">
+                <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.9 }} className="mt-4 text-gray-200 text-[14px] max-w-[260px] font-medium leading-snug drop-shadow-md">
                   Achieve your fitness goals with our innovative fitness app.
-                </p>
-              </motion.div>
+                </motion.p>
+              </div>
 
-              <button 
+              <motion.button 
+                initial={{ opacity: 0, y: 20, scale: 0.95 }} 
+                animate={{ opacity: 1, y: 0, scale: 1 }} 
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 1.1 }}
                 onClick={handleNext} 
                 className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-black text-[14px] tracking-wider uppercase shadow-[0_0_30px_rgba(173,255,0,0.15)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-6"
               >
                 <span>GET STARTED</span>
                 <ArrowRight className="w-5 h-5 ml-1" />
-              </button>
+              </motion.button>
 
-              <div className="flex items-start justify-between px-1 text-center font-medium border-t border-white/10 pt-5">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 1.3 }} className="flex items-start justify-between px-1 text-center font-medium border-t border-white/10 pt-5">
                 
                 <div className="flex flex-col items-center gap-2 w-1/3">
                   <Clock className="w-5 h-5 text-[#ADFF00] font-light" strokeWidth={1.5} />
@@ -356,7 +359,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   </div>
                 </div>
 
-              </div>
+              </motion.div>
             </div>
           </div>
         );
