@@ -1972,7 +1972,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
         {/* Main Content Area */}
         <div className="flex-1 relative">
-          <AnimatePresence mode="wait" initial={false} custom={direction}>
+          <AnimatePresence mode="wait" initial={true} custom={direction}>
             <motion.div
               key={step}
               custom={direction}
