@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
 import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2 } from "lucide-react";
@@ -273,10 +274,15 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         return (
           <div className="absolute inset-0 flex flex-col justify-end bg-[#0A1108] z-50">
             {/* Background Image */}
-            <div 
-              className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-90"
-              style={{ backgroundImage: 'url(/images/onboarding-bg.png)' }}
-            />
+            <div className="absolute inset-0 z-0 opacity-90">
+              <Image 
+                src="/images/onboarding-bg.png" 
+                alt="Background" 
+                fill 
+                className="object-cover object-center" 
+                priority
+              />
+            </div>
             
             {/* Dark Gradient Overlay */}
             <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/60 to-transparent" />
