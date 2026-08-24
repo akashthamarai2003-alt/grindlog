@@ -290,11 +290,11 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             {/* Quote Block (Top Left) */}
             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="absolute top-[8%] left-8 z-20 flex gap-3">
               <div className="w-[3px] bg-[#ADFF00] rounded-full" />
-              <div className="flex flex-col gap-2 py-0.5">
-                <p className="text-white font-bold text-[15px] leading-[1.3] max-w-[180px]">
+              <div className="flex flex-col gap-1.5 py-0.5">
+                <p className="text-white font-bold text-[13px] leading-[1.3] max-w-[160px]">
                   Discipline today builds the stronger you tomorrow.
                 </p>
-                <p className="text-gray-400 font-bold text-[10px] tracking-widest uppercase mt-1">
+                <p className="text-gray-400 font-bold text-[9px] tracking-widest uppercase mt-0.5">
                   — TOM HOLLAND
                 </p>
               </div>
@@ -304,52 +304,52 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             <div className="relative z-20 px-8 pb-12 w-full flex flex-col h-full justify-end">
               
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex flex-col mb-8">
-                <h1 className="text-[4rem] leading-[0.85] font-black uppercase tracking-tighter drop-shadow-lg">
+                <h1 className="text-[3.25rem] leading-[0.85] font-black uppercase tracking-tighter drop-shadow-lg">
                   <span className="block text-[#ADFF00]">PUSH</span>
                   <span className="block text-[#ADFF00]">YOURSELF</span>
                   <span className="block text-white">HARDER</span>
                 </h1>
                 
-                <p className="mt-5 text-gray-200 text-[15px] max-w-[280px] font-medium leading-snug drop-shadow-md">
+                <p className="mt-4 text-gray-200 text-[14px] max-w-[260px] font-medium leading-snug drop-shadow-md">
                   Achieve your fitness goals with our innovative fitness app.
                 </p>
               </motion.div>
 
               <button 
                 onClick={handleNext} 
-                className="w-full py-5 bg-[#ADFF00] text-black rounded-full font-black text-[15px] tracking-wider uppercase shadow-[0_0_30px_rgba(173,255,0,0.15)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-10"
+                className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-black text-[14px] tracking-wider uppercase shadow-[0_0_30px_rgba(173,255,0,0.15)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-10"
               >
                 <span>GET STARTED</span>
                 <ArrowRight className="w-5 h-5 ml-1" />
               </button>
 
-              <div className="flex items-start justify-between px-1 text-center text-xs font-medium border-t border-white/10 pt-6">
+              <div className="flex items-start justify-between px-1 text-center font-medium border-t border-white/10 pt-6">
                 
-                <div className="flex flex-col items-center gap-3 w-1/3">
-                  <Clock className="w-6 h-6 text-[#ADFF00] font-light" strokeWidth={1.5} />
-                  <div className="flex flex-col gap-1">
-                    <span className="block text-white font-bold tracking-wide">5-7 MINUTES</span>
-                    <span className="text-gray-500 font-medium">Quick & Easy</span>
+                <div className="flex flex-col items-center gap-2.5 w-1/3">
+                  <Clock className="w-5 h-5 text-[#ADFF00] font-light" strokeWidth={1.5} />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="block text-white font-bold text-[10px] tracking-wide">5-7 MINUTES</span>
+                    <span className="text-gray-500 text-[9px] font-medium">Quick & Easy</span>
                   </div>
                 </div>
 
-                <div className="w-px h-12 bg-white/10 mt-2" />
+                <div className="w-px h-10 bg-white/10 mt-1" />
 
-                <div className="flex flex-col items-center gap-3 w-1/3">
-                  <ListChecks className="w-6 h-6 text-[#ADFF00] font-light" strokeWidth={1.5} />
-                  <div className="flex flex-col gap-1">
-                    <span className="block text-white font-bold tracking-wide">12-14 STEPS</span>
-                    <span className="text-gray-500 font-medium">Personalized Plan</span>
+                <div className="flex flex-col items-center gap-2.5 w-1/3">
+                  <ListChecks className="w-5 h-5 text-[#ADFF00] font-light" strokeWidth={1.5} />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="block text-white font-bold text-[10px] tracking-wide">12-14 STEPS</span>
+                    <span className="text-gray-500 text-[9px] font-medium">Personalized Plan</span>
                   </div>
                 </div>
 
-                <div className="w-px h-12 bg-white/10 mt-2" />
+                <div className="w-px h-10 bg-white/10 mt-1" />
 
-                <div className="flex flex-col items-center gap-3 w-1/3">
-                  <Target className="w-6 h-6 text-[#ADFF00] font-light" strokeWidth={1.5} />
-                  <div className="flex flex-col gap-1">
-                    <span className="block text-white font-bold tracking-wide">YOUR GOALS</span>
-                    <span className="text-gray-500 font-medium">Our Priority</span>
+                <div className="flex flex-col items-center gap-2.5 w-1/3">
+                  <Target className="w-5 h-5 text-[#ADFF00] font-light" strokeWidth={1.5} />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="block text-white font-bold text-[10px] tracking-wide">YOUR GOALS</span>
+                    <span className="text-gray-500 text-[9px] font-medium">Our Priority</span>
                   </div>
                 </div>
 
