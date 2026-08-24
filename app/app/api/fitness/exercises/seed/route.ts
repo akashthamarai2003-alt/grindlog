@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 const FREE_EXERCISE_DB_URL = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json";
 
@@ -13,8 +14,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Create admin client to bypass RLS for seeding global exercises
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     // Check if library is already populated
-    const { count } = await supabase
+    const { count } = await supabaseAdmin
       .from("fitness_exercises_library")
       .select("*", { count: "exact", head: true });
       
@@ -50,7 +57,7 @@ export async function POST(req: NextRequest) {
 
     for (let i = 0; i < mappedExercises.length; i += CHUNK_SIZE) {
       const chunk = mappedExercises.slice(i, i + CHUNK_SIZE);
-      const { error } = await supabase.from("fitness_exercises_library").upsert(chunk, { onConflict: 'slug' });
+      const { error } = await supabaseAdmin.from("fitness_exercises_library").upsert(chunk, { onConflict: 'slug' });
       if (error) {
         console.error("Chunk insert error:", error);
         throw error;
