@@ -274,7 +274,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         return (
           <div className="absolute inset-0 flex flex-col justify-end bg-[#0A1108] z-50">
             {/* Background Image */}
-            <div className="absolute inset-0 z-0 opacity-90">
+            <div className="absolute inset-0 z-0">
               <Image 
                 src="/images/onboarding-bg.png" 
                 alt="Background" 
@@ -284,11 +284,11 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               />
             </div>
             
-            {/* Dark Gradient Overlay */}
-            <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/60 to-transparent" />
+            {/* Dark Gradient Overlay - Only on bottom 65% so the top stays bright */}
+            <div className="absolute bottom-0 left-0 right-0 h-[70%] z-10 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/90 to-transparent" />
             
             {/* Quote Block (Top Left) */}
-            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="absolute top-24 left-8 z-20 flex gap-3">
+            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="absolute top-[8%] left-8 z-20 flex gap-3">
               <div className="w-[3px] bg-[#ADFF00] rounded-full" />
               <div className="flex flex-col gap-2 py-0.5">
                 <p className="text-white font-bold text-[15px] leading-[1.3] max-w-[180px]">
