@@ -271,27 +271,40 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     switch(step) {
       case 1:
         return (
-          <div className="absolute inset-0 flex flex-col justify-end bg-black z-50">
+          <div className="absolute inset-0 flex flex-col justify-end bg-[#0A1108] z-50">
             {/* Background Image */}
             <div 
-              className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-80"
-              style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop)' }}
+              className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-90"
+              style={{ backgroundImage: 'url(/images/onboarding-bg.png)' }}
             />
             
             {/* Dark Gradient Overlay */}
-            <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/80 to-transparent" />
+            <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/60 to-transparent" />
             
+            {/* Quote Block (Top Left) */}
+            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="absolute top-24 left-8 z-20 flex gap-3">
+              <div className="w-[3px] bg-[#ADFF00] rounded-full" />
+              <div className="flex flex-col gap-2 py-0.5">
+                <p className="text-white font-bold text-[15px] leading-[1.3] max-w-[180px]">
+                  Discipline today builds the stronger you tomorrow.
+                </p>
+                <p className="text-gray-400 font-bold text-[10px] tracking-widest uppercase mt-1">
+                  — TOM HOLLAND
+                </p>
+              </div>
+            </motion.div>
+
             {/* Content Container */}
             <div className="relative z-20 px-8 pb-12 w-full flex flex-col h-full justify-end">
               
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex flex-col mb-8">
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex flex-col mb-8">
                 <h1 className="text-[4rem] leading-[0.85] font-black uppercase tracking-tighter drop-shadow-lg">
                   <span className="block text-[#ADFF00]">PUSH</span>
                   <span className="block text-[#ADFF00]">YOURSELF</span>
                   <span className="block text-white">HARDER</span>
                 </h1>
                 
-                <p className="mt-6 text-gray-300 text-lg max-w-[280px] font-medium leading-snug drop-shadow">
+                <p className="mt-5 text-gray-200 text-[15px] max-w-[280px] font-medium leading-snug drop-shadow-md">
                   Achieve your fitness goals with our innovative fitness app.
                 </p>
               </motion.div>
