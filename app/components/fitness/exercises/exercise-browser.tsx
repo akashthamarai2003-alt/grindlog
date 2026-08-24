@@ -18,6 +18,8 @@ interface LibraryExercise {
   image_urls: string[];
 }
 
+const exerciseCache = new Map<string, LibraryExercise[]>();
+
 function ExerciseBrowserContent() {
   const searchParams = useSearchParams();
   const initialMuscle = searchParams.get("muscle") || "All";
@@ -44,17 +46,25 @@ function ExerciseBrowserContent() {
   const EQUIPMENT = ["All", "body only", "machine", "barbell", "dumbbell", "cable", "bands", "kettlebells"];
 
   const fetchExercises = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.append("q", debouncedSearch);
+    if (muscleFilter !== "All") params.append("muscle", muscleFilter);
+    if (equipmentFilter !== "All") params.append("equipment", equipmentFilter);
+    params.append("limit", "100"); // keep it simple for now without pagination
+
+    const cacheKey = params.toString();
+    if (exerciseCache.has(cacheKey)) {
+      setExercises(exerciseCache.get(cacheKey)!);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (debouncedSearch) params.append("q", debouncedSearch);
-      if (muscleFilter !== "All") params.append("muscle", muscleFilter);
-      if (equipmentFilter !== "All") params.append("equipment", equipmentFilter);
-      params.append("limit", "100"); // keep it simple for now without pagination
-
-      const res = await fetch(`/api/fitness/exercises?${params.toString()}`);
+      const res = await fetch(`/api/fitness/exercises?${cacheKey}`);
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
+      exerciseCache.set(cacheKey, data.exercises || []);
       setExercises(data.exercises || []);
     } catch (e) {
       console.error(e);

@@ -39,6 +39,10 @@ export async function GET(req: NextRequest) {
       exercises, 
       total: count || 0,
       hasMore: count ? (offset + limit) < count : false
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
+      }
     });
 
   } catch (error: any) {
