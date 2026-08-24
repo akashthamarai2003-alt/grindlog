@@ -271,37 +271,70 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     switch(step) {
       case 1:
         return (
-          <div className="flex flex-col h-[85vh] justify-center px-6 relative">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex-1 flex flex-col justify-center items-center text-center">
-              <div className="w-20 h-20 bg-[#ADFF00]/10 border border-[#ADFF00]/30 rounded-3xl flex items-center justify-center mb-8 text-[#ADFF00] shadow-[0_0_30px_rgba(173,255,0,0.15)]">
-                <Target size={36} strokeWidth={1.5} />
-              </div>
-              <h1 className="text-4xl font-black text-white tracking-tight leading-tight mb-5">
-                Let's build your transformation plan.
-              </h1>
-              <p className="text-lg text-gray-400 max-w-sm mb-10">
-                We'll ask a few questions about your body, lifestyle, food and goals.
-              </p>
+          <div className="absolute inset-0 flex flex-col justify-end bg-black z-50">
+            {/* Background Image */}
+            <div 
+              className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-80"
+              style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop)' }}
+            />
+            
+            {/* Dark Gradient Overlay */}
+            <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/80 to-transparent" />
+            
+            {/* Content Container */}
+            <div className="relative z-20 px-8 pb-12 w-full flex flex-col h-full justify-end">
+              
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex flex-col mb-8">
+                <h1 className="text-[4rem] leading-[0.85] font-black uppercase tracking-tighter drop-shadow-lg">
+                  <span className="block text-[#ADFF00]">PUSH</span>
+                  <span className="block text-[#ADFF00]">YOURSELF</span>
+                  <span className="block text-white">HARDER</span>
+                </h1>
+                
+                <p className="mt-6 text-gray-300 text-lg max-w-[280px] font-medium leading-snug drop-shadow">
+                  Achieve your fitness goals with our innovative fitness app.
+                </p>
+              </motion.div>
 
-              <div className="flex items-center gap-6 text-sm font-semibold text-gray-300">
-                <div className="flex items-center gap-2 bg-[#121E12] px-4 py-2 rounded-full border border-[#1E2E1D]">
-                  <Clock className="w-4 h-4 text-[#ADFF00]" />
-                  <span>5–7 minutes</span>
-                </div>
-                <div className="flex items-center gap-2 bg-[#121E12] px-4 py-2 rounded-full border border-[#1E2E1D]">
-                  <ListChecks className="w-4 h-4 text-[#ADFF00]" />
-                  <span>12–14 steps</span>
-                </div>
-              </div>
-            </motion.div>
-            <div className="pb-8 space-y-4">
               <button 
                 onClick={handleNext} 
-                className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg shadow-[0_0_30px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group hover:bg-[#c4ff33]"
+                className="w-full py-5 bg-[#ADFF00] text-black rounded-full font-black text-[15px] tracking-wider uppercase shadow-[0_0_30px_rgba(173,255,0,0.15)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-10"
               >
-                <span>Let's Start</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <span>GET STARTED</span>
+                <ArrowRight className="w-5 h-5 ml-1" />
               </button>
+
+              <div className="flex items-start justify-between px-1 text-center text-xs font-medium border-t border-white/10 pt-6">
+                
+                <div className="flex flex-col items-center gap-3 w-1/3">
+                  <Clock className="w-6 h-6 text-[#ADFF00] font-light" strokeWidth={1.5} />
+                  <div className="flex flex-col gap-1">
+                    <span className="block text-white font-bold tracking-wide">5-7 MINUTES</span>
+                    <span className="text-gray-500 font-medium">Quick & Easy</span>
+                  </div>
+                </div>
+
+                <div className="w-px h-12 bg-white/10 mt-2" />
+
+                <div className="flex flex-col items-center gap-3 w-1/3">
+                  <ListChecks className="w-6 h-6 text-[#ADFF00] font-light" strokeWidth={1.5} />
+                  <div className="flex flex-col gap-1">
+                    <span className="block text-white font-bold tracking-wide">12-14 STEPS</span>
+                    <span className="text-gray-500 font-medium">Personalized Plan</span>
+                  </div>
+                </div>
+
+                <div className="w-px h-12 bg-white/10 mt-2" />
+
+                <div className="flex flex-col items-center gap-3 w-1/3">
+                  <Target className="w-6 h-6 text-[#ADFF00] font-light" strokeWidth={1.5} />
+                  <div className="flex flex-col gap-1">
+                    <span className="block text-white font-bold tracking-wide">YOUR GOALS</span>
+                    <span className="text-gray-500 font-medium">Our Priority</span>
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
         );
@@ -1888,7 +1921,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     <div className="min-h-[100dvh] w-full bg-[#0A1108] selection:bg-[#ADFF00] selection:text-black">
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
-        <div className="h-16 flex items-center px-4 relative z-10">
+        <div className={step === 1 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
           {step > 1 && step < 16 && (
             <button 
               onClick={handleBack}
