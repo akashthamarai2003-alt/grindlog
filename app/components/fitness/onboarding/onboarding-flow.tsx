@@ -407,8 +407,11 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               </motion.div>
 
             {/* Header */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.05 }} className="mt-[32px] mb-[32px]">
-              <h1 className="text-[30px] sm:text-[32px] font-[800] text-white tracking-[-0.7px]">Personal Profile</h1>
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.05 }} className="mb-8 mt-4">
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic uppercase flex gap-2">
+                <span className="text-[#ADFF00]">PERSONAL</span>
+                <span className="text-white">PROFILE</span>
+              </h2>
               <p className="text-[16px] font-[500] text-[#91A0B5] mt-2">Tell us a bit about yourself.</p>
             </motion.div>
 
@@ -561,8 +564,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/80 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/40 to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#050905]/30 to-transparent opacity-60" />
             </div>
 
             <div className="relative z-10 w-full h-full flex flex-col px-6 pb-32">
@@ -652,7 +655,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     <div>
                       <label className="flex flex-col gap-0.5 text-sm font-bold text-white mb-2">
                         <div className="flex items-center gap-2">
-                          <CircleDashed size={16} className="text-[#ADFF00]" />
+                          <WaistIcon size={16} className="text-[#ADFF00]" />
                           <span>Waist (cm) <span className="text-gray-500 font-normal text-xs ml-1">Optional</span></span>
                         </div>
                       </label>
@@ -670,7 +673,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     <div>
                       <label className="flex flex-col gap-0.5 text-sm font-bold text-white mb-2">
                         <div className="flex items-center gap-2">
-                          <Shirt size={16} className="text-[#ADFF00]" />
+                          <ChestIcon size={16} className="text-[#ADFF00]" />
                           <span>Chest (cm) <span className="text-gray-500 font-normal text-xs ml-1">Optional</span></span>
                         </div>
                       </label>
@@ -709,7 +712,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     <div>
                       <label className="flex flex-col gap-0.5 text-sm font-bold text-white mb-2">
                         <div className="flex items-center gap-2">
-                          <Activity size={16} className="text-[#ADFF00]" />
+                          <ThighIcon size={16} className="text-[#ADFF00]" />
                           <span>Thigh (cm) <span className="text-gray-500 font-normal text-xs ml-1">Optional</span></span>
                         </div>
                       </label>
@@ -2341,3 +2344,27 @@ const AnalysisBlock = ({ title, items, isActive, isComplete }: { title: string, 
     </motion.div>
   );
 };
+const WaistIcon = ({ className, size = 16 }: { className?: string, size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <ellipse cx="9" cy="12" rx="5" ry="5" />
+    <path d="M14 12h8v4h-8" />
+    <path d="M18 12v4" />
+  </svg>
+);
+
+const ChestIcon = ({ className, size = 16 }: { className?: string, size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M6 5c0-1.5 2-3 6-3s6 1.5 6 3v4.5c0 2-1.5 4-3 6.5V20H9v-4C7.5 14 6 12 6 9.5V5z" />
+    <path d="M9 10h6" />
+  </svg>
+);
+
+const ThighIcon = ({ className, size = 16 }: { className?: string, size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M10 3c0 4 2 7 3 11s1 6 1 8" />
+    <path d="M16 3c0 4-2 7-3 11" />
+    <path d="M10 13h4" />
+  </svg>
+);
+
+
