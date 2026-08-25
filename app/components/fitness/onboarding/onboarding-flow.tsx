@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
-import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users } from "lucide-react";
 import { BodySilhouette } from "./body-silhouette";
 import { toast } from "sonner";
 import frontImg from "../../../assets/images/placeholder-front.png";
@@ -370,7 +370,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
           <div className="flex flex-col min-h-[100dvh] bg-[#050905] relative overflow-hidden">
             
             {/* Background Image */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="fixed inset-0 z-0 pointer-events-none">
               <Image 
                 src="/images/profile-bg-2.png" 
                 alt="Background" 
@@ -439,11 +439,13 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 <div>
                   <label className="block text-[14px] font-[700] text-white mb-2">Gender</label>
                   <button 
-                    onClick={() => setShowGenderSheet(true)}
-                    className="w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] font-[500]"
-                  >
-                    <span className={data.gender ? "text-white" : "text-[#53657A]"}>{data.gender || "Select"}</span>
-                  </button>
+                      onClick={() => setShowGenderSheet(true)}
+                      className="w-full h-[58px] pl-[46px] pr-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)] font-[500] relative flex items-center justify-between"
+                    >
+                      <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-[22px] h-[22px] text-[#A8FF00]" strokeWidth={1.5} />
+                      <span className={data.gender ? "text-white" : "text-[#53657A]"}>{data.gender || "Select"}</span>
+                      <ChevronDown className="w-5 h-5 text-[#A8FF00] opacity-50" />
+                    </button>
                 </div>
               </div>
 
@@ -466,11 +468,12 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               <div>
                 <label className="block text-[14px] font-[700] text-white mb-2">Preferred Language</label>
                 <button 
-                  onClick={() => setShowLanguageSheet(true)}
-                  className="w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] font-[500]"
-                >
-                  <span className={data.preferred_language ? "text-white" : "text-[#53657A]"}>{data.preferred_language || "e.g. English"}</span>
-                </button>
+                    onClick={() => setShowLanguageSheet(true)}
+                    className="w-full h-[58px] pl-[46px] pr-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)] font-[500] relative flex items-center justify-between"
+                  >
+                    <Languages className="absolute left-4 top-1/2 -translate-y-1/2 w-[22px] h-[22px] text-[#A8FF00]" strokeWidth={1.5} />
+                    <span className={data.preferred_language ? "text-white" : "text-[#53657A]"}>{data.preferred_language || "e.g. English"}</span>
+                  </button>
                 <FieldError error={step2Errors.preferred_language} />
               </div>
 
