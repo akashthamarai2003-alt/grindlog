@@ -29,9 +29,9 @@ export default function AdminLayout({
         <div className="h-16 flex items-center px-6 border-b border-gray-200">
           <Link href="/admin" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">G</span>
+              <span className="text-white font-bold text-xl">F</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">Admin</span>
+            <span className="text-xl font-bold text-gray-900">Fitness Admin</span>
           </Link>
         </div>
 
@@ -71,9 +71,9 @@ export default function AdminLayout({
         <div className="h-14 flex items-center justify-between px-4">
           <Link href="/admin" className="flex items-center gap-2">
             <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-base">G</span>
+              <span className="text-white font-bold text-base">F</span>
             </div>
-            <span className="font-bold text-base text-gray-900">GrindLog Admin</span>
+            <span className="font-bold text-base text-gray-900">Fitness Admin</span>
           </Link>
 
           <div className="flex items-center gap-2">

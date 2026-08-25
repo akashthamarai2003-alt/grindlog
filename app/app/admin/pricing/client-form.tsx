@@ -13,8 +13,8 @@ export default function PricingClientForm({
   grindlogPricing: PlanPricingConfig;
   fitnessPricing: PlanPricingConfig;
 }) {
-  const [appFilter, setAppFilter] = useState<"grindlog" | "fitness">("grindlog");
-  const [pricing, setPricing] = useState<PlanPricingConfig>(grindlogPricing);
+  const [appFilter, setAppFilter] = useState<"grindlog" | "fitness">("fitness");
+  const [pricing, setPricing] = useState<PlanPricingConfig>(fitnessPricing);
   const [isSaving, setIsSaving] = useState(false);
 
   // Sync pricing state when filter changes
@@ -83,30 +83,7 @@ export default function PricingClientForm({
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex bg-white/20 p-1 rounded-lg backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={() => handleFilterChange("grindlog")}
-              className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${
-                appFilter === "grindlog"
-                  ? "bg-white text-green-700 shadow-sm"
-                  : "text-white hover:bg-white/10"
-              }`}
-            >
-              GrindLog App
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFilterChange("fitness")}
-              className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${
-                appFilter === "fitness"
-                  ? "bg-white text-green-700 shadow-sm"
-                  : "text-white hover:bg-white/10"
-              }`}
-            >
-              Fitness App
-            </button>
-          </div>
+
 
           <button
             type="submit"
