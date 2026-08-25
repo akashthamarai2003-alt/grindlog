@@ -11,7 +11,7 @@ const razorpay = new Razorpay({
 
 export async function GET(req: NextRequest) {
   // If a user accidentally navigates to this URL directly, redirect them to safety
-  return NextResponse.redirect(new URL("/dashboard", req.url), 303);
+  return NextResponse.redirect(new URL("/workout", req.url), 303);
 }
 
 export async function POST(req: NextRequest) {
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const secret = process.env.RAZORPAY_KEY_SECRET || "";
 
     if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
-      return NextResponse.redirect(new URL("/dashboard?error=Missing+payment+details", req.url), 303);
+      return NextResponse.redirect(new URL("/?error=Missing+payment+details", req.url), 303);
     }
 
     const generatedSignature = crypto
@@ -35,13 +35,13 @@ export async function POST(req: NextRequest) {
       .digest("hex");
 
     if (generatedSignature !== razorpaySignature) {
-      return NextResponse.redirect(new URL("/dashboard?error=Invalid+payment+signature", req.url), 303);
+      return NextResponse.redirect(new URL("/workout?error=Invalid+payment+signature", req.url), 303);
     }
 
     // Fetch the order from Razorpay to get the secure notes
     const order = await razorpay.orders.fetch(razorpayOrderId);
     if (!order || !order.notes) {
-      return NextResponse.redirect(new URL("/dashboard?error=Invalid+order+metadata", req.url), 303);
+      return NextResponse.redirect(new URL("/workout?error=Invalid+order+metadata", req.url), 303);
     }
 
     const adminClient = createAdminClient();
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const type = order.notes.type as string; // Optional, used for topups
 
     if (!userId) {
-      return NextResponse.redirect(new URL("/dashboard?error=Missing+user+in+order", req.url), 303);
+      return NextResponse.redirect(new URL("/workout?error=Missing+user+in+order", req.url), 303);
     }
 
     if (type === "ai_messages_topup") {
@@ -111,10 +111,10 @@ export async function POST(req: NextRequest) {
         console.warn("Callback subscription insert warning:", err);
       }
 
-      return NextResponse.redirect(new URL("/dashboard?success=Premium+Activated", req.url), 303);
+      return NextResponse.redirect(new URL("/workout?success=Premium+Activated", req.url), 303);
     }
   } catch (error) {
     console.error("Payment callback error:", error);
-    return NextResponse.redirect(new URL("/dashboard?error=Payment+Verification+Failed", req.url), 303);
+    return NextResponse.redirect(new URL("/workout?error=Payment+Verification+Failed", req.url), 303);
   }
 }

@@ -57,7 +57,7 @@ export default function AdminLayout({
 
         <div className="p-4 border-t border-gray-200">
           <Link
-            href="/dashboard"
+            href="/workout"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
           >
             <LogOut className="w-5 h-5 text-gray-400" />
@@ -159,7 +159,7 @@ export default function AdminLayout({
 
             <div className="p-4 border-t border-gray-200 bg-gray-50">
               <Link
-                href="/dashboard"
+                href="/workout"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-200 transition-colors bg-white border border-gray-200"
               >
