@@ -408,7 +408,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
             {/* Header */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.05 }} className="mb-8 mt-4">
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic uppercase flex gap-2">
+              <h2 style={{ fontFamily: "Oswald, sans-serif" }} className="text-[42px] leading-none font-bold italic uppercase tracking-tight flex gap-2">
                 <span className="text-[#ADFF00]">PERSONAL</span>
                 <span className="text-white">PROFILE</span>
               </h2>
@@ -594,7 +594,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 
                 {/* Styled Header */}
                 <div className="mb-8 mt-4">
-                  <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic uppercase flex gap-2">
+                  <h2 style={{ fontFamily: "Oswald, sans-serif" }} className="text-[42px] leading-none font-bold italic uppercase tracking-tight flex gap-2">
                     <span className="text-[#ADFF00]">BODY</span>
                     <span className="text-white">DETAILS</span>
                   </h2>
