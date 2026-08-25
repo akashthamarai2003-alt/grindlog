@@ -32,9 +32,12 @@ export const metadata: Metadata = {
     startupImage: ["/icons/apple-touch-icon.png"],
   },
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/apple-touch-icon.png",
-    other: [{ rel: "mask-icon", url: "/icons/notification-badge.svg", color: "#ADFF00" }],
+    icon: [
+      { url: "/favicon.ico?v=2", sizes: "any" },
+      { url: "/icons/icon-192.png?v=2", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png?v=2",
+    other: [{ rel: "mask-icon", url: "/icons/notification-badge.svg?v=2", color: "#ADFF00" }],
   },
   openGraph: {
     title: "GrindLog",
