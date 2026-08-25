@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const secret = process.env.RAZORPAY_KEY_SECRET || "";
 
     if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
-      return NextResponse.redirect(new URL("/?error=Missing+payment+details", req.url), 303);
+      return NextResponse.redirect(new URL("/workout?error=Missing+payment+details", req.url), 303);
     }
 
     const generatedSignature = crypto

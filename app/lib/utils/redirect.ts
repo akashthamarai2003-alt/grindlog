@@ -18,5 +18,5 @@ export function getSafeRedirect(redirect: string | null): string {
     return redirect;
   }
   
-  return "/dashboard";
+  return "/workout";
 }
