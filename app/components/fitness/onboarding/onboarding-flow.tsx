@@ -2345,25 +2345,31 @@ const AnalysisBlock = ({ title, items, isActive, isComplete }: { title: string, 
   );
 };
 const WaistIcon = ({ className, size = 16 }: { className?: string, size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <ellipse cx="9" cy="12" rx="5" ry="5" />
-    <path d="M14 12h8v4h-8" />
-    <path d="M18 12v4" />
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect x="2" y="7" width="10" height="10" rx="3" />
+    <circle cx="7" cy="12" r="2" />
+    <path d="M12 9h10v6h-10" />
+    <path d="M15 9v2" />
+    <path d="M18 9v2" />
   </svg>
 );
 
 const ChestIcon = ({ className, size = 16 }: { className?: string, size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M6 5c0-1.5 2-3 6-3s6 1.5 6 3v4.5c0 2-1.5 4-3 6.5V20H9v-4C7.5 14 6 12 6 9.5V5z" />
-    <path d="M9 10h6" />
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M7 4h10" />
+    <path d="M7 4c-3 0-5 2-5 5v2c1 1 2 2 4 2" />
+    <path d="M17 4c3 0 5 2 5 5v2c-1 1-2 2-4 2" />
+    <path d="M6 13c1 3 2 8 2 8h8c0 0 1-5 2-8" />
+    <path d="M8 9c2 2 6 2 8 0" />
   </svg>
 );
 
 const ThighIcon = ({ className, size = 16 }: { className?: string, size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M10 3c0 4 2 7 3 11s1 6 1 8" />
-    <path d="M16 3c0 4-2 7-3 11" />
-    <path d="M10 13h4" />
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M10 2c-2 2-3 5-3 9 0 2 1 4 1 4" />
+    <path d="M8 15c0 2-1 4-1 6h4" />
+    <path d="M11 21l2-4c1-2 2-4 2-5" />
+    <path d="M15 12c0-3-1-7-1-10" />
   </svg>
 );
 
