@@ -97,15 +97,15 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
   const variants = {
     enter: (direction: number) => ({
-      x: direction > 0 ? 30 : -30,
-      opacity: 0,
+      x: step === 1 ? 0 : (direction > 0 ? 20 : -20),
+      opacity: step === 1 ? 1 : 0,
     }),
     center: {
       x: 0,
       opacity: 1,
     },
     exit: (direction: number) => ({
-      x: direction < 0 ? 30 : -30,
+      x: direction < 0 ? 20 : -20,
       opacity: 0,
     })
   };
@@ -365,83 +365,157 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         );
       case 2:
         return (
-          <div className="px-6 pt-6 pb-36">
-            <StepHeader title="Personal Profile" subtitle="Tell us a bit about yourself." />
-            <div className="space-y-6">
+          <div className="flex flex-col min-h-[100dvh] bg-[#050905] px-6 relative overflow-hidden pb-32">
+            
+            {/* Top Navigation */}
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="pt-[max(env(safe-area-inset-top),24px)] flex items-center">
+              <button onClick={handleBack} className="group flex items-center justify-center w-[42px] h-[42px] rounded-full bg-[rgba(10,18,10,0.5)] border border-[rgba(255,255,255,0.05)] hover:bg-[rgba(10,18,10,0.8)] transition-all duration-150">
+                <ArrowLeft className="w-5 h-5 text-gray-300 group-hover:-translate-x-[2px] transition-transform duration-150" />
+              </button>
+              <div className="flex-1 pl-4 pr-2">
+                <div className="h-[6px] w-full bg-[rgba(100,130,100,0.18)] rounded-full overflow-hidden flex">
+                   <div className="h-full bg-[#A8FF00] rounded-full shadow-[0_0_8px_rgba(168,255,0,0.4)]" style={{ width: `${(step / totalSteps) * 100}%` }} />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Header */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.05 }} className="mt-[32px] mb-[32px]">
+              <h1 className="text-[30px] sm:text-[32px] font-[800] text-white tracking-[-0.7px]">Personal Profile</h1>
+              <p className="text-[16px] font-[500] text-[#91A0B5] mt-2">Tell us a bit about yourself.</p>
+            </motion.div>
+
+            {/* Form */}
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }} className="flex flex-col gap-[24px]">
+              
+              {/* Name */}
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Name</label>
+                <label className="block text-[14px] font-[700] text-white mb-2 transition-colors focus-within:text-[#A8FF00]">Name</label>
                 <input 
                   type="text" 
                   value={data.name || ""} 
                   onChange={e => handleUpdate({ name: e.target.value })}
-                  className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                    step2Errors.name ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                  className={`w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-white text-[16px] transition-all duration-200 outline-none placeholder:text-[#53657A] font-[500] ${
+                    step2Errors.name ? 'border border-red-500/80 focus:border-red-500' : 'border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)]'
                   }`} 
                   placeholder="Your Name"
                 />
                 <FieldError error={step2Errors.name} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Age & Gender Grid */}
+              <div className="grid grid-cols-2 gap-[14px]">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Age</label>
+                  <label className="block text-[14px] font-[700] text-white mb-2 transition-colors focus-within:text-[#A8FF00]">Age</label>
                   <input 
                     type="number" 
                     min={16} max={120}
                     value={data.age || ""} 
                     onChange={e => handleUpdate({ age: parseInt(e.target.value) || undefined })}
-                    className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                      step2Errors.age ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                    className={`w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-white text-[16px] transition-all duration-200 outline-none placeholder:text-[#53657A] font-[500] ${
+                      step2Errors.age ? 'border border-red-500/80 focus:border-red-500' : 'border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)]'
                     }`} 
                     placeholder="25"
                   />
                   <FieldError error={step2Errors.age} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Gender</label>
-                  <select 
-                    value={data.gender || ""} 
-                    onChange={e => handleUpdate({ gender: e.target.value as any })}
-                    className="w-full p-4 rounded-xl border border-[#1A2619] bg-[#0D150D] text-white focus:border-[#ADFF00] transition-colors outline-none appearance-none"
+                  <label className="block text-[14px] font-[700] text-white mb-2">Gender</label>
+                  <button 
+                    onClick={() => setShowGenderSheet(true)}
+                    className="w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] font-[500]"
                   >
-                    <option value="" disabled className="text-gray-500">Select</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
-                  </select>
+                    <span className={data.gender ? "text-white" : "text-[#53657A]"}>{data.gender || "Select"}</span>
+                  </button>
                 </div>
               </div>
+
+              {/* Country */}
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Country</label>
+                <label className="block text-[14px] font-[700] text-white mb-2 transition-colors focus-within:text-[#A8FF00]">Country</label>
                 <input 
                   type="text" 
                   value={data.country || ""} 
                   onChange={e => handleUpdate({ country: e.target.value })}
-                  className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                    step2Errors.country ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
+                  className={`w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-white text-[16px] transition-all duration-200 outline-none placeholder:text-[#53657A] font-[500] ${
+                    step2Errors.country ? 'border border-red-500/80 focus:border-red-500' : 'border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)]'
                   }`} 
                   placeholder="e.g. United States"
                 />
                 <FieldError error={step2Errors.country} />
               </div>
+
+              {/* Preferred Language */}
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Preferred Language</label>
-                <input 
-                  type="text" 
-                  value={data.preferred_language || ""} 
-                  onChange={e => handleUpdate({ preferred_language: e.target.value })}
-                  className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                    step2Errors.preferred_language ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
-                  }`} 
-                  placeholder="e.g. English"
-                />
+                <label className="block text-[14px] font-[700] text-white mb-2">Preferred Language</label>
+                <button 
+                  onClick={() => setShowLanguageSheet(true)}
+                  className="w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] font-[500]"
+                >
+                  <span className={data.preferred_language ? "text-white" : "text-[#53657A]"}>{data.preferred_language || "e.g. English"}</span>
+                </button>
                 <FieldError error={step2Errors.preferred_language} />
               </div>
-            </div>
-            <BottomBar 
-              canProceed={isStep2Valid} 
-              onProceed={handleNext} 
-            />
+
+            </motion.div>
+
+            {/* Continue Button (Fixed bottom) */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.15 }} className="fixed bottom-0 left-0 right-0 z-30 max-w-[480px] mx-auto pb-[max(env(safe-area-inset-bottom),24px)] pt-8 px-4 bg-gradient-to-t from-[#050905] via-[#050905]/90 to-transparent pointer-events-none">
+               <div className="pointer-events-auto flex justify-center">
+                 <button 
+                   disabled={!isStep2Valid}
+                   onClick={handleNext}
+                   className={`w-full max-w-[calc(100%-16px)] sm:max-w-[calc(100%-32px)] h-[60px] rounded-full font-[800] text-[16px] transition-all duration-200 active:scale-[0.98] ${
+                     isStep2Valid 
+                       ? "bg-[#A8FF00] text-[#050505] shadow-[0_8px_30px_rgba(168,255,0,0.16)]" 
+                       : "bg-[#1C2920] text-[#687A70] cursor-not-allowed"
+                   }`}
+                 >
+                   Continue
+                 </button>
+               </div>
+            </motion.div>
+
+            {/* Gender Sheet */}
+            <AnimatePresence>
+              {showGenderSheet && (
+                <>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowGenderSheet(false)} className="fixed inset-0 bg-black/60 z-[60]" />
+                  <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)]">
+                    <h3 className="text-white font-[800] text-[20px] mb-6">Select Gender</h3>
+                    <div className="space-y-3">
+                      {["Male", "Female", "Other", "Prefer not to say"].map(g => (
+                        <button key={g} onClick={() => { handleUpdate({ gender: g as any }); setShowGenderSheet(false); }} className={`w-full p-4 rounded-[14px] text-left font-[500] flex justify-between items-center transition-colors ${data.gender === g ? "bg-[rgba(168,255,0,0.1)] border border-[#A8FF00] text-[#A8FF00]" : "bg-[#050905] border border-transparent text-white"}`}>
+                          <span>{g}</span>
+                          {data.gender === g && <Check className="w-5 h-5 text-[#A8FF00]" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
+            {/* Language Sheet */}
+            <AnimatePresence>
+              {showLanguageSheet && (
+                <>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowLanguageSheet(false)} className="fixed inset-0 bg-black/60 z-[60]" />
+                  <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)] max-h-[70vh] overflow-y-auto">
+                    <h3 className="text-white font-[800] text-[20px] mb-6">Preferred Language</h3>
+                    <div className="space-y-3">
+                      {["English", "Tamil", "Hindi", "Telugu", "Malayalam", "Kannada", "Spanish", "French", "German"].map(l => (
+                        <button key={l} onClick={() => { handleUpdate({ preferred_language: l }); setShowLanguageSheet(false); }} className={`w-full p-4 rounded-[14px] text-left font-[500] flex justify-between items-center transition-colors ${data.preferred_language === l ? "bg-[rgba(168,255,0,0.1)] border border-[#A8FF00] text-[#A8FF00]" : "bg-[#050905] border border-transparent text-white"}`}>
+                          <span>{l}</span>
+                          {data.preferred_language === l && <Check className="w-5 h-5 text-[#A8FF00]" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
           </div>
         );
       case 3:
@@ -1946,7 +2020,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     <div className="min-h-[100dvh] w-full bg-[#0A1108] selection:bg-[#ADFF00] selection:text-black">
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
-        <div className={step === 1 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
+        <div className={step === 1 || step === 2 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
           {step > 1 && step < 16 && (
             <button 
               onClick={handleBack}
