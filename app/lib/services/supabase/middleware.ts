@@ -86,9 +86,9 @@ export async function updateSession(request: NextRequest) {
     
     // Determine safe redirect
     const redirectParam = request.nextUrl.searchParams.get("redirect");
-    let safeRedirect = "/dashboard";
+    let safeRedirect = "/fitness/workout";
     if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
-       const allowedBasePaths = ["/dashboard", "/app", "/fitness", "/calendar", "/habits", "/quests", "/store", "/profile"];
+       const allowedBasePaths = ["/fitness", "/profile"];
        const isAllowed = allowedBasePaths.some(p => redirectParam === p || redirectParam.startsWith(p + "/"));
        if (isAllowed) {
          safeRedirect = redirectParam;
