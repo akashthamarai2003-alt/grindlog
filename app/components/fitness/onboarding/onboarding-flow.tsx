@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
-import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, Tape, Shirt, BicepsFlexed } from "lucide-react";
 import { BodySilhouette } from "./body-silhouette";
 import { toast } from "sonner";
 import frontImg from "../../../assets/images/placeholder-front.png";
@@ -546,7 +546,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
           </div>
         );
-            case 3:
+                  case 3:
         return (
           <div className="flex flex-col min-h-[100dvh] bg-[#050905] relative overflow-hidden">
             
@@ -588,116 +588,148 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               </motion.div>
 
               <div className="pt-2 pb-36">
-
-              <StepHeader title="Body Details" subtitle="Let's understand your starting point." />
-              
-              <div className="mb-6 bg-[#0D150D] border border-[#1A2619] p-4 rounded-2xl space-y-2.5">
-                <div className="flex items-center gap-2">
-                  <Info size={16} className="text-[#ADFF00] shrink-0" />
-                  <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Why Honest Details Matter</h4>
-                </div>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  Please enter your exact measurements honestly. We calculate an estimated body-fat range using an established formula based on your metrics.
-                </p>
-                <div className="pt-2 border-t border-[#1A2619] text-[11px] text-gray-400 leading-relaxed flex items-start gap-1.5">
-                  <span>📸</span>
-                  <span><b>Photos & Goal Physique:</b> Photos can be used for visual progress comparison and AI Goal Physique photo analysis.</span>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Height (cm)</label>
-                    <input 
-                      type="number" 
-                      value={data.height || ""} 
-                      onChange={e => handleUpdate({ height: parseFloat(e.target.value) || undefined })}
-                      className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                        step3Errors.height ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
-                      }`}
-                      placeholder="173"
-                    />
-                    <FieldError error={step3Errors.height} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Weight (kg)</label>
-                    <input 
-                      type="number" 
-                      value={data.weight || ""} 
-                      onChange={e => handleUpdate({ weight: parseFloat(e.target.value) || undefined })}
-                      className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                        step3Errors.weight ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
-                      }`}
-                      placeholder="73"
-                    />
-                    <FieldError error={step3Errors.weight} />
-                  </div>
+                
+                {/* Styled Header */}
+                <div className="mb-8 mt-4">
+                  <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic uppercase flex gap-2">
+                    <span className="text-[#ADFF00]">BODY</span>
+                    <span className="text-white">DETAILS</span>
+                  </h2>
+                  <p className="text-gray-400 mt-2 text-sm font-medium">Let's understand your starting point.</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Waist (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
-                    <input 
-                      type="number" 
-                      value={data.waist_cm || ""} 
-                      onChange={e => handleUpdate({ waist_cm: parseFloat(e.target.value) || undefined })}
-                      className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                        step3Errors.waist_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
-                      }`}
-                      placeholder="80"
-                    />
-                    <FieldError error={step3Errors.waist_cm} />
+                <div className="mb-6 bg-[#0D150D]/80 backdrop-blur-md border border-[#1A2619] p-4 rounded-2xl space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <Check size={16} className="text-[#ADFF00] shrink-0" />
+                    <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Why Honest Details Matter</h4>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Chest (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
-                    <input 
-                      type="number" 
-                      value={data.chest_cm || ""} 
-                      onChange={e => handleUpdate({ chest_cm: parseFloat(e.target.value) || undefined })}
-                      className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                        step3Errors.chest_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
-                      }`}
-                      placeholder="95"
-                    />
-                    <FieldError error={step3Errors.chest_cm} />
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Please enter your exact measurements honestly. We calculate an estimated body-fat range using an established formula based on your metrics.
+                  </p>
+                  <div className="pt-2 border-t border-[#1A2619] text-[11px] text-gray-400 leading-relaxed flex items-start gap-1.5">
+                    <span className="mt-[1px]">📸</span>
+                    <span><b>Photos & Goal Physique:</b> Photos can be used for visual progress comparison and AI Goal Physique photo analysis.</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Arm (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
-                    <input 
-                      type="number" 
-                      value={data.arm_cm || ""} 
-                      onChange={e => handleUpdate({ arm_cm: parseFloat(e.target.value) || undefined })}
-                      className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                        step3Errors.arm_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
-                      }`}
-                      placeholder="35"
-                    />
-                    <FieldError error={step3Errors.arm_cm} />
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-bold text-white mb-2">
+                        <Ruler size={16} className="text-[#ADFF00]" />
+                        Height (cm)
+                      </label>
+                      <input 
+                        type="number" 
+                        value={data.height || ""} 
+                        onChange={e => handleUpdate({ height: parseFloat(e.target.value) || undefined })}
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.height ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        }`}
+                        placeholder="173"
+                      />
+                      <FieldError error={step3Errors.height} />
+                    </div>
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-bold text-white mb-2">
+                        <Scale size={16} className="text-[#ADFF00]" />
+                        Weight (kg)
+                      </label>
+                      <input 
+                        type="number" 
+                        value={data.weight || ""} 
+                        onChange={e => handleUpdate({ weight: parseFloat(e.target.value) || undefined })}
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.weight ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        }`}
+                        placeholder="73"
+                      />
+                      <FieldError error={step3Errors.weight} />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Thigh (cm) <span className="text-gray-500 font-normal block text-xs">Optional</span></label>
-                    <input 
-                      type="number" 
-                      value={data.thigh_cm || ""} 
-                      onChange={e => handleUpdate({ thigh_cm: parseFloat(e.target.value) || undefined })}
-                      className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
-                        step3Errors.thigh_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
-                      }`}
-                      placeholder="55"
-                    />
-                    <FieldError error={step3Errors.thigh_cm} />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="flex flex-col gap-0.5 text-sm font-bold text-white mb-2">
+                        <div className="flex items-center gap-2">
+                          <Tape size={16} className="text-[#ADFF00]" />
+                          <span>Waist (cm) <span className="text-gray-500 font-normal text-xs ml-1">Optional</span></span>
+                        </div>
+                      </label>
+                      <input 
+                        type="number" 
+                        value={data.waist_cm || ""} 
+                        onChange={e => handleUpdate({ waist_cm: parseFloat(e.target.value) || undefined })}
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.waist_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        }`}
+                        placeholder="80"
+                      />
+                      <FieldError error={step3Errors.waist_cm} />
+                    </div>
+                    <div>
+                      <label className="flex flex-col gap-0.5 text-sm font-bold text-white mb-2">
+                        <div className="flex items-center gap-2">
+                          <Shirt size={16} className="text-[#ADFF00]" />
+                          <span>Chest (cm) <span className="text-gray-500 font-normal text-xs ml-1">Optional</span></span>
+                        </div>
+                      </label>
+                      <input 
+                        type="number" 
+                        value={data.chest_cm || ""} 
+                        onChange={e => handleUpdate({ chest_cm: parseFloat(e.target.value) || undefined })}
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.chest_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        }`}
+                        placeholder="95"
+                      />
+                      <FieldError error={step3Errors.chest_cm} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="flex flex-col gap-0.5 text-sm font-bold text-white mb-2">
+                        <div className="flex items-center gap-2">
+                          <BicepsFlexed size={16} className="text-[#ADFF00]" />
+                          <span>Arm (cm) <span className="text-gray-500 font-normal text-xs ml-1">Optional</span></span>
+                        </div>
+                      </label>
+                      <input 
+                        type="number" 
+                        value={data.arm_cm || ""} 
+                        onChange={e => handleUpdate({ arm_cm: parseFloat(e.target.value) || undefined })}
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.arm_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        }`}
+                        placeholder="35"
+                      />
+                      <FieldError error={step3Errors.arm_cm} />
+                    </div>
+                    <div>
+                      <label className="flex flex-col gap-0.5 text-sm font-bold text-white mb-2">
+                        <div className="flex items-center gap-2">
+                          <Activity size={16} className="text-[#ADFF00]" />
+                          <span>Thigh (cm) <span className="text-gray-500 font-normal text-xs ml-1">Optional</span></span>
+                        </div>
+                      </label>
+                      <input 
+                        type="number" 
+                        value={data.thigh_cm || ""} 
+                        onChange={e => handleUpdate({ thigh_cm: parseFloat(e.target.value) || undefined })}
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.thigh_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        }`}
+                        placeholder="55"
+                      />
+                      <FieldError error={step3Errors.thigh_cm} />
+                    </div>
                   </div>
                 </div>
-              </div>
-              <BottomBar 
-                canProceed={isStep3Valid} 
-                onProceed={handleNext} 
-              />
-
+                <BottomBar 
+                  canProceed={isStep3Valid} 
+                  onProceed={handleNext} 
+                />
               </div>
             </div>
           </div>
