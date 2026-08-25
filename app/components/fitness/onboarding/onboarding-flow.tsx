@@ -375,7 +375,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 src="/images/profile-bg-2.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100" 
+                className="object-cover object-top opacity-100 -translate-y-[70px] scale-[1.05]" 
                 priority
                 unoptimized
               />
