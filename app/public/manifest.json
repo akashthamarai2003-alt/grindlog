@@ -24,6 +24,12 @@
       "src": "/icons/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
+    },
+    {
+      "src": "/icons/notification-badge.svg",
+      "sizes": "96x96",
+      "type": "image/svg+xml",
+      "purpose": "monochrome"
     }
   ],
   "screenshots": [

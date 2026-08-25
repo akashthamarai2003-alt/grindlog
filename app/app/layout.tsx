@@ -34,6 +34,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icons/icon-192.png",
     apple: "/icons/apple-touch-icon.png",
+    other: [{ rel: "mask-icon", url: "/icons/notification-badge.svg", color: "#ADFF00" }],
   },
   openGraph: {
     title: "GrindLog",
