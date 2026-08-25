@@ -375,11 +375,11 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 src="/images/profile-bg-2.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-center opacity-50" 
+                className="object-cover object-top opacity-90 -translate-y-8 scale-[1.02]" 
                 priority
               />
-              {/* Overlay gradient to fade bottom into solid black and top slightly */}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#050905]/50 via-transparent to-[#050905] mix-blend-multiply" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#050905] via-[#050905]/95 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-[#050905]/30 mix-blend-multiply" />
             </div>
 
             <div className="relative z-10 w-full h-full flex flex-col px-6 pb-32">
@@ -440,11 +440,9 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   <label className="block text-[14px] font-[700] text-white mb-2">Gender</label>
                   <button 
                       onClick={() => setShowGenderSheet(true)}
-                      className="w-full h-[58px] pl-[46px] pr-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)] font-[500] relative flex items-center justify-between"
+                      className="w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] font-[500]"
                     >
-                      <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-[22px] h-[22px] text-[#A8FF00]" strokeWidth={1.5} />
                       <span className={data.gender ? "text-white" : "text-[#53657A]"}>{data.gender || "Select"}</span>
-                      <ChevronDown className="w-5 h-5 text-[#A8FF00] opacity-50" />
                     </button>
                 </div>
               </div>
@@ -469,9 +467,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 <label className="block text-[14px] font-[700] text-white mb-2">Preferred Language</label>
                 <button 
                     onClick={() => setShowLanguageSheet(true)}
-                    className="w-full h-[58px] pl-[46px] pr-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)] font-[500] relative flex items-center justify-between"
+                    className="w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] font-[500]"
                   >
-                    <Languages className="absolute left-4 top-1/2 -translate-y-1/2 w-[22px] h-[22px] text-[#A8FF00]" strokeWidth={1.5} />
                     <span className={data.preferred_language ? "text-white" : "text-[#53657A]"}>{data.preferred_language || "e.g. English"}</span>
                   </button>
                 <FieldError error={step2Errors.preferred_language} />
