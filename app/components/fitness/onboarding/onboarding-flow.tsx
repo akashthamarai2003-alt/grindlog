@@ -387,16 +387,24 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             <div className="relative z-10 w-full h-full flex flex-col px-6 pb-32">
               
               {/* Top Navigation */}
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="pt-[max(env(safe-area-inset-top),24px)] flex items-center">
-              <button onClick={handleBack} className="group flex items-center justify-center w-[42px] h-[42px] rounded-full bg-[rgba(10,18,10,0.5)] border border-[rgba(255,255,255,0.05)] hover:bg-[rgba(10,18,10,0.8)] transition-all duration-150">
-                <ArrowLeft className="w-5 h-5 text-gray-300 group-hover:-translate-x-[2px] transition-transform duration-150" />
-              </button>
-              <div className="flex-1 pl-4 pr-2">
-                <div className="h-[6px] w-full bg-[rgba(100,130,100,0.18)] rounded-full overflow-hidden flex">
-                   <div className="h-full bg-[#A8FF00] rounded-full shadow-[0_0_8px_rgba(168,255,0,0.4)]" style={{ width: `${(step / totalSteps) * 100}%` }} />
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
+                <button 
+                  onClick={handleBack}
+                  className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <div className="flex-1 px-8 flex justify-center">
+                  <div className="w-full bg-[#1A2619] h-2 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-[#ADFF00]"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${((step - 1) / (totalSteps - 2)) * 100}%` }}
+                      transition={{ ease: "easeInOut" }}
+                    />
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
 
             {/* Header */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.05 }} className="mt-[32px] mb-[32px]">
