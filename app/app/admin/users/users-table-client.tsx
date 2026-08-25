@@ -33,7 +33,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "core" | "pro">("all");
   const [tierFilter, setTierFilter] = useState<"all" | "monthly" | "six_months" | "lifetime">("all");
-  const [appFilter, setAppFilter] = useState<"all" | "grindlog" | "fitness">("all");
+  const [appFilter, setAppFilter] = useState<"all" | "grindlog" | "fitness">("fitness");
 
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [selectedMailUsers, setSelectedMailUsers] = useState<UserWithDetails[] | null>(null);
@@ -167,18 +167,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             />
           </div>
 
-          {/* App Filter Dropdown */}
-          <div className="flex flex-col gap-1">
-            <select
-              value={appFilter}
-              onChange={(e) => setAppFilter(e.target.value as any)}
-              className="px-3 py-2 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 text-gray-700"
-            >
-              <option value="all">App: All Apps</option>
-              <option value="grindlog">App: GrindLog Users</option>
-              <option value="fitness">App: Fitness OS Users</option>
-            </select>
-          </div>
+
 
           {/* Status Filter Dropdown */}
           <div className="flex flex-col gap-1">
