@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
-import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, Tape, Shirt, BicepsFlexed } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, CircleDashed, Shirt, BicepsFlexed } from "lucide-react";
 import { BodySilhouette } from "./body-silhouette";
 import { toast } from "sonner";
 import frontImg from "../../../assets/images/placeholder-front.png";
@@ -652,7 +652,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     <div>
                       <label className="flex flex-col gap-0.5 text-sm font-bold text-white mb-2">
                         <div className="flex items-center gap-2">
-                          <Tape size={16} className="text-[#ADFF00]" />
+                          <CircleDashed size={16} className="text-[#ADFF00]" />
                           <span>Waist (cm) <span className="text-gray-500 font-normal text-xs ml-1">Optional</span></span>
                         </div>
                       </label>
