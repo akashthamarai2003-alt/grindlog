@@ -370,13 +370,14 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
           <div className="flex flex-col min-h-[100dvh] bg-[#050905] relative overflow-hidden">
             
             {/* Background Image */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
               <Image 
                 src="/images/profile-bg-2.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-top opacity-100" 
                 priority
+                unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/80 to-transparent" />
