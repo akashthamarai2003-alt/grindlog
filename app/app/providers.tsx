@@ -2,13 +2,12 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useUIStore } from "@/store/ui-store";
+
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 
 export function Providers({ children, initialTheme = "default" }: { children: React.ReactNode, initialTheme?: string }) {
-  const theme = useUIStore((s) => s.theme);
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
   
@@ -17,24 +16,8 @@ export function Providers({ children, initialTheme = "default" }: { children: Re
 
   useEffect(() => {
     const root = document.documentElement;
-    
-    // Clear old theme classes dynamically
-    const classes = Array.from(root.classList);
-    classes.forEach(c => {
-      if (c.startsWith("theme-")) {
-        root.classList.remove(c);
-      }
-    });
-    root.classList.remove("dark");
-    
-    if (theme === "dark") {
-      root.classList.add("dark");
-    }
-    
-    if (initialTheme && initialTheme !== "default") {
-      root.classList.add(`theme-${initialTheme.replace('_theme', '')}`);
-    }
-  }, [theme, initialTheme]);
+    root.classList.add("dark");
+  }, []);
 
   return (
     <div
