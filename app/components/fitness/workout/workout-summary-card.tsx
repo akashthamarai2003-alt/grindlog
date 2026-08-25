@@ -22,14 +22,14 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
     if (isStarting) return;
     
     if (isCompleted) {
-      router.push(`/fitness/workout/${workout.id}/summary`);
+      router.push(`/workout/${workout.id}/summary`);
       return;
     }
     
     setIsStarting(true);
     if (workout.id === "mock") {
       await new Promise(r => setTimeout(r, 500));
-      router.push(`/fitness/workout/${workout.id}`);
+      router.push(`/workout/${workout.id}`);
       return;
     }
 
@@ -44,7 +44,7 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
       
       if (!res.ok) throw new Error(data.error || "Failed to start workout");
       
-      router.push(`/fitness/workout/${workout.id}`);
+      router.push(`/workout/${workout.id}`);
     } catch (e: any) {
       toast.error(e.message || "Failed to start workout");
       setIsStarting(false);

@@ -44,7 +44,7 @@ export function ProPageClient({ plans, activePlanId }: ProPageClientProps) {
         if (!verifyRes.ok) throw new Error("Mock verification failed");
         
         router.refresh();
-        router.push("/fitness");
+        router.push("/");
         return;
       }
 
@@ -70,7 +70,7 @@ export function ProPageClient({ plans, activePlanId }: ProPageClientProps) {
 
             if (verifyRes.ok) {
               router.refresh();
-              router.push("/fitness");
+              router.push("/");
             } else {
               setError("Payment verification failed. Please contact support.");
             }
@@ -102,7 +102,7 @@ export function ProPageClient({ plans, activePlanId }: ProPageClientProps) {
       
       {/* Header */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-4 py-3 flex items-center">
-        <Link href="/fitness" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
+        <Link href="/" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
           <ArrowLeft className="w-6 h-6 text-gray-800" />
         </Link>
         <div className="flex-1 text-center pr-8">

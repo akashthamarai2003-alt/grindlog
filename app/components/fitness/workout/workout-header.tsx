@@ -16,7 +16,7 @@ interface WorkoutHeaderProps {
   workoutId?: string;
 }
 
-export function WorkoutHeader({ title, dateStr, avatarUrl, backUrl = "/fitness", startedAt, isPaused, workoutId }: WorkoutHeaderProps) {
+export function WorkoutHeader({ title, dateStr, avatarUrl, backUrl = "/", startedAt, isPaused, workoutId }: WorkoutHeaderProps) {
   const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
 
   return (

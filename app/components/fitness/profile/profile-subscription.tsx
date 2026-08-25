@@ -24,7 +24,7 @@ export function ProfileSubscription({ planConfig, status, aiLimitInfo }: Profile
         <h3 className="text-[16px] font-bold text-gray-900 mb-1">No Active Plan</h3>
         <p className="text-[14px] text-gray-500 font-medium mb-6">You need a subscription to access Fitness AI features.</p>
         <Link 
-          href="/fitness/pro"
+          href="/pro"
           className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-[15px] font-bold py-3.5 rounded-2xl transition-colors shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2"
         >
           View Plans
@@ -72,7 +72,7 @@ export function ProfileSubscription({ planConfig, status, aiLimitInfo }: Profile
 
       {!isPro && (
         <Link 
-          href="/fitness/pro"
+          href="/pro"
           className="w-full bg-gray-900 hover:bg-black text-white text-[15px] font-bold py-3.5 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 group"
         >
           Upgrade to Pro

@@ -36,7 +36,7 @@ export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) 
     // If it's a mock workout, skip real API call
     if (workout.id === "mock") {
       await new Promise(r => setTimeout(r, 500));
-      router.push(`/fitness/workout/${workout.id}/summary`);
+      router.push(`/workout/${workout.id}/summary`);
       return;
     }
 
@@ -47,7 +47,7 @@ export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to finish workout");
       
-      router.push(`/fitness/workout/${workout.id}/summary`);
+      router.push(`/workout/${workout.id}/summary`);
     } catch (e: any) {
       toast.error(e.message || "Failed to finish workout");
       setIsFinishing(false);

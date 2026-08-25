@@ -96,7 +96,7 @@ function ExerciseBrowserContent() {
   return (
     <div className="w-full flex flex-col h-full bg-[#0A1108] overflow-y-auto pb-32">
       <div className="px-5 pt-8">
-        <WorkoutHeader title="Exercise Library" backUrl="/fitness" />
+        <WorkoutHeader title="Exercise Library" backUrl="/" />
         
         {/* Search & Filter Bar */}
         <div className="flex flex-col gap-3 mt-6 sticky top-0 bg-[#0A1108]/90 backdrop-blur-xl z-20 py-2">
@@ -113,7 +113,7 @@ function ExerciseBrowserContent() {
             </div>
             
             <Link 
-              href="/fitness/exercises/custom"
+              href="/exercises/custom"
               className="p-3 bg-[#ADFF00] text-black rounded-xl border border-[#ADFF00] hover:bg-[#baff22] transition-colors flex items-center justify-center shrink-0"
             >
               <Plus className="w-5 h-5" />
@@ -190,7 +190,7 @@ function ExerciseBrowserContent() {
           ) : (
             exercises.map(ex => (
               <Link 
-                href={`/fitness/exercises/${ex.slug}`} 
+                href={`/exercises/${ex.slug}`} 
                 key={ex.id}
                 className="bg-[#111A10] border border-white/5 rounded-2xl p-4 flex items-center gap-4 hover:bg-white/5 transition-colors group"
               >

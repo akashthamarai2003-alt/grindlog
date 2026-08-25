@@ -51,7 +51,7 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
               <h3 className="font-bold text-[#ADFF00]">No Active Plan</h3>
               <p className="text-xs text-gray-400 mt-1">Generate your AI strategy.</p>
             </div>
-            <Link href="/fitness/report" className="px-4 py-2 bg-[#ADFF00] text-black font-bold rounded-xl text-sm whitespace-nowrap shadow-[0_0_10px_rgba(173,255,0,0.3)] hover:bg-[#c4ff33]">
+            <Link href="/report" className="px-4 py-2 bg-[#ADFF00] text-black font-bold rounded-xl text-sm whitespace-nowrap shadow-[0_0_10px_rgba(173,255,0,0.3)] hover:bg-[#c4ff33]">
               Generate
             </Link>
           </div>

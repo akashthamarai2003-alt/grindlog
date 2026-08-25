@@ -93,7 +93,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
   };
 
   const handleComplete = () => {
-    router.push("/fitness/report");
+    router.push("/report");
     router.refresh();
   };
 

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const APP_ICON = "https://www.grindlog.in/icons/icon-192.png";
 const NOTIFICATION_BADGE = "https://www.grindlog.in/icons/notification-badge.png";
-const NOTIFICATION_URL = "/fitness";
+const NOTIFICATION_URL = "/";
 
 type ReminderNotification = {
   userId: string;
@@ -146,7 +146,7 @@ export async function GET(req: Request) {
                   title: `Time to sweat! 🏋️‍♂️`,
                   body: `Your daily workout is scheduled for ${profile.workout_time}. Let's get to work!`,
                   tag: `workout:${profile.user_id}:${istDateKey}`,
-                  url: "/fitness/workout",
+                  url: "/workout",
                 });
               }
             }
@@ -177,7 +177,7 @@ export async function GET(req: Request) {
                   title: `Time for ${reminder.type}! ${getEmojiForType(reminder.type)}`,
                   body: `Your ${reminder.type} is scheduled for ${reminder.time}. Stay on track!`,
                   tag: `custom_reminder:${profile.user_id}:${reminder.type}:${istDateKey}`,
-                  url: "/fitness",
+                  url: "/",
                 });
               }
             }

@@ -95,7 +95,7 @@ export function WorkoutComplete({
         });
       }
       
-      router.push("/fitness");
+      router.push("/");
       router.refresh();
     } catch (e) {
       console.error("Failed to save feedback", e);

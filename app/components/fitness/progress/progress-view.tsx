@@ -85,7 +85,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
                 <p className="text-sm font-medium text-white/90">
                   You've been highly consistent with your workouts and diet! Your body is actively transforming. It's time to capture your new physique.
                 </p>
-                <Link href="/fitness/progress/add-scan" className="mt-2 w-full py-3 bg-[#ADFF00] text-black font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center hover:bg-[#baff22] transition-colors">
+                <Link href="/progress/add-scan" className="mt-2 w-full py-3 bg-[#ADFF00] text-black font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center hover:bg-[#baff22] transition-colors">
                   Take Progress Photo 📸
                 </Link>
               </div>

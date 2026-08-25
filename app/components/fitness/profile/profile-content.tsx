@@ -156,7 +156,7 @@ export function ProfileContent({
         {/* Navigation Bar */}
         <div className="flex items-center justify-between">
           <Link 
-            href="/fitness" 
+            href="/" 
             className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center text-gray-300 hover:text-white hover:border-[#ADFF00]/50 transition-all active:scale-95"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -253,7 +253,7 @@ export function ProfileContent({
                 </h3>
               </div>
               <Link 
-                href="/fitness/payment"
+                href="/payment"
                 className="px-4 py-2 bg-[#ADFF00] text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(173,255,0,0.25)] hover:bg-[#b8ff1a] transition-all active:scale-95 flex items-center gap-1.5"
               >
                 <CreditCard className="w-3.5 h-3.5" />
@@ -299,7 +299,7 @@ export function ProfileContent({
             
             {/* My Details */}
             <Link 
-              href="/fitness/profile/details"
+              href="/profile/details"
               className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
             >
               <div className="flex items-center gap-3">
@@ -316,7 +316,7 @@ export function ProfileContent({
 
             {/* Re-take Onboarding */}
             <Link 
-              href="/fitness/onboarding?mode=edit"
+              href="/onboarding?mode=edit"
               className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
             >
               <div className="flex items-center gap-3">
@@ -333,7 +333,7 @@ export function ProfileContent({
 
             {/* Set Reminders */}
             <Link 
-              href="/fitness/reminders"
+              href="/reminders"
               className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
             >
               <div className="flex items-center gap-3">
@@ -350,7 +350,7 @@ export function ProfileContent({
 
             {/* Billing */}
             <Link 
-              href="/fitness/payment"
+              href="/payment"
               className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
             >
               <div className="flex items-center gap-3">
@@ -548,7 +548,7 @@ export function ProfileContent({
                   </button>
 
                   <Link
-                    href="/fitness/onboarding?mode=edit"
+                    href="/onboarding?mode=edit"
                     className="w-full py-3 bg-[#1A2619] text-gray-300 hover:text-white font-bold text-xs rounded-xl transition-colors text-center flex items-center justify-center gap-1.5"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />

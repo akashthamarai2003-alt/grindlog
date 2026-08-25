@@ -52,7 +52,7 @@ export function HorizontalCalendar() {
           return (
             <Link 
               key={idx}
-              href={`/fitness?date=${dateString}`}
+              href={`/?date=${dateString}`}
               scroll={false}
               onClick={() => {
                 if (!isActive) setPendingDate(dateString);

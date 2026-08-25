@@ -18,11 +18,11 @@ export function ActiveWorkoutResumeCard({
   const router = useRouter();
 
   const handleContinue = () => {
-    router.push(`/fitness/workout/${workoutId}`);
+    router.push(`/workout/${workoutId}`);
   };
 
   const handleEnd = () => {
-    router.push(`/fitness/workout/${workoutId}/summary`);
+    router.push(`/workout/${workoutId}/summary`);
   };
 
   return (

@@ -60,7 +60,7 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
           <Camera className="w-8 h-8 text-white/20 mb-3" />
           <p className="text-sm font-bold text-white/60 mb-2">No body scans yet</p>
           <p className="text-xs font-medium text-white/40 mb-4 px-4">Complete your first body scan to start visual progress tracking.</p>
-          <Link href="/fitness/progress/add-scan" className="flex items-center gap-2 px-4 py-2 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-xs uppercase tracking-widest border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors">
+          <Link href="/progress/add-scan" className="flex items-center gap-2 px-4 py-2 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-xs uppercase tracking-widest border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors">
             <Camera className="w-3 h-3" /> Add Scan
           </Link>
         </div>
@@ -79,7 +79,7 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
             Body Progress
           </h2>
           <Link 
-            href="/fitness/progress/add-scan" 
+            href="/progress/add-scan" 
             onClick={handleAddClick}
             className="sm:hidden flex items-center justify-center w-7 h-7 bg-[#ADFF00]/10 text-[#ADFF00] rounded-full border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors"
           >
@@ -99,7 +99,7 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
             ))}
           </div>
           <Link 
-            href="/fitness/progress/add-scan" 
+            href="/progress/add-scan" 
             onClick={handleAddClick}
             className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-[#ADFF00]/10 text-[#ADFF00] rounded-md font-black text-[9px] uppercase tracking-widest border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors"
           >

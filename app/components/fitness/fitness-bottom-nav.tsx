@@ -6,11 +6,11 @@ import { Home, Dumbbell, Utensils, TrendingUp, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { id: "home", label: "Home", icon: Home, path: "/fitness" },
-  { id: "workout", label: "Workout", icon: Dumbbell, path: "/fitness/workout" },
-  { id: "diet", label: "Diet", icon: Utensils, path: "/fitness/diet" },
-  { id: "progress", label: "Progress", icon: TrendingUp, path: "/fitness/progress" },
-  { id: "profile", label: "Profile", icon: User, path: "/fitness/profile" },
+  { id: "home", label: "Home", icon: Home, path: "/" },
+  { id: "workout", label: "Workout", icon: Dumbbell, path: "/workout" },
+  { id: "diet", label: "Diet", icon: Utensils, path: "/diet" },
+  { id: "progress", label: "Progress", icon: TrendingUp, path: "/progress" },
+  { id: "profile", label: "Profile", icon: User, path: "/profile" },
 ];
 
 export function FitnessBottomNav() {
@@ -22,8 +22,8 @@ export function FitnessBottomNav() {
         {tabs.map((tab) => {
           const Icon = tab.icon;
           // Match exact path for Home since it's the root /fitness
-          const isActive = tab.path === "/fitness" 
-            ? pathname === "/fitness" 
+          const isActive = tab.path === "/" 
+            ? pathname === "/" 
             : pathname?.startsWith(tab.path);
             
           return (

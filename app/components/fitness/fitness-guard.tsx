@@ -16,15 +16,15 @@ export async function FitnessGuard({ children, requirePro = false }: { children:
     .maybeSingle();
 
   if (!profile?.onboarding_completed) {
-    redirect("/fitness/onboarding");
+    redirect("/onboarding");
   }
 
   if (!profile?.fitness_is_premium) {
-    redirect("/fitness/payment?returnTo=/fitness");
+    redirect("/payment?returnTo=/fitness");
   }
 
   if (requirePro && profile?.fitness_premium_level !== "pro") {
-    redirect("/fitness/payment?returnTo=/fitness");
+    redirect("/payment?returnTo=/fitness");
   }
 
   return <>{children}</>;

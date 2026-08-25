@@ -12,7 +12,7 @@ export function ExerciseLibraryCard() {
       transition={{ duration: 0.5, delay: 0.6 }}
       className="w-full relative rounded-2xl overflow-hidden group mt-2"
     >
-      <Link href="/fitness/exercises" className="block">
+      <Link href="/exercises" className="block">
         <div className="relative bg-[#111A10] rounded-2xl p-4 flex items-center justify-between shadow-xl border border-white/5 hover:border-white/20 transition-colors backdrop-blur-md">
           
           <div className="flex items-center gap-4">

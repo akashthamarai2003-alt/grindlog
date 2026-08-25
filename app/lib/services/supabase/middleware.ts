@@ -48,17 +48,12 @@ export async function updateSession(request: NextRequest) {
 
   const publicPaths = [
     "/",
-    "/fitness",
-    "/landing",
-    "/fitness/landing",
-    "/app",
     "/auth/signup",
     "/auth/signin",
     "/auth/callback",
     "/auth/forgot-password",
     "/auth/reset-password",
     "/admin-login",
-    "/onboarding",
     "/terms",
     "/privacy",
     "/refund",
@@ -81,14 +76,14 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath && !pathname.startsWith("/fitness") && !["/auth/reset-password", "/terms", "/privacy", "/refund", "/admin-login", "/landing"].includes(pathname)) {
+  if (user && isPublicPath && !["/auth/reset-password", "/terms", "/privacy", "/refund", "/admin-login"].includes(pathname)) {
     const url = request.nextUrl.clone();
     
     // Determine safe redirect
     const redirectParam = request.nextUrl.searchParams.get("redirect");
-    let safeRedirect = "/fitness/workout";
+    let safeRedirect = "/workout";
     if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
-       const allowedBasePaths = ["/fitness", "/profile"];
+       const allowedBasePaths = ["/", "/profile", "/workout", "/diet", "/coach", "/progress"];
        const isAllowed = allowedBasePaths.some(p => redirectParam === p || redirectParam.startsWith(p + "/"));
        if (isAllowed) {
          safeRedirect = redirectParam;

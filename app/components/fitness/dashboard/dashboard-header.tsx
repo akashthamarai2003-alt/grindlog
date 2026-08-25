@@ -68,7 +68,7 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
       </div>
 
       <div className="flex items-center gap-3">
-        <Link href="/fitness/notifications" className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center relative hover:bg-[#1A2619] transition-colors">
+        <Link href="/notifications" className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center relative hover:bg-[#1A2619] transition-colors">
           <Bell size={18} className="text-gray-300" />
           {/* Notification Dot */}
           {unreadCount > 0 && (

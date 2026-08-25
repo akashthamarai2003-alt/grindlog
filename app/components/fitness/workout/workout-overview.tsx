@@ -22,7 +22,7 @@ export function WorkoutOverview({ workout, exerciseCount }: WorkoutOverviewProps
     
     const res = await startWorkoutSessionAction({ workoutId: workout.id });
     if (res.success) {
-      router.push(`/fitness/workout/${workout.id}`);
+      router.push(`/workout/${workout.id}`);
     } else {
       toast.error(res.error || "Failed to start workout");
       setIsStarting(false);

@@ -156,7 +156,7 @@ export function MyDetailsContent({
         {/* Navigation Bar */}
         <div className="flex items-center justify-between">
           <Link 
-            href="/fitness/profile" 
+            href="/profile" 
             className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center text-gray-300 hover:text-white hover:border-[#ADFF00]/50 transition-all active:scale-95"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -606,7 +606,7 @@ export function MyDetailsContent({
                   </button>
 
                   <Link
-                    href="/fitness/onboarding?mode=edit"
+                    href="/onboarding?mode=edit"
                     className="w-full py-3 bg-[#1A2619] text-gray-300 hover:text-white font-bold text-xs rounded-xl transition-colors text-center flex items-center justify-center gap-1.5"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />

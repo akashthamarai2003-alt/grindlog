@@ -77,7 +77,7 @@ export async function updatePlanPricesAction(newPricing: PlanPricingConfig, appT
 
     revalidatePath("/payment");
     revalidatePath("/admin/pricing");
-    revalidatePath("/fitness/payment");
+    revalidatePath("/payment");
     return { success: true };
   } catch (err: any) {
     console.error("updatePlanPricesAction exception:", err);

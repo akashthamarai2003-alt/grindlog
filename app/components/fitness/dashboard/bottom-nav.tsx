@@ -8,11 +8,11 @@ export function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { icon: Home, label: "Home", href: "/fitness" },
-    { icon: Dumbbell, label: "Workout", href: "/fitness/workout" },
-    { icon: Utensils, label: "Meals", href: "/fitness/nutrition" },
-    { icon: TrendingUp, label: "Progress", href: "/fitness/progress" },
-    { icon: User, label: "Profile", href: "/fitness/profile" }
+    { icon: Home, label: "Home", href: "/" },
+    { icon: Dumbbell, label: "Workout", href: "/workout" },
+    { icon: Utensils, label: "Meals", href: "/nutrition" },
+    { icon: TrendingUp, label: "Progress", href: "/progress" },
+    { icon: User, label: "Profile", href: "/profile" }
   ];
 
   return (

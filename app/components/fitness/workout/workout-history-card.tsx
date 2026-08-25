@@ -18,7 +18,7 @@ export function WorkoutHistoryCard({ workout, exerciseCount, completedSets, tota
   });
 
   return (
-    <Link href={`/fitness/workout/${workout.id}/summary`}>
+    <Link href={`/workout/${workout.id}/summary`}>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}

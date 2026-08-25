@@ -8,7 +8,7 @@ export function QuickActions() {
   const router = useRouter();
   
   const actions = [
-    { id: "workout", label: "Start Workout", icon: Play, color: "text-emerald-500", bg: "bg-emerald-50", route: "/fitness/workout" },
+    { id: "workout", label: "Start Workout", icon: Play, color: "text-emerald-500", bg: "bg-emerald-50", route: "/workout" },
     { id: "meal", label: "Log Meal", icon: Apple, color: "text-orange-500", bg: "bg-orange-50" },
     { id: "water", label: "Log Water", icon: Droplet, color: "text-blue-500", bg: "bg-blue-50" },
     { id: "photo", label: "Add Photo", icon: Camera, color: "text-indigo-500", bg: "bg-indigo-50" },

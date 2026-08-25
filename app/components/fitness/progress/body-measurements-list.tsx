@@ -13,7 +13,7 @@ export function BodyMeasurementsList({ measurements, isBulking = false }: { meas
         </h2>
         <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
           <p className="text-sm font-bold text-white/60 mb-2">No measurements yet</p>
-          <Link href="/fitness/progress/log-measurements" className="flex items-center gap-2 px-4 py-2 bg-white/5 text-white/80 rounded-xl font-black text-xs uppercase tracking-widest border border-white/10 hover:bg-white/10 transition-colors">
+          <Link href="/progress/log-measurements" className="flex items-center gap-2 px-4 py-2 bg-white/5 text-white/80 rounded-xl font-black text-xs uppercase tracking-widest border border-white/10 hover:bg-white/10 transition-colors">
             <Ruler className="w-3 h-3" /> Log Measurements
           </Link>
         </div>
@@ -27,7 +27,7 @@ export function BodyMeasurementsList({ measurements, isBulking = false }: { meas
         <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
           Body Measurements
         </h2>
-        <Link href="/fitness/progress/log-measurements" className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest hover:text-white transition-colors">
+        <Link href="/progress/log-measurements" className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest hover:text-white transition-colors">
           Add +
         </Link>
       </div>

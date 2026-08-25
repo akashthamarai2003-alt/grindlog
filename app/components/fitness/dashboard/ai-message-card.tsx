@@ -6,7 +6,7 @@ import Link from "next/link";
 export function AIMessageCard({ premiumLevel = "core" }: { premiumLevel?: string }) {
   if (premiumLevel === "core") {
     return (
-      <Link href="/fitness/payment?returnTo=/fitness">
+      <Link href="/payment?returnTo=/fitness">
         <div className="relative w-full overflow-hidden rounded-[24px] bg-[#121E12] border border-[#1A2619] p-5 flex justify-between items-center group cursor-pointer transition-transform hover:scale-[1.02]">
           <div className="relative z-10 flex gap-4 items-center">
             <div className="w-12 h-12 rounded-full bg-black/40 flex items-center justify-center shrink-0 border border-[#1A2619]">
@@ -56,7 +56,7 @@ export function AIMessageCard({ premiumLevel = "core" }: { premiumLevel?: string
 
       {/* Action Button */}
       <div className="relative z-10 shrink-0">
-        <Link href="/fitness/workout">
+        <Link href="/workout">
           <button className="bg-black text-white text-[10px] font-black uppercase px-4 py-2.5 rounded-full flex items-center gap-1 shadow-xl hover:bg-gray-900 transition-colors">
             Start <ArrowRight size={12} />
           </button>

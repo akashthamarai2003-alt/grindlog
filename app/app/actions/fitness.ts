@@ -113,8 +113,8 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
       .eq("id", user.id);
   }
 
-  revalidatePath("/fitness");
-  revalidatePath("/fitness/profile");
+  revalidatePath("/");
+  revalidatePath("/profile");
   return { success: true };
 }
 
@@ -152,8 +152,8 @@ export async function updateFitnessProfilePartialAction(payload: Record<string, 
       .eq("id", user.id);
   }
 
-  revalidatePath("/fitness");
-  revalidatePath("/fitness/profile");
+  revalidatePath("/");
+  revalidatePath("/profile");
   return { success: true };
 }
 
@@ -215,7 +215,7 @@ export async function startWorkoutSessionAction(payload: { workoutId: string }) 
     .update({ status: "in_progress", started_at: now })
     .eq("id", workoutId);
 
-  revalidatePath(`/fitness/workout/${workoutId}`);
+  revalidatePath(`/workout/${workoutId}`);
   return { success: true, data: { sessionId: newSession.id } };
 }
 
@@ -271,7 +271,7 @@ export async function completeSetAction(payload: { setId: string; actualReps?: n
     return { success: false, error: "Failed to complete set" };
   }
 
-  revalidatePath(`/fitness/workout/${exercise.workout_id}`);
+  revalidatePath(`/workout/${exercise.workout_id}`);
   return { success: true };
 }
 
@@ -300,7 +300,7 @@ export async function pauseWorkoutSessionAction(payload: { sessionId: string }) 
     .update({ status: "paused", paused_at: now })
     .eq("id", sessionId);
 
-  revalidatePath(`/fitness/workout/${session.workout_id}`);
+  revalidatePath(`/workout/${session.workout_id}`);
   return { success: true };
 }
 
@@ -342,7 +342,7 @@ export async function resumeWorkoutSessionAction(payload: { sessionId: string })
     })
     .eq("id", sessionId);
 
-  revalidatePath(`/fitness/workout/${session.workout_id}`);
+  revalidatePath(`/workout/${session.workout_id}`);
   return { success: true };
 }
 
@@ -402,9 +402,9 @@ export async function finishWorkoutSessionAction(payload: { sessionId: string })
     })
     .eq("id", session.workout_id);
 
-  revalidatePath(`/fitness/workout`);
-  revalidatePath(`/fitness/workout/${session.workout_id}`);
-  revalidatePath(`/fitness/workout/history`);
+  revalidatePath(`/workout`);
+  revalidatePath(`/workout/${session.workout_id}`);
+  revalidatePath(`/workout/history`);
   
   return { success: true };
 }
@@ -430,8 +430,8 @@ export async function updateRemindersAction(enabled: boolean, reminders: any[]) 
     return { success: false, error: error.message };
   }
 
-  revalidatePath("/fitness/reminders");
-  revalidatePath("/fitness/profile");
+  revalidatePath("/reminders");
+  revalidatePath("/profile");
   
   return { success: true };
 }

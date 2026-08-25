@@ -42,7 +42,7 @@ export function CustomExerciseForm() {
       if (!res.ok) throw new Error(data.error || "Failed to create exercise");
 
       toast.success("Exercise created!");
-      router.push(`/fitness/exercises/${data.slug}`);
+      router.push(`/exercises/${data.slug}`);
     } catch (err: any) {
       toast.error(err.message || "Something went wrong");
     } finally {
@@ -53,7 +53,7 @@ export function CustomExerciseForm() {
   return (
     <div className="w-full flex flex-col h-full bg-[#0A1108] overflow-y-auto pb-32">
       <div className="px-5 pt-8">
-        <WorkoutHeader title="Custom Exercise" backUrl="/fitness/exercises" />
+        <WorkoutHeader title="Custom Exercise" backUrl="/exercises" />
         
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
           <div className="flex flex-col gap-2">

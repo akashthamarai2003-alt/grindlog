@@ -137,7 +137,7 @@ export function PlanGeneration() {
   }
 
   if (planId) {
-    return <PlanPreview planId={planId} onConfirm={() => router.push("/fitness")} />;
+    return <PlanPreview planId={planId} onConfirm={() => router.push("/")} />;
   }
 
   return null;

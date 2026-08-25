@@ -245,8 +245,8 @@ export async function verifyRazorpayPayment(
   revalidatePath("/", "layout");
   revalidatePath("/dashboard");
   revalidatePath("/payment");
-  revalidatePath("/fitness/payment");
-  revalidatePath("/fitness");
+  revalidatePath("/payment");
+  revalidatePath("/");
   revalidatePath("/profile");
   revalidatePath("/admin/users");
   revalidatePath("/admin");

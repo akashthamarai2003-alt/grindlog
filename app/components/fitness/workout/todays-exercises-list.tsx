@@ -36,7 +36,7 @@ export function TodaysExercisesList({ workoutId, exercises = [], readonly = fals
   const handleStartExercise = (exerciseId: string) => {
     setNavigatingExerciseId(exerciseId);
     // Navigate to the specific exercise in the workout session
-    router.push(`/fitness/workout/${workoutId}?exercise=${exerciseId}`);
+    router.push(`/workout/${workoutId}?exercise=${exerciseId}`);
   };
 
   return (

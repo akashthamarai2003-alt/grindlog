@@ -87,7 +87,7 @@ export function ScannerFlow() {
   };
 
   const handleSkip = () => {
-    router.push("/fitness/plan/generating");
+    router.push("/plan/generating");
   };
 
   const handleAnalyze = async () => {
@@ -121,7 +121,7 @@ export function ScannerFlow() {
       }
 
       toast.success("Analysis complete! Generating your personalized plan...");
-      router.push("/fitness/plan/generating");
+      router.push("/plan/generating");
 
     } catch (error: any) {
       toast.error(error.message || "An error occurred.");

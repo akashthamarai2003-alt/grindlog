@@ -58,7 +58,7 @@ export function PremiumFeatureLock({
           </p>
           
           <Link 
-            href="/fitness/pro"
+            href="/pro"
             className="w-full bg-gray-900 hover:bg-black text-white text-[15px] font-bold py-3.5 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 group/btn"
           >
             Upgrade to Pro
