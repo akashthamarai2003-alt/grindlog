@@ -372,7 +372,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             {/* Background Image */}
             <div className="absolute inset-0 z-0 pointer-events-none">
               <Image 
-                src="/images/profile-bg.png" 
+                src="/images/profile-bg-2.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-center opacity-50" 
