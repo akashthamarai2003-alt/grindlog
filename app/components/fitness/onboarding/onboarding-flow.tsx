@@ -375,11 +375,12 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 src="/images/profile-bg-2.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-90 -translate-y-16 scale-105" 
+                className="object-cover object-top opacity-100" 
                 priority
               />
-              <div className="absolute inset-0 bg-gradient-to-tr from-[#050905] via-[#050905]/95 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-[#050905]/30 mix-blend-multiply" />
+              {/* Simple gradient from solid black at bottom to transparent at top */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/80 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-transparent to-transparent opacity-80" />
             </div>
 
             <div className="relative z-10 w-full h-full flex flex-col px-6 pb-32">
