@@ -367,10 +367,25 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         );
       case 2:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905] px-6 relative overflow-hidden pb-32">
+          <div className="flex flex-col min-h-[100dvh] bg-[#050905] relative overflow-hidden">
             
-            {/* Top Navigation */}
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="pt-[max(env(safe-area-inset-top),24px)] flex items-center">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <Image 
+                src="/images/profile-bg.png" 
+                alt="Background" 
+                fill 
+                className="object-cover object-center opacity-50" 
+                priority
+              />
+              {/* Overlay gradient to fade bottom into solid black and top slightly */}
+              <div className="absolute inset-0 bg-gradient-to-b from-[#050905]/50 via-transparent to-[#050905] mix-blend-multiply" />
+            </div>
+
+            <div className="relative z-10 w-full h-full flex flex-col px-6 pb-32">
+              
+              {/* Top Navigation */}
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="pt-[max(env(safe-area-inset-top),24px)] flex items-center">
               <button onClick={handleBack} className="group flex items-center justify-center w-[42px] h-[42px] rounded-full bg-[rgba(10,18,10,0.5)] border border-[rgba(255,255,255,0.05)] hover:bg-[rgba(10,18,10,0.8)] transition-all duration-150">
                 <ArrowLeft className="w-5 h-5 text-gray-300 group-hover:-translate-x-[2px] transition-transform duration-150" />
               </button>
@@ -460,6 +475,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               </div>
 
             </motion.div>
+            </div> {/* End of inner content wrapper */}
 
             {/* Continue Button (Fixed bottom) */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.15 }} className="fixed bottom-0 left-0 right-0 z-30 max-w-[480px] mx-auto pb-[max(env(safe-area-inset-bottom),24px)] pt-8 px-4 bg-gradient-to-t from-[#050905] via-[#050905]/90 to-transparent pointer-events-none">
