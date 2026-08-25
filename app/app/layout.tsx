@@ -33,11 +33,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico?v=3", sizes: "any" },
-      { url: "/icons/icon-192.png?v=3", type: "image/png" },
+      { url: "/favicon.ico?v=4", sizes: "any" },
+      { url: "/icons/icon-192.png?v=4", type: "image/png" },
     ],
-    apple: "/icons/apple-touch-icon.png?v=3",
-    other: [{ rel: "mask-icon", url: "/icons/notification-badge.svg?v=3", color: "#ADFF00" }],
+    apple: "/icons/apple-touch-icon.png?v=4",
+    other: [{ rel: "mask-icon", url: "/icons/notification-badge.svg?v=4", color: "#ADFF00" }],
   },
   openGraph: {
     title: "GrindLog",
