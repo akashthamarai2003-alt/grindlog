@@ -76,12 +76,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath && !["/auth/reset-password", "/terms", "/privacy", "/refund", "/admin-login"].includes(pathname)) {
+  if (user && isPublicPath && !["/", "/auth/reset-password", "/terms", "/privacy", "/refund", "/admin-login"].includes(pathname)) {
     const url = request.nextUrl.clone();
     
     // Determine safe redirect
     const redirectParam = request.nextUrl.searchParams.get("redirect");
-    let safeRedirect = "/workout";
+    let safeRedirect = "/";
     if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
        const allowedBasePaths = ["/", "/profile", "/workout", "/diet", "/coach", "/progress"];
        const isAllowed = allowedBasePaths.some(p => redirectParam === p || redirectParam.startsWith(p + "/"));

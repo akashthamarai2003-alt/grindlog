@@ -243,7 +243,7 @@ export async function verifyRazorpayPayment(
   }
 
   revalidatePath("/", "layout");
-  revalidatePath("/workout");
+  revalidatePath("/");
   revalidatePath("/payment");
   revalidatePath("/payment");
   revalidatePath("/");

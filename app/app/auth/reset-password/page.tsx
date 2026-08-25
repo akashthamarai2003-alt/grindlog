@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
     setIsLoading(false);
     
     if (result.success) {
-      router.push("/workout");
+      router.push("/");
     } else {
       setError(result.error || "Failed to update password");
     }

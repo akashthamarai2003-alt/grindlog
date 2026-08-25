@@ -1,9 +1,9 @@
 export function getSafeRedirect(redirect: string | null): string {
-  if (!redirect) return "/workout"; // Default to Fitness workout
+  if (!redirect) return "/"; // Default to Fitness dashboard
 
   // Prevent open redirects (external URLs or protocol-relative URLs)
   if (redirect.startsWith("http://") || redirect.startsWith("https://") || redirect.startsWith("//") || !redirect.startsWith("/")) {
-    return "/workout";
+    return "/";
   }
 
   // Allowed safe internal base paths
@@ -18,5 +18,5 @@ export function getSafeRedirect(redirect: string | null): string {
     return redirect;
   }
   
-  return "/workout";
+  return "/";
 }
