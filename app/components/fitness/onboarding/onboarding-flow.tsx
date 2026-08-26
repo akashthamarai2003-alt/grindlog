@@ -835,7 +835,7 @@ case 4:
                   className={`w-full p-3 rounded-xl border bg-[#121E12] text-white transition-colors outline-none placeholder:text-gray-600 font-bold ${
                     step4Errors.target_deadline_days ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]/50'
                   }`}
-                  placeholder="Or enter custom days (e.g. 45, or leave blank)"
+                  placeholder="Custom days (e.g. 45)"
                 />
                 <FieldError error={step4Errors.target_deadline_days} />
               </div>
