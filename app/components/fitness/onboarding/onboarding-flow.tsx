@@ -150,12 +150,20 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     </motion.button>
   );
 
-  const StepHeader = ({ title, subtitle }: { title: string, subtitle?: string }) => (
-    <div className="mb-8">
-      <h2 className="text-3xl font-black text-white tracking-tight">{title}</h2>
-      {subtitle && <p className="text-gray-400 mt-2">{subtitle}</p>}
-    </div>
-  );
+  const StepHeader = ({ title, subtitle }: { title: string, subtitle?: string }) => {
+    const words = title.split(" ");
+    const firstWord = words[0];
+    const rest = words.slice(1).join(" ");
+    return (
+      <div className="mb-8 mt-2">
+        <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[38px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-wrap gap-x-2">
+          <span className="text-[#ADFF00]">{firstWord}</span>
+          {rest && <span className="text-white">{rest}</span>}
+        </h2>
+        {subtitle && <p className="text-gray-400 mt-2 font-medium">{subtitle}</p>}
+      </div>
+    );
+  };
 
   const BottomBar = ({ 
     canProceed, 
