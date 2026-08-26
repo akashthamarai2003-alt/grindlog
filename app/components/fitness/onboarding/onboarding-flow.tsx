@@ -367,10 +367,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         );
       case 2:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905] relative overflow-hidden">
+          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
             
-            {/* Background Image */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            {/* Background Image - Sticky to stay fixed while scrolling */}
+            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
               <Image 
                 src="/images/profile-bg-2.png" 
                 alt="Background" 
@@ -384,7 +384,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-transparent to-transparent opacity-80" />
             </div>
 
-            <div className="relative z-10 w-full h-full flex flex-col px-6 pb-32">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
               
               {/* Top Navigation */}
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
@@ -551,10 +551,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         );
                   case 3:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905] relative overflow-hidden">
+          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
             
-            {/* Background Image */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            {/* Background Image - Sticky to stay fixed while scrolling */}
+            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
               <Image 
                 src="/images/body-details-bg.png" 
                 alt="Background" 
@@ -568,7 +568,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905]/30 to-transparent opacity-60" />
             </div>
 
-            <div className="relative z-10 w-full h-full flex flex-col px-6 pb-32">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
               
               {/* Top Navigation */}
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
