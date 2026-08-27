@@ -854,47 +854,84 @@ case 4:
         );
       case 5:
         return (
-          <div className="px-6 pt-6 pb-28">
-            <StepHeader title="What's your training experience?" />
-            <div className="space-y-8">
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-3">Experience Level</label>
-                <div className="space-y-4">
-                  {[
-                    { id: "Beginner", desc: "0–6 months" },
-                    { id: "Intermediate", desc: "6 months–2 years" },
-                    { id: "Advanced", desc: "2+ years" }
-                  ].map(opt => (
-                    <OptionCard
-                      key={opt.id}
-                      title={opt.id}
-                      desc={opt.desc}
-                      selected={data.fitness_level === opt.id}
-                      onClick={() => handleUpdate({ fitness_level: opt.id as any })}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-3">Training Frequency</label>
-                <div className="flex justify-between gap-2">
-                  {[3,4,5,6,7].map(d => (
-                    <button 
-                      key={d}
-                      onClick={() => handleUpdate({ training_days_per_week: d })}
-                      className={`flex-1 py-3 rounded-xl flex flex-col items-center justify-center font-bold transition-all border ${
-                        data.training_days_per_week === d ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
-                      }`}
-                    >
-                      <span className="text-xl">{d}</span>
-                      <span className="text-xs uppercase tracking-wider mt-1 opacity-70 font-semibold">days</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
+            
+            {/* Background Image - Sticky to stay fixed while scrolling */}
+            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+              <Image 
+                src="/images/wan2.7-image_b_make_thi_man_to_x_me.png" 
+                alt="Background" 
+                fill 
+                className="object-cover object-top opacity-100 scale-[1.05]" 
+                priority
+                unoptimized
+              />
+              {/* Simple gradient from solid black at bottom to transparent at top */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/80 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/60 to-transparent opacity-90" />
             </div>
-            <BottomBar canProceed={!!data.fitness_level && !!data.training_days_per_week} onProceed={handleNext} />
+
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+              
+              {/* Top Navigation */}
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
+                <button 
+                  onClick={handleBack}
+                  className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <div className="flex-1 px-8 flex justify-center">
+                  <div className="w-full bg-[#1A2619] h-2 rounded-full overflow-hidden">
+                    <motion.div className="h-full bg-[#ADFF00]" initial={{ width: "0%" }} animate={{ width: `${((step - 1) / (totalSteps - 2)) * 100}%` }} transition={{ ease: "easeInOut" }} />
+                  </div>
+                </div>
+                <div className="w-9" />
+              </motion.div>
+
+              <div className="pt-6">
+                <StepHeader title="What's your training experience?" />
+                <div className="space-y-8">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-300 mb-3">Experience Level</label>
+                    <div className="space-y-4">
+                      {[
+                        { id: "Beginner", desc: "0-6 months" },
+                        { id: "Intermediate", desc: "6 months-2 years" },
+                        { id: "Advanced", desc: "2+ years" }
+                      ].map(opt => (
+                        <OptionCard
+                          key={opt.id}
+                          title={opt.id}
+                          desc={opt.desc}
+                          selected={data.fitness_level === opt.id}
+                          onClick={() => handleUpdate({ fitness_level: opt.id as any })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-300 mb-3">Training Frequency</label>
+                    <div className="flex justify-between gap-2">
+                      {[3,4,5,6,7].map(d => (
+                        <button 
+                          key={d}
+                          onClick={() => handleUpdate({ training_days_per_week: d })}
+                          className={`flex-1 py-3 rounded-xl flex flex-col items-center justify-center font-bold transition-all border ${
+                            data.training_days_per_week === d ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                          }`}
+                        >
+                          <span className="text-xl">{d}</span>
+                          <span className="text-xs uppercase tracking-wider mt-1 opacity-70 font-semibold">days</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <BottomBar canProceed={!!data.fitness_level && !!data.training_days_per_week} onProceed={handleNext} />
+            </div>
           </div>
         );
       case 6:
@@ -2143,7 +2180,7 @@ case 4:
     <div className="min-h-[100dvh] w-full bg-[#0A1108] selection:bg-[#ADFF00] selection:text-black">
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
-        <div className={step === 1 || step === 2 || step === 3 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
+        <div className={step === 1 || step === 2 || step === 3 || step === 5 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
           {step > 1 && step < 16 && (
             <button 
               onClick={handleBack}
