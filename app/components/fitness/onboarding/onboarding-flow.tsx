@@ -891,8 +891,8 @@ case 4:
 
               <div className="pt-6">
                 <StepHeader title="What's your training experience?" />
-                <div className="space-y-8 pr-[32%]">
-                  <div>
+                <div className="space-y-8">
+                  <div className="pr-[32%]">
                     <label className="block text-sm font-semibold text-gray-300 mb-3">Experience Level</label>
                     <div className="space-y-4">
                       {[
