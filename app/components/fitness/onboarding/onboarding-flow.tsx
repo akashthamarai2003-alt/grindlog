@@ -1123,12 +1123,13 @@ case 4:
                 src="/images/training-schedule-bg.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-60" 
+                className="object-cover object-top opacity-100 scale-[1.05]" 
                 priority
                 unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/80 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/80 to-transparent w-[85%]" />
             </div>
 
             <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
