@@ -972,7 +972,7 @@ case 4:
               <div className="pt-6">
                 <StepHeader title="Workout Environment" subtitle="Where will you train?" />
                 <div className="space-y-8 ">
-              <div className="space-y-3 pr-[32%]">
+              <div className="space-y-2 pr-[32%]">
                 {[
                   { 
                     id: "Gym", 
@@ -1010,8 +1010,12 @@ case 4:
                           training_location: opt.id as any, 
                           equipment: opt.defaultEq 
                         });
+                        setTimeout(() => {
+                          const el = document.getElementById("equipment-options");
+                          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }, 150);
                       }}
-                      className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${isSelected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"}`}
+                      className={`w-full p-3 rounded-2xl border-2 text-left transition-all ${isSelected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"}`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -1037,6 +1041,7 @@ case 4:
               <AnimatePresence>
                 {data.training_location && (
                   <motion.div
+                    id="equipment-options"
                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
                     animate={{ opacity: 1, height: "auto", marginTop: 24 }}
                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
