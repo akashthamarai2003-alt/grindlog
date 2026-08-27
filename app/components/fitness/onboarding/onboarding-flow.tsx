@@ -862,7 +862,7 @@ case 4:
                 src="/images/wan2.7-image_b_make_thi_man_to_x_me.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100 -translate-y-[110px] scale-[1.05]" 
+                className="object-cover object-top opacity-100" 
                 priority
                 unoptimized
               />
@@ -943,7 +943,7 @@ case 4:
                 src="/images/a_make_this_man_to_thi.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100 -translate-y-[110px] scale-[1.05]" 
+                className="object-cover object-top opacity-100" 
                 priority
                 unoptimized
               />
