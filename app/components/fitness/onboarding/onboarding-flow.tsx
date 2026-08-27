@@ -1494,8 +1494,41 @@ case 4:
 
       case 10:
         return (
-          <div className="px-6 pt-6 pb-36">
-            <StepHeader title="Lifestyle Profile" subtitle="How do you spend your days?" />
+          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
+            {/* Background Image - Sticky to stay fixed while scrolling */}
+            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+              <Image 
+                src="/images/lifestyle-bg.png" 
+                alt="Background" 
+                fill 
+                className="object-cover object-center opacity-100" 
+                priority
+                unoptimized
+              />
+              {/* Simple gradient from solid black at bottom to transparent at top */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/60 to-transparent w-[70%]" />
+            </div>
+
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+              {/* Top Navigation */}
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
+                <button 
+                  onClick={handleBack}
+                  className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <div className="flex-1 px-8 flex justify-center">
+                  <div className="w-full bg-[#1A2619] h-2 rounded-full overflow-hidden">
+                    <motion.div className="h-full bg-[#ADFF00]" initial={{ width: "0%" }} animate={{ width: `${((step - 1) / (totalSteps - 2)) * 100}%` }} transition={{ ease: "easeInOut" }} />
+                  </div>
+                </div>
+                <div className="w-9" />
+              </motion.div>
+
+              <div className="pt-6">
+                <StepHeader title="Lifestyle Profile" subtitle="How do you spend your days?" />
             <div className="space-y-8">
               
               <div>
@@ -1619,10 +1652,13 @@ case 4:
                 </AnimatePresence>
               </div>
 
+              </div>
             </div>
             <BottomBar canProceed={!!(data.activity_level && data.daily_steps && data.sleep_duration)} onProceed={handleNext} />
           </div>
-        );
+        </div>
+      </div>
+    );
 
       case 11:
         return (
@@ -2335,7 +2371,7 @@ case 4:
     <div className="min-h-[100dvh] w-full bg-[#0A1108] selection:bg-[#ADFF00] selection:text-black">
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
-        <div className={step === 1 || step === 2 || step === 3 || step === 5 || step === 6 || step === 7 || step === 8 || step === 9 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
+        <div className={step === 1 || step === 2 || step === 3 || step === 5 || step === 6 || step === 7 || step === 8 || step === 9 || step === 10 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
           {step > 1 && step < 16 && (
             <button 
               onClick={handleBack}
