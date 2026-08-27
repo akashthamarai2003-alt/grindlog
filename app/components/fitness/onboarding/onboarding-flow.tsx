@@ -1260,7 +1260,13 @@ case 4:
               </motion.div>
 
               <div className="pt-6">
-                <StepHeader title="Nutrition Profile" subtitle="Help us understand your eating habits." />
+                <div className="mb-8 mt-2">
+                  <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[42px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-col">
+                    <span className="text-[#ADFF00]">NUTRITION</span>
+                    <span className="text-white">PROFILE</span>
+                  </h2>
+                  <p className="text-gray-400 mt-2 font-medium">Help us understand your eating habits.</p>
+                </div>
             <div className="space-y-8">
               
               <div>
