@@ -1123,7 +1123,7 @@ case 4:
                 src="/images/training-schedule-bg.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100 scale-[1.05]" 
+                className="object-cover object-top opacity-100 scale-[1.05] -translate-y-[100px]" 
                 priority
                 unoptimized
               />
@@ -1150,7 +1150,13 @@ case 4:
               </motion.div>
 
               <div className="pt-6">
-                <StepHeader title="Training Schedule" subtitle="How much time can you commit?" />
+                <div className="mb-8 mt-2">
+                  <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[42px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-col">
+                    <span className="text-[#ADFF00]">TRAINING</span>
+                    <span className="text-white">SCHEDULE</span>
+                  </h2>
+                  <p className="text-gray-400 mt-2 font-medium">How much time can you commit?</p>
+                </div>
             <div className="space-y-8">
               <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-3">Preferred Workout Duration</label>
