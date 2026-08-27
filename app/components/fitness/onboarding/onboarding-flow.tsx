@@ -862,13 +862,13 @@ case 4:
                 src="/images/wan2.7-image_b_make_thi_man_to_x_me.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100 scale-[1.05]" 
+                className="object-cover object-top opacity-100 -translate-y-[20px] scale-[1.05]" 
                 priority
                 unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/80 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/60 to-transparent opacity-90" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/80 to-transparent w-[85%]" />
             </div>
 
             <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
@@ -919,7 +919,7 @@ case 4:
                           key={d}
                           onClick={() => handleUpdate({ training_days_per_week: d })}
                           className={`flex-1 py-3 rounded-xl flex flex-col items-center justify-center font-bold transition-all border ${
-                            data.training_days_per_week === d ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                            data.training_days_per_week === d ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                           }`}
                         >
                           <span className="text-xl">{d}</span>
@@ -1094,7 +1094,7 @@ case 4:
                       key={m}
                       onClick={() => handleUpdate({ workout_duration_minutes: m })}
                       className={`py-3 rounded-xl flex flex-col items-center justify-center transition-all border ${
-                        data.workout_duration_minutes === m ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                        data.workout_duration_minutes === m ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                       }`}
                     >
                       <span className="font-bold text-xl">{m}</span>
@@ -1111,7 +1111,7 @@ case 4:
                       key={opt}
                       onClick={() => handleUpdate({ preferred_training_time: opt })}
                       className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.preferred_training_time === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                        data.preferred_training_time === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                       }`}
                     >
                       <span className="text-sm">{opt}</span>
@@ -1120,7 +1120,7 @@ case 4:
                   <button 
                       onClick={() => handleUpdate({ preferred_training_time: "Anytime" })}
                       className={`col-span-2 py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.preferred_training_time === "Anytime" ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                        data.preferred_training_time === "Anytime" ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                       }`}
                     >
                       <span className="text-sm">Anytime</span>
@@ -1186,7 +1186,7 @@ case 4:
                       key={opt}
                       onClick={() => handleUpdate({ meals_per_day: opt as any })}
                       className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.meals_per_day === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                        data.meals_per_day === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                       }`}
                     >
                       <span className="text-xs">{opt}</span>
@@ -1210,7 +1210,7 @@ case 4:
                       key={opt.id}
                       onClick={() => handleUpdate({ food_environment: opt.id as any })}
                       className={`p-3 rounded-xl flex items-center gap-3 font-bold transition-all border text-left ${
-                        data.food_environment === opt.id ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                        data.food_environment === opt.id ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                       }`}
                     >
                       <span className="text-xl">{opt.emoji}</span>
@@ -1239,7 +1239,7 @@ case 4:
                       key={opt}
                       onClick={() => handleUpdate({ nutrition_budget: opt as any })}
                       className={`py-4 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.nutrition_budget === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                        data.nutrition_budget === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                       }`}
                     >
                       <span className="text-sm">{opt}</span>
@@ -1356,7 +1356,7 @@ case 4:
                       key={opt}
                       onClick={() => handleUpdate({ activity_level: opt as any })}
                       className={`p-3 rounded-xl flex flex-col items-center text-center justify-center font-bold transition-all border ${
-                        data.activity_level === opt ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                        data.activity_level === opt ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                       }`}
                     >
                       <span className="text-sm">{opt}</span>
@@ -1373,7 +1373,7 @@ case 4:
                       key={opt}
                       onClick={() => handleUpdate({ daily_steps: opt as any })}
                       className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.daily_steps === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                        data.daily_steps === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                       }`}
                     >
                       <span className="text-xs">{opt}</span>
@@ -1390,7 +1390,7 @@ case 4:
                       key={opt}
                       onClick={() => handleUpdate({ sleep_duration: opt as any })}
                       className={`flex-1 min-w-[60px] py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.sleep_duration === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#ADFF00]/50 hover:text-white'
+                        data.sleep_duration === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
                       }`}
                     >
                       <span className="text-sm">{opt}</span>
