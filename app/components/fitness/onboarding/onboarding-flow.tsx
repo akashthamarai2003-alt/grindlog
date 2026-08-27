@@ -308,7 +308,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     Discipline today builds the stronger you tomorrow.
                   </p>
                   <p className="text-gray-400 font-bold text-[9px] tracking-widest uppercase mt-0.5">
-                    — TOM HOLLAND
+                    — GRINDLOG
                   </p>
                 </div>
               </motion.div>
