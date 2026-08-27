@@ -2089,7 +2089,7 @@ case 4:
           <div className="px-6 pt-6 pb-36">
             <StepHeader 
               title="AI Body Scan & Goal Physique" 
-              subtitle="Show your AI coach where you're starting and choose what you want to achieve." 
+              subtitle="Show your AI coach where you're starting and choose your dream physique." 
             />
             
             <div className="space-y-8">
