@@ -1335,7 +1335,8 @@ case 4:
             <BottomBar canProceed={!!(data.food_type && data.meals_per_day && data.food_environment)} onProceed={handleNext} />
           </div>
         </div>
-        );
+      </div>
+    );
 
             case 9:
         return (
