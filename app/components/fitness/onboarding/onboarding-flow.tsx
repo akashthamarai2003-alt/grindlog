@@ -567,7 +567,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 src="/images/body-details-bg.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100 -translate-y-[80px] scale-[1.1]" 
+                className="object-cover object-top opacity-100 -translate-y-[180px] scale-[1.15]" 
                 priority
                 unoptimized
               />
@@ -862,7 +862,7 @@ case 4:
                 src="/images/wan2.7-image_b_make_thi_man_to_x_me.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100 -translate-y-[80px] scale-[1.1]" 
+                className="object-cover object-top opacity-100 -translate-y-[180px] scale-[1.15]" 
                 priority
                 unoptimized
               />
@@ -891,7 +891,7 @@ case 4:
 
               <div className="pt-6">
                 <StepHeader title="What's your training experience?" />
-                <div className="space-y-8">
+                <div className="space-y-8 pr-[32%]">
                   <div>
                     <label className="block text-sm font-semibold text-gray-300 mb-3">Experience Level</label>
                     <div className="space-y-4">
