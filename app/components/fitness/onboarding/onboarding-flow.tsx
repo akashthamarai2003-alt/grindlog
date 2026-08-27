@@ -943,7 +943,7 @@ case 4:
                 src="/images/a_make_this_man_to_thi.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100 -translate-y-[10px] scale-[1.05]" 
+                className="object-cover object-top opacity-100 translate-y-[40px] scale-[1.05]" 
                 priority
                 unoptimized
               />
@@ -1011,9 +1011,7 @@ case 4:
                           equipment: opt.defaultEq 
                         });
                       }}
-                      className={`w-full p-4 rounded-2xl border-[1.5px] text-left transition-all backdrop-blur-sm ${
-                        isSelected ? "border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_20px_rgba(173,255,0,0.15)]" : "border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/50"
-                      }`}
+                      className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${isSelected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"}`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
