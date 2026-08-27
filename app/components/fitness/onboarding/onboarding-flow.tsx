@@ -862,7 +862,7 @@ case 4:
                 src="/images/wan2.7-image_b_make_thi_man_to_x_me.png" 
                 alt="Background" 
                 fill 
-                className="object-cover opacity-100 scale-[1.7] translate-x-[25%] -translate-y-[15%]" 
+                className="object-cover object-top opacity-100 -translate-y-[80px] scale-[1.1]" 
                 priority
                 unoptimized
               />
