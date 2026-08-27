@@ -943,7 +943,7 @@ case 4:
                 src="/images/a_make_this_man_to_thi.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100 -translate-y-[80px] scale-[1.1]" 
+                className="object-cover object-top opacity-100 -translate-y-[10px] scale-[1.05]" 
                 priority
                 unoptimized
               />
@@ -1011,8 +1011,8 @@ case 4:
                           equipment: opt.defaultEq 
                         });
                       }}
-                      className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
-                        isSelected ? "border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_15px_rgba(173,255,0,0.15)] backdrop-blur-sm" : "border-white/10 bg-black/40 backdrop-blur-sm hover:border-white/20 hover:bg-black/50"
+                      className={`w-full p-4 rounded-2xl border-[1.5px] text-left transition-all backdrop-blur-sm ${
+                        isSelected ? "border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_20px_rgba(173,255,0,0.15)]" : "border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/50"
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -1022,7 +1022,7 @@ case 4:
                           </div>
                           <div>
                             <h3 className={`font-extrabold text-base ${isSelected ? "text-[#ADFF00]" : "text-gray-100"}`}>{opt.id}</h3>
-                            <p className="text-xs text-gray-400 mt-0.5 font-medium leading-relaxed">{opt.desc}</p>
+                            <p className={`text-xs mt-0.5 font-medium leading-relaxed ${isSelected ? "text-[#ADFF00]/80" : "text-gray-400"}`}>{opt.desc}</p>
                           </div>
                         </div>
                         {isSelected && (
