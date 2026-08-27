@@ -1489,7 +1489,6 @@ case 4:
             <BottomBar canProceed={!!data.nutrition_budget} onProceed={handleNext} />
           </div>
         </div>
-      </div>
     );
 
       case 10:
@@ -1657,7 +1656,6 @@ case 4:
             <BottomBar canProceed={!!(data.activity_level && data.daily_steps && data.sleep_duration)} onProceed={handleNext} />
           </div>
         </div>
-      </div>
     );
 
       case 11:
