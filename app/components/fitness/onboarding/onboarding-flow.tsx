@@ -523,7 +523,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               {showGenderSheet && (
                 <motion.div key="gender-sheet" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)]">
                   <h3 className="text-white font-[800] text-[20px] mb-6">Select Gender</h3>
-                  <div className="space-y-3 pr-[32%]">
+                  <div className="space-y-3">
                     {["Male", "Female", "Other", "Prefer not to say"].map(g => (
                       <button key={g} onClick={() => { handleUpdate({ gender: g as any }); setShowGenderSheet(false); }} className={`w-full p-4 rounded-[14px] text-left font-[500] flex justify-between items-center transition-colors ${data.gender === g ? "bg-[rgba(168,255,0,0.1)] border border-[#A8FF00] text-[#A8FF00]" : "bg-[#050905] border border-transparent text-white"}`}>
                         <span>{g}</span>
