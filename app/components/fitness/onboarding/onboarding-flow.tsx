@@ -943,7 +943,7 @@ case 4:
                 src="/images/a_make_this_man_to_thi.png" 
                 alt="Background" 
                 fill 
-                className="object-cover object-top opacity-100 translate-y-[40px] scale-[1.05]" 
+                className="object-cover object-top opacity-100 -translate-y-[180px] scale-[1.15]" 
                 priority
                 unoptimized
               />
