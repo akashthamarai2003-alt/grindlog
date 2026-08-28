@@ -58,18 +58,26 @@ export function useAnimationTimeline(
     t(() => setPhase("AI_APPEAR"), 250);
     t(() => setPhase("DATA_ENTER"), 550);
     t(() => setPhase("NETWORK_FULL"), 2100);
-    t(() => setPhase("ANALYZING"), 3800);
 
-    // Sequential scan
-    const scanMs = Math.min(160, 1300 / pc);
+    // AI is analyzing... stretch this out so we get 3 slow rounds!
+    t(() => setPhase("ANALYZING"), 3800);
+    
+    // We want 3 full rounds at 8 seconds per round = 24 seconds total.
+    // Rotation starts around 550ms, so collapse should happen around 24550ms.
+    const analyzingDuration = 24550 - 3800;
+    
     for (let i = 0; i < pc; i++) {
-      t(() => setScanIndex(i), 3800 + i * scanMs);
+      t(() => setScanIndex(i), 3800 + i * (analyzingDuration / pc));
     }
 
-    t(() => { setScanIndex(-1); setPhase("DATA_COLLAPSE"); }, 5000);
-    t(() => setPhase("AI_ALONE"), 6700);
-    t(() => setPhase("TRANSITION"), 8650);
-    t(() => setPhase("COMPLETE"), 9250);
+    t(() => { setScanIndex(-1); setPhase("DATA_COLLAPSE"); }, 24550);
+
+    // AI alone phase before generating
+    // Give time for the sequential one-by-one collapse to finish (9 * 120ms + 500ms = ~1.6s)
+    t(() => setPhase("AI_ALONE"), 26500);
+
+    t(() => setPhase("TRANSITION"), 28500);
+    t(() => setPhase("COMPLETE"), 29000);
 
     return () => { refs.current.forEach(clearTimeout); };
   }, [pillCount, reducedMotion, t]);

@@ -64,7 +64,8 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
   const TOTAL_PILLS = Math.max(pills.length, 1);
   
   // Normal, slow, majestic rotation speed so text is easy to read
-  const ROTATION_SPEED_MS = 32000; // 32s per revolution
+  // Exactly 8s per round * 3 rounds = 24 seconds (which perfectly matches our new timeline!)
+  const ROTATION_SPEED_MS = 8000;
 
   useAnimationFrame((time) => {
     if (!showPills) return;
