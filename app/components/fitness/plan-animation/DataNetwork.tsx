@@ -229,25 +229,35 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
 
             return (
               <g key={`branch-${pill.key}`}>
-                <motion.path
+                <path
                   ref={(el) => { glowLineRefs.current[idx] = el; }}
                   fill="none"
                   stroke={isScanning ? "url(#lokiSurgeGrad)" : "url(#lokiAuraGrad)"}
                   strokeWidth={isScanning ? 4.5 : 2.6}
                   strokeLinecap="round"
-                  initial={{ strokeDasharray: maxLineLength, strokeDashoffset: maxLineLength, opacity: 0 }}
-                  animate={{ strokeDashoffset: targetOffset, opacity: targetOpacity }}
-                  transition={{ strokeDashoffset: { duration: animDuration, delay: animDelay, ease: [0.16, 1, 0.3, 1] }, opacity: { duration: animDuration * 0.8, delay: animDelay } }}
+                  style={{
+                    strokeDasharray: maxLineLength,
+                    strokeDashoffset: targetOffset,
+                    opacity: targetOpacity,
+                    transition: animDuration > 0 
+                      ? `stroke-dashoffset ${animDuration}s cubic-bezier(0.16,1,0.3,1) ${animDelay}s, opacity ${animDuration * 0.8}s ease ${animDelay}s, stroke 0.3s ease`
+                      : 'none'
+                  }}
                 />
-                <motion.path
+                <path
                   ref={(el) => { lineRefs.current[idx] = el; }}
                   fill="none"
                   stroke={isScanning ? "#FFFFFF" : "url(#lokiCoreGrad)"}
                   strokeWidth={isScanning ? 1.8 : 1.0}
                   strokeLinecap="round"
-                  initial={{ strokeDasharray: maxLineLength, strokeDashoffset: maxLineLength, opacity: 0 }}
-                  animate={{ strokeDashoffset: targetOffset, opacity: isHidden || isCollapsing ? 0 : (isScanning ? 1.0 : 0.85) }}
-                  transition={{ strokeDashoffset: { duration: animDuration, delay: animDelay, ease: [0.16, 1, 0.3, 1] }, opacity: { duration: animDuration * 0.8, delay: animDelay } }}
+                  style={{
+                    strokeDasharray: maxLineLength,
+                    strokeDashoffset: targetOffset,
+                    opacity: isHidden || isCollapsing ? 0 : (isScanning ? 1.0 : 0.85),
+                    transition: animDuration > 0
+                      ? `stroke-dashoffset ${animDuration}s cubic-bezier(0.16,1,0.3,1) ${animDelay}s, opacity ${animDuration * 0.8}s ease ${animDelay}s, stroke 0.3s ease`
+                      : 'none'
+                  }}
                 />
                 {!isHidden && !isCollapsing && (
                   <path
@@ -257,7 +267,10 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                     strokeWidth={isScanning ? 1.6 : 0.75}
                     strokeLinecap="round"
                     className="timeline-flowing-sparks"
-                    opacity={isScanning ? 0.95 : 0.5}
+                    style={{
+                      opacity: isScanning ? 0.95 : 0.5,
+                      transition: 'opacity 0.3s ease, stroke 0.3s ease'
+                    }}
                   />
                 )}
               </g>
