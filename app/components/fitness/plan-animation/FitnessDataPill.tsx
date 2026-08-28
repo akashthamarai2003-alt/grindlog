@@ -105,9 +105,6 @@ export function FitnessDataPill({
   return (
     <div
       style={{
-        position: "absolute",
-        left: style?.left,
-        top: style?.top,
         zIndex: 15,
         pointerEvents: "none",
         willChange: "transform",
