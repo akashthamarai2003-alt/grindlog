@@ -40,6 +40,31 @@ export default function DataNodeAnimation() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const [phase, setPhase] = useState<'spawn' | 'orbit' | 'retract' | 'ready'>('spawn');
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    let t1: NodeJS.Timeout;
+    let t2: NodeJS.Timeout;
+    let t3: NodeJS.Timeout;
+
+    const runSequence = () => {
+      setPhase('spawn');
+      t1 = setTimeout(() => setPhase('orbit'), 1500);
+      t2 = setTimeout(() => setPhase('retract'), 5000);
+      t3 = setTimeout(() => setPhase('ready'), 7200);
+    };
+
+    runSequence();
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [mounted]);
+
   if (!mounted) return null;
 
   const cx = windowSize.width / 2;
@@ -57,6 +82,8 @@ export default function DataNodeAnimation() {
   });
 
   const ORBIT_DURATION = 32; // Smooth steady rotation
+
+  const isVisible = phase === 'spawn' || phase === 'orbit';
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -81,8 +108,12 @@ export default function DataNodeAnimation() {
               strokeWidth="1.2"
               strokeOpacity="0.45"
               initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: node.id * 0.08 }}
+              animate={{ pathLength: isVisible ? 1 : 0 }}
+              transition={{
+                duration: isVisible ? 0.6 : 0.4,
+                ease: isVisible ? "easeOut" : "easeInOut",
+                delay: isVisible ? node.id * 0.08 : (9 - node.id) * 0.06
+              }}
             />
           ))}
         </svg>
@@ -96,11 +127,14 @@ export default function DataNodeAnimation() {
                 key={node.id}
                 className="absolute flex items-center justify-center pointer-events-none"
                 initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: [0, 1.15, 1] }}
+                animate={{
+                  opacity: isVisible ? 1 : 0,
+                  scale: isVisible ? [0, 1.15, 1] : [1, 0.3, 0]
+                }}
                 transition={{
-                  duration: 0.4,
-                  delay: 0.2 + node.id * 0.08,
-                  ease: "easeOut"
+                  duration: isVisible ? 0.4 : 0.35,
+                  delay: isVisible ? 0.2 + node.id * 0.08 : (9 - node.id) * 0.06,
+                  ease: isVisible ? "easeOut" : "easeInOut"
                 }}
                 style={{
                   left: node.x,
