@@ -65,30 +65,57 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
   // Normal, slow, majestic rotation speed so text is easy to read
   const ROTATION_SPEED_MS = 32000; // 32s per revolution (slow, smooth, space-like)
 
-
+  // Persistent refs to survive React re-renders and phase changes
+  const angleRef = useRef(0);
+  const lastTimeRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
   // Use a RAW NATIVE requestAnimationFrame loop to completely bypass Framer Motion
   // and React 19 concurrent mode. This guarantees the absolute highest priority 
   // execution directly on the browser's native paint cycle.
   useEffect(() => {
-    if (!showPills) return;
+    if (!showPills) {
+      startTimeRef.current = null;
+      lastTimeRef.current = null;
+      angleRef.current = 0;
+      return;
+    }
 
     let frameId: number;
-    let lastTime: number | null = null;
-    let accumulatedAngle = 0;
 
     const tick = (time: number) => {
-      if (lastTime === null) {
-        lastTime = time;
+      if (startTimeRef.current === null) {
+        startTimeRef.current = time;
       }
-      const rawDelta = time - lastTime;
-      lastTime = time;
+      if (lastTimeRef.current === null) {
+        lastTimeRef.current = time;
+      }
+      
+      const rawDelta = time - lastTimeRef.current;
+      lastTimeRef.current = time;
       
       // Clamp delta to prevent "catching up" (speed bursts) if the browser thread lags.
       const safeDelta = Math.min(Math.max(rawDelta, 0), 32);
+      const elapsed = time - startTimeRef.current;
       
-      // Accumulate angle at a mathematically constant linear speed
-      accumulatedAngle += (safeDelta / ROTATION_SPEED_MS) * Math.PI * 2;
+      // --- 7-SECOND CINEMATIC ACCELERATION CURVE ---
+      // 0-1.5s: VERY SLOW
+      // 1.5-3s: SLOW
+      // 3-5s: SLIGHTLY FAST
+      // 5-7s: MEDIUM FAST
+      // >7s: SMOOTH STEADY ROTATION
+      const p = Math.min(1, elapsed / 7000);
+      
+      // Cubic ease-in-out for incredibly smooth velocity ramp
+      const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      
+      // Velocity in rotations per ms
+      const startV = 1 / 45000; // VERY SLOW (45s per round)
+      const targetV = 1 / 8000; // MEDIUM FAST (8s per round)
+      const currentV = startV + (targetV - startV) * ease;
+      
+      // Accumulate angle continuously, surviving all React re-renders!
+      angleRef.current += safeDelta * currentV * Math.PI * 2;
 
       // Handle mathematical spiral collapse
       const isCollapsing = phase === "DATA_COLLAPSE";
@@ -102,19 +129,19 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         let ry = isOuter ? OUTER_RY : INNER_RY;
 
         if (collapseStartTime.current !== null) {
-          const elapsed = time - collapseStartTime.current;
+          const collapseElapsed = time - collapseStartTime.current;
           const collapseDelay = i * 120; 
           const collapseDuration = 450; 
           
-          if (elapsed > collapseDelay) {
-            const progress = Math.min(1, (elapsed - collapseDelay) / collapseDuration);
+          if (collapseElapsed > collapseDelay) {
+            const progress = Math.min(1, (collapseElapsed - collapseDelay) / collapseDuration);
             const easeProgress = progress * progress * progress; 
             rx = rx * (1 - easeProgress);
             ry = ry * (1 - easeProgress);
           }
         }
 
-        const pillAngle = accumulatedAngle + (i * Math.PI * 2) / TOTAL_PILLS - Math.PI / 2;
+        const pillAngle = angleRef.current + (i * Math.PI * 2) / TOTAL_PILLS - Math.PI / 2;
         const px = Math.cos(pillAngle) * rx;
         const py = Math.sin(pillAngle) * ry;
 
@@ -144,7 +171,12 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
 
     frameId = requestAnimationFrame(tick);
 
-    return () => cancelAnimationFrame(frameId);
+    return () => {
+      cancelAnimationFrame(frameId);
+      // Only clear lastTimeRef so it cleanly resumes next frame without a jump.
+      // angleRef and startTimeRef are intentionally preserved to keep continuous velocity!
+      lastTimeRef.current = null;
+    };
   }, [showPills, pills, phase]);
 
   if (!showPills) return null;
