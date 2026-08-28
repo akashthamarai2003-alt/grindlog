@@ -59,7 +59,7 @@ export async function POST(req: Request) {
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
           userPrompt,
           model: "primary",
-          maxTokens: 8000,
+          maxTokens: 3000,
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
         });
 

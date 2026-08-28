@@ -54,7 +54,7 @@ export async function generateAIResponse({
   userPrompt,
   messages,
   model = "fast",
-  maxTokens = 8000,
+  maxTokens = 2500,
   temperature = 0.7,
   responseFormat,
 }: {
@@ -146,7 +146,7 @@ export async function generateAIResponseJSON<T>({
   systemPrompt,
   userPrompt,
   model = "fast",
-  maxTokens = 8000,
+  maxTokens = 2500,
   temperature = 0.2,
 }: {
   systemPrompt: string;
