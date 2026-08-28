@@ -130,9 +130,9 @@ export default function DataNodeAnimation() {
 
       {/* Center Core and Atoms */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-        {/* Core Solid Orb for Progress Text */}
+        {/* Core Image Orb */}
         <motion.div 
-          className="relative w-[85px] h-[85px] bg-[#39FF14] rounded-full shadow-[0_0_30px_rgba(57,255,20,0.6)] flex items-center justify-center z-10"
+          className="relative w-[85px] h-[85px] rounded-full shadow-[0_0_30px_rgba(57,255,20,0.6)] flex items-center justify-center z-10 border-2 border-[#39FF14] overflow-hidden"
           initial={{ scale: 0 }}
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ 
@@ -140,6 +140,11 @@ export default function DataNodeAnimation() {
             default: { type: "spring", bounce: 0.5, duration: 1 }
           }}
         >
+          <img 
+            src="/images/b_remove_background_fo.jpeg" 
+            alt="Loki Core" 
+            className="w-full h-full object-cover"
+          />
         </motion.div>
 
         {/* Orbit Ring 1 */}
