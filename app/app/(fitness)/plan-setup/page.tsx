@@ -6,37 +6,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import GroceryTab from '@/components/fitness/plan/grocery-tab';
-import DataNodeAnimation from '@/components/fitness/DataNodeAnimation';
+import { AIPlanAnimation } from '@/components/fitness/plan-animation';
 
 export default function PlanSetupPage() {
   const router = useRouter();
   const [planData, setPlanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [progress, setProgress] = useState(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generationErrorType, setGenerationErrorType] = useState<"SAFETY" | "SYSTEM" | null>(null);
   
-  const [selectedDay, setSelectedDay] = useState(0); // 0 = Mon, 6 = Sun
+  const [selectedDay, setSelectedDay] = useState(0);
   const [activeTab, setActiveTab] = useState<"workout" | "diet" | "grocery">("workout");
   
   const [chatInput, setChatInput] = useState("");
   const [modulating, setModulating] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!loading) return;
-    const interval = setInterval(() => {
-      setProgress(p => {
-        // Slow down the progress significantly to account for up to 3 retries (approx 30-45 seconds)
-        if (p < 60) return p + Math.floor(Math.random() * 3) + 1; // Fast to 60%
-        if (p < 85) return p + 1; // 1% every 0.8s
-        if (p < 95) return p + (Math.random() > 0.5 ? 1 : 0); // Very slow
-        if (p < 99) return p + (Math.random() > 0.9 ? 1 : 0); // Crawl
-        return 99;
-      });
-    }, 800);
-    return () => clearInterval(interval);
-  }, [loading]);
 
   useEffect(() => {
     // Generate draft on mount
@@ -124,39 +108,7 @@ export default function PlanSetupPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center text-center relative overflow-hidden">
-        <DataNodeAnimation />
-        
-
-
-        {/* Text at the bottom */}
-        <div className="absolute bottom-8 left-0 right-0 z-20 pointer-events-none px-6">
-          <h2 className="text-xl font-black shadow-black drop-shadow-lg">Building your perfect plan...</h2>
-          <p className="text-sm text-gray-300 mt-2 shadow-black drop-shadow-md">AI is analyzing your body scan and fitness profile...</p>
-          
-          <div className="mt-4 text-xs text-[#39FF14] font-bold tracking-widest uppercase h-4 shadow-black drop-shadow-md">
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={
-                progress < 30 ? "analyzing" :
-                progress < 60 ? "designing" :
-                progress < 85 ? "calculating" : "finalizing"
-              }
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-            >
-              {progress < 30 ? "Analyzing profile constraints..." : 
-               progress < 60 ? "Designing custom workout splits..." : 
-               progress < 85 ? "Calculating macro requirements..." : 
-               "Finalizing safety checks..."}
-            </motion.span>
-          </AnimatePresence>
-        </div>
-      </div>
-      </div>
-    );
+    return <AIPlanAnimation />;
   }
 
   if (!planData) {
