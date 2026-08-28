@@ -71,9 +71,9 @@ export default function DataNodeAnimation() {
               stroke="#16A34A"
               strokeWidth="1.5"
               strokeOpacity="0.5"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 0.5 }}
-              transition={{ duration: 1.2, ease: "easeOut", delay: node.id * 0.1 }}
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: node.id * 0.1 }}
             />
           ))}
         </svg>
@@ -87,10 +87,10 @@ export default function DataNodeAnimation() {
                 key={node.id}
                 className="absolute flex items-center justify-center"
                 initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
+                animate={{ opacity: 1, scale: [0, 1.2, 1] }}
                 transition={{ 
-                  opacity: { duration: 0.4, delay: 0.3 + node.id * 0.1 },
-                  scale: { type: "spring", bounce: 0.4, delay: 0.3 + node.id * 0.1 }
+                  opacity: { duration: 0.3, delay: 0.3 + node.id * 0.1 },
+                  scale: { duration: 0.5, delay: 0.3 + node.id * 0.1, ease: "easeOut" }
                 }}
                 style={{ 
                   left: node.x, 
