@@ -12,14 +12,12 @@ interface FitnessDataPillProps {
   entryAngle: number;
   enterDelay: number;
   collapseDelay: number;
-  counterRotation: number;
   style?: React.CSSProperties;
 }
 
 /**
- * Large, highly readable data pill (height ~42-48px, font 14-16px).
- * Enters from outside along entryAngle, collapses toward center.
- * Counter-rotates smoothly so text remains strictly horizontal.
+ * High-performance, GPU-accelerated data pill.
+ * Uses hardware-accelerated transforms and opacity only (no blur filters to prevent mobile GPU glitching).
  */
 export function FitnessDataPill({
   icon: Icon,
@@ -28,12 +26,11 @@ export function FitnessDataPill({
   entryAngle,
   enterDelay,
   collapseDelay,
-  counterRotation,
   style,
 }: FitnessDataPillProps) {
   const rad = (entryAngle * Math.PI) / 180;
-  const ex = Math.cos(rad) * 140;
-  const ey = Math.sin(rad) * 140;
+  const ex = Math.cos(rad) * 110;
+  const ey = Math.sin(rad) * 110;
 
   let animateProps: Record<string, any> = {};
   let transitionProps: Record<string, any> = {};
@@ -42,11 +39,9 @@ export function FitnessDataPill({
     case "hidden":
       animateProps = {
         opacity: 0,
-        scale: 0.75,
-        filter: "blur(5px)",
+        scale: 0.7,
         x: ex,
         y: ey,
-        rotate: counterRotation,
       };
       transitionProps = { duration: 0 };
       break;
@@ -54,110 +49,98 @@ export function FitnessDataPill({
       animateProps = {
         opacity: 1,
         scale: 1,
-        filter: "blur(0px)",
         x: 0,
         y: 0,
-        rotate: counterRotation,
       };
       transitionProps = {
-        duration: 0.65,
+        duration: 0.6,
         ease: [0.16, 1, 0.3, 1],
         delay: enterDelay,
-        rotate: { duration: 0 },
       };
       break;
     case "visible":
       animateProps = {
         opacity: 1,
         scale: 1,
-        filter: "blur(0px)",
         x: 0,
         y: 0,
-        rotate: counterRotation,
-        borderColor: "rgba(22, 163, 74, 0.6)",
-        backgroundColor: "rgba(10, 26, 10, 0.92)",
-        boxShadow: "0 4px 14px rgba(0, 0, 0, 0.6)",
+        borderColor: "rgba(22, 163, 74, 0.55)",
+        backgroundColor: "rgba(8, 24, 8, 0.94)",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.6)",
       };
       transitionProps = {
         duration: 0.25,
-        rotate: { duration: 0 },
       };
       break;
     case "processing":
       animateProps = {
         opacity: 1,
-        filter: "blur(0px)",
         x: 0,
         y: 0,
-        rotate: counterRotation,
-        scale: [1, 1.07, 1],
+        scale: [1, 1.06, 1],
         borderColor: "#39FF14",
-        backgroundColor: "rgba(14, 42, 14, 0.96)",
-        boxShadow: "0 0 20px rgba(57, 255, 20, 0.35)",
+        backgroundColor: "rgba(12, 38, 12, 0.98)",
+        boxShadow: "0 0 16px rgba(57, 255, 20, 0.35)",
       };
       transitionProps = {
         duration: 0.45,
         scale: { duration: 0.45, ease: "easeInOut" },
-        rotate: { duration: 0 },
       };
       break;
     case "collapsing":
       animateProps = {
         opacity: 0,
-        scale: 0.45,
-        filter: "blur(4px)",
-        x: -ex * 0.75,
-        y: -ey * 0.75,
-        rotate: counterRotation,
+        scale: 0.4,
+        x: -ex * 0.7,
+        y: -ey * 0.7,
       };
       transitionProps = {
-        duration: 0.65,
+        duration: 0.6,
         delay: collapseDelay,
         ease: [0.16, 1, 0.3, 1],
-        rotate: { duration: 0 },
       };
       break;
   }
 
   return (
     <div
+      className="pill-counter-rotator"
       style={{
         position: "absolute",
         left: style?.left,
         top: style?.top,
-        transform: "translate(-50%, -50%)",
         zIndex: 15,
         pointerEvents: "none",
+        willChange: "transform",
       }}
     >
       <motion.div
         className="flex items-center gap-2 whitespace-nowrap
-          border border-[rgba(22,163,74,0.6)]
+          border border-[rgba(22,163,74,0.55)]
           rounded-full select-none"
         style={{
-          padding: "10px 18px",
-          minHeight: "44px",
+          padding: "8px 15px",
+          minHeight: "40px",
+          willChange: "transform, opacity",
         }}
         initial={{
           opacity: 0,
-          scale: 0.75,
-          filter: "blur(5px)",
+          scale: 0.7,
           x: ex,
           y: ey,
-          rotate: counterRotation,
         }}
         animate={animateProps}
         transition={transitionProps}
       >
         <Icon
-          size={18}
+          size={16}
           className="shrink-0 transition-colors duration-200"
           style={{ color: state === "processing" ? "#39FF14" : "#22c55e" }}
         />
         <span
           className="font-bold tracking-wide transition-colors duration-200"
           style={{
-            fontSize: "clamp(13.5px, 3.8vw, 16px)",
+            fontSize: "clamp(12.5px, 3.5vw, 15px)",
             color: state === "processing" ? "#f0fdf4" : "#ffffff",
           }}
         >

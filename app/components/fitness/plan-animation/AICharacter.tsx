@@ -11,6 +11,7 @@ interface AICharacterProps {
 /**
  * Central character — 100-120px on mobile, positioned by parent.
  * Subtle floating/breathing animation. Glow reacts to processing.
+ * Clean GPU hardware compositing without memory-corrupting blur filters.
  */
 export function AICharacter({ isVisible, isProcessing, isComplete }: AICharacterProps) {
   const reduced = useReducedMotion();
@@ -18,22 +19,24 @@ export function AICharacter({ isVisible, isProcessing, isComplete }: AICharacter
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.75, filter: "blur(6px)" }}
+      initial={{ opacity: 0, scale: 0.75 }}
       animate={
         isVisible
-          ? { opacity: 1, scale: 1, filter: "blur(0px)" }
-          : { opacity: 0, scale: 0.75, filter: "blur(6px)" }
+          ? { opacity: 1, scale: 1 }
+          : { opacity: 0, scale: 0.75 }
       }
       transition={{ duration: 0.5, ease: "easeOut" }}
+      style={{ willChange: "transform, opacity" }}
     >
       <motion.img
         src="/images/b_remove_background_fo.png"
         alt="GrindLog AI"
-        className="object-contain object-center"
+        className="object-contain object-center select-none"
         style={{
           width: "clamp(100px, 28vw, 140px)",
           height: "clamp(120px, 35vw, 170px)",
-          filter: `drop-shadow(0 0 22px rgba(57,255,20,${glow}))`,
+          filter: `drop-shadow(0 0 20px rgba(57,255,20,${glow}))`,
+          willChange: "transform",
         }}
         animate={
           reduced

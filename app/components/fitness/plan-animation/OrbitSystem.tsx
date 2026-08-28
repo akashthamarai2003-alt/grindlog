@@ -8,15 +8,14 @@ interface OrbitSystemProps {
 
 /**
  * 4 SVG elliptical orbit paths around the AI at (50%,43%).
- * Each orbit is a tilted ellipse that rotates at its own speed.
- * 3 orbits carry small energy nodes.
- * Sized relative to viewport to match the large constellation layout.
+ * Uses lightweight GPU-accelerated concentric SVG circles (no feGaussianBlur filters)
+ * to prevent mobile GPU framebuffer texture memory glitches.
  */
 export function OrbitSystem({ isActive, isProcessing }: OrbitSystemProps) {
   const orbits = [
-    { rx: 85, ry: 32, tilt: 15,  dur: 18, dir: "normal",  node: true },
-    { rx: 95, ry: 40, tilt: -25, dur: 23, dir: "reverse", node: true },
-    { rx: 75, ry: 50, tilt: 65,  dur: 29, dir: "normal",  node: true },
+    { rx: 85,  ry: 32, tilt: 15,  dur: 18, dir: "normal",  node: true },
+    { rx: 95,  ry: 40, tilt: -25, dur: 23, dir: "reverse", node: true },
+    { rx: 75,  ry: 50, tilt: 65,  dur: 29, dir: "normal",  node: true },
     { rx: 110, ry: 30, tilt: -10, dur: 34, dir: "reverse", node: false },
   ];
 
@@ -33,14 +32,11 @@ export function OrbitSystem({ isActive, isProcessing }: OrbitSystemProps) {
         zIndex: 3,
         opacity: isActive ? 1 : 0,
         transition: "opacity 0.8s ease",
+        willChange: "transform, opacity",
       }}
       viewBox="-140 -90 280 180"
     >
       <defs>
-        <filter id="ng" x="-200%" y="-200%" width="500%" height="500%">
-          <feGaussianBlur stdDeviation="2" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
         <style>{`
           @keyframes ospin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
           @media (prefers-reduced-motion: reduce) { .og { animation: none !important; } }
@@ -60,6 +56,7 @@ export function OrbitSystem({ isActive, isProcessing }: OrbitSystemProps) {
                         animation: `ospin ${speed}s linear infinite`,
                         animationDirection: o.dir as any,
                         transformOrigin: "0 0",
+                        willChange: "transform",
                       }
                     : { transformOrigin: "0 0" }
                 }
@@ -71,10 +68,22 @@ export function OrbitSystem({ isActive, isProcessing }: OrbitSystemProps) {
                   strokeWidth={0.9}
                 />
                 {o.node && (
-                  <circle
-                    cx={o.rx} cy={0} r={2.5}
-                    fill="#39FF14" filter="url(#ng)"
-                  />
+                  <g>
+                    {/* Outer halo */}
+                    <circle
+                      cx={o.rx}
+                      cy={0}
+                      r={5}
+                      fill="rgba(57, 255, 20, 0.3)"
+                    />
+                    {/* Inner core node */}
+                    <circle
+                      cx={o.rx}
+                      cy={0}
+                      r={2.2}
+                      fill="#39FF14"
+                    />
+                  </g>
                 )}
               </g>
             </g>

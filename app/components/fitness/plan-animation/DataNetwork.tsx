@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useRef, useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { FitnessDataPill, type PillState } from "./FitnessDataPill";
@@ -17,21 +17,18 @@ interface DataNetworkProps {
   scanIndex: number;
 }
 
-// Normalized coordinate multipliers [normX, normY, entryAngle]
-// Designed for a spacious, non-overlapping radial constellation
-const CONSTELLATION_SLOTS = [
-  { nx: 0, ny: -0.98, angle: -90 },       // Top
-  { nx: 0.82, ny: -0.66, angle: -40 },    // Upper-Right
-  { nx: 0.96, ny: -0.08, angle: 0 },      // Right
-  { nx: 0.80, ny: 0.58, angle: 45 },      // Lower-Right
-  { nx: 0, ny: 0.96, angle: 90 },         // Bottom
-  { nx: -0.80, ny: 0.58, angle: 135 },    // Lower-Left
-  { nx: -0.96, ny: -0.08, angle: 180 },   // Left
-  { nx: -0.82, ny: -0.66, angle: -140 },  // Upper-Left
-  { nx: -0.42, ny: -0.86, angle: -115 },  // Mid-Upper-Left (for 9+ pills)
-  { nx: 0.42, ny: -0.86, angle: -65 },    // Mid-Upper-Right (for 10+ pills)
-  { nx: -0.42, ny: 0.80, angle: 120 },    // Mid-Lower-Left (for 11+ pills)
-  { nx: 0.42, ny: 0.80, angle: 60 },      // Mid-Lower-Right (for 12+ pills)
+// Evenly distributed radial constellation slots (10 distinct non-colliding sectors)
+const RADIAL_SLOTS = [
+  { nx: 0,     ny: -1.0,  angle: -90 },  // 0: Top
+  { nx: 0.68,  ny: -0.72, angle: -54 },  // 1: Upper-Right
+  { nx: 0.96,  ny: -0.22, angle: -18 },  // 2: Right-Upper
+  { nx: 0.96,  ny: 0.22,  angle: 18 },   // 3: Right-Lower
+  { nx: 0.68,  ny: 0.72,  angle: 54 },   // 4: Lower-Right
+  { nx: 0,     ny: 1.0,   angle: 90 },   // 5: Bottom
+  { nx: -0.68, ny: 0.72,  angle: 126 },  // 6: Lower-Left
+  { nx: -0.96, ny: 0.22,  angle: 162 },  // 7: Left-Lower
+  { nx: -0.96, ny: -0.22, angle: -162 }, // 8: Left-Upper
+  { nx: -0.68, ny: -0.72, angle: -126 }, // 9: Upper-Left
 ];
 
 function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): PillState {
@@ -53,92 +50,71 @@ function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): 
 }
 
 export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProps) {
-  const [rotation, setRotation] = useState(0);
-  const [windowSize, setWindowSize] = useState({ w: 375, h: 698 });
-  const rafRef = useRef<number>(0);
-  const startTimeRef = useRef<number>(0);
-
-  // Track window dimensions for responsive ellipse radius
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        w: window.innerWidth || 375,
-        h: window.innerHeight || 698,
-      });
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Responsive radial spread
-  // Keeps pills well within viewport boundaries while filling ~85% width & ~60% height
-  const rx = useMemo(() => Math.min(Math.max(windowSize.w * 0.38, 120), 160), [windowSize.w]);
-  const ry = useMemo(() => Math.min(Math.max(windowSize.h * 0.28, 150), 220), [windowSize.h]);
-
-  // Smooth continuous network rotation: 0° -> ~28° over ~5s
-  useEffect(() => {
-    const active =
-      phase === "DATA_ENTER" ||
-      phase === "NETWORK_FULL" ||
-      phase === "ANALYZING" ||
-      phase === "DATA_COLLAPSE";
-
-    if (!active) {
-      cancelAnimationFrame(rafRef.current);
-      return;
-    }
-
-    if (!startTimeRef.current) startTimeRef.current = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = (now - startTimeRef.current) / 1000;
-      // 5.5 degrees per second
-      setRotation(elapsed * 5.5);
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [phase]);
-
   const showPills =
     phase === "DATA_ENTER" ||
     phase === "NETWORK_FULL" ||
     phase === "ANALYZING" ||
     phase === "DATA_COLLAPSE";
 
-  if (!showPills) return null;
+  // Fixed responsive radii calculated safely with clamp
+  const rx = 135;
+  const ry = 185;
 
   // Compute exact positions for each pill
-  const pillNodes = pills.map((pill, idx) => {
-    const slot = CONSTELLATION_SLOTS[idx % CONSTELLATION_SLOTS.length];
-    const px = slot.nx * rx;
-    const py = slot.ny * ry;
-    const state = getPillState(phase, idx, scanIndex);
-    return {
-      pill,
-      idx,
-      px,
-      py,
-      entryAngle: slot.angle,
-      state,
-      isScanning: scanIndex === idx && phase === "ANALYZING",
-    };
-  });
+  const pillNodes = useMemo(() => {
+    return pills.map((pill, idx) => {
+      const slot = RADIAL_SLOTS[idx % RADIAL_SLOTS.length];
+      const px = slot.nx * rx;
+      const py = slot.ny * ry;
+      return {
+        pill,
+        idx,
+        px,
+        py,
+        entryAngle: slot.angle,
+      };
+    });
+  }, [pills, rx, ry]);
+
+  if (!showPills) return null;
 
   return (
     <div
-      className="absolute pointer-events-none"
+      className="network-spin-container"
       style={{
+        position: "absolute",
         left: "50%",
         top: "43%",
-        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+        transform: "translate(-50%, -50%)",
         width: 0,
         height: 0,
         zIndex: 10,
+        pointerEvents: "none",
+        willChange: "transform",
       }}
     >
+      <style>{`
+        @keyframes constNetworkSpin {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @keyframes pillCounterSpin {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+        .network-spin-container {
+          animation: constNetworkSpin 75s linear infinite;
+        }
+        .pill-counter-rotator {
+          animation: pillCounterSpin 75s linear infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .network-spin-container, .pill-counter-rotator {
+            animation: none !important;
+          }
+        }
+      `}</style>
+
       {/* SVG Connection Lines Layer */}
       <svg
         className="absolute pointer-events-none"
@@ -149,33 +125,26 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
           height: 800,
           overflow: "visible",
           zIndex: 4,
+          willChange: "transform",
         }}
         viewBox="-400 -400 800 800"
       >
-        <defs>
-          <filter id="netPulseGlow" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="3" result="glow" />
-            <feMerge>
-              <feMergeNode in="glow" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
         {pillNodes.map((node) => {
           const lineLength = Math.hypot(node.px, node.py);
-          const isVisible = node.state !== "hidden";
+          const state = getPillState(phase, node.idx, scanIndex);
+          const isVisible = state !== "hidden";
+          const isScanning = scanIndex === node.idx && phase === "ANALYZING";
 
           return (
             <g key={`line-${node.pill.key}`}>
-              {/* Radial spoke line connecting AI center (0,0) to pill (px, py) */}
+              {/* Radial connection line */}
               <motion.line
                 x1={0}
                 y1={0}
                 x2={node.px}
                 y2={node.py}
-                stroke={node.isScanning ? "#39FF14" : "rgba(34, 197, 94, 0.35)"}
-                strokeWidth={node.isScanning ? 1.5 : 0.9}
+                stroke={isScanning ? "#39FF14" : "rgba(34, 197, 94, 0.32)"}
+                strokeWidth={isScanning ? 1.4 : 0.85}
                 initial={{
                   strokeDasharray: lineLength,
                   strokeDashoffset: lineLength,
@@ -183,32 +152,46 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                 }}
                 animate={{
                   strokeDashoffset: isVisible ? 0 : lineLength,
-                  opacity: isVisible ? (node.isScanning ? 0.9 : 0.4) : 0,
+                  opacity: isVisible ? (isScanning ? 0.9 : 0.35) : 0,
                 }}
                 transition={{
                   strokeDashoffset: {
-                    duration: 0.6,
+                    duration: 0.55,
                     delay: node.idx * 0.08,
                     ease: [0.16, 1, 0.3, 1],
                   },
-                  opacity: { duration: 0.3, delay: node.idx * 0.08 },
+                  opacity: { duration: 0.25, delay: node.idx * 0.08 },
                 }}
               />
 
-              {/* Energy pulse traveling toward AI (px,py) -> (0,0) during processing */}
-              {node.isScanning && (
-                <motion.circle
-                  r={3.5}
-                  fill="#39FF14"
-                  filter="url(#netPulseGlow)"
-                  initial={{ cx: node.px, cy: node.py, opacity: 0 }}
-                  animate={{
-                    cx: [node.px, 0],
-                    cy: [node.py, 0],
-                    opacity: [0, 1, 1, 0],
-                  }}
-                  transition={{ duration: 0.45, ease: "easeInOut" }}
-                />
+              {/* Energy pulse traveling toward AI during active scanning */}
+              {isScanning && (
+                <g>
+                  {/* Outer pulse halo */}
+                  <motion.circle
+                    r={5}
+                    fill="rgba(57, 255, 20, 0.3)"
+                    initial={{ cx: node.px, cy: node.py, opacity: 0 }}
+                    animate={{
+                      cx: [node.px, 0],
+                      cy: [node.py, 0],
+                      opacity: [0, 0.8, 0.8, 0],
+                    }}
+                    transition={{ duration: 0.45, ease: "easeInOut" }}
+                  />
+                  {/* Core energy dot */}
+                  <motion.circle
+                    r={2.5}
+                    fill="#39FF14"
+                    initial={{ cx: node.px, cy: node.py, opacity: 0 }}
+                    animate={{
+                      cx: [node.px, 0],
+                      cy: [node.py, 0],
+                      opacity: [0, 1, 1, 0],
+                    }}
+                    transition={{ duration: 0.45, ease: "easeInOut" }}
+                  />
+                </g>
               )}
             </g>
           );
@@ -216,22 +199,24 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       </svg>
 
       {/* Fitness Data Pills */}
-      {pillNodes.map((node) => (
-        <FitnessDataPill
-          key={node.pill.key}
-          icon={node.pill.icon}
-          label={node.pill.label}
-          state={node.state}
-          entryAngle={node.entryAngle}
-          enterDelay={node.idx * 0.09}
-          collapseDelay={node.idx * 0.08}
-          counterRotation={-rotation}
-          style={{
-            left: `${node.px}px`,
-            top: `${node.py}px`,
-          }}
-        />
-      ))}
+      {pillNodes.map((node) => {
+        const state = getPillState(phase, node.idx, scanIndex);
+        return (
+          <FitnessDataPill
+            key={node.pill.key}
+            icon={node.pill.icon}
+            label={node.pill.label}
+            state={state}
+            entryAngle={node.entryAngle}
+            enterDelay={node.idx * 0.08}
+            collapseDelay={node.idx * 0.07}
+            style={{
+              left: `${node.px}px`,
+              top: `${node.py}px`,
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
