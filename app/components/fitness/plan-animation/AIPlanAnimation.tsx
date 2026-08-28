@@ -141,13 +141,13 @@ export default function AIPlanAnimation({ onAnimationComplete }: AIPlanAnimation
       </div>
 
       {/* Layer 4: Full Constellation Data Network */}
-      {pills.length > 0 && (
-        <DataNetwork
-          pills={pills}
-          phase={timeline.phase}
-          scanIndex={timeline.scanIndex}
-        />
-      )}
+      {/* Mount the rotation clock immediately; it stays visually empty until
+          profile pills arrive, preventing a delayed/stuck first start. */}
+      <DataNetwork
+        pills={pills}
+        phase={timeline.phase}
+        scanIndex={timeline.scanIndex}
+      />
 
       {/* Layer 5: Dynamic Bottom Status & Heading Text */}
       <ProcessingStatus
