@@ -44,7 +44,6 @@ export function OrbitSystem({ isActive, isProcessing }: OrbitSystemProps) {
       </defs>
 
       {orbits.map((o, i) => {
-        const speed = isProcessing ? o.dur * 0.7 : o.dur;
         return (
           <g key={i}>
             <g transform={`rotate(${o.tilt})`}>
@@ -53,7 +52,10 @@ export function OrbitSystem({ isActive, isProcessing }: OrbitSystemProps) {
                 style={
                   isActive
                     ? {
-                        animation: `ospin ${speed}s linear infinite`,
+                        // Keep each orbit's velocity continuous for its full lifetime.
+                        // Changing the duration when processing starts would restart the
+                        // CSS animation and create a visible speed jump.
+                        animation: `ospin ${o.dur}s linear infinite`,
                         animationDirection: o.dir as any,
                         transformOrigin: "0 0",
                         willChange: "transform",

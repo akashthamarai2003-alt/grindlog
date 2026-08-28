@@ -1,6 +1,5 @@
 "use client";
 import React, { useRef, useEffect } from "react";
-import { motion, useAnimationFrame } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { FitnessDataPill, type PillState } from "./FitnessDataPill";
 import type { AnimationPhase } from "./useAnimationTimeline";
@@ -60,15 +59,16 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
   const INNER_RY = 150;
   const OUTER_RX = 138;
   const OUTER_RY = 215;
-  const TOTAL_PILLS = Math.max(pills.length, 1);
   
-  // Normal, slow, majestic rotation speed so text is easy to read
-  const ROTATION_SPEED_MS = 32000; // 32s per revolution (slow, smooth, space-like)
-
   // Persistent refs to survive React re-renders and phase changes
   const angleRef = useRef(0);
   const lastTimeRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const phaseRef = useRef(phase);
+  const pillsRef = useRef(pills);
+  // Keep the animation loop stable while React updates visual states.
+  phaseRef.current = phase;
+  pillsRef.current = pills;
 
   // Use a RAW NATIVE requestAnimationFrame loop to completely bypass Framer Motion
   // and React 19 concurrent mode. This guarantees the absolute highest priority 
@@ -88,7 +88,9 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         startTimeRef.current = time;
       }
       if (lastTimeRef.current === null) {
-        lastTimeRef.current = time;
+        // Seed the first delta so the very first painted frame has gentle
+        // movement instead of appearing frozen at the starting angle.
+        lastTimeRef.current = time - 16;
       }
       
       const rawDelta = time - lastTimeRef.current;
@@ -106,8 +108,9 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       // >7s: SMOOTH STEADY ROTATION
       const p = Math.min(1, elapsed / 7000);
       
-      // Cubic ease-in-out for incredibly smooth velocity ramp
-      const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      // Quintic smootherstep is monotonic (never eases back down), with zero
+      // slope at both ends so acceleration remains cinematic and imperceptible.
+      const ease = p * p * p * (p * (p * 6 - 15) + 10);
       
       // Velocity in rotations per ms
       const startV = 1 / 45000; // VERY SLOW (45s per round)
@@ -118,12 +121,15 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       angleRef.current += safeDelta * currentV * Math.PI * 2;
 
       // Handle mathematical spiral collapse
-      const isCollapsing = phase === "DATA_COLLAPSE";
+      const currentPhase = phaseRef.current;
+      const currentPills = pillsRef.current;
+      const totalPills = Math.max(currentPills.length, 1);
+      const isCollapsing = currentPhase === "DATA_COLLAPSE";
       if (isCollapsing && collapseStartTime.current === null) {
         collapseStartTime.current = time;
       }
 
-      pills.forEach((_, i) => {
+      currentPills.forEach((_, i) => {
         const isOuter = i % 2 === 1;
         let rx = isOuter ? OUTER_RX : INNER_RX;
         let ry = isOuter ? OUTER_RY : INNER_RY;
@@ -141,7 +147,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
           }
         }
 
-        const pillAngle = angleRef.current + (i * Math.PI * 2) / TOTAL_PILLS - Math.PI / 2;
+        const pillAngle = angleRef.current + (i * Math.PI * 2) / totalPills - Math.PI / 2;
         const px = Math.cos(pillAngle) * rx;
         const py = Math.sin(pillAngle) * ry;
 
@@ -177,7 +183,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       // angleRef and startTimeRef are intentionally preserved to keep continuous velocity!
       lastTimeRef.current = null;
     };
-  }, [showPills, pills, phase]);
+  }, [showPills]);
 
   if (!showPills) return null;
 
