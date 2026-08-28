@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import GroceryTab from '@/components/fitness/plan/grocery-tab';
-import CinematicFitnessEnergy from '@/components/fitness/CinematicFitnessEnergy';
+import DataNodeAnimation from '@/components/fitness/DataNodeAnimation';
 
 export default function PlanSetupPage() {
   const router = useRouter();
@@ -119,7 +119,7 @@ export default function PlanSetupPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-        <CinematicFitnessEnergy />
+        <DataNodeAnimation />
         <div className="relative z-10 w-32 h-32 flex items-center justify-center mb-8">
           <svg className="absolute inset-0 w-full h-full transform -rotate-90">
             <circle cx="64" cy="64" r="60" className="stroke-[#1A2619] fill-none" strokeWidth="8" />
