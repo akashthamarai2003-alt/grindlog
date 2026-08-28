@@ -11,6 +11,7 @@ import { AnimatedBackground } from "./AnimatedBackground";
 import { AICharacter } from "./AICharacter";
 import { OrbitSystem } from "./OrbitSystem";
 import DataNetwork, { type PillData } from "./DataNetwork";
+import { ProcessingStatus } from "./ProcessingStatus";
 import { useAnimationTimeline } from "./useAnimationTimeline";
 
 interface ProfileSummary {
@@ -147,6 +148,13 @@ export default function AIPlanAnimation({ onAnimationComplete }: AIPlanAnimation
           scanIndex={timeline.scanIndex}
         />
       )}
+
+      {/* Layer 5: Dynamic Bottom Status & Heading Text */}
+      <ProcessingStatus
+        phase={timeline.phase}
+        scanIndex={timeline.scanIndex}
+        pillLabels={pills.map((p) => p.label)}
+      />
     </motion.div>
   );
 }
