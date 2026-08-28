@@ -65,17 +65,37 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
   
   // Normal, slow, majestic rotation speed so text is easy to read
   // Exactly 8s per round * 3 rounds = 24 seconds (which perfectly matches our new timeline!)
-  const ROTATION_SPEED_MS = 8000;
+  const ROTATION_SPEED_MS = 32000; // 32s per revolution (slow, smooth, space-like)
+
+  // Use a ref to accumulate the angle at a strictly constant rate.
+  // This completely eliminates "sudden acceleration" or "speed bursts" 
+  // caused by browser main-thread lags during React state changes.
+  const angleRef = useRef(0);
+  const lastTimeRef = useRef<number | null>(null);
 
   useAnimationFrame((time) => {
     if (!showPills) return;
 
+    // 1. Enforce STRICTLY CONSTANT LINEAR VELOCITY
+    if (lastTimeRef.current === null) {
+      lastTimeRef.current = time;
+    }
+    const rawDelta = time - lastTimeRef.current;
+    lastTimeRef.current = time;
+    
+    // Clamp delta to prevent "catching up" (speed bursts) if the browser thread lags.
+    // Max 32ms (~30fps) jump per frame.
+    const safeDelta = Math.min(Math.max(rawDelta, 0), 32);
+    
+    // Accumulate angle at a mathematically constant linear speed from the very first frame
+    angleRef.current += (safeDelta / ROTATION_SPEED_MS) * Math.PI * 2;
+    const globalAngle = angleRef.current;
+
+    // 2. Handle perfect mathematical spiral collapse
     const isCollapsing = phase === "DATA_COLLAPSE";
     if (isCollapsing && collapseStartTime.current === null) {
       collapseStartTime.current = time;
     }
-
-    const globalAngle = (time / ROTATION_SPEED_MS) * Math.PI * 2;
 
     pills.forEach((_, i) => {
       const isOuter = i % 2 === 1;
