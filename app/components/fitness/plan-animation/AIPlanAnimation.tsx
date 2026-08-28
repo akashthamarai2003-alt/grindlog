@@ -82,7 +82,10 @@ export default function AIPlanAnimation({ onAnimationComplete }: AIPlanAnimation
     }));
   }, [profile]);
 
-  const timeline = useAnimationTimeline(pills.length || 8, reducedMotion);
+  // Start the timeline from the actual pill count. This guarantees that when
+  // profile data arrives—even with exactly eight pills—the opening sequence
+  // begins at DATA_ENTER and each pill/line can enter in order.
+  const timeline = useAnimationTimeline(pills.length, reducedMotion);
 
   // Trigger completion callback when timeline finishes
   useEffect(() => {
