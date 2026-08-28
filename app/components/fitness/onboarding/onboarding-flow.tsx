@@ -2087,10 +2087,19 @@ case 4:
       case 14:
         return (
           <div className="px-6 pt-6 pb-36">
-            <StepHeader 
-              title="AI Body Scan & Goal Physique" 
-              subtitle="Show your AI coach where you're starting and choose your dream physique." 
-            />
+            <div className="mb-8 mt-2">
+              <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[38px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-col">
+                <span className="text-[#ADFF00]">AI BODY SCAN</span>
+                <span className="text-white">& GOAL PHYSIQUE</span>
+              </h2>
+              <p className="text-gray-400 mt-2 font-medium">Show your AI coach where you're starting and choose your dream physique.</p>
+              
+              <div className="mt-4 flex items-center gap-2 bg-[#121E12] px-3 py-2 rounded-lg border border-[#1E2E1D] inline-flex">
+                <Info size={14} className="text-[#ADFF00] shrink-0" />
+                <span className="text-xs font-semibold text-gray-300">Your photos are 100% private, encrypted & safe.</span>
+              </div>
+            </div>
+
             
             <div className="space-y-8">
               {/* 1. CURRENT BODY SCAN PHOTOS */}
