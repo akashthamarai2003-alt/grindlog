@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useMemo, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { motion, useAnimationFrame } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { FitnessDataPill, type PillState } from "./FitnessDataPill";
@@ -63,9 +63,8 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
   
   const TOTAL_PILLS = Math.max(pills.length, 1);
   
-  // SPEED BOOST: 1900ms per revolution ensures EXACTLY 3 full rounds (1080 degrees) 
-  // during the ~5.7 seconds the network is active.
-  const ROTATION_SPEED_MS = 1900; 
+  // Normal, slow, majestic rotation speed so text is easy to read
+  const ROTATION_SPEED_MS = 32000; // 32s per revolution
 
   useAnimationFrame((time) => {
     if (!showPills) return;
@@ -82,11 +81,12 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       let rx = isOuter ? OUTER_RX : INNER_RX;
       let ry = isOuter ? OUTER_RY : INNER_RY;
 
-      // Mathematically spiral into the center behind Loki on collapse
+      // Mathematically spiral into the center behind Loki on collapse ONE BY ONE
       if (collapseStartTime.current !== null) {
         const elapsed = time - collapseStartTime.current;
-        const collapseDelay = i * 70; // Matches FitnessDataPill 0.07s delay
-        const collapseDuration = 550; // 0.55s duration
+        // 120ms stagger delay between each pill vanishing, matching the reference images
+        const collapseDelay = i * 120; 
+        const collapseDuration = 450; // 0.45s duration per pill
         
         if (elapsed > collapseDelay) {
           const progress = Math.min(1, (elapsed - collapseDelay) / collapseDuration);
@@ -136,7 +136,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         }
         .timeline-flowing-sparks {
           stroke-dasharray: 6 12;
-          animation: lokiTimelineFlow 0.8s linear infinite; /* sped up for fast rotation */
+          animation: lokiTimelineFlow 1.6s linear infinite; /* Normal spark speed */
         }
         @media (prefers-reduced-motion: reduce) {
           .timeline-flowing-sparks {
@@ -184,6 +184,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
           {pills.map((pill, idx) => {
             const state = getPillState(phase, idx, scanIndex);
             const isScanning = scanIndex === idx && phase === "ANALYZING";
+            const isCollapsing = state === "collapsing";
             const isHidden = state === "hidden";
             
             const maxLineLength = Math.hypot(OUTER_RX, OUTER_RY) * 1.1;
@@ -197,6 +198,12 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
               targetOffset = maxLineLength;
               targetOpacity = 0;
               animDuration = 0;
+            } else if (isCollapsing) {
+              targetOffset = maxLineLength;
+              targetOpacity = 0;
+              animDuration = 0.45;
+              // Sync SVG line fade out exactly with the 120ms stagger logic
+              animDelay = idx * 0.12; 
             }
 
             return (
@@ -218,10 +225,10 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                   strokeWidth={isScanning ? 1.8 : 1.0}
                   strokeLinecap="round"
                   initial={{ strokeDasharray: maxLineLength, strokeDashoffset: maxLineLength, opacity: 0 }}
-                  animate={{ strokeDashoffset: targetOffset, opacity: isHidden ? 0 : (isScanning ? 1.0 : 0.85) }}
+                  animate={{ strokeDashoffset: targetOffset, opacity: isHidden || isCollapsing ? 0 : (isScanning ? 1.0 : 0.85) }}
                   transition={{ strokeDashoffset: { duration: animDuration, delay: animDelay, ease: [0.16, 1, 0.3, 1] }, opacity: { duration: animDuration * 0.8, delay: animDelay } }}
                 />
-                {!isHidden && (
+                {!isHidden && !isCollapsing && (
                   <path
                     ref={(el) => { shimmerRefs.current[idx] = el; }}
                     fill="none"
@@ -240,8 +247,8 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
 
       {/* 
         LAYER B: Pills 
-        CRITICAL FIX: zIndex: 7 places them BEHIND Loki (zIndex: 8).
-        When they spiral into (0,0), they will seamlessly vanish into his back!
+        zIndex: 7 places them BEHIND Loki (zIndex: 8).
+        They spiral down to (0,0) one by one and vanish seamlessly.
       */}
       <div
         className="pointer-events-none"
@@ -274,7 +281,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                   state={state}
                   entryAngle={idx * 36 - 90}
                   enterDelay={idx * 0.08}
-                  collapseDelay={idx * 0.07}
+                  collapseDelay={idx * 0.12} // Sync pill fade with the 120ms stagger logic
                 />
               </div>
             </div>
