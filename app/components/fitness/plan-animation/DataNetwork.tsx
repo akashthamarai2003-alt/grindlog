@@ -107,7 +107,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       
       // Velocity in rotations per ms
       const startV = 1 / 16000; // Very slow (16s per round), visibly moving at entry
-      const targetV = 1 / 8000; // MEDIUM FAST (8s per round)
+      const targetV = 1 / 11800; // MEDIUM FAST (about 11.8s per round)
       const currentV = startV + (targetV - startV) * ease;
       
       // Accumulate angle continuously, surviving all React re-renders!

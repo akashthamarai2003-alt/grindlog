@@ -59,10 +59,9 @@ export function useAnimationTimeline(
     t(() => setPhase("DATA_ENTER"), 550);
     t(() => setPhase("NETWORK_FULL"), 2100);
 
-    // AI is analyzing... stretch this out so we get 3 slow rounds!
+    // AI is analyzing... stretch this out for two controlled rotations.
     t(() => setPhase("ANALYZING"), 3800);
     
-    // We want 3 full rounds at 8 seconds per round = 24 seconds total.
     // Rotation starts around 550ms, so collapse should happen around 24550ms.
     const analyzingDuration = 24550 - 3800;
     
