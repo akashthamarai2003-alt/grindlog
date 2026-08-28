@@ -60,91 +60,92 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
   const INNER_RY = 150;
   const OUTER_RX = 138;
   const OUTER_RY = 215;
-  
   const TOTAL_PILLS = Math.max(pills.length, 1);
   
   // Normal, slow, majestic rotation speed so text is easy to read
-  // Exactly 8s per round * 3 rounds = 24 seconds (which perfectly matches our new timeline!)
   const ROTATION_SPEED_MS = 32000; // 32s per revolution (slow, smooth, space-like)
 
-  // Use a ref to accumulate the angle at a strictly constant rate.
-  // This completely eliminates "sudden acceleration" or "speed bursts" 
-  // caused by browser main-thread lags during React state changes.
-  const angleRef = useRef(0);
-  const lastTimeRef = useRef<number | null>(null);
 
-  useAnimationFrame((time) => {
+
+  // Use a RAW NATIVE requestAnimationFrame loop to completely bypass Framer Motion
+  // and React 19 concurrent mode. This guarantees the absolute highest priority 
+  // execution directly on the browser's native paint cycle.
+  useEffect(() => {
     if (!showPills) return;
 
-    // 1. Enforce STRICTLY CONSTANT LINEAR VELOCITY
-    if (lastTimeRef.current === null) {
-      lastTimeRef.current = time;
-    }
-    const rawDelta = time - lastTimeRef.current;
-    lastTimeRef.current = time;
-    
-    // Clamp delta to prevent "catching up" (speed bursts) if the browser thread lags.
-    // Max 32ms (~30fps) jump per frame.
-    const safeDelta = Math.min(Math.max(rawDelta, 0), 32);
-    
-    // Accumulate angle at a mathematically constant linear speed from the very first frame
-    angleRef.current += (safeDelta / ROTATION_SPEED_MS) * Math.PI * 2;
-    const globalAngle = angleRef.current;
+    let frameId: number;
+    let lastTime: number | null = null;
+    let accumulatedAngle = 0;
 
-    // 2. Handle perfect mathematical spiral collapse
-    const isCollapsing = phase === "DATA_COLLAPSE";
-    if (isCollapsing && collapseStartTime.current === null) {
-      collapseStartTime.current = time;
-    }
+    const tick = (time: number) => {
+      if (lastTime === null) {
+        lastTime = time;
+      }
+      const rawDelta = time - lastTime;
+      lastTime = time;
+      
+      // Clamp delta to prevent "catching up" (speed bursts) if the browser thread lags.
+      const safeDelta = Math.min(Math.max(rawDelta, 0), 32);
+      
+      // Accumulate angle at a mathematically constant linear speed
+      accumulatedAngle += (safeDelta / ROTATION_SPEED_MS) * Math.PI * 2;
 
-    pills.forEach((_, i) => {
-      const isOuter = i % 2 === 1;
-      let rx = isOuter ? OUTER_RX : INNER_RX;
-      let ry = isOuter ? OUTER_RY : INNER_RY;
+      // Handle mathematical spiral collapse
+      const isCollapsing = phase === "DATA_COLLAPSE";
+      if (isCollapsing && collapseStartTime.current === null) {
+        collapseStartTime.current = time;
+      }
 
-      // Mathematically spiral into the center behind Loki on collapse ONE BY ONE
-      if (collapseStartTime.current !== null) {
-        const elapsed = time - collapseStartTime.current;
-        // 120ms stagger delay between each pill vanishing, matching the reference images
-        const collapseDelay = i * 120; 
-        const collapseDuration = 450; // 0.45s duration per pill
-        
-        if (elapsed > collapseDelay) {
-          const progress = Math.min(1, (elapsed - collapseDelay) / collapseDuration);
-          // Cubic ease-in for a snappy, magnetic snap to center
-          const easeProgress = progress * progress * progress; 
-          rx = rx * (1 - easeProgress);
-          ry = ry * (1 - easeProgress);
+      pills.forEach((_, i) => {
+        const isOuter = i % 2 === 1;
+        let rx = isOuter ? OUTER_RX : INNER_RX;
+        let ry = isOuter ? OUTER_RY : INNER_RY;
+
+        if (collapseStartTime.current !== null) {
+          const elapsed = time - collapseStartTime.current;
+          const collapseDelay = i * 120; 
+          const collapseDuration = 450; 
+          
+          if (elapsed > collapseDelay) {
+            const progress = Math.min(1, (elapsed - collapseDelay) / collapseDuration);
+            const easeProgress = progress * progress * progress; 
+            rx = rx * (1 - easeProgress);
+            ry = ry * (1 - easeProgress);
+          }
         }
-      }
 
-      const pillAngle = globalAngle + (i * Math.PI * 2) / TOTAL_PILLS - Math.PI / 2;
+        const pillAngle = accumulatedAngle + (i * Math.PI * 2) / TOTAL_PILLS - Math.PI / 2;
+        const px = Math.cos(pillAngle) * rx;
+        const py = Math.sin(pillAngle) * ry;
 
-      const px = Math.cos(pillAngle) * rx;
-      const py = Math.sin(pillAngle) * ry;
+        const pillEl = pillRefs.current[i];
+        if (pillEl) {
+          pillEl.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px)`;
+        }
 
-      const pillEl = pillRefs.current[i];
-      if (pillEl) {
-        pillEl.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px)`;
-      }
+        const lineLen = Math.hypot(px, py);
+        const curve = isOuter ? 10 : -10;
+        
+        const curveFactor = (lineLen / Math.hypot(OUTER_RX, OUTER_RY)) * curve;
+        
+        const perpX = lineLen === 0 ? 0 : (-py / lineLen) * curveFactor;
+        const perpY = lineLen === 0 ? 0 : (px / lineLen) * curveFactor;
+        const cx = px * 0.5 + perpX;
+        const cy = py * 0.5 + perpY;
+        const pathD = `M 0,0 Q ${cx.toFixed(1)},${cy.toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}`;
 
-      const lineLen = Math.hypot(px, py);
-      const curve = isOuter ? 10 : -10;
-      
-      // As line shrinks to 0, curve multiplier must gracefully shrink to prevent glitchy loops
-      const curveFactor = (lineLen / Math.hypot(OUTER_RX, OUTER_RY)) * curve;
-      
-      const perpX = lineLen === 0 ? 0 : (-py / lineLen) * curveFactor;
-      const perpY = lineLen === 0 ? 0 : (px / lineLen) * curveFactor;
-      const cx = px * 0.5 + perpX;
-      const cy = py * 0.5 + perpY;
-      const pathD = `M 0,0 Q ${cx.toFixed(1)},${cy.toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}`;
+        if (lineRefs.current[i]) lineRefs.current[i]!.setAttribute("d", pathD);
+        if (glowLineRefs.current[i]) glowLineRefs.current[i]!.setAttribute("d", pathD);
+        if (shimmerRefs.current[i]) shimmerRefs.current[i]!.setAttribute("d", pathD);
+      });
 
-      if (lineRefs.current[i]) lineRefs.current[i]!.setAttribute("d", pathD);
-      if (glowLineRefs.current[i]) glowLineRefs.current[i]!.setAttribute("d", pathD);
-      if (shimmerRefs.current[i]) shimmerRefs.current[i]!.setAttribute("d", pathD);
-    });
-  });
+      frameId = requestAnimationFrame(tick);
+    };
+
+    frameId = requestAnimationFrame(tick);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [showPills, pills, phase]);
 
   if (!showPills) return null;
 
