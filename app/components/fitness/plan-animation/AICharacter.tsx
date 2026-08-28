@@ -41,12 +41,16 @@ export function AICharacter({ isVisible, isProcessing, isComplete }: AICharacter
         animate={
           reduced
             ? {}
+            : isComplete
+            ? { scale: [1.08, 1.24, 1.16, 1.24], y: [0, -3, 0, -3] }
             : isProcessing
             ? { scale: [1, 1.03, 1] }
             : { y: [0, -4, 0], scale: [1, 1.015, 1] }
         }
         transition={
-          isProcessing
+          isComplete
+            ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
+            : isProcessing
             ? { duration: 0.35, ease: "easeInOut" }
             : { duration: 3, repeat: Infinity, ease: "easeInOut" }
         }

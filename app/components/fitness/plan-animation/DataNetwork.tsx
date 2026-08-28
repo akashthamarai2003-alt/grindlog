@@ -91,7 +91,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       
       // Bound missed-frame catch-up so a busy mobile frame does not look like
       // a stall, while still preventing any visible speed burst.
-      const safeDelta = Math.min(Math.max(rawDelta, 0), 40);
+      const safeDelta = Math.min(Math.max(rawDelta, 0), 48);
       const elapsed = time - startTimeRef.current;
       
       // --- 7-SECOND CINEMATIC ACCELERATION CURVE ---
@@ -107,8 +107,8 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       const ease = p * p * p * (p * (p * 6 - 15) + 10);
       
       // Velocity in rotations per ms
-      const startV = 1 / 14000; // Very slow (14s per round), visibly moving at entry
-      const targetV = 1 / 10500; // Medium-fast (about 10.5s per round)
+      const startV = 1 / 12000; // Very slow (12s per round), visibly moving at entry
+      const targetV = 1 / 8500; // Medium-fast (about 8.5s per round)
       const currentV = startV + (targetV - startV) * ease;
       
       // Accumulate angle continuously, surviving all React re-renders!
