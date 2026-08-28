@@ -53,9 +53,7 @@ export default function DataNodeAnimation() {
     <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
       {/* Background Radar Grid */}
       <div className="absolute inset-0 opacity-15">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-[#16A34A]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-[#16A34A]" />
-        
+
         {/* Radar spokes */}
         {[0, 45, 90, 135].map(deg => (
           <div 
