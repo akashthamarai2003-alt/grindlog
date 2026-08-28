@@ -17,18 +17,18 @@ interface DataNetworkProps {
   scanIndex: number;
 }
 
-// 10 evenly balanced radial slots
+// 10 evenly spaced, non-colliding radial slots with wide clearance
 const RADIAL_SLOTS = [
   { nx: 0,     ny: -1.0,  angle: -90 },  // 0: Top
-  { nx: 0.65,  ny: -0.72, angle: -48 },  // 1: Upper-Right
-  { nx: 0.95,  ny: -0.22, angle: -14 },  // 2: Right-Upper
-  { nx: 0.95,  ny: 0.22,  angle: 14 },   // 3: Right-Lower
-  { nx: 0.65,  ny: 0.72,  angle: 48 },   // 4: Lower-Right
+  { nx: 0.62,  ny: -0.76, angle: -50 },  // 1: Upper-Right
+  { nx: 0.96,  ny: -0.28, angle: -16 },  // 2: Right-Upper
+  { nx: 0.96,  ny: 0.28,  angle: 16 },   // 3: Right-Lower
+  { nx: 0.62,  ny: 0.76,  angle: 50 },   // 4: Lower-Right
   { nx: 0,     ny: 1.0,   angle: 90 },   // 5: Bottom
-  { nx: -0.65, ny: 0.72,  angle: 132 },  // 6: Lower-Left
-  { nx: -0.95, ny: 0.22,  angle: 166 },  // 7: Left-Lower
-  { nx: -0.95, ny: -0.22, angle: -166 }, // 8: Left-Upper
-  { nx: -0.65, ny: -0.72, angle: -132 }, // 9: Upper-Left
+  { nx: -0.62, ny: 0.76,  angle: 130 },  // 6: Lower-Left
+  { nx: -0.96, ny: 0.28,  angle: 164 },  // 7: Left-Lower
+  { nx: -0.96, ny: -0.28, angle: -164 }, // 8: Left-Upper
+  { nx: -0.62, ny: -0.76, angle: -130 }, // 9: Upper-Left
 ];
 
 function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): PillState {
@@ -51,7 +51,7 @@ function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): 
 
 // Generates an organic curved timeline branch path (Loki Season 2 finale style)
 function getBranchPath(x: number, y: number, idx: number) {
-  const curveMagnitude = (idx % 2 === 0 ? 1 : -1) * 18;
+  const curveMagnitude = (idx % 2 === 0 ? 1 : -1) * 20;
   const len = Math.hypot(x, y) || 1;
   const perpX = (-y / len) * curveMagnitude;
   const perpY = (x / len) * curveMagnitude;
@@ -67,9 +67,9 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
     phase === "ANALYZING" ||
     phase === "DATA_COLLAPSE";
 
-  // Dynamic oval dimensions optimized for mobile rotation without overlapping
-  const rx = 126;
-  const ry = 175;
+  // Large, spacious radii utilizing the extra top & bottom space
+  const rx = 135;
+  const ry = 228;
 
   // Compute exact positions & organic timeline branch paths
   const pillNodes = useMemo(() => {
@@ -109,12 +109,12 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
           0% { stroke-dashoffset: 0; }
           100% { stroke-dashoffset: -40; }
         }
-        /* Faster, more lively rotation (~30s full revolution) */
+        /* Dynamic, smooth rotation (~28s full revolution) */
         .network-spin-layer {
-          animation: constNetworkSpin 30s linear infinite;
+          animation: constNetworkSpin 28s linear infinite;
         }
         .pill-counter-rotator {
-          animation: pillCounterSpin 30s linear infinite;
+          animation: pillCounterSpin 28s linear infinite;
         }
         .timeline-flowing-sparks {
           stroke-dasharray: 8 16;
@@ -136,7 +136,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         style={{
           position: "absolute",
           left: "50%",
-          top: "40%",
+          top: "39%",
           transform: "translate(-50%, -50%)",
           width: 0,
           height: 0,
@@ -147,14 +147,14 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         <svg
           className="absolute pointer-events-none"
           style={{
-            left: -400,
-            top: -400,
-            width: 800,
-            height: 800,
+            left: -450,
+            top: -450,
+            width: 900,
+            height: 900,
             overflow: "visible",
             willChange: "transform",
           }}
-          viewBox="-400 -400 800 800"
+          viewBox="-450 -450 900 900"
         >
           <defs>
             {/* Loki S2 Finale Vibrant Gradient - Emerald & Neon Lime */}
@@ -181,8 +181,28 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
 
           {pillNodes.map((node) => {
             const state = getPillState(phase, node.idx, scanIndex);
-            const isVisible = state !== "hidden";
             const isScanning = scanIndex === node.idx && phase === "ANALYZING";
+            const isCollapsing = state === "collapsing";
+            const isHidden = state === "hidden";
+            const collapseDelay = node.idx * 0.07;
+
+            // Line animates in, stays visible, and retracts/vanishes on collapse
+            let targetOffset = 0;
+            let targetOpacity = isScanning ? 0.95 : 0.45;
+            let animDuration = 0.55;
+            let animDelay = node.idx * 0.08;
+
+            if (isHidden) {
+              targetOffset = node.lineLength;
+              targetOpacity = 0;
+              animDuration = 0;
+            } else if (isCollapsing) {
+              // Line retracts into Loki simultaneously as the pill vanishes
+              targetOffset = node.lineLength;
+              targetOpacity = 0;
+              animDuration = 0.5;
+              animDelay = collapseDelay;
+            }
 
             return (
               <g key={`branch-${node.pill.key}`}>
@@ -199,16 +219,19 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                     opacity: 0,
                   }}
                   animate={{
-                    strokeDashoffset: isVisible ? 0 : node.lineLength,
-                    opacity: isVisible ? (isScanning ? 0.95 : 0.45) : 0,
+                    strokeDashoffset: targetOffset,
+                    opacity: targetOpacity,
                   }}
                   transition={{
                     strokeDashoffset: {
-                      duration: 0.55,
-                      delay: node.idx * 0.08,
+                      duration: animDuration,
+                      delay: animDelay,
                       ease: [0.16, 1, 0.3, 1],
                     },
-                    opacity: { duration: 0.25, delay: node.idx * 0.08 },
+                    opacity: {
+                      duration: animDuration * 0.8,
+                      delay: animDelay,
+                    },
                   }}
                 />
 
@@ -225,21 +248,24 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                     opacity: 0,
                   }}
                   animate={{
-                    strokeDashoffset: isVisible ? 0 : node.lineLength,
-                    opacity: isVisible ? (isScanning ? 1.0 : 0.85) : 0,
+                    strokeDashoffset: targetOffset,
+                    opacity: isCollapsing || isHidden ? 0 : (isScanning ? 1.0 : 0.85),
                   }}
                   transition={{
                     strokeDashoffset: {
-                      duration: 0.55,
-                      delay: node.idx * 0.08,
+                      duration: animDuration,
+                      delay: animDelay,
                       ease: [0.16, 1, 0.3, 1],
                     },
-                    opacity: { duration: 0.25, delay: node.idx * 0.08 },
+                    opacity: {
+                      duration: animDuration * 0.8,
+                      delay: animDelay,
+                    },
                   }}
                 />
 
                 {/* 3. Flowing Temporal Energy Shimmer (Living Magic Tendril) */}
-                {isVisible && (
+                {!isCollapsing && !isHidden && (
                   <path
                     d={node.pathD}
                     fill="none"
@@ -293,7 +319,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         style={{
           position: "absolute",
           left: "50%",
-          top: "40%",
+          top: "39%",
           transform: "translate(-50%, -50%)",
           width: 0,
           height: 0,
