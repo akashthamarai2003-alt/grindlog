@@ -7,87 +7,73 @@ interface OrbitSystemProps {
 }
 
 /**
- * SVG orbit ellipses — white/pale green, thin, continuously rotating.
- * Each orbit is a <g> group that rotates via CSS animation.
- * Energy nodes sit at fixed points on the ellipse and orbit with the group.
+ * 4 SVG elliptical orbit paths around the AI at (50%,43%).
+ * Each orbit is a tilted ellipse that rotates at its own speed.
+ * 3 orbits carry small energy nodes.
+ * Sized relative to viewport to match the large constellation layout.
  */
 export function OrbitSystem({ isActive, isProcessing }: OrbitSystemProps) {
   const orbits = [
-    { rx: 85, ry: 32, rotation: 15, duration: 18, dir: "normal", hasNode: true },
-    { rx: 88, ry: 36, rotation: -25, duration: 24, dir: "reverse", hasNode: true },
-    { rx: 75, ry: 45, rotation: 65, duration: 30, dir: "normal", hasNode: true },
-    { rx: 100, ry: 28, rotation: -10, duration: 22, dir: "reverse", hasNode: false },
+    { rx: 85, ry: 32, tilt: 15,  dur: 18, dir: "normal",  node: true },
+    { rx: 95, ry: 40, tilt: -25, dur: 23, dir: "reverse", node: true },
+    { rx: 75, ry: 50, tilt: 65,  dur: 29, dir: "normal",  node: true },
+    { rx: 110, ry: 30, tilt: -10, dur: 34, dir: "reverse", node: false },
   ];
-
-  const speedFactor = isProcessing ? 0.75 : 1;
 
   return (
     <svg
-      viewBox="-130 -80 260 160"
       className="absolute pointer-events-none"
       style={{
         left: "50%",
-        top: "40%",
+        top: "43%",
         transform: "translate(-50%, -50%)",
-        width: "min(85vw, 420px)",
-        height: "min(50vw, 240px)",
+        width: "min(88vw, 440px)",
+        height: "min(52vw, 280px)",
         overflow: "visible",
+        zIndex: 3,
+        opacity: isActive ? 1 : 0,
+        transition: "opacity 0.8s ease",
       }}
+      viewBox="-140 -90 280 180"
     >
       <defs>
-        <filter id="nodeGlow" x="-100%" y="-100%" width="300%" height="300%">
+        <filter id="ng" x="-200%" y="-200%" width="500%" height="500%">
           <feGaussianBlur stdDeviation="2" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
         <style>{`
-          @keyframes orbitSpin {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .orbit-group { animation: none !important; }
-          }
+          @keyframes ospin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @media (prefers-reduced-motion: reduce) { .og { animation: none !important; } }
         `}</style>
       </defs>
 
       {orbits.map((o, i) => {
-        const dur = o.duration * speedFactor;
+        const speed = isProcessing ? o.dur * 0.7 : o.dur;
         return (
-          <g key={i} style={{ transformOrigin: "0 0" }}>
-            {/* Static rotation offset for the ellipse tilt */}
-            <g transform={`rotate(${o.rotation})`}>
-              {/* Rotating group */}
+          <g key={i}>
+            <g transform={`rotate(${o.tilt})`}>
               <g
-                className="orbit-group"
+                className="og"
                 style={
                   isActive
                     ? {
-                        animation: `orbitSpin ${dur}s linear infinite`,
-                        animationDirection: o.dir as "normal" | "reverse",
+                        animation: `ospin ${speed}s linear infinite`,
+                        animationDirection: o.dir as any,
                         transformOrigin: "0 0",
                       }
                     : { transformOrigin: "0 0" }
                 }
               >
                 <ellipse
-                  cx={0}
-                  cy={0}
-                  rx={o.rx}
-                  ry={o.ry}
+                  cx={0} cy={0} rx={o.rx} ry={o.ry}
                   fill="none"
-                  stroke="rgba(220,240,220,0.18)"
-                  strokeWidth={1}
+                  stroke="rgba(210,235,210,0.18)"
+                  strokeWidth={0.9}
                 />
-                {o.hasNode && (
+                {o.node && (
                   <circle
-                    cx={o.rx}
-                    cy={0}
-                    r={2.5}
-                    fill="#39FF14"
-                    filter="url(#nodeGlow)"
+                    cx={o.rx} cy={0} r={2.5}
+                    fill="#39FF14" filter="url(#ng)"
                   />
                 )}
               </g>

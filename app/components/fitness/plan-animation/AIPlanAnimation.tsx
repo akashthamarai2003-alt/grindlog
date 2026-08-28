@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Target, User, Weight, Ruler, Calendar, Timer,
@@ -11,10 +11,8 @@ import { AnimatedBackground } from "./AnimatedBackground";
 import { AICharacter } from "./AICharacter";
 import { OrbitSystem } from "./OrbitSystem";
 import DataNetwork, { type PillData } from "./DataNetwork";
-import { ProcessingStatus } from "./ProcessingStatus";
 import { useAnimationTimeline } from "./useAnimationTimeline";
 
-// ── Profile shape from the API ──────────────────────────────────
 interface ProfileSummary {
   goal?: string | null;
   gender?: string | null;
@@ -36,60 +34,68 @@ interface PillConfig {
 }
 
 const PILL_CONFIGS: PillConfig[] = [
-  { key: "goal", field: "goal", icon: Target, format: (v) => String(v) },
-  { key: "activity", field: "activity_level", icon: Activity, format: (v) => String(v) },
   { key: "training_days", field: "training_days_per_week", icon: Calendar, format: (v) => `${v} per week` },
   { key: "duration", field: "workout_duration_minutes", icon: Timer, format: (v) => `${v} min` },
+  { key: "activity", field: "activity_level", icon: Activity, format: (v) => String(v) },
   { key: "fitness", field: "fitness_level", icon: TrendingUp, format: (v) => String(v) },
-  { key: "weight", field: "weight", icon: Weight, format: (v) => `${v} kg` },
   { key: "height", field: "height", icon: Ruler, format: (v) => `${v} cm` },
+  { key: "weight", field: "weight", icon: Weight, format: (v) => `${v} kg` },
   { key: "gender", field: "gender", icon: User, format: (v) => String(v) },
-  { key: "location", field: "training_location", icon: Dumbbell, format: (v) => String(v) },
   { key: "food", field: "food_type", icon: Utensils, format: (v) => String(v) },
+  { key: "location", field: "training_location", icon: Dumbbell, format: (v) => String(v) },
+  { key: "goal", field: "goal", icon: Target, format: (v) => String(v) },
 ];
 
-// ─────────────────────────────────────────────────────────────────
-export default function AIPlanAnimation() {
+interface AIPlanAnimationProps {
+  onAnimationComplete?: () => void;
+}
+
+export default function AIPlanAnimation({ onAnimationComplete }: AIPlanAnimationProps) {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const reducedMotion = useReducedMotion() ?? false;
 
-  // Fetch profile data for pills
+  // Fetch real profile data immediately
   useEffect(() => {
-    let cancelled = false;
+    let active = true;
     fetch("/api/fitness/profile-summary")
       .then((r) => r.json())
-      .then((d) => { if (!cancelled && d.success) setProfile(d.data); })
+      .then((d) => {
+        if (active && d.success) setProfile(d.data);
+      })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      active = false;
+    };
   }, []);
 
-  // Build pills from real data
+  // Dynamically build real user data pills
   const pills: PillData[] = useMemo(() => {
     if (!profile) return [];
-    return PILL_CONFIGS
-      .filter((c) => {
-        const v = profile[c.field];
-        return v !== null && v !== undefined && v !== "";
-      })
-      .map((c) => ({
-        key: c.key,
-        icon: c.icon,
-        label: c.format(profile[c.field]),
-      }));
+    return PILL_CONFIGS.filter((c) => {
+      const v = profile[c.field];
+      return v !== null && v !== undefined && v !== "";
+    }).map((c) => ({
+      key: c.key,
+      icon: c.icon,
+      label: c.format(profile[c.field]),
+    }));
   }, [profile]);
 
-  const pillLabels = useMemo(() => pills.map((p) => p.label), [pills]);
-
-  // Timeline state machine
   const timeline = useAnimationTimeline(pills.length || 8, reducedMotion);
 
-  // ── Derived state ──
+  // Trigger completion callback when timeline finishes
+  useEffect(() => {
+    if (timeline.isComplete && onAnimationComplete) {
+      onAnimationComplete();
+    }
+  }, [timeline.isComplete, onAnimationComplete]);
+
+  // Derived states for components
   const isCharVisible = timeline.phase !== "BOOT";
   const isProcessing =
     timeline.phase === "ANALYZING" || timeline.phase === "DATA_COLLAPSE";
   const isComplete =
     timeline.phase === "AI_ALONE" ||
-    timeline.phase === "PLAN_GENERATING" ||
     timeline.phase === "TRANSITION" ||
     timeline.phase === "COMPLETE";
   const orbitsActive = timeline.phase !== "BOOT";
@@ -97,67 +103,50 @@ export default function AIPlanAnimation() {
     timeline.phase === "TRANSITION" || timeline.phase === "COMPLETE";
 
   return (
-    <div className="fixed inset-0 bg-[#061506] overflow-hidden" style={{ zIndex: 50 }}>
-      {/* ── SCENE A: Animation ── */}
-      <motion.div
-        className="absolute inset-0 flex flex-col"
-        animate={{
-          y: isTransitioning ? "-100%" : "0%",
-        }}
-        transition={{
-          duration: 0.8,
-          ease: [0.16, 1, 0.3, 1],
+    <motion.div
+      className="fixed inset-0 w-screen h-[100dvh] bg-[#061506] overflow-hidden select-none"
+      style={{ zIndex: 50 }}
+      initial={{ y: "0%" }}
+      animate={{
+        // Critical Rule #20 & AE: Slide DOWNWARD (translateY(0) -> translateY(100%))
+        y: isTransitioning ? "100%" : "0%",
+      }}
+      transition={{
+        duration: 0.75,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+    >
+      {/* Layer 1: Ambient Background */}
+      <AnimatedBackground phase={timeline.phase} />
+
+      {/* Layer 2: Orbit System centered at (50%, 43%) */}
+      <OrbitSystem isActive={orbitsActive} isProcessing={isProcessing} />
+
+      {/* Layer 3: Central AI Character at (50%, 43%) */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: "50%",
+          top: "43%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 8,
         }}
       >
-        {/* Background layers */}
-        <AnimatedBackground />
+        <AICharacter
+          isVisible={isCharVisible}
+          isProcessing={isProcessing}
+          isComplete={isComplete}
+        />
+      </div>
 
-        {/* Animation viewport — constrained to ~62% height */}
-        <div
-          className="relative flex-1"
-          style={{ maxHeight: "65dvh", minHeight: "55dvh" }}
-        >
-          {/* Orbit system — centered at 40% of viewport */}
-          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 3 }}>
-            <OrbitSystem isActive={orbitsActive} isProcessing={isProcessing} />
-          </div>
-
-          {/* AI Character — centered */}
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              left: "50%",
-              top: "40%",
-              transform: "translate(-50%, -50%)",
-              zIndex: 8,
-            }}
-          >
-            <AICharacter
-              isVisible={isCharVisible}
-              isProcessing={isProcessing}
-              isComplete={isComplete}
-            />
-          </div>
-
-          {/* Data Network (rotating pills + connection lines) */}
-          {pills.length > 0 && (
-            <DataNetwork
-              pills={pills}
-              phase={timeline.phase}
-              scanIndex={timeline.scanIndex}
-            />
-          )}
-        </div>
-
-        {/* Text section — below animation viewport */}
-        <div className="relative z-20 pb-8 pt-3">
-          <ProcessingStatus
-            phase={timeline.phase}
-            scanIndex={timeline.scanIndex}
-            pillLabels={pillLabels}
-          />
-        </div>
-      </motion.div>
-    </div>
+      {/* Layer 4: Full Constellation Data Network */}
+      {pills.length > 0 && (
+        <DataNetwork
+          pills={pills}
+          phase={timeline.phase}
+          scanIndex={timeline.scanIndex}
+        />
+      )}
+    </motion.div>
   );
 }

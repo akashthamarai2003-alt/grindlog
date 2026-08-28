@@ -107,11 +107,7 @@ export default function PlanSetupPage() {
     }
   };
 
-  if (loading) {
-    return <AIPlanAnimation />;
-  }
-
-  if (!planData) {
+  if (!loading && !planData) {
     const isSafetyError = generationErrorType === "SAFETY";
     
     return (
@@ -164,19 +160,21 @@ export default function PlanSetupPage() {
   }
 
   // Workouts logic
-  const workouts = planData.workouts || [];
+  const workouts = planData?.workouts || [];
   const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
   
-  const activeWorkout = selectedDay < workouts.length ? workouts[selectedDay] : null;
+  const activeWorkout = planData && selectedDay < workouts.length ? workouts[selectedDay] : null;
 
   return (
-    <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[140px]">
-      <div className="pt-12 px-6 pb-6">
-        <h1 className="text-3xl font-black mb-2 tracking-tight">
-          {activeTab === 'workout' ? 'Your Training Plan' : activeTab === 'diet' ? 'Your Nutrition Plan' : 'Your Grocery Plan'}
-        </h1>
-        <p className="text-gray-400">{planData.plan?.description || "Here is your custom AI generated plan."}</p>
-      </div>
+    <>
+      {planData && (
+        <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[140px]">
+          <div className="pt-12 px-6 pb-6">
+            <h1 className="text-3xl font-black mb-2 tracking-tight">
+              {activeTab === 'workout' ? 'Your Training Plan' : activeTab === 'diet' ? 'Your Nutrition Plan' : 'Your Grocery Plan'}
+            </h1>
+            <p className="text-gray-400">{planData.plan?.description || "Here is your custom AI generated plan."}</p>
+          </div>
 
       {/* Tab Toggle */}
       <div className="flex bg-[#121E12] rounded-full p-1 mx-6 mb-6">
@@ -339,23 +337,29 @@ export default function PlanSetupPage() {
         <GroceryTab planData={planData} setPlanData={setPlanData} profile={planData._profile} />
       )}
 
-      {/* Floating Modulator & Save */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50 pointer-events-none">
-        <div className="max-w-md mx-auto space-y-3 pointer-events-auto">
-          
-          <button 
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#c4ff33] disabled:opacity-70 transition-colors"
-          >
-            {saving ? (
-              <><Loader2 size={20} className="animate-spin" /> <span>Activating Plan...</span></>
-            ) : (
-              <><span>Confirm & Enter Dashboard</span> <ArrowRight size={20} /></>
-            )}
-          </button>
+          {/* Floating Modulator & Save */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50 pointer-events-none">
+            <div className="max-w-md mx-auto space-y-3 pointer-events-auto">
+              
+              <button 
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#c4ff33] disabled:opacity-70 transition-colors"
+              >
+                {saving ? (
+                  <><Loader2 size={20} className="animate-spin" /> <span>Activating Plan...</span></>
+                ) : (
+                  <><span>Confirm & Enter Dashboard</span> <ArrowRight size={20} /></>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+
+      {loading && (
+        <AIPlanAnimation onAnimationComplete={() => setLoading(false)} />
+      )}
+    </>
   );
 }

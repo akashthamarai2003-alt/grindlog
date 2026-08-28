@@ -9,35 +9,31 @@ interface FitnessDataPillProps {
   icon: LucideIcon;
   label: string;
   state: PillState;
-  /** Entry direction — used for the entrance translation offset */
   entryAngle: number;
-  /** Stagger delay in seconds for entrance */
-  delay: number;
-  /** Stagger delay in seconds for collapse */
+  enterDelay: number;
   collapseDelay: number;
-  /** Counter-rotation to keep text upright while parent rotates */
   counterRotation: number;
   style?: React.CSSProperties;
 }
 
 /**
- * Individual data pill that enters from outside the composition,
- * can be highlighted during processing, and collapses toward center.
+ * Large, highly readable data pill (height ~42-48px, font 14-16px).
+ * Enters from outside along entryAngle, collapses toward center.
+ * Counter-rotates smoothly so text remains strictly horizontal.
  */
 export function FitnessDataPill({
   icon: Icon,
   label,
   state,
   entryAngle,
-  delay,
+  enterDelay,
   collapseDelay,
   counterRotation,
   style,
 }: FitnessDataPillProps) {
-  // Calculate entry offset — pill comes from 150px away along its entry angle
-  const entryDist = 150;
-  const entryX = Math.cos((entryAngle * Math.PI) / 180) * entryDist;
-  const entryY = Math.sin((entryAngle * Math.PI) / 180) * entryDist;
+  const rad = (entryAngle * Math.PI) / 180;
+  const ex = Math.cos(rad) * 140;
+  const ey = Math.sin(rad) * 140;
 
   let animateProps: Record<string, any> = {};
   let transitionProps: Record<string, any> = {};
@@ -48,12 +44,12 @@ export function FitnessDataPill({
         opacity: 0,
         scale: 0.75,
         filter: "blur(5px)",
-        x: entryX,
-        y: entryY,
+        x: ex,
+        y: ey,
+        rotate: counterRotation,
       };
       transitionProps = { duration: 0 };
       break;
-
     case "entering":
       animateProps = {
         opacity: 1,
@@ -61,14 +57,15 @@ export function FitnessDataPill({
         filter: "blur(0px)",
         x: 0,
         y: 0,
+        rotate: counterRotation,
       };
       transitionProps = {
         duration: 0.65,
         ease: [0.16, 1, 0.3, 1],
-        delay,
+        delay: enterDelay,
+        rotate: { duration: 0 },
       };
       break;
-
     case "visible":
       animateProps = {
         opacity: 1,
@@ -76,72 +73,97 @@ export function FitnessDataPill({
         filter: "blur(0px)",
         x: 0,
         y: 0,
-        borderColor: "rgba(22,163,74,0.5)",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+        rotate: counterRotation,
+        borderColor: "rgba(22, 163, 74, 0.6)",
+        backgroundColor: "rgba(10, 26, 10, 0.92)",
+        boxShadow: "0 4px 14px rgba(0, 0, 0, 0.6)",
       };
-      transitionProps = { duration: 0.25 };
+      transitionProps = {
+        duration: 0.25,
+        rotate: { duration: 0 },
+      };
       break;
-
     case "processing":
       animateProps = {
         opacity: 1,
         filter: "blur(0px)",
         x: 0,
         y: 0,
+        rotate: counterRotation,
+        scale: [1, 1.07, 1],
         borderColor: "#39FF14",
-        boxShadow: "0 0 14px rgba(57,255,20,0.3)",
-        scale: [1, 1.08, 1],
+        backgroundColor: "rgba(14, 42, 14, 0.96)",
+        boxShadow: "0 0 20px rgba(57, 255, 20, 0.35)",
       };
       transitionProps = {
         duration: 0.45,
         scale: { duration: 0.45, ease: "easeInOut" },
+        rotate: { duration: 0 },
       };
       break;
-
     case "collapsing":
       animateProps = {
         opacity: 0,
-        scale: 0.4,
-        filter: "blur(3px)",
-        x: -entryX * 0.6,
-        y: -entryY * 0.6,
+        scale: 0.45,
+        filter: "blur(4px)",
+        x: -ex * 0.75,
+        y: -ey * 0.75,
+        rotate: counterRotation,
       };
       transitionProps = {
-        duration: 0.7,
+        duration: 0.65,
         delay: collapseDelay,
         ease: [0.16, 1, 0.3, 1],
+        rotate: { duration: 0 },
       };
       break;
   }
 
   return (
-    <motion.div
+    <div
       style={{
-        ...style,
-        // Counter-rotate to keep text upright while network spins
-        transform: `rotate(${counterRotation}deg)`,
+        position: "absolute",
+        left: style?.left,
+        top: style?.top,
+        transform: "translate(-50%, -50%)",
+        zIndex: 15,
+        pointerEvents: "none",
       }}
-      initial={{
-        opacity: 0,
-        scale: 0.75,
-        filter: "blur(5px)",
-        x: entryX,
-        y: entryY,
-      }}
-      animate={animateProps}
-      transition={transitionProps}
-      className="absolute flex items-center gap-1.5 whitespace-nowrap
-        bg-[#071507]/90 border border-[rgba(22,163,74,0.5)]
-        px-2.5 py-1 rounded-full
-        shadow-[0_1px_6px_rgba(0,0,0,0.6)]"
     >
-      <Icon size={12} className="text-[#39FF14] shrink-0" />
-      <span
-        className="text-[10px] sm:text-[11px] font-bold tracking-wide transition-colors duration-200"
-        style={{ color: state === "processing" ? "#a7f3d0" : "#ffffff" }}
+      <motion.div
+        className="flex items-center gap-2 whitespace-nowrap
+          border border-[rgba(22,163,74,0.6)]
+          rounded-full select-none"
+        style={{
+          padding: "10px 18px",
+          minHeight: "44px",
+        }}
+        initial={{
+          opacity: 0,
+          scale: 0.75,
+          filter: "blur(5px)",
+          x: ex,
+          y: ey,
+          rotate: counterRotation,
+        }}
+        animate={animateProps}
+        transition={transitionProps}
       >
-        {label}
-      </span>
-    </motion.div>
+        <Icon
+          size={18}
+          className="shrink-0 transition-colors duration-200"
+          style={{ color: state === "processing" ? "#39FF14" : "#22c55e" }}
+        />
+        <span
+          className="font-bold tracking-wide transition-colors duration-200"
+          style={{
+            fontSize: "clamp(13.5px, 3.8vw, 16px)",
+            color: state === "processing" ? "#f0fdf4" : "#ffffff",
+          }}
+        >
+          {label}
+        </span>
+      </motion.div>
+    </div>
   );
 }
