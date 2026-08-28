@@ -59,7 +59,7 @@ export async function POST(req: Request) {
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
           userPrompt,
           model: "fast",
-          maxTokens: 2000,
+          maxTokens: 1000,
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
         });
 
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
     }
 
     // 9. Log Usage
-    await logFitnessAIUsage(user.id, "plan_generation", userPrompt, JSON.stringify(planData), "llama-3.1-8b-instant", 0);
+    await logFitnessAIUsage(user.id, "plan_generation", userPrompt, JSON.stringify(planData), "llama3-8b-8192", 0);
 
     return NextResponse.json({ success: true, data: { ...planData, _profile: profile } });
     
