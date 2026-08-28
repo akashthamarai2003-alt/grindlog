@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import GroceryTab from '@/components/fitness/plan/grocery-tab';
-import CinematicDataNodes from '@/components/fitness/CinematicDataNodes';
+import DataNodeAnimation from '@/components/fitness/DataNodeAnimation';
 
 export default function PlanSetupPage() {
   const router = useRouter();
@@ -119,9 +119,9 @@ export default function PlanSetupPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center text-center relative overflow-hidden">
-        <CinematicDataNodes />
+        <DataNodeAnimation />
         
-        {/* We place the progress text in the exact center to overlay on top of the CinematicDataNodes core */}
+        {/* We place the progress text in the exact center to overlay on top of the DataNodeAnimation core */}
         <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none z-20">
           <span className="text-3xl font-black text-[#0A1108] drop-shadow-sm mt-2">{progress}%</span>
         </div>
