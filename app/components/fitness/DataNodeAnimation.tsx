@@ -4,16 +4,16 @@ import { motion } from 'framer-motion';
 import { Activity, User, Timer, Calendar, Dumbbell, Ruler, Weight, Utensils, Flame } from 'lucide-react';
 
 const NODES_DATA = [
-  { id: 0, label: "Intermediate", icon: Activity, angle: -110, distBase: 130 },
-  { id: 1, label: "Fat Loss", icon: Flame, angle: -70, distBase: 160 },
-  { id: 2, label: "45 min", icon: Timer, angle: -30, distBase: 140 },
-  { id: 3, label: "4 per week", icon: Calendar, angle: 15, distBase: 160 },
-  { id: 4, label: "Gym", icon: Dumbbell, angle: 60, distBase: 130 },
-  { id: 5, label: "Very Active", icon: Activity, angle: 100, distBase: 160 },
-  { id: 6, label: "Male", icon: User, angle: 140, distBase: 140 },
-  { id: 7, label: "75 kg", icon: Weight, angle: 180, distBase: 150 },
-  { id: 8, label: "175 cm", icon: Ruler, angle: 215, distBase: 130 },
-  { id: 9, label: "High Protein", icon: Utensils, angle: 255, distBase: 160 }
+  { id: 0, label: "Intermediate", icon: Activity, angle: -30, distBase: 130 },
+  { id: 1, label: "Fat Loss", icon: Flame, angle: -60, distBase: 160 },
+  { id: 2, label: "45 min", icon: Timer, angle: -90, distBase: 140 },
+  { id: 3, label: "4 per week", icon: Calendar, angle: -120, distBase: 160 },
+  { id: 4, label: "Gym", icon: Dumbbell, angle: -150, distBase: 130 },
+  { id: 5, label: "Very Active", icon: Activity, angle: -180, distBase: 150 },
+  { id: 6, label: "Male", icon: User, angle: -210, distBase: 130 },
+  { id: 7, label: "75 kg", icon: Weight, angle: -240, distBase: 160 },
+  { id: 8, label: "175 cm", icon: Ruler, angle: -270, distBase: 140 },
+  { id: 9, label: "High Protein", icon: Utensils, angle: -300, distBase: 160 }
 ];
 
 export default function DataNodeAnimation() {
@@ -48,7 +48,7 @@ export default function DataNodeAnimation() {
   });
 
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-[#0A1108]">
+    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
       {/* Background Radar Grid */}
       <div className="absolute inset-0 opacity-15">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-[#16A34A]" />
