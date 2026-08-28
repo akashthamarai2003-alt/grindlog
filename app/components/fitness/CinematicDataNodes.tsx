@@ -197,6 +197,13 @@ export default function CinematicDataNodes() {
         ctx.arc(cx, cy, coreRadius * 2, 0, Math.PI * 2);
         ctx.fill();
 
+        // Solid inner core to frame the progress text
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = `rgba(57, 255, 20, ${0.8 * globalIntensity})`;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 45, 0, Math.PI * 2);
+        ctx.fill();
+
         // 3. Process each node
         const scale = Math.min(width / 400, 1.2);
 

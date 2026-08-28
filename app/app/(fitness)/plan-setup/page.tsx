@@ -118,31 +118,20 @@ export default function PlanSetupPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+      <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center text-center relative overflow-hidden">
         <CinematicDataNodes />
-        <div className="relative z-10 w-32 h-32 flex items-center justify-center mb-8">
-          <svg className="absolute inset-0 w-full h-full transform -rotate-90">
-            <circle cx="64" cy="64" r="60" className="stroke-[#1A2619] fill-none" strokeWidth="8" />
-            <motion.circle 
-              cx="64" cy="64" r="60" 
-              className="stroke-[#ADFF00] fill-none" 
-              strokeWidth="8" 
-              strokeDasharray={2 * Math.PI * 60}
-              strokeDashoffset={2 * Math.PI * 60 * (1 - progress / 100)}
-              strokeLinecap="round"
-              initial={{ strokeDashoffset: 2 * Math.PI * 60 }}
-              animate={{ strokeDashoffset: 2 * Math.PI * 60 * (1 - progress / 100) }}
-              transition={{ duration: 0.5 }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center flex-col">
-            <span className="text-3xl font-black">{progress}%</span>
-          </div>
-        </div>
-        <h2 className="relative z-10 text-2xl font-black">Building your perfect plan...</h2>
-        <p className="relative z-10 text-gray-400 mt-2">AI is analyzing your body scan and fitness profile...</p>
         
-        <div className="relative z-10 mt-8 text-xs text-gray-500 font-bold tracking-widest uppercase h-4">
+        {/* We place the progress text in the exact center to overlay on top of the CinematicDataNodes core */}
+        <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none z-20">
+          <span className="text-3xl font-black text-[#0A1108] drop-shadow-sm mt-2">{progress}%</span>
+        </div>
+
+        {/* Text at the bottom */}
+        <div className="absolute bottom-16 left-0 right-0 z-20 pointer-events-none px-6">
+          <h2 className="text-2xl font-black shadow-black drop-shadow-lg">Building your perfect plan...</h2>
+          <p className="text-gray-300 mt-2 shadow-black drop-shadow-md">AI is analyzing your body scan and fitness profile...</p>
+          
+          <div className="mt-8 text-xs text-[#39FF14] font-bold tracking-widest uppercase h-4 shadow-black drop-shadow-md">
           <AnimatePresence mode="wait">
             <motion.span
               key={
@@ -161,6 +150,7 @@ export default function PlanSetupPage() {
             </motion.span>
           </AnimatePresence>
         </div>
+      </div>
       </div>
     );
   }
