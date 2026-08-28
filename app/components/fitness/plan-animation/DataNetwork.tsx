@@ -106,7 +106,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       const ease = p * p * p * (p * (p * 6 - 15) + 10);
       
       // Velocity in rotations per ms
-      const startV = 1 / 24000; // VERY SLOW (24s per round), immediately perceptible
+      const startV = 1 / 16000; // Very slow (16s per round), visibly moving at entry
       const targetV = 1 / 8000; // MEDIUM FAST (8s per round)
       const currentV = startV + (targetV - startV) * ease;
       
