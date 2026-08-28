@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 import GroceryTab from '@/components/fitness/plan/grocery-tab';
+import CinematicFitnessEnergy from '@/components/fitness/CinematicFitnessEnergy';
 
 export default function PlanSetupPage() {
   const router = useRouter();
@@ -117,8 +118,9 @@ export default function PlanSetupPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="relative w-32 h-32 flex items-center justify-center mb-8">
+      <div className="min-h-screen bg-[#0A1108] text-white flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+        <CinematicFitnessEnergy />
+        <div className="relative z-10 w-32 h-32 flex items-center justify-center mb-8">
           <svg className="absolute inset-0 w-full h-full transform -rotate-90">
             <circle cx="64" cy="64" r="60" className="stroke-[#1A2619] fill-none" strokeWidth="8" />
             <motion.circle 
@@ -137,10 +139,10 @@ export default function PlanSetupPage() {
             <span className="text-3xl font-black">{progress}%</span>
           </div>
         </div>
-        <h2 className="text-2xl font-black">Building your perfect plan...</h2>
-        <p className="text-gray-400 mt-2">AI is analyzing your body scan and fitness profile...</p>
+        <h2 className="relative z-10 text-2xl font-black">Building your perfect plan...</h2>
+        <p className="relative z-10 text-gray-400 mt-2">AI is analyzing your body scan and fitness profile...</p>
         
-        <div className="mt-8 text-xs text-gray-500 font-bold tracking-widest uppercase h-4">
+        <div className="relative z-10 mt-8 text-xs text-gray-500 font-bold tracking-widest uppercase h-4">
           <AnimatePresence mode="wait">
             <motion.span
               key={
