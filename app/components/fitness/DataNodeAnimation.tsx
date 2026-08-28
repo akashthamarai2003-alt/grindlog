@@ -128,11 +128,10 @@ export default function DataNodeAnimation() {
         </div>
       </motion.div>
 
-      {/* Center Core and Atoms */}
+      {/* Center Core */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-        {/* Core Image Orb */}
         <motion.div 
-          className="relative w-[85px] h-[85px] rounded-full shadow-[0_0_30px_rgba(57,255,20,0.6)] flex items-center justify-center z-10 border-2 border-[#39FF14] overflow-hidden"
+          className="relative w-[110px] h-[110px] flex items-center justify-center z-10"
           initial={{ scale: 0 }}
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ 
@@ -143,32 +142,9 @@ export default function DataNodeAnimation() {
           <img 
             src="/images/b_remove_background_fo.jpeg" 
             alt="Loki Core" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain object-top"
+            style={{ WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 70%)', maskImage: 'radial-gradient(circle at center, black 40%, transparent 70%)' }}
           />
-        </motion.div>
-
-        {/* Orbit Ring 1 */}
-        <motion.div 
-          className="absolute top-1/2 left-1/2 w-[160px] h-[50px] border-2 border-white/60 rounded-[50%]"
-          style={{ transformOrigin: 'center' }}
-          initial={{ x: '-50%', y: '-50%', rotateZ: 20 }}
-          animate={{ rotateZ: 380 }}
-          transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
-        >
-          {/* Electron */}
-          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_white]" />
-        </motion.div>
-
-        {/* Orbit Ring 2 */}
-        <motion.div 
-          className="absolute top-1/2 left-1/2 w-[160px] h-[50px] border-2 border-white/60 rounded-[50%]"
-          style={{ transformOrigin: 'center' }}
-          initial={{ x: '-50%', y: '-50%', rotateZ: -70 }}
-          animate={{ rotateZ: -430 }}
-          transition={{ repeat: Infinity, duration: 7, ease: "linear" }}
-        >
-          {/* Electron */}
-          <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_white]" />
         </motion.div>
       </div>
 

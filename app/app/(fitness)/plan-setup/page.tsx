@@ -123,7 +123,7 @@ export default function PlanSetupPage() {
         
         {/* We place the progress text in the exact center to overlay on top of the DataNodeAnimation core */}
         <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none z-20">
-          <span className="text-3xl font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,1)] mt-2">{progress}%</span>
+          <span className="text-3xl font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,1)] mb-6">{progress}%</span>
         </div>
 
         {/* Text at the bottom */}
