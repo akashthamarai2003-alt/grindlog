@@ -127,11 +127,11 @@ export default function PlanSetupPage() {
         </div>
 
         {/* Text at the bottom */}
-        <div className="absolute bottom-16 left-0 right-0 z-20 pointer-events-none px-6">
-          <h2 className="text-2xl font-black shadow-black drop-shadow-lg">Building your perfect plan...</h2>
-          <p className="text-gray-300 mt-2 shadow-black drop-shadow-md">AI is analyzing your body scan and fitness profile...</p>
+        <div className="absolute bottom-8 left-0 right-0 z-20 pointer-events-none px-6">
+          <h2 className="text-xl font-black shadow-black drop-shadow-lg">Building your perfect plan...</h2>
+          <p className="text-sm text-gray-300 mt-2 shadow-black drop-shadow-md">AI is analyzing your body scan and fitness profile...</p>
           
-          <div className="mt-8 text-xs text-[#39FF14] font-bold tracking-widest uppercase h-4 shadow-black drop-shadow-md">
+          <div className="mt-4 text-xs text-[#39FF14] font-bold tracking-widest uppercase h-4 shadow-black drop-shadow-md">
           <AnimatePresence mode="wait">
             <motion.span
               key={
