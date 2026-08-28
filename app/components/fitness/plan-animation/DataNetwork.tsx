@@ -106,7 +106,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       const ease = p * p * p * (p * (p * 6 - 15) + 10);
       
       // Velocity in rotations per ms
-      const startV = 1 / 45000; // VERY SLOW (45s per round)
+      const startV = 1 / 24000; // VERY SLOW (24s per round), immediately perceptible
       const targetV = 1 / 8000; // MEDIUM FAST (8s per round)
       const currentV = startV + (targetV - startV) * ease;
       
@@ -146,7 +146,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
 
         const pillEl = pillRefs.current[i];
         if (pillEl) {
-          pillEl.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px)`;
+          pillEl.style.transform = `translate3d(${px.toFixed(2)}px, ${py.toFixed(2)}px, 0)`;
         }
 
         const lineLen = Math.hypot(px, py);
@@ -158,7 +158,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         const perpY = lineLen === 0 ? 0 : (px / lineLen) * curveFactor;
         const cx = px * 0.5 + perpX;
         const cy = py * 0.5 + perpY;
-        const pathD = `M 0,0 Q ${cx.toFixed(1)},${cy.toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}`;
+        const pathD = `M 0,0 Q ${cx.toFixed(2)},${cy.toFixed(2)} ${px.toFixed(2)},${py.toFixed(2)}`;
 
         if (lineRefs.current[i]) lineRefs.current[i]!.setAttribute("d", pathD);
         if (glowLineRefs.current[i]) glowLineRefs.current[i]!.setAttribute("d", pathD);
