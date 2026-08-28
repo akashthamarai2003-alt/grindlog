@@ -136,7 +136,7 @@ export async function generateAIResponse({
 
   // If we reach here, all providers are dead, rate-limited, or misconfigured.
   console.error("[AI ROUTER] ALL TIERS EXHAUSTED. Errors:", errors);
-  throw new Error("Our AI engines are currently experiencing extreme viral traffic! Please try again in 60 seconds.");
+  throw new Error(`Our AI engines are currently experiencing extreme viral traffic! Please try again in 60 seconds. [DEBUG: ${errors.join(" | ")}]`);
 }
 
 // ------------------------------------------------------------------
