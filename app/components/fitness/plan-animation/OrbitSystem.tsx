@@ -1,89 +1,96 @@
-'use client';
-
-import React from 'react';
+"use client";
+import React from "react";
 
 interface OrbitSystemProps {
   isActive: boolean;
   isProcessing: boolean;
-  containerWidth: number;
-  containerHeight: number;
 }
 
-export function OrbitSystem({ isActive, isProcessing, containerWidth, containerHeight }: OrbitSystemProps) {
-  const cx = containerWidth / 2;
-  const cy = containerHeight / 2;
-
+/**
+ * SVG orbit ellipses — white/pale green, thin, continuously rotating.
+ * Each orbit is a <g> group that rotates via CSS animation.
+ * Energy nodes sit at fixed points on the ellipse and orbit with the group.
+ */
+export function OrbitSystem({ isActive, isProcessing }: OrbitSystemProps) {
   const orbits = [
-    { rx: 90, ry: 35, rotation: 15, direction: 'cw', duration: 18, hasNode: true },
-    { rx: 110, ry: 40, rotation: -30, direction: 'ccw', duration: 22, hasNode: true },
-    { rx: 75, ry: 28, rotation: 60, direction: 'cw', duration: 15, hasNode: true },
-    { rx: 130, ry: 48, rotation: -10, direction: 'ccw', duration: 25, hasNode: false },
+    { rx: 85, ry: 32, rotation: 15, duration: 18, dir: "normal", hasNode: true },
+    { rx: 88, ry: 36, rotation: -25, duration: 24, dir: "reverse", hasNode: true },
+    { rx: 75, ry: 45, rotation: 65, duration: 30, dir: "normal", hasNode: true },
+    { rx: 100, ry: 28, rotation: -10, duration: 22, dir: "reverse", hasNode: false },
   ];
+
+  const speedFactor = isProcessing ? 0.75 : 1;
 
   return (
     <svg
-      width="100%"
-      height="100%"
-      viewBox={`0 0 ${containerWidth} ${containerHeight}`}
-      style={{ overflow: 'visible' }}
-      className="absolute inset-0 pointer-events-none"
+      viewBox="-130 -80 260 160"
+      className="absolute pointer-events-none"
+      style={{
+        left: "50%",
+        top: "40%",
+        transform: "translate(-50%, -50%)",
+        width: "min(85vw, 420px)",
+        height: "min(50vw, 240px)",
+        overflow: "visible",
+      }}
     >
       <defs>
-        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2" result="blur" />
+        <filter id="nodeGlow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="2" result="b" />
           <feMerge>
-            <feMergeNode in="blur" />
+            <feMergeNode in="b" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <style>
-          {`
-            @keyframes orbit-cw {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            @keyframes orbit-ccw {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(-360deg); }
-            }
-            @media (prefers-reduced-motion: reduce) {
-              .orbit-anim {
-                animation: none !important;
-              }
-            }
-          `}
-        </style>
+        <style>{`
+          @keyframes orbitSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .orbit-group { animation: none !important; }
+          }
+        `}</style>
       </defs>
 
-      {orbits.map((orbit, i) => {
-        const animName = orbit.direction === 'cw' ? 'orbit-cw' : 'orbit-ccw';
-        const speedMultiplier = isProcessing ? 0.8 : 1;
-        const duration = orbit.duration * speedMultiplier;
-        const animStyle = isActive 
-          ? { animation: `${animName} ${duration}s linear infinite` }
-          : {};
-
+      {orbits.map((o, i) => {
+        const dur = o.duration * speedFactor;
         return (
-          <g key={i} transform={`translate(${cx}, ${cy}) rotate(${orbit.rotation})`}>
-            <g className="orbit-anim" style={animStyle} transform-origin="0 0">
-              <ellipse
-                cx={0}
-                cy={0}
-                rx={orbit.rx}
-                ry={orbit.ry}
-                fill="none"
-                stroke="rgba(22,163,74,0.2)"
-                strokeWidth={0.8}
-              />
-              {orbit.hasNode && (
-                <circle
-                  cx={orbit.rx}
+          <g key={i} style={{ transformOrigin: "0 0" }}>
+            {/* Static rotation offset for the ellipse tilt */}
+            <g transform={`rotate(${o.rotation})`}>
+              {/* Rotating group */}
+              <g
+                className="orbit-group"
+                style={
+                  isActive
+                    ? {
+                        animation: `orbitSpin ${dur}s linear infinite`,
+                        animationDirection: o.dir as "normal" | "reverse",
+                        transformOrigin: "0 0",
+                      }
+                    : { transformOrigin: "0 0" }
+                }
+              >
+                <ellipse
+                  cx={0}
                   cy={0}
-                  r={3}
-                  fill="#39FF14"
-                  filter="url(#glow)"
+                  rx={o.rx}
+                  ry={o.ry}
+                  fill="none"
+                  stroke="rgba(220,240,220,0.18)"
+                  strokeWidth={1}
                 />
-              )}
+                {o.hasNode && (
+                  <circle
+                    cx={o.rx}
+                    cy={0}
+                    r={2.5}
+                    fill="#39FF14"
+                    filter="url(#nodeGlow)"
+                  />
+                )}
+              </g>
             </g>
           </g>
         );

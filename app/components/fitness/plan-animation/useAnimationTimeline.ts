@@ -4,45 +4,34 @@ import { useState, useEffect, useCallback, useRef } from "react";
 export type AnimationPhase =
   | "BOOT"
   | "AI_APPEAR"
-  | "ORBIT_START"
   | "DATA_ENTER"
-  | "NETWORK_COMPLETE"
+  | "NETWORK_ROTATE"
   | "ANALYZING"
-  | "DATA_PROCESSED"
-  | "NETWORK_COLLAPSE"
-  | "AI_COMPLETE"
+  | "DATA_COLLAPSE"
+  | "AI_ALONE"
   | "PLAN_GENERATING"
+  | "TRANSITION"
   | "COMPLETE";
-
-const PHASE_ORDER: AnimationPhase[] = [
-  "BOOT",
-  "AI_APPEAR",
-  "ORBIT_START",
-  "DATA_ENTER",
-  "NETWORK_COMPLETE",
-  "ANALYZING",
-  "DATA_PROCESSED",
-  "NETWORK_COLLAPSE",
-  "AI_COMPLETE",
-  "PLAN_GENERATING",
-  "COMPLETE",
-];
 
 export interface AnimationTimeline {
   phase: AnimationPhase;
-  phaseIndex: number;
-  /** Index of the pill currently being "scanned" during ANALYZING phase (-1 if not scanning) */
   scanIndex: number;
   isComplete: boolean;
-  pillCount: number;
 }
 
 /**
- * State machine hook that drives the entire animation sequence.
- * Total duration: ~9 seconds.
- * 
- * @param pillCount - Number of data pills to animate
- * @param reducedMotion - Whether the user prefers reduced motion
+ * State machine matching the reference animation timeline:
+ *
+ * 0.00–0.25s   BOOT (dark screen)
+ * 0.20–0.50s   AI_APPEAR (character fades in)
+ * 0.35–1.80s   DATA_ENTER (pills fly in from outside)
+ * 1.80–4.00s   NETWORK_ROTATE (full constellation + slow rotation)
+ * 3.50–5.00s   ANALYZING (sequential processing/highlighting)
+ * 5.00–6.30s   DATA_COLLAPSE (pills collapse into AI)
+ * 6.30–8.50s   AI_ALONE (AI core breathing, orbit continues)
+ * 8.50–8.80s   PLAN_GENERATING (status text updates)
+ * 8.80–9.20s   TRANSITION (vertical scene slide)
+ * 9.20s+       COMPLETE
  */
 export function useAnimationTimeline(
   pillCount: number,
@@ -52,99 +41,70 @@ export function useAnimationTimeline(
   const [scanIndex, setScanIndex] = useState(-1);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const scheduleTimeout = useCallback((fn: () => void, delay: number) => {
+  const schedule = useCallback((fn: () => void, delay: number) => {
     const id = setTimeout(fn, delay);
     timeoutsRef.current.push(id);
     return id;
   }, []);
 
   useEffect(() => {
-    // Clear any existing timeouts
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
 
     if (reducedMotion) {
-      // Reduced motion: skip directly to a minimal sequence
       setPhase("AI_APPEAR");
-      scheduleTimeout(() => setPhase("DATA_ENTER"), 300);
-      scheduleTimeout(() => setPhase("NETWORK_COMPLETE"), 800);
-      scheduleTimeout(() => setPhase("PLAN_GENERATING"), 1500);
-      scheduleTimeout(() => setPhase("COMPLETE"), 2000);
-      return () => {
-        timeoutsRef.current.forEach(clearTimeout);
-      };
+      schedule(() => setPhase("DATA_ENTER"), 200);
+      schedule(() => setPhase("NETWORK_ROTATE"), 600);
+      schedule(() => setPhase("COMPLETE"), 1500);
+      return () => { timeoutsRef.current.forEach(clearTimeout); };
     }
 
-    // Full animation timeline
-    let t = 0;
+    // ── Reference timeline ──
 
-    // 0.0s - BOOT (already set)
-    
-    // 0.3s - AI character appears
-    t += 300;
-    scheduleTimeout(() => setPhase("AI_APPEAR"), t);
+    // 0.00s BOOT
+    // 0.25s AI appears
+    schedule(() => setPhase("AI_APPEAR"), 250);
 
-    // 0.6s - Orbits start
-    t += 300;
-    scheduleTimeout(() => setPhase("ORBIT_START"), t);
+    // 0.40s Data pills start entering
+    schedule(() => setPhase("DATA_ENTER"), 400);
 
-    // 0.9s - Data pills begin entering
-    t += 300;
-    scheduleTimeout(() => setPhase("DATA_ENTER"), t);
+    // 1.80s Full constellation formed, continuous rotation
+    schedule(() => setPhase("NETWORK_ROTATE"), 1800);
 
-    // 2.5s - All pills visible, network settles
-    // Stagger: pillCount * 150ms + 600ms buffer from DATA_ENTER start
-    const dataEnterDuration = pillCount * 150 + 400;
-    t += dataEnterDuration;
-    scheduleTimeout(() => setPhase("NETWORK_COMPLETE"), t);
+    // 3.50s Sequential processing begins
+    schedule(() => setPhase("ANALYZING"), 3500);
 
-    // 3.5s - Begin sequential scanning
-    t += 800;
-    scheduleTimeout(() => setPhase("ANALYZING"), t);
-
-    // Scan each pill sequentially (~250ms per pill)
-    const scanStart = t;
+    // Sequential scan per pill (~170ms each)
+    const scanStart = 3500;
+    const scanInterval = Math.min(170, 1200 / Math.max(pillCount, 1));
     for (let i = 0; i < pillCount; i++) {
-      scheduleTimeout(() => setScanIndex(i), scanStart + i * 280);
+      schedule(() => setScanIndex(i), scanStart + i * scanInterval);
     }
 
-    // After all pills scanned
-    t = scanStart + pillCount * 280 + 200;
-    scheduleTimeout(() => {
+    // 5.00s Collapse begins
+    schedule(() => {
       setScanIndex(-1);
-      setPhase("DATA_PROCESSED");
-    }, t);
+      setPhase("DATA_COLLAPSE");
+    }, 5000);
 
-    // Network peak hold
-    t += 600;
+    // 6.30s AI alone
+    schedule(() => setPhase("AI_ALONE"), 6300);
 
-    // Data collapse
-    scheduleTimeout(() => setPhase("NETWORK_COLLAPSE"), t);
+    // 8.50s Plan generating text
+    schedule(() => setPhase("PLAN_GENERATING"), 8500);
 
-    // AI complete
-    t += 1200;
-    scheduleTimeout(() => setPhase("AI_COMPLETE"), t);
+    // 8.80s Vertical transition
+    schedule(() => setPhase("TRANSITION"), 8800);
 
-    // Plan generating
-    t += 800;
-    scheduleTimeout(() => setPhase("PLAN_GENERATING"), t);
+    // 9.30s Complete
+    schedule(() => setPhase("COMPLETE"), 9300);
 
-    // Complete
-    t += 1000;
-    scheduleTimeout(() => setPhase("COMPLETE"), t);
-
-    return () => {
-      timeoutsRef.current.forEach(clearTimeout);
-    };
-  }, [pillCount, reducedMotion, scheduleTimeout]);
-
-  const phaseIndex = PHASE_ORDER.indexOf(phase);
+    return () => { timeoutsRef.current.forEach(clearTimeout); };
+  }, [pillCount, reducedMotion, schedule]);
 
   return {
     phase,
-    phaseIndex,
     scanIndex,
     isComplete: phase === "COMPLETE",
-    pillCount,
   };
 }

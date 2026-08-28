@@ -1,17 +1,9 @@
 "use client";
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
-  Target,
-  User,
-  Weight,
-  Ruler,
-  Calendar,
-  Timer,
-  Dumbbell,
-  Activity,
-  TrendingUp,
-  Utensils,
+  Target, User, Weight, Ruler, Calendar, Timer,
+  Dumbbell, Activity, TrendingUp, Utensils,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -22,6 +14,7 @@ import DataNetwork, { type PillData } from "./DataNetwork";
 import { ProcessingStatus } from "./ProcessingStatus";
 import { useAnimationTimeline } from "./useAnimationTimeline";
 
+// ── Profile shape from the API ──────────────────────────────────
 interface ProfileSummary {
   goal?: string | null;
   gender?: string | null;
@@ -39,232 +32,132 @@ interface PillConfig {
   key: string;
   field: keyof ProfileSummary;
   icon: LucideIcon;
-  format: (value: any) => string;
+  format: (v: any) => string;
 }
 
 const PILL_CONFIGS: PillConfig[] = [
-  {
-    key: "training_days",
-    field: "training_days_per_week",
-    icon: Calendar,
-    format: (v) => `${v} per week`,
-  },
-  {
-    key: "duration",
-    field: "workout_duration_minutes",
-    icon: Timer,
-    format: (v) => `${v} min`,
-  },
-  {
-    key: "location",
-    field: "training_location",
-    icon: Dumbbell,
-    format: (v) => String(v),
-  },
-  {
-    key: "goal",
-    field: "goal",
-    icon: Target,
-    format: (v) => String(v),
-  },
-  {
-    key: "activity",
-    field: "activity_level",
-    icon: Activity,
-    format: (v) => String(v),
-  },
-  {
-    key: "gender",
-    field: "gender",
-    icon: User,
-    format: (v) => String(v),
-  },
-  {
-    key: "fitness",
-    field: "fitness_level",
-    icon: TrendingUp,
-    format: (v) => String(v),
-  },
-  {
-    key: "weight",
-    field: "weight",
-    icon: Weight,
-    format: (v) => `${v} kg`,
-  },
-  {
-    key: "height",
-    field: "height",
-    icon: Ruler,
-    format: (v) => `${v} cm`,
-  },
-  {
-    key: "food",
-    field: "food_type",
-    icon: Utensils,
-    format: (v) => String(v),
-  },
+  { key: "goal", field: "goal", icon: Target, format: (v) => String(v) },
+  { key: "activity", field: "activity_level", icon: Activity, format: (v) => String(v) },
+  { key: "training_days", field: "training_days_per_week", icon: Calendar, format: (v) => `${v} per week` },
+  { key: "duration", field: "workout_duration_minutes", icon: Timer, format: (v) => `${v} min` },
+  { key: "fitness", field: "fitness_level", icon: TrendingUp, format: (v) => String(v) },
+  { key: "weight", field: "weight", icon: Weight, format: (v) => `${v} kg` },
+  { key: "height", field: "height", icon: Ruler, format: (v) => `${v} cm` },
+  { key: "gender", field: "gender", icon: User, format: (v) => String(v) },
+  { key: "location", field: "training_location", icon: Dumbbell, format: (v) => String(v) },
+  { key: "food", field: "food_type", icon: Utensils, format: (v) => String(v) },
 ];
 
+// ─────────────────────────────────────────────────────────────────
 export default function AIPlanAnimation() {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
-  const [containerSize, setContainerSize] = useState({ width: 375, height: 500 });
-  const containerRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion() ?? false;
 
   // Fetch profile data for pills
   useEffect(() => {
     let cancelled = false;
     fetch("/api/fitness/profile-summary")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled && data.success) {
-          setProfile(data.data);
-        }
-      })
-      .catch(() => {
-        // Silently fail — pills just won't show
-      });
-    return () => {
-      cancelled = true;
-    };
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled && d.success) setProfile(d.data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
-  // Track container size
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerSize({ width: rect.width, height: rect.height });
-      }
-    };
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, []);
-
-  // Build pills from real profile data
+  // Build pills from real data
   const pills: PillData[] = useMemo(() => {
     if (!profile) return [];
-    return PILL_CONFIGS.filter((cfg) => {
-      const val = profile[cfg.field];
-      return val !== null && val !== undefined && val !== "";
-    }).map((cfg) => ({
-      key: cfg.key,
-      icon: cfg.icon,
-      label: cfg.format(profile[cfg.field]),
-    }));
+    return PILL_CONFIGS
+      .filter((c) => {
+        const v = profile[c.field];
+        return v !== null && v !== undefined && v !== "";
+      })
+      .map((c) => ({
+        key: c.key,
+        icon: c.icon,
+        label: c.format(profile[c.field]),
+      }));
   }, [profile]);
 
   const pillLabels = useMemo(() => pills.map((p) => p.label), [pills]);
 
-  // Animation state machine
-  const timeline = useAnimationTimeline(
-    pills.length || 10, // fallback count for timing
-    reducedMotion
-  );
+  // Timeline state machine
+  const timeline = useAnimationTimeline(pills.length || 8, reducedMotion);
 
-  const isCharVisible =
-    timeline.phase !== "BOOT";
+  // ── Derived state ──
+  const isCharVisible = timeline.phase !== "BOOT";
   const isProcessing =
-    timeline.phase === "ANALYZING" ||
-    timeline.phase === "DATA_PROCESSED";
+    timeline.phase === "ANALYZING" || timeline.phase === "DATA_COLLAPSE";
   const isComplete =
-    timeline.phase === "AI_COMPLETE" ||
+    timeline.phase === "AI_ALONE" ||
     timeline.phase === "PLAN_GENERATING" ||
+    timeline.phase === "TRANSITION" ||
     timeline.phase === "COMPLETE";
-  const orbitsActive =
-    timeline.phase !== "BOOT" && timeline.phase !== "AI_APPEAR";
+  const orbitsActive = timeline.phase !== "BOOT";
+  const isTransitioning =
+    timeline.phase === "TRANSITION" || timeline.phase === "COMPLETE";
 
   return (
-    <div className="min-h-[100dvh] bg-[#061506] text-white flex flex-col relative overflow-hidden">
-      {/* Animation Area */}
-      <div
-        ref={containerRef}
-        className="relative flex-1 w-full"
-        style={{ minHeight: "62dvh" }}
+    <div className="fixed inset-0 bg-[#061506] overflow-hidden" style={{ zIndex: 50 }}>
+      {/* ── SCENE A: Animation ── */}
+      <motion.div
+        className="absolute inset-0 flex flex-col"
+        animate={{
+          y: isTransitioning ? "-100%" : "0%",
+        }}
+        transition={{
+          duration: 0.8,
+          ease: [0.16, 1, 0.3, 1],
+        }}
       >
-        {/* Layer 1: Animated Background */}
+        {/* Background layers */}
         <AnimatedBackground />
 
-        {/* Layer 2: Orbit System */}
-        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 3 }}>
-          <OrbitSystem
-            isActive={orbitsActive}
-            isProcessing={isProcessing}
-            containerWidth={containerSize.width}
-            containerHeight={containerSize.height}
-          />
-        </div>
-
-        {/* Layer 3: AI Character */}
+        {/* Animation viewport — constrained to ~62% height */}
         <div
-          className="absolute pointer-events-none"
-          style={{
-            left: "50%",
-            top: "45%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 8,
-          }}
+          className="relative flex-1"
+          style={{ maxHeight: "65dvh", minHeight: "55dvh" }}
         >
-          <AICharacter
-            isVisible={isCharVisible}
-            isProcessing={isProcessing}
-            isComplete={isComplete}
-          />
-        </div>
+          {/* Orbit system — centered at 40% of viewport */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 3 }}>
+            <OrbitSystem isActive={orbitsActive} isProcessing={isProcessing} />
+          </div>
 
-        {/* Layer 4: Data Network (pills + connection lines) */}
-        {pills.length > 0 && (
-          <DataNetwork
-            pills={pills}
-            phase={timeline.phase}
-            scanIndex={timeline.scanIndex}
-            containerWidth={containerSize.width}
-            containerHeight={containerSize.height}
-          />
-        )}
-
-        {/* Scanning radar wave */}
-        {(timeline.phase === "ANALYZING" || timeline.phase === "DATA_PROCESSED") && (
+          {/* AI Character — centered */}
           <div
             className="absolute pointer-events-none"
             style={{
               left: "50%",
-              top: "45%",
+              top: "40%",
               transform: "translate(-50%, -50%)",
-              zIndex: 4,
+              zIndex: 8,
             }}
           >
-            <div
-              className="rounded-full border border-[#16A34A]/10"
-              style={{
-                width: 200,
-                height: 200,
-                animation: reducedMotion
-                  ? "none"
-                  : "scanWave 3s ease-out infinite",
-              }}
+            <AICharacter
+              isVisible={isCharVisible}
+              isProcessing={isProcessing}
+              isComplete={isComplete}
             />
           </div>
-        )}
-      </div>
 
-      {/* Text Section - below animation area */}
-      <div className="relative z-20 px-6 pb-8 pt-4 text-center">
-        <ProcessingStatus
-          phase={timeline.phase}
-          scanIndex={timeline.scanIndex}
-          pillLabels={pillLabels}
-        />
-      </div>
+          {/* Data Network (rotating pills + connection lines) */}
+          {pills.length > 0 && (
+            <DataNetwork
+              pills={pills}
+              phase={timeline.phase}
+              scanIndex={timeline.scanIndex}
+            />
+          )}
+        </div>
 
-      {/* Global CSS for scan wave */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes scanWave {
-          0% { transform: scale(0.3); opacity: 0.15; }
-          100% { transform: scale(3); opacity: 0; }
-        }
-      ` }} />
+        {/* Text section — below animation viewport */}
+        <div className="relative z-20 pb-8 pt-3">
+          <ProcessingStatus
+            phase={timeline.phase}
+            scanIndex={timeline.scanIndex}
+            pillLabels={pillLabels}
+          />
+        </div>
+      </motion.div>
     </div>
   );
 }
