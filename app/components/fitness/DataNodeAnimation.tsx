@@ -140,10 +140,9 @@ export default function DataNodeAnimation() {
           }}
         >
           <img 
-            src="/images/b_remove_background_fo.jpeg" 
+            src="/images/b_remove_background_fo.png" 
             alt="Loki Core" 
             className="w-full h-full object-contain object-top"
-            style={{ WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 70%)', maskImage: 'radial-gradient(circle at center, black 40%, transparent 70%)' }}
           />
         </motion.div>
       </div>
