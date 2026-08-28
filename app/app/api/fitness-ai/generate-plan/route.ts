@@ -72,7 +72,7 @@ export async function POST(req: Request) {
             { role: "system", content: FITNESS_PLAN_SYSTEM_PROMPT },
             { role: "user", content: userPrompt }
           ],
-          model: "llama3-8b-8192",
+          model: "llama-3.1-8b-instant",
           temperature: 0.3,
           max_tokens: 2000,
           response_format: { type: "json_object" }

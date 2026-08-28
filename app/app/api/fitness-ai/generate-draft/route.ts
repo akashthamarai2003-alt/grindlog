@@ -97,7 +97,7 @@ export async function POST(req: Request) {
     }
 
     // 9. Log Usage
-    await logFitnessAIUsage(user.id, "plan_generation", userPrompt, JSON.stringify(planData), "llama3-8b-8192", 0);
+    await logFitnessAIUsage(user.id, "plan_generation", userPrompt, JSON.stringify(planData), "llama-3.1-8b-instant", 0);
 
     return NextResponse.json({ success: true, data: { ...planData, _profile: profile } });
     

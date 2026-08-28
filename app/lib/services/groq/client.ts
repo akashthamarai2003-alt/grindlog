@@ -41,7 +41,7 @@ function getNvidiaClient(): OpenAI | null {
 export const GROQ_MODELS = {
   primary: "llama-3.3-70b-versatile",
   reasoning: "deepseek-r1-distill-llama-70b",
-  fast: "llama3-8b-8192",
+  fast: "llama-3.1-8b-instant",
 } as const;
 
 export type RouteModel = keyof typeof GROQ_MODELS;
@@ -81,8 +81,8 @@ export async function generateAIResponse({
     console.log(`[AI ROUTER] Tier 1: Attempting Groq (${groqKeys.length} keys)...`);
     
     // We'll try the requested model, then gracefully degrade to instant if needed
-    const requestedGroqModel = GROQ_MODELS[model] || "llama3-8b-8192";
-    const modelsToTry = Array.from(new Set([requestedGroqModel, "llama3-8b-8192"]));
+    const requestedGroqModel = GROQ_MODELS[model] || "llama-3.1-8b-instant";
+    const modelsToTry = Array.from(new Set([requestedGroqModel, "llama-3.1-8b-instant"]));
 
     for (let keyAttempt = 0; keyAttempt < groqKeys.length; keyAttempt++) {
       const selectedKeyIndex = (globalKeyCounter + keyAttempt) % groqKeys.length;
@@ -120,7 +120,7 @@ export async function generateAIResponse({
     try {
       console.log(`[AI ROUTER] Tier 2: Attempting NVIDIA NIM Emergency Backup...`);
       const completion = await nvidia.chat.completions.create({
-        model: "meta/llama-3.1-8b-instruct",
+        model: "meta/llama-3.3-70b-instruct",
         messages: finalMessages,
         max_tokens: maxTokens,
         temperature,
