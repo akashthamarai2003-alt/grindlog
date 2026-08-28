@@ -130,7 +130,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         if (collapseStartTime.current !== null) {
           const collapseElapsed = time - collapseStartTime.current;
           const collapseDelay = i * 120; 
-          const collapseDuration = 450; 
+          const collapseDuration = 550;
           
           if (collapseElapsed > collapseDelay) {
             const progress = Math.min(1, (collapseElapsed - collapseDelay) / collapseDuration);
@@ -254,7 +254,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
             } else if (isCollapsing) {
               targetOffset = maxLineLength;
               targetOpacity = 0;
-              animDuration = 0.45;
+              animDuration = 0.55;
               // Sync SVG line fade out exactly with the 120ms stagger logic
               animDelay = idx * 0.12; 
             }
