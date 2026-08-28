@@ -4,16 +4,16 @@ import { motion } from 'framer-motion';
 import { Activity, User, Timer, Calendar, Dumbbell, Ruler, Weight, Utensils, Flame } from 'lucide-react';
 
 const NODES_DATA = [
-  { id: 0, label: "Intermediate", icon: Activity, angle: -36, distBase: 130 },
-  { id: 1, label: "Fat Loss", icon: Flame, angle: -72, distBase: 160 },
-  { id: 2, label: "45 min", icon: Timer, angle: -108, distBase: 140 },
-  { id: 3, label: "4 per week", icon: Calendar, angle: -144, distBase: 160 },
-  { id: 4, label: "Gym", icon: Dumbbell, angle: -180, distBase: 130 },
-  { id: 5, label: "Very Active", icon: Activity, angle: -216, distBase: 150 },
-  { id: 6, label: "Male", icon: User, angle: -252, distBase: 130 },
-  { id: 7, label: "75 kg", icon: Weight, angle: -288, distBase: 160 },
-  { id: 8, label: "175 cm", icon: Ruler, angle: -324, distBase: 140 },
-  { id: 9, label: "High Protein", icon: Utensils, angle: -360, distBase: 160 }
+  { id: 0, label: "Intermediate", icon: Activity, angle: -15, distBase: 120 },
+  { id: 1, label: "Fat Loss", icon: Flame, angle: -50, distBase: 160 },
+  { id: 2, label: "45 min", icon: Timer, angle: -85, distBase: 100 },
+  { id: 3, label: "4 per week", icon: Calendar, angle: -125, distBase: 140 },
+  { id: 4, label: "Gym", icon: Dumbbell, angle: -175, distBase: 110 },
+  { id: 5, label: "Very Active", icon: Activity, angle: -215, distBase: 150 },
+  { id: 6, label: "Male", icon: User, angle: -250, distBase: 110 },
+  { id: 7, label: "75 kg", icon: Weight, angle: -285, distBase: 170 },
+  { id: 8, label: "175 cm", icon: Ruler, angle: -320, distBase: 130 },
+  { id: 9, label: "High Protein", icon: Utensils, angle: -350, distBase: 160 }
 ];
 
 export default function DataNodeAnimation() {
@@ -51,19 +51,7 @@ export default function DataNodeAnimation() {
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
-      {/* Background Radar Grid */}
-      <div className="absolute inset-0 opacity-15">
-
-        {/* Radar spokes */}
-        {[0, 45, 90, 135].map(deg => (
-          <div 
-            key={deg}
-            className="absolute top-1/2 left-1/2 w-[1000px] h-[1px] bg-[#16A34A] -translate-x-1/2 -translate-y-1/2"
-            style={{ transform: `translate(-50%, -50%) rotate(${deg}deg)` }}
-          />
-        ))}
-      </div>
-
+      
       {/* Orbiting Container for Lines and Nodes */}
       <motion.div 
         className="absolute inset-0 w-full h-full"
@@ -78,11 +66,13 @@ export default function DataNodeAnimation() {
               key={`line-${node.id}`}
               x1={cx}
               y1={cy}
+              x2={cx + node.x}
+              y2={cy + node.y}
               stroke="#16A34A"
               strokeWidth="1.5"
               strokeOpacity="0.5"
-              initial={{ x2: cx, y2: cy, opacity: 0 }}
-              animate={{ x2: cx + node.x, y2: cy + node.y, opacity: 0.5 }}
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.5 }}
               transition={{ duration: 1.2, ease: "easeOut", delay: node.id * 0.1 }}
             />
           ))}
@@ -96,20 +86,17 @@ export default function DataNodeAnimation() {
               <motion.div
                 key={node.id}
                 className="absolute flex items-center justify-center"
-                initial={{ left: 0, top: 0, opacity: 0, scale: 0 }}
-                animate={{ 
-                  left: node.x, 
-                  top: node.y, 
-                  opacity: 1, 
-                  scale: 1,
-                }}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
                 transition={{ 
                   opacity: { duration: 0.4, delay: 0.3 + node.id * 0.1 },
-                  scale: { type: "spring", bounce: 0.4, delay: 0.3 + node.id * 0.1 },
-                  left: { type: "spring", bounce: 0.2, duration: 1.2, delay: 0.1 + node.id * 0.1 },
-                  top: { type: "spring", bounce: 0.2, duration: 1.2, delay: 0.1 + node.id * 0.1 }
+                  scale: { type: "spring", bounce: 0.4, delay: 0.3 + node.id * 0.1 }
                 }}
-                style={{ transform: 'translate(-50%, -50%)' }}
+                style={{ 
+                  left: node.x, 
+                  top: node.y, 
+                  transform: 'translate(-50%, -50%)' 
+                }}
               >
                 {/* Counter-rotation container to keep text level while orbiting */}
                 <motion.div 
@@ -142,6 +129,30 @@ export default function DataNodeAnimation() {
             alt="Loki Core" 
             className="w-full h-full object-contain object-top"
           />
+        </motion.div>
+
+        {/* Orbit Ring 1 (Restored) */}
+        <motion.div 
+          className="absolute top-1/2 left-1/2 w-[160px] h-[50px] border-2 border-white/40 rounded-[50%]"
+          style={{ transformOrigin: 'center' }}
+          initial={{ x: '-50%', y: '-50%', rotateZ: 20 }}
+          animate={{ rotateZ: 380 }}
+          transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
+        >
+          {/* Electron */}
+          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_white]" />
+        </motion.div>
+
+        {/* Orbit Ring 2 (Restored) */}
+        <motion.div 
+          className="absolute top-1/2 left-1/2 w-[160px] h-[50px] border-2 border-white/40 rounded-[50%]"
+          style={{ transformOrigin: 'center' }}
+          initial={{ x: '-50%', y: '-50%', rotateZ: -70 }}
+          animate={{ rotateZ: -430 }}
+          transition={{ repeat: Infinity, duration: 7, ease: "linear" }}
+        >
+          {/* Electron */}
+          <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_white]" />
         </motion.div>
       </div>
 
