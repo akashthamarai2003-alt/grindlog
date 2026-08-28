@@ -56,20 +56,13 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
   
   const TOTAL_PILLS = Math.max(pills.length, 1);
   const ROTATION_SPEED_MS = 28000; // 28s per revolution
-  const ROTATION_DELAY_MS = 1800; // Wait 1.8s for entrance animations to finish before rotating
 
   useAnimationFrame((time) => {
     if (!showPills) return;
 
-    // Smoothly start rotation only AFTER the pills have finished flying in
-    // This completely eliminates the "stuck/stutter" issue on mobile main thread
-    let activeRotationTime = 0;
-    if (time > ROTATION_DELAY_MS) {
-      activeRotationTime = time - ROTATION_DELAY_MS;
-    }
-    
-    // Calculate the current global rotation angle
-    const globalAngle = (activeRotationTime / ROTATION_SPEED_MS) * Math.PI * 2;
+    // Start rotation immediately (smooth, continuous motion from frame 1)
+    // This completely removes the "stuck" pause behavior
+    const globalAngle = (time / ROTATION_SPEED_MS) * Math.PI * 2;
 
     pills.forEach((_, i) => {
       // 1. Calculate exact staggered radius
