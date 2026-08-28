@@ -74,13 +74,6 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
   // and React 19 concurrent mode. This guarantees the absolute highest priority 
   // execution directly on the browser's native paint cycle.
   useEffect(() => {
-    if (!showPills) {
-      startTimeRef.current = null;
-      lastTimeRef.current = null;
-      angleRef.current = 0;
-      return;
-    }
-
     let frameId: number;
 
     const tick = (time: number) => {
@@ -183,7 +176,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       // angleRef and startTimeRef are intentionally preserved to keep continuous velocity!
       lastTimeRef.current = null;
     };
-  }, [showPills]);
+  }, []);
 
   if (!showPills) return null;
 
