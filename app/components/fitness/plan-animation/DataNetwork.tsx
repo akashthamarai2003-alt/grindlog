@@ -17,20 +17,6 @@ interface DataNetworkProps {
   scanIndex: number;
 }
 
-// 10 evenly spaced, non-colliding radial slots with wide clearance
-const RADIAL_SLOTS = [
-  { nx: 0,     ny: -1.0,  angle: -90 },  // 0: Top
-  { nx: 0.62,  ny: -0.76, angle: -50 },  // 1: Upper-Right
-  { nx: 0.96,  ny: -0.28, angle: -16 },  // 2: Right-Upper
-  { nx: 0.96,  ny: 0.28,  angle: 16 },   // 3: Right-Lower
-  { nx: 0.62,  ny: 0.76,  angle: 50 },   // 4: Lower-Right
-  { nx: 0,     ny: 1.0,   angle: 90 },   // 5: Bottom
-  { nx: -0.62, ny: 0.76,  angle: 130 },  // 6: Lower-Left
-  { nx: -0.96, ny: 0.28,  angle: 164 },  // 7: Left-Lower
-  { nx: -0.96, ny: -0.28, angle: -164 }, // 8: Left-Upper
-  { nx: -0.62, ny: -0.76, angle: -130 }, // 9: Upper-Left
-];
-
 function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): PillState {
   switch (phase) {
     case "BOOT":
@@ -51,7 +37,7 @@ function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): 
 
 // Generates an organic curved timeline branch path (Loki Season 2 finale style)
 function getBranchPath(x: number, y: number, idx: number) {
-  const curveMagnitude = (idx % 2 === 0 ? 1 : -1) * 20;
+  const curveMagnitude = (idx % 2 === 0 ? 1 : -1) * 16;
   const len = Math.hypot(x, y) || 1;
   const perpX = (-y / len) * curveMagnitude;
   const perpY = (x / len) * curveMagnitude;
@@ -67,18 +53,25 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
     phase === "ANALYZING" ||
     phase === "DATA_COLLAPSE";
 
-  // Large, spacious radii utilizing the extra top & bottom space
-  const rx = 135;
-  const ry = 228;
+  // Radius for 100% collision-free circular orbital rotation
+  // Sized to fit comfortably within mobile viewports (375px+) at all rotation angles
+  const orbitRadius = 135;
 
-  // Compute exact positions & organic timeline branch paths
+  // Compute exact positions with constant angular separation (36° per slot)
   const pillNodes = useMemo(() => {
+    const total = Math.max(pills.length, 1);
+    const step = 360 / total;
+
     return pills.map((pill, idx) => {
-      const slot = RADIAL_SLOTS[idx % RADIAL_SLOTS.length];
-      const px = slot.nx * rx;
-      const py = slot.ny * ry;
+      const angleDeg = idx * step - 90; // Start at top
+      const rad = (angleDeg * Math.PI) / 180;
+      
+      // Slight organic radius stagger (+-6px) for natural constellation feel
+      const r = orbitRadius + (idx % 2 === 0 ? 4 : -4);
+      const px = Math.cos(rad) * r;
+      const py = Math.sin(rad) * r;
       const pathD = getBranchPath(px, py, idx);
-      const lineLength = Math.hypot(px, py) * 1.06;
+      const lineLength = Math.hypot(px, py) * 1.05;
 
       return {
         pill,
@@ -87,10 +80,10 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         py,
         pathD,
         lineLength,
-        entryAngle: slot.angle,
+        entryAngle: angleDeg,
       };
     });
-  }, [pills, rx, ry]);
+  }, [pills, orbitRadius]);
 
   if (!showPills) return null;
 
@@ -107,18 +100,18 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         }
         @keyframes lokiTimelineFlow {
           0% { stroke-dashoffset: 0; }
-          100% { stroke-dashoffset: -40; }
+          100% { stroke-dashoffset: -36; }
         }
-        /* Dynamic, smooth rotation (~28s full revolution) */
+        /* Rotates 2 full rounds (3.1s per revolution) */
         .network-spin-layer {
-          animation: constNetworkSpin 28s linear infinite;
+          animation: constNetworkSpin 3.1s linear infinite;
         }
         .pill-counter-rotator {
-          animation: pillCounterSpin 28s linear infinite;
+          animation: pillCounterSpin 3.1s linear infinite;
         }
         .timeline-flowing-sparks {
-          stroke-dasharray: 8 16;
-          animation: lokiTimelineFlow 1.8s linear infinite;
+          stroke-dasharray: 6 12;
+          animation: lokiTimelineFlow 1.2s linear infinite;
         }
         @media (prefers-reduced-motion: reduce) {
           .network-spin-layer, .pill-counter-rotator, .timeline-flowing-sparks {
@@ -147,21 +140,21 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         <svg
           className="absolute pointer-events-none"
           style={{
-            left: -450,
-            top: -450,
-            width: 900,
-            height: 900,
+            left: -400,
+            top: -400,
+            width: 800,
+            height: 800,
             overflow: "visible",
             willChange: "transform",
           }}
-          viewBox="-450 -450 900 900"
+          viewBox="-400 -400 800 800"
         >
           <defs>
             {/* Loki S2 Finale Vibrant Gradient - Emerald & Neon Lime */}
             <linearGradient id="lokiAuraGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00FF87" stopOpacity="0.8" />
-              <stop offset="50%" stopColor="#39FF14" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#ADFF00" stopOpacity="0.4" />
+              <stop offset="0%" stopColor="#00FF87" stopOpacity="0.85" />
+              <stop offset="50%" stopColor="#39FF14" stopOpacity="0.65" />
+              <stop offset="100%" stopColor="#ADFF00" stopOpacity="0.45" />
             </linearGradient>
 
             {/* Glowing Core Magic Gradient */}
@@ -197,10 +190,10 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
               targetOpacity = 0;
               animDuration = 0;
             } else if (isCollapsing) {
-              // Line retracts into Loki simultaneously as the pill vanishes
+              // Line retracts back into Loki simultaneously as the pill vanishes
               targetOffset = node.lineLength;
               targetOpacity = 0;
-              animDuration = 0.5;
+              animDuration = 0.45;
               animDelay = collapseDelay;
             }
 

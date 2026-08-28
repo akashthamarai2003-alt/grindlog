@@ -119,8 +119,8 @@ export function FitnessDataPill({
           border border-[rgba(22,163,74,0.55)]
           rounded-full select-none"
         style={{
-          padding: "8px 15px",
-          minHeight: "40px",
+          padding: "7px 13px",
+          minHeight: "36px",
           willChange: "transform, opacity",
         }}
         initial={{
@@ -133,14 +133,14 @@ export function FitnessDataPill({
         transition={transitionProps}
       >
         <Icon
-          size={16}
+          size={15}
           className="shrink-0 transition-colors duration-200"
           style={{ color: state === "processing" ? "#39FF14" : "#22c55e" }}
         />
         <span
           className="font-bold tracking-wide transition-colors duration-200"
           style={{
-            fontSize: "clamp(12.5px, 3.5vw, 15px)",
+            fontSize: "clamp(12px, 3.2vw, 14px)",
             color: state === "processing" ? "#f0fdf4" : "#ffffff",
           }}
         >
