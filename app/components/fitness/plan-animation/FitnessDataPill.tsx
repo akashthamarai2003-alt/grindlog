@@ -64,9 +64,9 @@ export function FitnessDataPill({
         scale: 1,
         x: 0,
         y: 0,
-        borderColor: "rgba(22, 163, 74, 0.55)",
-        backgroundColor: "rgba(8, 24, 8, 0.94)",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.6)",
+        borderColor: "rgba(34, 197, 94, 0.65)",
+        backgroundColor: "rgba(7, 22, 7, 0.95)",
+        boxShadow: "0 0 12px rgba(34, 197, 94, 0.3), 0 4px 14px rgba(0, 0, 0, 0.7)",
       };
       transitionProps = {
         duration: 0.25,
@@ -77,10 +77,10 @@ export function FitnessDataPill({
         opacity: 1,
         x: 0,
         y: 0,
-        scale: [1, 1.06, 1],
+        scale: [1, 1.07, 1],
         borderColor: "#39FF14",
-        backgroundColor: "rgba(12, 38, 12, 0.98)",
-        boxShadow: "0 0 16px rgba(57, 255, 20, 0.35)",
+        backgroundColor: "rgba(10, 35, 10, 0.98)",
+        boxShadow: "0 0 22px rgba(57, 255, 20, 0.5), 0 0 40px rgba(34, 197, 94, 0.25)",
       };
       transitionProps = {
         duration: 0.45,

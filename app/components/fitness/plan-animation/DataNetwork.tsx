@@ -17,18 +17,18 @@ interface DataNetworkProps {
   scanIndex: number;
 }
 
-// Evenly distributed radial constellation slots (10 distinct non-colliding sectors)
+// 10 evenly spaced radial slots with generous clearance
 const RADIAL_SLOTS = [
   { nx: 0,     ny: -1.0,  angle: -90 },  // 0: Top
-  { nx: 0.68,  ny: -0.72, angle: -54 },  // 1: Upper-Right
-  { nx: 0.96,  ny: -0.22, angle: -18 },  // 2: Right-Upper
-  { nx: 0.96,  ny: 0.22,  angle: 18 },   // 3: Right-Lower
-  { nx: 0.68,  ny: 0.72,  angle: 54 },   // 4: Lower-Right
-  { nx: 0,     ny: 1.0,   angle: 90 },   // 5: Bottom
-  { nx: -0.68, ny: 0.72,  angle: 126 },  // 6: Lower-Left
-  { nx: -0.96, ny: 0.22,  angle: 162 },  // 7: Left-Lower
-  { nx: -0.96, ny: -0.22, angle: -162 }, // 8: Left-Upper
-  { nx: -0.68, ny: -0.72, angle: -126 }, // 9: Upper-Left
+  { nx: 0.68,  ny: -0.72, angle: -50 },  // 1: Upper-Right
+  { nx: 0.96,  ny: -0.20, angle: -15 },  // 2: Right-Upper
+  { nx: 0.96,  ny: 0.22,  angle: 15 },   // 3: Right-Lower
+  { nx: 0.68,  ny: 0.72,  angle: 50 },   // 4: Lower-Right
+  { nx: 0,     ny: 0.98,  angle: 90 },   // 5: Bottom
+  { nx: -0.68, ny: 0.72,  angle: 130 },  // 6: Lower-Left
+  { nx: -0.96, ny: 0.22,  angle: 165 },  // 7: Left-Lower
+  { nx: -0.96, ny: -0.20, angle: -165 }, // 8: Left-Upper
+  { nx: -0.68, ny: -0.72, angle: -130 }, // 9: Upper-Left
 ];
 
 function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): PillState {
@@ -49,6 +49,17 @@ function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): 
   }
 }
 
+// Generates an organic curved timeline branch (Loki Season 2 finale style)
+function getBranchPath(x: number, y: number, idx: number) {
+  const curveMagnitude = (idx % 2 === 0 ? 1 : -1) * 22;
+  const len = Math.hypot(x, y) || 1;
+  const perpX = (-y / len) * curveMagnitude;
+  const perpY = (x / len) * curveMagnitude;
+  const cx = x * 0.5 + perpX;
+  const cy = y * 0.5 + perpY;
+  return `M 0,0 Q ${cx.toFixed(1)},${cy.toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`;
+}
+
 export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProps) {
   const showPills =
     phase === "DATA_ENTER" ||
@@ -56,21 +67,26 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
     phase === "ANALYZING" ||
     phase === "DATA_COLLAPSE";
 
-  // Fixed responsive radii calculated safely with clamp
-  const rx = 135;
-  const ry = 185;
+  // Generous, spacious radii utilizing the screen's full extra space
+  const rx = 150;
+  const ry = 215;
 
-  // Compute exact positions for each pill
+  // Compute exact positions & organic timeline branch paths
   const pillNodes = useMemo(() => {
     return pills.map((pill, idx) => {
       const slot = RADIAL_SLOTS[idx % RADIAL_SLOTS.length];
       const px = slot.nx * rx;
       const py = slot.ny * ry;
+      const pathD = getBranchPath(px, py, idx);
+      const lineLength = Math.hypot(px, py) * 1.05;
+
       return {
         pill,
         idx,
         px,
         py,
+        pathD,
+        lineLength,
         entryAngle: slot.angle,
       };
     });
@@ -84,7 +100,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       style={{
         position: "absolute",
         left: "50%",
-        top: "43%",
+        top: "40%",
         transform: "translate(-50%, -50%)",
         width: 0,
         height: 0,
@@ -102,61 +118,67 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
           0% { transform: translate(-50%, -50%) rotate(0deg); }
           100% { transform: translate(-50%, -50%) rotate(-360deg); }
         }
+        @keyframes timelinePulseFlow {
+          0% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: -32; }
+        }
         .network-spin-container {
-          animation: constNetworkSpin 75s linear infinite;
+          animation: constNetworkSpin 80s linear infinite;
         }
         .pill-counter-rotator {
-          animation: pillCounterSpin 75s linear infinite;
+          animation: pillCounterSpin 80s linear infinite;
+        }
+        .timeline-shimmer {
+          stroke-dasharray: 6 12;
+          animation: timelinePulseFlow 2.4s linear infinite;
         }
         @media (prefers-reduced-motion: reduce) {
-          .network-spin-container, .pill-counter-rotator {
+          .network-spin-container, .pill-counter-rotator, .timeline-shimmer {
             animation: none !important;
           }
         }
       `}</style>
 
-      {/* SVG Connection Lines Layer */}
+      {/* SVG Loki Timeline Branches Layer */}
       <svg
         className="absolute pointer-events-none"
         style={{
-          left: -400,
-          top: -400,
-          width: 800,
-          height: 800,
+          left: -450,
+          top: -450,
+          width: 900,
+          height: 900,
           overflow: "visible",
           zIndex: 4,
           willChange: "transform",
         }}
-        viewBox="-400 -400 800 800"
+        viewBox="-450 -450 900 900"
       >
         {pillNodes.map((node) => {
-          const lineLength = Math.hypot(node.px, node.py);
           const state = getPillState(phase, node.idx, scanIndex);
           const isVisible = state !== "hidden";
           const isScanning = scanIndex === node.idx && phase === "ANALYZING";
 
           return (
-            <g key={`line-${node.pill.key}`}>
-              {/* Radial connection line */}
-              <motion.line
-                x1={0}
-                y1={0}
-                x2={node.px}
-                y2={node.py}
-                stroke={isScanning ? "#39FF14" : "rgba(34, 197, 94, 0.32)"}
-                strokeWidth={isScanning ? 1.4 : 0.85}
+            <g key={`branch-${node.pill.key}`}>
+              {/* 1. Outer Timeline Glow / Aura */}
+              <motion.path
+                d={node.pathD}
+                fill="none"
+                stroke={isScanning ? "rgba(57, 255, 20, 0.75)" : "rgba(34, 197, 94, 0.35)"}
+                strokeWidth={isScanning ? 4.5 : 2.5}
+                strokeLinecap="round"
                 initial={{
-                  strokeDasharray: lineLength,
-                  strokeDashoffset: lineLength,
+                  strokeDasharray: node.lineLength,
+                  strokeDashoffset: node.lineLength,
                   opacity: 0,
                 }}
                 animate={{
-                  strokeDashoffset: isVisible ? 0 : lineLength,
-                  opacity: isVisible ? (isScanning ? 0.9 : 0.35) : 0,
+                  strokeDashoffset: isVisible ? 0 : node.lineLength,
+                  opacity: isVisible ? (isScanning ? 0.95 : 0.45) : 0,
                 }}
                 transition={{
                   strokeDashoffset: {
-                    duration: 0.55,
+                    duration: 0.6,
                     delay: node.idx * 0.08,
                     ease: [0.16, 1, 0.3, 1],
                   },
@@ -164,29 +186,68 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                 }}
               />
 
-              {/* Energy pulse traveling toward AI during active scanning */}
+              {/* 2. Core Living Green Timeline Strand */}
+              <motion.path
+                d={node.pathD}
+                fill="none"
+                stroke={isScanning ? "#F0FFF0" : "#39FF14"}
+                strokeWidth={isScanning ? 2.0 : 1.1}
+                strokeLinecap="round"
+                initial={{
+                  strokeDasharray: node.lineLength,
+                  strokeDashoffset: node.lineLength,
+                  opacity: 0,
+                }}
+                animate={{
+                  strokeDashoffset: isVisible ? 0 : node.lineLength,
+                  opacity: isVisible ? (isScanning ? 1.0 : 0.75) : 0,
+                }}
+                transition={{
+                  strokeDashoffset: {
+                    duration: 0.6,
+                    delay: node.idx * 0.08,
+                    ease: [0.16, 1, 0.3, 1],
+                  },
+                  opacity: { duration: 0.25, delay: node.idx * 0.08 },
+                }}
+              />
+
+              {/* 3. Flowing Temporal Energy Shimmer (Loki Magic) */}
+              {isVisible && (
+                <path
+                  d={node.pathD}
+                  fill="none"
+                  stroke={isScanning ? "#FFFFFF" : "#6EE7B7"}
+                  strokeWidth={isScanning ? 2.2 : 1.0}
+                  strokeLinecap="round"
+                  className="timeline-shimmer"
+                  opacity={isScanning ? 0.9 : 0.4}
+                />
+              )}
+
+              {/* 4. Energy Surge Dot traveling along Timeline into Loki during scan */}
               {isScanning && (
                 <g>
-                  {/* Outer pulse halo */}
+                  {/* Outer Surge Halo */}
                   <motion.circle
-                    r={5}
-                    fill="rgba(57, 255, 20, 0.3)"
+                    r={6}
+                    fill="rgba(57, 255, 20, 0.45)"
                     initial={{ cx: node.px, cy: node.py, opacity: 0 }}
                     animate={{
-                      cx: [node.px, 0],
-                      cy: [node.py, 0],
-                      opacity: [0, 0.8, 0.8, 0],
+                      cx: [node.px, node.px * 0.5, 0],
+                      cy: [node.py, node.py * 0.5, 0],
+                      opacity: [0, 1, 1, 0],
                     }}
                     transition={{ duration: 0.45, ease: "easeInOut" }}
                   />
-                  {/* Core energy dot */}
+                  {/* Bright Core Magic Dot */}
                   <motion.circle
-                    r={2.5}
-                    fill="#39FF14"
+                    r={3}
+                    fill="#F0FFF0"
                     initial={{ cx: node.px, cy: node.py, opacity: 0 }}
                     animate={{
-                      cx: [node.px, 0],
-                      cy: [node.py, 0],
+                      cx: [node.px, node.px * 0.5, 0],
+                      cy: [node.py, node.py * 0.5, 0],
                       opacity: [0, 1, 1, 0],
                     }}
                     transition={{ duration: 0.45, ease: "easeInOut" }}
