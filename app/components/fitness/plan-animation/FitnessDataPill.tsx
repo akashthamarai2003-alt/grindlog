@@ -46,10 +46,13 @@ export function FitnessDataPill({
     case "hidden":
       break;
     case "entering":
-      opacity = 1;
-      scale = 1;
-      transform = `translate(0px, 0px)`;
-      transition = `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${enterDelay}s, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${enterDelay}s`;
+      // Enter from the profile point with an explicit keyframe. A transition
+      // cannot animate reliably when this element is mounted already at its
+      // destination value.
+      opacity = 0;
+      scale = 0.7;
+      transform = `translate(${ex}px, ${ey}px)`;
+      transition = "none";
       break;
     case "visible":
       opacity = 1;
@@ -98,6 +101,11 @@ export function FitnessDataPill({
           opacity,
           transform: `${transform} scale(${scale})`,
           transition,
+          animation: state === "entering"
+            ? `lokiPillEnter 0.6s cubic-bezier(0.16,1,0.3,1) ${enterDelay}s both`
+            : "none",
+          ["--entry-x" as string]: `${ex}px`,
+          ["--entry-y" as string]: `${ey}px`,
           willChange: "transform, opacity, border-color, background-color, box-shadow",
         }}
       >

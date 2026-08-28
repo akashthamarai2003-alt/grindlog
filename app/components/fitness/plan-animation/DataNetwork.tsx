@@ -187,6 +187,14 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
           0% { stroke-dashoffset: 0; }
           100% { stroke-dashoffset: -32; }
         }
+        @keyframes lokiPillEnter {
+          from { opacity: 0; transform: translate(var(--entry-x), var(--entry-y)) scale(0.7); }
+          to { opacity: 1; transform: translate(0, 0) scale(1); }
+        }
+        @keyframes lokiLineDraw {
+          from { stroke-dashoffset: var(--line-length); }
+          to { stroke-dashoffset: 0; }
+        }
         .timeline-flowing-sparks {
           stroke-dasharray: 6 12;
           animation: lokiTimelineFlow 1.6s linear infinite; /* Normal spark speed */
@@ -239,6 +247,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
             const isScanning = scanIndex === idx && phase === "ANALYZING";
             const isCollapsing = state === "collapsing";
             const isHidden = state === "hidden";
+            const isEntering = state === "entering";
             
             const maxLineLength = Math.hypot(OUTER_RX, OUTER_RY) * 1.1;
 
@@ -271,7 +280,11 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                     strokeDasharray: maxLineLength,
                     strokeDashoffset: targetOffset,
                     opacity: targetOpacity,
-                    transition: animDuration > 0 
+                    ["--line-length" as string]: maxLineLength,
+                    animation: isEntering
+                      ? `lokiLineDraw 0.6s cubic-bezier(0.16,1,0.3,1) ${animDelay}s both`
+                      : "none",
+                    transition: !isEntering && animDuration > 0
                       ? `stroke-dashoffset ${animDuration}s cubic-bezier(0.16,1,0.3,1) ${animDelay}s, opacity ${animDuration * 0.8}s ease ${animDelay}s, stroke 0.3s ease`
                       : 'none'
                   }}
@@ -286,7 +299,11 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                     strokeDasharray: maxLineLength,
                     strokeDashoffset: targetOffset,
                     opacity: isHidden || isCollapsing ? 0 : (isScanning ? 1.0 : 0.85),
-                    transition: animDuration > 0
+                    ["--line-length" as string]: maxLineLength,
+                    animation: isEntering
+                      ? `lokiLineDraw 0.6s cubic-bezier(0.16,1,0.3,1) ${animDelay}s both`
+                      : "none",
+                    transition: !isEntering && animDuration > 0
                       ? `stroke-dashoffset ${animDuration}s cubic-bezier(0.16,1,0.3,1) ${animDelay}s, opacity ${animDuration * 0.8}s ease ${animDelay}s, stroke 0.3s ease`
                       : 'none'
                   }}
