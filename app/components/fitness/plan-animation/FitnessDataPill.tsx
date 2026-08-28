@@ -90,14 +90,12 @@ export function FitnessDataPill({
     case "collapsing":
       animateProps = {
         opacity: 0,
-        scale: 0.4,
-        x: -ex * 0.7,
-        y: -ey * 0.7,
+        scale: 0.1,
       };
       transitionProps = {
-        duration: 0.6,
+        duration: 0.55,
         delay: collapseDelay,
-        ease: [0.16, 1, 0.3, 1],
+        ease: "easeIn",
       };
       break;
   }

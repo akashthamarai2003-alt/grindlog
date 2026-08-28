@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useMemo } from "react";
+import React, { useRef, useMemo, useEffect } from "react";
 import { motion, useAnimationFrame } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { FitnessDataPill, type PillState } from "./FitnessDataPill";
@@ -42,52 +42,79 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
     phase === "ANALYZING" ||
     phase === "DATA_COLLAPSE";
 
-  // DOM Refs for high-performance 60fps hardware-accelerated updates (0 React re-renders)
   const pillRefs = useRef<(HTMLDivElement | null)[]>([]);
   const lineRefs = useRef<(SVGPathElement | null)[]>([]);
   const glowLineRefs = useRef<(SVGPathElement | null)[]>([]);
   const shimmerRefs = useRef<(SVGPathElement | null)[]>([]);
 
-  // Staggered Oval Orbit constants (Perfect mobile spacing, zero overlaps)
+  // Track exact moment collapse begins for perfectly synchronized spiral-in
+  const collapseStartTime = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (phase !== "DATA_COLLAPSE") {
+      collapseStartTime.current = null;
+    }
+  }, [phase]);
+
   const INNER_RX = 105;
   const INNER_RY = 150;
   const OUTER_RX = 138;
   const OUTER_RY = 215;
   
   const TOTAL_PILLS = Math.max(pills.length, 1);
-  const ROTATION_SPEED_MS = 28000; // 28s per revolution
+  
+  // SPEED BOOST: 1900ms per revolution ensures EXACTLY 3 full rounds (1080 degrees) 
+  // during the ~5.7 seconds the network is active.
+  const ROTATION_SPEED_MS = 1900; 
 
   useAnimationFrame((time) => {
     if (!showPills) return;
 
-    // Start rotation immediately (smooth, continuous motion from frame 1)
-    // This completely removes the "stuck" pause behavior
+    const isCollapsing = phase === "DATA_COLLAPSE";
+    if (isCollapsing && collapseStartTime.current === null) {
+      collapseStartTime.current = time;
+    }
+
     const globalAngle = (time / ROTATION_SPEED_MS) * Math.PI * 2;
 
     pills.forEach((_, i) => {
-      // 1. Calculate exact staggered radius
       const isOuter = i % 2 === 1;
-      const rx = isOuter ? OUTER_RX : INNER_RX;
-      const ry = isOuter ? OUTER_RY : INNER_RY;
+      let rx = isOuter ? OUTER_RX : INNER_RX;
+      let ry = isOuter ? OUTER_RY : INNER_RY;
 
-      // 2. Calculate exact angle in constellation
+      // Mathematically spiral into the center behind Loki on collapse
+      if (collapseStartTime.current !== null) {
+        const elapsed = time - collapseStartTime.current;
+        const collapseDelay = i * 70; // Matches FitnessDataPill 0.07s delay
+        const collapseDuration = 550; // 0.55s duration
+        
+        if (elapsed > collapseDelay) {
+          const progress = Math.min(1, (elapsed - collapseDelay) / collapseDuration);
+          // Cubic ease-in for a snappy, magnetic snap to center
+          const easeProgress = progress * progress * progress; 
+          rx = rx * (1 - easeProgress);
+          ry = ry * (1 - easeProgress);
+        }
+      }
+
       const pillAngle = globalAngle + (i * Math.PI * 2) / TOTAL_PILLS - Math.PI / 2;
 
-      // 3. Compute (x, y) coordinate
       const px = Math.cos(pillAngle) * rx;
       const py = Math.sin(pillAngle) * ry;
 
-      // 4. Update Pill wrapper DOM (translate center to px, py)
       const pillEl = pillRefs.current[i];
       if (pillEl) {
         pillEl.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px)`;
       }
 
-      // 5. Update SVG Lines exactly to px, py
       const lineLen = Math.hypot(px, py);
       const curve = isOuter ? 10 : -10;
-      const perpX = (-py / lineLen) * curve;
-      const perpY = (px / lineLen) * curve;
+      
+      // As line shrinks to 0, curve multiplier must gracefully shrink to prevent glitchy loops
+      const curveFactor = (lineLen / Math.hypot(OUTER_RX, OUTER_RY)) * curve;
+      
+      const perpX = lineLen === 0 ? 0 : (-py / lineLen) * curveFactor;
+      const perpY = lineLen === 0 ? 0 : (px / lineLen) * curveFactor;
       const cx = px * 0.5 + perpX;
       const cy = py * 0.5 + perpY;
       const pathD = `M 0,0 Q ${cx.toFixed(1)},${cy.toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}`;
@@ -109,7 +136,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         }
         .timeline-flowing-sparks {
           stroke-dasharray: 6 12;
-          animation: lokiTimelineFlow 1.6s linear infinite;
+          animation: lokiTimelineFlow 0.8s linear infinite; /* sped up for fast rotation */
         }
         @media (prefers-reduced-motion: reduce) {
           .timeline-flowing-sparks {
@@ -118,7 +145,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         }
       `}</style>
 
-      {/* LAYER A: SVG Lines (Behind Loki) */}
+      {/* LAYER A: SVG Lines (Behind Loki - zIndex: 4) */}
       <div
         className="pointer-events-none"
         style={{
@@ -157,7 +184,6 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
           {pills.map((pill, idx) => {
             const state = getPillState(phase, idx, scanIndex);
             const isScanning = scanIndex === idx && phase === "ANALYZING";
-            const isCollapsing = state === "collapsing";
             const isHidden = state === "hidden";
             
             const maxLineLength = Math.hypot(OUTER_RX, OUTER_RY) * 1.1;
@@ -171,11 +197,6 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
               targetOffset = maxLineLength;
               targetOpacity = 0;
               animDuration = 0;
-            } else if (isCollapsing) {
-              targetOffset = maxLineLength;
-              targetOpacity = 0;
-              animDuration = 0.45;
-              animDelay = idx * 0.07;
             }
 
             return (
@@ -197,10 +218,10 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                   strokeWidth={isScanning ? 1.8 : 1.0}
                   strokeLinecap="round"
                   initial={{ strokeDasharray: maxLineLength, strokeDashoffset: maxLineLength, opacity: 0 }}
-                  animate={{ strokeDashoffset: targetOffset, opacity: isCollapsing || isHidden ? 0 : (isScanning ? 1.0 : 0.85) }}
+                  animate={{ strokeDashoffset: targetOffset, opacity: isHidden ? 0 : (isScanning ? 1.0 : 0.85) }}
                   transition={{ strokeDashoffset: { duration: animDuration, delay: animDelay, ease: [0.16, 1, 0.3, 1] }, opacity: { duration: animDuration * 0.8, delay: animDelay } }}
                 />
-                {!isCollapsing && !isHidden && (
+                {!isHidden && (
                   <path
                     ref={(el) => { shimmerRefs.current[idx] = el; }}
                     fill="none"
@@ -217,7 +238,11 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         </svg>
       </div>
 
-      {/* LAYER B: Pills (In Front of Loki) */}
+      {/* 
+        LAYER B: Pills 
+        CRITICAL FIX: zIndex: 7 places them BEHIND Loki (zIndex: 8).
+        When they spiral into (0,0), they will seamlessly vanish into his back!
+      */}
       <div
         className="pointer-events-none"
         style={{
@@ -226,7 +251,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
           top: "40%",
           width: 0,
           height: 0,
-          zIndex: 12,
+          zIndex: 7, 
         }}
       >
         {pills.map((pill, idx) => {
@@ -242,10 +267,6 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                 willChange: "transform",
               }}
             >
-              {/* 
-                CRITICAL FIX: translate(-50%, -50%) centers the pill EXACTLY at (px, py).
-                This completely prevents the lines from shooting past the pills.
-              */}
               <div style={{ position: "absolute", transform: "translate(-50%, -50%)" }}>
                 <FitnessDataPill
                   icon={pill.icon}
