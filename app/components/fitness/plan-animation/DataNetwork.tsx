@@ -37,7 +37,7 @@ function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): 
 
 // Generates an organic curved timeline branch path (Loki Season 2 finale style)
 function getBranchPath(x: number, y: number, idx: number) {
-  const curveMagnitude = (idx % 2 === 0 ? 1 : -1) * 16;
+  const curveMagnitude = (idx % 2 === 0 ? 1 : -1) * 14;
   const len = Math.hypot(x, y) || 1;
   const perpX = (-y / len) * curveMagnitude;
   const perpY = (x / len) * curveMagnitude;
@@ -53,11 +53,13 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
     phase === "ANALYZING" ||
     phase === "DATA_COLLAPSE";
 
-  // Radius for 100% collision-free circular orbital rotation
-  // Sized to fit comfortably within mobile viewports (375px+) at all rotation angles
-  const orbitRadius = 135;
+  // Base circular radius in unscaled coordinate space
+  // Scaled vertically by 1.55 on the outer fixed container to form a permanent vertical oval (rx=132px, ry=205px)
+  const baseRadius = 132;
+  const scaleY = 1.55;
+  const invScaleY = (1 / scaleY).toFixed(5); // 0.64516
 
-  // Compute exact positions with constant angular separation (36° per slot)
+  // Compute exact positions with constant angular separation (36° per slot for 10 pills)
   const pillNodes = useMemo(() => {
     const total = Math.max(pills.length, 1);
     const step = 360 / total;
@@ -66,10 +68,8 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       const angleDeg = idx * step - 90; // Start at top
       const rad = (angleDeg * Math.PI) / 180;
       
-      // Slight organic radius stagger (+-6px) for natural constellation feel
-      const r = orbitRadius + (idx % 2 === 0 ? 4 : -4);
-      const px = Math.cos(rad) * r;
-      const py = Math.sin(rad) * r;
+      const px = Math.cos(rad) * baseRadius;
+      const py = Math.sin(rad) * baseRadius;
       const pathD = getBranchPath(px, py, idx);
       const lineLength = Math.hypot(px, py) * 1.05;
 
@@ -83,7 +83,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         entryAngle: angleDeg,
       };
     });
-  }, [pills, orbitRadius]);
+  }, [pills, baseRadius]);
 
   if (!showPills) return null;
 
@@ -91,27 +91,27 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
     <>
       <style>{`
         @keyframes constNetworkSpin {
-          0% { transform: translate(-50%, -50%) rotate(0deg); }
-          100% { transform: translate(-50%, -50%) rotate(360deg); }
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
         @keyframes pillCounterSpin {
-          0% { transform: translate(-50%, -50%) rotate(0deg); }
-          100% { transform: translate(-50%, -50%) rotate(-360deg); }
+          0% { transform: scale(1, ${invScaleY}) rotate(0deg); }
+          100% { transform: scale(1, ${invScaleY}) rotate(-360deg); }
         }
         @keyframes lokiTimelineFlow {
           0% { stroke-dashoffset: 0; }
           100% { stroke-dashoffset: -36; }
         }
-        /* Rotates 2 full rounds (3.1s per revolution) */
+        /* Normal, graceful rotation speed (~14s full revolution) */
         .network-spin-layer {
-          animation: constNetworkSpin 3.1s linear infinite;
+          animation: constNetworkSpin 14s linear infinite;
         }
         .pill-counter-rotator {
-          animation: pillCounterSpin 3.1s linear infinite;
+          animation: pillCounterSpin 14s linear infinite;
         }
         .timeline-flowing-sparks {
           stroke-dasharray: 6 12;
-          animation: lokiTimelineFlow 1.2s linear infinite;
+          animation: lokiTimelineFlow 1.6s linear infinite;
         }
         @media (prefers-reduced-motion: reduce) {
           .network-spin-layer, .pill-counter-rotator, .timeline-flowing-sparks {
@@ -122,222 +122,226 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
 
       {/* 
         LAYER A (Behind Loki - zIndex: 4): 
-        Realistic, Colorful Loki Season 2 Yggdrasil Timeline Branches 
+        Realistic, Colorful Loki Season 2 Yggdrasil Timeline Branches
+        Outer wrapper applies fixed vertical oval stretch (scale(1, 1.55))
       */}
       <div
-        className="network-spin-layer pointer-events-none"
+        className="pointer-events-none"
         style={{
           position: "absolute",
           left: "50%",
           top: "39%",
-          transform: "translate(-50%, -50%)",
+          transform: `translate(-50%, -50%) scale(1, ${scaleY})`,
           width: 0,
           height: 0,
           zIndex: 4,
           willChange: "transform",
         }}
       >
-        <svg
-          className="absolute pointer-events-none"
-          style={{
-            left: -400,
-            top: -400,
-            width: 800,
-            height: 800,
-            overflow: "visible",
-            willChange: "transform",
-          }}
-          viewBox="-400 -400 800 800"
-        >
-          <defs>
-            {/* Loki S2 Finale Vibrant Gradient - Emerald & Neon Lime */}
-            <linearGradient id="lokiAuraGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00FF87" stopOpacity="0.85" />
-              <stop offset="50%" stopColor="#39FF14" stopOpacity="0.65" />
-              <stop offset="100%" stopColor="#ADFF00" stopOpacity="0.45" />
-            </linearGradient>
+        <div className="network-spin-layer" style={{ width: 0, height: 0, willChange: "transform" }}>
+          <svg
+            className="absolute pointer-events-none"
+            style={{
+              left: -350,
+              top: -350,
+              width: 700,
+              height: 700,
+              overflow: "visible",
+            }}
+            viewBox="-350 -350 700 700"
+          >
+            <defs>
+              {/* Loki S2 Finale Vibrant Gradient - Emerald & Neon Lime */}
+              <linearGradient id="lokiAuraGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#00FF87" stopOpacity="0.85" />
+                <stop offset="50%" stopColor="#39FF14" stopOpacity="0.65" />
+                <stop offset="100%" stopColor="#ADFF00" stopOpacity="0.45" />
+              </linearGradient>
 
-            {/* Glowing Core Magic Gradient */}
-            <linearGradient id="lokiCoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="40%" stopColor="#A7F3D0" />
-              <stop offset="100%" stopColor="#34D399" />
-            </linearGradient>
+              {/* Glowing Core Magic Gradient */}
+              <linearGradient id="lokiCoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FFFFFF" />
+                <stop offset="40%" stopColor="#A7F3D0" />
+                <stop offset="100%" stopColor="#34D399" />
+              </linearGradient>
 
-            {/* High-Voltage Surge Gradient */}
-            <linearGradient id="lokiSurgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#F0FFF0" />
-              <stop offset="50%" stopColor="#39FF14" />
-              <stop offset="100%" stopColor="#00FF87" />
-            </linearGradient>
-          </defs>
+              {/* High-Voltage Surge Gradient */}
+              <linearGradient id="lokiSurgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#F0FFF0" />
+                <stop offset="50%" stopColor="#39FF14" />
+                <stop offset="100%" stopColor="#00FF87" />
+              </linearGradient>
+            </defs>
 
-          {pillNodes.map((node) => {
-            const state = getPillState(phase, node.idx, scanIndex);
-            const isScanning = scanIndex === node.idx && phase === "ANALYZING";
-            const isCollapsing = state === "collapsing";
-            const isHidden = state === "hidden";
-            const collapseDelay = node.idx * 0.07;
+            {pillNodes.map((node) => {
+              const state = getPillState(phase, node.idx, scanIndex);
+              const isScanning = scanIndex === node.idx && phase === "ANALYZING";
+              const isCollapsing = state === "collapsing";
+              const isHidden = state === "hidden";
+              const collapseDelay = node.idx * 0.07;
 
-            // Line animates in, stays visible, and retracts/vanishes on collapse
-            let targetOffset = 0;
-            let targetOpacity = isScanning ? 0.95 : 0.45;
-            let animDuration = 0.55;
-            let animDelay = node.idx * 0.08;
+              // Line animates in, stays visible, and retracts/vanishes on collapse
+              let targetOffset = 0;
+              let targetOpacity = isScanning ? 0.95 : 0.45;
+              let animDuration = 0.55;
+              let animDelay = node.idx * 0.08;
 
-            if (isHidden) {
-              targetOffset = node.lineLength;
-              targetOpacity = 0;
-              animDuration = 0;
-            } else if (isCollapsing) {
-              // Line retracts back into Loki simultaneously as the pill vanishes
-              targetOffset = node.lineLength;
-              targetOpacity = 0;
-              animDuration = 0.45;
-              animDelay = collapseDelay;
-            }
+              if (isHidden) {
+                targetOffset = node.lineLength;
+                targetOpacity = 0;
+                animDuration = 0;
+              } else if (isCollapsing) {
+                // Line retracts back into Loki simultaneously as the pill vanishes
+                targetOffset = node.lineLength;
+                targetOpacity = 0;
+                animDuration = 0.45;
+                animDelay = collapseDelay;
+              }
 
-            return (
-              <g key={`branch-${node.pill.key}`}>
-                {/* 1. Broad Outer Atmospheric Glow */}
-                <motion.path
-                  d={node.pathD}
-                  fill="none"
-                  stroke={isScanning ? "url(#lokiSurgeGrad)" : "url(#lokiAuraGrad)"}
-                  strokeWidth={isScanning ? 5.5 : 3.2}
-                  strokeLinecap="round"
-                  initial={{
-                    strokeDasharray: node.lineLength,
-                    strokeDashoffset: node.lineLength,
-                    opacity: 0,
-                  }}
-                  animate={{
-                    strokeDashoffset: targetOffset,
-                    opacity: targetOpacity,
-                  }}
-                  transition={{
-                    strokeDashoffset: {
-                      duration: animDuration,
-                      delay: animDelay,
-                      ease: [0.16, 1, 0.3, 1],
-                    },
-                    opacity: {
-                      duration: animDuration * 0.8,
-                      delay: animDelay,
-                    },
-                  }}
-                />
-
-                {/* 2. Core Living Green Timeline Thread */}
-                <motion.path
-                  d={node.pathD}
-                  fill="none"
-                  stroke={isScanning ? "#FFFFFF" : "url(#lokiCoreGrad)"}
-                  strokeWidth={isScanning ? 2.2 : 1.2}
-                  strokeLinecap="round"
-                  initial={{
-                    strokeDasharray: node.lineLength,
-                    strokeDashoffset: node.lineLength,
-                    opacity: 0,
-                  }}
-                  animate={{
-                    strokeDashoffset: targetOffset,
-                    opacity: isCollapsing || isHidden ? 0 : (isScanning ? 1.0 : 0.85),
-                  }}
-                  transition={{
-                    strokeDashoffset: {
-                      duration: animDuration,
-                      delay: animDelay,
-                      ease: [0.16, 1, 0.3, 1],
-                    },
-                    opacity: {
-                      duration: animDuration * 0.8,
-                      delay: animDelay,
-                    },
-                  }}
-                />
-
-                {/* 3. Flowing Temporal Energy Shimmer (Living Magic Tendril) */}
-                {!isCollapsing && !isHidden && (
-                  <path
+              return (
+                <g key={`branch-${node.pill.key}`}>
+                  {/* 1. Broad Outer Atmospheric Glow */}
+                  <motion.path
                     d={node.pathD}
                     fill="none"
-                    stroke={isScanning ? "#FFFFFF" : "#6EE7B7"}
-                    strokeWidth={isScanning ? 2.0 : 0.9}
+                    stroke={isScanning ? "url(#lokiSurgeGrad)" : "url(#lokiAuraGrad)"}
+                    strokeWidth={isScanning ? 5.0 : 3.0}
                     strokeLinecap="round"
-                    className="timeline-flowing-sparks"
-                    opacity={isScanning ? 0.95 : 0.5}
+                    initial={{
+                      strokeDasharray: node.lineLength,
+                      strokeDashoffset: node.lineLength,
+                      opacity: 0,
+                    }}
+                    animate={{
+                      strokeDashoffset: targetOffset,
+                      opacity: targetOpacity,
+                    }}
+                    transition={{
+                      strokeDashoffset: {
+                        duration: animDuration,
+                        delay: animDelay,
+                        ease: [0.16, 1, 0.3, 1],
+                      },
+                      opacity: {
+                        duration: animDuration * 0.8,
+                        delay: animDelay,
+                      },
+                    }}
                   />
-                )}
 
-                {/* 4. Temporal Pulse Surge along Branch into Loki during scanning */}
-                {isScanning && (
-                  <g>
-                    <motion.circle
-                      r={6.5}
-                      fill="rgba(57, 255, 20, 0.45)"
-                      initial={{ cx: node.px, cy: node.py, opacity: 0 }}
-                      animate={{
-                        cx: [node.px, node.px * 0.5, 0],
-                        cy: [node.py, node.py * 0.5, 0],
-                        opacity: [0, 1, 1, 0],
-                      }}
-                      transition={{ duration: 0.45, ease: "easeInOut" }}
+                  {/* 2. Core Living Green Timeline Thread */}
+                  <motion.path
+                    d={node.pathD}
+                    fill="none"
+                    stroke={isScanning ? "#FFFFFF" : "url(#lokiCoreGrad)"}
+                    strokeWidth={isScanning ? 2.0 : 1.1}
+                    strokeLinecap="round"
+                    initial={{
+                      strokeDasharray: node.lineLength,
+                      strokeDashoffset: node.lineLength,
+                      opacity: 0,
+                    }}
+                    animate={{
+                      strokeDashoffset: targetOffset,
+                      opacity: isCollapsing || isHidden ? 0 : (isScanning ? 1.0 : 0.85),
+                    }}
+                    transition={{
+                      strokeDashoffset: {
+                        duration: animDuration,
+                        delay: animDelay,
+                        ease: [0.16, 1, 0.3, 1],
+                      },
+                      opacity: {
+                        duration: animDuration * 0.8,
+                        delay: animDelay,
+                      },
+                    }}
+                  />
+
+                  {/* 3. Flowing Temporal Energy Shimmer (Living Magic Tendril) */}
+                  {!isCollapsing && !isHidden && (
+                    <path
+                      d={node.pathD}
+                      fill="none"
+                      stroke={isScanning ? "#FFFFFF" : "#6EE7B7"}
+                      strokeWidth={isScanning ? 1.8 : 0.85}
+                      strokeLinecap="round"
+                      className="timeline-flowing-sparks"
+                      opacity={isScanning ? 0.95 : 0.5}
                     />
-                    <motion.circle
-                      r={3}
-                      fill="#FFFFFF"
-                      initial={{ cx: node.px, cy: node.py, opacity: 0 }}
-                      animate={{
-                        cx: [node.px, node.px * 0.5, 0],
-                        cy: [node.py, node.py * 0.5, 0],
-                        opacity: [0, 1, 1, 0],
-                      }}
-                      transition={{ duration: 0.45, ease: "easeInOut" }}
-                    />
-                  </g>
-                )}
-              </g>
-            );
-          })}
-        </svg>
+                  )}
+
+                  {/* 4. Temporal Pulse Surge along Branch into Loki during scanning */}
+                  {isScanning && (
+                    <g>
+                      <motion.circle
+                        r={6}
+                        fill="rgba(57, 255, 20, 0.45)"
+                        initial={{ cx: node.px, cy: node.py, opacity: 0 }}
+                        animate={{
+                          cx: [node.px, node.px * 0.5, 0],
+                          cy: [node.py, node.py * 0.5, 0],
+                          opacity: [0, 1, 1, 0],
+                        }}
+                        transition={{ duration: 0.45, ease: "easeInOut" }}
+                      />
+                      <motion.circle
+                        r={2.8}
+                        fill="#FFFFFF"
+                        initial={{ cx: node.px, cy: node.py, opacity: 0 }}
+                        animate={{
+                          cx: [node.px, node.px * 0.5, 0],
+                          cy: [node.py, node.py * 0.5, 0],
+                          opacity: [0, 1, 1, 0],
+                        }}
+                        transition={{ duration: 0.45, ease: "easeInOut" }}
+                      />
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
       </div>
 
       {/* 
         LAYER B (In Front of Loki - zIndex: 12): 
-        Counter-Rotating Fitness Data Pills 
+        Counter-Rotating Fitness Data Pills along the Permanent Vertical Oval
       */}
       <div
-        className="network-spin-layer pointer-events-none"
+        className="pointer-events-none"
         style={{
           position: "absolute",
           left: "50%",
           top: "39%",
-          transform: "translate(-50%, -50%)",
+          transform: `translate(-50%, -50%) scale(1, ${scaleY})`,
           width: 0,
           height: 0,
           zIndex: 12,
           willChange: "transform",
         }}
       >
-        {pillNodes.map((node) => {
-          const state = getPillState(phase, node.idx, scanIndex);
-          return (
-            <FitnessDataPill
-              key={node.pill.key}
-              icon={node.pill.icon}
-              label={node.pill.label}
-              state={state}
-              entryAngle={node.entryAngle}
-              enterDelay={node.idx * 0.08}
-              collapseDelay={node.idx * 0.07}
-              style={{
-                left: `${node.px}px`,
-                top: `${node.py}px`,
-              }}
-            />
-          );
-        })}
+        <div className="network-spin-layer" style={{ width: 0, height: 0, willChange: "transform" }}>
+          {pillNodes.map((node) => {
+            const state = getPillState(phase, node.idx, scanIndex);
+            return (
+              <FitnessDataPill
+                key={node.pill.key}
+                icon={node.pill.icon}
+                label={node.pill.label}
+                state={state}
+                entryAngle={node.entryAngle}
+                enterDelay={node.idx * 0.08}
+                collapseDelay={node.idx * 0.07}
+                style={{
+                  left: `${node.px}px`,
+                  top: `${node.py}px`,
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
     </>
   );
