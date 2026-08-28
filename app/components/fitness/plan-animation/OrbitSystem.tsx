@@ -24,7 +24,7 @@ export function OrbitSystem({ isActive, isProcessing }: OrbitSystemProps) {
       className="absolute pointer-events-none"
       style={{
         left: "50%",
-        top: "43%",
+        top: "40%",
         transform: "translate(-50%, -50%)",
         width: "min(88vw, 440px)",
         height: "min(52vw, 280px)",

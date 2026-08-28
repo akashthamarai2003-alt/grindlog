@@ -35,7 +35,7 @@ export function AnimatedBackground({ phase }: Props) {
       <div
         className="absolute inset-0"
         style={{
-          background: "radial-gradient(ellipse at 50% 43%, #0a1f0a 0%, #061506 35%, #030a03 100%)",
+          background: "radial-gradient(ellipse at 50% 40%, #0a1f0a 0%, #061506 35%, #030a03 100%)",
         }}
       />
 
@@ -44,7 +44,7 @@ export function AnimatedBackground({ phase }: Props) {
         className="absolute inset-0 transition-opacity duration-[2s]"
         style={{
           opacity: phaseIdx >= 1 ? 1 : 0,
-          background: "radial-gradient(circle at 50% 43%, rgba(34,197,94,0.06) 0%, transparent 50%)",
+          background: "radial-gradient(circle at 50% 40%, rgba(34,197,94,0.06) 0%, transparent 50%)",
         }}
       />
 
@@ -65,7 +65,7 @@ export function AnimatedBackground({ phase }: Props) {
       <div
         className="absolute pointer-events-none transition-opacity duration-[2s]"
         style={{
-          left: "50%", top: "43%", transform: "translate(-50%, -50%)",
+          left: "50%", top: "40%", transform: "translate(-50%, -50%)",
           opacity: radarOpacity,
         }}
       >

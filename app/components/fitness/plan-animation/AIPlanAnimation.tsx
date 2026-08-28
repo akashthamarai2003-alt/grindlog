@@ -128,7 +128,7 @@ export default function AIPlanAnimation({ onAnimationComplete }: AIPlanAnimation
         className="absolute pointer-events-none"
         style={{
           left: "50%",
-          top: "43%",
+          top: "40%",
           transform: "translate(-50%, -50%)",
           zIndex: 8,
         }}
