@@ -104,7 +104,6 @@ export function FitnessDataPill({
 
   return (
     <div
-      className="pill-counter-rotator"
       style={{
         position: "absolute",
         left: style?.left,
