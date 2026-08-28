@@ -169,8 +169,8 @@ Output ONLY valid JSON matching this schema.`;
       aiStrategy = await generateAIResponseJSON({
         systemPrompt,
         userPrompt: "Generate my strategy now.",
-        model: "primary",
-        maxTokens: 8000,
+        model: "fast",
+        maxTokens: 2000,
       });
       console.log("AI Strategy Generated:", aiStrategy);
     } catch (err) {

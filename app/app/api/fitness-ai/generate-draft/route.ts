@@ -58,8 +58,8 @@ export async function POST(req: Request) {
         const aiResponse = await generateAIResponseJSON({
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
           userPrompt,
-          model: "primary",
-          maxTokens: 3000,
+          model: "fast",
+          maxTokens: 2000,
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
         });
 

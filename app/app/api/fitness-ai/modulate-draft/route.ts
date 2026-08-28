@@ -50,8 +50,8 @@ Modify the JSON appropriately and return the full updated JSON.`;
     const aiResponse = await generateAIResponseJSON({
       systemPrompt,
       userPrompt,
-      model: "primary",
-      maxTokens: 8000,
+      model: "fast",
+      maxTokens: 2000,
     });
 
     // Validate
