@@ -41,9 +41,16 @@ export default function PlanSetupPage() {
   useEffect(() => {
     // Generate draft on mount
     let isMounted = true;
-    fetch('/api/fitness-ai/generate-draft', { method: 'POST' })
-      .then(res => res.json())
-      .then(res => {
+    
+    // 1. Start the API request
+    const aiFetchPromise = fetch('/api/fitness-ai/generate-draft', { method: 'POST' }).then(res => res.json());
+    
+    // 2. Start a hard 8-second timer
+    const minimumDelayPromise = new Promise(resolve => setTimeout(resolve, 8000));
+
+    // Wait for BOTH the AI to finish AND the 8 seconds to pass
+    Promise.all([aiFetchPromise, minimumDelayPromise])
+      .then(([res]) => {
         if (!isMounted) return;
         if (res.success) {
           setPlanData(res.data);
