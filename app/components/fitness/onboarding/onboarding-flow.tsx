@@ -2235,13 +2235,14 @@ case 4:
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Select Target Physique Type</label>
                   <div className="space-y-3">
                     {[
-                      { id: "Lean Athletic", image: "/images/physique_lean_athletic.png", tag: "Low Fat & Toned", desc: "Low body fat, defined core & lean athletic conditioning" },
-                      { id: "Muscular", image: "/images/physique_muscular.png", tag: "High Muscle Mass", desc: "Solid muscle mass, broad chest, biceps & powerful build" },
-                      { id: "Six Pack", image: "/images/physique_six_pack.png", tag: "Shredded Core", desc: "Defined 6-pack abs, tight waist & sculpted upper body" },
-                      { id: "Men's Physique", image: "/images/physique_mens_physique.png", tag: "Aesthetic V-Taper", desc: "Classic V-taper, wide lats & aesthetic proportions" },
-                      { id: "Bodybuilder", image: "/images/physique_bodybuilder.png", tag: "Maximum Mass", desc: "Maximum muscle volume, thickness & hyper-density" },
-                      { id: "Sporty", image: "/images/physique_sporty.png", tag: "Agile & Active", desc: "Functional, energetic, fit & overall athletic endurance" },
-                      { id: "Strong & Functional", image: "/images/physique_strong.png", tag: "Power & Strength", desc: "Thick core, heavy lifting build & functional strength" }
+                      { id: "Lean Athletic", image: "/images/physiques/physique_lean_athletic.png", tag: "Low Fat & Toned", desc: "Low body fat, defined core & lean athletic conditioning" },
+                      { id: "Muscular", image: "/images/physiques/physique_muscular.png", tag: "High Muscle Mass", desc: "Solid muscle mass, broad chest, biceps & powerful build" },
+                      { id: "Six Pack", image: "/images/physiques/physique_six_pack.png", tag: "Shredded Core", desc: "Defined 6-pack abs, tight waist & sculpted upper body" },
+                      { id: "Men's Physique", image: "/images/physiques/physique_mens_physique.png", tag: "Aesthetic V-Taper", desc: "Classic V-taper, wide lats & aesthetic proportions" },
+                      { id: "Bodybuilder", image: "/images/physiques/physique_bodybuilder.png", tag: "Maximum Mass", desc: "Maximum muscle volume, thickness & hyper-density" },
+                      { id: "Sporty", image: "/images/physiques/physique_sporty.png", tag: "Agile & Active", desc: "Functional, energetic, fit & overall athletic endurance" },
+                      { id: "Strong & Functional", image: "/images/physiques/physique_strong.png", tag: "Power & Strength", desc: "Thick core, heavy lifting build & functional strength" }
+
                     ].map(opt => {
                       const isSelected = data.target_physique === opt.id;
                       return (
