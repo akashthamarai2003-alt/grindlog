@@ -262,7 +262,9 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
               targetOpacity = 0;
               animDuration = 0;
             } else if (isCollapsing) {
-              targetOffset = maxLineLength;
+              // Let the path geometry travel all the way into Loki. Retraction
+              // via dashoffset here made the line disappear before it arrived.
+              targetOffset = 0;
               targetOpacity = 0;
               animDuration = 0.55;
               // Sync SVG line fade out exactly with the 120ms stagger logic
