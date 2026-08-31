@@ -33,29 +33,19 @@ export async function generateOpenAIResponseJSON<T>({
     ? Math.max(maxTokens, 8000)
     : maxTokens;
 
-  const completion = await getOpenAIClient().chat.completions.create({
+  const response = await getOpenAIClient().responses.create({
     model: OPENAI_MODEL,
-    messages: [
-      {
-        role: "system",
-        content: `${systemPrompt}\n\nYou MUST respond with valid JSON only. No markdown formatting, no code blocks, and no explanation text. Return only the raw JSON object.`,
-      },
-      { role: "user", content: userPrompt },
-    ],
-    max_completion_tokens: completionTokenBudget,
-    // GPT-5.6 reasoning models use reasoning_effort instead of temperature
-    // for controlling deliberation. Keep temperature for non-reasoning overrides.
+    input: `SYSTEM INSTRUCTIONS:\n${systemPrompt}\n\nUSER REQUEST:\n${userPrompt}\n\nReturn valid JSON only. Do not include markdown or explanation text.`,
+    max_output_tokens: completionTokenBudget,
     ...(OPENAI_MODEL.startsWith("gpt-5.6-")
-      ? { reasoning_effort: "high" as const }
+      ? { reasoning: { effort: "high" as const } }
       : { temperature }),
-    response_format: { type: "json_object" },
+    text: { format: { type: "json_object" } },
   });
 
-  const choice = completion.choices[0];
-  const text = choice?.message?.content?.trim();
+  const text = response.output_text?.trim();
   if (!text) {
-    const finishReason = choice?.finish_reason || "unknown";
-    throw new Error(`OpenAI returned an empty response (finish reason: ${finishReason}).`);
+    throw new Error(`OpenAI returned an empty response (status: ${response.status || "unknown"}).`);
   }
 
   try {
