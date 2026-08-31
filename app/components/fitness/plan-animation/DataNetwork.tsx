@@ -91,7 +91,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
       
       // Bound missed-frame catch-up so a busy mobile frame does not look like
       // a stall, while still preventing any visible speed burst.
-      const safeDelta = Math.min(Math.max(rawDelta, 0), 48);
+      const safeDelta = Math.min(Math.max(rawDelta, 0), 32);
       const elapsed = time - startTimeRef.current;
       
       // --- 7-SECOND CINEMATIC ACCELERATION CURVE ---
@@ -282,6 +282,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                   style={{
                     strokeDasharray: maxLineLength,
                     strokeDashoffset: targetOffset,
+                    willChange: "stroke-dashoffset, opacity",
                     opacity: targetOpacity,
                     ["--line-length" as string]: maxLineLength,
                     animation: isEntering
@@ -301,6 +302,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                   style={{
                     strokeDasharray: maxLineLength,
                     strokeDashoffset: targetOffset,
+                    willChange: "stroke-dashoffset, opacity",
                     opacity: isHidden || isCollapsing ? 0 : (isScanning ? 1.0 : 0.85),
                     ["--line-length" as string]: maxLineLength,
                     animation: isEntering
