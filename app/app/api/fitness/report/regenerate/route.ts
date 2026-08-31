@@ -1,15 +1,25 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { generateStartingReport } from "@/lib/services/fitness/starting-report-service";
+import { OPENAI_MODEL } from "@/lib/services/openai/client";
+import {
+  getGenerationRetryAfterSeconds,
+  recordGenerationAttempt,
+} from "@/lib/services/fitness-ai-generation-guard";
 import { OnboardingSchema } from "@/types/fitness/onboarding";
 
 export async function POST() {
   try {
     const supabase = await createServerSupabase();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Not authenticated" },
+        { status: 401 },
+      );
     }
 
     const { data: profile, error: profileError } = await supabase
@@ -19,12 +29,37 @@ export async function POST() {
       .maybeSingle();
 
     if (profileError || !profile) {
-      return NextResponse.json({ success: false, error: "Onboarding profile not found." }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Onboarding profile not found." },
+        { status: 404 },
+      );
+    }
+
+    const retryAfterSeconds = await getGenerationRetryAfterSeconds(
+      supabase,
+      user.id,
+      "starting_report_attempt",
+    );
+    if (retryAfterSeconds > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Please wait ${retryAfterSeconds} seconds before trying to create the report again.`,
+          retryAfterSeconds,
+        },
+        { status: 429 },
+      );
     }
 
     const parsedOnboarding = OnboardingSchema.safeParse(profile.onboarding_data);
     if (!parsedOnboarding.success) {
-      return NextResponse.json({ success: false, error: "Saved onboarding data is incomplete. Please review it first." }, { status: 422 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Saved onboarding data is incomplete. Please review it first.",
+        },
+        { status: 422 },
+      );
     }
 
     const { data: scan } = await supabase
@@ -33,14 +68,22 @@ export async function POST() {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    // One explicit user action creates one compact OpenAI report request.
+    // One explicit action creates one request. The persisted attempt record prevents
+    // failed responses, reloads, or multiple tabs from causing a retry storm.
+    await recordGenerationAttempt(
+      supabase,
+      user.id,
+      "starting_report_attempt",
+      OPENAI_MODEL,
+    );
     const aiStrategy = await generateStartingReport({
       onboarding: parsedOnboarding.data,
       bmi: typeof profile.bmi === "number" ? profile.bmi : null,
       estimatedBodyFat: null,
-      visualObservations: typeof scan?.gemini_analysis === "string"
-        ? scan.gemini_analysis
-        : "No photos provided.",
+      visualObservations:
+        typeof scan?.gemini_analysis === "string"
+          ? scan.gemini_analysis
+          : "No photos provided.",
     });
 
     const { error: updateError } = await supabase
@@ -50,15 +93,21 @@ export async function POST() {
 
     if (updateError) {
       console.error("Failed to save regenerated starting report:", updateError);
-      return NextResponse.json({ success: false, error: "Could not save your report." }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: "Could not save your report." },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Starting report regeneration error:", error);
-    return NextResponse.json({
-      success: false,
-      error: "Your personalised report could not be generated. Please try again.",
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Your personalised report could not be generated. Please try again.",
+      },
+      { status: 500 },
+    );
   }
 }

@@ -15,33 +15,34 @@ export async function checkFitnessAILimit(supabase: SupabaseClient, userId: stri
       allowed: false,
       limit: 0,
       used: 0,
-      remaining: 0
+      remaining: 0,
     };
   }
 
   // 2. Count today's fitness AI sessions
   const adminClient = createAdminClient();
-  
+
   const { count, error } = await adminClient
     .from("fitness_os_ai_sessions")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
+    .eq("session_type", "plan_generation")
     .gte("created_at", startOfDay.toISOString());
 
   if (error) {
     console.error("Error checking Fitness AI limit:", error);
     return { allowed: false, limit: dailyLimit, used: 0, remaining: 0, error };
   }
-  
+
   const todayCount = count || 0;
   const remaining = Math.max(0, dailyLimit - todayCount);
 
   if (todayCount < dailyLimit) {
-    return { 
-      allowed: true, 
+    return {
+      allowed: true,
       limit: dailyLimit,
       used: todayCount,
-      remaining
+      remaining,
     };
   }
 
@@ -49,11 +50,18 @@ export async function checkFitnessAILimit(supabase: SupabaseClient, userId: stri
     allowed: false,
     limit: dailyLimit,
     used: todayCount,
-    remaining: 0
+    remaining: 0,
   };
 }
 
-export async function logFitnessAIUsage(userId: string, sessionType: string, prompt: string = "", response: string = "", model: string = "system", tokens: number = 0) {
+export async function logFitnessAIUsage(
+  userId: string,
+  sessionType: string,
+  prompt: string = "",
+  response: string = "",
+  model: string = "system",
+  tokens: number = 0,
+) {
   try {
     const adminClient = createAdminClient();
 
