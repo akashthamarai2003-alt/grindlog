@@ -11,17 +11,26 @@ export default function RoadmapPage() {
   const supabase = createClient();
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<any>(null);
+  const [activePlan, setActivePlan] = useState<any>(null);
   const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: fitnessProfile } = await (supabase.from('fitness_os_profiles' as any) as any).select('*').eq('user_id', user.id).single();
+        const [{ data: fitnessProfile }, { data: savedPlan }] = await Promise.all([
+          (supabase.from('fitness_os_profiles' as any) as any).select('*').eq('user_id', user.id).single(),
+          (supabase.from('fitness_os_workout_plans' as any) as any)
+            .select('id, name, description, goal, plan_data, created_at')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .maybeSingle(),
+        ]);
         if (fitnessProfile) {
           setProfile(fitnessProfile);
           setIsPremium(!!fitnessProfile.fitness_is_premium);
         }
+        if (savedPlan) setActivePlan(savedPlan);
       }
     };
     fetchProfile();
@@ -38,6 +47,11 @@ export default function RoadmapPage() {
   }, [step]);
 
   const currentWeight = profile?.weight ? `${profile.weight} kg` : '-- kg';
+  const planData = activePlan?.plan_data || {};
+  const workoutsPerWeek = Array.isArray(planData.workouts) ? planData.workouts.length : null;
+  const nutritionTarget = planData.nutrition;
+  const lifestyleTarget = planData.lifestyle;
+  const weightTarget = profile?.target_weight ? `${currentWeight} → ${profile.target_weight} kg` : 'AI Target';
 
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col relative overflow-hidden">
@@ -135,35 +149,35 @@ export default function RoadmapPage() {
                  <div className="bg-[#1A2619] p-2 rounded-lg text-[#ADFF00]"><Target size={16} /></div>
                  <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase">Workout</p>
-                   <p className="text-xs font-bold text-gray-300">AI Target</p>
+                   <p className="text-xs font-bold text-gray-300">{workoutsPerWeek ? `${workoutsPerWeek} sessions/week` : 'AI Target'}</p>
                  </div>
                </div>
                <div className="bg-[#121E12] border border-[#1A2619] p-3 rounded-xl flex items-center gap-3">
                  <div className="bg-[#1A2619] p-2 rounded-lg text-[#ADFF00]"><Flame size={16} /></div>
                  <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase">Nutrition</p>
-                   <p className="text-xs font-bold text-gray-300">AI Target</p>
+                   <p className="text-xs font-bold text-gray-300">{nutritionTarget?.daily_calories ? `${nutritionTarget.daily_calories} kcal · ${nutritionTarget.protein_grams || '--'}g protein` : 'AI Target'}</p>
                  </div>
                </div>
                <div className="bg-[#121E12] border border-[#1A2619] p-3 rounded-xl flex items-center gap-3">
                  <div className="bg-[#1A2619] p-2 rounded-lg text-[#ADFF00]"><Activity size={16} /></div>
                  <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase">Steps</p>
-                   <p className="text-xs font-bold text-gray-300">AI Target</p>
+                   <p className="text-xs font-bold text-gray-300">{lifestyleTarget?.daily_steps_target ? `${lifestyleTarget.daily_steps_target.toLocaleString()} steps/day` : 'AI Target'}</p>
                  </div>
                </div>
                <div className="bg-[#121E12] border border-[#1A2619] p-3 rounded-xl flex items-center gap-3">
                  <div className="bg-[#1A2619] p-2 rounded-lg text-[#ADFF00]"><TrendingDown size={16} /></div>
                  <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase">Weight</p>
-                   <p className="text-xs font-bold text-gray-300">Trend</p>
+                   <p className="text-xs font-bold text-gray-300">{weightTarget}</p>
                  </div>
                </div>
                <div className="bg-[#121E12] border border-[#1A2619] p-3 rounded-xl flex items-center gap-3 col-span-2 justify-center">
                  <div className="bg-[#1A2619] p-2 rounded-lg text-[#ADFF00]"><Calendar size={16} /></div>
                  <div className="text-left">
                    <p className="text-[10px] text-gray-500 font-bold uppercase">Tracking</p>
-                   <p className="text-xs font-bold text-gray-300">Weekly Check-in</p>
+                   <p className="text-xs font-bold text-gray-300">{activePlan?.name || 'Weekly Check-in'}</p>
                  </div>
                </div>
             </motion.div>
