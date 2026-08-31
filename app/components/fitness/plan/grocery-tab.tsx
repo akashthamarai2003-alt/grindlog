@@ -1,15 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ShoppingCart, Edit2, CheckCircle, Plus, Minus, Trash2, RefreshCw, Wand2, Info } from 'lucide-react';
-import { toast } from 'sonner';
+import { ShoppingCart, Edit2, CheckCircle, Plus, Minus, Trash2, Info } from 'lucide-react';
 
 export default function GroceryTab({ planData, setPlanData, profile }: { planData: any, setPlanData: any, profile: any }) {
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [tempPrice, setTempPrice] = useState<string>('');
   
-  const [generating, setGenerating] = useState(false);
-  const [optimizing, setOptimizing] = useState(false);
   const usesProvidedCoreMeals = ["PG", "Hostel", "Home", "Office/Canteen"].includes(profile?.food_environment);
   const planLabel = usesProvidedCoreMeals ? "Monthly Add-ons" : "Monthly Grocery Plan";
   const planExplanation = usesProvidedCoreMeals
@@ -37,6 +34,9 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
 
   const remainingBudget = budgetLimit > 0 ? budgetLimit - totalCost : null;
   const isOverBudget = remainingBudget !== null && remainingBudget < 0;
+  const budgetLabel = budgetLimit > 0
+    ? `Up to ₹${budgetLimit.toLocaleString()} / month`
+    : budgetStr || 'Not specified';
 
   // Group by category
   const groupedItems = useMemo(() => {
@@ -74,75 +74,12 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
     setEditingPriceId(null);
   };
 
-  const generateGrocery = async () => {
-    setGenerating(true);
-    try {
-      const res = await fetch('/api/fitness-ai/generate-grocery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentNutritionPlan: planData.nutrition })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setPlanData({
-          ...planData,
-          nutrition: { ...planData.nutrition, grocery_list: data.data.grocery_list }
-        });
-        toast.success("Grocery plan generated!");
-      } else {
-        toast.error(data.error || "Failed to generate grocery plan");
-      }
-    } catch (err) {
-      toast.error("Network error");
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const optimizeBudget = async () => {
-    if (!budgetLimit) return toast.error("No budget set in profile.");
-    setOptimizing(true);
-    try {
-      const res = await fetch('/api/fitness-ai/generate-grocery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          currentNutritionPlan: planData.nutrition,
-          optimizeBudgetMode: true,
-          currentTotalCost: totalCost 
-        })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setPlanData({
-          ...planData,
-          nutrition: { ...planData.nutrition, grocery_list: data.data.grocery_list }
-        });
-        toast.success("Budget optimized!");
-      } else {
-        toast.error(data.error || "Failed to optimize budget");
-      }
-    } catch (err) {
-      toast.error("Network error");
-    } finally {
-      setOptimizing(false);
-    }
-  };
-
   if (groceryList.length === 0) {
     return (
       <div className="px-6 py-12 animate-in fade-in flex flex-col items-center justify-center text-center">
         <ShoppingCart size={48} className="text-gray-500 mb-4" />
-        <h3 className="text-xl font-bold text-white mb-2">No {usesProvidedCoreMeals ? "Add-on" : "Grocery"} Plan Yet</h3>
-        <p className="text-gray-400 mb-6 max-w-xs">Your {usesProvidedCoreMeals ? "protein add-ons" : "grocery list"} haven't been generated yet.</p>
-        <button 
-          onClick={generateGrocery} 
-          disabled={generating}
-          className="bg-[#ADFF00] text-black font-bold py-3 px-6 rounded-full flex items-center gap-2 hover:bg-[#9BE600] disabled:opacity-70 transition-all"
-        >
-          {generating ? <RefreshCw className="animate-spin" size={18} /> : <Wand2 size={18} />}
-          {generating ? 'Creating your grocery plan...' : 'Generate Grocery Plan'}
-        </button>
+        <h3 className="text-xl font-bold text-white mb-2">No {usesProvidedCoreMeals ? "Add-ons" : "Grocery Items"} Needed</h3>
+        <p className="text-gray-400 max-w-xs">This plan does not require any extra monthly food purchases.</p>
       </div>
     );
   }
@@ -167,13 +104,14 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
             <p className="text-3xl font-black text-white">₹{totalCost.toLocaleString()}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-500 mb-1">{usesProvidedCoreMeals ? "Add-on budget" : "Budget"} ({budgetStr || 'N/A'})</p>
+            <p className="text-sm text-gray-500 mb-1">{usesProvidedCoreMeals ? "Add-on budget" : "Budget"}</p>
+            <p className="text-xs text-gray-500 mb-1">{budgetLabel}</p>
             {remainingBudget !== null ? (
               <p className={`font-bold ${isOverBudget ? 'text-red-500' : 'text-[#ADFF00]'}`}>
                 {isOverBudget ? (
                   <span className="flex items-center gap-1 justify-end"><Info size={14}/> ₹{Math.abs(remainingBudget).toLocaleString()} over budget</span>
                 ) : (
-                  <span>✓ ₹{remainingBudget.toLocaleString()} remaining</span>
+                  <span>✓ ₹{remainingBudget.toLocaleString()} unspent</span>
                 )}
               </p>
             ) : (
@@ -182,16 +120,6 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
           </div>
         </div>
 
-        {isOverBudget && (
-          <button 
-            onClick={optimizeBudget}
-            disabled={optimizing}
-            className="w-full mt-4 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl py-2.5 text-sm font-bold flex items-center justify-center gap-2"
-          >
-            {optimizing ? <RefreshCw className="animate-spin" size={16} /> : <Wand2 size={16} />}
-            {optimizing ? 'Optimizing...' : 'Optimize Budget with AI'}
-          </button>
-        )}
       </div>
 
       {/* Categories */}
@@ -285,19 +213,6 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
           </div>
         </div>
       ))}
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 pt-4 border-t border-[#1A2619]">
-        <button 
-          onClick={generateGrocery}
-          disabled={generating}
-          className="flex-1 bg-[#1A2619] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#233322]"
-        >
-          {generating ? <RefreshCw className="animate-spin" size={18} /> : <RefreshCw size={18} />}
-          Regenerate
-        </button>
-      </div>
-
     </div>
   );
 }
