@@ -27,6 +27,12 @@ export async function generateOpenAIResponseJSON<T>({
   maxTokens?: number;
   temperature?: number;
 }): Promise<T> {
+  // Reasoning tokens are included in the completion budget for GPT-5.6.
+  // A small visible-output limit can therefore finish before JSON is emitted.
+  const completionTokenBudget = OPENAI_MODEL.startsWith("gpt-5.6-")
+    ? Math.max(maxTokens, 8000)
+    : maxTokens;
+
   const completion = await getOpenAIClient().chat.completions.create({
     model: OPENAI_MODEL,
     messages: [
@@ -36,7 +42,7 @@ export async function generateOpenAIResponseJSON<T>({
       },
       { role: "user", content: userPrompt },
     ],
-    max_completion_tokens: maxTokens,
+    max_completion_tokens: completionTokenBudget,
     // GPT-5.6 reasoning models use reasoning_effort instead of temperature
     // for controlling deliberation. Keep temperature for non-reasoning overrides.
     ...(OPENAI_MODEL.startsWith("gpt-5.6-")
@@ -45,8 +51,12 @@ export async function generateOpenAIResponseJSON<T>({
     response_format: { type: "json_object" },
   });
 
-  const text = completion.choices[0]?.message?.content?.trim();
-  if (!text) throw new Error("OpenAI returned an empty response.");
+  const choice = completion.choices[0];
+  const text = choice?.message?.content?.trim();
+  if (!text) {
+    const finishReason = choice?.finish_reason || "unknown";
+    throw new Error(`OpenAI returned an empty response (finish reason: ${finishReason}).`);
+  }
 
   try {
     return JSON.parse(text) as T;
