@@ -3,8 +3,15 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { generateOpenAIResponseJSON, OPENAI_MODEL } from "@/lib/services/openai/client";
 import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-ai-limit";
 import { GeneratedPlanSchema, GeneratedPlanData } from "@/lib/fitness/ai/schemas";
-import { FITNESS_PLAN_SYSTEM_PROMPT, buildFitnessPlanPrompt } from "@/lib/fitness/ai/prompts";
+import {
+  FITNESS_PLAN_SYSTEM_PROMPT,
+  buildFitnessPlanPrompt,
+} from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
+import {
+  getGenerationRetryAfterSeconds,
+  recordGenerationAttempt,
+} from "@/lib/services/fitness-ai-generation-guard";
 
 export const maxDuration = 60;
 const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 1;
@@ -12,11 +19,17 @@ const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 1;
 export async function POST(req: Request) {
   try {
     const supabase = await createServerSupabase();
-    
+
     // 1. Authenticate user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
     // 2. Prevent duplicate active plans
@@ -28,13 +41,22 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (existingPlan) {
-      return NextResponse.json({ success: false, error: "An active plan already exists. Return to dashboard." }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "An active plan already exists. Return to dashboard." },
+        { status: 400 },
+      );
     }
 
     // 3. Rate Limit
     const limitCheck = await checkFitnessAILimit(supabase, user.id);
     if (!limitCheck.allowed) {
-      return NextResponse.json({ success: false, error: "Fitness AI limit reached for today. Please try again tomorrow." }, { status: 429 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Fitness AI limit reached for today. Please try again tomorrow.",
+        },
+        { status: 429 },
+      );
     }
 
     // 4. Fetch Profile
@@ -45,7 +67,10 @@ export async function POST(req: Request) {
       .single();
 
     if (profileError || !profile) {
-      return NextResponse.json({ success: false, error: "Profile not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Profile not found" },
+        { status: 404 },
+      );
     }
 
     // 4.5 Fetch latest Gemini Body Scan (if any)
@@ -56,9 +81,31 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     // 5. Call AI Server-Side
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toISOString().split("T")[0];
     const userPrompt = buildFitnessPlanPrompt(profile, todayStr, scan?.gemini_analysis);
-    
+
+    const retryAfterSeconds = await getGenerationRetryAfterSeconds(
+      supabase,
+      user.id,
+      "plan_generation_attempt",
+    );
+    if (retryAfterSeconds > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Please wait ${retryAfterSeconds} seconds before trying again.`,
+        },
+        { status: 429 },
+      );
+    }
+
+    await recordGenerationAttempt(
+      supabase,
+      user.id,
+      "plan_generation_attempt",
+      OPENAI_MODEL,
+    );
+
     let planData: GeneratedPlanData | null = null;
     let lastErrorMessage = "We couldn't build your plan right now.";
 
@@ -70,7 +117,9 @@ export async function POST(req: Request) {
         const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
           userPrompt,
-          maxTokens: 2000,
+          maxTokens: 5600,
+          minimumOutputTokens: 5600,
+          reasoningEffort: "high",
           temperature: 0.3,
         });
 
@@ -88,7 +137,8 @@ export async function POST(req: Request) {
         const safetyCheck = runFitnessAISafetyCheck(candidatePlan, profile);
         if (!safetyCheck.safe) {
           console.warn(`Attempt ${attempt} Safety check failed:`, safetyCheck.reason);
-          lastErrorMessage = safetyCheck.reason || "Generated plan violated safety checks.";
+          lastErrorMessage =
+            safetyCheck.reason || "Generated plan violated safety checks.";
           continue;
         }
 
@@ -101,26 +151,47 @@ export async function POST(req: Request) {
     }
 
     if (!planData) {
-      return NextResponse.json({ success: false, error: lastErrorMessage }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: lastErrorMessage },
+        { status: 400 },
+      );
     }
 
     // 8. Atomic Database Transaction via RPC
-    const { data: planId, error: rpcError } = await supabase.rpc("create_fitness_os_plan_transaction", {
-      payload: planData
-    });
+    const { data: planId, error: rpcError } = await supabase.rpc(
+      "create_fitness_os_plan_transaction",
+      {
+        payload: planData,
+      },
+    );
 
     if (rpcError || !planId) {
       console.error("Fitness AI Transaction failed:", rpcError);
-      return NextResponse.json({ success: false, error: "Failed to save the generated plan." }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: "Failed to save the generated plan." },
+        { status: 500 },
+      );
     }
 
     // 9. Log Usage
-    await logFitnessAIUsage(user.id, "plan_generation", userPrompt, JSON.stringify(planData), OPENAI_MODEL, 0);
+    await logFitnessAIUsage(
+      user.id,
+      "plan_generation",
+      userPrompt,
+      JSON.stringify(planData),
+      OPENAI_MODEL,
+      0,
+    );
 
     return NextResponse.json({ success: true, data: { planId } });
-    
   } catch (error: any) {
     console.error("Fitness AI Generation Error:", error);
-    return NextResponse.json({ success: false, error: "We couldn't build your plan right now. Please try again." }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "We couldn't build your plan right now. Please try again.",
+      },
+      { status: 500 },
+    );
   }
 }

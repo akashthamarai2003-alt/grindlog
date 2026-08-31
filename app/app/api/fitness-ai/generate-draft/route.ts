@@ -135,7 +135,11 @@ export async function POST(req: Request) {
         const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
           userPrompt,
-          maxTokens: 1000,
+          // A complete weekly plan needs more space than the report, but this is
+          // intentionally below the old implicit 8,000-token ceiling.
+          maxTokens: 5600,
+          minimumOutputTokens: 5600,
+          reasoningEffort: "high",
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
         });
 

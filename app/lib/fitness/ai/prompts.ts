@@ -21,8 +21,57 @@ CRITICAL GENERAL RULES:
 For workout schedules, generate workouts exactly starting from tomorrow or the current week, distributing them according to the user's preferred days and 'training_days_per_week'.
 `;
 
-export function buildFitnessPlanPrompt(profileData: any, todayDateStr: string, geminiAnalysis?: string | null): string {
+const PLAN_BODY_SCAN_CONTEXT_LIMIT = 2600;
+const PLAN_STRATEGY_TEXT_LIMIT = 360;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function compactText(value: unknown, limit: number): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  if (!text) return null;
+  return text.length <= limit ? text : `${text.slice(0, limit).trimEnd()}…`;
+}
+
+function compactList(value: unknown, limit: number, itemLimit: number): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => compactText(item, itemLimit))
+    .filter((item): item is string => Boolean(item))
+    .slice(0, limit);
+}
+
+function buildCompactStrategyContext(value: unknown): string | null {
+  if (!isRecord(value)) return null;
+
+  const health = isRecord(value.health_and_safety) ? value.health_and_safety : null;
+  const context = {
+    training_strategy: compactText(value.training_strategy, PLAN_STRATEGY_TEXT_LIMIT),
+    nutrition_strategy: compactText(value.nutrition_strategy, PLAN_STRATEGY_TEXT_LIMIT),
+    focus_areas: compactList(value.focus_areas, 5, 100),
+    health_and_safety: health
+      ? {
+          has_concerns: health.has_concerns === true,
+          safety_verdict: compactText(health.safety_verdict, PLAN_STRATEGY_TEXT_LIMIT),
+          medical_focus_areas: compactList(health.medical_focus_areas, 3, 100),
+        }
+      : null,
+  };
+
+  return JSON.stringify(context);
+}
+
+export function buildFitnessPlanPrompt(
+  profileData: any,
+  todayDateStr: string,
+  geminiAnalysis?: string | null,
+): string {
   const profile: any = profileData;
+  const bodyScanContext = compactText(geminiAnalysis, PLAN_BODY_SCAN_CONTEXT_LIMIT);
+  const strategyContext = buildCompactStrategyContext(profile.ai_strategy);
+
   return `Please generate a personalized fitness plan for me.
   
 User Profile:
@@ -34,10 +83,10 @@ User Profile:
 - Current Weight: ${profile.weight} kg
 - Target Weight: ${profile.target_weight} kg
 - Height: ${profile.height} cm
-- Waist: ${profile.waist_cm ? profile.waist_cm + ' cm' : 'Not specified'}
-- Chest: ${profile.chest_cm ? profile.chest_cm + ' cm' : 'Not specified'}
-- Arms: ${profile.arm_cm ? profile.arm_cm + ' cm' : 'Not specified'}
-- Thighs: ${profile.thigh_cm ? profile.thigh_cm + ' cm' : 'Not specified'}
+- Waist: ${profile.waist_cm ? profile.waist_cm + " cm" : "Not specified"}
+- Chest: ${profile.chest_cm ? profile.chest_cm + " cm" : "Not specified"}
+- Arms: ${profile.arm_cm ? profile.arm_cm + " cm" : "Not specified"}
+- Thighs: ${profile.thigh_cm ? profile.thigh_cm + " cm" : "Not specified"}
 - Training Location: ${profile.training_location}
 - Available Equipment: ${profile.equipment?.join(", ") || "None specified"}
 - Training Days per week: ${profile.training_days_per_week}
@@ -61,8 +110,8 @@ User Profile:
 - Medical Guidance: ${profile.medical_guidance || "None"}
 - Health Notes: ${profile.additional_health_notes || "None"}
 
-${geminiAnalysis ? `AI Body Scan Analysis (Gemini Vision):\n${geminiAnalysis}\n` : ''}
-${profile.ai_strategy && Object.keys(profile.ai_strategy).length > 0 ? `Coach's Initial Strategy & Assessment:\n${JSON.stringify(profile.ai_strategy, null, 2)}\n` : ''}
+${bodyScanContext ? `AI Body Scan Analysis (Gemini Vision, concise extract):\n${bodyScanContext}\n` : ""}
+${strategyContext ? `Coach's Initial Strategy & Safety Context:\n${strategyContext}\n` : ""}
 Current Date: ${todayDateStr}
 
 Instructions:
@@ -72,7 +121,7 @@ Instructions:
 3. Generate 'exercises' for each workout that fit within my '${profile.workout_duration_minutes || 45} minute' duration and match my ${profile.training_location} / ${Array.isArray(profile.equipment) ? profile.equipment.join(", ") : "None"} constraints. 
    - CRITICAL PROGRESSION RULE: Rep ranges MUST match my goal ('${profile.goal || "Not specified"}'). If 'Build Strength', program 3-6 reps for compound lifts. If 'Build Muscle', program 8-12 reps. If 'Lose Fat', program 12-15 reps with shorter rest periods.
    - CRITICAL EQUIPMENT RULE: You MUST strictly prescribe exercises based on the 'Available Equipment' list! If my location is 'Home' and equipment is 'None', program bodyweight-only exercises. If my equipment is just 'Dumbbells', program ONLY dumbbell exercises.
-${(!profile.equipment || !profile.equipment.some((e: string) => e.includes('Treadmill'))) ? `   - ABSOLUTE CARDIO RULE: The user DOES NOT have a Treadmill. You are STRICTLY FORBIDDEN from generating any exercise containing the word 'Treadmill'. DO NOT name any workout 'CARDIO DAY' as it implies a treadmill session. If you must program cardio, name the workout 'ACTIVE RECOVERY (WALKING)' and use exactly 'Brisk Walking', 'Jogging (Outdoors)', or 'Walking'. NEVER output 'Treadmill'.` : ''}
+${!profile.equipment || !profile.equipment.some((e: string) => e.includes("Treadmill")) ? `   - ABSOLUTE CARDIO RULE: The user DOES NOT have a Treadmill. You are STRICTLY FORBIDDEN from generating any exercise containing the word 'Treadmill'. DO NOT name any workout 'CARDIO DAY' as it implies a treadmill session. If you must program cardio, name the workout 'ACTIVE RECOVERY (WALKING)' and use exactly 'Brisk Walking', 'Jogging (Outdoors)', or 'Walking'. NEVER output 'Treadmill'.` : ""}
    - CRITICAL DURATION RULE: You MUST generate enough exercises to realistically fill the duration! For 10-20 mins: ~3 exercises. For 30-45 mins: ~5-6 exercises. For 60+ mins: ~7-8 exercises. Do not be lazy.
    - CRITICAL PHYSIQUE RULE: You MUST customize the workout split to match my Target Physique: '${profile.target_physique || "Not specified"}'. If 'Men's Physique', explicitly program heavy Lateral Deltoids and Lats for a V-Taper (include a dedicated Shoulder Day or high-frequency lateral raises). If 'Six Pack', emphasize core isolation. If 'Bodybuilder', ensure a comprehensive 5-day split hitting every muscle including calves and rear delts. If 'Lean Athletic' or 'Sporty', include functional/plyometric movements.
    - CRITICAL SAFETY RULE: You MUST strictly respect all my 'Physical Problems', 'Exercise Limitations', 'Previous Injuries', and 'Medical Guidance'. Do NOT prescribe movements that I cannot comfortably perform. You must strictly obey these mapping rules to prevent safety rejection:
@@ -93,11 +142,11 @@ ${(!profile.equipment || !profile.equipment.some((e: string) => e.includes('Trea
 4. Generate 'nutrition' providing a safe daily_calories target and protein_grams. Create a 'meals' array reflecting my ${profile.meals_per_day || "3 meals"} preference. For each meal, provide specific, realistic food items that fit my Budget (${profile.nutrition_budget || "Not specified"}), Diet (${profile.food_type || profile.diet_preference}), and Lifestyle (${profile.lifestyle_description}). 
    - CRITICAL DIET RULE: You MUST strictly adhere to my Diet Preference (${profile.food_type || profile.diet_preference}). If Vegan, DO NOT suggest ANY dairy, eggs, whey protein, or meat. If Vegetarian (Veg), DO NOT suggest ANY meat or eggs. If Jain, avoid onions and garlic.
    - CRITICAL FOOD ENVIRONMENT RULE:
-     * If Food Environment is 'PG', 'Hostel', 'Home', or 'Office/Canteen': The user's CORE MEALS (breakfast, lunch, dinner) are ALREADY PROVIDED for free by their PG/hostel/family/canteen. Do NOT suggest specific dishes for core meals — instead, write the meal items as: "PG/Home Provided Meal (Rice, Dal, Chapati, etc.)" with cost ₹0. Then ADD cheap, no-cook protein add-ons to each meal (e.g. 50g roasted chana ₹5, 30g roasted peanuts ₹5, 100g soy chunks ₹15, 1 bowl curd ₹10, 1 banana ₹5). The user's budget (${profile.nutrition_budget || 'Not specified'}) is ONLY for these add-ons. Total add-on cost MUST stay within budget.
+     * If Food Environment is 'PG', 'Hostel', 'Home', or 'Office/Canteen': The user's CORE MEALS (breakfast, lunch, dinner) are ALREADY PROVIDED for free by their PG/hostel/family/canteen. Do NOT suggest specific dishes for core meals — instead, write the meal items as: "PG/Home Provided Meal (Rice, Dal, Chapati, etc.)" with cost ₹0. Then ADD cheap, no-cook protein add-ons to each meal (e.g. 50g roasted chana ₹5, 30g roasted peanuts ₹5, 100g soy chunks ₹15, 1 bowl curd ₹10, 1 banana ₹5). The user's budget (${profile.nutrition_budget || "Not specified"}) is ONLY for these add-ons. Total add-on cost MUST stay within budget.
      * If Food Environment is 'I Cook': The user cooks everything. Suggest specific affordable meals with real costs. Total cost must fit within their budget.
      * If Food Environment is 'Mixed': Treat weekday meals as provided (like PG) and weekend meals as self-cooked.
      * (Again, respect the CRITICAL DIET RULE when selecting add-ons! No eggs/meat for Vegetarian, no dairy for Vegan!)
-   - CRITICAL MEALS PER DAY RULE: You MUST generate EXACTLY the number of meals matching my meals_per_day preference (${profile.meals_per_day || '3 meals'}). If '2 meals': generate only Lunch and Dinner. If '3 meals': generate Breakfast, Lunch, Dinner. If '4 meals': generate Breakfast, Lunch, Pre-Workout, Dinner. If '5+ meals': generate Breakfast, Pre-Workout, Lunch, Post-Workout, Dinner.
+   - CRITICAL MEALS PER DAY RULE: You MUST generate EXACTLY the number of meals matching my meals_per_day preference (${profile.meals_per_day || "3 meals"}). If '2 meals': generate only Lunch and Dinner. If '3 meals': generate Breakfast, Lunch, Dinner. If '4 meals': generate Breakfast, Lunch, Pre-Workout, Dinner. If '5+ meals': generate Breakfast, Pre-Workout, Lunch, Post-Workout, Dinner.
    - Ensure prep_instructions are practical. Strictly avoid my allergies (${profile.food_allergies || "None"}) and disliked/avoided foods (${[profile.foods_disliked, profile.foods_avoided].filter(Boolean).join(", ") || "None"}).
 5. Generate a practical monthly 'grocery_list' based directly on the generated nutrition plan. Prioritize foods already available to me (${Array.isArray(profile.available_foods) ? profile.available_foods.join(", ") : "None"}). Do not recommend purchasing foods already provided by my ${profile.food_environment} environment.
    - CRITICAL BUDGET RULE: You MUST use REALISTIC, real-world market prices in INR (₹). For example, 1 Dozen Eggs is ~₹80, 1 Kg Chicken Breast is ~₹300, 1 Kg Whey Protein is ~₹2000. Do NOT invent fake, ultra-cheap prices (like pricing 8kg chicken at ₹500 or 12 dozen eggs at ₹100) just to fit the budget! If the required quantities exceed my Nutrition Budget (${profile.nutrition_budget || "Not specified"}), you MUST swap expensive items for cheaper high-protein sources (like Soya Chunks, Dal/Lentils, or Peanuts). If the plan still exceeds the budget, output the REALISTIC prices anyway; NEVER lie about the price of food.
