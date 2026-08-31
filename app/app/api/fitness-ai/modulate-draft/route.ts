@@ -4,6 +4,8 @@ import { GeneratedPlanSchema, GeneratedPlanData } from "@/lib/fitness/ai/schemas
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { FITNESS_PLAN_SYSTEM_PROMPT } from "@/lib/fitness/ai/prompts";
 import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
+import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
+import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 
 export async function POST(req: Request) {
   try {
@@ -23,6 +25,15 @@ export async function POST(req: Request) {
 
     if (!currentPlan || !prompt) {
       return NextResponse.json({ success: false, error: "Missing plan or prompt." }, { status: 400 });
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("fitness_os_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+    if (profileError || !profile) {
+      return NextResponse.json({ success: false, error: "Fitness profile not found." }, { status: 404 });
     }
 
     const systemPrompt = `You are an elite AI Fitness Coach modifying a user's generated workout plan based on their request.
@@ -58,8 +69,19 @@ Modify the JSON appropriately and return the full updated JSON.`;
       return NextResponse.json({ success: false, error: "Failed to modify plan." }, { status: 500 });
     }
 
-    // Safety check - we could reuse runFitnessAISafetyCheck if we want
-    return NextResponse.json({ success: true, data: parsed.data });
+    const safetyCheck = runFitnessAISafetyCheck(parsed.data, profile);
+    const profileCheck = validatePlanAgainstProfile(parsed.data, profile);
+    if (!safetyCheck.safe || !profileCheck.valid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: safetyCheck.reason || profileCheck.issues[0] || "The requested change conflicts with your saved profile.",
+        },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: { ...profileCheck.plan, _profile: profile } });
 
   } catch (error: any) {
     console.error("Modulate Error:", error);

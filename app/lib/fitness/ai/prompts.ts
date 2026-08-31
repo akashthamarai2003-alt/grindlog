@@ -1,4 +1,5 @@
 import { OnboardingData } from "@/types/fitness/onboarding";
+import { getPlanNutritionTargets } from "@/lib/fitness/validation/fitness-plan-profile";
 
 export const FITNESS_PLAN_SYSTEM_PROMPT = `You are Grindlog's cautious fitness and nutrition coach. Build one complete, personalised 7-day plan from the supplied PROFILE JSON. The profile is the source of truth.
 
@@ -6,7 +7,7 @@ Safety is absolute: never prescribe a movement in profile.safety.forbidden_movem
 
 Training: create exactly training.sessions workout objects, no rest-day objects, dated from profile.today across the next 7 days and honour preferred_days when supplied. Use only the listed equipment at the stated location; no treadmill when it is absent. Fit the stated duration: about 3 exercises for 10–20 minutes, 5–6 for 30–45, and 7–8 for 60+. Use 3–6 compound reps for Build Strength, 8–12 for Build Muscle, and 12–15 with shorter rest for Lose Fat.
 
-Nutrition: respect the diet and exclusions exactly. For provided-core-meal settings, keep breakfast/lunch/dinner as a zero-cost provided meal and price only practical protein add-ons within the stated budget. For self-cooked settings, give affordable specific meals. Return concise, practical notes and realistic INR prices.
+Nutrition: respect diet, available_foods, allergies, and avoid exactly. Never recommend an item outside available_foods when it is supplied. Use nutrition.targets.daily_calories and nutrition.targets.protein_grams exactly when they are present; they were calculated from the saved onboarding profile. For provided-core-meal settings, keep breakfast/lunch/dinner explicitly labelled as a provided meal and price only practical protein add-ons within the stated budget. For self-cooked settings, give affordable specific meals. Use a clock time only when that exact time exists in profile.routine; otherwise use relative timing such as "After waking", "Midday", "Evening", or "Any time". Return concise, practical notes and realistic INR prices.
 
 Return JSON only, with every field in this shape:
 {safety_acknowledgment, plan:{name,description,goal}, workouts:[{title,workout_date,duration_minutes,exercises:[{name,exercise_order,sets,reps_string,target_reps_num,rest_seconds,notes}]}], nutrition:{daily_calories,protein_grams,meals_per_day,guidance,meals:[{meal_name,time_of_day,items,total_calories,protein_grams,prep_instructions}],grocery_list:[{name,monthly_quantity,unit,estimated_price,category,is_optional,reason}]}, lifestyle:{sleep_target_hours,water_target_liters,daily_steps_target}}.
@@ -355,6 +356,7 @@ function buildCompactPlanProfile(
   const providedCoreMeals = ["PG", "Hostel", "Home", "Office/Canteen"].includes(
     foodEnvironment,
   );
+  const nutritionTargets = getPlanNutritionTargets(profile);
 
   return (pruneEmpty({
     today: todayDateStr,
@@ -390,6 +392,10 @@ function buildCompactPlanProfile(
       provided_core_meals: providedCoreMeals,
       monthly_budget: profile.nutrition_budget,
       meals_per_day: profile.meals_per_day,
+      targets: {
+        daily_calories: nutritionTargets.calories,
+        protein_grams: nutritionTargets.protein,
+      },
       available_foods: stringList(profile.available_foods),
       allergies: profile.food_allergies,
       avoid: [profile.foods_disliked, profile.foods_avoided].filter(Boolean),

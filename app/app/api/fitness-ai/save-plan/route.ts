@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { GeneratedPlanSchema } from "@/lib/fitness/ai/schemas";
+import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
+import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 
 export async function POST(req: Request) {
   try {
@@ -19,9 +21,34 @@ export async function POST(req: Request) {
 
     const planData = parsed.data;
 
+    // Do not trust browser-held draft data. A user may have an older cached
+    // draft or modify the request before saving, so validate it again against
+    // the profile that is actually stored for this account.
+    const { data: profile, error: profileError } = await supabase
+      .from("fitness_os_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ success: false, error: "Fitness profile not found." }, { status: 404 });
+    }
+
+    const safetyCheck = runFitnessAISafetyCheck(planData, profile);
+    const profileCheck = validatePlanAgainstProfile(planData, profile);
+    if (!safetyCheck.safe || !profileCheck.valid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: safetyCheck.reason || profileCheck.issues[0] || "This draft no longer matches your saved profile.",
+        },
+        { status: 400 },
+      );
+    }
+
     // Atomic Database Transaction via RPC
     const { data: planId, error: rpcError } = await supabase.rpc("create_fitness_os_plan_transaction", {
-      payload: planData
+      payload: profileCheck.plan
     });
 
     if (rpcError || !planId) {

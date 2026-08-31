@@ -11,6 +11,7 @@ import {
   buildFitnessPlanPrompt,
 } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
+import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 import {
   getGenerationRetryAfterSeconds,
   recordGenerationAttempt,
@@ -20,7 +21,10 @@ import {
 // platform timeout turning a valid in-progress response into an empty client
 // payload. This remains below Vercel's current Hobby function limit.
 export const maxDuration = 180;
-const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 1;
+// A second request occurs only when the first valid-shaped response conflicts
+// with stored onboarding facts. It avoids presenting an invalid plan while not
+// spending extra tokens for normal successful generations.
+const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 2;
 
 export async function POST(req: Request) {
   try {
@@ -79,14 +83,17 @@ export async function POST(req: Request) {
         const cachedPlan = GeneratedPlanSchema.safeParse(
           JSON.parse(cachedDraft.response),
         );
-        if (
-          cachedPlan.success &&
-          runFitnessAISafetyCheck(cachedPlan.data, profile).safe
-        ) {
+        const safetyCheck = cachedPlan.success
+          ? runFitnessAISafetyCheck(cachedPlan.data, profile)
+          : null;
+        const profileCheck = cachedPlan.success
+          ? validatePlanAgainstProfile(cachedPlan.data, profile)
+          : null;
+        if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
           return NextResponse.json({
             success: true,
             cached: true,
-            data: { ...cachedPlan.data, _profile: profile },
+            data: { ...profileCheck.plan, _profile: profile },
           });
         }
       } catch {
@@ -134,13 +141,14 @@ export async function POST(req: Request) {
     let planData: GeneratedPlanData | null = null;
     let lastErrorType = "SYSTEM";
     let lastErrorMessage = "We couldn't build your plan right now.";
+    let correctionNote = "";
 
     for (let attempt = 1; attempt <= MAX_AUTOMATIC_GENERATION_ATTEMPTS; attempt++) {
       try {
         console.log(`Fitness AI Generation Attempt ${attempt}...`);
         const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
-          userPrompt,
+          userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
           model: FITNESS_PLAN_MODEL,
           // A complete weekly plan needs more space than the report, but this is
           // intentionally below the old implicit 8,000-token ceiling.
@@ -157,6 +165,7 @@ export async function POST(req: Request) {
           console.warn(`Attempt ${attempt} Zod validation failed:`, parsed.error);
           lastErrorType = "SYSTEM";
           lastErrorMessage = "Failed to parse AI output.";
+          correctionNote = "The prior output did not match the required JSON shape. Return the exact requested JSON object with every required section.";
           continue; // Try again
         }
 
@@ -169,10 +178,20 @@ export async function POST(req: Request) {
           lastErrorType = "SAFETY";
           lastErrorMessage =
             safetyCheck.reason || "Generated plan violated safety checks.";
+          correctionNote = "The prior output violated a safety restriction. Follow every value in profile.safety exactly; do not include blocked workouts or movements.";
           continue; // Try again
         }
 
-        planData = candidatePlan;
+        const profileCheck = validatePlanAgainstProfile(candidatePlan, profile);
+        if (!profileCheck.valid) {
+          console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);
+          lastErrorType = "SYSTEM";
+          lastErrorMessage = "The generated plan did not match the saved food, budget, meal, or safety profile.";
+          correctionNote = `The prior output conflicted with saved onboarding data: ${profileCheck.issues.join(" ")} Fix every listed issue and return the complete plan again.`;
+          continue;
+        }
+
+        planData = profileCheck.plan;
         break; // Success! Break out of the loop.
       } catch (err: any) {
         console.error(`Attempt ${attempt} caught error:`, err);

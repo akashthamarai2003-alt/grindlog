@@ -36,6 +36,19 @@ function getPlanGenerationErrorType(error: unknown): "SAFETY" | "SYSTEM" {
     : "SYSTEM";
 }
 
+function planProfileSummary(profile: any): string[] {
+  if (!profile || typeof profile !== "object") return [];
+
+  const labels = [
+    profile.food_environment ? `${profile.food_environment} meals` : null,
+    profile.food_type || profile.diet_preference || null,
+    profile.meals_per_day || null,
+    profile.nutrition_budget ? `${profile.nutrition_budget} add-ons` : null,
+  ].filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+
+  return labels.slice(0, 4);
+}
+
 export default function PlanSetupPage() {
   const router = useRouter();
   const [planData, setPlanData] = useState<any>(null);
@@ -193,7 +206,7 @@ export default function PlanSetupPage() {
   const hasTrainingSessions = workouts.some((workout: any) => !isRestOrRecoveryWorkout(workout));
   const safetyAcknowledgment = String(planData?.safety_acknowledgment || "").trim();
   const trainingPausedForSafety = Boolean(safetyAcknowledgment) && !hasTrainingSessions;
-  const nutritionGuidance = String(planData?.nutrition?.guidance || "").trim();
+  const nutritionProfileSummary = planProfileSummary(planData?._profile);
   const tabTitle = trainingPausedForSafety && activeTab === "workout"
     ? "Your Recovery Plan"
     : activeTab === "workout"
@@ -206,7 +219,9 @@ export default function PlanSetupPage() {
       ? "Your safety comes first. Keep the nutrition and recovery plan below while you arrange professional guidance."
       : String(planData?.plan?.description || "A weekly plan shaped around your goals, time, and equipment.")
     : activeTab === "diet"
-      ? nutritionGuidance || "Simple daily targets and meals that fit the food routine you shared."
+      ? trainingPausedForSafety
+        ? "Nutrition and recovery support based on the routine you saved."
+        : "Daily targets and meal steps based on the food routine you saved."
       : "A flexible monthly shopping list built around your food preferences and budget.";
 
   return (
@@ -407,6 +422,19 @@ export default function PlanSetupPage() {
               <span className="text-lg font-black text-white">{planData.lifestyle?.water_target_liters || 3}L</span>
             </div>
           </div>
+
+          {nutritionProfileSummary.length > 0 && (
+            <section className="mb-5 rounded-2xl border border-[#1A2619] bg-[#121E12] px-4 py-3">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#ADFF00]">Based on your saved profile</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {nutritionProfileSummary.map((item) => (
+                  <span key={item} className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[11px] font-semibold text-gray-300">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
 
           <div className="space-y-4">
             {meals.map((meal: any, idx: number) => (

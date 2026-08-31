@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { GeneratedGroceryItemSchema } from "@/lib/fitness/ai/schemas";
 import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
+import { validateGroceryListAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 import { z } from "zod";
 
 const GenerateGroceryResponseSchema = z.object({
@@ -23,10 +24,19 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { profile, currentNutritionPlan, optimizeBudgetMode, currentTotalCost } = body;
+    const { currentNutritionPlan, optimizeBudgetMode, currentTotalCost } = body;
 
-    if (!profile || !currentNutritionPlan) {
-      return NextResponse.json({ success: false, error: "Missing profile or nutrition plan." }, { status: 400 });
+    if (!currentNutritionPlan) {
+      return NextResponse.json({ success: false, error: "Missing nutrition plan." }, { status: 400 });
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("fitness_os_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+    if (profileError || !profile) {
+      return NextResponse.json({ success: false, error: "Fitness profile not found." }, { status: 404 });
     }
 
     const systemPrompt = `You are the Fitness AI OS intelligent coaching assistant.
@@ -80,6 +90,14 @@ CRITICAL: For eggs, NEVER use "dozen" or "dozens". If you want 36 eggs, use {"mo
       temperature: 0.2,
     });
     const parsedData = GenerateGroceryResponseSchema.parse(aiResponse);
+
+    const profileCheck = validateGroceryListAgainstProfile(parsedData.grocery_list, profile);
+    if (!profileCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: profileCheck.issues[0] || "The grocery list did not match your saved profile." },
+        { status: 400 },
+      );
+    }
 
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {
