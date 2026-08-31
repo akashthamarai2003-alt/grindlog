@@ -2496,7 +2496,12 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
         <div className="w-[300px] h-[300px] bg-[#ADFF00] rounded-full blur-[100px] animate-pulse" />
       </div>
 
-      <div className="relative z-10 w-full max-w-sm mx-auto py-12">
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-sm mx-auto py-8 text-center"
+      >
         <div className="flex justify-center mb-10 h-16">
           {phase < 4 ? (
             <motion.div
@@ -2505,13 +2510,18 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
               className="w-16 h-16 border-4 border-[#1A2619] border-t-[#ADFF00] rounded-full"
             />
           ) : (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-16 h-16 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(173,255,0,0.5)]">
+            <motion.div
+              initial={{ scale: 0.65, opacity: 0 }}
+              animate={{ scale: [0.65, 1.1, 1], opacity: 1 }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="w-16 h-16 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(173,255,0,0.5)]"
+            >
               <Check size={32} strokeWidth={3} />
             </motion.div>
           )}
         </div>
 
-        <div className="space-y-8 min-h-[280px]">
+        <div className="space-y-8 min-h-[280px] flex flex-col items-center">
           <AnalysisBlock 
             title="Understanding your profile..." 
             items={["Body information", "Fitness goal", "Training experience", "Lifestyle", "Nutrition preferences"]}
@@ -2535,9 +2545,10 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
         <div className="mt-8 h-16">
           <AnimatePresence>
             {phase >= 4 && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }} 
+              <motion.div
+                initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
                 <button 
                   onClick={handleCompleteClick} 
@@ -2564,7 +2575,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -2574,22 +2585,31 @@ const AnalysisBlock = ({ title, items, isActive, isComplete }: { title: string, 
   if (!isActive) return null;
   
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+    <motion.div
+      initial={{ opacity: 0, y: 14, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full space-y-3 text-center"
+    >
       <h3 className={`font-black text-sm transition-colors duration-500 ${isComplete ? 'text-gray-400' : 'text-white'}`}>{title}</h3>
-      <div className="space-y-2">
+      <div className="space-y-2 flex flex-col items-center">
         {items.map((item, i) => (
           <motion.div 
             key={item} 
-            initial={{ opacity: 0, x: -10 }} 
-            animate={{ opacity: 1, x: 0 }} 
-            transition={{ delay: i * 0.15 }}
-            className="flex items-center gap-3"
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.1 + i * 0.11, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="flex items-center justify-center gap-3"
           >
-            <div className={`w-5 h-5 rounded-full flex flex-shrink-0 items-center justify-center border-2 transition-colors duration-500 ${
+            <motion.div
+              animate={{ scale: isComplete ? [0.8, 1.12, 1] : 1 }}
+              transition={{ delay: i * 0.08, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className={`w-5 h-5 rounded-full flex flex-shrink-0 items-center justify-center border-2 transition-colors duration-500 ${
               isComplete ? 'border-[#ADFF00] bg-[#ADFF00]/10 text-[#ADFF00]' : 'border-gray-600 bg-transparent text-transparent'
-            }`}>
+            }`}
+            >
               <Check size={12} strokeWidth={3} className={isComplete ? "opacity-100" : "opacity-0"} />
-            </div>
+            </motion.div>
             <span className={`text-sm font-semibold transition-colors duration-500 ${isComplete ? 'text-gray-300' : 'text-gray-500'}`}>{item}</span>
           </motion.div>
         ))}
