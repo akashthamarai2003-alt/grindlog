@@ -1,5 +1,5 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { generateAIResponseJSON, GROQ_MODELS } from "@/lib/services/groq/client";
+import { generateOpenAIResponseJSON, OPENAI_MODEL } from "@/lib/services/openai/client";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 
 interface MealPlanGenerationResult {
@@ -196,19 +196,18 @@ Generate the meal plan with EXACTLY these meal types: ${mealTypesToGenerate.join
 Strictly adhere to the Diet Preference, Budget, and Food Environment constraints.
 `;
 
-    // 5. Call Groq with 1 retry logic for JSON formatting
+    // 5. Call OpenAI with one retry for transient/formatting failures
     let aiResult: MealPlanGenerationResult | null = null;
     let attempts = 0;
-    const model = GROQ_MODELS.fast;
+    const model = OPENAI_MODEL;
     let lastError = null;
 
     while (attempts < 2) {
       try {
         attempts++;
-        aiResult = await generateAIResponseJSON<MealPlanGenerationResult>({
+        aiResult = await generateOpenAIResponseJSON<MealPlanGenerationResult>({
           systemPrompt,
           userPrompt,
-          model: "fast"
         });
         
         // Basic schema validation

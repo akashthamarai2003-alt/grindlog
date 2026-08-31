@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { GeneratedGroceryItemSchema } from "@/lib/fitness/ai/schemas";
-import { getGroqClient } from "@/lib/services/groq/client";
+import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
 import { z } from "zod";
 
 const GenerateGroceryResponseSchema = z.object({
@@ -74,20 +74,12 @@ Respond entirely in JSON format matching this schema:
 }
 CRITICAL: For eggs, NEVER use "dozen" or "dozens". If you want 36 eggs, use {"monthly_quantity": 36, "unit": "pieces"}. Every single item MUST have a realistic estimated_price > 0. Never output 0 for prices.`;
 
-    const groq = getGroqClient();
-    
-    const response = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      model: "llama-3.3-70b-versatile",
+    const aiResponse = await generateOpenAIResponseJSON<z.infer<typeof GenerateGroceryResponseSchema>>({
+      systemPrompt,
+      userPrompt,
       temperature: 0.2,
-      response_format: { type: "json_object" }
     });
-
-    const aiResponseText = response.choices[0]?.message?.content || "{}";
-    const parsedData = GenerateGroceryResponseSchema.parse(JSON.parse(aiResponseText));
+    const parsedData = GenerateGroceryResponseSchema.parse(aiResponse);
 
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {

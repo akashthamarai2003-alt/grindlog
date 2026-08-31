@@ -3,7 +3,7 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { GeneratedPlanSchema, GeneratedPlanData } from "@/lib/fitness/ai/schemas";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { FITNESS_PLAN_SYSTEM_PROMPT } from "@/lib/fitness/ai/prompts";
-import { getGroqClient } from "@/lib/services/groq/client";
+import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
 
 export async function POST(req: Request) {
   try {
@@ -45,12 +45,9 @@ User request: "${prompt}"
 
 Modify the JSON appropriately and return the full updated JSON.`;
 
-    const { generateAIResponseJSON } = await import("@/lib/services/groq/client");
-    
-    const aiResponse = await generateAIResponseJSON({
+    const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
       systemPrompt,
       userPrompt,
-      model: "fast",
       maxTokens: 2000,
     });
 

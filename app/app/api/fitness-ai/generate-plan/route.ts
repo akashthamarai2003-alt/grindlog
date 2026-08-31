@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { generateAIResponseJSON } from "@/lib/services/groq/client";
+import { generateOpenAIResponseJSON, OPENAI_MODEL } from "@/lib/services/openai/client";
 import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-ai-limit";
 import { GeneratedPlanSchema, GeneratedPlanData } from "@/lib/fitness/ai/schemas";
 import { FITNESS_PLAN_SYSTEM_PROMPT, buildFitnessPlanPrompt } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
-import { getGroqClient } from "@/lib/services/groq/client";
 
 export const maxDuration = 60; // Set to 60 seconds to accommodate auto-retries
 
@@ -59,26 +58,18 @@ export async function POST(req: Request) {
     const todayStr = new Date().toISOString().split('T')[0];
     const userPrompt = buildFitnessPlanPrompt(profile, todayStr, scan?.gemini_analysis);
     
-    const groq = getGroqClient();
-
     let planData: GeneratedPlanData | null = null;
     let lastErrorMessage = "We couldn't build your plan right now.";
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         console.log(`Fitness AI Generation Attempt ${attempt}...`);
-        const response = await groq.chat.completions.create({
-          messages: [
-            { role: "system", content: FITNESS_PLAN_SYSTEM_PROMPT },
-            { role: "user", content: userPrompt }
-          ],
-          model: "llama-3.1-8b-instant",
+        const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
+          systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
+          userPrompt,
+          maxTokens: 2000,
           temperature: 0.3,
-          max_tokens: 2000,
-          response_format: { type: "json_object" }
         });
-
-        const aiResponse = JSON.parse(response.choices[0].message.content || "{}");
 
         // 6. Validate AI JSON
         const parsed = GeneratedPlanSchema.safeParse(aiResponse);
@@ -121,7 +112,7 @@ export async function POST(req: Request) {
     }
 
     // 9. Log Usage
-    await logFitnessAIUsage(user.id, "plan_generation", userPrompt, JSON.stringify(planData), "llama-3.1-8b-instant", 0);
+    await logFitnessAIUsage(user.id, "plan_generation", userPrompt, JSON.stringify(planData), OPENAI_MODEL, 0);
 
     return NextResponse.json({ success: true, data: { planId } });
     
