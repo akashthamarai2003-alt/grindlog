@@ -25,9 +25,9 @@ export interface AnimationTimeline {
  * 2.10–3.80  NETWORK_FULL (continuous rotation)
  * 3.80–9.05  ANALYZING (sequential processing)
  * 9.05–10.80 DATA_COLLAPSE
- * 10.80–11.50 AI_ALONE
- * 11.50–12.00 TRANSITION (slide down)
- * 12.00+     COMPLETE
+ * 10.80–13.80 AI_ALONE (Loki atomic reveal)
+ * 13.80–14.30 TRANSITION (slide down)
+ * 14.30+     COMPLETE
  */
 export function useAnimationTimeline(
   pillCount: number,
@@ -76,8 +76,8 @@ export function useAnimationTimeline(
     // Give time for the sequential one-by-one collapse to finish (9 * 120ms + 500ms = ~1.6s)
     t(() => setPhase("AI_ALONE"), 10800);
 
-    t(() => setPhase("TRANSITION"), 11500);
-    t(() => setPhase("COMPLETE"), 12000);
+    t(() => setPhase("TRANSITION"), 13800);
+    t(() => setPhase("COMPLETE"), 14300);
 
     return () => { refs.current.forEach(clearTimeout); };
   }, [pillCount, reducedMotion, t]);
