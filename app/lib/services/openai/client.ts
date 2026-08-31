@@ -14,7 +14,7 @@ function getOpenAIClient(): OpenAI {
   return openaiClient;
 }
 
-export const OPENAI_MODEL = process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
+export const OPENAI_MODEL = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-terra";
 
 export async function generateOpenAIResponseJSON<T>({
   systemPrompt,
@@ -36,8 +36,12 @@ export async function generateOpenAIResponseJSON<T>({
       },
       { role: "user", content: userPrompt },
     ],
-    max_tokens: maxTokens,
-    temperature,
+    max_completion_tokens: maxTokens,
+    // GPT-5.6 reasoning models use reasoning_effort instead of temperature
+    // for controlling deliberation. Keep temperature for non-reasoning overrides.
+    ...(OPENAI_MODEL.startsWith("gpt-5.6-")
+      ? { reasoning_effort: "high" as const }
+      : { temperature }),
     response_format: { type: "json_object" },
   });
 
