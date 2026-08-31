@@ -6,7 +6,7 @@ export async function FitnessGuard({ children, requirePro = false }: { children:
   const { data: { user } } = await getCachedUser();
 
   if (!user) {
-    redirect("/auth/signin?redirect=/fitness");
+    redirect("/auth/signin?redirect=/");
   }
 
   const { data: profile } = await supabase
@@ -20,11 +20,11 @@ export async function FitnessGuard({ children, requirePro = false }: { children:
   }
 
   if (!profile?.fitness_is_premium) {
-    redirect("/payment?returnTo=/fitness");
+    redirect("/payment?returnTo=/");
   }
 
   if (requirePro && profile?.fitness_premium_level !== "pro") {
-    redirect("/payment?returnTo=/fitness");
+    redirect("/payment?returnTo=/");
   }
 
   return <>{children}</>;

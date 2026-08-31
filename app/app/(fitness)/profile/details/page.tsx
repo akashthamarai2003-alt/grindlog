@@ -9,7 +9,7 @@ export default async function MyDetailsPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin?redirect=/fitness");
+    redirect("/auth/signin?redirect=/profile/details");
   }
 
   const { data: fitnessProfile } = await supabase

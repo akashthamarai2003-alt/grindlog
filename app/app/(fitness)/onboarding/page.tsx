@@ -15,7 +15,7 @@ export default async function OnboardingPage({
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect("/auth/signin?redirect=/fitness");
+  if (!user) redirect("/auth/signin?redirect=/onboarding");
 
   const { data: profile } = await supabase
     .from("fitness_os_profiles")

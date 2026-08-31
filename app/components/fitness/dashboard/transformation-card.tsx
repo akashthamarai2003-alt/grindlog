@@ -95,7 +95,7 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
         </div>
 
         {premiumLevel === "core" ? (
-          <Link href="/payment?returnTo=/fitness" className="w-full mt-3">
+          <Link href="/payment?returnTo=/" className="w-full mt-3">
             <button className="w-full py-3 px-4 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-[#ADFF00]/20">
               <span className="text-sm font-semibold text-[#ADFF00] group-hover/btn:text-[#ADFF00] transition-colors">Upgrade to unlock Automated AI Tracking</span>
               <div className="bg-[#ADFF00] text-black text-[9px] font-black uppercase px-2 py-1 rounded-full">Pro</div>

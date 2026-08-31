@@ -10,7 +10,7 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    redirect("/auth/signin?redirect=/fitness");
+    redirect(`/auth/signin?redirect=${encodeURIComponent(`/workout/${workoutId}/summary`)}`);
   }
 
   if (workoutId === "mock") {

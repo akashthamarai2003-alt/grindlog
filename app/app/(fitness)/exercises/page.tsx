@@ -15,7 +15,7 @@ export default async function ExercisesPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin?redirect=/fitness");
+    redirect("/auth/signin?redirect=/exercises");
   }
 
   return (

@@ -108,7 +108,7 @@ export function MyDetailsContent({
     try {
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
-      router.push("/auth/signin?redirect=/fitness");
+      router.push("/auth/signin?redirect=/");
       router.refresh();
     } catch (err) {
       toast.error("Failed to sign out");

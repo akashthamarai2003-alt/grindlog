@@ -240,7 +240,7 @@ export default function RoadmapPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.2 }}
                 onClick={() => {
-                  router.push('/payment?returnTo=/fitness');
+                  router.push('/payment?returnTo=/roadmap');
                 }}
                 className="w-full bg-[#ADFF00] text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#9BE600] transition-colors"
               >

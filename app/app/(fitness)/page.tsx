@@ -42,7 +42,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
 
   if (!mainProfile?.fitness_is_premium) {
     if (plan) {
-      redirect("/payment?returnTo=/fitness");
+      redirect("/payment?returnTo=/");
     } else {
       // Keep reopening/back navigation on the completed onboarding report.
       // Plan generation starts only when the user explicitly clicks

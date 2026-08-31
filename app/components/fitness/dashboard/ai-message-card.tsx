@@ -6,7 +6,7 @@ import Link from "next/link";
 export function AIMessageCard({ premiumLevel = "core" }: { premiumLevel?: string }) {
   if (premiumLevel === "core") {
     return (
-      <Link href="/payment?returnTo=/fitness">
+      <Link href="/payment?returnTo=/">
         <div className="relative w-full overflow-hidden rounded-[24px] bg-[#121E12] border border-[#1A2619] p-5 flex justify-between items-center group cursor-pointer transition-transform hover:scale-[1.02]">
           <div className="relative z-10 flex gap-4 items-center">
             <div className="w-12 h-12 rounded-full bg-black/40 flex items-center justify-center shrink-0 border border-[#1A2619]">

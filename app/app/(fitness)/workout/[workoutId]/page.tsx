@@ -19,7 +19,7 @@ export default async function ActiveWorkoutPage({
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    redirect("/auth/signin?redirect=/fitness");
+    redirect(`/auth/signin?redirect=${encodeURIComponent(`/workout/${workoutId}`)}`);
   }
 
   if (workoutId === "mock") {

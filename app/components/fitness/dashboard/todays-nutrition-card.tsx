@@ -106,7 +106,7 @@ export function TodaysNutritionCard({ nutrition, premiumLevel = "core" }: Todays
               <p className="text-[10px] text-white/50 max-w-[200px]">
                 You currently have access to Macros Only. Upgrade to Pro for a hyper-personalized daily meal plan.
               </p>
-              <Link href="/payment?returnTo=/fitness" className="mt-1">
+              <Link href="/payment?returnTo=/" className="mt-1">
                 <button className="bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 text-[#ADFF00] text-[10px] font-black uppercase px-4 py-2 rounded-full border border-[#ADFF00]/20 transition-all flex items-center gap-1.5">
                   Unlock Pro <ArrowRight size={12} />
                 </button>

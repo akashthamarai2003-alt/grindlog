@@ -22,7 +22,7 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect("/auth/signin?redirect=/fitness");
+  if (!user) redirect(`/auth/signin?redirect=${encodeURIComponent(`/exercises/${slug}`)}`);
 
   const { data: exercise } = await supabase
     .from("fitness_exercises_library")

@@ -17,6 +17,7 @@ import {
   Dumbbell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getSafeRedirect } from "@/lib/utils/redirect";
 import { createRazorpayOrder, verifyRazorpayPayment, checkUserPremiumStatusAction, getUserPremiumDetailsAction } from "@/app/actions/payment";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
@@ -47,7 +48,7 @@ const basePlans = [
 export default function FitnessPaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get('returnTo');
+  const returnTo = getSafeRedirect(searchParams.get("returnTo"));
   
   // In Fitness OS, the duration is always monthly, but we let them choose the tier
   const selectedPlan = "monthly";
@@ -69,11 +70,8 @@ export default function FitnessPaymentPage() {
   // Reliable redirect effect
   useEffect(() => {
     if (isSuccess) {
-      if (returnTo) {
-        window.location.href = `${returnTo}?success=true&t=${Date.now()}`;
-      } else {
-        window.location.href = "/?success=true&t=" + Date.now();
-      }
+      const separator = returnTo.includes("?") ? "&" : "?";
+      window.location.href = `${returnTo}${separator}success=true&t=${Date.now()}`;
     }
   }, [isSuccess, returnTo]);
 
@@ -234,7 +232,7 @@ export default function FitnessPaymentPage() {
       {/* Header */}
       <div className="sticky top-0 z-50 px-4 py-4 flex items-center justify-between bg-[#0A1108]/80 backdrop-blur-lg">
         <button
-          onClick={() => returnTo ? router.push(returnTo) : router.back()}
+          onClick={() => router.push(returnTo)}
           className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center hover:bg-[#1A2619] transition-colors"
         >
           <ChevronLeft className="w-5 h-5 text-gray-300" />
