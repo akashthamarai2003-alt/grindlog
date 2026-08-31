@@ -6,7 +6,8 @@ import { GeneratedPlanSchema, GeneratedPlanData } from "@/lib/fitness/ai/schemas
 import { FITNESS_PLAN_SYSTEM_PROMPT, buildFitnessPlanPrompt } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 
-export const maxDuration = 60; // Set to 60 seconds to accommodate auto-retries
+export const maxDuration = 60;
+const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 1;
 
 export async function POST(req: Request) {
   try {
@@ -61,7 +62,9 @@ export async function POST(req: Request) {
     let planData: GeneratedPlanData | null = null;
     let lastErrorMessage = "We couldn't build your plan right now.";
 
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    // One paid generation per user action. The user can retry intentionally
+    // instead of the server silently consuming three requests.
+    for (let attempt = 1; attempt <= MAX_AUTOMATIC_GENERATION_ATTEMPTS; attempt++) {
       try {
         console.log(`Fitness AI Generation Attempt ${attempt}...`);
         const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
