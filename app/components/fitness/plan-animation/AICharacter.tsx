@@ -66,7 +66,8 @@ export function AICharacter({ isVisible, isProcessing, isComplete }: AICharacter
       </div>
       <style>{`
         .loki-atomic { position: relative; display: inline-flex; align-items: center; justify-content: center; }
-        .loki-atomic__orbits { position: absolute; inset: -30% -38%; pointer-events: none; }
+        .loki-atomic__orbits { position: absolute; inset: -30% -38%; pointer-events: none; z-index: 2; }
+        .loki-atomic > img { position: relative; z-index: 1; }
         .loki-atomic__orbit {
           position: absolute; inset: 0; border: 1px solid rgba(57,255,20,.72);
           border-radius: 50%; box-shadow: 0 0 10px rgba(57,255,20,.28);
