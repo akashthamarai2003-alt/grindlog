@@ -2521,7 +2521,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
           )}
         </div>
 
-        <div className="space-y-8 min-h-[280px] flex flex-col items-center">
+        <div className="space-y-7 min-h-[280px] w-full max-w-[310px] mx-auto text-left">
           <AnalysisBlock 
             title="Understanding your profile..." 
             items={["Body information", "Fitness goal", "Training experience", "Lifestyle", "Nutrition preferences"]}
@@ -2589,17 +2589,17 @@ const AnalysisBlock = ({ title, items, isActive, isComplete }: { title: string, 
       initial={{ opacity: 0, y: 14, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full space-y-3 text-center"
+      className="w-full space-y-3 text-left"
     >
       <h3 className={`font-black text-sm transition-colors duration-500 ${isComplete ? 'text-gray-400' : 'text-white'}`}>{title}</h3>
-      <div className="space-y-2 flex flex-col items-center">
+      <div className="space-y-2 flex flex-col items-stretch">
         {items.map((item, i) => (
           <motion.div 
             key={item} 
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.1 + i * 0.11, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center justify-center gap-3"
+            className="w-full flex items-center gap-3"
           >
             <motion.div
               animate={{ scale: isComplete ? [0.8, 1.12, 1] : 1 }}
