@@ -182,9 +182,16 @@ export default function PlanSetupPage() {
   }
 
   // Workouts logic
-  const workouts = planData?.workouts || [];
+  // Plans made before the current schema can still be in a browser/server
+  // cache. Treat malformed legacy lists as empty rather than crashing the
+  // entire final-plan screen during render.
+  const workouts = Array.isArray(planData?.workouts)
+    ? planData.workouts.filter((workout: unknown) => workout && typeof workout === "object")
+    : [];
+  const meals = Array.isArray(planData?.nutrition?.meals) ? planData.nutrition.meals : [];
   const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
   const activeWorkout = planData && selectedDay < workouts.length ? workouts[selectedDay] : null;
+  const activeExercises = Array.isArray(activeWorkout?.exercises) ? activeWorkout.exercises : [];
   const isRestOrRecoveryWorkout = (workout: any) =>
     !workout?.exercises?.length || /rest|recovery/i.test(workout?.title || "");
   const hasTrainingSessions = workouts.some((workout: any) => !isRestOrRecoveryWorkout(workout));
@@ -303,6 +310,7 @@ export default function PlanSetupPage() {
           const isSelected = selectedDay === i;
           const hasWorkout = i < workouts.length;
           const wo = hasWorkout ? workouts[i] : null;
+          const workoutTitle = typeof wo?.title === "string" ? wo.title : "Workout";
           
           return (
             <button
@@ -315,11 +323,11 @@ export default function PlanSetupPage() {
               }`}
             >
               <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-[#ADFF00]' : 'text-gray-500'}`}>{day}</span>
-              {hasWorkout && (wo.title.toLowerCase().includes("rest") || wo.title.toLowerCase().includes("recovery")) ? (
+              {hasWorkout && /rest|recovery/i.test(workoutTitle) ? (
                 <span className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-gray-400'}`}>Recovery</span>
               ) : hasWorkout ? (
                 <span className={`text-xs font-bold leading-tight text-left ${isSelected ? 'text-white' : 'text-gray-300'}`}>
-                  {wo.title.substring(0, 18)}{wo.title.length > 18 ? '...' : ''}
+                  {workoutTitle.substring(0, 18)}{workoutTitle.length > 18 ? '...' : ''}
                 </span>
               ) : (
                 <span className="text-xs font-semibold text-gray-500">Rest</span>
@@ -346,13 +354,13 @@ export default function PlanSetupPage() {
                     <Dumbbell size={20} className="text-[#ADFF00]" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black">{activeWorkout.title}</h2>
-                    <p className="text-sm text-gray-400">{activeWorkout.duration_minutes} min</p>
+                    <h2 className="text-xl font-black">{typeof activeWorkout.title === "string" ? activeWorkout.title : "Workout"}</h2>
+                    <p className="text-sm text-gray-400">{Number(activeWorkout.duration_minutes) || 45} min</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {activeWorkout.exercises?.map((ex: any, i: number) => (
+                  {activeExercises.map((ex: any, i: number) => (
                     <div key={i} className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex justify-between items-center">
                       <div className="flex-1 pr-4">
                         <h3 className="font-bold text-gray-200">{ex.name}</h3>
@@ -365,7 +373,7 @@ export default function PlanSetupPage() {
                       </div>
                     </div>
                   ))}
-                  {(!activeWorkout.exercises || activeWorkout.exercises.length === 0) && (
+                  {activeExercises.length === 0 && (
                     <div className="text-center p-8 bg-[#121E12] border border-[#1A2619] rounded-2xl text-gray-500">
                       Active Recovery / Rest Day
                     </div>
@@ -405,16 +413,16 @@ export default function PlanSetupPage() {
           </div>
 
           <div className="space-y-4">
-            {planData.nutrition?.meals?.map((meal: any, idx: number) => (
+            {meals.map((meal: any, idx: number) => (
               <div key={idx} className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#ADFF00] opacity-50"></div>
                 <div className="flex justify-between items-start mb-3 pl-2">
-                  <h3 className="font-bold text-gray-200 text-lg">{meal.meal_name}</h3>
-                  <span className="text-xs font-semibold text-gray-500 bg-black/40 px-2 py-1 rounded-md">{meal.time_of_day}</span>
+                  <h3 className="font-bold text-gray-200 text-lg">{String(meal?.meal_name || "Meal")}</h3>
+                  <span className="text-xs font-semibold text-gray-500 bg-black/40 px-2 py-1 rounded-md">{String(meal?.time_of_day || "Any time")}</span>
                 </div>
                 
                 <div className="space-y-2 pl-2">
-                  {meal.items?.map((item: string, itemIdx: number) => (
+                  {(Array.isArray(meal?.items) ? meal.items : []).map((item: string, itemIdx: number) => (
                     <div key={itemIdx} className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#ADFF00]"></div>
                       <span className="text-sm font-medium text-gray-300">{item}</span>
@@ -422,9 +430,9 @@ export default function PlanSetupPage() {
                   ))}
                 </div>
                 
-                {meal.prep_instructions && (
+                {meal?.prep_instructions && (
                   <div className="mt-4 pl-2 text-[11px] text-gray-500 border-t border-[#1A2619] pt-3">
-                    {meal.prep_instructions}
+                    {String(meal.prep_instructions)}
                   </div>
                 )}
               </div>

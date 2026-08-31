@@ -11,7 +11,11 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
   const [generating, setGenerating] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
 
-  const groceryList = planData?.nutrition?.grocery_list || [];
+  // Older cached plans may not have a valid grocery array. Keep the page
+  // usable and offer generation instead of throwing during render.
+  const groceryList = Array.isArray(planData?.nutrition?.grocery_list)
+    ? planData.nutrition.grocery_list.filter((item: unknown) => item && typeof item === 'object')
+    : [];
 
   // Budget Parsing
   const budgetStr = profile?.nutrition_budget || "";
