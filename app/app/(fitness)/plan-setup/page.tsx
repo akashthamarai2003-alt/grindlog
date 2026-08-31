@@ -49,6 +49,10 @@ function planProfileSummary(profile: any): string[] {
   return labels.slice(0, 4);
 }
 
+function usesProvidedCoreMeals(profile: any): boolean {
+  return ["PG", "Hostel", "Home", "Office/Canteen"].includes(profile?.food_environment);
+}
+
 export default function PlanSetupPage() {
   const router = useRouter();
   const [planData, setPlanData] = useState<any>(null);
@@ -207,13 +211,16 @@ export default function PlanSetupPage() {
   const safetyAcknowledgment = String(planData?.safety_acknowledgment || "").trim();
   const trainingPausedForSafety = Boolean(safetyAcknowledgment) && !hasTrainingSessions;
   const nutritionProfileSummary = planProfileSummary(planData?._profile);
+  const groceryUsesProvidedCoreMeals = usesProvidedCoreMeals(planData?._profile);
   const tabTitle = trainingPausedForSafety && activeTab === "workout"
     ? "Your Recovery Plan"
     : activeTab === "workout"
       ? "Your Training Plan"
       : activeTab === "diet"
         ? "Your Nutrition Plan"
-        : "Your Grocery Plan";
+        : groceryUsesProvidedCoreMeals
+          ? "Your Grocery Add-ons"
+          : "Your Grocery Plan";
   const tabDescription = activeTab === "workout"
     ? trainingPausedForSafety
       ? "Your safety comes first. Keep the nutrition and recovery plan below while you arrange professional guidance."
@@ -222,7 +229,9 @@ export default function PlanSetupPage() {
       ? trainingPausedForSafety
         ? "Nutrition and recovery support based on the routine you saved."
         : "Daily targets and meal steps based on the food routine you saved."
-      : "A flexible monthly shopping list built around your food preferences and budget.";
+      : groceryUsesProvidedCoreMeals
+        ? `Only practical add-ons not supplied with your ${planData?._profile?.food_environment} meals.`
+        : "A monthly shopping list based on your saved food preferences and budget.";
 
   return (
     <>

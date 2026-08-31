@@ -10,6 +10,11 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
   
   const [generating, setGenerating] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
+  const usesProvidedCoreMeals = ["PG", "Hostel", "Home", "Office/Canteen"].includes(profile?.food_environment);
+  const planLabel = usesProvidedCoreMeals ? "Monthly Add-ons" : "Monthly Grocery Plan";
+  const planExplanation = usesProvidedCoreMeals
+    ? `Only add-ons are counted. Your ${profile?.food_environment} core meals stay separate.`
+    : "Adjust a quantity or local price and your total updates instantly.";
 
   // Older cached plans may not have a valid grocery array. Keep the page
   // usable and offer generation instead of throwing during render.
@@ -19,17 +24,11 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
 
   // Budget Parsing
   const budgetStr = profile?.nutrition_budget || "";
-  let budgetLimit = 0;
-  if (budgetStr.includes("–")) {
-    const parts = budgetStr.split("–");
-    budgetLimit = parseInt(parts[1].replace(/[^0-9]/g, '')) || 0;
-  } else if (budgetStr.includes("+")) {
-    budgetLimit = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0;
-  } else if (budgetStr.includes("0-")) {
-    budgetLimit = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0;
-  } else {
-    budgetLimit = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0;
-  }
+  const budgetLimit = useMemo(() => {
+    if (!budgetStr || budgetStr.includes("+")) return 0;
+    const values = budgetStr.match(/\d[\d,]*/g)?.map((value: string) => Number(value.replace(/,/g, ""))) ?? [];
+    return values.length ? Math.max(...values) : 0;
+  }, [budgetStr]);
 
   // Calculate totals
   const totalCost = useMemo(() => {
@@ -81,7 +80,7 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
       const res = await fetch('/api/fitness-ai/generate-grocery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile, currentNutritionPlan: planData.nutrition })
+        body: JSON.stringify({ currentNutritionPlan: planData.nutrition })
       });
       const data = await res.json();
       if (data.success) {
@@ -108,7 +107,6 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          profile, 
           currentNutritionPlan: planData.nutrition,
           optimizeBudgetMode: true,
           currentTotalCost: totalCost 
@@ -135,8 +133,8 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
     return (
       <div className="px-6 py-12 animate-in fade-in flex flex-col items-center justify-center text-center">
         <ShoppingCart size={48} className="text-gray-500 mb-4" />
-        <h3 className="text-xl font-bold text-white mb-2">No Grocery Plan Yet</h3>
-        <p className="text-gray-400 mb-6 max-w-xs">Your grocery plan hasn't been generated yet.</p>
+        <h3 className="text-xl font-bold text-white mb-2">No {usesProvidedCoreMeals ? "Add-on" : "Grocery"} Plan Yet</h3>
+        <p className="text-gray-400 mb-6 max-w-xs">Your {usesProvidedCoreMeals ? "protein add-ons" : "grocery list"} haven't been generated yet.</p>
         <button 
           onClick={generateGrocery} 
           disabled={generating}
@@ -157,8 +155,8 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
         <div className={`absolute top-0 left-0 w-1 h-full ${isOverBudget ? 'bg-red-500' : 'bg-[#ADFF00]'}`} />
         <div className="mb-5 flex items-start justify-between gap-3 pl-2">
           <div>
-            <h3 className="text-xs font-extrabold text-[#ADFF00] tracking-wider uppercase">Monthly Grocery Plan</h3>
-            <p className="mt-1 text-xs leading-relaxed text-gray-500">Adjust a quantity or local price and your total updates instantly.</p>
+            <h3 className="text-xs font-extrabold text-[#ADFF00] tracking-wider uppercase">{planLabel}</h3>
+            <p className="mt-1 text-xs leading-relaxed text-gray-500">{planExplanation}</p>
           </div>
           <ShoppingCart size={20} className="shrink-0 text-[#ADFF00]" />
         </div>
@@ -169,7 +167,7 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
             <p className="text-3xl font-black text-white">₹{totalCost.toLocaleString()}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-500 mb-1">Budget ({budgetStr || 'N/A'})</p>
+            <p className="text-sm text-gray-500 mb-1">{usesProvidedCoreMeals ? "Add-on budget" : "Budget"} ({budgetStr || 'N/A'})</p>
             {remainingBudget !== null ? (
               <p className={`font-bold ${isOverBudget ? 'text-red-500' : 'text-[#ADFF00]'}`}>
                 {isOverBudget ? (
