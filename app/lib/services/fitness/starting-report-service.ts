@@ -3,6 +3,18 @@ import type { OnboardingData } from "@/types/fitness/onboarding";
 import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
 
 const StartingReportSchema = z.object({
+  body_scan_insights: z.object({
+    has_body_scan: z.boolean(),
+    overall_summary: z.string().min(20),
+    observed_strengths: z.array(z.string().min(4)).max(3),
+    priority_improvements: z.array(z.string().min(4)).max(3),
+    posture_or_movement_note: z.string().min(10),
+  }),
+  first_two_weeks: z.object({
+    training_start: z.string().min(20),
+    nutrition_start: z.string().min(20),
+    recovery_start: z.string().min(20),
+  }),
   training_strategy: z.string().min(20),
   nutrition_strategy: z.string().min(20),
   progress_roadmap: z.array(z.string().min(4)).min(3).max(4),
@@ -52,6 +64,14 @@ function compactVisualObservations(raw: string): string {
   // Vision analysis can be long. A concise extract is enough for the report and
   // prevents an uploaded-photo analysis from inflating every OpenAI request.
   return raw.slice(0, 2800);
+}
+
+function hasUsableBodyScan(raw: string): boolean {
+  return Boolean(
+    raw
+    && raw !== "No photos provided."
+    && !raw.includes('"error"'),
+  );
 }
 
 export async function generateStartingReport({
@@ -113,6 +133,8 @@ export async function generateStartingReport({
   const systemPrompt = `You are Grindlog's cautious fitness coach. Create a concise starting report using only the supplied onboarding profile and optional vision observations. Do not invent a measurement, target, injury, food preference, budget, or photo finding. This is coaching guidance, not medical advice.
 
 Return one valid JSON object with exactly these top-level fields:
+- body_scan_insights: { has_body_scan, overall_summary, observed_strengths, priority_improvements, posture_or_movement_note }. Only describe photo observations when body_scan_available is true. Never diagnose health conditions or give an exact body-fat percentage from photos. If false, explicitly state that no usable body scan is available and use empty observation arrays.
+- first_two_weeks: { training_start, nutrition_start, recovery_start }. Give a realistic beginner-safe start that respects stated injuries, fitness level, available time, location, equipment, diet, and budget. Do not prescribe a six-day hard programme to a beginner unless their supplied profile supports it.
 - training_strategy: short personalised strategy.
 - nutrition_strategy: short personalised strategy that strictly respects diet_type, allergies, avoided foods, food environment, and budget.
 - progress_roadmap: 3 or 4 short milestones.
@@ -127,11 +149,11 @@ Use Indian rupees only when the supplied budget is in rupees. Keep each string p
 
   const response = await generateOpenAIResponseJSON<unknown>({
     systemPrompt,
-    userPrompt: `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`,
-    maxTokens: 1400,
+    userPrompt: `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nBODY SCAN AVAILABLE: ${hasUsableBodyScan(visualObservations)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`,
+    maxTokens: 1800,
     // This report is bounded and should not use the high-reasoning plan budget.
     reasoningEffort: "low",
-    minimumOutputTokens: 1800,
+    minimumOutputTokens: 2600,
   });
 
   const parsed = StartingReportSchema.safeParse(response);

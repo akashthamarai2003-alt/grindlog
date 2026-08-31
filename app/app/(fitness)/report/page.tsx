@@ -9,11 +9,24 @@ function isRecord(value: unknown): value is Record<string, any> {
 }
 
 function hasGeneratedStartingReport(strategy: Record<string, any>): boolean {
+  const bodyScan = strategy.body_scan_insights;
+  const firstTwoWeeks = strategy.first_two_weeks;
   const realityCheck = strategy.reality_check;
   const budget = strategy.budget_breakdown;
   const health = strategy.health_and_safety;
 
-  return Array.isArray(strategy.focus_areas) && strategy.focus_areas.length === 5
+  return isRecord(bodyScan)
+    && typeof bodyScan.overall_summary === "string"
+    && Array.isArray(bodyScan.observed_strengths)
+    && Array.isArray(bodyScan.priority_improvements)
+    && typeof bodyScan.posture_or_movement_note === "string"
+    && isRecord(firstTwoWeeks)
+    && typeof firstTwoWeeks.training_start === "string"
+    && typeof firstTwoWeeks.nutrition_start === "string"
+    && typeof firstTwoWeeks.recovery_start === "string"
+    && typeof strategy.training_strategy === "string"
+    && typeof strategy.nutrition_strategy === "string"
+    && Array.isArray(strategy.focus_areas) && strategy.focus_areas.length === 5
     && typeof strategy.fitness_score === "number"
     && isRecord(realityCheck)
     && typeof realityCheck.honest_assessment === "string"
@@ -90,6 +103,25 @@ export default async function AIStartingReportPage() {
     );
   }
   const focusAreas = Array.isArray(aiStrategy.focus_areas) ? aiStrategy.focus_areas : [];
+  const onboardingData = isRecord(profile.onboarding_data) ? profile.onboarding_data : {};
+  const bodyScanInsights = aiStrategy.body_scan_insights as Record<string, any>;
+  const firstTwoWeeks = aiStrategy.first_two_weeks as Record<string, any>;
+  const bodyDetails = [
+    ["Height", displayValue(onboardingData.height ?? profile.height, " cm")],
+    ["BMI", displayValue(profile.bmi)],
+    ["Waist", displayValue(onboardingData.waist_cm, " cm")],
+    ["Chest", displayValue(onboardingData.chest_cm, " cm")],
+    ["Arm", displayValue(onboardingData.arm_cm, " cm")],
+    ["Thigh", displayValue(onboardingData.thigh_cm, " cm")],
+  ];
+  const personalNumbers = [
+    ["Protein starting target", displayValue(profile.initial_protein_target, " g/day")],
+    ["Maintenance estimate", displayValue(profile.baseline_calories, " kcal/day")],
+    ["Daily activity", displayValue(profile.daily_steps)],
+    ["Sleep", displayValue(profile.sleep_duration)],
+    ["Target deadline", displayValue(onboardingData.target_deadline_days, " days")],
+    ["Workout time", displayValue(profile.preferred_training_time || profile.workout_time)],
+  ];
   
   const rawFitnessScore = aiStrategy.fitness_score;
   const fitnessScore = (typeof rawFitnessScore === 'number' || typeof rawFitnessScore === 'string')
@@ -156,6 +188,57 @@ export default async function AIStartingReportPage() {
           </div>
         </div>
 
+        {/* Body details entered during onboarding */}
+        <section className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+          <div>
+            <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-1">Your body details</p>
+            <h2 className="text-lg font-black tracking-tight">Starting measurements</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {bodyDetails.map(([label, value]) => (
+              <div key={label} className="bg-[#0D150D] border border-white/5 rounded-2xl px-3.5 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{label}</p>
+                <p className="mt-1 text-sm font-bold text-white">{value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Insight generated from the optional uploaded body scan */}
+        <section className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+          <div>
+            <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-1">Your body scan insights</p>
+            <h2 className="text-lg font-black tracking-tight">What the uploaded photos show</h2>
+          </div>
+          <p className="text-sm text-gray-300 leading-relaxed bg-[#0D150D] border border-white/5 rounded-2xl p-4">
+            {String(bodyScanInsights.overall_summary)}
+          </p>
+
+          {bodyScanInsights.has_body_scan && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Visible strengths</p>
+                <ul className="space-y-2">
+                  {bodyScanInsights.observed_strengths.map((item: string, index: number) => (
+                    <li key={`${item}-${index}`} className="text-xs leading-relaxed text-gray-300">{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-2">Priority improvements</p>
+                <ul className="space-y-2">
+                  {bodyScanInsights.priority_improvements.map((item: string, index: number) => (
+                    <li key={`${item}-${index}`} className="text-xs leading-relaxed text-gray-300">{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-400 leading-relaxed">{String(bodyScanInsights.posture_or_movement_note)}</p>
+          <p className="text-[11px] text-gray-500">Photo observations are coaching guidance only, not a medical diagnosis or body-fat measurement.</p>
+        </section>
+
         {/* Profile Configuration */}
         <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
           <div className="flex items-center gap-2 mb-2">
@@ -186,6 +269,58 @@ export default async function AIStartingReportPage() {
             )}
           </div>
         </div>
+
+        {/* Directly calculated from body and lifestyle inputs saved at onboarding */}
+        <section className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+          <div>
+            <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-1">Your personal numbers</p>
+            <h2 className="text-lg font-black tracking-tight">Starting targets and routine</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {personalNumbers.map(([label, value]) => (
+              <div key={label} className="bg-[#0D150D] border border-white/5 rounded-2xl px-3.5 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{label}</p>
+                <p className="mt-1 text-sm font-bold text-white leading-snug">{value}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] leading-relaxed text-gray-500">Protein and maintenance are starting estimates calculated from your onboarding details; adjust them with real progress over time.</p>
+        </section>
+
+        {/* One practical, user-specific start instead of a generic hard programme */}
+        <section className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+          <div>
+            <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-1">Your first two weeks</p>
+            <h2 className="text-lg font-black tracking-tight">Start safely and build consistency</h2>
+          </div>
+          <div className="space-y-3">
+            {[
+              ["Training", firstTwoWeeks.training_start],
+              ["Nutrition", firstTwoWeeks.nutrition_start],
+              ["Recovery", firstTwoWeeks.recovery_start],
+            ].map(([label, value]) => (
+              <div key={label} className="bg-[#0D150D] border border-white/5 rounded-2xl p-4">
+                <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-1">{label}</p>
+                <p className="text-sm leading-relaxed text-gray-300">{String(value)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Tailored strategies produced from the complete onboarding profile */}
+        <section className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+          <h2 className="text-lg font-black tracking-tight">Your tailored strategy</h2>
+          <div className="space-y-3">
+            <div className="bg-[#0D150D] border border-white/5 rounded-2xl p-4">
+              <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-1">Training approach</p>
+              <p className="text-sm leading-relaxed text-gray-300">{String(aiStrategy.training_strategy)}</p>
+            </div>
+            <div className="bg-[#0D150D] border border-white/5 rounded-2xl p-4">
+              <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-wider mb-1">Nutrition approach</p>
+              <p className="text-sm leading-relaxed text-gray-300">{String(aiStrategy.nutrition_strategy)}</p>
+            </div>
+          </div>
+        </section>
 
         {/* REALITY CHECK SECTION */}
         <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4 relative overflow-hidden">
