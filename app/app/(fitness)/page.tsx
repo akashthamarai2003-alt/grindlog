@@ -44,7 +44,10 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     if (plan) {
       redirect("/payment?returnTo=/fitness");
     } else {
-      redirect("/plan-setup");
+      // Keep reopening/back navigation on the completed onboarding report.
+      // Plan generation starts only when the user explicitly clicks
+      // "Generate My Plan", avoiding duplicate paid AI requests.
+      redirect("/report");
     }
   }
 
