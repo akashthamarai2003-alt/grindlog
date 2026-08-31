@@ -208,7 +208,7 @@ export default function PlanSetupPage() {
   const tabDescription = activeTab === "workout"
     ? trainingPausedForSafety
       ? "Your safety comes first. Keep the nutrition and recovery plan below while you arrange professional guidance."
-      : String(planData.plan?.description || "A weekly plan shaped around your goals, time, and equipment.")
+      : String(planData?.plan?.description || "A weekly plan shaped around your goals, time, and equipment.")
     : activeTab === "diet"
       ? nutritionGuidance || "Simple daily targets and meals that fit the food routine you shared."
       : "A flexible monthly shopping list built around your food preferences and budget.";
