@@ -65,7 +65,6 @@ export default function PlanSetupPage() {
       .then(([res]) => {
         if (!isMounted) return;
         setPlanData(res.data);
-        setLoading(false);
       })
       .catch((err: unknown) => {
         if (!isMounted) return;
@@ -73,7 +72,6 @@ export default function PlanSetupPage() {
         setGenerationError(message);
         setGenerationErrorType(getPlanGenerationErrorType(err));
         toast.error(message);
-        setLoading(false);
       });
       
     return () => { isMounted = false; };
@@ -162,14 +160,12 @@ export default function PlanSetupPage() {
             requestPlanDraft()
               .then(res => {
                 setPlanData(res.data);
-                setLoading(false);
               })
               .catch((err: unknown) => {
                 setGenerationError(
                   err instanceof Error ? err.message : "Network error while generating the plan.",
                 );
                 setGenerationErrorType(getPlanGenerationErrorType(err));
-                setLoading(false);
               });
           }} 
           className="px-8 py-3 bg-[#ADFF00] text-black font-extrabold rounded-full flex items-center gap-2 hover:bg-[#c4ff33] transition-colors"
@@ -467,7 +463,10 @@ export default function PlanSetupPage() {
       )}
 
       {loading && (
-        <AIPlanAnimation onAnimationComplete={() => setLoading(false)} />
+        <AIPlanAnimation
+          isReady={Boolean(planData || generationError)}
+          onAnimationComplete={() => setLoading(false)}
+        />
       )}
     </>
   );

@@ -48,10 +48,15 @@ const PILL_CONFIGS: PillConfig[] = [
 ];
 
 interface AIPlanAnimationProps {
+  /** Keep the final state visible until the live plan request settles. */
+  isReady?: boolean;
   onAnimationComplete?: () => void;
 }
 
-export default function AIPlanAnimation({ onAnimationComplete }: AIPlanAnimationProps) {
+export default function AIPlanAnimation({
+  isReady = false,
+  onAnimationComplete,
+}: AIPlanAnimationProps) {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const reducedMotion = useReducedMotion() ?? false;
 
@@ -87,12 +92,17 @@ export default function AIPlanAnimation({ onAnimationComplete }: AIPlanAnimation
   // begins at DATA_ENTER and each pill/line can enter in order.
   const timeline = useAnimationTimeline(pills.length, reducedMotion);
 
-  // Trigger completion callback when timeline finishes
+  // The animation timeline is only visual. Do not reveal a failure screen
+  // while the real model call is still running; exit after both are ready.
+  const isTransitioning =
+    (timeline.phase === "TRANSITION" || timeline.phase === "COMPLETE") && isReady;
+
   useEffect(() => {
-    if (timeline.isComplete && onAnimationComplete) {
-      onAnimationComplete();
-    }
-  }, [timeline.isComplete, onAnimationComplete]);
+    if (!isTransitioning || !onAnimationComplete) return;
+
+    const timer = window.setTimeout(onAnimationComplete, 750);
+    return () => window.clearTimeout(timer);
+  }, [isTransitioning, onAnimationComplete]);
 
   // Derived states for components
   const isCharVisible = timeline.phase !== "BOOT";
@@ -103,9 +113,6 @@ export default function AIPlanAnimation({ onAnimationComplete }: AIPlanAnimation
     timeline.phase === "TRANSITION" ||
     timeline.phase === "COMPLETE";
   const orbitsActive = timeline.phase !== "BOOT";
-  const isTransitioning =
-    timeline.phase === "TRANSITION" || timeline.phase === "COMPLETE";
-
   return (
     <motion.div
       className="fixed inset-0 w-screen h-[100dvh] bg-[#061506] overflow-hidden select-none"
