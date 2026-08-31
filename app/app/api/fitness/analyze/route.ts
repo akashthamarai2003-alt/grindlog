@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { OnboardingSchema } from '@/types/fitness/onboarding';
-import { getGroqClient } from "@/lib/services/groq/client";
+import { generateStartingReport } from "@/lib/services/fitness/starting-report-service";
 
 export async function POST(req: Request) {
   try {
-    const groq = getGroqClient();
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -98,9 +97,10 @@ export async function POST(req: Request) {
       }
     }
 
-    // Now, call Groq Text for the final strategy
-    console.log("Generating fitness reasoning...");
-    let aiStrategy = {};
+    // The personalised report is generated once from this exact onboarding data.
+    // Groq remains isolated to the in-app chatbot.
+    console.log("Generating personalised starting report...");
+    let aiStrategy: Record<string, unknown> = {};
     try {
       const systemPrompt = `You are an elite AI Fitness Coach building a highly personalized transformation strategy.
 Here is the user's data:
@@ -164,18 +164,21 @@ Generate a comprehensive Transformation Strategy JSON containing exactly these t
     - "medical_focus_areas": (array of strings) 1-3 specific medical/rehab goals (e.g. "Strengthen lower back", "Improve knee mobility"). Omit if no concerns.
 Output ONLY valid JSON matching this schema.`;
 
-      const { generateAIResponseJSON } = await import("@/lib/services/groq/client");
-      
-      aiStrategy = await generateAIResponseJSON({
-        systemPrompt,
-        userPrompt: "Generate my strategy now.",
-        model: "fast",
-        maxTokens: 2000,
+      aiStrategy = await generateStartingReport({
+        onboarding: data,
+        bmi,
+        estimatedBodyFat: estimated_body_fat,
+        visualObservations,
       });
       console.log("AI Strategy Generated:", aiStrategy);
     } catch (err) {
-      console.error("Groq Reasoning API Error:", err);
-      aiStrategy = { error: "Failed to generate strategy." };
+      console.error("OpenAI starting report error:", err);
+      // Never show a generic mock report if generation fails. The report page
+      // provides a manual retry that reuses the saved onboarding profile.
+      aiStrategy = {
+        generation_status: "failed",
+        generation_error: "Your personalised report could not be generated yet.",
+      };
     }
 
     let baseline_calories = null;

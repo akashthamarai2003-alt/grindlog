@@ -2,6 +2,34 @@ import { redirect } from "next/navigation";
 import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { ArrowRight, Brain, Info } from "lucide-react";
 import Link from "next/link";
+import { RegenerateReportButton } from "@/components/fitness/report/regenerate-report-button";
+
+function isRecord(value: unknown): value is Record<string, any> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasGeneratedStartingReport(strategy: Record<string, any>): boolean {
+  const realityCheck = strategy.reality_check;
+  const budget = strategy.budget_breakdown;
+  const health = strategy.health_and_safety;
+
+  return Array.isArray(strategy.focus_areas) && strategy.focus_areas.length === 5
+    && typeof strategy.fitness_score === "number"
+    && isRecord(realityCheck)
+    && typeof realityCheck.honest_assessment === "string"
+    && Array.isArray(realityCheck.achievable_in_timeframe)
+    && isRecord(budget)
+    && typeof budget.budget_verdict === "string"
+    && Array.isArray(budget.recommended_add_ons)
+    && Array.isArray(strategy.timeline_projection)
+    && strategy.timeline_projection.length >= 3
+    && isRecord(health);
+}
+
+function displayValue(value: unknown, suffix = ""): string {
+  if (value === null || value === undefined || value === "") return "Not specified";
+  return `${String(value)}${suffix}`;
+}
 
 export default async function AIStartingReportPage() {
   const supabase = await createServerSupabase();
@@ -21,30 +49,55 @@ export default async function AIStartingReportPage() {
     redirect("/onboarding");
   }
 
-  const aiStrategy = profile.ai_strategy || {};
-  const focusAreas = Array.isArray(aiStrategy.focus_areas) ? aiStrategy.focus_areas : [
-    "Reduce waist/body fat",
-    "Develop shoulders",
-    "Develop chest",
-    "Improve core strength",
-    "Improve overall conditioning"
-  ];
+  const aiStrategy = isRecord(profile.ai_strategy) ? profile.ai_strategy : {};
+
+  if (!hasGeneratedStartingReport(aiStrategy)) {
+    return (
+      <div className="min-h-screen bg-[#0A1108] text-white p-6 pb-28">
+        <div className="max-w-md mx-auto space-y-8 mt-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#121E12] border border-[#1A2619] mb-4">
+              <Brain size={14} className="text-[#ADFF00]" />
+              <span className="text-xs font-bold text-gray-300 tracking-wider">AI STARTING REPORT</span>
+            </div>
+            <h1 className="text-3xl font-black tracking-tight">Your Starting Point</h1>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Weight</p>
+              <p className="text-2xl font-black text-white">{displayValue(profile.weight, " kg")}</p>
+            </div>
+            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Target Weight</p>
+              <p className="text-2xl font-black text-white">{displayValue(profile.target_weight, " kg")}</p>
+            </div>
+            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl col-span-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Goal</p>
+              <p className="text-lg font-bold text-[#ADFF00] leading-tight">{displayValue(profile.goal)}</p>
+            </div>
+          </div>
+
+          <div className="bg-[#121E12] border border-amber-500/30 rounded-3xl p-5 space-y-4">
+            <h2 className="text-lg font-black">Your report is not ready yet</h2>
+            <p className="text-sm leading-relaxed text-gray-300">
+              We do not show generic coaching advice here. Create the report to analyse the onboarding details you provided.
+            </p>
+            <RegenerateReportButton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  const focusAreas = Array.isArray(aiStrategy.focus_areas) ? aiStrategy.focus_areas : [];
   
   const rawFitnessScore = aiStrategy.fitness_score;
-  const fitnessScore = (typeof rawFitnessScore === 'number' || typeof rawFitnessScore === 'string') 
-    ? rawFitnessScore 
-    : 68;
+  const fitnessScore = (typeof rawFitnessScore === 'number' || typeof rawFitnessScore === 'string')
+    ? rawFitnessScore
+    : null;
     
   const rawRealityCheck = aiStrategy.reality_check;
-  const realityCheck = rawRealityCheck || {
-    is_timeframe_realistic: true,
-    honest_assessment: "Your plan has been customized based on your profile. Stay consistent with your training and nutrition to achieve your goals.",
-    achievable_in_timeframe: [
-      "Build a consistent workout habit",
-      "Improve overall strength and endurance",
-      "Achieve visible body composition changes",
-    ],
-  };
+  const realityCheck = rawRealityCheck || {};
 
   const rawBudgetBreakdown = aiStrategy.budget_breakdown;
   const budgetBreakdown = rawBudgetBreakdown || {
@@ -56,14 +109,9 @@ export default async function AIStartingReportPage() {
 
   const healthAndSafety = aiStrategy.health_and_safety;
 
-  const timelineProjection = Array.isArray(aiStrategy.timeline_projection) && aiStrategy.timeline_projection.length > 0
+  const timelineProjection = Array.isArray(aiStrategy.timeline_projection)
     ? aiStrategy.timeline_projection
-    : [
-        { timeframe: "Week 1-2", target_weight_kg: null, expected_changes: "Body adapts to new routine. Focus on form and consistency." },
-        { timeframe: "Week 3-4", target_weight_kg: null, expected_changes: "Strength improves, early body recomposition begins." },
-        { timeframe: "Week 5-8", target_weight_kg: null, expected_changes: "Visible changes in muscle definition and fat loss." },
-        { timeframe: "Week 9-12", target_weight_kg: null, expected_changes: "Significant progress milestone. Reassess and level up." },
-      ];
+    : [];
 
   const achievableList = Array.isArray(realityCheck.achievable_in_timeframe)
     ? realityCheck.achievable_in_timeframe
@@ -90,22 +138,20 @@ export default async function AIStartingReportPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Weight</p>
-            <p className="text-2xl font-black text-white">{profile.weight || '--'} kg</p>
+            <p className="text-2xl font-black text-white">{displayValue(profile.weight, " kg")}</p>
           </div>
           <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Goal</p>
-            <p className="text-2xl font-black text-white">{profile.target_weight || '--'} kg</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Target Weight</p>
+            <p className="text-2xl font-black text-white">{displayValue(profile.target_weight, " kg")}</p>
           </div>
           <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Target</p>
-            <p className="text-lg font-bold text-[#ADFF00] leading-tight">{profile.goal || 'Not specified'}</p>
+            <p className="text-lg font-bold text-[#ADFF00] leading-tight">{displayValue(profile.goal)}</p>
           </div>
           <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Physique</p>
             <p className="text-lg font-bold text-[#ADFF00] leading-tight">
-              {(!profile.target_physique || profile.target_physique === 'Not specified') 
-                ? (profile.goal_physique_image ? 'Custom Photo' : 'Not specified')
-                : profile.target_physique}
+              {displayValue(profile.target_physique)}
             </p>
           </div>
         </div>
@@ -119,23 +165,23 @@ export default async function AIStartingReportPage() {
           
           <div className="flex flex-wrap gap-2">
             <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
-              {profile.training_location || 'Gym'}
+              {displayValue(profile.training_location)}
             </span>
             <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
-              {profile.training_days_per_week || 4} Days/Week
+              {displayValue(profile.training_days_per_week, " Days/Week")}
             </span>
             <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
-              {profile.workout_duration_minutes || 45} Mins
+              {displayValue(profile.workout_duration_minutes, " Mins")}
             </span>
             <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
-              {profile.food_type || profile.diet_preference || 'Balanced Diet'}
+              {displayValue(profile.food_type || profile.diet_preference)}
             </span>
             <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
-              {profile.food_environment || 'Home'}
+              {displayValue(profile.food_environment)}
             </span>
-            {profile.experience_level && (
+            {profile.fitness_level && (
               <span className="text-xs font-bold bg-[#1A2619] text-gray-300 px-3 py-1.5 rounded-full border border-white/5">
-                {profile.experience_level}
+                {profile.fitness_level}
               </span>
             )}
           </div>

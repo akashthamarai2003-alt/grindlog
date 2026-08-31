@@ -21,16 +21,22 @@ export async function generateOpenAIResponseJSON<T>({
   userPrompt,
   maxTokens = 2500,
   temperature = 0.2,
+  reasoningEffort = "high",
+  minimumOutputTokens = 8000,
 }: {
   systemPrompt: string;
   userPrompt: string;
   maxTokens?: number;
   temperature?: number;
+  /** Use low effort for short, bounded tasks such as the onboarding report. */
+  reasoningEffort?: "low" | "medium" | "high";
+  /** GPT-5.6 counts reasoning and visible output in this shared budget. */
+  minimumOutputTokens?: number;
 }): Promise<T> {
   // Reasoning tokens are included in the completion budget for GPT-5.6.
   // A small visible-output limit can therefore finish before JSON is emitted.
   const completionTokenBudget = OPENAI_MODEL.startsWith("gpt-5.6-")
-    ? Math.max(maxTokens, 8000)
+    ? Math.max(maxTokens, minimumOutputTokens)
     : maxTokens;
 
   const response = await getOpenAIClient().responses.create({
@@ -38,7 +44,7 @@ export async function generateOpenAIResponseJSON<T>({
     input: `SYSTEM INSTRUCTIONS:\n${systemPrompt}\n\nUSER REQUEST:\n${userPrompt}\n\nReturn valid JSON only. Do not include markdown or explanation text.`,
     max_output_tokens: completionTokenBudget,
     ...(OPENAI_MODEL.startsWith("gpt-5.6-")
-      ? { reasoning: { effort: "high" as const } }
+      ? { reasoning: { effort: reasoningEffort } }
       : { temperature }),
     text: { format: { type: "json_object" } },
   });
