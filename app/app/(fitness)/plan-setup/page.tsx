@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart } from 'lucide-react';
+import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart, ShieldAlert, HeartPulse, CalendarDays, CircleCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import GroceryTab from '@/components/fitness/plan/grocery-tab';
 import { AIPlanAnimation } from '@/components/fitness/plan-animation';
@@ -184,46 +184,121 @@ export default function PlanSetupPage() {
   // Workouts logic
   const workouts = planData?.workouts || [];
   const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-  
   const activeWorkout = planData && selectedDay < workouts.length ? workouts[selectedDay] : null;
+  const isRestOrRecoveryWorkout = (workout: any) =>
+    !workout?.exercises?.length || /rest|recovery/i.test(workout?.title || "");
+  const hasTrainingSessions = workouts.some((workout: any) => !isRestOrRecoveryWorkout(workout));
+  const safetyAcknowledgment = String(planData?.safety_acknowledgment || "").trim();
+  const trainingPausedForSafety = Boolean(safetyAcknowledgment) && !hasTrainingSessions;
+  const nutritionGuidance = String(planData?.nutrition?.guidance || "").trim();
+  const tabTitle = trainingPausedForSafety && activeTab === "workout"
+    ? "Your Recovery Plan"
+    : activeTab === "workout"
+      ? "Your Training Plan"
+      : activeTab === "diet"
+        ? "Your Nutrition Plan"
+        : "Your Grocery Plan";
+  const tabDescription = activeTab === "workout"
+    ? trainingPausedForSafety
+      ? "Your safety comes first. Keep the nutrition and recovery plan below while you arrange professional guidance."
+      : String(planData.plan?.description || "A weekly plan shaped around your goals, time, and equipment.")
+    : activeTab === "diet"
+      ? nutritionGuidance || "Simple daily targets and meals that fit the food routine you shared."
+      : "A flexible monthly shopping list built around your food preferences and budget.";
 
   return (
     <>
       {planData && (
-        <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[140px]">
-          <div className="pt-12 px-6 pb-6">
-            <h1 className="text-3xl font-black mb-2 tracking-tight">
-              {activeTab === 'workout' ? 'Your Training Plan' : activeTab === 'diet' ? 'Your Nutrition Plan' : 'Your Grocery Plan'}
-            </h1>
-            <p className="text-gray-400">{planData.plan?.description || "Here is your custom AI generated plan."}</p>
+        <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[156px]">
+          <div className="mx-auto max-w-md pt-10 px-6 pb-6">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#233522] bg-[#121E12] px-3 py-1.5 text-[10px] font-extrabold tracking-[0.14em] text-[#ADFF00] uppercase">
+              <CircleCheck size={13} /> Your personalised plan
+            </div>
+            <h1 className="text-3xl font-black tracking-tight">{tabTitle}</h1>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">{tabDescription}</p>
           </div>
 
       {/* Tab Toggle */}
-      <div className="flex bg-[#121E12] rounded-full p-1 mx-6 mb-6">
+      <div className="mx-auto mb-7 max-w-md px-6">
+      <div className="flex bg-[#121E12] rounded-full p-1">
         <button 
           onClick={() => setActiveTab("workout")}
+          aria-pressed={activeTab === "workout"}
           className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "workout" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
         >
           <Dumbbell size={16} /> Workout
         </button>
         <button 
           onClick={() => setActiveTab("diet")}
+          aria-pressed={activeTab === "diet"}
           className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "diet" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
         >
           <Apple size={16} /> Diet
         </button>
         <button 
           onClick={() => setActiveTab("grocery")}
+          aria-pressed={activeTab === "grocery"}
           className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "grocery" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
         >
           <ShoppingCart size={16} /> Grocery
         </button>
       </div>
+      </div>
 
       {activeTab === "workout" ? (
+        trainingPausedForSafety ? (
+          <div className="mx-auto max-w-md px-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
+            <section className="overflow-hidden rounded-3xl border border-amber-400/30 bg-[#121E12]">
+              <div className="border-b border-amber-400/15 bg-amber-400/[0.06] p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300">
+                    <ShieldAlert size={22} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-extrabold tracking-wider text-amber-300 uppercase">Training paused for safety</p>
+                    <h2 className="mt-1 text-xl font-black">Take care first, then train with confidence.</h2>
+                  </div>
+                </div>
+                <p className="mt-4 text-sm leading-relaxed text-gray-300">{safetyAcknowledgment}</p>
+              </div>
+
+              <div className="space-y-3 p-5">
+                <div className="flex gap-3 rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                  <HeartPulse size={18} className="mt-0.5 shrink-0 text-[#ADFF00]" />
+                  <div>
+                    <p className="text-sm font-bold text-white">Your next best step</p>
+                    <p className="mt-1 text-xs leading-relaxed text-gray-400">Arrange a qualified medical or physiotherapy assessment before returning to resistance training.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                  <CalendarDays size={18} className="mt-0.5 shrink-0 text-[#ADFF00]" />
+                  <div>
+                    <p className="text-sm font-bold text-white">What remains active today</p>
+                    <p className="mt-1 text-xs leading-relaxed text-gray-400">Your food, hydration, sleep, and recovery guidance are ready. Use them to support your next step.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("diet")}
+                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl border border-[#ADFF00]/25 bg-[#ADFF00]/10 py-3 text-sm font-extrabold text-[#ADFF00] transition-colors hover:bg-[#ADFF00]/15"
+                >
+                  View nutrition & recovery support <ArrowRight size={16} />
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : (
         <>
+          {safetyAcknowledgment && (
+            <div className="mx-auto mb-5 max-w-md px-6">
+              <div className="flex gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-4">
+                <ShieldAlert size={18} className="mt-0.5 shrink-0 text-amber-300" />
+                <p className="text-xs leading-relaxed text-gray-300">{safetyAcknowledgment}</p>
+              </div>
+            </div>
+          )}
       {/* Week Selector */}
-      <div className="flex overflow-x-auto gap-3 px-6 pb-4 scrollbar-hide snap-x">
+      <div className="mx-auto flex max-w-md overflow-x-auto gap-3 px-6 pb-4 scrollbar-hide snap-x">
         {days.map((day, i) => {
           const isSelected = selectedDay === i;
           const hasWorkout = i < workouts.length;
@@ -255,7 +330,7 @@ export default function PlanSetupPage() {
       </div>
 
       {/* Selected Workout Details */}
-      <div className="px-6 mt-4">
+      <div className="mx-auto mt-4 max-w-md px-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={selectedDay}
@@ -308,8 +383,9 @@ export default function PlanSetupPage() {
 
 
         </>
+        )
       ) : activeTab === "diet" ? (
-        <div className="px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="mx-auto max-w-md px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="grid grid-cols-3 gap-3 mb-6">
             <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex flex-col items-center justify-center text-center">
               <Flame size={20} className="text-orange-500 mb-2" />
@@ -362,6 +438,9 @@ export default function PlanSetupPage() {
           {/* Floating Modulator & Save */}
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50 pointer-events-none">
             <div className="max-w-md mx-auto space-y-3 pointer-events-auto">
+              <p className="px-4 text-center text-xs text-gray-500">
+                You can refine this plan later from your dashboard.
+              </p>
               
               <button 
                 onClick={handleSave}
@@ -371,7 +450,7 @@ export default function PlanSetupPage() {
                 {saving ? (
                   <><Loader2 size={20} className="animate-spin" /> <span>Activating Plan...</span></>
                 ) : (
-                  <><span>Confirm & Enter Dashboard</span> <ArrowRight size={20} /></>
+                  <><span>{trainingPausedForSafety ? "Save Recovery Plan" : "Activate My Plan"}</span> <ArrowRight size={20} /></>
                 )}
               </button>
             </div>

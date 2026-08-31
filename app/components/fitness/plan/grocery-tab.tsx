@@ -146,12 +146,18 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
   }
 
   return (
-    <div className="px-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+    <div className="mx-auto max-w-md px-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
       
       {/* Budget Summary */}
-      <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-5 relative overflow-hidden">
+      <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 relative overflow-hidden">
         <div className={`absolute top-0 left-0 w-1 h-full ${isOverBudget ? 'bg-red-500' : 'bg-[#ADFF00]'}`} />
-        <h3 className="text-sm font-bold text-gray-400 tracking-wider uppercase mb-4 pl-2">Monthly Grocery Plan</h3>
+        <div className="mb-5 flex items-start justify-between gap-3 pl-2">
+          <div>
+            <h3 className="text-xs font-extrabold text-[#ADFF00] tracking-wider uppercase">Monthly Grocery Plan</h3>
+            <p className="mt-1 text-xs leading-relaxed text-gray-500">Adjust a quantity or local price and your total updates instantly.</p>
+          </div>
+          <ShoppingCart size={20} className="shrink-0 text-[#ADFF00]" />
+        </div>
         
         <div className="flex justify-between items-end pl-2">
           <div>
@@ -199,9 +205,15 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
             {items.map((item, localIdx) => {
               const globalIdx = groceryList.findIndex((g: any) => g.name === item.name);
               return (
-                <div key={localIdx} className="bg-[#121E12] border border-[#1A2619] rounded-xl p-4 flex items-center justify-between">
+                <div key={localIdx} className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-4 flex items-center justify-between">
                   <div className="flex-1 pr-4">
-                    <h5 className="font-bold text-gray-200">{item.name}</h5>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h5 className="font-bold text-gray-100">{item.name}</h5>
+                      {item.is_optional && (
+                        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-gray-400 uppercase">Optional</span>
+                      )}
+                    </div>
+                    {item.reason && <p className="mt-1 text-xs leading-relaxed text-gray-500">{item.reason}</p>}
                     
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex items-center bg-[#1A2619] rounded-lg p-1">
@@ -255,10 +267,10 @@ export default function GroceryTab({ planData, setPlanData, profile }: { planDat
                         <button onClick={() => handleSavePrice(globalIdx)} className="text-[#ADFF00]"><CheckCircle size={16} /></button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 group cursor-pointer" onClick={() => { setEditingPriceId(item.name); setTempPrice(item.estimated_price?.toString() || ''); }}>
+                      <button type="button" aria-label={`Edit price for ${item.name}`} className="flex items-center gap-2 group" onClick={() => { setEditingPriceId(item.name); setTempPrice(item.estimated_price?.toString() || ''); }}>
                         <span className="font-black text-gray-300">₹{item.estimated_price || 0}</span>
-                        <Edit2 size={12} className="text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
+                        <Edit2 size={12} className="text-gray-500 transition-colors group-hover:text-[#ADFF00]" />
+                      </button>
                     )}
                     
                     <button onClick={() => handleRemoveItem(globalIdx)} className="text-gray-600 hover:text-red-500 transition-colors p-1">
