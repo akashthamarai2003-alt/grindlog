@@ -1,25 +1,16 @@
 import { OnboardingData } from "@/types/fitness/onboarding";
 
-export const FITNESS_PLAN_SYSTEM_PROMPT = `You are the Fitness AI OS intelligent coaching assistant.
-Your goal is to generate a structured, highly personalized fitness and nutrition plan based on the user's profile.
+export const FITNESS_PLAN_SYSTEM_PROMPT = `You are Grindlog's cautious fitness and nutrition coach. Build one complete, personalised 7-day plan from the supplied PROFILE JSON. The profile is the source of truth.
 
-CRITICAL LOCATION & EQUIPMENT RULES:
-1. HOME WORKOUTS:
-   - If Location is 'Home' AND Equipment is ONLY 'No Equipment / Bodyweight', generate ONLY pure bodyweight calisthenics exercises (e.g. Push-ups, Bodyweight Squats, Chair Dips, Walking Lunges, Planks, Mountain Climbers, Glute Bridges).
-   - If Location is 'Home' AND the user HAS selected equipment (e.g., Dumbbells, Adjustable Bench, Kettlebell, Pull-up Bar, Resistance Bands), ONLY generate exercises using EXACTLY those home equipment items! (For example: Dumbbell Bench Press, Dumbbell Rows, Dumbbell Squats, Kettlebell Swings, Pull-ups). DO NOT prescribe heavy commercial gym machines or cable station exercises that require a commercial gym!
-2. GYM: If Location is 'Gym', ONLY generate commercial gym exercises using the specific equipment options the user has selected. CRITICAL: If a specific piece of equipment (e.g., 'Treadmill / Cardio') is NOT in their equipment list, DO NOT prescribe any exercises or warmups that require it, even if 'Full Commercial Gym' is selected!
-3. OUTDOOR: If Location is 'Outdoor', generate park calisthenics, running intervals, sprint drills, bodyweight dips, push-ups, and step-ups.
-4. COMBINATION: If Location is 'Combination', generate a hybrid schedule combining Gym strength lifting days with Home/Outdoor bodyweight & cardio days across the week.
+Safety is absolute: never prescribe a movement in profile.safety.forbidden_movements or violate user-stated limitations, injuries, medical guidance, allergies, avoided foods, diet, location, or equipment. If profile.safety.block_workouts is true, return an empty workouts array and make plan.description a clear medical-clearance warning. Do not diagnose, prescribe medication, guarantee outcomes, recommend steroids, starvation, or dangerous dehydration.
 
-CRITICAL GENERAL RULES:
-1. OUTPUT JSON ONLY. You must strictly follow the JSON schema provided. No markdown block backticks around JSON unless required, no conversational text before or after the JSON.
-2. NO MEDICAL ADVICE. You must not diagnose diseases, prescribe medication, or guarantee medical outcomes. If the user mentions a medical condition, recommend consulting a doctor in the plan description or guidance.
-3. NO EXTREME RESTRICTIONS. Do not recommend starvation, dangerous dehydration, or steroid use.
-4. RESPECT ALLERGIES AND PREFERENCES. The nutrition guidance must explicitly avoid any allergies or food avoidances provided.
-5. NO IDS. Do not invent any UUIDs. The database handles ID generation.
+Training: create exactly training.sessions workout objects, no rest-day objects, dated from profile.today across the next 7 days and honour preferred_days when supplied. Use only the listed equipment at the stated location; no treadmill when it is absent. Fit the stated duration: about 3 exercises for 10–20 minutes, 5–6 for 30–45, and 7–8 for 60+. Use 3–6 compound reps for Build Strength, 8–12 for Build Muscle, and 12–15 with shorter rest for Lose Fat.
 
-For workout schedules, generate workouts exactly starting from tomorrow or the current week, distributing them according to the user's preferred days and 'training_days_per_week'.
-`;
+Nutrition: respect the diet and exclusions exactly. For provided-core-meal settings, keep breakfast/lunch/dinner as a zero-cost provided meal and price only practical protein add-ons within the stated budget. For self-cooked settings, give affordable specific meals. Return concise, practical notes and realistic INR prices.
+
+Return JSON only, with every field in this shape:
+{safety_acknowledgment, plan:{name,description,goal}, workouts:[{title,workout_date,duration_minutes,exercises:[{name,exercise_order,sets,reps_string,target_reps_num,rest_seconds,notes}]}], nutrition:{daily_calories,protein_grams,meals_per_day,guidance,meals:[{meal_name,time_of_day,items,total_calories,protein_grams,prep_instructions}],grocery_list:[{name,monthly_quantity,unit,estimated_price,category,is_optional,reason}]}, lifestyle:{sleep_target_hours,water_target_liters,daily_steps_target}}.
+Use null only for genuinely unknown numeric values; otherwise include all fields. Never create IDs.`;
 
 const PLAN_BODY_SCAN_CONTEXT_LIMIT = 2600;
 const PLAN_STRATEGY_TEXT_LIMIT = 360;
@@ -63,7 +54,7 @@ function buildCompactStrategyContext(value: unknown): string | null {
   return JSON.stringify(context);
 }
 
-export function buildFitnessPlanPrompt(
+function buildLegacyFitnessPlanPrompt(
   profileData: any,
   todayDateStr: string,
   geminiAnalysis?: string | null,
@@ -213,6 +204,224 @@ Respond entirely in JSON format matching this exact schema:
   }
 }
 `;
+}
+
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => item.toLowerCase() !== "none");
+}
+
+function hasChoice(values: string[], choice: string): boolean {
+  return values.some((value) => value.toLowerCase().includes(choice));
+}
+
+function addUnique(values: string[], value: string) {
+  if (!values.includes(value)) values.push(value);
+}
+
+function pruneEmpty(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    const items = value
+      .map((item) => pruneEmpty(item))
+      .filter((item) => item !== undefined);
+    return items.length ? items : undefined;
+  }
+
+  if (isRecord(value)) {
+    const entries = Object.entries(value)
+      .map(([key, item]) => [key, pruneEmpty(item)] as const)
+      .filter(([, item]) => item !== undefined);
+    return entries.length ? Object.fromEntries(entries) : undefined;
+  }
+
+  if (typeof value === "string") return value.trim() || undefined;
+  return value ?? undefined;
+}
+
+function buildPlanSafetyBrief(profile: Record<string, any>) {
+  const limitations = stringList(profile.exercise_limitations);
+  const problems = stringList(profile.physical_problems);
+  const equipment = stringList(profile.equipment);
+  const forbidden: string[] = [];
+
+  if (hasChoice(limitations, "squatting")) {
+    addUnique(forbidden, "all squat variations, leg press, and deep loaded knee bending");
+  }
+  if (hasChoice(limitations, "running")) {
+    addUnique(
+      forbidden,
+      "running, jogging, sprinting, treadmill work, and high-impact cardio",
+    );
+  }
+  if (hasChoice(limitations, "jumping")) {
+    addUnique(forbidden, "jumping, plyometrics, box jumps, jump rope, and burpees");
+  }
+  if (hasChoice(limitations, "overhead movements")) {
+    addUnique(
+      forbidden,
+      "overhead pressing, overhead triceps extensions, and raising the arms overhead under load",
+    );
+  }
+  if (hasChoice(limitations, "push-ups")) {
+    addUnique(forbidden, "all push-up variations");
+  }
+  if (hasChoice(limitations, "pull-ups")) {
+    addUnique(forbidden, "pull-ups, chin-ups, and muscle-ups");
+  }
+  if (hasChoice(limitations, "lunges")) {
+    addUnique(forbidden, "lunges and Bulgarian split squats");
+  }
+  if (hasChoice(limitations, "bending")) {
+    addUnique(
+      forbidden,
+      "deadlifts, good mornings, bent-over rows, and heavy kettlebell swings",
+    );
+  }
+  if (hasChoice(problems, "back pain")) {
+    addUnique(
+      forbidden,
+      "deadlifts, good mornings, heavy barbell squats, and bent-over rows",
+    );
+  }
+  if (hasChoice(problems, "knee pain")) {
+    addUnique(
+      forbidden,
+      "heavy barbell squats, lunges, leg extensions, and high-impact jumping",
+    );
+  }
+  if (hasChoice(problems, "shoulder pain")) {
+    addUnique(
+      forbidden,
+      "overhead presses, overhead triceps extensions, dips, upright rows, behind-neck pulldowns, and heavy barbell bench press",
+    );
+  }
+  if (hasChoice(problems, "wrist pain") || hasChoice(problems, "elbow pain")) {
+    addUnique(forbidden, "heavy straight-bar pressing and skull crushers");
+  }
+  if (!equipment.some((item) => item.toLowerCase().includes("treadmill"))) {
+    addUnique(forbidden, "treadmill exercises");
+  }
+
+  const painScore =
+    typeof profile.current_pain_severity === "number"
+      ? profile.current_pain_severity
+      : null;
+
+  return pruneEmpty({
+    pain_score: painScore,
+    pain_triggers: stringList(profile.current_pain_triggers),
+    current_problems: problems,
+    previous_injury: profile.previous_injuries
+      ? {
+          areas: stringList(profile.previous_injury_areas),
+          timing: profile.previous_injury_timeline,
+        }
+      : undefined,
+    stated_limitations: limitations,
+    medical_guidance: profile.medical_guidance,
+    additional_notes: profile.additional_health_notes,
+    forbidden_movements: forbidden,
+    block_workouts: painScore !== null && painScore >= 7,
+  });
+}
+
+function buildPlanReportInsights(value: unknown): unknown {
+  if (!isRecord(value)) return undefined;
+
+  const health = isRecord(value.health_and_safety) ? value.health_and_safety : undefined;
+
+  return pruneEmpty({
+    focus_areas: compactList(value.focus_areas, 5, 90),
+    safety: health
+      ? {
+          has_concerns: health.has_concerns === true,
+          verdict: compactText(health.safety_verdict, 280),
+          focus_areas: compactList(health.medical_focus_areas, 3, 90),
+        }
+      : undefined,
+  });
+}
+
+function buildCompactPlanProfile(
+  profile: Record<string, any>,
+  todayDateStr: string,
+  geminiAnalysis?: string | null,
+): Record<string, unknown> {
+  const foodEnvironment = profile.food_environment;
+  const providedCoreMeals = ["PG", "Hostel", "Home", "Office/Canteen"].includes(
+    foodEnvironment,
+  );
+
+  return (pruneEmpty({
+    today: todayDateStr,
+    goal: profile.goal,
+    target_physique:
+      profile.target_physique ||
+      (profile.goal_physique_image ? "Custom photo goal" : undefined),
+    body: {
+      age: profile.age,
+      sex: profile.gender,
+      height_cm: profile.height,
+      weight_kg: profile.weight,
+      target_weight_kg: profile.target_weight,
+      measurements_cm: {
+        waist: profile.waist_cm,
+        chest: profile.chest_cm,
+        arm: profile.arm_cm,
+        thigh: profile.thigh_cm,
+      },
+    },
+    training: {
+      level: profile.fitness_level,
+      location: profile.training_location,
+      equipment: stringList(profile.equipment),
+      sessions: profile.training_days_per_week,
+      minutes: profile.workout_duration_minutes,
+      preferred_days: stringList(profile.preferred_training_days),
+      preferred_time: profile.workout_time || profile.preferred_training_time,
+    },
+    nutrition: {
+      diet: profile.food_type || profile.diet_preference,
+      environment: foodEnvironment,
+      provided_core_meals: providedCoreMeals,
+      monthly_budget: profile.nutrition_budget,
+      meals_per_day: profile.meals_per_day,
+      available_foods: stringList(profile.available_foods),
+      allergies: profile.food_allergies,
+      avoid: [profile.foods_disliked, profile.foods_avoided].filter(Boolean),
+    },
+    routine: {
+      activity: profile.activity_level,
+      daily_steps: profile.daily_steps,
+      sleep: profile.sleep_duration,
+      wake_time: profile.wake_time,
+      work_time: profile.work_time,
+      workout_time: profile.workout_time || profile.preferred_training_time,
+      sleep_time: profile.sleep_time,
+      lifestyle_notes: profile.lifestyle_description,
+    },
+    safety: buildPlanSafetyBrief(profile),
+    body_scan: compactText(geminiAnalysis, PLAN_BODY_SCAN_CONTEXT_LIMIT),
+    report_insights: buildPlanReportInsights(profile.ai_strategy),
+  }) || {}) as Record<string, unknown>;
+}
+
+export function buildFitnessPlanPrompt(
+  profileData: any,
+  todayDateStr: string,
+  geminiAnalysis?: string | null,
+): string {
+  const compactProfile = buildCompactPlanProfile(
+    isRecord(profileData) ? profileData : {},
+    todayDateStr,
+    geminiAnalysis,
+  );
+
+  return `PROFILE_JSON:\n${JSON.stringify(compactProfile)}`;
 }
 
 export const FITNESS_COACH_SYSTEM_PROMPT = `You are an elite, supportive Fitness AI Coach. Your primary job is to provide actionable fitness advice and progress analysis based strictly on the user's actual data.

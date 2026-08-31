@@ -124,6 +124,7 @@ export async function POST(req: Request) {
           maxTokens: 5600,
           minimumOutputTokens: 5600,
           reasoningEffort: "high",
+          promptCacheKey: "fitness-plan-v3",
           temperature: 0.3,
         });
 

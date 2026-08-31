@@ -30,6 +30,7 @@ export async function generateOpenAIResponseJSON<T>({
   temperature = 0.2,
   reasoningEffort = "high",
   minimumOutputTokens = 8000,
+  promptCacheKey,
 }: {
   systemPrompt: string;
   userPrompt: string;
@@ -41,6 +42,8 @@ export async function generateOpenAIResponseJSON<T>({
   reasoningEffort?: "low" | "medium" | "high";
   /** GPT-5.6 counts reasoning and visible output in this shared budget. */
   minimumOutputTokens?: number;
+  /** Stable key for workflows with a reusable instruction prefix. */
+  promptCacheKey?: string;
 }): Promise<T> {
   // Reasoning tokens are included in the completion budget for GPT-5.6.
   // A small visible-output limit can therefore finish before JSON is emitted.
@@ -50,8 +53,15 @@ export async function generateOpenAIResponseJSON<T>({
 
   const response = await getOpenAIClient().responses.create({
     model,
-    input: `SYSTEM INSTRUCTIONS:\n${systemPrompt}\n\nUSER REQUEST:\n${userPrompt}\n\nReturn valid JSON only. Do not include markdown or explanation text.`,
+    input: [
+      {
+        role: "developer",
+        content: `${systemPrompt}\n\nReturn valid JSON only. Do not include markdown or explanation text.`,
+      },
+      { role: "user", content: userPrompt },
+    ],
     max_output_tokens: completionTokenBudget,
+    ...(promptCacheKey ? { prompt_cache_key: promptCacheKey } : {}),
     ...(model.startsWith("gpt-5.6-")
       ? { reasoning: { effort: reasoningEffort } }
       : { temperature }),
