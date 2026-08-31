@@ -11,40 +11,21 @@ const StartingReportSchema = z.object({
     posture_or_movement_note: z.string().min(10),
   }),
   first_two_weeks: z.object({
-    training_start: z.string().min(20),
-    nutrition_start: z.string().min(20),
-    recovery_start: z.string().min(20),
+    training_start: z.string().min(20).max(180),
+    nutrition_start: z.string().min(20).max(180),
+    recovery_start: z.string().min(20).max(180),
   }),
-  training_strategy: z.string().min(20),
-  nutrition_strategy: z.string().min(20),
-  progress_roadmap: z.array(z.string().min(4)).min(3).max(4),
+  training_strategy: z.string().min(20).max(350),
+  nutrition_strategy: z.string().min(20).max(350),
   focus_areas: z.array(z.string().min(3)).length(5),
-  fitness_score: z.number().min(0).max(100),
   reality_check: z.object({
     is_timeframe_realistic: z.boolean(),
-    honest_assessment: z.string().min(20),
-    achievable_in_timeframe: z.array(z.string().min(4)).min(3).max(5),
+    honest_assessment: z.string().min(20).max(260),
+    achievable_in_timeframe: z.array(z.string().min(4).max(90)).min(3).max(3),
   }),
-  budget_breakdown: z.object({
-    monthly_budget: z.string().min(1),
-    recommended_add_ons: z.array(z.object({
-      item: z.string().min(1),
-      daily_qty: z.string().min(1),
-      daily_cost: z.string().min(1),
-      monthly_cost: z.string().min(1),
-      protein_provided_g: z.string().min(1),
-    })).max(4),
-    total_estimated_monthly_cost: z.string().min(1),
-    budget_verdict: z.string().min(20),
-  }),
-  timeline_projection: z.array(z.object({
-    timeframe: z.string().min(1),
-    target_weight_kg: z.union([z.string(), z.number(), z.null()]),
-    expected_changes: z.string().min(8),
-  })).min(3).max(4),
   health_and_safety: z.object({
     has_concerns: z.boolean(),
-    safety_verdict: z.string().min(10),
+    safety_verdict: z.string().min(10).max(260),
     medical_focus_areas: z.array(z.string()).max(3),
   }),
 });
@@ -132,28 +113,24 @@ export async function generateStartingReport({
 
   const systemPrompt = `You are Grindlog's cautious fitness coach. Create a concise starting report using only the supplied onboarding profile and optional vision observations. Do not invent a measurement, target, injury, food preference, budget, or photo finding. This is coaching guidance, not medical advice.
 
-Return one valid JSON object with exactly these top-level fields:
+Return one valid JSON object with exactly these top-level fields. The report must be readable in under one minute; avoid repetition.
 - body_scan_insights: { has_body_scan, overall_summary, observed_strengths, priority_improvements, posture_or_movement_note }. Only describe photo observations when body_scan_available is true. Never diagnose health conditions or give an exact body-fat percentage from photos. If false, explicitly state that no usable body scan is available and use empty observation arrays.
-- first_two_weeks: { training_start, nutrition_start, recovery_start }. Give a realistic beginner-safe start that respects stated injuries, fitness level, available time, location, equipment, diet, and budget. Do not prescribe a six-day hard programme to a beginner unless their supplied profile supports it.
-- training_strategy: short personalised strategy.
-- nutrition_strategy: short personalised strategy that strictly respects diet_type, allergies, avoided foods, food environment, and budget.
-- progress_roadmap: 3 or 4 short milestones.
+- first_two_weeks: { training_start, nutrition_start, recovery_start }. Each value must be one short action, maximum 24 words. Give a realistic beginner-safe start that respects stated injuries, fitness level, available time, location, equipment, diet, and budget. Do not prescribe a six-day hard programme to a beginner unless their supplied profile supports it.
+- training_strategy: short personalised strategy for the detailed plan, maximum 60 words.
+- nutrition_strategy: short personalised strategy for the detailed plan that strictly respects diet_type, allergies, avoided foods, food environment, and budget, maximum 60 words.
 - focus_areas: exactly 5 short personalised focus areas.
-- fitness_score: a number from 0 to 100; it is a non-medical coaching baseline.
-- reality_check: { is_timeframe_realistic, honest_assessment, achievable_in_timeframe } with 3 to 5 practical outcomes. If no deadline or target weight is provided, state that it was not supplied rather than inventing one.
-- budget_breakdown: { monthly_budget, recommended_add_ons, total_estimated_monthly_cost, budget_verdict }. recommended_add_ons is 0 to 4 objects with item, daily_qty, daily_cost, monthly_cost, protein_provided_g. Never recommend animal products to Vegan users; never recommend meat/fish to Vegetarian users. If budget is unknown, say so and use an empty add-on list.
-- timeline_projection: 3 or 4 objects { timeframe, target_weight_kg, expected_changes }. target_weight_kg must be null when no safe target can be calculated from supplied data.
-- health_and_safety: { has_concerns, safety_verdict, medical_focus_areas }. Keep medical_focus_areas empty if there are no stated concerns.
+- reality_check: { is_timeframe_realistic, honest_assessment, achievable_in_timeframe } with exactly 3 practical outcomes. honest_assessment must be maximum 40 words. If no deadline or target weight is provided, state that it was not supplied rather than inventing one.
+- health_and_safety: { has_concerns, safety_verdict, medical_focus_areas }. Keep medical_focus_areas empty if there are no stated concerns. safety_verdict must be maximum 40 words.
 
 Use Indian rupees only when the supplied budget is in rupees. Keep each string plain, concrete, and concise.`;
 
   const response = await generateOpenAIResponseJSON<unknown>({
     systemPrompt,
     userPrompt: `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nBODY SCAN AVAILABLE: ${hasUsableBodyScan(visualObservations)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`,
-    maxTokens: 1800,
+    maxTokens: 1100,
     // This report is bounded and should not use the high-reasoning plan budget.
     reasoningEffort: "low",
-    minimumOutputTokens: 2600,
+    minimumOutputTokens: 1800,
   });
 
   const parsed = StartingReportSchema.safeParse(response);
