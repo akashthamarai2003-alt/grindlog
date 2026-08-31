@@ -40,8 +40,8 @@ function getNvidiaClient(): OpenAI | null {
 // ------------------------------------------------------------------
 export const GROQ_MODELS = {
   primary: "llama-3.3-70b-versatile",
-  reasoning: "deepseek-r1-distill-llama-70b",
-  fast: "mixtral-8x7b-32768",
+  reasoning: "openai/gpt-oss-120b",
+  fast: "llama-3.1-8b-instant",
 } as const;
 
 export type RouteModel = keyof typeof GROQ_MODELS;
@@ -81,8 +81,14 @@ export async function generateAIResponse({
     console.log(`[AI ROUTER] Tier 1: Attempting Groq (${groqKeys.length} keys)...`);
     
     // We'll try the requested model, then gracefully degrade to instant if needed
-    const requestedGroqModel = GROQ_MODELS[model] || "mixtral-8x7b-32768";
-    const modelsToTry = Array.from(new Set([requestedGroqModel, "mixtral-8x7b-32768"]));
+    const requestedGroqModel = GROQ_MODELS[model] || GROQ_MODELS.fast;
+    // Keep fallbacks on current production models; retired Mixtral IDs must
+    // never be retried because they turn a recoverable request into a failure.
+    const modelsToTry = Array.from(new Set([
+      requestedGroqModel,
+      GROQ_MODELS.fast,
+      GROQ_MODELS.primary,
+    ]));
 
     for (let keyAttempt = 0; keyAttempt < groqKeys.length; keyAttempt++) {
       const selectedKeyIndex = (globalKeyCounter + keyAttempt) % groqKeys.length;
