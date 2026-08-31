@@ -23,11 +23,11 @@ export interface AnimationTimeline {
  * 0.25–0.55  AI_APPEAR
  * 0.55–2.10  DATA_ENTER
  * 2.10–3.80  NETWORK_FULL (continuous rotation)
- * 3.80–14.38 ANALYZING (sequential processing)
- * 14.38–16.30 DATA_COLLAPSE
- * 16.30–18.30 AI_ALONE
- * 18.30–18.80 TRANSITION (slide down)
- * 18.80+     COMPLETE
+ * 3.80–9.05  ANALYZING (sequential processing)
+ * 9.05–10.80 DATA_COLLAPSE
+ * 10.80–11.50 AI_ALONE
+ * 11.50–12.00 TRANSITION (slide down)
+ * 12.00+     COMPLETE
  */
 export function useAnimationTimeline(
   pillCount: number,
@@ -59,11 +59,11 @@ export function useAnimationTimeline(
     t(() => setPhase("DATA_ENTER"), 550);
     t(() => setPhase("NETWORK_FULL"), 2100);
 
-    // AI is analyzing... stretch this out for one-and-a-half controlled rotations.
+    // AI is analyzing... complete one-and-a-half controlled rotations quickly.
     t(() => setPhase("ANALYZING"), 3800);
     
     // Faster rotation completes one-and-a-half turns before collapse.
-    const collapseAt = 14375;
+    const collapseAt = 9050;
     const analyzingDuration = collapseAt - 3800;
     
     for (let i = 0; i < pc; i++) {
@@ -74,10 +74,10 @@ export function useAnimationTimeline(
 
     // AI alone phase before generating
     // Give time for the sequential one-by-one collapse to finish (9 * 120ms + 500ms = ~1.6s)
-    t(() => setPhase("AI_ALONE"), 16300);
+    t(() => setPhase("AI_ALONE"), 10800);
 
-    t(() => setPhase("TRANSITION"), 18300);
-    t(() => setPhase("COMPLETE"), 18800);
+    t(() => setPhase("TRANSITION"), 11500);
+    t(() => setPhase("COMPLETE"), 12000);
 
     return () => { refs.current.forEach(clearTimeout); };
   }, [pillCount, reducedMotion, t]);

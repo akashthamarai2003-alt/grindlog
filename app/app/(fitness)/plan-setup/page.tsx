@@ -29,8 +29,8 @@ export default function PlanSetupPage() {
     // 1. Start the API request
     const aiFetchPromise = fetch('/api/fitness-ai/generate-draft', { method: 'POST' }).then(res => res.json());
     
-    // 2. Keep the loading animation mounted for its complete 18.8-second timeline.
-    const minimumDelayPromise = new Promise(resolve => setTimeout(resolve, 18800));
+    // 2. Keep the loading animation mounted for its complete 12-second timeline.
+    const minimumDelayPromise = new Promise(resolve => setTimeout(resolve, 12000));
 
     // Wait for BOTH the AI to finish AND the full animation to complete
     Promise.all([aiFetchPromise, minimumDelayPromise])
