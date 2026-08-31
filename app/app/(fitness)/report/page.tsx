@@ -3,43 +3,10 @@ import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/ser
 import { ArrowRight, Brain, Info } from "lucide-react";
 import Link from "next/link";
 import { RegenerateReportButton } from "@/components/fitness/report/regenerate-report-button";
+import { hasGeneratedStartingReport } from "@/lib/services/fitness/starting-report-service";
 
 function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function hasGeneratedStartingReport(strategy: Record<string, any>): boolean {
-  const bodyScan = strategy.body_scan_insights;
-  const firstTwoWeeks = strategy.first_two_weeks;
-  const realityCheck = strategy.reality_check;
-  const budget = strategy.budget_breakdown;
-  const health = strategy.health_and_safety;
-
-  return (
-    isRecord(bodyScan) &&
-    typeof bodyScan.overall_summary === "string" &&
-    Array.isArray(bodyScan.observed_strengths) &&
-    Array.isArray(bodyScan.priority_improvements) &&
-    typeof bodyScan.posture_or_movement_note === "string" &&
-    isRecord(firstTwoWeeks) &&
-    typeof firstTwoWeeks.training_start === "string" &&
-    typeof firstTwoWeeks.nutrition_start === "string" &&
-    typeof firstTwoWeeks.recovery_start === "string" &&
-    typeof strategy.training_strategy === "string" &&
-    typeof strategy.nutrition_strategy === "string" &&
-    Array.isArray(strategy.focus_areas) &&
-    strategy.focus_areas.length === 5 &&
-    typeof strategy.fitness_score === "number" &&
-    isRecord(realityCheck) &&
-    typeof realityCheck.honest_assessment === "string" &&
-    Array.isArray(realityCheck.achievable_in_timeframe) &&
-    isRecord(budget) &&
-    typeof budget.budget_verdict === "string" &&
-    Array.isArray(budget.recommended_add_ons) &&
-    Array.isArray(strategy.timeline_projection) &&
-    strategy.timeline_projection.length >= 3 &&
-    isRecord(health)
-  );
 }
 
 function displayValue(value: unknown, suffix = ""): string {

@@ -16,7 +16,10 @@ import {
   recordGenerationAttempt,
 } from "@/lib/services/fitness-ai-generation-guard";
 
-export const maxDuration = 60;
+// A high-reasoning, full weekly plan can take longer than one minute. Avoid a
+// platform timeout turning a valid in-progress response into an empty client
+// payload. This remains below Vercel's current Hobby function limit.
+export const maxDuration = 180;
 const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 1;
 
 export async function POST(req: Request) {

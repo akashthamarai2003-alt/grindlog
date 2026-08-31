@@ -2556,7 +2556,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
                   className={`w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center ${error ? 'bg-red-500/20 text-red-500 border border-red-500' : 'bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33]'} disabled:opacity-70 disabled:cursor-not-allowed`}
                 >
                   {error ? (
-                    "Analysis Error"
+                    "Open Report to Try Again"
                   ) : !isDone ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="animate-spin w-5 h-5" />
@@ -2571,6 +2571,11 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
                     "View Transformation Plan"
                   )}
                 </button>
+                {error && (
+                  <p className="mt-3 text-center text-sm leading-relaxed text-red-300">
+                    {error}
+                  </p>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

@@ -8,6 +8,34 @@ import { toast } from 'sonner';
 import GroceryTab from '@/components/fitness/plan/grocery-tab';
 import { AIPlanAnimation } from '@/components/fitness/plan-animation';
 
+type PlanGenerationError = Error & {
+  errorType: "SAFETY" | "SYSTEM";
+};
+
+async function requestPlanDraft() {
+  const response = await fetch('/api/fitness-ai/generate-draft', { method: 'POST' });
+  const body = await response.json().catch(() => null);
+
+  if (!response.ok || !body?.success) {
+    const error = new Error(
+      body?.error || `We could not start plan generation (request ${response.status}).`,
+    ) as PlanGenerationError;
+    error.errorType = body?.errorType === "SAFETY" ? "SAFETY" : "SYSTEM";
+    throw error;
+  }
+
+  return body;
+}
+
+function getPlanGenerationErrorType(error: unknown): "SAFETY" | "SYSTEM" {
+  return typeof error === "object" &&
+    error !== null &&
+    "errorType" in error &&
+    error.errorType === "SAFETY"
+    ? "SAFETY"
+    : "SYSTEM";
+}
+
 export default function PlanSetupPage() {
   const router = useRouter();
   const [planData, setPlanData] = useState<any>(null);
@@ -27,7 +55,7 @@ export default function PlanSetupPage() {
     let isMounted = true;
     
     // 1. Start the API request
-    const aiFetchPromise = fetch('/api/fitness-ai/generate-draft', { method: 'POST' }).then(res => res.json());
+    const aiFetchPromise = requestPlanDraft();
     
     // 2. Keep the loading animation mounted for its complete 14.3-second timeline.
     const minimumDelayPromise = new Promise(resolve => setTimeout(resolve, 14300));
@@ -36,18 +64,15 @@ export default function PlanSetupPage() {
     Promise.all([aiFetchPromise, minimumDelayPromise])
       .then(([res]) => {
         if (!isMounted) return;
-        if (res.success) {
-          setPlanData(res.data);
-        } else {
-          setGenerationError(res.error || "Failed to generate plan");
-          setGenerationErrorType(res.errorType || "SYSTEM");
-          toast.error(res.error || "Failed to generate plan");
-        }
+        setPlanData(res.data);
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err: unknown) => {
         if (!isMounted) return;
-        toast.error("Network error");
+        const message = err instanceof Error ? err.message : "Network error while generating the plan.";
+        setGenerationError(message);
+        setGenerationErrorType(getPlanGenerationErrorType(err));
+        toast.error(message);
         setLoading(false);
       });
       
@@ -134,19 +159,16 @@ export default function PlanSetupPage() {
             setGenerationError(null);
             setGenerationErrorType(null);
             // Trigger a fresh generation
-            fetch('/api/fitness-ai/generate-draft', { method: 'POST' })
-              .then(res => res.json())
+            requestPlanDraft()
               .then(res => {
-                if (res.success) setPlanData(res.data);
-                else {
-                  setGenerationError(res.error || "Failed to generate plan");
-                  setGenerationErrorType(res.errorType || "SYSTEM");
-                }
+                setPlanData(res.data);
                 setLoading(false);
               })
-              .catch(() => {
-                setGenerationError("Network error");
-                setGenerationErrorType("SYSTEM");
+              .catch((err: unknown) => {
+                setGenerationError(
+                  err instanceof Error ? err.message : "Network error while generating the plan.",
+                );
+                setGenerationErrorType(getPlanGenerationErrorType(err));
                 setLoading(false);
               });
           }} 

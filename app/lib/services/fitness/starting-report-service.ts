@@ -60,6 +60,16 @@ const StartingReportSchema = z.object({
 
 export type StartingReport = z.infer<typeof StartingReportSchema>;
 
+/**
+ * A completed onboarding is not enough to show the report screen.  The
+ * strategy itself must pass the same contract that the report renderer uses.
+ * Keeping this check beside the schema prevents the onboarding flow and the
+ * report page from disagreeing about whether a report exists.
+ */
+export function hasGeneratedStartingReport(value: unknown): value is StartingReport {
+  return StartingReportSchema.safeParse(value).success;
+}
+
 type StartingReportInput = {
   onboarding: OnboardingData;
   bmi: number | null;

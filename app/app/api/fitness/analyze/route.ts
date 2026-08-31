@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { OnboardingSchema } from "@/types/fitness/onboarding";
-import { generateStartingReport } from "@/lib/services/fitness/starting-report-service";
+import {
+  generateStartingReport,
+  hasGeneratedStartingReport,
+} from "@/lib/services/fitness/starting-report-service";
 
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -65,7 +68,8 @@ export async function POST(req: Request) {
     if (
       existingProfile?.onboarding_completed &&
       stableStringify(existingProfile.onboarding_data) ===
-        stableStringify(stripImagePayload(data as Record<string, unknown>))
+        stableStringify(stripImagePayload(data as Record<string, unknown>)) &&
+      hasGeneratedStartingReport(existingProfile.ai_strategy)
     ) {
       return NextResponse.json({
         success: true,
@@ -176,6 +180,7 @@ export async function POST(req: Request) {
     // Groq remains isolated to the in-app chatbot.
     console.log("Generating personalised starting report...");
     let aiStrategy: Record<string, unknown> = {};
+    let reportGenerationFailed = false;
     try {
       const systemPrompt = `You are an elite AI Fitness Coach building a highly personalized transformation strategy.
 Here is the user's data:
@@ -248,8 +253,9 @@ Output ONLY valid JSON matching this schema.`;
       console.log("AI Strategy Generated:", aiStrategy);
     } catch (err) {
       console.error("OpenAI starting report error:", err);
-      // Never show a generic mock report if generation fails. The report page
-      // provides a manual retry that reuses the saved onboarding profile.
+      // Preserve the completed onboarding so the user can retry from the
+      // report screen, but never present this failed state as a ready report.
+      reportGenerationFailed = true;
       aiStrategy = {
         generation_status: "failed",
         generation_error: "Your personalised report could not be generated yet.",
@@ -387,6 +393,17 @@ Output ONLY valid JSON matching this schema.`;
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" },
+      );
+    }
+
+    if (reportGenerationFailed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Your onboarding was saved, but the personalised report was not created. Open the report to try again.",
+        },
+        { status: 502 },
       );
     }
 
