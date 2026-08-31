@@ -288,7 +288,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                       ? `lokiLineDraw 0.6s cubic-bezier(0.16,1,0.3,1) ${animDelay}s both`
                       : "none",
                     transition: !isEntering && animDuration > 0
-                      ? `stroke-dashoffset ${animDuration}s cubic-bezier(0.16,1,0.3,1) ${animDelay}s, opacity ${animDuration * 0.8}s ease ${animDelay}s, stroke 0.3s ease`
+                      ? `stroke-dashoffset ${animDuration}s cubic-bezier(0.16,1,0.3,1) ${animDelay}s, opacity ${animDuration * 0.8}s ease ${isCollapsing ? animDelay + animDuration : animDelay}s, stroke 0.3s ease`
                       : 'none'
                   }}
                 />
@@ -307,7 +307,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
                       ? `lokiLineDraw 0.6s cubic-bezier(0.16,1,0.3,1) ${animDelay}s both`
                       : "none",
                     transition: !isEntering && animDuration > 0
-                      ? `stroke-dashoffset ${animDuration}s cubic-bezier(0.16,1,0.3,1) ${animDelay}s, opacity ${animDuration * 0.8}s ease ${animDelay}s, stroke 0.3s ease`
+                      ? `stroke-dashoffset ${animDuration}s cubic-bezier(0.16,1,0.3,1) ${animDelay}s, opacity ${animDuration * 0.8}s ease ${isCollapsing ? animDelay + animDuration : animDelay}s, stroke 0.3s ease`
                       : 'none'
                   }}
                 />

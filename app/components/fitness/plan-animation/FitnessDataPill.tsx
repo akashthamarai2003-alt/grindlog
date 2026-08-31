@@ -75,10 +75,11 @@ export function FitnessDataPill({
       textColor = "#f0fdf4";
       break;
     case "collapsing":
-      opacity = 0;
-      scale = 0.1;
+      // Reach Loki first; fade only after the pill has arrived behind it.
+      opacity = 1;
+      scale = 0.75;
       transform = `translate(0px, 0px)`;
-      transition = `opacity 0.55s ease-in ${collapseDelay}s, transform 0.55s ease-in ${collapseDelay}s`;
+      transition = `transform 0.55s cubic-bezier(0.16,1,0.3,1) ${collapseDelay}s, opacity 0.25s ease-in ${collapseDelay + 0.55}s`;
       break;
   }
 
