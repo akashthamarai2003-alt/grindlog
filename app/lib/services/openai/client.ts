@@ -7,7 +7,9 @@ function getOpenAIClient(): OpenAI {
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is missing. Please configure it in your environment variables.");
+    throw new Error(
+      "OPENAI_API_KEY is missing. Please configure it in your environment variables.",
+    );
   }
 
   openaiClient = new OpenAI({ apiKey });
@@ -15,10 +17,15 @@ function getOpenAIClient(): OpenAI {
 }
 
 export const OPENAI_MODEL = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-terra";
+// Full weekly plans are generated only after the user explicitly confirms the
+// onboarding report. Keep this separately configurable from other AI features.
+export const FITNESS_PLAN_MODEL =
+  process.env.FITNESS_PLAN_MODEL?.trim() || "gpt-5.6-luna";
 
 export async function generateOpenAIResponseJSON<T>({
   systemPrompt,
   userPrompt,
+  model = OPENAI_MODEL,
   maxTokens = 2500,
   temperature = 0.2,
   reasoningEffort = "high",
@@ -26,6 +33,8 @@ export async function generateOpenAIResponseJSON<T>({
 }: {
   systemPrompt: string;
   userPrompt: string;
+  /** Override the default model for a specific product workflow. */
+  model?: string;
   maxTokens?: number;
   temperature?: number;
   /** Use low effort for short, bounded tasks such as the onboarding report. */
@@ -35,15 +44,15 @@ export async function generateOpenAIResponseJSON<T>({
 }): Promise<T> {
   // Reasoning tokens are included in the completion budget for GPT-5.6.
   // A small visible-output limit can therefore finish before JSON is emitted.
-  const completionTokenBudget = OPENAI_MODEL.startsWith("gpt-5.6-")
+  const completionTokenBudget = model.startsWith("gpt-5.6-")
     ? Math.max(maxTokens, minimumOutputTokens)
     : maxTokens;
 
   const response = await getOpenAIClient().responses.create({
-    model: OPENAI_MODEL,
+    model,
     input: `SYSTEM INSTRUCTIONS:\n${systemPrompt}\n\nUSER REQUEST:\n${userPrompt}\n\nReturn valid JSON only. Do not include markdown or explanation text.`,
     max_output_tokens: completionTokenBudget,
-    ...(OPENAI_MODEL.startsWith("gpt-5.6-")
+    ...(model.startsWith("gpt-5.6-")
       ? { reasoning: { effort: reasoningEffort } }
       : { temperature }),
     text: { format: { type: "json_object" } },
@@ -51,7 +60,9 @@ export async function generateOpenAIResponseJSON<T>({
 
   const text = response.output_text?.trim();
   if (!text) {
-    throw new Error(`OpenAI returned an empty response (status: ${response.status || "unknown"}).`);
+    throw new Error(
+      `OpenAI returned an empty response (status: ${response.status || "unknown"}).`,
+    );
   }
 
   try {

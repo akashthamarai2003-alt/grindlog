@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { generateOpenAIResponseJSON, OPENAI_MODEL } from "@/lib/services/openai/client";
+import {
+  FITNESS_PLAN_MODEL,
+  generateOpenAIResponseJSON,
+} from "@/lib/services/openai/client";
 import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-ai-limit";
 import { GeneratedPlanSchema, GeneratedPlanData } from "@/lib/fitness/ai/schemas";
 import {
@@ -122,7 +125,7 @@ export async function POST(req: Request) {
       supabase,
       user.id,
       "plan_generation_attempt",
-      OPENAI_MODEL,
+      FITNESS_PLAN_MODEL,
     );
 
     let planData: GeneratedPlanData | null = null;
@@ -135,6 +138,7 @@ export async function POST(req: Request) {
         const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
           userPrompt,
+          model: FITNESS_PLAN_MODEL,
           // A complete weekly plan needs more space than the report, but this is
           // intentionally below the old implicit 8,000-token ceiling.
           maxTokens: 5600,
@@ -186,7 +190,7 @@ export async function POST(req: Request) {
       "plan_generation",
       userPrompt,
       JSON.stringify(planData),
-      OPENAI_MODEL,
+      FITNESS_PLAN_MODEL,
       0,
     );
 
