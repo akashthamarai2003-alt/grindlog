@@ -81,7 +81,8 @@ export async function generateAIResponse({
     console.log(`[AI ROUTER] Tier 1: Attempting Groq (${groqKeys.length} keys)...`);
     
     // We'll try the requested model, then gracefully degrade to instant if needed
-    const requestedGroqModel = GROQ_MODELS[model] || GROQ_MODELS.fast;
+    const configuredModel = process.env.GROQ_MODEL?.trim();
+    const requestedGroqModel = configuredModel || GROQ_MODELS[model] || GROQ_MODELS.fast;
     // Keep fallbacks on current production models; retired Mixtral IDs must
     // never be retried because they turn a recoverable request into a failure.
     const modelsToTry = Array.from(new Set([
