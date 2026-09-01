@@ -10,6 +10,7 @@ export type AnimationPhase =
   | "ANALYZING"
   | "DATA_COLLAPSE"
   | "AI_ALONE"
+  | "FINAL_REVEAL"
   | "TRANSITION"
   | "COMPLETE";
 
@@ -25,7 +26,9 @@ export interface AnimationTimeline {
 const MINIMUM_VISIBLE_DURATION_MS = 13_000;
 const EXIT_DURATION_MS = 750;
 const FULL_FINALIZATION_DURATION_MS = 4_000;
-const AI_ALONE_DELAY_MS = 1_700;
+const AI_ALONE_DELAY_MS = 1_100;
+const FINAL_REVEAL_DELAY_MS = 2_200;
+const MINIMUM_FINAL_REVEAL_DURATION_MS = 1_200;
 
 /**
  * The opening sequence is cinematic, but the analysing phase is deliberately
@@ -104,22 +107,35 @@ export function useAnimationTimeline(
       }
 
       setScanIndex(-1);
+
+      // A response that arrives very late still gets a visible success finale.
+      // Without this, users only see the loading scene slide away.
+      if (transitionDelay < MINIMUM_FINAL_REVEAL_DURATION_MS) {
+        setPhase("FINAL_REVEAL");
+        schedule(() => setPhase("TRANSITION"), MINIMUM_FINAL_REVEAL_DURATION_MS);
+        schedule(
+          () => setPhase("COMPLETE"),
+          MINIMUM_FINAL_REVEAL_DURATION_MS + EXIT_DURATION_MS,
+        );
+        return;
+      }
+
       setPhase("DATA_COLLAPSE");
 
       // When the model finishes during the last few seconds, compress the
-      // finalization rather than extending the screen past the 13-second
-      // minimum. A late result skips straight to the exit instead.
-      if (transitionDelay > 0) {
-        schedule(
-          () => setPhase("AI_ALONE"),
-          Math.min(AI_ALONE_DELAY_MS, Math.round(transitionDelay * 0.55)),
-        );
-        schedule(() => setPhase("TRANSITION"), transitionDelay);
-        schedule(() => setPhase("COMPLETE"), transitionDelay + EXIT_DURATION_MS);
-      } else {
-        setPhase("TRANSITION");
-        schedule(() => setPhase("COMPLETE"), EXIT_DURATION_MS);
-      }
+      // finalization while preserving a dedicated final reveal before exit.
+      const aiAloneDelay = Math.min(
+        AI_ALONE_DELAY_MS,
+        Math.round(transitionDelay * 0.34),
+      );
+      const finalRevealDelay = Math.min(
+        FINAL_REVEAL_DELAY_MS,
+        Math.round(transitionDelay * 0.68),
+      );
+      schedule(() => setPhase("AI_ALONE"), aiAloneDelay);
+      schedule(() => setPhase("FINAL_REVEAL"), finalRevealDelay);
+      schedule(() => setPhase("TRANSITION"), transitionDelay);
+      schedule(() => setPhase("COMPLETE"), transitionDelay + EXIT_DURATION_MS);
     };
 
     const elapsed = Date.now() - startedAt.current;

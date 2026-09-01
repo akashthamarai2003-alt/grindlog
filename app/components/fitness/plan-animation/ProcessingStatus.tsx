@@ -39,6 +39,8 @@ export function ProcessingStatus({
         return "FINALIZING YOUR PERSONALIZED PLAN...";
       case "AI_ALONE":
         return "VALIDATING YOUR PLAN...";
+      case "FINAL_REVEAL":
+        return "YOUR PERSONALIZED PLAN IS READY";
       case "TRANSITION":
       case "COMPLETE":
         return "PLAN READY";
@@ -49,6 +51,7 @@ export function ProcessingStatus({
 
   const showHeading = phase !== "BOOT";
   const statusText = getStatusText();
+  const isFinalReveal = phase === "FINAL_REVEAL";
 
   return (
     <div className="absolute bottom-6 sm:bottom-10 inset-x-0 flex flex-col items-center justify-center text-center px-6 pointer-events-none z-20">
@@ -63,13 +66,15 @@ export function ProcessingStatus({
             className="text-xl sm:text-2xl font-black text-white mb-1.5 tracking-tight"
             style={{ textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}
           >
-            Building your perfect plan...
+            {isFinalReveal ? "Your plan is ready" : "Building your perfect plan..."}
           </h2>
           <p
             className="text-xs sm:text-sm text-gray-400 mb-3 max-w-xs sm:max-w-md"
             style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
           >
-            AI is analyzing your body scan and fitness profile...
+            {isFinalReveal
+              ? "Luna has finished your personalised plan."
+              : "AI is analyzing your body scan and fitness profile..."}
           </p>
         </motion.div>
       )}

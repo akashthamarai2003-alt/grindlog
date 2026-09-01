@@ -9,7 +9,7 @@ interface Props {
 export function AnimatedBackground({ phase }: Props) {
   const phaseIdx = [
     "BOOT","AI_APPEAR","DATA_ENTER","NETWORK_FULL",
-    "ANALYZING","DATA_COLLAPSE","AI_ALONE","TRANSITION","COMPLETE",
+    "ANALYZING","DATA_COLLAPSE","AI_ALONE","FINAL_REVEAL","TRANSITION","COMPLETE",
   ].indexOf(phase);
 
   // Grid becomes visible after ~2s, radar after ~3s

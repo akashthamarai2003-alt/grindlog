@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { CircleCheck } from "lucide-react";
 import {
   Target, User, Weight, Ruler, Calendar, Timer,
   Dumbbell, Activity, TrendingUp, Utensils,
@@ -112,8 +113,10 @@ export default function AIPlanAnimation({
     timeline.phase === "ANALYZING" || timeline.phase === "DATA_COLLAPSE";
   const isComplete =
     timeline.phase === "AI_ALONE" ||
+    timeline.phase === "FINAL_REVEAL" ||
     timeline.phase === "TRANSITION" ||
     timeline.phase === "COMPLETE";
+  const showFinalReveal = timeline.phase === "FINAL_REVEAL" && !hasError;
   const orbitsActive = timeline.phase !== "BOOT";
   return (
     <motion.div
@@ -160,6 +163,26 @@ export default function AIPlanAnimation({
         phase={timeline.phase}
         scanIndex={timeline.scanIndex}
       />
+
+      {showFinalReveal && (
+        <motion.div
+          className="absolute inset-x-0 top-[58%] z-20 flex flex-col items-center px-6 text-center pointer-events-none"
+          initial={{ opacity: 0, y: 18, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <motion.div
+            className="flex h-12 w-12 items-center justify-center rounded-full border border-[#ADFF00]/70 bg-[#ADFF00]/15 text-[#ADFF00] shadow-[0_0_30px_rgba(173,255,0,0.35)]"
+            animate={reducedMotion ? {} : { scale: [1, 1.12, 1], rotate: [0, 4, 0] }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+          >
+            <CircleCheck size={27} strokeWidth={2.5} />
+          </motion.div>
+          <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.18em] text-[#ADFF00]">Plan ready</p>
+          <p className="mt-1 text-sm font-bold text-white">Your personalised plan is complete.</p>
+        </motion.div>
+      )}
 
       {/* Layer 5: Dynamic Bottom Status & Heading Text */}
       <ProcessingStatus
