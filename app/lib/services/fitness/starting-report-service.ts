@@ -169,17 +169,30 @@ Return one valid JSON object with exactly these top-level fields:
 
 Use Indian rupees only when the supplied budget is in rupees. Keep each string plain, concrete, and concise.`;
 
-  const response = await generateOpenAIResponseJSON<unknown>({
-    systemPrompt,
-    userPrompt: `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nBODY SCAN AVAILABLE: ${hasUsableBodyScan(visualObservations)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`,
-    // GPT-5.6 shares this budget between reasoning and visible JSON. The prior
-    // 2,600-token ceiling could end before the required report object finished.
-    maxTokens: 5000,
-    // This report remains low-reasoning, but needs enough completion headroom
-    // for every validated section and the optional photo observations.
-    reasoningEffort: "low",
-    minimumOutputTokens: 5000,
-  });
+  const reportPrompt = `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nBODY SCAN AVAILABLE: ${hasUsableBodyScan(visualObservations)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`;
+  let response: unknown;
+  let lastError: unknown;
+  // GPT-5.6 shares this budget between reasoning and visible JSON. Keep one
+  // bounded recovery attempt for an interrupted response, without allowing a
+  // client-side retry storm.
+  for (const completionBudget of [9000, 12000]) {
+    try {
+      response = await generateOpenAIResponseJSON<unknown>({
+        systemPrompt,
+        userPrompt: reportPrompt,
+        maxTokens: completionBudget,
+        reasoningEffort: "low",
+        minimumOutputTokens: completionBudget,
+      });
+      break;
+    } catch (error) {
+      lastError = error;
+      if (!String(error).toLowerCase().includes("incomplete") || completionBudget === 12000) {
+        throw error;
+      }
+    }
+  }
+  if (response === undefined) throw lastError || new Error("Starting report generation failed.");
 
   const parsed = StartingReportSchema.safeParse(response);
   if (!parsed.success) {
