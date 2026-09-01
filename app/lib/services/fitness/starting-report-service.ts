@@ -60,6 +60,123 @@ const StartingReportSchema = z.object({
 
 export type StartingReport = z.infer<typeof StartingReportSchema>;
 
+// Keep the provider-side contract aligned with StartingReportSchema. Structured
+// Outputs prevents a complete-looking JSON response from silently omitting one
+// of the sections rendered by the report page.
+export const STARTING_REPORT_JSON_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "body_scan_insights",
+    "first_two_weeks",
+    "training_strategy",
+    "nutrition_strategy",
+    "progress_roadmap",
+    "focus_areas",
+    "fitness_score",
+    "reality_check",
+    "budget_breakdown",
+    "timeline_projection",
+    "health_and_safety",
+  ],
+  properties: {
+    body_scan_insights: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "has_body_scan",
+        "overall_summary",
+        "observed_strengths",
+        "priority_improvements",
+        "posture_or_movement_note",
+      ],
+      properties: {
+        has_body_scan: { type: "boolean" },
+        overall_summary: { type: "string" },
+        observed_strengths: { type: "array", items: { type: "string" }, maxItems: 3 },
+        priority_improvements: { type: "array", items: { type: "string" }, maxItems: 3 },
+        posture_or_movement_note: { type: "string" },
+      },
+    },
+    first_two_weeks: {
+      type: "object",
+      additionalProperties: false,
+      required: ["training_start", "nutrition_start", "recovery_start"],
+      properties: {
+        training_start: { type: "string" },
+        nutrition_start: { type: "string" },
+        recovery_start: { type: "string" },
+      },
+    },
+    training_strategy: { type: "string" },
+    nutrition_strategy: { type: "string" },
+    progress_roadmap: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 4 },
+    focus_areas: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 5 },
+    fitness_score: { type: "number", minimum: 0, maximum: 100 },
+    reality_check: {
+      type: "object",
+      additionalProperties: false,
+      required: ["is_timeframe_realistic", "honest_assessment", "achievable_in_timeframe"],
+      properties: {
+        is_timeframe_realistic: { type: "boolean" },
+        honest_assessment: { type: "string" },
+        achievable_in_timeframe: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 5 },
+      },
+    },
+    budget_breakdown: {
+      type: "object",
+      additionalProperties: false,
+      required: ["monthly_budget", "recommended_add_ons", "total_estimated_monthly_cost", "budget_verdict"],
+      properties: {
+        monthly_budget: { type: "string" },
+        recommended_add_ons: {
+          type: "array",
+          maxItems: 4,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["item", "daily_qty", "daily_cost", "monthly_cost", "protein_provided_g"],
+            properties: {
+              item: { type: "string" },
+              daily_qty: { type: "string" },
+              daily_cost: { type: "string" },
+              monthly_cost: { type: "string" },
+              protein_provided_g: { type: "string" },
+            },
+          },
+        },
+        total_estimated_monthly_cost: { type: "string" },
+        budget_verdict: { type: "string" },
+      },
+    },
+    timeline_projection: {
+      type: "array",
+      minItems: 3,
+      maxItems: 4,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["timeframe", "target_weight_kg", "expected_changes"],
+        properties: {
+          timeframe: { type: "string" },
+          target_weight_kg: { type: ["string", "number", "null"] },
+          expected_changes: { type: "string" },
+        },
+      },
+    },
+    health_and_safety: {
+      type: "object",
+      additionalProperties: false,
+      required: ["has_concerns", "safety_verdict", "medical_focus_areas"],
+      properties: {
+        has_concerns: { type: "boolean" },
+        safety_verdict: { type: "string" },
+        medical_focus_areas: { type: "array", items: { type: "string" }, maxItems: 3 },
+      },
+    },
+  },
+};
+
 /**
  * A completed onboarding is not enough to show the report screen.  The
  * strategy itself must pass the same contract that the report renderer uses.
@@ -185,6 +302,13 @@ Use Indian rupees only when the supplied budget is in rupees. Keep each string p
         maxTokens: completionBudget,
         reasoningEffort: "low",
         minimumOutputTokens: completionBudget,
+        jsonSchema: {
+          name: "starting_report",
+          schema: STARTING_REPORT_JSON_SCHEMA,
+          description: "A complete Grindlog personalised starting report.",
+          strict: true,
+        },
+        verbosity: "low",
       });
       const parsed = StartingReportSchema.safeParse(response);
       if (parsed.success) return parsed.data;

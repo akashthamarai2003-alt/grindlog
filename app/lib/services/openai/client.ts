@@ -31,6 +31,8 @@ export async function generateOpenAIResponseJSON<T>({
   reasoningEffort = "high",
   minimumOutputTokens = 8000,
   promptCacheKey,
+  jsonSchema,
+  verbosity,
 }: {
   systemPrompt: string;
   userPrompt: string;
@@ -44,6 +46,15 @@ export async function generateOpenAIResponseJSON<T>({
   minimumOutputTokens?: number;
   /** Stable key for workflows with a reusable instruction prefix. */
   promptCacheKey?: string;
+  /** Optional Structured Outputs schema for workflows with a strict contract. */
+  jsonSchema?: {
+    name: string;
+    schema: Record<string, unknown>;
+    description?: string;
+    strict?: boolean;
+  };
+  /** Limit visible verbosity without changing required content. */
+  verbosity?: "low" | "medium" | "high";
 }): Promise<T> {
   // Reasoning tokens are included in the completion budget for GPT-5.6.
   // A small visible-output limit can therefore finish before JSON is emitted.
@@ -65,7 +76,18 @@ export async function generateOpenAIResponseJSON<T>({
     ...(model.startsWith("gpt-5.6-")
       ? { reasoning: { effort: reasoningEffort } }
       : { temperature }),
-    text: { format: { type: "json_object" } },
+    text: {
+      format: jsonSchema
+        ? {
+            type: "json_schema",
+            name: jsonSchema.name,
+            schema: jsonSchema.schema,
+            ...(jsonSchema.description ? { description: jsonSchema.description } : {}),
+            strict: jsonSchema.strict ?? true,
+          }
+        : { type: "json_object" },
+      ...(verbosity ? { verbosity } : {}),
+    },
   });
 
   const text = response.output_text?.trim();
