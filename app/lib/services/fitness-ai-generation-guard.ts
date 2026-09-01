@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const RETRY_COOLDOWN_MS = 60_000;
+const RETRY_COOLDOWN_MS = 180_000;
 
 export async function getGenerationRetryAfterSeconds(
   supabase: SupabaseClient,

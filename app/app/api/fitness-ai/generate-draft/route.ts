@@ -109,10 +109,49 @@ export async function POST(req: Request) {
       "plan_generation_attempt",
     );
     if (retryAfterSeconds > 0) {
+      console.log(`Generation already in progress for user ${user.id}. Polling...`);
+      for (let i = 0; i < 30; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const { data: latestCachedDraft } = await supabase
+          .from("fitness_os_ai_sessions")
+          .select("prompt, response")
+          .eq("user_id", user.id)
+          .eq("session_type", "plan_generation")
+          .gte("created_at", draftCacheCutoff)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestCachedDraft?.prompt === userPrompt && latestCachedDraft.response) {
+          try {
+            const cachedPlan = GeneratedPlanSchema.safeParse(
+              JSON.parse(latestCachedDraft.response),
+            );
+            const safetyCheck = cachedPlan.success
+              ? runFitnessAISafetyCheck(cachedPlan.data, profile)
+              : null;
+            const profileCheck = cachedPlan.success
+              ? validatePlanAgainstProfile(cachedPlan.data, profile, {
+                  enforceBudgetUtilisation: true,
+                })
+              : null;
+            if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
+              console.log(`Polling succeeded for user ${user.id}.`);
+              return NextResponse.json({
+                success: true,
+                cached: true,
+                data: { ...profileCheck.plan, _profile: profile },
+              });
+            }
+          } catch {
+            // Ignore parse errors during polling
+          }
+        }
+      }
       return NextResponse.json(
         {
           success: false,
-          error: `Please wait ${retryAfterSeconds} seconds before trying again.`,
+          error: "A plan generation is already in progress and taking longer than expected. Please wait a moment and try again.",
         },
         { status: 429 },
       );

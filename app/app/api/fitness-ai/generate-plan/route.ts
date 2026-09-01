@@ -93,10 +93,25 @@ export async function POST(req: Request) {
       "plan_generation_attempt",
     );
     if (retryAfterSeconds > 0) {
+      console.log(`Plan generation already in progress for user ${user.id}. Polling for completion...`);
+      for (let i = 0; i < 30; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const { data: latestPlan } = await supabase
+          .from("fitness_os_workout_plans")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (latestPlan) {
+          console.log(`Polling found newly active plan ${latestPlan.id} for user ${user.id}.`);
+          return NextResponse.json({ success: true, data: { planId: latestPlan.id } });
+        }
+      }
       return NextResponse.json(
         {
           success: false,
-          error: `Please wait ${retryAfterSeconds} seconds before trying again.`,
+          error: "A plan generation is already in progress and taking longer than expected. Please wait a moment and try again.",
         },
         { status: 429 },
       );
