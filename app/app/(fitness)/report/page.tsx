@@ -149,6 +149,19 @@ export default async function AIStartingReportPage() {
   const recommendedAddOns = Array.isArray(budgetBreakdown.recommended_add_ons)
     ? budgetBreakdown.recommended_add_ons
     : [];
+  const rawBudgetEstimate = String(budgetBreakdown.total_estimated_monthly_cost || "").trim();
+  const needsMealDetails =
+    recommendedAddOns.length === 0 ||
+    !rawBudgetEstimate ||
+    /unknown|not estimated|cannot be calculated|specific hostel|local prices/i.test(
+      rawBudgetEstimate,
+    );
+  const budgetBadge = needsMealDetails
+    ? displayValue(profile.nutrition_budget, " / month")
+    : rawBudgetEstimate;
+  const budgetVerdict = needsMealDetails
+    ? "Your budget is saved. Exact protein add-ons depend on the meals and protein portions your PG provides."
+    : String(budgetBreakdown.budget_verdict || "");
 
   return (
     <div className="min-h-screen bg-[#0A1108] p-6 pb-28 text-white">
@@ -387,24 +400,20 @@ export default async function AIStartingReportPage() {
 
         {/* BUDGET & DIET ENVIRONMENT BREAKDOWN */}
         <div className="space-y-4 rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xl">💰</span>
               <h2 className="text-lg leading-tight font-black tracking-tight text-white">
                 Budget & Diet Plan
               </h2>
             </div>
-            <span className="shrink-0 rounded-full border border-[#ADFF00]/20 bg-[#ADFF00]/10 px-3 py-1 text-center text-[10px] font-bold text-[#ADFF00] sm:text-xs">
-              {String(
-                budgetBreakdown.total_estimated_monthly_cost ||
-                  budgetBreakdown.monthly_budget ||
-                  "",
-              )}
+            <span className="max-w-full self-start rounded-full border border-[#ADFF00]/20 bg-[#ADFF00]/10 px-3 py-1 text-left text-[10px] leading-snug font-bold text-[#ADFF00] sm:self-auto sm:text-center sm:text-xs">
+              {budgetBadge}
             </span>
           </div>
 
           <p className="text-xs leading-relaxed text-gray-400">
-            {String(budgetBreakdown.budget_verdict || "")}
+            {budgetVerdict}
           </p>
 
           {recommendedAddOns.length > 0 && (
