@@ -413,7 +413,6 @@ function buildCompactPlanProfile(
       sleep: profile.sleep_duration,
       wake_time: profile.wake_time,
       work_time: profile.work_time,
-      workout_time: profile.workout_time || profile.preferred_training_time,
       sleep_time: profile.sleep_time,
       lifestyle_notes: profile.lifestyle_description,
     },
