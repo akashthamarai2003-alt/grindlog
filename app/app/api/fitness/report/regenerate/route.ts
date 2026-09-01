@@ -7,6 +7,7 @@ import {
   recordGenerationAttempt,
 } from "@/lib/services/fitness-ai-generation-guard";
 import { OnboardingSchema } from "@/types/fitness/onboarding";
+import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
 
 export async function POST() {
   try {
@@ -85,6 +86,17 @@ export async function POST() {
           ? scan.gemini_analysis
           : "No photos provided.",
     });
+
+    const structuredBodyScan = parseBodyScanAnalysis(scan?.gemini_analysis);
+    if (structuredBodyScan) {
+      aiStrategy.body_scan_insights = {
+        has_body_scan: true,
+        overall_summary: structuredBodyScan.overall_summary,
+        observed_strengths: structuredBodyScan.observed_strengths,
+        priority_improvements: structuredBodyScan.priority_improvements,
+        posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
+      };
+    }
 
     const { error: updateError } = await supabase
       .from("fitness_os_profiles")

@@ -275,6 +275,21 @@ Output ONLY valid JSON matching this schema.`;
         estimatedBodyFat: estimated_body_fat,
         visualObservations,
       });
+
+      // Gemini is the source of truth for photo observations. Preserve its
+      // validated result in the report strategy so the report cannot hide a
+      // successful scan merely because the second report model summarised it
+      // incorrectly.
+      const structuredBodyScan = parseBodyScanAnalysis(visualObservations);
+      if (structuredBodyScan) {
+        aiStrategy.body_scan_insights = {
+          has_body_scan: true,
+          overall_summary: structuredBodyScan.overall_summary,
+          observed_strengths: structuredBodyScan.observed_strengths,
+          priority_improvements: structuredBodyScan.priority_improvements,
+          posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
+        };
+      }
       console.log("AI Strategy Generated:", aiStrategy);
     } catch (err) {
       console.error("OpenAI starting report error:", err);

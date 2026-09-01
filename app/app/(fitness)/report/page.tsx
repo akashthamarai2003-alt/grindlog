@@ -99,13 +99,21 @@ export default async function AIStartingReportPage() {
   }
   const focusAreas = Array.isArray(aiStrategy.focus_areas) ? aiStrategy.focus_areas : [];
   const onboardingData = isRecord(profile.onboarding_data) ? profile.onboarding_data : {};
-  const reportBodyScanInsights = aiStrategy.body_scan_insights as Record<string, any>;
+  const reportBodyScanInsights = isRecord(aiStrategy.body_scan_insights)
+    ? aiStrategy.body_scan_insights
+    : null;
   const directBodyScan = parseBodyScanAnalysis(scan?.gemini_analysis);
   // A structured Gemini result is the source of truth for photo observations.
   // Older reports still fall back to their stored coaching summary.
   const bodyScanInsights = directBodyScan || reportBodyScanInsights;
   const hasBodyScan =
-    directBodyScan !== null || reportBodyScanInsights.has_body_scan === true;
+    directBodyScan !== null || reportBodyScanInsights?.has_body_scan === true;
+  const bodyScanStrengths = bodyScanInsights && Array.isArray(bodyScanInsights.observed_strengths)
+    ? bodyScanInsights.observed_strengths.filter((item: unknown): item is string => typeof item === "string" && Boolean(item.trim()))
+    : [];
+  const bodyScanPriorities = bodyScanInsights && Array.isArray(bodyScanInsights.priority_improvements)
+    ? bodyScanInsights.priority_improvements.filter((item: unknown): item is string => typeof item === "string" && Boolean(item.trim()))
+    : [];
   const personalNumbers = [
     ["Protein starting target", displayValue(profile.initial_protein_target, " g/day")],
     ["Maintenance estimate", displayValue(profile.baseline_calories, " kcal/day")],
@@ -225,48 +233,42 @@ export default async function AIStartingReportPage() {
           </div>
           {hasBodyScan ? (
             <>
-              <p className="rounded-2xl border border-white/5 bg-[#0D150D] p-4 text-sm leading-relaxed text-gray-300">
-                {String(bodyScanInsights.overall_summary)}
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-                  <p className="mb-2 text-xs font-bold tracking-wider text-emerald-400 uppercase">
-                    Visible strengths
-                  </p>
-                  <ul className="space-y-2">
-                    {bodyScanInsights.observed_strengths.map(
-                      (item: string, index: number) => (
-                        <li
-                          key={`${item}-${index}`}
-                          className="text-xs leading-relaxed text-gray-300"
-                        >
-                          {item}
-                        </li>
-                      ),
-                    )}
+              <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                <p className="mb-3 text-xs font-bold tracking-wider text-emerald-400 uppercase">
+                  What I notice
+                </p>
+                <p className="text-sm leading-relaxed text-gray-300">
+                  {String(bodyScanInsights?.overall_summary || "Your photos provide a useful starting point for coaching.")}
+                </p>
+                {bodyScanStrengths.length > 0 && (
+                  <ul className="mt-3 space-y-2">
+                    {bodyScanStrengths.map((item, index) => (
+                      <li key={`${item}-${index}`} className="flex gap-2 text-sm leading-relaxed text-gray-300">
+                        <span className="text-[#ADFF00]">•</span><span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
-                </div>
+                )}
+              </div>
+              {bodyScanPriorities.length > 0 && (
                 <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
                   <p className="mb-2 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-                    Priority improvements
+                    Your first priorities
                   </p>
                   <ul className="space-y-2">
-                    {bodyScanInsights.priority_improvements.map(
-                      (item: string, index: number) => (
-                        <li
-                          key={`${item}-${index}`}
-                          className="text-xs leading-relaxed text-gray-300"
-                        >
-                          {item}
-                        </li>
-                      ),
-                    )}
+                    {bodyScanPriorities.map((item, index) => (
+                      <li key={`${item}-${index}`} className="flex gap-2 text-sm leading-relaxed text-gray-300">
+                        <span className="text-[#ADFF00]">•</span><span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
-              </div>
-              <p className="text-xs leading-relaxed text-gray-400">
-                {String(bodyScanInsights.posture_or_movement_note)}
-              </p>
+              )}
+              {bodyScanInsights?.posture_or_movement_note && (
+                <p className="text-xs leading-relaxed text-gray-400">
+                  {String(bodyScanInsights.posture_or_movement_note)}
+                </p>
+              )}
               {directBodyScan?.goal_gap && (
                 <p className="rounded-xl border border-[#ADFF00]/15 bg-[#ADFF00]/5 px-3 py-2 text-xs leading-relaxed text-gray-300">
                   <span className="font-bold text-[#ADFF00]">Goal direction: </span>
