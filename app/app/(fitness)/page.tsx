@@ -44,6 +44,31 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     if (plan) {
       redirect("/payment?returnTo=/");
     } else {
+      // If they recently generated a draft or one is actively generating, resume from plan-setup
+      const draftCacheCutoff = new Date(Date.now() - 30 * 60_000).toISOString();
+      const { data: cachedDraft } = await supabase
+        .from("fitness_os_ai_sessions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("session_type", "plan_generation")
+        .gte("created_at", draftCacheCutoff)
+        .limit(1)
+        .maybeSingle();
+
+      const attemptCutoff = new Date(Date.now() - 3 * 60_000).toISOString();
+      const { data: activeAttempt } = await supabase
+        .from("fitness_os_ai_sessions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("session_type", "plan_generation_attempt")
+        .gte("created_at", attemptCutoff)
+        .limit(1)
+        .maybeSingle();
+
+      if (cachedDraft || activeAttempt) {
+        redirect("/plan-setup");
+      }
+
       // Keep reopening/back navigation on the completed onboarding report.
       // Plan generation starts only when the user explicitly clicks
       // "Generate My Plan", avoiding duplicate paid AI requests.
