@@ -50,11 +50,13 @@ const PILL_CONFIGS: PillConfig[] = [
 interface AIPlanAnimationProps {
   /** Keep the final state visible until the live plan request settles. */
   isReady?: boolean;
+  hasError?: boolean;
   onAnimationComplete?: () => void;
 }
 
 export default function AIPlanAnimation({
   isReady = false,
+  hasError = false,
   onAnimationComplete,
 }: AIPlanAnimationProps) {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
@@ -90,7 +92,7 @@ export default function AIPlanAnimation({
   // Start the timeline from the actual pill count. This guarantees that when
   // profile data arrives—even with exactly eight pills—the opening sequence
   // begins at DATA_ENTER and each pill/line can enter in order.
-  const timeline = useAnimationTimeline(pills.length, reducedMotion);
+  const timeline = useAnimationTimeline(pills.length, reducedMotion, isReady);
 
   // The animation timeline is only visual. Do not reveal a failure screen
   // while the real model call is still running; exit after both are ready.
@@ -164,6 +166,7 @@ export default function AIPlanAnimation({
         phase={timeline.phase}
         scanIndex={timeline.scanIndex}
         pillLabels={pills.map((p) => p.label)}
+        hasError={hasError}
       />
     </motion.div>
   );

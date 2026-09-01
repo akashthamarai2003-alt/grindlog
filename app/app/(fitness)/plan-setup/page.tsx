@@ -71,15 +71,8 @@ export default function PlanSetupPage() {
     // Generate draft on mount
     let isMounted = true;
     
-    // 1. Start the API request
-    const aiFetchPromise = requestPlanDraft();
-    
-    // 2. Keep the loading animation mounted for its complete 14.3-second timeline.
-    const minimumDelayPromise = new Promise(resolve => setTimeout(resolve, 14300));
-
-    // Wait for BOTH the AI to finish AND the full animation to complete
-    Promise.all([aiFetchPromise, minimumDelayPromise])
-      .then(([res]) => {
+    requestPlanDraft()
+      .then((res) => {
         if (!isMounted) return;
         setPlanData(res.data);
       })
@@ -502,6 +495,7 @@ export default function PlanSetupPage() {
       {loading && (
         <AIPlanAnimation
           isReady={Boolean(planData || generationError)}
+          hasError={Boolean(generationError)}
           onAnimationComplete={() => setLoading(false)}
         />
       )}

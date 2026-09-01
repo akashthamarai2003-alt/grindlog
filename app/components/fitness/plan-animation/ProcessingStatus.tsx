@@ -7,10 +7,20 @@ interface ProcessingStatusProps {
   phase: AnimationPhase;
   scanIndex: number;
   pillLabels: string[];
+  hasError?: boolean;
 }
 
-export function ProcessingStatus({ phase, scanIndex, pillLabels }: ProcessingStatusProps) {
+export function ProcessingStatus({
+  phase,
+  scanIndex,
+  pillLabels,
+  hasError = false,
+}: ProcessingStatusProps) {
   const getStatusText = (): string => {
+    if (hasError && (phase === "TRANSITION" || phase === "COMPLETE")) {
+      return "GENERATION NEEDS YOUR ATTENTION";
+    }
+
     switch (phase) {
       case "BOOT":
         return "";
@@ -26,9 +36,9 @@ export function ProcessingStatus({ phase, scanIndex, pillLabels }: ProcessingSta
         return "ANALYZING FITNESS PROFILE...";
       }
       case "DATA_COLLAPSE":
-        return "OPTIMIZING YOUR WORKOUT...";
+        return "FINALIZING YOUR PERSONALIZED PLAN...";
       case "AI_ALONE":
-        return "CALCULATING NUTRITION TARGETS...";
+        return "VALIDATING YOUR PLAN...";
       case "TRANSITION":
       case "COMPLETE":
         return "PLAN READY";
