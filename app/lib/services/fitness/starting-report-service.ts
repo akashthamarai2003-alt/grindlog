@@ -170,21 +170,27 @@ Return one valid JSON object with exactly these top-level fields:
 Use Indian rupees only when the supplied budget is in rupees. Keep each string plain, concrete, and concise.`;
 
   const reportPrompt = `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nBODY SCAN AVAILABLE: ${hasUsableBodyScan(visualObservations)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`;
-  let response: unknown;
   let lastError: unknown;
   // GPT-5.6 shares this budget between reasoning and visible JSON. Keep one
   // bounded recovery attempt for an interrupted response, without allowing a
   // client-side retry storm.
   for (const completionBudget of [9000, 12000]) {
     try {
-      response = await generateOpenAIResponseJSON<unknown>({
+      const response = await generateOpenAIResponseJSON<unknown>({
         systemPrompt,
-        userPrompt: reportPrompt,
+        userPrompt:
+          completionBudget === 9000
+            ? reportPrompt
+            : `${reportPrompt}\n\nReturn every required field from the report schema. Do not omit body_scan_insights, first_two_weeks, budget_breakdown, timeline_projection, or health_and_safety. Return one complete JSON object.`,
         maxTokens: completionBudget,
         reasoningEffort: "low",
         minimumOutputTokens: completionBudget,
       });
-      break;
+      const parsed = StartingReportSchema.safeParse(response);
+      if (parsed.success) return parsed.data;
+      lastError = new Error("OpenAI returned an incomplete starting report.");
+      if (completionBudget === 9000) continue;
+      throw lastError;
     } catch (error) {
       lastError = error;
       if (!String(error).toLowerCase().includes("incomplete") || completionBudget === 12000) {
@@ -192,12 +198,5 @@ Use Indian rupees only when the supplied budget is in rupees. Keep each string p
       }
     }
   }
-  if (response === undefined) throw lastError || new Error("Starting report generation failed.");
-
-  const parsed = StartingReportSchema.safeParse(response);
-  if (!parsed.success) {
-    throw new Error("OpenAI returned an incomplete starting report.");
-  }
-
-  return parsed.data;
+  throw lastError || new Error("Starting report generation failed.");
 }
