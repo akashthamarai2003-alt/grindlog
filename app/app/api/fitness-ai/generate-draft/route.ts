@@ -152,10 +152,12 @@ export async function POST(req: Request) {
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
           userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
           model: FITNESS_PLAN_MODEL,
-          // A complete weekly plan needs more space than the report, but this is
-          // intentionally below the old implicit 8,000-token ceiling.
-          maxTokens: 5600,
-          minimumOutputTokens: 5600,
+          // GPT-5.6 shares this budget between reasoning and visible JSON. A
+          // 5,600-token cap can be exhausted before the weekly plan is emitted,
+          // which surfaces as an `incomplete` response with empty output.
+          // Keep enough headroom for high reasoning plus the complete schema.
+          maxTokens: attempt === 1 ? 10000 : 14000,
+          minimumOutputTokens: attempt === 1 ? 10000 : 14000,
           reasoningEffort: "high",
           promptCacheKey: "fitness-plan-v3",
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
@@ -201,6 +203,10 @@ export async function POST(req: Request) {
         console.error(`Attempt ${attempt} caught error:`, err);
         lastErrorType = "SYSTEM";
         lastErrorMessage = err.message || "Network or API error.";
+        if (String(lastErrorMessage).toLowerCase().includes("incomplete")) {
+          correctionNote =
+            "The previous generation was interrupted before JSON was complete. Return the full required JSON object in one response; keep descriptions concise, but do not omit any required section.";
+        }
       }
     }
 
