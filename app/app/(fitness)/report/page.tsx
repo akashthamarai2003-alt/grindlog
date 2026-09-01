@@ -168,7 +168,7 @@ export default async function AIStartingReportPage() {
     ? displayValue(profile.nutrition_budget, " / month")
     : rawBudgetEstimate;
   const budgetVerdict = needsMealDetails
-    ? "Your budget is saved. Exact protein add-ons depend on the meals and protein portions your PG provides."
+    ? "Your budget is saved. Exact food quantities and protein add-ons will be calculated dynamically when generating your daily plan."
     : String(budgetBreakdown.budget_verdict || "");
 
   return (
