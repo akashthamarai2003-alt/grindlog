@@ -4,6 +4,7 @@ import { ArrowRight, Brain, Info } from "lucide-react";
 import Link from "next/link";
 import { RegenerateReportButton } from "@/components/fitness/report/regenerate-report-button";
 import { hasGeneratedStartingReport } from "@/lib/services/fitness/starting-report-service";
+import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
 
 function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -24,11 +25,18 @@ export default async function AIStartingReportPage() {
     redirect("/");
   }
 
-  const { data: profile } = await supabase
-    .from("fitness_os_profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, { data: scan }] = await Promise.all([
+    supabase
+      .from("fitness_os_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("fitness_os_scans")
+      .select("gemini_analysis")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
 
   if (!profile || !profile.onboarding_completed) {
     redirect("/onboarding");
@@ -91,8 +99,13 @@ export default async function AIStartingReportPage() {
   }
   const focusAreas = Array.isArray(aiStrategy.focus_areas) ? aiStrategy.focus_areas : [];
   const onboardingData = isRecord(profile.onboarding_data) ? profile.onboarding_data : {};
-  const bodyScanInsights = aiStrategy.body_scan_insights as Record<string, any>;
-  const hasBodyScan = bodyScanInsights.has_body_scan === true;
+  const reportBodyScanInsights = aiStrategy.body_scan_insights as Record<string, any>;
+  const directBodyScan = parseBodyScanAnalysis(scan?.gemini_analysis);
+  // A structured Gemini result is the source of truth for photo observations.
+  // Older reports still fall back to their stored coaching summary.
+  const bodyScanInsights = directBodyScan || reportBodyScanInsights;
+  const hasBodyScan =
+    directBodyScan !== null || reportBodyScanInsights.has_body_scan === true;
   const personalNumbers = [
     ["Protein starting target", displayValue(profile.initial_protein_target, " g/day")],
     ["Maintenance estimate", displayValue(profile.baseline_calories, " kcal/day")],
@@ -241,6 +254,12 @@ export default async function AIStartingReportPage() {
               <p className="text-xs leading-relaxed text-gray-400">
                 {String(bodyScanInsights.posture_or_movement_note)}
               </p>
+              {directBodyScan?.goal_gap && (
+                <p className="rounded-xl border border-[#ADFF00]/15 bg-[#ADFF00]/5 px-3 py-2 text-xs leading-relaxed text-gray-300">
+                  <span className="font-bold text-[#ADFF00]">Goal direction: </span>
+                  {directBodyScan.goal_gap}
+                </p>
+              )}
             </>
           ) : (
             <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">

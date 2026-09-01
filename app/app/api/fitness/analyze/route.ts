@@ -5,6 +5,10 @@ import {
   generateStartingReport,
   hasGeneratedStartingReport,
 } from "@/lib/services/fitness/starting-report-service";
+import {
+  BODY_SCAN_RESPONSE_INSTRUCTIONS,
+  parseBodyScanAnalysis,
+} from "@/lib/fitness/body-scan";
 
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -90,12 +94,13 @@ export async function POST(req: Request) {
     }
 
     // Optional: Extract images for Gemini Vision
-    const images: any[] = [];
-    const addImage = (base64Str?: string) => {
+    const images: Array<{ label: string; inlineData: { data: string; mimeType: string } }> = [];
+    const addImage = (label: string, base64Str?: string) => {
       if (base64Str && base64Str.startsWith("data:image")) {
         const [meta, data] = base64Str.split(",");
         const mimeType = meta.split(";")[0].split(":")[1];
         images.push({
+          label,
           inlineData: {
             data,
             mimeType,
@@ -104,11 +109,14 @@ export async function POST(req: Request) {
       }
     };
 
-    addImage(data.body_scan_front);
-    addImage(data.body_scan_left);
-    addImage(data.body_scan_right);
-    addImage(data.body_scan_back);
-    addImage(data.goal_physique_image || data.body_scan_inspiration);
+    addImage("CURRENT BODY — FRONT VIEW", data.body_scan_front);
+    addImage("CURRENT BODY — LEFT SIDE VIEW", data.body_scan_left);
+    addImage("CURRENT BODY — RIGHT SIDE VIEW", data.body_scan_right);
+    addImage("CURRENT BODY — BACK VIEW", data.body_scan_back);
+    addImage(
+      "GOAL PHYSIQUE — INSPIRATION ONLY, NOT THE USER'S CURRENT BODY",
+      data.goal_physique_image || data.body_scan_inspiration,
+    );
 
     let visualObservations = "No photos provided.";
     let visionAnalysisSucceeded = false;
@@ -128,9 +136,12 @@ export async function POST(req: Request) {
               role: "user",
               parts: [
                 {
-                  text: "You are a cautious fitness coach. Analyse the uploaded current-body photos and optional goal-physique image. Return concise JSON with: overall_summary, visible_strengths, priority_improvements, posture_or_movement_note, and goal_gap (if a goal image is supplied). Use only visible observations, never diagnose a health condition, and never estimate an exact body-fat percentage. Keep language encouraging and practical.",
+                  text: `You are a cautious fitness coach. Analyse the labelled images below. The current-body views show the user from different angles; the optional goal-physique image is only a reference for direction. Keep the response concise, encouraging, and practical.\n${BODY_SCAN_RESPONSE_INSTRUCTIONS}`,
                 },
-                ...images,
+                ...images.flatMap((image) => [
+                  { text: image.label },
+                  { inlineData: image.inlineData },
+                ]),
               ],
             },
           ],
@@ -140,10 +151,11 @@ export async function POST(req: Request) {
           },
         });
 
-        visualObservations = response.text?.trim() || "";
-        if (!visualObservations) {
-          throw new Error("Gemini returned an empty body-scan analysis.");
+        const bodyScan = parseBodyScanAnalysis(response.text);
+        if (!bodyScan) {
+          throw new Error("Gemini returned an invalid body-scan analysis.");
         }
+        visualObservations = JSON.stringify(bodyScan);
         visionAnalysisSucceeded = true;
         console.log("Gemini Vision Observations:", visualObservations);
       } catch (err) {

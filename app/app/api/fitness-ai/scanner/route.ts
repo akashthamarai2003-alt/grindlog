@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { GoogleGenAI } from "@google/genai";
+import {
+  BODY_SCAN_RESPONSE_INSTRUCTIONS,
+  parseBodyScanAnalysis,
+} from "@/lib/fitness/body-scan";
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,10 +33,17 @@ export async function POST(req: NextRequest) {
 
     // Format base64 images for Gemini
     const imageParts: any[] = [];
+    const imageLabels: Record<string, string> = {
+      front: "CURRENT BODY — FRONT VIEW",
+      side: "CURRENT BODY — SIDE VIEW",
+      back: "CURRENT BODY — BACK VIEW",
+      goal: "GOAL PHYSIQUE — INSPIRATION ONLY, NOT THE USER'S CURRENT BODY",
+    };
     for (const [view, base64Str] of Object.entries(images as Record<string, string>)) {
       if (base64Str && base64Str.startsWith('data:image')) {
         const [meta, data] = base64Str.split(',');
         const mimeType = meta.split(';')[0].split(':')[1];
+        imageParts.push({ text: imageLabels[view] || `CURRENT BODY — ${view.toUpperCase()} VIEW` });
         imageParts.push({
           inlineData: {
             data,
@@ -46,21 +57,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Could not process uploaded images" }, { status: 400 });
     }
 
-    const promptText = `You are an elite, world-class fitness coach and biomechanics expert. 
-You are presented with body scan photos of a client, which may include Front, Side, and Back views, as well as an optional Goal Physique target photo.
-
-Your task is to analyze these photos and provide a highly personalized, structured physical assessment.
-
-ANALYSIS REQUIREMENTS:
-1. Current Physique Assessment: Identify general visual characteristics (e.g., broad shoulders, narrow waist, relative muscle mass, apparent postural imbalances like forward head posture or anterior pelvic tilt).
-2. Gap Analysis: If a goal physique photo is included, compare their current state to the goal. Explicitly identify the specific muscle groups or focus areas they need to prioritize to bridge that gap.
-3. Workout Implications: Briefly translate your findings into practical programming advice (e.g., "Due to anterior pelvic tilt, prioritize core strengthening and hip flexor stretching").
-
-CRITICAL SAFETY & COMPLIANCE INSTRUCTIONS:
-- DO NOT make any medical diagnoses (e.g., "you have scoliosis"). Use observational language (e.g., "there appears to be a slight spinal curvature").
-- DO NOT guess or state exact body-fat percentages (e.g., "you are 15% body fat").
-- Keep the analysis empowering, professional, concise, and highly structured.
-Respond in clear, readable plain text using bullet points where appropriate.`;
+    const promptText = `You are a cautious fitness coach. Analyse the labelled images below. The current-body views show the user from different angles; the optional goal-physique image is only a reference for direction. Keep the response concise, encouraging, and practical.\n${BODY_SCAN_RESPONSE_INSTRUCTIONS}`;
 
     // 5. Call Gemini Vision Server-Side
     const response = await geminiClient.models.generateContent({
@@ -71,13 +68,16 @@ Respond in clear, readable plain text using bullet points where appropriate.`;
           { text: promptText },
           ...imageParts
         ]
-      }]
+      }],
+      config: {
+        temperature: 0.1,
+        responseMimeType: "application/json",
+      },
     });
 
-    const analysisText = response.text;
-
-    if (!analysisText) {
-      throw new Error("No analysis generated from Gemini.");
+    const analysis = parseBodyScanAnalysis(response.text);
+    if (!analysis) {
+      throw new Error("Gemini returned an invalid body-scan analysis.");
     }
 
     // 5. Save to Database (Text Analysis ONLY)
@@ -90,7 +90,7 @@ Respond in clear, readable plain text using bullet points where appropriate.`;
         side_url: null,
         back_url: null,
         goal_url: null,
-        gemini_analysis: analysisText,
+        gemini_analysis: JSON.stringify(analysis),
         updated_at: new Date().toISOString()
       }, { onConflict: "user_id" });
 
@@ -99,7 +99,7 @@ Respond in clear, readable plain text using bullet points where appropriate.`;
       return NextResponse.json({ success: false, error: "Failed to save analysis." }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data: { analysis: analysisText } });
+    return NextResponse.json({ success: true, data: { analysis } });
 
   } catch (error: any) {
     console.error("Scanner API Error:", error);
