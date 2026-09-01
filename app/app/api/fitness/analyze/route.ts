@@ -129,27 +129,45 @@ export async function POST(req: Request) {
         if (!apiKey) throw new Error("GEMINI_API_KEY missing");
 
         const gemini = new GoogleGenAI({ apiKey });
-        const response = await gemini.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: [
-            {
-              role: "user",
-              parts: [
+        const models = [
+          process.env.GEMINI_VISION_MODEL?.trim() || "gemini-2.5-flash",
+          "gemini-2.0-flash",
+        ].filter((model, index, list) => list.indexOf(model) === index);
+        let response: Awaited<ReturnType<typeof gemini.models.generateContent>> | null = null;
+        let lastModelError: unknown;
+        for (const model of models) {
+          try {
+            response = await gemini.models.generateContent({
+              model,
+              contents: [
                 {
-                  text: `You are a cautious fitness coach. Analyse the labelled images below. The current-body views show the user from different angles; the optional goal-physique image is only a reference for direction. Keep the response concise, encouraging, and practical.\n${BODY_SCAN_RESPONSE_INSTRUCTIONS}`,
+                  role: "user",
+                  parts: [
+                    {
+                      text: `You are a cautious fitness coach. Analyse the labelled images below. The current-body views show the user from different angles; the optional goal-physique image is only a reference for direction. Keep the response concise, encouraging, and practical.\n${BODY_SCAN_RESPONSE_INSTRUCTIONS}`,
+                    },
+                    ...images.flatMap((image) => [
+                      { text: image.label },
+                      { inlineData: image.inlineData },
+                    ]),
+                  ],
                 },
-                ...images.flatMap((image) => [
-                  { text: image.label },
-                  { inlineData: image.inlineData },
-                ]),
               ],
-            },
-          ],
-          config: {
-            temperature: 0.2,
-            responseMimeType: "application/json",
-          },
-        });
+              config: {
+                temperature: 0.2,
+                responseMimeType: "application/json",
+              },
+            });
+            break;
+          } catch (modelError) {
+            lastModelError = modelError;
+            if (!String(modelError).includes("404") || model === models[models.length - 1]) {
+              throw modelError;
+            }
+            console.warn(`Gemini model ${model} was not found; trying fallback model.`);
+          }
+        }
+        if (!response) throw lastModelError || new Error("Gemini returned no response.");
 
         const bodyScan = parseBodyScanAnalysis(response.text);
         if (!bodyScan) {
