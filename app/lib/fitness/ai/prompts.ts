@@ -7,7 +7,7 @@ Safety is absolute: never prescribe a movement in profile.safety.forbidden_movem
 
 Training: create exactly training.sessions workout objects, no rest-day objects, dated from profile.today across the next 7 days and honour preferred_days when supplied. Use only the listed equipment at the stated location; no treadmill when it is absent. Fit the stated duration: about 3 exercises for 10–20 minutes, 5–6 for 30–45, and 7–8 for 60+. Use 3–6 compound reps for Build Strength, 8–12 for Build Muscle, and 12–15 with shorter rest for Lose Fat.
 
-Nutrition: respect diet, available_foods, allergies, and avoid exactly. Never recommend an item outside available_foods when it is supplied. Use nutrition.targets.daily_calories and nutrition.targets.protein_grams exactly when they are present; they were calculated from the saved onboarding profile. For provided-core-meal settings, keep breakfast/lunch/dinner explicitly labelled as a provided meal. The grocery_list is the user's complete monthly add-on purchase: each quantity must cover the meal add-ons for 30 days, the total of estimated_price must not exceed profile.nutrition.monthly_budget, and provided core meals must never be listed or priced. Do not spend unused budget just to reach the limit. For self-cooked settings, give affordable specific meals and a 30-day grocery list within the budget. Use a clock time only when that exact time exists in profile.routine; otherwise use relative timing such as "After waking", "Midday", "Evening", or "Any time". Return concise, practical notes and realistic INR prices.
+Nutrition: respect diet, available_foods, allergies, and avoid exactly. Never recommend an item outside available_foods when it is supplied. Use nutrition.targets.daily_calories and nutrition.targets.protein_grams exactly when they are present; they were calculated from the saved onboarding profile. For provided-core-meal settings, keep breakfast/lunch/dinner explicitly labelled as a provided meal. The grocery_list is the user's complete monthly add-on purchase: each quantity must cover the meal add-ons for 30 days, the total of estimated_price must not exceed a finite profile.nutrition.monthly_budget, and provided core meals must never be listed or priced. Treat profile.nutrition.monthly_budget_reference_inr as the amount the user wants this plan to use: create a varied, useful 30-day grocery list that targets 80–95% of that reference, not a token low-cost list. Use sensible portions and never add unnecessary or excessive food merely to fill money. If fewer than three compatible foods were selected, keep portions practical and explain the limitation in guidance. For self-cooked settings, give affordable specific meals and a 30-day grocery list within the budget. Use a clock time only when that exact time exists in profile.routine; otherwise use relative timing such as "After waking", "Midday", "Evening", or "Any time". Return concise, practical notes and realistic INR prices.
 
 Return JSON only, with every field in this shape:
 {safety_acknowledgment, plan:{name,description,goal}, workouts:[{title,workout_date,duration_minutes,exercises:[{name,exercise_order,sets,reps_string,target_reps_num,rest_seconds,notes}]}], nutrition:{daily_calories,protein_grams,meals_per_day,guidance,meals:[{meal_name,time_of_day,items,total_calories,protein_grams,prep_instructions}],grocery_list:[{name,monthly_quantity,unit,estimated_price,category,is_optional,reason}]}, lifestyle:{sleep_target_hours,water_target_liters,daily_steps_target}}.
@@ -347,6 +347,12 @@ function buildPlanReportInsights(value: unknown): unknown {
   });
 }
 
+function budgetPlanningReference(value: unknown): number | undefined {
+  if (typeof value !== "string") return undefined;
+  const values = value.replace(/,/g, "").match(/\d+/g)?.map(Number).filter(Number.isFinite) ?? [];
+  return values.length ? Math.max(...values) : undefined;
+}
+
 function buildCompactPlanProfile(
   profile: Record<string, any>,
   todayDateStr: string,
@@ -391,6 +397,7 @@ function buildCompactPlanProfile(
       environment: foodEnvironment,
       provided_core_meals: providedCoreMeals,
       monthly_budget: profile.nutrition_budget,
+      monthly_budget_reference_inr: budgetPlanningReference(profile.nutrition_budget),
       meals_per_day: profile.meals_per_day,
       targets: {
         daily_calories: nutritionTargets.calories,

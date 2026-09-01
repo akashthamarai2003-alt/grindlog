@@ -1,218 +1,306 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { ShoppingCart, Edit2, CheckCircle, Plus, Minus, Trash2, Info } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  Brain,
+  CheckCircle,
+  Edit2,
+  Info,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Trash2,
+} from 'lucide-react';
 
-export default function GroceryTab({ planData, setPlanData, profile }: { planData: any, setPlanData: any, profile: any }) {
-  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+type GroceryItem = {
+  name?: string;
+  monthly_quantity?: number;
+  unit?: string;
+  estimated_price?: number;
+  category?: string;
+  is_optional?: boolean;
+  reason?: string;
+};
+
+const PROVIDED_CORE_ENVIRONMENTS = ['PG', 'Hostel', 'Home', 'Office/Canteen'];
+
+function formatMoney(amount: number): string {
+  return `₹${Math.round(amount).toLocaleString('en-IN')}`;
+}
+
+function formatQuantity(quantity: number): string {
+  const rounded = Math.round(quantity * 10) / 10;
+  return String(rounded);
+}
+
+function getBudgetReference(value: unknown): { amount: number | null; isOpenEnded: boolean } {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  const amounts = raw.replace(/,/g, '').match(/\d+/g)?.map(Number).filter(Number.isFinite) ?? [];
+  return {
+    amount: amounts.length ? Math.max(...amounts) : null,
+    isOpenEnded: raw.includes('+'),
+  };
+}
+
+function isCoreMeal(mealName: unknown): boolean {
+  return typeof mealName === 'string' && /breakfast|lunch|dinner/i.test(mealName);
+}
+
+function dailyQuantityLabel(item: GroceryItem): string | null {
+  const quantity = Number(item.monthly_quantity);
+  if (!Number.isFinite(quantity) || quantity <= 0) return null;
+
+  const unit = String(item.unit || '').trim().toLowerCase();
+  const name = String(item.name || 'item').trim().toLowerCase();
+
+  if (unit === 'pieces' || unit === 'piece') return `${formatQuantity(quantity / 30)} ${name} / day`;
+  if (unit === 'liters' || unit === 'liter' || unit === 'l') return `${formatQuantity((quantity * 1000) / 30)} ml / day`;
+  if (unit === 'kg' || unit === 'kilograms' || unit === 'kilogram') return `${formatQuantity((quantity * 1000) / 30)} g / day`;
+  if (unit === 'grams' || unit === 'gram' || unit === 'g') return `${formatQuantity(quantity / 30)} g / day`;
+  return `${formatQuantity(quantity / 30)} ${unit || 'serving'} / day`;
+}
+
+function monthlyQuantityLabel(item: GroceryItem): string {
+  const quantity = Number(item.monthly_quantity);
+  const shownQuantity = Number.isFinite(quantity) && quantity > 0 ? formatQuantity(quantity) : '--';
+  const unit = String(item.unit || 'units').trim().toLowerCase();
+  const name = String(item.name || 'item').trim().toLowerCase();
+  return unit === 'pieces' || unit === 'piece'
+    ? `${shownQuantity} ${name} / month`
+    : `${shownQuantity} ${unit} / month`;
+}
+
+export default function GroceryTab({
+  planData,
+  setPlanData,
+  profile,
+}: {
+  planData: any;
+  setPlanData: any;
+  profile: any;
+}) {
+  const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
   const [tempPrice, setTempPrice] = useState<string>('');
-  
-  const usesProvidedCoreMeals = ["PG", "Hostel", "Home", "Office/Canteen"].includes(profile?.food_environment);
-  const planLabel = usesProvidedCoreMeals ? "Monthly Add-ons" : "Monthly Grocery Plan";
-  const planExplanation = usesProvidedCoreMeals
-    ? `Only add-ons are counted. Your ${profile?.food_environment} core meals stay separate.`
-    : "Adjust a quantity or local price and your total updates instantly.";
 
-  // Older cached plans may not have a valid grocery array. Keep the page
-  // usable and offer generation instead of throwing during render.
-  const groceryList = Array.isArray(planData?.nutrition?.grocery_list)
-    ? planData.nutrition.grocery_list.filter((item: unknown) => item && typeof item === 'object')
+  const usesProvidedCoreMeals = PROVIDED_CORE_ENVIRONMENTS.includes(profile?.food_environment);
+  const foodEnvironment = typeof profile?.food_environment === 'string' ? profile.food_environment : 'saved';
+  const foodType = typeof profile?.food_type === 'string'
+    ? profile.food_type
+    : typeof profile?.diet_preference === 'string'
+      ? profile.diet_preference
+      : null;
+  const groceryList: GroceryItem[] = Array.isArray(planData?.nutrition?.grocery_list)
+    ? planData.nutrition.grocery_list.filter((item: unknown): item is GroceryItem => Boolean(item) && typeof item === 'object')
     : [];
 
-  // Budget Parsing
-  const budgetStr = profile?.nutrition_budget || "";
-  const budgetLimit = useMemo(() => {
-    if (!budgetStr || budgetStr.includes("+")) return 0;
-    const values = budgetStr.match(/\d[\d,]*/g)?.map((value: string) => Number(value.replace(/,/g, ""))) ?? [];
-    return values.length ? Math.max(...values) : 0;
-  }, [budgetStr]);
+  const budgetStr = typeof profile?.nutrition_budget === 'string' ? profile.nutrition_budget : '';
+  const budget = useMemo(() => getBudgetReference(budgetStr), [budgetStr]);
+  const totalCost = useMemo(
+    () => groceryList.reduce((total, item) => total + (Number(item.estimated_price) || 0), 0),
+    [groceryList],
+  );
+  const remainingBudget = budget.amount === null ? null : budget.amount - totalCost;
+  const isOverBudget = !budget.isOpenEnded && remainingBudget !== null && remainingBudget < 0;
+  const targetFloor = budget.amount === null ? null : Math.ceil(budget.amount * 0.8);
+  const targetCeiling = budget.amount === null ? null : Math.floor(budget.amount * 0.95);
+  const usagePercent = budget.amount && budget.amount > 0 ? Math.min((totalCost / budget.amount) * 100, 100) : 0;
+  const selectedFoodsCount = Array.isArray(profile?.available_foods)
+    ? profile.available_foods.filter((food: unknown) => typeof food === 'string' && food.trim()).length
+    : 0;
 
-  // Calculate totals
-  const totalCost = useMemo(() => {
-    return groceryList.reduce((acc: number, item: any) => acc + (item.estimated_price || 0), 0);
-  }, [groceryList]);
-
-  const remainingBudget = budgetLimit > 0 ? budgetLimit - totalCost : null;
-  const isOverBudget = remainingBudget !== null && remainingBudget < 0;
-  const budgetLabel = budgetLimit > 0
-    ? `Up to ₹${budgetLimit.toLocaleString()} / month`
-    : budgetStr || 'Not specified';
-
-  // Group by category
   const groupedItems = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    groceryList.forEach((item: any) => {
-      if (!groups[item.category]) groups[item.category] = [];
-      groups[item.category].push(item);
+    const groups: Record<string, Array<{ item: GroceryItem; index: number }>> = {};
+    groceryList.forEach((item, index) => {
+      const category = String(item.category || 'Other');
+      if (!groups[category]) groups[category] = [];
+      groups[category].push({ item, index });
     });
-    return groups;
+    return Object.entries(groups);
   }, [groceryList]);
 
-  const handleUpdateItem = (index: number, updates: any) => {
+  const coveredCoreMeals = useMemo(() => {
+    if (!usesProvidedCoreMeals || !Array.isArray(planData?.nutrition?.meals)) return [];
+    return planData.nutrition.meals
+      .map((meal: any) => String(meal?.meal_name || '').trim())
+      .filter(isCoreMeal);
+  }, [planData?.nutrition?.meals, usesProvidedCoreMeals]);
+
+  const handleUpdateItem = (index: number, updates: Partial<GroceryItem>) => {
     const newList = [...groceryList];
     newList[index] = { ...newList[index], ...updates };
-    setPlanData({
-      ...planData,
-      nutrition: { ...planData.nutrition, grocery_list: newList }
-    });
+    setPlanData({ ...planData, nutrition: { ...planData.nutrition, grocery_list: newList } });
   };
 
   const handleRemoveItem = (index: number) => {
     const newList = [...groceryList];
     newList.splice(index, 1);
-    setPlanData({
-      ...planData,
-      nutrition: { ...planData.nutrition, grocery_list: newList }
-    });
+    setPlanData({ ...planData, nutrition: { ...planData.nutrition, grocery_list: newList } });
   };
 
   const handleSavePrice = (index: number) => {
-    const num = parseFloat(tempPrice);
-    if (!isNaN(num)) {
-      handleUpdateItem(index, { estimated_price: num });
-    }
+    const price = Number(tempPrice);
+    if (Number.isFinite(price) && price >= 0) handleUpdateItem(index, { estimated_price: price });
     setEditingPriceId(null);
   };
 
   if (groceryList.length === 0) {
     return (
-      <div className="px-6 py-12 animate-in fade-in flex flex-col items-center justify-center text-center">
-        <ShoppingCart size={48} className="text-gray-500 mb-4" />
-        <h3 className="text-xl font-bold text-white mb-2">No {usesProvidedCoreMeals ? "Add-ons" : "Grocery Items"} Needed</h3>
-        <p className="text-gray-400 max-w-xs">This plan does not require any extra monthly food purchases.</p>
+      <div className="flex flex-col items-center justify-center px-6 py-12 text-center animate-in fade-in">
+        <ShoppingCart size={48} className="mb-4 text-gray-500" />
+        <h3 className="mb-2 text-xl font-bold text-white">No {usesProvidedCoreMeals ? 'Add-ons' : 'Grocery Items'} Needed</h3>
+        <p className="max-w-xs text-sm leading-relaxed text-gray-400">Luna did not add purchases outside the meals already covered by your saved routine.</p>
       </div>
     );
   }
 
+  const budgetTargetText = budget.amount === null
+    ? 'No budget selected'
+    : budget.isOpenEnded
+      ? `${formatMoney(budget.amount)}+ baseline`
+      : formatMoney(budget.amount);
+  const budgetStatus = isOverBudget
+    ? `${formatMoney(Math.abs(remainingBudget || 0))} over budget`
+    : remainingBudget === null
+      ? 'Budget not specified'
+      : totalCost < (targetFloor || 0) && selectedFoodsCount !== 1 && selectedFoodsCount !== 2
+        ? `${formatMoney(Math.max(0, (targetFloor || 0) - totalCost))} to the useful spend range`
+        : budget.isOpenEnded
+          ? `${formatMoney(Math.max(0, remainingBudget))} to the selected baseline`
+          : `${formatMoney(Math.max(0, remainingBudget))} remaining`;
+
   return (
-    <div className="mx-auto max-w-md px-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
-      
-      {/* Budget Summary */}
-      <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 relative overflow-hidden">
-        <div className={`absolute top-0 left-0 w-1 h-full ${isOverBudget ? 'bg-red-500' : 'bg-[#ADFF00]'}`} />
-        <div className="mb-5 flex items-start justify-between gap-3 pl-2">
+    <div className="mx-auto max-w-md space-y-6 px-6 pb-28 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <section className="overflow-hidden rounded-3xl border border-[#ADFF00]/20 bg-[linear-gradient(145deg,rgba(173,255,0,0.10),rgba(18,30,18,1)_45%)] p-5">
+        <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]"><Brain size={14} /> Generated by Luna AI</div>
+        <h3 className="mt-3 text-xl font-black text-white">Your grocery add-ons</h3>
+        <p className="mt-1 text-sm leading-relaxed text-gray-400">
+          {usesProvidedCoreMeals ? `Only food to buy outside your ${foodEnvironment} meals.` : 'A 30-day shopping list built from the foods and budget you saved.'}
+        </p>
+      </section>
+
+      <section className="relative overflow-hidden rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">
+        <div className={`absolute inset-y-0 left-0 w-1 ${isOverBudget ? 'bg-red-500' : 'bg-[#ADFF00]'}`} />
+        <div className="flex items-start justify-between gap-4 pl-2">
           <div>
-            <h3 className="text-xs font-extrabold text-[#ADFF00] tracking-wider uppercase">{planLabel}</h3>
-            <p className="mt-1 text-xs leading-relaxed text-gray-500">{planExplanation}</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]">Monthly grocery budget</p>
+            <p className="mt-1 text-xs leading-relaxed text-gray-500">Estimated 30-day add-ons, planned around the budget you selected.</p>
           </div>
           <ShoppingCart size={20} className="shrink-0 text-[#ADFF00]" />
         </div>
-        
-        <div className="flex justify-between items-end pl-2">
+
+        <div className="mt-5 pl-2">
+          <p className="text-3xl font-black text-white">{formatMoney(totalCost)} <span className="text-base font-bold text-gray-500">/ {budgetTargetText}</span></p>
+          {budget.amount !== null && (
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/30">
+              <div className={`h-full rounded-full transition-all ${isOverBudget ? 'bg-red-500' : 'bg-[#ADFF00]'}`} style={{ width: `${usagePercent}%` }} />
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 border-t border-white/5 pt-4 pl-2">
           <div>
-            <p className="text-sm text-gray-500 mb-1">Estimated Cost</p>
-            <p className="text-3xl font-black text-white">₹{totalCost.toLocaleString()}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Estimated</p>
+            <p className="mt-1 text-lg font-black text-white">{formatMoney(totalCost)}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-500 mb-1">{usesProvidedCoreMeals ? "Add-on budget" : "Budget"}</p>
-            <p className="text-xs text-gray-500 mb-1">{budgetLabel}</p>
-            {remainingBudget !== null ? (
-              <p className={`font-bold ${isOverBudget ? 'text-red-500' : 'text-[#ADFF00]'}`}>
-                {isOverBudget ? (
-                  <span className="flex items-center gap-1 justify-end"><Info size={14}/> ₹{Math.abs(remainingBudget).toLocaleString()} over budget</span>
-                ) : (
-                  <span>✓ ₹{remainingBudget.toLocaleString()} unspent</span>
-                )}
-              </p>
-            ) : (
-              <p className="text-gray-400 font-bold">--</p>
-            )}
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{isOverBudget ? 'Over budget' : 'Budget status'}</p>
+            <p className={`mt-1 text-sm font-extrabold ${isOverBudget ? 'text-red-400' : 'text-[#ADFF00]'}`}>{isOverBudget && <Info size={14} className="mr-1 inline-block align-[-2px]" />}{budgetStatus}</p>
           </div>
         </div>
 
-      </div>
+        {targetFloor !== null && targetCeiling !== null && !isOverBudget && (
+          <p className="mt-3 pl-2 text-[11px] leading-relaxed text-gray-500">Luna&apos;s useful spend range: {formatMoney(targetFloor)}–{formatMoney(targetCeiling)} for this selected budget.</p>
+        )}
+      </section>
 
-      {/* Categories */}
-      {Object.entries(groupedItems).map(([category, items]) => (
-        <div key={category}>
-          <h4 className="text-xs font-bold text-[#ADFF00] tracking-widest uppercase mb-3 flex items-center gap-2">
-            <div className="h-px bg-[#1A2619] flex-1" />
-            {category}
-            <div className="h-px bg-[#1A2619] flex-1" />
-          </h4>
-          
-          <div className="space-y-3">
-            {items.map((item, localIdx) => {
-              const globalIdx = groceryList.findIndex((g: any) => g.name === item.name);
-              return (
-                <div key={localIdx} className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-4 flex items-center justify-between">
-                  <div className="flex-1 pr-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h5 className="font-bold text-gray-100">{item.name}</h5>
-                      {item.is_optional && (
-                        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-gray-400 uppercase">Optional</span>
-                      )}
-                    </div>
-                    {item.reason && <p className="mt-1 text-xs leading-relaxed text-gray-500">{item.reason}</p>}
-                    
-                    <div className="flex items-center gap-3 mt-2">
-                      <div className="flex items-center bg-[#1A2619] rounded-lg p-1">
-                        <button 
-                          onClick={() => {
-                            const newQty = Math.max(1, item.monthly_quantity - 1);
-                            if (newQty === item.monthly_quantity) return;
-                            const unitPrice = item.monthly_quantity > 0 ? (item.estimated_price || 0) / item.monthly_quantity : 0;
-                            handleUpdateItem(globalIdx, { 
-                              monthly_quantity: newQty, 
-                              estimated_price: Math.round(unitPrice * newQty) 
-                            });
-                          }} 
-                          className="p-1 text-gray-400 hover:text-white"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="text-xs font-bold min-w-[4rem] whitespace-nowrap px-1 text-center">
-                          {item.monthly_quantity} <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{item.unit}</span>
-                        </span>
-                        <button 
-                          onClick={() => {
-                            const newQty = item.monthly_quantity + 1;
-                            const unitPrice = item.monthly_quantity > 0 ? (item.estimated_price || 0) / item.monthly_quantity : 0;
-                            handleUpdateItem(globalIdx, { 
-                              monthly_quantity: newQty, 
-                              estimated_price: Math.round(unitPrice * newQty) 
-                            });
-                          }} 
-                          className="p-1 text-gray-400 hover:text-white"
-                        >
-                          <Plus size={14} />
-                        </button>
+      <section>
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]">Your add-ons</p>
+        <div className="mt-4 space-y-6">
+          {groupedItems.map(([category, entries]) => (
+            <div key={category}>
+              <h4 className="mb-3 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]"><span className="h-px flex-1 bg-[#1A2619]" />{category}<span className="h-px flex-1 bg-[#1A2619]" /></h4>
+              <div className="space-y-3">
+                {entries.map(({ item, index }) => {
+                  const price = Number(item.estimated_price) || 0;
+                  const quantity = Number(item.monthly_quantity) || 0;
+                  const dailyLabel = dailyQuantityLabel(item);
+
+                  return (
+                    <article key={`${item.name || 'item'}-${index}`} className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h5 className="text-base font-black text-white">{item.name || 'Food item'}</h5>
+                            {item.is_optional && <span className="rounded-full border border-white/10 bg-black/20 px-2 py-0.5 text-[9px] font-bold uppercase text-gray-400">Optional</span>}
+                          </div>
+                          {dailyLabel && <p className="mt-2 text-sm font-bold text-gray-300">{dailyLabel}</p>}
+                          <p className="mt-1 text-xs font-medium text-gray-500">{monthlyQuantityLabel(item)}</p>
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Estimated</p>
+                          {editingPriceId === index ? (
+                            <div className="mt-1 flex items-center justify-end gap-1">
+                              <span className="text-sm text-gray-400">₹</span>
+                              <input type="number" min="0" value={tempPrice} onChange={(event) => setTempPrice(event.target.value)} onBlur={() => handleSavePrice(index)} onKeyDown={(event) => event.key === 'Enter' && handleSavePrice(index)} className="w-16 rounded-md border border-[#1A2619] bg-black px-2 py-1 text-sm font-bold text-white outline-none focus:border-[#ADFF00]" autoFocus />
+                              <button type="button" aria-label={`Save price for ${item.name || 'item'}`} onClick={() => handleSavePrice(index)} className="p-1 text-[#ADFF00]"><CheckCircle size={15} /></button>
+                            </div>
+                          ) : (
+                            <button type="button" aria-label={`Edit price for ${item.name || 'item'}`} onClick={() => { setEditingPriceId(index); setTempPrice(String(price)); }} className="mt-1 inline-flex items-center gap-1 text-lg font-black text-white transition-colors hover:text-[#ADFF00]">{formatMoney(price)} <Edit2 size={12} className="text-gray-500" /></button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    {editingPriceId === item.name ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-400 text-sm">₹</span>
-                        <input 
-                          type="number" 
-                          value={tempPrice}
-                          onChange={e => setTempPrice(e.target.value)}
-                          className="w-16 bg-black border border-[#1A2619] rounded-md px-2 py-1 text-sm text-white"
-                          autoFocus
-                          onBlur={() => handleSavePrice(globalIdx)}
-                          onKeyDown={e => e.key === 'Enter' && handleSavePrice(globalIdx)}
-                        />
-                        <button onClick={() => handleSavePrice(globalIdx)} className="text-[#ADFF00]"><CheckCircle size={16} /></button>
+
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/5 pt-3">
+                        <div className="flex items-center rounded-lg bg-black/25 p-1">
+                          <button type="button" aria-label={`Decrease ${item.name || 'item'} quantity`} onClick={() => {
+                            const nextQuantity = Math.max(1, quantity - 1);
+                            if (nextQuantity === quantity) return;
+                            const unitPrice = quantity > 0 ? price / quantity : 0;
+                            handleUpdateItem(index, { monthly_quantity: nextQuantity, estimated_price: Math.round(unitPrice * nextQuantity) });
+                          }} className="p-1 text-gray-400 transition-colors hover:text-white"><Minus size={14} /></button>
+                          <span className="min-w-[5.4rem] px-2 text-center text-[11px] font-extrabold text-gray-200">{formatQuantity(quantity)} {String(item.unit || 'units').toUpperCase()}</span>
+                          <button type="button" aria-label={`Increase ${item.name || 'item'} quantity`} onClick={() => {
+                            const nextQuantity = quantity + 1;
+                            const unitPrice = quantity > 0 ? price / quantity : 0;
+                            handleUpdateItem(index, { monthly_quantity: nextQuantity, estimated_price: Math.round(unitPrice * nextQuantity) });
+                          }} className="p-1 text-gray-400 transition-colors hover:text-white"><Plus size={14} /></button>
+                        </div>
+                        <button type="button" aria-label={`Remove ${item.name || 'item'}`} onClick={() => handleRemoveItem(index)} className="p-1 text-gray-600 transition-colors hover:text-red-400"><Trash2 size={15} /></button>
                       </div>
-                    ) : (
-                      <button type="button" aria-label={`Edit price for ${item.name}`} className="flex items-center gap-2 group" onClick={() => { setEditingPriceId(item.name); setTempPrice(item.estimated_price?.toString() || ''); }}>
-                        <span className="font-black text-gray-300">₹{item.estimated_price || 0}</span>
-                        <Edit2 size={12} className="text-gray-500 transition-colors group-hover:text-[#ADFF00]" />
-                      </button>
-                    )}
-                    
-                    <button onClick={() => handleRemoveItem(globalIdx)} className="text-gray-600 hover:text-red-500 transition-colors p-1">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+
+                      {item.reason && <p className="mt-3 text-xs leading-relaxed text-gray-400">{item.reason}</p>}
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      </section>
+
+      <section className="rounded-3xl border border-[#ADFF00]/20 bg-[#121E12] p-5">
+        <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]"><Brain size={14} /> Why these add-ons?</div>
+        <p className="mt-3 text-sm leading-relaxed text-gray-300">Luna selected items that match the food details you saved and fill the gaps outside your regular meals.</p>
+        <ul className="mt-4 space-y-2 text-xs leading-relaxed text-gray-400">
+          {foodType && <li>• Compatible with your {foodType.toLowerCase()} food preference</li>}
+          {selectedFoodsCount > 0 && <li>• Chosen from your saved available-food list</li>}
+          {usesProvidedCoreMeals && <li>• Practical to keep alongside {foodEnvironment} meals</li>}
+          <li>• Quantities and prices cover a 30-day plan</li>
+        </ul>
+      </section>
+
+      {coveredCoreMeals.length > 0 && (
+        <section className="rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]">Already covered</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {coveredCoreMeals.map((mealName: string) => <span key={mealName} className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs font-bold text-gray-300">{mealName}</span>)}
+            <span className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs font-bold text-gray-300">{foodEnvironment} staples</span>
+          </div>
+        </section>
+      )}
+
+      <p className={`px-2 text-center text-xs font-semibold ${isOverBudget ? 'text-red-400' : 'text-gray-500'}`}>Estimated monthly add-ons: {formatMoney(totalCost)}{budgetStr ? ` · Selected budget: ${budgetStr}` : ''}</p>
     </div>
   );
 }

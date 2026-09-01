@@ -3,7 +3,10 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { GeneratedGroceryItemSchema } from "@/lib/fitness/ai/schemas";
 import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
-import { validateGroceryListAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
+import {
+  parseBudgetPlanningReference,
+  validateGroceryListAgainstProfile,
+} from "@/lib/fitness/validation/fitness-plan-profile";
 import { z } from "zod";
 
 const GenerateGroceryResponseSchema = z.object({
@@ -55,6 +58,7 @@ CRITICAL RULES:
 Profile:
 - Food Environment: ${profile.food_environment || "Home"}
 - Budget: ${profile.nutrition_budget || "Not specified"}
+- Monthly planning reference: ${parseBudgetPlanningReference(profile.nutrition_budget) || "Not specified"} INR
 - Diet Preference (Food Type): ${profile.food_type || profile.diet_preference || "Balanced"}
 - Allergies: ${profile.food_allergies || "None"}
 - Disliked/Avoided Foods: ${[profile.foods_disliked, profile.foods_avoided].filter(Boolean).join(", ") || "None"}
@@ -66,7 +70,7 @@ ${JSON.stringify(currentNutritionPlan, null, 2)}
 Instructions:
 ${optimizeBudgetMode 
   ? `My current estimated grocery cost is ₹${currentTotalCost}, but my budget is only ${profile.nutrition_budget}. Your previous list was OVER BUDGET. You MUST strictly reduce the estimated_price totals by substituting expensive items with cheaper alternatives (like replacing expensive meats/supplements with affordable whole foods) or slightly reducing quantities while ensuring adequate nutrition. Return the newly optimized grocery_list.` 
-  : `Generate a practical monthly 'grocery_list' based directly on the nutrition plan above. Prioritize foods already available to me. Do not recommend purchasing foods already provided by my food environment. Respect my monthly food budget. Quantities should represent realistic 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.`}
+  : `Generate a practical monthly 'grocery_list' based directly on the nutrition plan above. Prioritize foods already available to me. Do not recommend purchasing foods already provided by my food environment. The monthly planning reference is the spend target: when three or more compatible foods are available, make a varied, useful list that uses 80-95% of that reference. Do not create excessive portions or add unnecessary foods merely to spend money. Quantities should represent realistic 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.`}
 
 Respond entirely in JSON format matching this schema: 
 { 
@@ -91,7 +95,9 @@ CRITICAL: For eggs, NEVER use "dozen" or "dozens". If you want 36 eggs, use {"mo
     });
     const parsedData = GenerateGroceryResponseSchema.parse(aiResponse);
 
-    const profileCheck = validateGroceryListAgainstProfile(parsedData.grocery_list, profile);
+    const profileCheck = validateGroceryListAgainstProfile(parsedData.grocery_list, profile, {
+      enforceBudgetUtilisation: true,
+    });
     if (!profileCheck.valid) {
       return NextResponse.json(
         { success: false, error: profileCheck.issues[0] || "The grocery list did not match your saved profile." },

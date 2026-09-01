@@ -13,6 +13,11 @@ export type PlanProfileValidation = {
   plan: GeneratedPlanData;
 };
 
+type PlanValidationOptions = {
+  /** Generation should honour the user's chosen spend level; manual saved edits may still use less. */
+  enforceBudgetUtilisation?: boolean;
+};
+
 const PROVIDED_CORE_ENVIRONMENTS = new Set([
   "PG",
   "Hostel",
@@ -87,6 +92,44 @@ function parseBudgetMaximum(value: unknown): number | null {
 
   const values = text.match(/\d+/g)?.map(Number).filter(Number.isFinite) ?? [];
   return values.length ? Math.max(...values) : null;
+}
+
+/**
+ * The upper end of a selected range is the generator's monthly planning
+ * reference. For "₹5,000+", ₹5,000 is a baseline, not a spending ceiling.
+ */
+export function parseBudgetPlanningReference(value: unknown): number | null {
+  const text = cleanText(value).replace(/,/g, "");
+  const values = text.match(/\d+/g)?.map(Number).filter(Number.isFinite) ?? [];
+  return values.length ? Math.max(...values) : null;
+}
+
+function selectedFoodCount(profile: ProfileLike): number {
+  return Array.isArray(profile.available_foods)
+    ? profile.available_foods.map(cleanText).filter(Boolean).length
+    : 0;
+}
+
+function requiredBudgetUtilisationIssue(
+  groceryList: NonNullable<GeneratedPlanData["nutrition"]>["grocery_list"],
+  profile: ProfileLike,
+): string | null {
+  const budgetReference = parseBudgetPlanningReference(profile.nutrition_budget);
+  const foodCount = selectedFoodCount(profile);
+
+  // With only one or two selected foods, forcing an entire high budget into
+  // those items can create implausible portions. Let Luna stay sensible there.
+  if (!budgetReference || (foodCount > 0 && foodCount < 3)) return null;
+
+  const groceryCost = groceryList.reduce(
+    (total, item) => total + (Number.isFinite(item.estimated_price) ? item.estimated_price : 0),
+    0,
+  );
+  const minimumPlannedSpend = Math.ceil(budgetReference * 0.8);
+
+  return groceryCost < minimumPlannedSpend
+    ? `The grocery list uses Rs.${Math.round(groceryCost)}, but it should use at least Rs.${minimumPlannedSpend} of the saved Rs.${budgetReference} monthly planning budget when compatible foods are available.`
+    : null;
 }
 
 function expectedMealCount(value: unknown): number | null {
@@ -293,6 +336,7 @@ export function normalisePlanProfileDetails(
 export function validatePlanAgainstProfile(
   rawPlan: GeneratedPlanData,
   profile: ProfileLike,
+  options: PlanValidationOptions = {},
 ): PlanProfileValidation {
   const plan = normalisePlanProfileDetails(rawPlan, profile);
   const issues: string[] = [];
@@ -326,6 +370,15 @@ export function validatePlanAgainstProfile(
       (total, item) => total + (Number.isFinite(item.estimated_price) ? item.estimated_price : 0),
       0,
     );
+
+    if (options.enforceBudgetUtilisation) {
+      const budgetUtilisationIssue = requiredBudgetUtilisationIssue(
+        nutrition.grocery_list,
+        profile,
+      );
+      if (budgetUtilisationIssue) issues.push(budgetUtilisationIssue);
+    }
+
     if (budgetMaximum !== null && groceryCost > budgetMaximum) {
       issues.push(`The grocery list costs ₹${Math.round(groceryCost)}, above the saved ₹${budgetMaximum} monthly budget.`);
     }
@@ -354,6 +407,7 @@ export function validatePlanAgainstProfile(
 export function validateGroceryListAgainstProfile(
   groceryList: NonNullable<GeneratedPlanData["nutrition"]>["grocery_list"],
   profile: ProfileLike,
+  options: PlanValidationOptions = {},
 ): { valid: boolean; issues: string[] } {
   const text = groceryList
     .flatMap((item) => [item.name, item.reason])
@@ -385,6 +439,12 @@ export function validateGroceryListAgainstProfile(
     (total, item) => total + (Number.isFinite(item.estimated_price) ? item.estimated_price : 0),
     0,
   );
+
+  if (options.enforceBudgetUtilisation) {
+    const budgetUtilisationIssue = requiredBudgetUtilisationIssue(groceryList, profile);
+    if (budgetUtilisationIssue) issues.push(budgetUtilisationIssue);
+  }
+
   if (budgetMaximum !== null && groceryCost > budgetMaximum) {
     issues.push(`The grocery list costs ₹${Math.round(groceryCost)}, above the saved ₹${budgetMaximum} monthly budget.`);
   }

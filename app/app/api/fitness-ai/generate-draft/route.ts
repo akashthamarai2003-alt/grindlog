@@ -87,7 +87,9 @@ export async function POST(req: Request) {
           ? runFitnessAISafetyCheck(cachedPlan.data, profile)
           : null;
         const profileCheck = cachedPlan.success
-          ? validatePlanAgainstProfile(cachedPlan.data, profile)
+          ? validatePlanAgainstProfile(cachedPlan.data, profile, {
+              enforceBudgetUtilisation: true,
+            })
           : null;
         if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
           return NextResponse.json({
@@ -182,7 +184,9 @@ export async function POST(req: Request) {
           continue; // Try again
         }
 
-        const profileCheck = validatePlanAgainstProfile(candidatePlan, profile);
+        const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
+          enforceBudgetUtilisation: true,
+        });
         if (!profileCheck.valid) {
           console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);
           lastErrorType = "SYSTEM";
