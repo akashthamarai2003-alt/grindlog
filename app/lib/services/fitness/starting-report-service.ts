@@ -86,7 +86,13 @@ function compactVisualObservations(raw: string): string {
 }
 
 function hasUsableBodyScan(raw: string): boolean {
-  return Boolean(raw && raw !== "No photos provided." && !raw.includes('"error"'));
+  const value = raw.trim();
+  return Boolean(
+    value &&
+      value !== "No photos provided." &&
+      !value.includes('"error"') &&
+      !value.includes("Gemini Vision API Error"),
+  );
 }
 
 export async function generateStartingReport({
@@ -149,7 +155,7 @@ export async function generateStartingReport({
   const systemPrompt = `You are Grindlog's cautious fitness coach. Create a concise starting report using only the supplied onboarding profile and optional vision observations. Do not invent a measurement, target, injury, food preference, budget, or photo finding. This is coaching guidance, not medical advice.
 
 Return one valid JSON object with exactly these top-level fields:
-- body_scan_insights: { has_body_scan, overall_summary, observed_strengths, priority_improvements, posture_or_movement_note }. Only describe photo observations when body_scan_available is true. Never diagnose health conditions or give an exact body-fat percentage from photos. If false, explicitly state that no usable body scan is available and use empty observation arrays.
+- body_scan_insights: { has_body_scan, overall_summary, observed_strengths, priority_improvements, posture_or_movement_note }. Only describe photo observations when BODY SCAN AVAILABLE is true. Never diagnose health conditions or give an exact body-fat percentage from photos. If false, explicitly state that no usable body scan is available and use empty observation arrays.
 - first_two_weeks: { training_start, nutrition_start, recovery_start }. Give a realistic beginner-safe start that respects stated injuries, fitness level, available time, location, equipment, diet, and budget. Do not prescribe a six-day hard programme to a beginner unless their supplied profile supports it.
 - training_strategy: short personalised strategy.
 - nutrition_strategy: short personalised strategy that strictly respects diet_type, allergies, avoided foods, food environment, and budget.

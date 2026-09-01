@@ -92,6 +92,7 @@ export default async function AIStartingReportPage() {
   const focusAreas = Array.isArray(aiStrategy.focus_areas) ? aiStrategy.focus_areas : [];
   const onboardingData = isRecord(profile.onboarding_data) ? profile.onboarding_data : {};
   const bodyScanInsights = aiStrategy.body_scan_insights as Record<string, any>;
+  const hasBodyScan = bodyScanInsights.has_body_scan === true;
   const personalNumbers = [
     ["Protein starting target", displayValue(profile.initial_protein_target, " g/day")],
     ["Maintenance estimate", displayValue(profile.baseline_calories, " kcal/day")],
@@ -196,52 +197,66 @@ export default async function AIStartingReportPage() {
               What the uploaded photos show
             </h2>
           </div>
-          <p className="rounded-2xl border border-white/5 bg-[#0D150D] p-4 text-sm leading-relaxed text-gray-300">
-            {String(bodyScanInsights.overall_summary)}
-          </p>
-
-          {bodyScanInsights.has_body_scan && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-                <p className="mb-2 text-xs font-bold tracking-wider text-emerald-400 uppercase">
-                  Visible strengths
-                </p>
-                <ul className="space-y-2">
-                  {bodyScanInsights.observed_strengths.map(
-                    (item: string, index: number) => (
-                      <li
-                        key={`${item}-${index}`}
-                        className="text-xs leading-relaxed text-gray-300"
-                      >
-                        {item}
-                      </li>
-                    ),
-                  )}
-                </ul>
+          {hasBodyScan ? (
+            <>
+              <p className="rounded-2xl border border-white/5 bg-[#0D150D] p-4 text-sm leading-relaxed text-gray-300">
+                {String(bodyScanInsights.overall_summary)}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                  <p className="mb-2 text-xs font-bold tracking-wider text-emerald-400 uppercase">
+                    Visible strengths
+                  </p>
+                  <ul className="space-y-2">
+                    {bodyScanInsights.observed_strengths.map(
+                      (item: string, index: number) => (
+                        <li
+                          key={`${item}-${index}`}
+                          className="text-xs leading-relaxed text-gray-300"
+                        >
+                          {item}
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </div>
+                <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                  <p className="mb-2 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
+                    Priority improvements
+                  </p>
+                  <ul className="space-y-2">
+                    {bodyScanInsights.priority_improvements.map(
+                      (item: string, index: number) => (
+                        <li
+                          key={`${item}-${index}`}
+                          className="text-xs leading-relaxed text-gray-300"
+                        >
+                          {item}
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </div>
               </div>
-              <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-                <p className="mb-2 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-                  Priority improvements
-                </p>
-                <ul className="space-y-2">
-                  {bodyScanInsights.priority_improvements.map(
-                    (item: string, index: number) => (
-                      <li
-                        key={`${item}-${index}`}
-                        className="text-xs leading-relaxed text-gray-300"
-                      >
-                        {item}
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </div>
+              <p className="text-xs leading-relaxed text-gray-400">
+                {String(bodyScanInsights.posture_or_movement_note)}
+              </p>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+              <p className="text-sm font-bold text-white">Add photos for visual coaching feedback</p>
+              <p className="mt-1 text-xs leading-relaxed text-gray-400">
+                Upload fresh front, side, and back photos in onboarding. We keep the
+                generated coaching observations, not your raw onboarding photos.
+              </p>
+              <Link
+                href="/onboarding?mode=edit"
+                className="mt-3 inline-flex text-xs font-bold text-[#ADFF00] hover:underline"
+              >
+                Add body-scan photos
+              </Link>
             </div>
           )}
-
-          <p className="text-xs leading-relaxed text-gray-400">
-            {String(bodyScanInsights.posture_or_movement_note)}
-          </p>
           <p className="text-[11px] text-gray-500">
             Photo observations are coaching guidance only, not a medical diagnosis or
             body-fat measurement.

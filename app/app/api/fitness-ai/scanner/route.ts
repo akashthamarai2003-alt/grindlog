@@ -62,9 +62,9 @@ CRITICAL SAFETY & COMPLIANCE INSTRUCTIONS:
 - Keep the analysis empowering, professional, concise, and highly structured.
 Respond in clear, readable plain text using bullet points where appropriate.`;
 
-    // 5. Call Gemini 1.5 Flash Server-Side
+    // 5. Call Gemini Vision Server-Side
     const response = await geminiClient.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       contents: [{
         role: "user",
         parts: [

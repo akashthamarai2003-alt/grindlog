@@ -56,9 +56,19 @@ export async function POST(req: Request) {
     }
 
     const data = result.data;
+    const hasUploadedBodyScan = Boolean(
+      data.body_scan_front ||
+        data.body_scan_left ||
+        data.body_scan_right ||
+        data.body_scan_back ||
+        data.goal_physique_image ||
+        data.body_scan_inspiration,
+    );
 
     // Back/reload/reopen must not create another paid starting report when the
-    // user has already submitted the exact same onboarding profile.
+    // user has already submitted the exact same onboarding profile. A fresh
+    // photo upload needs a new vision analysis even when every text answer is
+    // unchanged, so it must never use this reuse path.
     const { data: existingProfile } = await supabase
       .from("fitness_os_profiles")
       .select("onboarding_completed, onboarding_data, ai_strategy")
@@ -66,6 +76,7 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (
+      !hasUploadedBodyScan &&
       existingProfile?.onboarding_completed &&
       stableStringify(existingProfile.onboarding_data) ===
         stableStringify(stripImagePayload(data as Record<string, unknown>)) &&
@@ -97,9 +108,10 @@ export async function POST(req: Request) {
     addImage(data.body_scan_left);
     addImage(data.body_scan_right);
     addImage(data.body_scan_back);
-    addImage(data.goal_physique_image);
+    addImage(data.goal_physique_image || data.body_scan_inspiration);
 
     let visualObservations = "No photos provided.";
+    let visionAnalysisSucceeded = false;
 
     if (images.length > 0) {
       console.log(`Sending ${images.length} images to Google Gemini Vision...`);
@@ -110,13 +122,13 @@ export async function POST(req: Request) {
 
         const gemini = new GoogleGenAI({ apiKey });
         const response = await gemini.models.generateContent({
-          model: "gemini-1.5-flash",
+          model: "gemini-2.5-flash",
           contents: [
             {
               role: "user",
               parts: [
                 {
-                  text: "You are an expert fitness coach and physique analyst. Analyze these photos of the user (and their target inspiration physique, if provided). Output a structured JSON response with your visual observations including: estimated body fat percentage range, muscle mass distribution, posture assessment, fat distribution, visual strengths/weaknesses, and what physically needs to change to approach the target physique. Output ONLY valid JSON.",
+                  text: "You are a cautious fitness coach. Analyse the uploaded current-body photos and optional goal-physique image. Return concise JSON with: overall_summary, visible_strengths, priority_improvements, posture_or_movement_note, and goal_gap (if a goal image is supplied). Use only visible observations, never diagnose a health condition, and never estimate an exact body-fat percentage. Keep language encouraging and practical.",
                 },
                 ...images,
               ],
@@ -128,13 +140,14 @@ export async function POST(req: Request) {
           },
         });
 
-        visualObservations = response.text || "{}";
+        visualObservations = response.text?.trim() || "";
+        if (!visualObservations) {
+          throw new Error("Gemini returned an empty body-scan analysis.");
+        }
+        visionAnalysisSucceeded = true;
         console.log("Gemini Vision Observations:", visualObservations);
       } catch (err) {
         console.error("Gemini Vision API Error:", err);
-        visualObservations = JSON.stringify({
-          error: "Failed to analyze images due to API error.",
-        });
       }
     }
 
@@ -385,7 +398,7 @@ Output ONLY valid JSON matching this schema.`;
     }
 
     // Save visual observations to scans table so generate-draft can use it
-    if (images.length > 0 && visualObservations !== "No photos provided.") {
+    if (images.length > 0 && visionAnalysisSucceeded) {
       await supabase.from("fitness_os_scans").upsert(
         {
           user_id: user.id,
