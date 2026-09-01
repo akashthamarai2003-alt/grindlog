@@ -265,7 +265,7 @@ export default function PlanSetupPage() {
   return (
     <>
       {planData && (
-        <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[156px]">
+        <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[220px]">
           <div className="mx-auto max-w-md pt-10 px-6 pb-6">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#233522] bg-[#121E12] px-3 py-1.5 text-[10px] font-extrabold tracking-[0.14em] text-[#ADFF00] uppercase">
               <CircleCheck size={13} /> Your personalised plan
@@ -417,7 +417,7 @@ export default function PlanSetupPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <span className="block font-black text-[#ADFF00] text-lg">
-                          {ex.sets} × {String(ex.reps_string || "").replace(/^\d+\s*[xX×]\s*/, '')}
+                          {ex.sets} x {String(ex.reps_string || "").replace(/^\d+\s*[xX]\s*/, '').replace(/^\d+\s*x-\s*/, '')}
                         </span>
                       </div>
                     </div>
