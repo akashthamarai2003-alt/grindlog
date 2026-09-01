@@ -88,7 +88,7 @@ export function TodaysExercisesList({ workoutId, exercises = [], readonly = fals
                     <div className="w-px h-6 bg-white/10" />
                     <div className="flex flex-col">
                       <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Sets × Reps</span>
-                      <span className="text-xs font-semibold text-white/80">{(exercise as any).target_sets || exercise.sets} × {(exercise as any).target_reps || exercise.reps}</span>
+                      <span className="text-xs font-semibold text-white/80">{(exercise as any).target_sets || exercise.sets} × {String((exercise as any).target_reps || exercise.reps || "").replace(/^\d+\s*[xX×]\s*/, '')}</span>
                     </div>
                     {((exercise as any).targetWeight || exercise.targetWeight) && (
                       <>

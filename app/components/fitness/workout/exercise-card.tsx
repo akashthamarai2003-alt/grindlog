@@ -27,7 +27,7 @@ export function ExerciseCard({ exercise, onSetCompleted, isTimerActive }: Exerci
         
         <div className="text-right">
           <p className="text-sm font-semibold text-white/80">
-            {exercise.target_sets} sets &times; {exercise.target_reps || "-"} reps
+            {exercise.target_sets} sets &times; {String(exercise.target_reps || "-").replace(/^\d+\s*[xX×]\s*/, '')} reps
           </p>
           <p className="text-xs font-medium text-white/40 mt-1">
             Rest {exercise.rest_seconds}s

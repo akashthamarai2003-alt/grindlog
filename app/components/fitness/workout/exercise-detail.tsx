@@ -262,7 +262,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       <div className="flex justify-between items-end border-b border-white/5 pb-4 mb-6">
         <div className="flex flex-col">
           <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5">Target</span>
-          <span className="text-sm font-semibold text-white/90">{exercise.target_sets} Sets × {exercise.target_reps} Reps</span>
+          <span className="text-sm font-semibold text-white/90">{exercise.target_sets} Sets x {String(exercise.target_reps || "").replace(/^\d+\s*[xX×]\s*/, '')} Reps</span>
         </div>
         <div className="flex flex-col text-right relative">
           <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5 flex items-center justify-end gap-1.5">

@@ -417,7 +417,7 @@ export default function PlanSetupPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <span className="block font-black text-[#ADFF00] text-lg">
-                          {ex.sets} × {ex.reps_string}
+                          {ex.sets} × {String(ex.reps_string || "").replace(/^\d+\s*[xX×]\s*/, '')}
                         </span>
                       </div>
                     </div>
