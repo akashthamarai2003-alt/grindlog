@@ -130,8 +130,8 @@ export async function POST(req: Request) {
 
         const gemini = new GoogleGenAI({ apiKey });
         const models = [
-          process.env.GEMINI_VISION_MODEL?.trim() || "gemini-3.7-flash",
-          "gemini-3.5-flash-lite",
+          process.env.GEMINI_VISION_MODEL?.trim() || "gemini-3.6-flash",
+          "gemini-2.5-pro",
         ].filter((model, index, list) => list.indexOf(model) === index);
         let response: Awaited<ReturnType<typeof gemini.models.generateContent>> | null = null;
         let lastModelError: unknown;
