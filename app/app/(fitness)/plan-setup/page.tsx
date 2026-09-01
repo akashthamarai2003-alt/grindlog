@@ -355,6 +355,7 @@ export default function PlanSetupPage() {
           )}
       {/* Week Selector */}
       <div className="mx-auto flex max-w-md overflow-x-auto gap-3 pb-4 scrollbar-hide snap-x">
+        <div className="w-3 shrink-0" /> {/* Left Spacer (3 + 3 gap = 6) */}
         {days.map((day, i) => {
           const isSelected = selectedDay === i;
           const hasWorkout = i < workouts.length;
@@ -365,7 +366,7 @@ export default function PlanSetupPage() {
             <button
               key={day}
               onClick={() => setSelectedDay(i)}
-              className={`snap-start shrink-0 w-28 p-3 rounded-2xl border-2 transition-all flex flex-col items-start gap-1 ${i === 0 ? 'ml-6' : ''} ${i === days.length - 1 ? 'mr-6' : ''} ${
+              className={`snap-start shrink-0 w-28 p-3 rounded-2xl border-2 transition-all flex flex-col items-start gap-1 ${
                 isSelected 
                   ? 'border-[#ADFF00] bg-[#ADFF00]/10' 
                   : 'border-[#1A2619] bg-[#121E12] hover:border-gray-700'
@@ -384,6 +385,7 @@ export default function PlanSetupPage() {
             </button>
           );
         })}
+        <div className="w-3 shrink-0" /> {/* Right Spacer */}
       </div>
 
       {/* Selected Workout Details */}
@@ -417,7 +419,7 @@ export default function PlanSetupPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <span className="block font-black text-[#ADFF00] text-lg">
-                          {ex.sets} x {String(ex.reps_string || "").replace(/^\d+\s*[xX]\s*/, '').replace(/^\d+\s*x-\s*/, '')}
+                          {ex.sets} x {String(ex.reps_string || "").replace(/^\d+\s*[xX×*]\s*/, '').replace(/^\d+\s*x-\s*/, '')}
                         </span>
                       </div>
                     </div>
@@ -564,12 +566,15 @@ export default function PlanSetupPage() {
             </section>
           )}
         </div>
-      ) : (
-        <GroceryTab planData={planData} setPlanData={setPlanData} profile={planData._profile} />
-      )}
+        ) : (
+          <GroceryTab planData={planData} setPlanData={setPlanData} profile={planData._profile} />
+        )}
 
-          {/* Floating Modulator & Save */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50 pointer-events-none">
+        {/* Explicit bottom spacer to ensure content clears the floating footer */}
+        <div className="h-56 shrink-0 w-full" />
+
+        {/* Floating Modulator & Save */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50 pointer-events-none">
             <div className="max-w-md mx-auto space-y-3 pointer-events-auto">
               <p className="px-4 text-center text-xs text-gray-500">
                 You can refine this plan later from your dashboard.
