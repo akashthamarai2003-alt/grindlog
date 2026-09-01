@@ -275,30 +275,30 @@ export default function PlanSetupPage() {
           </div>
 
       {/* Tab Toggle */}
-      <div className="mx-auto mb-7 max-w-md px-6">
-      <div className="flex bg-[#121E12] rounded-full p-1">
-        <button 
-          onClick={() => setActiveTab("workout")}
-          aria-pressed={activeTab === "workout"}
-          className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "workout" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
-        >
-          <Dumbbell size={16} /> Workout
-        </button>
-        <button 
-          onClick={() => setActiveTab("diet")}
-          aria-pressed={activeTab === "diet"}
-          className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "diet" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
-        >
-          <Apple size={16} /> Diet
-        </button>
-        <button 
-          onClick={() => setActiveTab("grocery")}
-          aria-pressed={activeTab === "grocery"}
-          className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "grocery" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
-        >
-          <ShoppingCart size={16} /> Grocery
-        </button>
-      </div>
+      <div className="mx-auto mb-5 max-w-md px-6">
+        <div className="flex bg-[#121E12] rounded-full p-1">
+          <button 
+            onClick={() => setActiveTab("workout")}
+            aria-pressed={activeTab === "workout"}
+            className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "workout" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+          >
+            <Dumbbell size={16} /> Workout
+          </button>
+          <button 
+            onClick={() => setActiveTab("diet")}
+            aria-pressed={activeTab === "diet"}
+            className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "diet" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+          >
+            <Apple size={16} /> Diet
+          </button>
+          <button 
+            onClick={() => setActiveTab("grocery")}
+            aria-pressed={activeTab === "grocery"}
+            className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "grocery" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+          >
+            <ShoppingCart size={16} /> Grocery
+          </button>
+        </div>
       </div>
 
       {activeTab === "workout" ? (
@@ -354,7 +354,7 @@ export default function PlanSetupPage() {
             </div>
           )}
       {/* Week Selector */}
-      <div className="mx-auto flex max-w-md overflow-x-auto gap-3 px-6 pb-4 scrollbar-hide snap-x">
+      <div className="mx-auto flex max-w-md overflow-x-auto gap-3 pb-4 scrollbar-hide snap-x">
         {days.map((day, i) => {
           const isSelected = selectedDay === i;
           const hasWorkout = i < workouts.length;
@@ -365,7 +365,7 @@ export default function PlanSetupPage() {
             <button
               key={day}
               onClick={() => setSelectedDay(i)}
-              className={`snap-start shrink-0 w-28 p-3 rounded-2xl border-2 transition-all flex flex-col items-start gap-1 ${
+              className={`snap-start shrink-0 w-28 p-3 rounded-2xl border-2 transition-all flex flex-col items-start gap-1 ${i === 0 ? 'ml-6' : ''} ${i === days.length - 1 ? 'mr-6' : ''} ${
                 isSelected 
                   ? 'border-[#ADFF00] bg-[#ADFF00]/10' 
                   : 'border-[#1A2619] bg-[#121E12] hover:border-gray-700'
