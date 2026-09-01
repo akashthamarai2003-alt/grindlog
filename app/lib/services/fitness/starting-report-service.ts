@@ -172,10 +172,13 @@ Use Indian rupees only when the supplied budget is in rupees. Keep each string p
   const response = await generateOpenAIResponseJSON<unknown>({
     systemPrompt,
     userPrompt: `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nBODY SCAN AVAILABLE: ${hasUsableBodyScan(visualObservations)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`,
-    maxTokens: 1800,
-    // This report is bounded and should not use the high-reasoning plan budget.
+    // GPT-5.6 shares this budget between reasoning and visible JSON. The prior
+    // 2,600-token ceiling could end before the required report object finished.
+    maxTokens: 5000,
+    // This report remains low-reasoning, but needs enough completion headroom
+    // for every validated section and the optional photo observations.
     reasoningEffort: "low",
-    minimumOutputTokens: 2600,
+    minimumOutputTokens: 5000,
   });
 
   const parsed = StartingReportSchema.safeParse(response);
