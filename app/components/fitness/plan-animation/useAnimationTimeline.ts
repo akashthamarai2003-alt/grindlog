@@ -25,10 +25,6 @@ export interface AnimationTimeline {
 // countdown either.
 const MINIMUM_VISIBLE_DURATION_MS = 13_000;
 const EXIT_DURATION_MS = 750;
-const FULL_FINALIZATION_DURATION_MS = 4_000;
-const AI_ALONE_DELAY_MS = 1_100;
-const FINAL_REVEAL_DELAY_MS = 2_200;
-const MINIMUM_FINAL_REVEAL_DURATION_MS = 1_200;
 
 /**
  * The opening sequence is cinematic, but the analysing phase is deliberately
@@ -100,61 +96,28 @@ export function useAnimationTimeline(
 
     completionStarted.current = true;
 
-    const beginFinalization = (transitionDelay: number) => {
+    const revealFinishedPlan = () => {
       if (scanInterval.current) {
         clearInterval(scanInterval.current);
         scanInterval.current = null;
       }
 
       setScanIndex(-1);
-
-      // A response that arrives very late still gets a visible success finale.
-      // Without this, users only see the loading scene slide away.
-      if (transitionDelay < MINIMUM_FINAL_REVEAL_DURATION_MS) {
-        setPhase("FINAL_REVEAL");
-        schedule(() => setPhase("TRANSITION"), MINIMUM_FINAL_REVEAL_DURATION_MS);
-        schedule(
-          () => setPhase("COMPLETE"),
-          MINIMUM_FINAL_REVEAL_DURATION_MS + EXIT_DURATION_MS,
-        );
-        return;
-      }
-
-      setPhase("DATA_COLLAPSE");
-
-      // When the model finishes during the last few seconds, compress the
-      // finalization while preserving a dedicated final reveal before exit.
-      const aiAloneDelay = Math.min(
-        AI_ALONE_DELAY_MS,
-        Math.round(transitionDelay * 0.34),
-      );
-      const finalRevealDelay = Math.min(
-        FINAL_REVEAL_DELAY_MS,
-        Math.round(transitionDelay * 0.68),
-      );
-      schedule(() => setPhase("AI_ALONE"), aiAloneDelay);
-      schedule(() => setPhase("FINAL_REVEAL"), finalRevealDelay);
-      schedule(() => setPhase("TRANSITION"), transitionDelay);
-      schedule(() => setPhase("COMPLETE"), transitionDelay + EXIT_DURATION_MS);
+      setPhase("FINAL_REVEAL");
     };
 
     const elapsed = Date.now() - startedAt.current;
-    const normalFinalizationStart =
-      MINIMUM_VISIBLE_DURATION_MS - FULL_FINALIZATION_DURATION_MS;
+    // The rotating profile network remains on-screen until the last 750ms.
+    // The final reveal then slides that still-rotating scene into the actual
+    // plan, so users never see an early static replacement for the rotation.
+    const earliestRevealAt = MINIMUM_VISIBLE_DURATION_MS - EXIT_DURATION_MS;
 
-    if (elapsed < normalFinalizationStart) {
-      // Keep cycling actual onboarding facts until there is enough room to
-      // play the full "finalizing" sequence and reveal the plan at 13s.
-      schedule(
-        () => beginFinalization(FULL_FINALIZATION_DURATION_MS - EXIT_DURATION_MS),
-        normalFinalizationStart - elapsed,
-      );
+    if (elapsed < earliestRevealAt) {
+      schedule(revealFinishedPlan, earliestRevealAt - elapsed);
       return;
     }
 
-    const remainingBeforeExit =
-      MINIMUM_VISIBLE_DURATION_MS - EXIT_DURATION_MS - elapsed;
-    beginFinalization(Math.max(0, remainingBeforeExit));
+    revealFinishedPlan();
   }, [isPlanReady, phase, schedule]);
 
   return { phase, scanIndex, isComplete: phase === "COMPLETE" };

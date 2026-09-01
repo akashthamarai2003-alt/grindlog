@@ -98,7 +98,9 @@ export default function AIPlanAnimation({
   // The animation timeline is only visual. Do not reveal a failure screen
   // while the real model call is still running; exit after both are ready.
   const isTransitioning =
-    (timeline.phase === "TRANSITION" || timeline.phase === "COMPLETE") && isReady;
+    (timeline.phase === "FINAL_REVEAL" ||
+      timeline.phase === "TRANSITION" ||
+      timeline.phase === "COMPLETE") && isReady;
 
   useEffect(() => {
     if (!isTransitioning || !onAnimationComplete) return;
