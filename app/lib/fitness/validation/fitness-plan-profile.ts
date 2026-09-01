@@ -264,15 +264,38 @@ function hasUnselectedAvailableFood(plan: GeneratedPlanData, profile: ProfileLik
 }
 
 function buildGoalCalorieTarget(profile: ProfileLike): number | null {
-  if (typeof profile.baseline_calories !== "number" || profile.baseline_calories <= 0) {
-    return null;
+  let maintenance = profile.baseline_calories;
+
+  // Fallback for older profiles without baseline_calories in the DB
+  if (typeof maintenance !== "number" || maintenance <= 0) {
+    if (profile.weight && profile.height && profile.age && profile.gender) {
+      let bmr = 0;
+      if (profile.gender === "Male") {
+        bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5;
+      } else if (profile.gender === "Female") {
+        bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
+      } else {
+        bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 78;
+      }
+      const activityMultipliers: Record<string, number> = {
+        "Mostly sitting": 1.2,
+        "Mostly sedentary": 1.2,
+        "Lightly active": 1.375,
+        "Moderately active": 1.55,
+        "Very active": 1.725
+      };
+      const multiplier = profile.activity_level ? (activityMultipliers[profile.activity_level] || 1.2) : 1.2;
+      maintenance = Math.round(bmr * multiplier);
+    } else {
+      return null;
+    }
   }
 
   // The saved baseline is maintenance. These deliberately modest adjustments
   // make the visible plan target deterministic without turning this layer into
   // a medical calculator. Minors retain their saved maintenance estimate.
   if (typeof profile.age === "number" && profile.age < 18) {
-    return profile.baseline_calories;
+    return maintenance;
   }
 
   const adjustmentByGoal: Record<string, number> = {
@@ -282,7 +305,7 @@ function buildGoalCalorieTarget(profile: ProfileLike): number | null {
     "Gain Weight": 300,
   };
   const adjustment = adjustmentByGoal[cleanText(profile.goal)] ?? 0;
-  return Math.round(profile.baseline_calories + adjustment);
+  return Math.round(maintenance + adjustment);
 }
 
 export function getPlanNutritionTargets(profile: ProfileLike): {
