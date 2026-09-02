@@ -5,7 +5,11 @@ import {
   generateOpenAIResponseJSON,
 } from "@/lib/services/openai/client";
 import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-ai-limit";
-import { GeneratedPlanSchema, GeneratedPlanData } from "@/lib/fitness/ai/schemas";
+import {
+  FITNESS_PLAN_JSON_SCHEMA,
+  GeneratedPlanSchema,
+  GeneratedPlanData,
+} from "@/lib/fitness/ai/schemas";
 import {
   FITNESS_PLAN_SYSTEM_PROMPT,
   buildFitnessPlanPrompt,
@@ -154,6 +158,12 @@ export async function POST(req: Request) {
           reasoningEffort: "medium",
           promptCacheKey: "fitness-plan-v3",
           temperature: 0.3,
+          jsonSchema: {
+            name: "fitness_plan",
+            schema: FITNESS_PLAN_JSON_SCHEMA,
+            description: "A complete personalized 7-day Grindlog fitness plan.",
+            strict: true,
+          },
           verbosity: "low",
         });
 

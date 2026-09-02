@@ -100,6 +100,142 @@ export const GeneratedPlanSchema = z.preprocess(
   })
 );
 
+// Keep the provider response contract strict for the two plan-generation
+// routes. Without this, a model can return a mapping/object for `workouts`
+// and the local parser only discovers the problem after the paid call.
+export const FITNESS_PLAN_JSON_SCHEMA: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["safety_acknowledgment", "plan", "workouts", "nutrition", "lifestyle"],
+  properties: {
+    safety_acknowledgment: { type: "string" },
+    plan: {
+      type: "object",
+      additionalProperties: false,
+      required: ["name", "description", "goal"],
+      properties: {
+        name: { type: "string" },
+        description: { type: "string" },
+        goal: { type: "string" },
+      },
+    },
+    workouts: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["title", "workout_date", "duration_minutes", "exercises"],
+        properties: {
+          title: { type: "string" },
+          workout_date: { type: "string" },
+          duration_minutes: { type: "number" },
+          exercises: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: [
+                "name",
+                "exercise_order",
+                "sets",
+                "reps_string",
+                "target_reps_num",
+                "rest_seconds",
+                "notes",
+              ],
+              properties: {
+                name: { type: "string" },
+                exercise_order: { type: "number" },
+                sets: { type: "number" },
+                reps_string: { type: "string" },
+                target_reps_num: { type: ["number", "null"] },
+                rest_seconds: { type: "number" },
+                notes: { type: ["string", "null"] },
+              },
+            },
+          },
+        },
+      },
+    },
+    nutrition: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "daily_calories",
+        "protein_grams",
+        "meals_per_day",
+        "guidance",
+        "meals",
+        "grocery_list",
+      ],
+      properties: {
+        daily_calories: { type: ["number", "null"] },
+        protein_grams: { type: ["number", "null"] },
+        meals_per_day: { type: ["number", "null"] },
+        guidance: { type: "string" },
+        meals: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+              "meal_name",
+              "time_of_day",
+              "items",
+              "total_calories",
+              "protein_grams",
+              "prep_instructions",
+            ],
+            properties: {
+              meal_name: { type: "string" },
+              time_of_day: { type: "string" },
+              items: { type: "array", items: { type: "string" } },
+              total_calories: { type: ["number", "null"] },
+              protein_grams: { type: ["number", "null"] },
+              prep_instructions: { type: "string" },
+            },
+          },
+        },
+        grocery_list: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+              "name",
+              "monthly_quantity",
+              "unit",
+              "estimated_price",
+              "category",
+              "is_optional",
+              "reason",
+            ],
+            properties: {
+              name: { type: "string" },
+              monthly_quantity: { type: "number" },
+              unit: { type: "string" },
+              estimated_price: { type: "number" },
+              category: { type: "string" },
+              is_optional: { type: "boolean" },
+              reason: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    lifestyle: {
+      type: "object",
+      additionalProperties: false,
+      required: ["sleep_target_hours", "water_target_liters", "daily_steps_target"],
+      properties: {
+        sleep_target_hours: { type: ["number", "null"] },
+        water_target_liters: { type: ["number", "null"] },
+        daily_steps_target: { type: ["number", "null"] },
+      },
+    },
+  },
+};
+
 export type GeneratedPlanData = z.infer<typeof GeneratedPlanSchema>;
 
 export const CoachResponseSchema = z.object({
