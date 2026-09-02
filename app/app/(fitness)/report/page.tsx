@@ -374,12 +374,10 @@ export default async function AIStartingReportPage() {
           )}
         </div>
 
-
-
         {/* HEALTH & SAFETY PROTOCOL */}
-        {healthAndSafety && healthAndSafety.has_concerns && (
-          <div className="relative space-y-4 overflow-hidden rounded-3xl border border-red-900/30 bg-[#121E12] p-5">
-            <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-red-500/5 blur-3xl" />
+        {healthAndSafety && (
+          <div className={`relative space-y-4 overflow-hidden rounded-3xl border p-5 ${healthAndSafety.has_concerns ? 'border-red-900/30 bg-[#121E12]' : 'border-[#1A2619] bg-[#0A1108]'}`}>
+            <div className={`absolute top-0 right-0 h-32 w-32 rounded-full blur-3xl ${healthAndSafety.has_concerns ? 'bg-red-500/5' : 'bg-[#39FF14]/5'}`} />
 
             <div className="relative z-10 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -388,16 +386,16 @@ export default async function AIStartingReportPage() {
                   Safety Protocol
                 </h2>
               </div>
-              <span className="shrink-0 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-center text-[10px] font-bold tracking-wider text-red-400 uppercase sm:text-xs">
-                Active Restrictions
+              <span className={`shrink-0 rounded-full border px-3 py-1 text-center text-[10px] font-bold tracking-wider uppercase sm:text-xs ${healthAndSafety.has_concerns ? 'border-red-500/20 bg-red-500/10 text-red-400' : 'border-[#39FF14]/20 bg-[#39FF14]/10 text-[#39FF14]'}`}>
+                {healthAndSafety.has_concerns ? 'Active Restrictions' : 'All Clear'}
               </span>
             </div>
 
-            <p className="relative z-10 rounded-2xl border border-red-900/20 bg-[#0D150D] p-4 text-xs leading-relaxed font-medium text-gray-300">
-              {String(healthAndSafety.safety_verdict || "")}
+            <p className={`relative z-10 rounded-2xl border p-4 text-xs leading-relaxed font-medium text-gray-300 ${healthAndSafety.has_concerns ? 'border-red-900/20 bg-[#0D150D]' : 'border-white/5 bg-[#061506]'}`}>
+              {String(healthAndSafety.safety_verdict || (healthAndSafety.has_concerns ? "" : "You have no reported injuries or medical restrictions. You are cleared for standard programming. Let's get to work!"))}
             </p>
 
-            {healthAndSafety.medical_focus_areas &&
+            {healthAndSafety.has_concerns && healthAndSafety.medical_focus_areas &&
               healthAndSafety.medical_focus_areas.length > 0 && (
                 <div className="relative z-10 pt-2">
                   <p className="mb-2 text-xs font-bold tracking-wider text-red-400 uppercase">
@@ -409,7 +407,9 @@ export default async function AIStartingReportPage() {
                         key={idx}
                         className="flex items-start gap-2 text-xs text-gray-300"
                       >
-                        <span className="mt-0.5 font-bold text-red-400">⚕️</span>
+                        <span className="mt-0.5 shrink-0 text-[10px] text-red-500">
+                          ⚕️
+                        </span>
                         <span>{String(item)}</span>
                       </li>
                     ))}
