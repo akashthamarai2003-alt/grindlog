@@ -5,39 +5,39 @@ import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
 const StartingReportSchema = z.object({
   body_scan_insights: z.object({
     has_body_scan: z.boolean(),
-    overall_summary: z.string().min(20),
-    observed_strengths: z.array(z.string().min(4)).max(3),
-    priority_improvements: z.array(z.string().min(4)).max(3),
-    posture_or_movement_note: z.string().min(10),
+    overall_summary: z.string().min(2),
+    observed_strengths: z.array(z.string().min(2)).max(3),
+    priority_improvements: z.array(z.string().min(2)).max(3),
+    posture_or_movement_note: z.string().min(2),
   }),
   first_two_weeks: z.object({
-    training_start: z.string().min(20),
-    nutrition_start: z.string().min(20),
-    recovery_start: z.string().min(20),
+    training_start: z.string().min(2),
+    nutrition_start: z.string().min(2),
+    recovery_start: z.string().min(2),
   }),
-  training_strategy: z.string().min(20),
-  nutrition_strategy: z.string().min(20),
-  progress_roadmap: z.array(z.string().min(4)).min(3).max(4),
-  focus_areas: z.array(z.string().min(3)).length(5),
+  training_strategy: z.string().min(2),
+  nutrition_strategy: z.string().min(2),
+  progress_roadmap: z.array(z.string().min(2)).min(3).max(4),
+  focus_areas: z.array(z.string().min(2)).length(5),
   fitness_score: z.number().min(0).max(100),
   reality_check: z.object({
     is_timeframe_realistic: z.boolean(),
-    honest_assessment: z.string().min(20),
-    achievable_in_timeframe: z.array(z.string().min(4)).min(3).max(5),
+    honest_assessment: z.string().min(2),
+    achievable_in_timeframe: z.array(z.string().min(2)).min(3).max(5),
   }),
   timeline_projection: z
     .array(
       z.object({
         timeframe: z.string().min(1),
         target_weight_kg: z.union([z.string(), z.number(), z.null()]),
-        expected_changes: z.string().min(8),
+        expected_changes: z.string().min(2),
       }),
     )
     .min(3)
     .max(4),
   health_and_safety: z.object({
     has_concerns: z.boolean(),
-    safety_verdict: z.string().min(10),
+    safety_verdict: z.string().min(2),
     medical_focus_areas: z.array(z.string()).max(3),
   }),
 });
@@ -271,6 +271,7 @@ export async function generateStartingReport({
       });
       const parsed = StartingReportSchema.safeParse(response);
       if (parsed.success) return parsed.data;
+      console.error("Zod Validation Failed:", parsed.error);
       lastError = new Error("OpenAI returned an incomplete starting report.");
       if (completionBudget === 9000) continue;
       throw lastError;
