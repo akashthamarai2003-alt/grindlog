@@ -172,12 +172,13 @@ function removeExplicitlySafeFoodPhrases(text: string): string {
   return text
     // A restriction mentioned as a negative qualifier is not a recommended
     // ingredient (for example, "dairy-free" or "without eggs").
-    .replace(/\b(?:dairy|non[- ]dairy)\s*[- ]free\s+(?:milk|curd|yog(?:h)?urt|paneer|cheese)\b/gi, "")
+    .replace(/\b(?:dairy|non[- ]dairy)\s*[- ]free\s+(?:milk|curd|yog(?:h)?urt|paneer|cheese|ghee|butter|whey|egg|eggs|meat|chicken|fish|seafood)\b/gi, "")
     .replace(/\b(?:dairy|milk|curd|yog(?:h)?urt|paneer|cheese|ghee|butter|whey|egg|eggs|meat|chicken|fish|seafood|honey)\s*[- ]?free\b/gi, "")
     .replace(/\b(?:no|without|free of|free from|excluding|avoid(?:ing)?)\s+(?:any\s+)?(?:dairy|milk|curd|yog(?:h)?urt|paneer|cheese|ghee|butter|whey|egg|eggs|meat|chicken|fish|seafood|honey)\b/gi, "")
-    // Common vegan alternatives contain words such as "milk", "yogurt", or
-    // "meat" but are not animal products themselves.
-    .replace(/\b(?:vegan|plant[- ]based|non[- ]dairy|almond|oat|soy|soya|coconut|cashew|rice)\s+(?:milk|curd|yog(?:h)?urt|paneer|cheese|meat|chicken|fish)\b/gi, "");
+    // Common vegan alternatives contain words such as "milk", "yogurt",
+    // "butter", or "meat" but are not animal products themselves. Support
+    // both "oat milk" and "oat-based milk" spellings.
+    .replace(/\b(?:vegan|plant[- ]based|non[- ]dairy|(?:almond|oat|soy|soya|coconut|cashew|rice|pea|hazelnut)(?:[- ]based)?)\s+(?:milk|curd|yog(?:h)?urt|paneer|cheese|ghee|butter|whey|egg|eggs|meat|chicken|fish|seafood)\b/gi, "");
 }
 
 function hasForbiddenFood(text: string, profile: ProfileLike): string | null {
@@ -265,7 +266,9 @@ function recommendedNutritionText(plan: GeneratedPlanData): string {
     ...nutrition.grocery_list.map((item) => item.name),
   ]
     .filter((value): value is string => typeof value === "string")
-    .join(" ");
+    // Keep item boundaries explicit. Otherwise a safe qualifier in one item
+    // ("dairy-free") could accidentally mask a forbidden word in the next.
+    .join(" | ");
 }
 
 function hasUnselectedAvailableFood(plan: GeneratedPlanData, profile: ProfileLike): string | null {
