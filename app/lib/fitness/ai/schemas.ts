@@ -236,6 +236,17 @@ export const FITNESS_PLAN_JSON_SCHEMA: Record<string, unknown> = {
   },
 };
 
+export function buildFitnessPlanJsonSchema(
+  exactWorkoutCount?: number,
+): Record<string, unknown> {
+  const schema = JSON.parse(JSON.stringify(FITNESS_PLAN_JSON_SCHEMA)) as Record<string, any>;
+  if (Number.isInteger(exactWorkoutCount) && exactWorkoutCount >= 0) {
+    schema.properties.workouts.minItems = exactWorkoutCount;
+    schema.properties.workouts.maxItems = exactWorkoutCount;
+  }
+  return schema;
+}
+
 export type GeneratedPlanData = z.infer<typeof GeneratedPlanSchema>;
 
 export const CoachResponseSchema = z.object({

@@ -6,7 +6,7 @@ import {
 } from "@/lib/services/openai/client";
 import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-ai-limit";
 import {
-  FITNESS_PLAN_JSON_SCHEMA,
+  buildFitnessPlanJsonSchema,
   GeneratedPlanSchema,
   GeneratedPlanData,
 } from "@/lib/fitness/ai/schemas";
@@ -81,6 +81,14 @@ export async function POST(req: Request) {
       scan?.gemini_analysis,
       foodCatalog || [],
     );
+    const painSeverity = Number(profile.current_pain_severity);
+    const exactWorkoutCount =
+      typeof profile.training_days_per_week === "number"
+        ? painSeverity >= 7
+          ? 0
+          : profile.training_days_per_week
+        : undefined;
+    const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount);
     const draftCacheCutoff = new Date(Date.now() - 30 * 60_000).toISOString();
     const { data: cachedDraft } = await supabase
       .from("fitness_os_ai_sessions")
@@ -217,7 +225,7 @@ export async function POST(req: Request) {
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
           jsonSchema: {
             name: "fitness_plan",
-            schema: FITNESS_PLAN_JSON_SCHEMA,
+            schema: planJsonSchema,
             description: "A complete personalized 7-day Grindlog fitness plan.",
             strict: true,
           },
