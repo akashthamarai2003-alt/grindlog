@@ -634,7 +634,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.height || ""} 
                         onChange={e => handleUpdate({ height: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
                           step3Errors.height ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
                         }`}
                         placeholder="173"
@@ -650,7 +650,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.weight || ""} 
                         onChange={e => handleUpdate({ weight: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
                           step3Errors.weight ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
                         }`}
                         placeholder="73"
@@ -671,7 +671,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.waist_cm || ""} 
                         onChange={e => handleUpdate({ waist_cm: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
                           step3Errors.waist_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
                         }`}
                         placeholder="80"
@@ -689,7 +689,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.chest_cm || ""} 
                         onChange={e => handleUpdate({ chest_cm: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
                           step3Errors.chest_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
                         }`}
                         placeholder="95"
@@ -710,7 +710,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.arm_cm || ""} 
                         onChange={e => handleUpdate({ arm_cm: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
                           step3Errors.arm_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
                         }`}
                         placeholder="35"
@@ -728,7 +728,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.thigh_cm || ""} 
                         onChange={e => handleUpdate({ thigh_cm: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-[#0D150D]/90 text-white transition-colors outline-none placeholder:text-gray-600 ${
+                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
                           step3Errors.thigh_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
                         }`}
                         placeholder="55"
