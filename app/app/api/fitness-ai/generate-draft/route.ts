@@ -197,7 +197,7 @@ export async function POST(req: Request) {
           // Keep enough headroom for high reasoning plus the complete schema.
           maxTokens: attempt === 1 ? 10000 : 14000,
           minimumOutputTokens: attempt === 1 ? 10000 : 14000,
-          reasoningEffort: "high",
+          reasoningEffort: "low",
           promptCacheKey: "fitness-plan-v3",
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
         });
