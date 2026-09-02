@@ -571,9 +571,9 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 priority
                 unoptimized
               />
-              {/* Simple gradient from solid black at bottom to transparent at top */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#050905]/30 to-transparent opacity-60" />
+              {/* Subtle dark overlay instead of solid black bottom */}
+              <div className="absolute inset-0 bg-black/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
             </div>
 
             <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
@@ -758,9 +758,9 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   priority
                   unoptimized
                 />
-                {/* Simple gradient from solid black at bottom to transparent at top */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#050905]/40 to-transparent" />
+                {/* Subtle dark overlay instead of solid black bottom */}
+                <div className="absolute inset-0 bg-black/40" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
               </div>
 
               {/* Scrollable Content overlay */}
@@ -810,12 +810,12 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                       whileTap={{ scale: 0.99 }}
                       onClick={() => handleUpdate({ goal: opt.id as any })}
                       className={`w-full flex items-center p-3 rounded-2xl border-[1.5px] text-left transition-all ${
-                        isSelected ? "border-[#ADFF00] shadow-[0_0_20px_rgba(173,255,0,0.15)] bg-gradient-to-r from-[#ADFF00]/10 to-transparent" : "border-[#1A2619] bg-[#0A1108] hover:border-[#233522]"
+                        isSelected ? "border-[#ADFF00] shadow-[0_0_20px_rgba(173,255,0,0.15)] bg-[#ADFF00]/10 backdrop-blur-sm" : "border-white/10 bg-black/40 backdrop-blur-md hover:border-white/20 hover:bg-black/50"
                       }`}
                     >
-                      <div className={`relative w-[60px] h-[60px] rounded-full overflow-hidden mr-4 border-2 ${isSelected ? "border-[#ADFF00]" : "border-[#1A2619]"}`}>
+                      <div className={`relative w-[60px] h-[60px] rounded-full overflow-hidden mr-4 border-2 ${isSelected ? "border-[#ADFF00]" : "border-white/20"}`}>
                         <Image src={opt.img} alt={opt.id} fill className="object-cover" unoptimized />
-                        {!isSelected && <div className="absolute inset-0 bg-black/40" />}
+                        {!isSelected && <div className="absolute inset-0 bg-black/50" />}
                       </div>
                       
                       <div className="flex-1">
