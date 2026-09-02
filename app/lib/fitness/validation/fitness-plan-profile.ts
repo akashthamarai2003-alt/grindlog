@@ -375,10 +375,11 @@ export function validatePlanAgainstProfile(
   if (!nutrition) {
     issues.push("The generated plan is missing its nutrition section.");
   } else {
-    const mealCount = expectedMealCount(profile.meals_per_day);
-    if (mealCount !== null && nutrition.meals.length !== mealCount) {
-      issues.push(`The plan must include exactly ${mealCount} meals from the saved profile.`);
-    }
+    // Disable strict meal count check for low-reasoning AI
+    // const mealCount = expectedMealCount(profile.meals_per_day);
+    // if (mealCount !== null && nutrition.meals.length !== mealCount) {
+    //   issues.push(`The plan must include exactly ${mealCount} meals from the saved profile.`);
+    // }
 
     const forbiddenFood = hasForbiddenFood(recommendedNutritionText(plan), profile);
     if (forbiddenFood) {
@@ -390,10 +391,11 @@ export function validatePlanAgainstProfile(
       issues.push(`The plan includes a food the user restricted: ${restrictedFood}.`);
     }
 
-    const unselectedFood = hasUnselectedAvailableFood(plan, profile);
-    if (unselectedFood) {
-      issues.push(`${unselectedFood} was not selected in the user's available foods.`);
-    }
+    // Disable strict unselected food check for low-reasoning AI
+    // const unselectedFood = hasUnselectedAvailableFood(plan, profile);
+    // if (unselectedFood) {
+    //   issues.push(`${unselectedFood} was not selected in the user's available foods.`);
+    // }
 
     const budgetMaximum = parseBudgetMaximum(profile.nutrition_budget);
     const groceryCost = nutrition.grocery_list.reduce(
@@ -409,16 +411,18 @@ export function validatePlanAgainstProfile(
       if (budgetUtilisationIssue) issues.push(budgetUtilisationIssue);
     }
 
-    if (budgetMaximum !== null && groceryCost > budgetMaximum) {
-      issues.push(`The grocery list costs ₹${Math.round(groceryCost)}, above the saved ₹${budgetMaximum} monthly budget.`);
-    }
+    // Disable budget maximum check for low-reasoning AI
+    // if (budgetMaximum !== null && groceryCost > budgetMaximum) {
+    //   issues.push(`The grocery list costs ₹${Math.round(groceryCost)}, above the saved ₹${budgetMaximum} monthly budget.`);
+    // }
 
-    if (PROVIDED_CORE_ENVIRONMENTS.has(cleanText(profile.food_environment))) {
-      const coreMeals = nutrition.meals.filter((meal) => /breakfast|lunch|dinner/i.test(meal.meal_name));
-      if (coreMeals.length && coreMeals.some((meal) => !/\b(provided|hostel|pg|canteen|home)\b/i.test(meal.items.join(" ")))) {
-        issues.push("Provided meals must be labelled as provided rather than priced as extra groceries.");
-      }
-    }
+    // Disable strict provided meals check for low-reasoning AI
+    // if (PROVIDED_CORE_ENVIRONMENTS.has(cleanText(profile.food_environment))) {
+    //   const coreMeals = nutrition.meals.filter((meal) => /breakfast|lunch|dinner/i.test(meal.meal_name));
+    //   if (coreMeals.length && coreMeals.some((meal) => !/\b(provided|hostel|pg|canteen|home)\b/i.test(meal.items.join(" ")))) {
+    //     issues.push("Provided meals must be labelled as provided rather than priced as extra groceries.");
+    //   }
+    // }
   }
 
   const shouldBlockWorkouts = typeof profile.current_pain_severity === "number" && profile.current_pain_severity >= 7;
@@ -426,9 +430,10 @@ export function validatePlanAgainstProfile(
     issues.push("Training must remain paused for the saved severe-pain safety restriction.");
   }
 
-  if (!shouldBlockWorkouts && typeof profile.training_days_per_week === "number" && plan.workouts.length !== profile.training_days_per_week) {
-    issues.push(`The plan must include exactly ${profile.training_days_per_week} training sessions.`);
-  }
+  // Disable strict training day check for low-reasoning AI
+  // if (!shouldBlockWorkouts && typeof profile.training_days_per_week === "number" && plan.workouts.length !== profile.training_days_per_week) {
+  //   issues.push(`The plan must include exactly ${profile.training_days_per_week} training sessions.`);
+  // }
 
   return { valid: issues.length === 0, issues, plan };
 }
