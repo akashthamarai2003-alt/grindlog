@@ -15,6 +15,7 @@ import {
   buildFitnessPlanPrompt,
 } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
+import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 import {
   getGenerationRetryAfterSeconds,
   recordGenerationAttempt,
@@ -194,7 +195,17 @@ export async function POST(req: Request) {
           continue;
         }
 
-        planData = candidatePlan;
+        const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
+          enforceProfileRules: true,
+          enforceBudgetUtilisation: false,
+        });
+        if (!profileCheck.valid) {
+          console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);
+          lastErrorMessage = `The generated plan did not match the saved profile: ${profileCheck.issues.join("; ")}`;
+          continue;
+        }
+
+        planData = profileCheck.plan;
         break; // Success!
       } catch (err: any) {
         console.error(`Attempt ${attempt} caught error:`, err);
