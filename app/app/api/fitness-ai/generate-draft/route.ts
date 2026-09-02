@@ -65,7 +65,17 @@ export async function POST(req: Request) {
     // 4. Reuse an identical recent draft. Reopening the tab must not spend on a
     // second plan while the user is still reviewing the first one.
     const todayStr = new Date().toISOString().split("T")[0];
-    const userPrompt = buildFitnessPlanPrompt(profile, todayStr, scan?.gemini_analysis);
+    const { data: foodCatalog } = await supabase
+      .from("foods")
+      .select("name, category, serving_size, calories, protein, estimated_cost, diet_type, is_pg_friendly, allergens")
+      .eq("is_active", true)
+      .limit(250);
+    const userPrompt = buildFitnessPlanPrompt(
+      profile,
+      todayStr,
+      scan?.gemini_analysis,
+      foodCatalog || [],
+    );
     const draftCacheCutoff = new Date(Date.now() - 30 * 60_000).toISOString();
     const { data: cachedDraft } = await supabase
       .from("fitness_os_ai_sessions")

@@ -85,7 +85,17 @@ export async function POST(req: Request) {
 
     // 5. Call AI Server-Side
     const todayStr = new Date().toISOString().split("T")[0];
-    const userPrompt = buildFitnessPlanPrompt(profile, todayStr, scan?.gemini_analysis);
+    const { data: foodCatalog } = await supabase
+      .from("foods")
+      .select("name, category, serving_size, calories, protein, estimated_cost, diet_type, is_pg_friendly, allergens")
+      .eq("is_active", true)
+      .limit(250);
+    const userPrompt = buildFitnessPlanPrompt(
+      profile,
+      todayStr,
+      scan?.gemini_analysis,
+      foodCatalog || [],
+    );
 
     const retryAfterSeconds = await getGenerationRetryAfterSeconds(
       supabase,

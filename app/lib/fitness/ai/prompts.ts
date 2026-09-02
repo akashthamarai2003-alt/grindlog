@@ -3,7 +3,7 @@ import { getPlanNutritionTargets } from "@/lib/fitness/validation/fitness-plan-p
 
 export const FITNESS_PLAN_SYSTEM_PROMPT = `You are Grindlog's cautious fitness and nutrition coach. Build one complete, personalised 7-day plan from the supplied PROFILE JSON. The profile is the source of truth.
 
-For a Vegan profile, every nutrition.meals.items entry and nutrition.grocery_list.name entry must be vegan-safe. Never put egg, milk, curd, yogurt, paneer, cheese, ghee, butter, whey, meat, chicken, fish, seafood, or honey in those food-name strings, including as an example, substitution, or parenthetical. Use clearly named plant-based alternatives only. Exclusion explanations belong in nutrition.guidance, not in food-name strings.
+For a Vegan profile, every nutrition.meals.items entry and nutrition.grocery_list.name entry must be vegan-safe. Never put egg, milk, curd, yogurt, paneer, cheese, ghee, butter, whey, meat, chicken, fish, seafood, or honey in those food-name strings, including as an example, substitution, or parenthetical. Use clearly named plant-based alternatives only. Exclusion explanations belong in nutrition.guidance, not in food-name strings. If profile.nutrition.food_library is present, use only compatible entries from that library for explicit meal items and grocery names. Treat its diet_type, allergens, macros, serving_size, and estimated_cost as the source of truth; if no compatible item exists, explain the limitation instead of inventing a food.
 
 Safety is absolute: never prescribe a movement in profile.safety.forbidden_movements or violate user-stated limitations, injuries, medical guidance, allergies, avoided foods, diet, location, or equipment. If profile.safety.block_workouts is true, return an empty workouts array and make plan.description a clear medical-clearance warning. Do not diagnose, prescribe medication, guarantee outcomes, recommend steroids, starvation, or dangerous dehydration.
 
@@ -17,6 +17,18 @@ CRITICAL: All numeric fields (e.g., sets, rest_seconds, estimated_price, total_c
 
 const PLAN_BODY_SCAN_CONTEXT_LIMIT = 2600;
 const PLAN_STRATEGY_TEXT_LIMIT = 360;
+
+export type PlanFoodCatalogItem = {
+  name: string;
+  category?: string | null;
+  serving_size?: string | null;
+  calories?: number | null;
+  protein?: number | null;
+  estimated_cost?: number | null;
+  diet_type?: string | null;
+  is_pg_friendly?: boolean | null;
+  allergens?: string[] | null;
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -359,6 +371,7 @@ function buildCompactPlanProfile(
   profile: Record<string, any>,
   todayDateStr: string,
   geminiAnalysis?: string | null,
+  foodCatalog: PlanFoodCatalogItem[] = [],
 ): Record<string, unknown> {
   const foodEnvironment = profile.food_environment;
   const providedCoreMeals = ["PG", "Hostel", "Home", "Office/Canteen"].includes(
@@ -408,6 +421,19 @@ function buildCompactPlanProfile(
       available_foods: stringList(profile.available_foods),
       allergies: profile.food_allergies,
       avoid: [profile.foods_disliked, profile.foods_avoided].filter(Boolean),
+      food_library: foodCatalog.length
+        ? foodCatalog.map((food) => ({
+            name: food.name,
+            category: food.category,
+            serving_size: food.serving_size,
+            calories: food.calories,
+            protein: food.protein,
+            estimated_cost: food.estimated_cost,
+            diet_type: food.diet_type,
+            pg_friendly: food.is_pg_friendly,
+            allergens: food.allergens,
+          }))
+        : undefined,
     },
     routine: {
       activity: profile.activity_level,
@@ -428,11 +454,13 @@ export function buildFitnessPlanPrompt(
   profileData: any,
   todayDateStr: string,
   geminiAnalysis?: string | null,
+  foodCatalog: PlanFoodCatalogItem[] = [],
 ): string {
   const compactProfile = buildCompactPlanProfile(
     isRecord(profileData) ? profileData : {},
     todayDateStr,
     geminiAnalysis,
+    foodCatalog,
   );
 
   return `PROFILE_JSON:\n${JSON.stringify(compactProfile)}`;
