@@ -609,15 +609,15 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   <p className="text-gray-400 mt-2 text-sm font-medium">Let's understand your starting point.</p>
                 </div>
                 
-                <div className="mb-6 bg-[#0D150D]/80 backdrop-blur-md border border-[#1A2619] p-4 rounded-2xl space-y-2.5">
+                <div className="mb-6 bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl p-4 rounded-2xl space-y-2.5">
                   <div className="flex items-center gap-2">
                     <Check size={16} className="text-[#ADFF00] shrink-0" />
                     <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Why Honest Details Matter</h4>
                   </div>
-                  <p className="text-xs text-gray-300 leading-relaxed">
+                  <p className="text-xs text-gray-200 leading-relaxed font-medium">
                     Please enter your exact measurements honestly. We calculate an estimated body-fat range using an established formula based on your metrics.
                   </p>
-                  <div className="pt-2 border-t border-[#1A2619] text-[11px] text-gray-400 leading-relaxed flex items-start gap-1.5">
+                  <div className="pt-2 border-t border-white/10 text-[11px] text-gray-300 leading-relaxed flex items-start gap-1.5">
                     <span className="mt-[1px]">📸</span>
                     <span><b>Photos & Goal Physique:</b> Photos can be used for visual progress comparison and AI Goal Physique photo analysis.</span>
                   </div>
