@@ -4,7 +4,10 @@ import process from "node:process";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 
-dotenv.config({ path: path.resolve("app/.env.local") });
+// Support both `node app/scripts/...` from the repository root and
+// `node scripts/...` from the app directory.
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+dotenv.config({ path: path.resolve(process.cwd(), "app/.env.local") });
 
 const DEFAULT_JSON_PATH = path.resolve(
   "C:/Users/DELL/AppData/Local/Temp/grindlog-usda-import/expanded/FoodData_Central_foundation_food_json_2026-04-30.json",
@@ -119,8 +122,26 @@ if (!supabaseUrl || !serviceRoleKey) {
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
-const { error } = await supabase
-  .from("foods")
-  .upsert(rows, { onConflict: "source_record_id" });
-if (error) throw error;
-console.log("USDA rows imported/upserted safely. Existing non-USDA rows were not changed.");
+// The schema uses a partial unique index because legacy rows have no source
+// ID. Resolve each non-null source ID explicitly instead of relying on
+// PostgREST ON CONFLICT inference, which cannot infer a partial index.
+for (const row of rows) {
+  const { data: existing, error: lookupError } = await supabase
+    .from("foods")
+    .select("id")
+    .eq("source_record_id", row.source_record_id)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+
+  if (existing?.id) {
+    const { error: updateError } = await supabase
+      .from("foods")
+      .update(row)
+      .eq("id", existing.id);
+    if (updateError) throw updateError;
+  } else {
+    const { error: insertError } = await supabase.from("foods").insert(row);
+    if (insertError) throw insertError;
+  }
+}
+console.log("USDA rows imported safely. Existing non-USDA rows were not changed.");
