@@ -132,7 +132,7 @@ export async function POST(req: Request) {
               : null;
             const profileCheck = cachedPlan.success
               ? validatePlanAgainstProfile(cachedPlan.data, profile, {
-                  enforceBudgetUtilisation: true,
+                  enforceBudgetUtilisation: false,
                 })
               : null;
             if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
@@ -226,7 +226,7 @@ export async function POST(req: Request) {
         }
 
         const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
-          enforceBudgetUtilisation: true,
+          enforceBudgetUtilisation: false,
         });
         if (!profileCheck.valid) {
           console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);

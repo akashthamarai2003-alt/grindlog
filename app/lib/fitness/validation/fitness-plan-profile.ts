@@ -331,16 +331,23 @@ export function normalisePlanProfileDetails(
   plan: GeneratedPlanData,
   profile: ProfileLike,
 ): GeneratedPlanData {
-  if (!plan.nutrition) return plan;
+  const shouldBlockWorkouts = typeof profile.current_pain_severity === "number" && profile.current_pain_severity >= 7;
+  const normalisedPlan = { ...plan };
+
+  if (shouldBlockWorkouts && normalisedPlan.workouts) {
+    normalisedPlan.workouts = [];
+  }
+
+  if (!normalisedPlan.nutrition) return normalisedPlan;
 
   const targets = getPlanNutritionTargets(profile);
   const savedTimes = storedTimes(profile);
   const nutrition = {
-    ...plan.nutrition,
+    ...normalisedPlan.nutrition,
     ...(targets.calories !== null ? { daily_calories: targets.calories } : {}),
     ...(targets.protein !== null ? { protein_grams: targets.protein } : {}),
     ...(targets.mealsPerDay !== null ? { meals_per_day: targets.mealsPerDay } : {}),
-    meals: plan.nutrition.meals.map((meal) => {
+    meals: normalisedPlan.nutrition.meals.map((meal) => {
       const time = cleanText(meal.time_of_day);
       const isStoredTime = time && savedTimes.includes(time.toLowerCase());
       return {
@@ -353,7 +360,7 @@ export function normalisePlanProfileDetails(
     }),
   };
 
-  return { ...plan, nutrition };
+  return { ...normalisedPlan, nutrition };
 }
 
 export function validatePlanAgainstProfile(
