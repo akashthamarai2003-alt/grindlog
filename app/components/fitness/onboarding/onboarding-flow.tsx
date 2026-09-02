@@ -774,19 +774,17 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   >
                     <ArrowLeft size={20} />
                   </button>
-                  <div className="flex-1 px-4">
-                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                  <div className="flex-1 px-8 flex justify-center">
+                    <div className="w-full bg-[#1A2619] h-2 rounded-full overflow-hidden">
                       <motion.div 
-                        className="h-full bg-[#ADFF00] rounded-full"
-                        initial={{ width: `${((step - 1) / 15) * 100}%` }}
-                        animate={{ width: `${(step / 15) * 100}%` }}
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                        className="h-full bg-[#ADFF00]" 
+                        initial={{ width: "0%" }} 
+                        animate={{ width: `${((step - 1) / 14) * 100}%` }} 
+                        transition={{ ease: "easeInOut" }} 
                       />
                     </div>
                   </div>
-                  <div className="w-10 text-right text-[10px] font-bold text-gray-400">
-                    {step}/15
-                  </div>
+                  <div className="w-9" />
                 </motion.div>
 
                 <div className="mt-6">
