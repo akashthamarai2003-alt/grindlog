@@ -224,6 +224,7 @@ export async function POST(req: Request) {
     console.log("Generating personalised starting report...");
     let aiStrategy: Record<string, unknown> = {};
     let reportGenerationFailed = false;
+    try {
     const systemPrompt = `You are an elite AI Fitness Coach building a highly personalized transformation strategy.
   
   CRITICAL TONE RULE: You MUST write in very simple, beginner-friendly English (5th-grade reading level). Our users are beginners and many are not native English speakers. Do not use complex medical, scientific, or robotic words. Be friendly, encouraging, and talk like a real human personal trainer using normal, natural gym slang (e.g. "Let's get those gains", "Don't sweat it", "We're gonna build some solid muscle"). For example, instead of 'The stated goal conflicts with height...', say 'Based on your height and weight, it's safer to focus on building muscle first rather than losing fat!'
