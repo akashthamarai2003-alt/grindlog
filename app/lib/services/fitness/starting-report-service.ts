@@ -1,6 +1,9 @@
 import { z } from "zod";
 import type { OnboardingData } from "@/types/fitness/onboarding";
-import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
+import {
+  FITNESS_REPORT_MODEL,
+  generateOpenAIResponseJSON,
+} from "@/lib/services/openai/client";
 
 const StartingReportSchema = z.object({
   body_scan_insights: z.object({
@@ -246,41 +249,27 @@ export async function generateStartingReport({
   Keep each string plain, concrete, and concise, but friendly.`;
 
   const reportPrompt = `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nBODY SCAN AVAILABLE: ${hasUsableBodyScan(visualObservations)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`;
-  let lastError: unknown;
-  // GPT-5.6 shares this budget between reasoning and visible JSON. Keep one
-  // bounded recovery attempt for an interrupted response, without allowing a
-  // client-side retry storm.
-  for (const completionBudget of [9000, 12000]) {
-    try {
-      const response = await generateOpenAIResponseJSON<unknown>({
-        systemPrompt,
-        userPrompt:
-          completionBudget === 9000
-            ? reportPrompt
-            : `${reportPrompt}\n\nReturn every required field from the report schema. Do not omit body_scan_insights, first_two_weeks, timeline_projection, or health_and_safety. Return one complete JSON object.`,
-        maxTokens: completionBudget,
-        reasoningEffort: "low",
-        minimumOutputTokens: completionBudget,
-        jsonSchema: {
-          name: "starting_report",
-          schema: STARTING_REPORT_JSON_SCHEMA,
-          description: "A complete Grindlog personalised starting report.",
-          strict: true,
-        },
-        verbosity: "low",
-      });
-      const parsed = StartingReportSchema.safeParse(response);
-      if (parsed.success) return parsed.data;
-      console.error("Zod Validation Failed:", parsed.error);
-      lastError = new Error("OpenAI returned an incomplete starting report.");
-      if (completionBudget === 9000) continue;
-      throw lastError;
-    } catch (error) {
-      lastError = error;
-      if (!String(error).toLowerCase().includes("incomplete") || completionBudget === 12000) {
-        throw error;
-      }
-    }
+  // One explicit report action makes one paid model call. A malformed or
+  // incomplete result fails closed and can be retried intentionally by the user.
+  const response = await generateOpenAIResponseJSON<unknown>({
+    systemPrompt,
+    userPrompt: reportPrompt,
+    model: FITNESS_REPORT_MODEL,
+    maxTokens: 10000,
+    reasoningEffort: "low",
+    minimumOutputTokens: 10000,
+    jsonSchema: {
+      name: "starting_report",
+      schema: STARTING_REPORT_JSON_SCHEMA,
+      description: "A complete Grindlog personalised starting report.",
+      strict: true,
+    },
+    verbosity: "low",
+  });
+  const parsed = StartingReportSchema.safeParse(response);
+  if (!parsed.success) {
+    console.error("Zod Validation Failed:", parsed.error);
+    throw new Error("OpenAI returned an incomplete starting report.");
   }
-  throw lastError || new Error("Starting report generation failed.");
+  return parsed.data;
 }

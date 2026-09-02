@@ -21,6 +21,11 @@ export const OPENAI_MODEL = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-terra";
 // onboarding report. Keep this separately configurable from other AI features.
 export const FITNESS_PLAN_MODEL =
   process.env.FITNESS_PLAN_MODEL?.trim() || "gpt-5.6-luna";
+// The onboarding report is the only other workflow that uses Luna. All other
+// OpenAI features continue using OPENAI_MODEL unless they explicitly override
+// it for their own provider/workflow.
+export const FITNESS_REPORT_MODEL =
+  process.env.FITNESS_REPORT_MODEL?.trim() || "gpt-5.6-luna";
 
 export async function generateOpenAIResponseJSON<T>({
   systemPrompt,

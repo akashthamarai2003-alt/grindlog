@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { generateStartingReport } from "@/lib/services/fitness/starting-report-service";
-import { OPENAI_MODEL } from "@/lib/services/openai/client";
+import { FITNESS_REPORT_MODEL } from "@/lib/services/openai/client";
 import {
   getGenerationRetryAfterSeconds,
   recordGenerationAttempt,
@@ -75,7 +75,7 @@ export async function POST() {
       supabase,
       user.id,
       "starting_report_attempt",
-      OPENAI_MODEL,
+      FITNESS_REPORT_MODEL,
     );
     const aiStrategy = await generateStartingReport({
       onboarding: parsedOnboarding.data,
