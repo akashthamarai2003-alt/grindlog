@@ -745,11 +745,54 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             </div>
           </div>
         );
-case 4:
-        return (
-          <div className="px-6 pt-6 pb-36">
-            <StepHeader title="What do you want to achieve?" />
-              <div className="space-y-3">
+        case 4:
+          return (
+            <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
+              {/* Background Image - Sticky to stay fixed while scrolling */}
+              <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+                <Image 
+                  src="/images/goals-bg.png" 
+                  alt="Background" 
+                  fill 
+                  className="object-cover object-top opacity-100 scale-[1.05]" 
+                  priority
+                  unoptimized
+                />
+                {/* Simple gradient from solid black at bottom to transparent at top */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#050905]/40 to-transparent" />
+              </div>
+
+              {/* Scrollable Content overlay */}
+              <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+                
+                {/* Top Navigation */}
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
+                  <button 
+                    onClick={handleBack}
+                    className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <div className="flex-1 px-4">
+                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                      <motion.div 
+                        className="h-full bg-[#ADFF00] rounded-full"
+                        initial={{ width: `${((step - 1) / 15) * 100}%` }}
+                        animate={{ width: `${(step / 15) * 100}%` }}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-10 text-right text-[10px] font-bold text-gray-400">
+                    {step}/15
+                  </div>
+                </motion.div>
+
+                <div className="mt-6">
+                  <StepHeader title="What do you want to achieve?" />
+                </div>
+                <div className="space-y-3">
                 {[
                   { id: "Lose Fat", img: "/images/goals/goal-1.png", desc: "Reduce body fat & get lean" },
                   { id: "Build Muscle", img: "/images/goals/goal-2.png", desc: "Build size & muscular definition" },
@@ -850,6 +893,7 @@ case 4:
             </div>
 
             <BottomBar canProceed={isStep4Valid} onProceed={handleNext} />
+            </div>
           </div>
         );
       case 5:
@@ -2379,7 +2423,7 @@ case 4:
     <div className="min-h-[100dvh] w-full bg-[#0A1108] selection:bg-[#ADFF00] selection:text-black">
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
-        <div className={step === 1 || step === 2 || step === 3 || step === 5 || step === 6 || step === 7 || step === 8 || step === 9 || step === 10 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
+        <div className={step === 1 || step === 2 || step === 3 || step === 4 || step === 5 || step === 6 || step === 7 || step === 8 || step === 9 || step === 10 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
           {step > 1 && step < 16 && (
             <button 
               onClick={handleBack}
