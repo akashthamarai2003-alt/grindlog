@@ -25,22 +25,6 @@ const StartingReportSchema = z.object({
     honest_assessment: z.string().min(20),
     achievable_in_timeframe: z.array(z.string().min(4)).min(3).max(5),
   }),
-  budget_breakdown: z.object({
-    monthly_budget: z.string().min(1),
-    recommended_add_ons: z
-      .array(
-        z.object({
-          item: z.string().min(1),
-          daily_qty: z.string().min(1),
-          daily_cost: z.string().min(1),
-          monthly_cost: z.string().min(1),
-          protein_provided_g: z.string().min(1),
-        }),
-      )
-      .max(4),
-    total_estimated_monthly_cost: z.string().min(1),
-    budget_verdict: z.string().min(20),
-  }),
   timeline_projection: z
     .array(
       z.object({
@@ -75,7 +59,6 @@ export const STARTING_REPORT_JSON_SCHEMA: Record<string, unknown> = {
     "focus_areas",
     "fitness_score",
     "reality_check",
-    "budget_breakdown",
     "timeline_projection",
     "health_and_safety",
   ],
@@ -121,32 +104,6 @@ export const STARTING_REPORT_JSON_SCHEMA: Record<string, unknown> = {
         is_timeframe_realistic: { type: "boolean" },
         honest_assessment: { type: "string" },
         achievable_in_timeframe: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 5 },
-      },
-    },
-    budget_breakdown: {
-      type: "object",
-      additionalProperties: false,
-      required: ["monthly_budget", "recommended_add_ons", "total_estimated_monthly_cost", "budget_verdict"],
-      properties: {
-        monthly_budget: { type: "string" },
-        recommended_add_ons: {
-          type: "array",
-          maxItems: 4,
-          items: {
-            type: "object",
-            additionalProperties: false,
-            required: ["item", "daily_qty", "daily_cost", "monthly_cost", "protein_provided_g"],
-            properties: {
-              item: { type: "string" },
-              daily_qty: { type: "string" },
-              daily_cost: { type: "string" },
-              monthly_cost: { type: "string" },
-              protein_provided_g: { type: "string" },
-            },
-          },
-        },
-        total_estimated_monthly_cost: { type: "string" },
-        budget_verdict: { type: "string" },
       },
     },
     timeline_projection: {
@@ -270,21 +227,23 @@ export async function generateStartingReport({
   };
 
   const systemPrompt = `You are Grindlog's cautious fitness coach. Create a concise starting report using only the supplied onboarding profile and optional vision observations. Do not invent a measurement, target, injury, food preference, budget, or photo finding. This is coaching guidance, not medical advice.
-
-Return one valid JSON object with exactly these top-level fields:
-- body_scan_insights: { has_body_scan, overall_summary, observed_strengths, priority_improvements, posture_or_movement_note }. Only describe photo observations when BODY SCAN AVAILABLE is true. Never diagnose health conditions or give an exact body-fat percentage from photos. If false, explicitly state that no usable body scan is available and use empty observation arrays.
-- first_two_weeks: { training_start, nutrition_start, recovery_start }. Give a realistic beginner-safe start that respects stated injuries, fitness level, available time, location, equipment, diet, and budget. Do not prescribe a six-day hard programme to a beginner unless their supplied profile supports it.
-- training_strategy: short personalised strategy.
-- nutrition_strategy: short personalised strategy that strictly respects diet_type, allergies, avoided foods, food environment, and budget.
-- progress_roadmap: 3 or 4 short milestones.
-- focus_areas: exactly 5 short personalised focus areas.
-- fitness_score: a number from 0 to 100; it is a non-medical coaching baseline.
-- reality_check: { is_timeframe_realistic, honest_assessment, achievable_in_timeframe } with 3 to 5 practical outcomes. If no deadline or target weight is provided, state that it was not supplied rather than inventing one.
-- budget_breakdown: { monthly_budget, recommended_add_ons, total_estimated_monthly_cost, budget_verdict }. recommended_add_ons is 0 to 4 objects with item, daily_qty, daily_cost, monthly_cost, protein_provided_g. Never recommend animal products to Vegan users; never recommend meat/fish to Vegetarian users. If budget is unknown, say so and use an empty add-on list.
-- timeline_projection: 3 or 4 objects { timeframe, target_weight_kg, expected_changes }. target_weight_kg must be null when no safe target can be calculated from supplied data.
-- health_and_safety: { has_concerns, safety_verdict, medical_focus_areas }. Keep medical_focus_areas empty if there are no stated concerns.
-
-Use Indian rupees only when the supplied budget is in rupees. Keep each string plain, concrete, and concise.`;
+  
+  CRITICAL TONE RULE: You MUST write in very simple, beginner-friendly English (5th-grade reading level). Our users are beginners and many are not native English speakers. Do not use complex medical, scientific, or robotic words. Be friendly, encouraging, and talk like a real human personal trainer using normal, natural gym slang (e.g. "Let's get those gains", "Don't sweat it", "We're gonna build some solid muscle"). For example, instead of 'The stated goal conflicts with height...', say 'Based on your height and weight, it's safer to focus on building muscle first rather than losing fat!'
+  YOU MUST STRICTLY FOLLOW THIS TONE RULE FOR EVERY TEXT FIELD. Make it sound like a direct, encouraging message from a personal trainer.
+  
+  Return one valid JSON object with exactly these top-level fields:
+  - body_scan_insights: { has_body_scan, overall_summary, observed_strengths, priority_improvements, posture_or_movement_note }. Only describe photo observations when BODY SCAN AVAILABLE is true. Never diagnose health conditions or give an exact body-fat percentage from photos. If false, explicitly state that no usable body scan is available and use empty observation arrays.
+  - first_two_weeks: { training_start, nutrition_start, recovery_start }. Give a realistic beginner-safe start that respects stated injuries, fitness level, available time, location, equipment, diet, and budget. Do not prescribe a six-day hard programme to a beginner unless their supplied profile supports it.
+  - training_strategy: short personalised strategy.
+  - nutrition_strategy: short personalised strategy that strictly respects diet_type, allergies, avoided foods, food environment, and budget.
+  - progress_roadmap: 3 or 4 short milestones. (e.g., "Hit your first 5 pushups!", "Start noticing your shirts fitting tighter around the chest")
+  - focus_areas: exactly 5 short personalised focus areas. Use slang like "Grow those shoulders" instead of "Deltoid hypertrophy".
+  - fitness_score: a number from 0 to 100; it is a non-medical coaching baseline.
+  - reality_check: { is_timeframe_realistic, honest_assessment, achievable_in_timeframe } with 3 to 5 practical outcomes. If no deadline or target weight is provided, state that it was not supplied rather than inventing one. EXTREMELY IMPORTANT: TALK LIKE A FRIENDLY GYM BRO / PERSONAL TRAINER in the honest_assessment. Use words like "Listen bro," "Don't sweat it," "We're gonna crush this." NEVER USE ROBOTIC LANGUAGE!
+  - timeline_projection: 3 or 4 objects { timeframe, target_weight_kg, expected_changes }. target_weight_kg must be null when no safe target can be calculated from supplied data. Make "expected_changes" sound human and encouraging!
+  - health_and_safety: { has_concerns, safety_verdict, medical_focus_areas }. Keep medical_focus_areas empty if there are no stated concerns.
+  
+  Keep each string plain, concrete, and concise, but friendly.`;
 
   const reportPrompt = `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nBODY SCAN AVAILABLE: ${hasUsableBodyScan(visualObservations)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`;
   let lastError: unknown;
@@ -298,7 +257,7 @@ Use Indian rupees only when the supplied budget is in rupees. Keep each string p
         userPrompt:
           completionBudget === 9000
             ? reportPrompt
-            : `${reportPrompt}\n\nReturn every required field from the report schema. Do not omit body_scan_insights, first_two_weeks, budget_breakdown, timeline_projection, or health_and_safety. Return one complete JSON object.`,
+            : `${reportPrompt}\n\nReturn every required field from the report schema. Do not omit body_scan_insights, first_two_weeks, timeline_projection, or health_and_safety. Return one complete JSON object.`,
         maxTokens: completionBudget,
         reasoningEffort: "low",
         minimumOutputTokens: completionBudget,
