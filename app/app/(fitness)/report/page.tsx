@@ -135,41 +135,15 @@ export default async function AIStartingReportPage() {
   const rawRealityCheck = aiStrategy.reality_check;
   const realityCheck = rawRealityCheck || {};
 
-  const rawBudgetBreakdown = aiStrategy.budget_breakdown;
-  const budgetBreakdown = rawBudgetBreakdown || {
-    total_estimated_monthly_cost: "Varies",
-    monthly_budget: "Varies",
-    budget_verdict:
-      "Focus on whole foods — eggs, rice, lentils, and seasonal vegetables give the best nutrition per rupee. Cook at home as much as possible to stay within budget.",
-    recommended_add_ons: [],
-  };
-
   const healthAndSafety = aiStrategy.health_and_safety;
-
+  
   const timelineProjection = Array.isArray(aiStrategy.timeline_projection)
     ? aiStrategy.timeline_projection
     : [];
-
+  
   const achievableList = Array.isArray(realityCheck.achievable_in_timeframe)
     ? realityCheck.achievable_in_timeframe
     : [];
-
-  const recommendedAddOns = Array.isArray(budgetBreakdown.recommended_add_ons)
-    ? budgetBreakdown.recommended_add_ons
-    : [];
-  const rawBudgetEstimate = String(budgetBreakdown.total_estimated_monthly_cost || "").trim();
-  const needsMealDetails =
-    recommendedAddOns.length === 0 ||
-    !rawBudgetEstimate ||
-    /unknown|not estimated|cannot be calculated|specific hostel|local prices/i.test(
-      rawBudgetEstimate,
-    );
-  const budgetBadge = needsMealDetails
-    ? displayValue(profile.nutrition_budget, " / month")
-    : rawBudgetEstimate;
-  const budgetVerdict = needsMealDetails
-    ? "Your budget is saved. Exact food quantities and protein add-ons will be calculated dynamically when generating your daily plan."
-    : String(budgetBreakdown.budget_verdict || "");
 
   return (
     <div className="min-h-screen bg-[#0A1108] p-6 pb-28 text-white">
@@ -400,60 +374,7 @@ export default async function AIStartingReportPage() {
           )}
         </div>
 
-        {/* BUDGET & DIET ENVIRONMENT BREAKDOWN */}
-        <div className="space-y-4 rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">💰</span>
-              <h2 className="text-lg leading-tight font-black tracking-tight text-white">
-                Budget & Diet Plan
-              </h2>
-            </div>
-            <span className="max-w-full self-start rounded-full border border-[#ADFF00]/20 bg-[#ADFF00]/10 px-3 py-1 text-left text-[10px] leading-snug font-bold text-[#ADFF00] sm:self-auto sm:text-center sm:text-xs">
-              {budgetBadge}
-            </span>
-          </div>
 
-          <p className="text-xs leading-relaxed text-gray-400">
-            {budgetVerdict}
-          </p>
-
-          {recommendedAddOns.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <p className="text-xs font-bold tracking-wider text-gray-400 uppercase">
-                Affordable Protein Add-ons:
-              </p>
-              <div className="space-y-2">
-                {recommendedAddOns.map((addon: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between rounded-xl border border-white/5 bg-[#0D150D] p-3 text-xs"
-                  >
-                    <div>
-                      <p className="font-bold text-white">
-                        {String(addon.item || "")}{" "}
-                        <span className="font-normal text-gray-400">
-                          ({String(addon.daily_qty || "")})
-                        </span>
-                      </p>
-                      <p className="text-[11px] text-gray-500">
-                        {String(addon.protein_provided_g || "")} protein/day
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-extrabold text-[#ADFF00]">
-                        {String(addon.monthly_cost || "")}
-                      </p>
-                      <p className="text-[10px] text-gray-500">
-                        {String(addon.daily_cost || "")}/day
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* HEALTH & SAFETY PROTOCOL */}
         {healthAndSafety && healthAndSafety.has_concerns && (
