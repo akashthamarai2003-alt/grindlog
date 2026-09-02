@@ -207,7 +207,7 @@ export async function POST(req: Request) {
         if (!parsed.success) {
           console.warn(`Attempt ${attempt} Zod validation failed:`, parsed.error);
           lastErrorType = "SYSTEM";
-          lastErrorMessage = "Failed to parse AI output.";
+          lastErrorMessage = `Failed to parse AI output: ${parsed.error.errors.map(e => e.path.join(".") + " " + e.message).join(", ")}`;
           correctionNote = "The prior output did not match the required JSON shape. Return the exact requested JSON object with every required section.";
           continue; // Try again
         }
@@ -231,7 +231,7 @@ export async function POST(req: Request) {
         if (!profileCheck.valid) {
           console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);
           lastErrorType = "SYSTEM";
-          lastErrorMessage = "The generated plan did not match the saved food, budget, meal, or safety profile.";
+          lastErrorMessage = `The generated plan did not match the saved profile: ${profileCheck.issues.join("; ")}`;
           correctionNote = `The prior output conflicted with saved onboarding data: ${profileCheck.issues.join(" ")} Fix every listed issue and return the complete plan again.`;
           continue;
         }
