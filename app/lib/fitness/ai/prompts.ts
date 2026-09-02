@@ -11,7 +11,7 @@ Nutrition: respect diet, available_foods, allergies, and avoid exactly. Never re
 
 Return JSON only, with every field in this shape:
 {safety_acknowledgment, plan:{name,description,goal}, workouts:[{title,workout_date,duration_minutes,exercises:[{name,exercise_order,sets,reps_string,target_reps_num,rest_seconds,notes}]}], nutrition:{daily_calories,protein_grams,meals_per_day,guidance,meals:[{meal_name,time_of_day,items,total_calories,protein_grams,prep_instructions}],grocery_list:[{name,monthly_quantity,unit,estimated_price,category,is_optional,reason}]}, lifestyle:{sleep_target_hours,water_target_liters,daily_steps_target}}.
-Use null only for genuinely unknown numeric values; otherwise include all fields. Never create IDs.`;
+CRITICAL: All numeric fields (e.g., sets, rest_seconds, estimated_price, total_calories) MUST be pure numbers (e.g. 60), NEVER strings with units (e.g. "60s" or "60 INR"). Use null only for genuinely unknown numeric values; otherwise include all fields. Never create IDs.`;
 
 const PLAN_BODY_SCAN_CONTEXT_LIMIT = 2600;
 const PLAN_STRATEGY_TEXT_LIMIT = 360;

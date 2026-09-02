@@ -14,13 +14,13 @@ export const GeneratedWorkoutSchema = z.object({
   title: z.coerce.string(),
   workout_date: z.coerce.string().describe("YYYY-MM-DD").optional().default(""),
   duration_minutes: z.coerce.number().optional().default(45),
-  exercises: z.array(GeneratedExerciseSchema).default([])
+  exercises: z.union([z.array(GeneratedExerciseSchema), z.null(), z.undefined()]).transform(val => val || [])
 });
 
 export const GeneratedMealSchema = z.object({
   meal_name: z.coerce.string().describe("e.g., Breakfast, Lunch, Snack").optional().default(""),
   time_of_day: z.coerce.string().describe("e.g., 08:00 AM").optional().default(""),
-  items: z.array(z.coerce.string()).describe("List of food items with quantities").default([]),
+  items: z.union([z.array(z.coerce.string()), z.null(), z.undefined()]).transform(val => val || []),
   total_calories: z.coerce.number().nullable().optional(),
   protein_grams: z.coerce.number().nullable().optional(),
   prep_instructions: z.coerce.string().describe("Brief prep instructions, highlighting if it's no-cook or hostel-friendly").optional().default("")
@@ -40,8 +40,8 @@ export const GeneratedNutritionSchema = z.object({
   daily_calories: z.coerce.number().nullable().optional(),
   protein_grams: z.coerce.number().nullable().optional(),
   meals_per_day: z.coerce.number().nullable().optional(),
-  meals: z.array(GeneratedMealSchema).default([]),
-  grocery_list: z.array(GeneratedGroceryItemSchema).default([]),
+  meals: z.union([z.array(GeneratedMealSchema), z.null(), z.undefined()]).transform(val => val || []),
+  grocery_list: z.union([z.array(GeneratedGroceryItemSchema), z.null(), z.undefined()]).transform(val => val || []),
   guidance: z.coerce.string().describe("General healthy eating tips reflecting allergies and preferences").optional().default("")
 });
 
@@ -58,7 +58,7 @@ export const GeneratedPlanSchema = z.object({
     description: z.coerce.string(),
     goal: z.coerce.string()
   }),
-  workouts: z.array(GeneratedWorkoutSchema).default([]),
+  workouts: z.union([z.array(GeneratedWorkoutSchema), z.null(), z.undefined()]).transform(val => val || []),
   nutrition: GeneratedNutritionSchema.nullable().optional(),
   lifestyle: GeneratedLifestyleSchema.nullable().optional()
 });
