@@ -9,6 +9,14 @@ const safeNumber = z.preprocess((val) => {
   return 0;
 }, z.number());
 
+const safeArray = <T extends z.ZodTypeAny>(schema: T) => z.preprocess((val: any) => {
+  if (typeof val === 'string') return [];
+  if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+    return Object.values(val);
+  }
+  return val;
+}, z.union([z.array(schema), z.null(), z.undefined()]).transform(val => val || []));
+
 export const GeneratedExerciseSchema = z.object({
   name: z.coerce.string(),
   exercise_order: safeNumber.optional(),
@@ -23,13 +31,13 @@ export const GeneratedWorkoutSchema = z.object({
   title: z.coerce.string(),
   workout_date: z.coerce.string().describe("YYYY-MM-DD").optional().default(""),
   duration_minutes: safeNumber.optional().default(45),
-  exercises: z.union([z.array(GeneratedExerciseSchema), z.null(), z.undefined()]).transform(val => val || [])
+  exercises: safeArray(GeneratedExerciseSchema)
 });
 
 export const GeneratedMealSchema = z.object({
   meal_name: z.coerce.string().describe("e.g., Breakfast, Lunch, Snack").optional().default(""),
   time_of_day: z.coerce.string().describe("e.g., 08:00 AM").optional().default(""),
-  items: z.union([z.array(z.coerce.string()), z.null(), z.undefined()]).transform(val => val || []),
+  items: safeArray(z.coerce.string()),
   total_calories: safeNumber.nullable().optional(),
   protein_grams: safeNumber.nullable().optional(),
   prep_instructions: z.coerce.string().describe("Brief prep instructions, highlighting if it's no-cook or hostel-friendly").optional().default("")
@@ -49,8 +57,8 @@ export const GeneratedNutritionSchema = z.object({
   daily_calories: safeNumber.nullable().optional(),
   protein_grams: safeNumber.nullable().optional(),
   meals_per_day: safeNumber.nullable().optional(),
-  meals: z.union([z.array(GeneratedMealSchema), z.null(), z.undefined()]).transform(val => val || []),
-  grocery_list: z.union([z.array(GeneratedGroceryItemSchema), z.null(), z.undefined()]).transform(val => val || []),
+  meals: safeArray(GeneratedMealSchema),
+  grocery_list: safeArray(GeneratedGroceryItemSchema),
   guidance: z.coerce.string().describe("General healthy eating tips reflecting allergies and preferences").optional().default("")
 });
 
@@ -86,7 +94,7 @@ export const GeneratedPlanSchema = z.preprocess(
       description: z.coerce.string(),
       goal: z.coerce.string()
     }),
-    workouts: z.union([z.array(GeneratedWorkoutSchema), z.null(), z.undefined()]).transform(val => val || []),
+    workouts: safeArray(GeneratedWorkoutSchema),
     nutrition: GeneratedNutritionSchema.nullable().optional(),
     lifestyle: GeneratedLifestyleSchema.nullable().optional()
   })
