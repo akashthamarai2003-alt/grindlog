@@ -51,17 +51,37 @@ export const GeneratedLifestyleSchema = z.object({
   daily_steps_target: z.coerce.number().nullable().optional()
 });
 
-export const GeneratedPlanSchema = z.object({
-  safety_acknowledgment: z.coerce.string().describe("Explicit acknowledgment of all limitations and forbidden exercises").optional(),
-  plan: z.object({
-    name: z.coerce.string(),
-    description: z.coerce.string(),
-    goal: z.coerce.string()
-  }),
-  workouts: z.union([z.array(GeneratedWorkoutSchema), z.null(), z.undefined()]).transform(val => val || []),
-  nutrition: GeneratedNutritionSchema.nullable().optional(),
-  lifestyle: GeneratedLifestyleSchema.nullable().optional()
-});
+export const GeneratedPlanSchema = z.preprocess(
+  (val: any) => {
+    if (!val || typeof val !== 'object') return val;
+    if (!val.plan && (val.name || val.description || val.goal)) {
+      val.plan = {
+        name: val.name || "Custom Fitness Plan",
+        description: val.description || "Your personalized plan.",
+        goal: val.goal || "Fitness"
+      };
+    }
+    if (!val.plan) {
+      val.plan = {
+        name: "Custom Fitness Plan",
+        description: "Your personalized plan.",
+        goal: "Fitness"
+      };
+    }
+    return val;
+  },
+  z.object({
+    safety_acknowledgment: z.coerce.string().describe("Explicit acknowledgment of all limitations and forbidden exercises").optional(),
+    plan: z.object({
+      name: z.coerce.string(),
+      description: z.coerce.string(),
+      goal: z.coerce.string()
+    }),
+    workouts: z.union([z.array(GeneratedWorkoutSchema), z.null(), z.undefined()]).transform(val => val || []),
+    nutrition: GeneratedNutritionSchema.nullable().optional(),
+    lifestyle: GeneratedLifestyleSchema.nullable().optional()
+  })
+);
 
 export type GeneratedPlanData = z.infer<typeof GeneratedPlanSchema>;
 
