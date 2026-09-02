@@ -136,11 +136,14 @@ export async function POST(req: Request) {
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
           userPrompt,
           model: FITNESS_PLAN_MODEL,
-          maxTokens: 5600,
-          minimumOutputTokens: 5600,
-          reasoningEffort: "low",
+          // This route is also synchronous; Medium balances plan quality and
+          // common 60-second serverless limits. Validation remains mandatory.
+          maxTokens: 10000,
+          minimumOutputTokens: 10000,
+          reasoningEffort: "medium",
           promptCacheKey: "fitness-plan-v3",
           temperature: 0.3,
+          verbosity: "low",
         });
 
         // 6. Validate AI JSON

@@ -21,10 +21,9 @@ import {
 // platform timeout turning a valid in-progress response into an empty client
 // payload. This remains below Vercel's current Hobby function limit.
 export const maxDuration = 180;
-// A second request occurs only when the first valid-shaped response conflicts
-// with stored onboarding facts. It avoids presenting an invalid plan while not
-// spending extra tokens for normal successful generations.
-const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 2;
+// Keep one paid model call per user action. If the model returns an invalid
+// plan, the user can retry explicitly instead of silently doubling spend.
+const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 1;
 
 export async function POST(req: Request) {
   try {
@@ -88,7 +87,8 @@ export async function POST(req: Request) {
           : null;
         const profileCheck = cachedPlan.success
           ? validatePlanAgainstProfile(cachedPlan.data, profile, {
-              enforceBudgetUtilisation: true,
+              enforceProfileRules: true,
+              enforceBudgetUtilisation: false,
             })
           : null;
         if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
@@ -132,6 +132,7 @@ export async function POST(req: Request) {
               : null;
             const profileCheck = cachedPlan.success
               ? validatePlanAgainstProfile(cachedPlan.data, profile, {
+              enforceProfileRules: true,
                   enforceBudgetUtilisation: false,
                 })
               : null;
@@ -191,15 +192,15 @@ export async function POST(req: Request) {
           systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
           userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
           model: FITNESS_PLAN_MODEL,
-          // GPT-5.6 shares this budget between reasoning and visible JSON. A
-          // 5,600-token cap can be exhausted before the weekly plan is emitted,
-          // which surfaces as an `incomplete` response with empty output.
-          // Keep enough headroom for high reasoning plus the complete schema.
-          maxTokens: attempt === 1 ? 10000 : 14000,
-          minimumOutputTokens: attempt === 1 ? 10000 : 14000,
-          reasoningEffort: "low",
+          // Setup is a synchronous request. Medium is the quality/latency
+          // compromise; deterministic safety/profile validators remain the
+          // safety barrier.
+          maxTokens: 10000,
+          minimumOutputTokens: 10000,
+          reasoningEffort: "medium",
           promptCacheKey: "fitness-plan-v3",
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
+          verbosity: "low",
         });
 
         // 7. Validate AI JSON
@@ -226,6 +227,7 @@ export async function POST(req: Request) {
         }
 
         const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
+          enforceProfileRules: true,
           enforceBudgetUtilisation: false,
         });
         if (!profileCheck.valid) {

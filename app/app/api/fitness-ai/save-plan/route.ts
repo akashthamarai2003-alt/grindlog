@@ -35,7 +35,10 @@ export async function POST(req: Request) {
     }
 
     const safetyCheck = runFitnessAISafetyCheck(planData, profile);
-    const profileCheck = validatePlanAgainstProfile(planData, profile);
+    const profileCheck = validatePlanAgainstProfile(planData, profile, {
+      enforceProfileRules: true,
+      enforceBudgetUtilisation: true,
+    });
     if (!safetyCheck.safe || !profileCheck.valid) {
       return NextResponse.json(
         {

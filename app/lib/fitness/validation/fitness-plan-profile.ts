@@ -14,6 +14,8 @@ export type PlanProfileValidation = {
 };
 
 type PlanValidationOptions = {
+  /** Require the generated structure to match the onboarding selections. */
+  enforceProfileRules?: boolean;
   /** Generation should honour the user's chosen spend level; manual saved edits may still use less. */
   enforceBudgetUtilisation?: boolean;
 };
@@ -166,17 +168,47 @@ function storedTimes(profile: ProfileLike): string[] {
     .map((time) => time.toLowerCase());
 }
 
+function removeExplicitlySafeFoodPhrases(text: string): string {
+  return text
+    // A restriction mentioned as a negative qualifier is not a recommended
+    // ingredient (for example, "dairy-free" or "without eggs").
+    .replace(/\b(?:dairy|non[- ]dairy)\s*[- ]free\s+(?:milk|curd|yog(?:h)?urt|paneer|cheese)\b/gi, "")
+    .replace(/\b(?:dairy|milk|curd|yog(?:h)?urt|paneer|cheese|ghee|butter|whey|egg|eggs|meat|chicken|fish|seafood|honey)\s*[- ]?free\b/gi, "")
+    .replace(/\b(?:no|without|free of|free from|excluding|avoid(?:ing)?)\s+(?:any\s+)?(?:dairy|milk|curd|yog(?:h)?urt|paneer|cheese|ghee|butter|whey|egg|eggs|meat|chicken|fish|seafood|honey)\b/gi, "")
+    // Common vegan alternatives contain words such as "milk", "yogurt", or
+    // "meat" but are not animal products themselves.
+    .replace(/\b(?:vegan|plant[- ]based|non[- ]dairy|almond|oat|soy|soya|coconut|cashew|rice)\s+(?:milk|curd|yog(?:h)?urt|paneer|cheese|meat|chicken|fish)\b/gi, "");
+}
+
 function hasForbiddenFood(text: string, profile: ProfileLike): string | null {
   const diet = cleanText(profile.food_type || profile.diet_preference).toLowerCase();
+  const foodText = removeExplicitlySafeFoodPhrases(text);
+  const isVegan = diet.includes("vegan");
+  const isVegetarian = diet.includes("vegetarian") && !isVegan;
+  const isEggetarian = diet.includes("eggetarian");
+  const firstMatch = (patterns: Array<[string, RegExp]>): string | null => {
+    for (const [label, pattern] of patterns) {
+      if (pattern.test(foodText)) return label;
+    }
+    return null;
+  };
 
-  if (diet === "vegan" && (EGG.test(text) || DAIRY.test(text) || MEAT_OR_FISH.test(text) || HONEY.test(text))) {
-    return "a vegan-incompatible food";
+  if (isVegan) {
+    const match = firstMatch([
+      ["egg", EGG],
+      ["dairy", DAIRY],
+      ["meat/fish", MEAT_OR_FISH],
+      ["honey", HONEY],
+    ]);
+    if (match) return `a vegan-incompatible food (${match})`;
   }
-  if (diet === "vegetarian" && (EGG.test(text) || MEAT_OR_FISH.test(text))) {
-    return "an egg or meat/fish item for a vegetarian profile";
+  if (isVegetarian) {
+    const match = firstMatch([["egg", EGG], ["meat/fish", MEAT_OR_FISH]]);
+    if (match) return `an egg or meat/fish item (${match}) for a vegetarian profile`;
   }
-  if (diet === "eggetarian" && MEAT_OR_FISH.test(text)) {
-    return "a meat or fish item for an eggetarian profile";
+  if (isEggetarian) {
+    const match = firstMatch([["meat/fish", MEAT_OR_FISH]]);
+    if (match) return `a meat or fish item (${match}) for an eggetarian profile`;
   }
 
   return null;
@@ -210,12 +242,13 @@ function restrictionTerms(profile: ProfileLike): string[] {
 }
 
 function hasRestrictionConflict(text: string, profile: ProfileLike): string | null {
+  const foodText = removeExplicitlySafeFoodPhrases(text);
   const terms = restrictionTerms(profile);
   for (const term of terms) {
     const pattern = RESTRICTION_ALIASES[term]
       ?? AVAILABLE_FOOD_ALIASES[term[0].toUpperCase() + term.slice(1)]
       ?? new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-    if (pattern.test(text)) return term;
+    if (pattern.test(foodText)) return term;
   }
   return null;
 }
@@ -225,12 +258,11 @@ function recommendedNutritionText(plan: GeneratedPlanData): string {
   if (!nutrition) return "";
 
   return [
-    ...nutrition.meals.flatMap((meal) => [
-      meal.meal_name,
-      ...meal.items,
-      meal.prep_instructions,
-    ]),
-    ...nutrition.grocery_list.flatMap((item) => [item.name, item.reason]),
+    // Validate food names only. Prep instructions and reasons often explain
+    // what the plan excludes ("dairy-free", "without eggs", etc.), which must
+    // not be mistaken for an ingredient in the plan.
+    ...nutrition.meals.flatMap((meal) => meal.items),
+    ...nutrition.grocery_list.map((item) => item.name),
   ]
     .filter((value): value is string => typeof value === "string")
     .join(" ");
@@ -369,17 +401,19 @@ export function validatePlanAgainstProfile(
   options: PlanValidationOptions = {},
 ): PlanProfileValidation {
   const plan = normalisePlanProfileDetails(rawPlan, profile);
+  const enforceProfileRules = options.enforceProfileRules !== false;
   const issues: string[] = [];
   const nutrition = plan.nutrition;
 
   if (!nutrition) {
     issues.push("The generated plan is missing its nutrition section.");
   } else {
-    // Disable strict meal count check for low-reasoning AI
-    // const mealCount = expectedMealCount(profile.meals_per_day);
-    // if (mealCount !== null && nutrition.meals.length !== mealCount) {
-    //   issues.push(`The plan must include exactly ${mealCount} meals from the saved profile.`);
-    // }
+    if (enforceProfileRules) {
+      const mealCount = expectedMealCount(profile.meals_per_day);
+      if (mealCount !== null && nutrition.meals.length !== mealCount) {
+        issues.push(`The plan must include exactly ${mealCount} meals from the saved profile.`);
+      }
+    }
 
     const forbiddenFood = hasForbiddenFood(recommendedNutritionText(plan), profile);
     if (forbiddenFood) {
@@ -391,11 +425,12 @@ export function validatePlanAgainstProfile(
       issues.push(`The plan includes a food the user restricted: ${restrictedFood}.`);
     }
 
-    // Disable strict unselected food check for low-reasoning AI
-    // const unselectedFood = hasUnselectedAvailableFood(plan, profile);
-    // if (unselectedFood) {
-    //   issues.push(`${unselectedFood} was not selected in the user's available foods.`);
-    // }
+    if (enforceProfileRules) {
+      const unselectedFood = hasUnselectedAvailableFood(plan, profile);
+      if (unselectedFood) {
+        issues.push(`${unselectedFood} was not selected in the user's available foods.`);
+      }
+    }
 
     const budgetMaximum = parseBudgetMaximum(profile.nutrition_budget);
     const groceryCost = nutrition.grocery_list.reduce(
@@ -411,12 +446,21 @@ export function validatePlanAgainstProfile(
       if (budgetUtilisationIssue) issues.push(budgetUtilisationIssue);
     }
 
-    // Disable budget maximum check for low-reasoning AI
+    if (enforceProfileRules && budgetMaximum !== null && groceryCost > budgetMaximum) {
+      issues.push(`The grocery list costs Rs.${Math.round(groceryCost)}, above the saved Rs.${budgetMaximum} monthly budget.`);
+    }
+
+    if (enforceProfileRules && PROVIDED_CORE_ENVIRONMENTS.has(cleanText(profile.food_environment))) {
+      const coreMeals = nutrition.meals.filter((meal) => /breakfast|lunch|dinner/i.test(meal.meal_name));
+      if (coreMeals.length && coreMeals.some((meal) => !/\b(provided|hostel|pg|canteen|home)\b/i.test(meal.items.join(" ")))) {
+        issues.push("Provided meals must be labelled as provided rather than priced as extra groceries.");
+      }
+    }
+
     // if (budgetMaximum !== null && groceryCost > budgetMaximum) {
     //   issues.push(`The grocery list costs ₹${Math.round(groceryCost)}, above the saved ₹${budgetMaximum} monthly budget.`);
     // }
 
-    // Disable strict provided meals check for low-reasoning AI
     // if (PROVIDED_CORE_ENVIRONMENTS.has(cleanText(profile.food_environment))) {
     //   const coreMeals = nutrition.meals.filter((meal) => /breakfast|lunch|dinner/i.test(meal.meal_name));
     //   if (coreMeals.length && coreMeals.some((meal) => !/\b(provided|hostel|pg|canteen|home)\b/i.test(meal.items.join(" ")))) {
@@ -430,10 +474,14 @@ export function validatePlanAgainstProfile(
     issues.push("Training must remain paused for the saved severe-pain safety restriction.");
   }
 
-  // Disable strict training day check for low-reasoning AI
-  // if (!shouldBlockWorkouts && typeof profile.training_days_per_week === "number" && plan.workouts.length !== profile.training_days_per_week) {
-  //   issues.push(`The plan must include exactly ${profile.training_days_per_week} training sessions.`);
-  // }
+  if (
+    enforceProfileRules &&
+    !shouldBlockWorkouts &&
+    typeof profile.training_days_per_week === "number" &&
+    plan.workouts.length !== profile.training_days_per_week
+  ) {
+    issues.push(`The plan must include exactly ${profile.training_days_per_week} training sessions.`);
+  }
 
   return { valid: issues.length === 0, issues, plan };
 }
@@ -445,9 +493,10 @@ export function validateGroceryListAgainstProfile(
   options: PlanValidationOptions = {},
 ): { valid: boolean; issues: string[] } {
   const text = groceryList
-    .flatMap((item) => [item.name, item.reason])
+    .map((item) => item.name)
     .filter((value): value is string => typeof value === "string")
     .join(" ");
+  const foodText = removeExplicitlySafeFoodPhrases(text);
   const issues: string[] = [];
   const forbiddenFood = hasForbiddenFood(text, profile);
   if (forbiddenFood) issues.push(`The grocery list contains ${forbiddenFood}.`);
@@ -463,7 +512,7 @@ export function validateGroceryListAgainstProfile(
   if (selectedFoods.length) {
     const selected = new Set(selectedFoods.map((food) => food.toLowerCase()));
     for (const [food, pattern] of Object.entries(AVAILABLE_FOOD_ALIASES)) {
-      if (pattern.test(text) && !selected.has(food.toLowerCase())) {
+      if (pattern.test(foodText) && !selected.has(food.toLowerCase())) {
         issues.push(`${food} was not selected in the user's available foods.`);
       }
     }

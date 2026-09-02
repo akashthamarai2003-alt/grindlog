@@ -12,19 +12,30 @@ type PlanGenerationError = Error & {
   errorType: "SAFETY" | "SYSTEM";
 };
 
+let activePlanDraftRequest: Promise<any> | null = null;
+
 async function requestPlanDraft() {
-  const response = await fetch('/api/fitness-ai/generate-draft', { method: 'POST' });
-  const body = await response.json().catch(() => null);
+  if (activePlanDraftRequest) return activePlanDraftRequest;
 
-  if (!response.ok || !body?.success) {
-    const error = new Error(
-      body?.error || `We could not start plan generation (request ${response.status}).`,
-    ) as PlanGenerationError;
-    error.errorType = body?.errorType === "SAFETY" ? "SAFETY" : "SYSTEM";
-    throw error;
-  }
+  activePlanDraftRequest = fetch('/api/fitness-ai/generate-draft', { method: 'POST' })
+    .then(async (response) => {
+      const body = await response.json().catch(() => null);
 
-  return body;
+      if (!response.ok || !body?.success) {
+        const error = new Error(
+          body?.error || `We could not start plan generation (request ${response.status}).`,
+        ) as PlanGenerationError;
+        error.errorType = body?.errorType === "SAFETY" ? "SAFETY" : "SYSTEM";
+        throw error;
+      }
+
+      return body;
+    })
+    .finally(() => {
+      activePlanDraftRequest = null;
+    });
+
+  return activePlanDraftRequest;
 }
 
 function getPlanGenerationErrorType(error: unknown): "SAFETY" | "SYSTEM" {
