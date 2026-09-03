@@ -50,7 +50,7 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
   // 3. Equipment Safety (Basic Keyword Checks)
   const equipment = (profile.equipment || []).map(normalise);
   const hasFullGym = equipment.some((item) =>
-    item.includes("full commercial gym") || item.includes("hybrid gym"),
+    item.includes("full commercial gym"),
   );
   const hasNoEquipment =
     equipment.length === 0 ||
@@ -76,18 +76,18 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
         { label: "barbell", pattern: /barbell/, accepted: ["barbell", "squat rack"] },
         { label: "dumbbell", pattern: /dumbbell/, accepted: ["dumbbell"] },
         { label: "cable", pattern: /cable/, accepted: ["cable"] },
-        { label: "machine", pattern: /machine/, accepted: ["machine", "full commercial gym", "hybrid gym"] },
+        { label: "machine", pattern: /machine/, accepted: ["machine", "full commercial gym"] },
         { label: "kettlebell", pattern: /kettlebell/, accepted: ["kettlebell"] },
         { label: "resistance band", pattern: /resistance band|banded/, accepted: ["resistance band", "band"] },
-        { label: "pull-up bar", pattern: /pull[- ]?up bar|hanging/, accepted: ["pull-up bar", "park benches & bars", "full commercial gym", "hybrid gym"] },
-        { label: "bench", pattern: /bench press|bench dip|incline|decline/, accepted: ["bench", "adjustable bench", "park benches", "full commercial gym", "hybrid gym"] },
-        { label: "treadmill", pattern: /treadmill/, accepted: ["treadmill", "treadmill / cardio", "full commercial gym", "hybrid gym"] },
-        { label: "exercise bike", pattern: /exercise bike|stationary bike|spin bike|cycling/, accepted: ["exercise bike", "treadmill / exercise bike", "treadmill / cardio", "full commercial gym", "hybrid gym"] },
-        { label: "rowing machine", pattern: /rowing machine|rower/, accepted: ["rowing machine", "treadmill / cardio", "full commercial gym", "hybrid gym"] },
-        { label: "stair climber", pattern: /stair climber|stair machine/, accepted: ["stair climber", "treadmill / cardio", "full commercial gym", "hybrid gym"] },
-        { label: "jump rope", pattern: /jump rope|skipping rope/, accepted: ["jump rope", "full commercial gym", "hybrid gym"] },
-        { label: "medicine ball", pattern: /medicine ball|slam ball/, accepted: ["medicine ball", "full commercial gym", "hybrid gym"] },
-        { label: "exercise box", pattern: /plyo box|exercise box/, accepted: ["step / plyo box", "full commercial gym", "hybrid gym"] },
+        { label: "pull-up bar", pattern: /pull[- ]?up bar|hanging/, accepted: ["pull-up bar", "park benches & bars", "full commercial gym"] },
+        { label: "bench", pattern: /bench press|bench dip|incline|decline/, accepted: ["bench", "adjustable bench", "park benches", "full commercial gym"] },
+        { label: "treadmill", pattern: /treadmill/, accepted: ["treadmill", "treadmill / cardio", "full commercial gym"] },
+        { label: "exercise bike", pattern: /exercise bike|stationary bike|spin bike|cycling/, accepted: ["exercise bike", "treadmill / exercise bike", "treadmill / cardio", "full commercial gym"] },
+        { label: "rowing machine", pattern: /rowing machine|rower/, accepted: ["rowing machine", "treadmill / cardio", "full commercial gym"] },
+        { label: "stair climber", pattern: /stair climber|stair machine/, accepted: ["stair climber", "treadmill / cardio", "full commercial gym"] },
+        { label: "jump rope", pattern: /jump rope|skipping rope/, accepted: ["jump rope", "full commercial gym"] },
+        { label: "medicine ball", pattern: /medicine ball|slam ball/, accepted: ["medicine ball", "full commercial gym"] },
+        { label: "exercise box", pattern: /plyo box|exercise box/, accepted: ["step / plyo box", "full commercial gym"] },
       ];
       if (!hasFullGym) {
         const missingEquipment = requiredEquipment.find(

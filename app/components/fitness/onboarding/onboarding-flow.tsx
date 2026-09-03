@@ -32,7 +32,6 @@ type EquipmentOption = {
 
 const EQUIPMENT_ACCESS_MARKERS = new Set([
   "Full Commercial Gym",
-  "Hybrid Gym & Home Equipment",
 ]);
 
 const EQUIPMENT_OPTIONS: Record<"Gym" | "Home" | "Outdoor" | "Combination", EquipmentOption[]> = {
@@ -79,7 +78,6 @@ const EQUIPMENT_OPTIONS: Record<"Gym" | "Home" | "Outdoor" | "Combination", Equi
     { id: "Jump Rope", label: "Jump rope", description: "Rope for skipping on a safe surface", icon: Footprints },
   ],
   Combination: [
-    { id: "Hybrid Gym & Home Equipment", label: "Gym + home access", description: "Use gym, home and outdoor sessions", icon: RefreshCw },
     { id: "Full Commercial Gym", label: "Full commercial gym", description: "Full access on gym days", icon: Building2 },
     { id: "No Equipment / Bodyweight", label: "Home bodyweight", description: "No-equipment sessions at home", icon: House },
     { id: "Dumbbells", label: "Home dumbbells", description: "Dumbbells available at home", icon: Dumbbell },
@@ -1136,7 +1134,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     id: "Combination", 
                     emoji: "🔄", 
                     desc: "Hybrid plan — Mix of Gym lifting + Home bodyweight / Outdoor sessions",
-                    defaultEq: ["Hybrid Gym & Home Equipment"]
+                    defaultEq: ["No Equipment / Bodyweight"]
                   }
                 ].map(opt => {
                   const isSelected = data.training_location === opt.id;
