@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { createClient } from "@/lib/services/supabase/server";
+import { createClient, getCachedUser } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { RemindersClient } from "./reminders-client";
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default async function RemindersPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCachedUser();
 
   if (!user) return null;
 

@@ -1,4 +1,4 @@
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import { TodaysExercisesList } from "@/components/fitness/workout/todays-exercises-list";
@@ -14,7 +14,7 @@ import { CalendarClock } from "lucide-react";
 
 export default async function WorkoutIndexPage() {
   const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCachedUser();
   
   if (!user) {
     redirect("/auth/signin?redirect=/workout");

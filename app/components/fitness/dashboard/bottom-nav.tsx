@@ -28,7 +28,8 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
             <Link 
               key={item.href} 
               href={item.href}
-              className="flex flex-col items-center gap-1 group relative"
+              prefetch={true}
+              className="flex flex-col items-center gap-1 group relative active:scale-90 transition-transform duration-100"
             >
               {isActive && (
                 <div className="absolute -inset-2 bg-[#ADFF00]/10 rounded-full blur-md" />

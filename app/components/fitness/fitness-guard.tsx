@@ -37,17 +37,18 @@ export async function FitnessGuard({ children, requirePro = false, featureName =
     redirect("/auth/signin?redirect=/");
   }
 
-  const { data: profile } = await supabase
-    .from("fitness_os_profiles")
-    .select("onboarding_completed")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, plan] = await Promise.all([
+    supabase
+      .from("fitness_os_profiles")
+      .select("onboarding_completed")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    getFitnessPlan(user.id),
+  ]);
 
   if (!profile?.onboarding_completed) {
     redirect("/onboarding");
   }
-
-  const plan = await getFitnessPlan(user.id);
 
   if (!plan) {
     redirect("/payment?returnTo=/");

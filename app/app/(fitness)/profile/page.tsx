@@ -1,43 +1,42 @@
 import { redirect } from "next/navigation";
 import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { ProfileContent } from "@/components/fitness/profile/profile-content";
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
 export default async function FitnessProfilePage() {
   const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCachedUser();
 
   if (!user) {
     redirect("/auth/signin?redirect=/profile");
   }
 
-  // 1. Fetch Fitness OS Profile
-  const { data: fitnessProfile } = await supabase
-    .from("fitness_os_profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  // 2. Fetch Main Profile (for premium statuses and metadata)
-  const { data: mainProfile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  // 3. Fetch Active Workout Plan
-  const { data: activePlan } = await supabase
-    .from("fitness_os_workout_plans")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
-
-  // 4. Read the canonical active Fitness subscription. The profile badge must
-  // use the same source as feature access and AI limits.
-  const [subscriptionPlan, aiLimitInfo] = await Promise.all([
+  // Fetch all profile, plan, subscription and AI limit data concurrently
+  const [
+    { data: fitnessProfile },
+    { data: mainProfile },
+    { data: activePlan },
+    subscriptionPlan,
+    aiLimitInfo,
+  ] = await Promise.all([
+    supabase
+      .from("fitness_os_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("fitness_os_workout_plans")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle(),
     getFitnessPlan(user.id),
     checkFitnessAILimit(supabase, user.id),
   ]);

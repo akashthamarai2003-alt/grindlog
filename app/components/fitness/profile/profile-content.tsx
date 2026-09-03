@@ -168,6 +168,7 @@ export function ProfileContent({
         <div className="flex items-center justify-between">
           <Link 
             href="/" 
+            prefetch={true}
             className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center text-gray-300 hover:text-white hover:border-[#ADFF00]/50 transition-all active:scale-95"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -265,7 +266,8 @@ export function ProfileContent({
               </div>
               <Link 
                 href="/payment"
-                className="px-4 py-2 bg-[#ADFF00] text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(173,255,0,0.25)] hover:bg-[#b8ff1a] transition-all active:scale-95 flex items-center gap-1.5"
+                prefetch={true}
+                className="px-4 py-2 bg-[#ADFF00] text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(173,255,0,0.25)] hover:bg-[#b8ff1a] transition-all active:scale-90 flex items-center gap-1.5"
               >
                 <CreditCard className="w-3.5 h-3.5" />
                 <span>{isPremium ? "Manage Plan" : "Upgrade Pro"}</span>
@@ -311,7 +313,8 @@ export function ProfileContent({
             {/* My Details */}
             <Link 
               href="/profile/details"
-              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
+              prefetch={true}
+              className="p-4 flex items-center justify-between hover:bg-white/5 active:bg-white/10 active:scale-[0.99] transition-all group duration-75"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
@@ -328,7 +331,8 @@ export function ProfileContent({
             {/* Re-take Onboarding */}
             <Link 
               href="/onboarding?mode=edit"
-              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
+              prefetch={true}
+              className="p-4 flex items-center justify-between hover:bg-white/5 active:bg-white/10 active:scale-[0.99] transition-all group duration-75"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
@@ -345,7 +349,8 @@ export function ProfileContent({
             {/* Set Reminders */}
             <Link 
               href="/reminders"
-              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
+              prefetch={true}
+              className="p-4 flex items-center justify-between hover:bg-white/5 active:bg-white/10 active:scale-[0.99] transition-all group duration-75"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
@@ -362,7 +367,8 @@ export function ProfileContent({
             {/* Billing */}
             <Link 
               href="/payment"
-              className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors group"
+              prefetch={true}
+              className="p-4 flex items-center justify-between hover:bg-white/5 active:bg-white/10 active:scale-[0.99] transition-all group duration-75"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-cyan-400">

@@ -1,11 +1,12 @@
+import { cache } from "react";
 import { createClient } from "@/lib/services/supabase/server";
 import { FitnessSubscription, FitnessFeature, FitnessPlanConfig } from "./types";
 import { FITNESS_PLANS } from "./plans";
 
 /**
- * Gets the raw subscription record for a user.
+ * Gets the raw subscription record for a user (memoized per request).
  */
-export async function getFitnessSubscription(userId: string): Promise<FitnessSubscription | null> {
+export const getFitnessSubscription = cache(async (userId: string): Promise<FitnessSubscription | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("fitness_os_subscriptions")
@@ -14,16 +15,16 @@ export async function getFitnessSubscription(userId: string): Promise<FitnessSub
     .single();
     
   return data || null;
-}
+});
 
 /**
- * Gets the active plan config for a user, if they have an active subscription.
+ * Gets the active plan config for a user, if they have an active subscription (memoized per request).
  */
-export async function getFitnessPlan(userId: string): Promise<FitnessPlanConfig | null> {
+export const getFitnessPlan = cache(async (userId: string): Promise<FitnessPlanConfig | null> => {
   const sub = await getFitnessSubscription(userId);
   if (!sub || sub.status !== "active") return null;
   return FITNESS_PLANS[sub.plan] || null;
-}
+});
 
 export async function isFitnessStarter(userId: string): Promise<boolean> {
   const plan = await getFitnessPlan(userId);

@@ -1,6 +1,82 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+import { getFitnessPlan } from "@/lib/fitness/subscription/access";
+
+const ALLOWED_MEAL_TYPES = new Set([
+  "breakfast",
+  "lunch",
+  "pre_workout",
+  "post_workout",
+  "snack",
+  "dinner",
+]);
+
+function normalize(value: unknown): string {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\beggs\b/g, "egg")
+    .replace(/\s+/g, " ")
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim();
+}
+
+function profileTerms(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : String(value || "").split(/[,;|\n]+/);
+  return values
+    .map((item) => normalize(item))
+    .filter((item) => item && !["none", "no", "n a", "na", "nil", "not specified"].includes(item));
+}
+
+function matchesTerm(foodText: string, term: string): boolean {
+  return foodText.includes(term) || term.includes(foodText.split(" ")[0]);
+}
+
+function isFoodAvailable(food: any, available: string[]): boolean {
+  if (available.length === 0) return true;
+  const foodName = normalize(food.name);
+  return available.some((term) => foodName.includes(term) || term.includes(foodName));
+}
+
+function isFoodBlocked(food: any, blockedTerms: string[]): boolean {
+  const foodText = normalize([
+    food.name,
+    food.category,
+    ...(Array.isArray(food.allergens) ? food.allergens : []),
+  ].join(" "));
+  return blockedTerms.some((term) => matchesTerm(foodText, term));
+}
+
+function isDietCompatible(food: any, diet: string): boolean {
+  const foodDiet = normalize(food.diet_type);
+  const foodText = normalize(`${food.name} ${food.category} ${foodDiet}`);
+  const isVegan = diet.includes("vegan");
+  const isNonVegetarian = diet.includes("non veg") || diet.includes("nonvegetarian");
+  const isVegetarian = !isNonVegetarian && (diet === "veg" || diet.includes("vegetarian"));
+  const isEggetarian = diet.includes("eggetarian") || diet.includes("eggitarian");
+
+  if (isVegan) {
+    return foodDiet.includes("vegan") && !/(dairy|egg|meat|chicken|fish|non veg)/.test(foodText);
+  }
+  if (isVegetarian && !isEggetarian) {
+    return !/(non veg|nonvegetarian|meat|chicken|fish|egg)/.test(foodText);
+  }
+  if (isEggetarian) {
+    return !/(non veg|nonvegetarian|meat|chicken|fish)/.test(foodText);
+  }
+  return true;
+}
+
+function totalsForFoods(foods: any[]) {
+  return foods.reduce((totals, food) => ({
+    calories: totals.calories + Number(food.calories || 0),
+    protein: totals.protein + Number(food.protein || 0),
+    carbs: totals.carbs + Number(food.carbs || 0),
+    fat: totals.fat + Number(food.fat || 0),
+    estimated_cost: totals.estimated_cost + Number(food.estimated_cost || 0),
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0, estimated_cost: 0 });
+}
 
 export async function POST(request: Request) {
   try {
@@ -9,120 +85,196 @@ export async function POST(request: Request) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated.' } },
-        { status: 401 }
+        { success: false, error: { code: "UNAUTHORIZED", message: "Not authenticated." } },
+        { status: 401 },
+      );
+    }
+
+    // Nutrition is a Pro-only surface. Keep the API protected even if called
+    // directly without going through the page guard.
+    const plan = await getFitnessPlan(user.id);
+    if (plan?.id !== "pro") {
+      return NextResponse.json(
+        { success: false, error: { code: "PRO_REQUIRED", message: "Meal swapping is available on the Pro plan." } },
+        { status: 403 },
       );
     }
 
     const body = await request.json().catch(() => ({}));
-    const mealType = (body.meal_type || 'lunch').toLowerCase();
-    const localDate = await NutritionService.getLocalDateString(user.id);
-
-    // Fetch user profile for dietary restrictions
-    const { data: profile } = await supabase
-      .from('fitness_os_profiles')
-      .select('diet_preference, food_type')
-      .eq('user_id', user.id)
-      .single();
-
-    const dietPref = (profile?.diet_preference || profile?.food_type || "").toLowerCase();
-    const isVegan = dietPref.includes('vegan');
-    const isVeg = dietPref.includes('veg') && !isVegan; // e.g. vegetarian
-
-    // Fetch active food catalog
-    const { data: allFoods } = await supabase
-      .from('foods')
-      .select('*')
-      .eq('is_active', true);
-
-    if (!allFoods || allFoods.length === 0) {
+    const mealType = String(body.meal_type || "").toLowerCase().trim();
+    if (!ALLOWED_MEAL_TYPES.has(mealType)) {
       return NextResponse.json(
-        { success: false, error: { code: 'NO_FOODS', message: 'Food catalog is empty.' } },
-        { status: 400 }
+        { success: false, error: { code: "INVALID_MEAL_TYPE", message: "Choose a valid meal to swap." } },
+        { status: 400 },
       );
     }
 
-    // Filter foods matching diet preference
-    let allowedFoods = allFoods;
-    if (isVegan) {
-      allowedFoods = allFoods.filter(f => {
-        const dt = (f.diet_type || "").toLowerCase();
-        return dt.includes('vegan') || (!dt.includes('non-veg') && !dt.includes('dairy') && !dt.includes('egg') && !dt.includes('meat'));
-      });
-    } else if (isVeg) {
-      allowedFoods = allFoods.filter(f => {
-        const dt = (f.diet_type || "").toLowerCase();
-        return !dt.includes('non-veg') && !dt.includes('meat') && !dt.includes('egg'); // some vegetarians eat eggs, but generally in India veg = no egg.
-      });
+    const localDate = await NutritionService.getLocalDateString(user.id);
+    const { data: profile, error: profileError } = await supabase
+      .from("fitness_os_profiles")
+      .select("diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { success: false, error: { code: "PROFILE_NOT_FOUND", message: "Your food preferences could not be loaded." } },
+        { status: 404 },
+      );
     }
 
-    // Filter foods matching meal category
-    let altFoods = allowedFoods.filter(f => {
-      const cat = (f.category || '').toLowerCase();
-      if (mealType === 'breakfast') return cat.includes('breakfast') || cat.includes('dairy') || cat.includes('fruit');
-      if (mealType === 'snack') return cat.includes('snack') || cat.includes('fruit');
-      return cat.includes('curry') || cat.includes('protein') || cat.includes('staple');
+    const { data: allFoods, error: foodsError } = await supabase
+      .from("foods")
+      .select("id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, allergens")
+      .eq("is_active", true);
+
+    if (foodsError || !allFoods || allFoods.length === 0) {
+      return NextResponse.json(
+        { success: false, error: { code: "NO_FOODS", message: "The food catalog is temporarily unavailable." } },
+        { status: 400 },
+      );
+    }
+
+    const diet = normalize(profile.diet_preference || profile.food_type);
+    const available = profileTerms(profile.available_foods);
+    const blocked = [profile.food_allergies, profile.foods_disliked, profile.foods_avoided]
+      .flatMap((value) => profileTerms(value));
+
+    const compatibleFoods = allFoods.filter((food) => (
+      isDietCompatible(food, diet)
+      && isFoodAvailable(food, available)
+      && !isFoodBlocked(food, blocked)
+    ));
+
+    const categoryFoods = compatibleFoods.filter((food) => {
+      const category = normalize(food.category);
+      if (mealType === "breakfast") return category.includes("breakfast") || category.includes("dairy") || category.includes("fruit");
+      if (mealType === "snack" || mealType === "pre_workout" || mealType === "post_workout") {
+        return category.includes("snack") || category.includes("fruit") || category.includes("protein");
+      }
+      return category.includes("curry") || category.includes("protein") || category.includes("staple");
     });
+    const candidates = categoryFoods.length >= 2 ? categoryFoods : compatibleFoods;
 
-    if (altFoods.length < 2) altFoods = allowedFoods;
+    if (candidates.length < 2) {
+      return NextResponse.json(
+        { success: false, error: { code: "NO_SAFE_ALTERNATIVES", message: "There are not enough safe foods in your saved food list for this swap." } },
+        { status: 409 },
+      );
+    }
 
-    // Pick 2 random foods for the swapped meal
-    const shuffled = [...altFoods].sort(() => 0.5 - Math.random());
-    const selectedFoods = shuffled.slice(0, 2);
+    // Read only the selected meal override. A daily plan is never used as the
+    // swap target because deleting it would remove every meal for today.
+    const { data: existingPlans, error: plansError } = await supabase
+      .from("meal_plans")
+      .select("id, meal_type, meal_plan_items(food_id, quantity, serving_size)")
+      .eq("user_id", user.id)
+      .eq("date", localDate)
+      .order("created_at", { ascending: false });
+    if (plansError) throw plansError;
 
-    // Check if meal_plan row for this mealType/date exists or single daily plan exists
-    const { data: existingPlans } = await supabase
-      .from('meal_plans')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('date', localDate);
+    const targetPlan = (existingPlans || []).find((planRow: any) => planRow.meal_type === mealType);
+    const previousItems = targetPlan?.meal_plan_items || [];
+    const previousFoodIds = new Set(previousItems.map((item: any) => item.food_id));
+    const withoutCurrent = candidates.filter((food) => !previousFoodIds.has(food.id));
+    const selectionPool = withoutCurrent.length >= 2 ? withoutCurrent : candidates;
+    const selectedFoods = [...selectionPool]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 2);
+    const totals = totalsForFoods(selectedFoods);
 
-    let targetPlan;
-    if (existingPlans && existingPlans.length > 0) {
-      targetPlan = existingPlans.find(p => p.meal_type === mealType) || existingPlans[0];
-      
-      // Delete old items for this plan
-      await supabase.from('meal_plan_items').delete().eq('meal_plan_id', targetPlan.id);
-    } else {
-      // Create a new meal plan row for this specific meal type
-      const { data: newPlan } = await supabase
-        .from('meal_plans')
+    let swapPlan = targetPlan;
+    let createdPlan = false;
+    if (!swapPlan) {
+      const { data: newPlan, error: createError } = await supabase
+        .from("meal_plans")
         .insert({
           user_id: user.id,
           date: localDate,
-          meal_type: mealType
+          meal_type: mealType,
+          name: `${mealType.replace("_", " ")} alternative`,
+          calories: Math.round(totals.calories),
+          protein: totals.protein,
+          carbs: totals.carbs,
+          fat: totals.fat,
+          estimated_cost: totals.estimated_cost,
+          ai_generated: false,
         })
-        .select()
+        .select("id, meal_type, meal_plan_items(food_id, quantity, serving_size)")
         .single();
-        
-      targetPlan = newPlan;
+      if (createError || !newPlan) throw createError || new Error("Could not create meal alternative.");
+      swapPlan = newPlan;
+      createdPlan = true;
+    } else {
+      const { error: deleteError } = await supabase
+        .from("meal_plan_items")
+        .delete()
+        .eq("meal_plan_id", swapPlan.id);
+      if (deleteError) throw deleteError;
     }
 
-    if (targetPlan) {
-      // Insert new swapped items
-      const newItems = selectedFoods.map(f => ({
-        meal_plan_id: targetPlan.id,
-        food_id: f.id,
-        quantity: 1
-      }));
+    const { error: itemError } = await supabase
+      .from("meal_plan_items")
+      .insert(selectedFoods.map((food) => ({
+        meal_plan_id: swapPlan.id,
+        food_id: food.id,
+        quantity: 1,
+        serving_size: food.serving_size,
+      })));
 
-      if (newItems.length > 0) {
-        await supabase.from('meal_plan_items').insert(newItems);
+    if (itemError) {
+      if (createdPlan) {
+        await supabase.from("meal_plans").delete().eq("id", swapPlan.id).eq("user_id", user.id);
+      } else if (previousItems.length > 0) {
+        await supabase.from("meal_plan_items").insert(previousItems.map((item: any) => ({
+          meal_plan_id: swapPlan.id,
+          food_id: item.food_id,
+          quantity: item.quantity,
+          serving_size: item.serving_size,
+        })));
       }
+      throw itemError;
+    }
+
+    if (!createdPlan) {
+      const { error: updateError } = await supabase
+        .from("meal_plans")
+        .update({
+          name: `${mealType.replace("_", " ")} alternative`,
+          calories: Math.round(totals.calories),
+          protein: totals.protein,
+          carbs: totals.carbs,
+          fat: totals.fat,
+          estimated_cost: totals.estimated_cost,
+          ai_generated: false,
+        })
+        .eq("id", swapPlan.id)
+        .eq("user_id", user.id);
+      if (updateError) throw updateError;
     }
 
     await NutritionService.updateDailySummary(user.id);
 
-    return NextResponse.json({ 
-      success: true, 
-      message: `Swapped ${mealType} meal with new foods!`,
-      data: null 
+    return NextResponse.json({
+      success: true,
+      message: `${mealType.replace("_", " ")} meal swapped safely for today.`,
+      data: {
+        meal_type: mealType,
+        foods: selectedFoods.map((food) => ({
+          name: food.name,
+          serving_size: food.serving_size,
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat,
+        })),
+      },
     });
   } catch (error: any) {
     console.error("Error in POST /api/nutrition/swap-meal:", error);
     return NextResponse.json(
-      { success: false, error: { code: 'SERVER_ERROR', message: 'Failed to swap meal.' } },
-      { status: 500 }
+      { success: false, error: { code: "SERVER_ERROR", message: "The meal could not be swapped safely. Your saved plan was not changed." } },
+      { status: 500 },
     );
   }
 }
