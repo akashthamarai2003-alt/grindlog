@@ -143,8 +143,8 @@ export function LogFoodModal({ isOpen, onClose, onSuccess, defaultMealType = 'lu
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#111A10] w-full max-w-md rounded-t-[32px] sm:rounded-[32px] border border-white/10 overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4 pb-28 sm:items-center sm:pb-4">
+      <div className="bg-[#111A10] w-full max-w-md rounded-t-[32px] sm:rounded-[32px] border border-white/10 overflow-hidden shadow-2xl flex flex-col max-h-[calc(100dvh-8rem)] sm:max-h-[85vh]">
         
         <div className="p-5 border-b border-white/5 flex items-center justify-between">
           <h2 className="text-sm font-black uppercase tracking-widest text-white">
