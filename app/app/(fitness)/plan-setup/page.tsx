@@ -585,7 +585,7 @@ export default function PlanSetupPage() {
       ) : isCorePlan ? (
         <ProUpgradePanel
           section={activeTab === "grocery" ? "grocery" : "diet"}
-          onUpgrade={() => router.push("/payment?returnTo=/plan-setup&intent=upgrade_pro")}
+          onUpgrade={() => router.push("/payment?returnTo=/&intent=upgrade_pro")}
         />
       ) : activeTab === "diet" ? (
         <div className="mx-auto max-w-md px-6 pb-5 animate-in fade-in slide-in-from-bottom-4 duration-500">

@@ -11,6 +11,7 @@ import { TodaysNutritionCard } from "./todays-nutrition-card";
 import { DailyActivityCard } from "./daily-activity-card";
 import { TodaysGoalsCard } from "./todays-goals-card";
 import { ExerciseLibraryCard } from "./exercise-library-card";
+import { ProNutritionGenerationCard } from "./pro-nutrition-generation-card";
 import { Dumbbell, Target } from "lucide-react";
 
 interface FitnessDashboardProps {
@@ -68,6 +69,10 @@ export function FitnessDashboard({ user, profile, activePlan, todayWorkout, hasP
               )}
             </div>
           </section>
+        )}
+
+        {premiumLevel === "pro" && hasPlan && activePlan && (!Array.isArray(nutrition?.meals) || nutrition.meals.length === 0) && (
+          <ProNutritionGenerationCard />
         )}
 
         {!hasPlan && (
