@@ -8,9 +8,9 @@ import { LogFoodModal } from "./log-food-modal";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function NutritionView() {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function NutritionView({ initialData }: { initialData?: any } = {}) {
+  const [data, setData] = useState<any>(initialData || null);
+  const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<any>(null);
   const [isWaterLoading, setIsWaterLoading] = useState(false);
   const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
@@ -24,11 +24,11 @@ export function NutritionView() {
 
   // Targets Modal Form State
   const [targetForm, setTargetForm] = useState({
-    calories: 2000,
-    protein: 130,
-    carbs: 225,
-    fat: 55,
-    water_ml: 3000
+    calories: initialData?.targets?.calories || 2000,
+    protein: initialData?.targets?.protein || 130,
+    carbs: initialData?.targets?.carbs || 225,
+    fat: initialData?.targets?.fat || 55,
+    water_ml: initialData?.targets?.water_ml || 3000
   });
 
   const fetchToday = async () => {
@@ -53,8 +53,10 @@ export function NutritionView() {
   };
 
   useEffect(() => {
-    fetchToday();
-  }, []);
+    if (!initialData) {
+      fetchToday();
+    }
+  }, [initialData]);
 
   const handleSetDailyTargets = async (customPayload?: any) => {
     setIsGenerating(true);

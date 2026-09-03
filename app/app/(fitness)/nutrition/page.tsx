@@ -2,11 +2,21 @@ import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { NutritionView } from "@/components/fitness/nutrition/nutrition-view";
+import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+import { getCachedUser } from "@/lib/services/supabase/server";
 
-export default function NutritionIndexPage() {
+export default async function NutritionIndexPage() {
   const today = new Date().toLocaleDateString("en-US", { 
     weekday: 'short', month: 'short', day: 'numeric' 
   });
+
+  const { data: { user } } = await getCachedUser();
+  const initialData = user
+    ? await NutritionService.getTodaySummaryAndDetails(user.id).catch((err) => {
+        console.warn("Failed to prefetch today nutrition on server:", err?.message || err);
+        return null;
+      })
+    : null;
 
   return (
     <FitnessGuard requirePro featureName="nutrition and food logging">
@@ -27,7 +37,7 @@ export default function NutritionIndexPage() {
             <div className="w-10 h-10" />
           </div>
 
-          <NutritionView />
+          <NutritionView initialData={initialData} />
 
         </div>
       </div>
