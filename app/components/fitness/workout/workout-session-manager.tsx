@@ -69,6 +69,12 @@ export function WorkoutSessionManager({
     });
   };
 
+  const exercises = workout.fitness_os_exercises || [];
+  const currentIndex = exercises.findIndex((e: any) => e.id === activeExerciseId);
+  const nextExercise = currentIndex >= 0 && currentIndex < exercises.length - 1
+    ? { id: exercises[currentIndex + 1].id, name: exercises[currentIndex + 1].name }
+    : null;
+
   return (
     <>
       {!activeExercise && (
@@ -92,6 +98,8 @@ export function WorkoutSessionManager({
           isPaused={isPaused}
           onBack={handleBackToOverview}
           onSetCompleted={handleSetCompleted}
+          nextExercise={nextExercise}
+          onNextExercise={handleSelectExercise}
         />
       ) : (
         <WorkoutExecution

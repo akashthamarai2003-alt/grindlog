@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Bot, Check, Loader2, Pencil, X, Timer,
-  BookOpen, ChevronDown, ChevronUp, Dumbbell, Target, Trophy
+  BookOpen, ChevronDown, ChevronUp, Dumbbell, Target, Trophy, ArrowRight
 } from "lucide-react";
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { toast } from "sonner";
@@ -20,6 +20,8 @@ interface ExerciseDetailProps {
   isPaused?: boolean;
   onBack?: () => void;
   onSetCompleted?: (setId: string, reps: number, weightKg: number) => void;
+  nextExercise?: { id: string; name: string } | null;
+  onNextExercise?: (exerciseId: string) => void;
 }
 
 // Bodyweight exercise keywords — show "BW" instead of "0 kg"
@@ -113,7 +115,7 @@ function generateInstructions(exercise: FitnessExercise): string[] {
   ];
 }
 
-export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused, onBack, onSetCompleted }: ExerciseDetailProps) {
+export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused, onBack, onSetCompleted, nextExercise, onNextExercise }: ExerciseDetailProps) {
   const router = useRouter();
   const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
   
@@ -421,11 +423,11 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
                 </motion.div>
               )}
 
-              {/* All sets done — back to workout button */}
+              {/* All sets done — next exercise or back to overview */}
               {allSetsCompleted && idx === sortedSets.length - 1 && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full mt-6">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full mt-6 flex flex-col gap-3">
                   {activeRestSeconds !== null && activeRestSeconds > 0 && (
-                    <div className="w-full flex justify-center mb-3">
+                    <div className="w-full flex justify-center mb-1">
                       <div className="bg-[#111A10] border border-white/10 rounded-full px-4 py-1.5 flex items-center gap-2">
                         <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Rest:</span>
                         <span className="text-sm font-black text-[#ADFF00]">
@@ -434,13 +436,43 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
                       </div>
                     </div>
                   )}
+
+                  {nextExercise && (
+                    <button
+                      onClick={() => {
+                        if (onNextExercise) {
+                          onNextExercise(nextExercise.id);
+                        } else if (onBack) {
+                          onBack();
+                        } else {
+                          router.push(`/workout/${workoutId}`);
+                        }
+                      }}
+                      className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.3)] active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                      <span className="truncate">Next: {nextExercise.name}</span>
+                      <ArrowRight className="w-5 h-5 shrink-0" />
+                    </button>
+                  )}
+
                   <button
-                    onClick={() => { setIsNavigatingBack(true); router.refresh(); setTimeout(() => router.push(`/workout/${workoutId}`), 100); }}
+                    onClick={() => {
+                      if (onBack) {
+                        onBack();
+                      } else {
+                        setIsNavigatingBack(true);
+                        router.push(`/workout/${workoutId}`);
+                      }
+                    }}
                     disabled={isNavigatingBack}
-                    className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98] transition-transform disabled:opacity-50"
+                    className={`w-full font-black uppercase tracking-widest py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${
+                      nextExercise
+                        ? "bg-[#111A10] border border-white/10 text-white hover:bg-white/5"
+                        : "bg-[#ADFF00] text-black shadow-[0_0_20px_rgba(173,255,0,0.2)]"
+                    }`}
                   >
-                    {isNavigatingBack ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                    {isNavigatingBack ? "Navigating..." : "Back to Workout"}
+                    <Check className="w-4 h-4 text-[#ADFF00]" />
+                    <span>Workout Overview</span>
                   </button>
                 </motion.div>
               )}
