@@ -106,18 +106,21 @@ export async function POST(req: Request) {
           : profile.training_days_per_week
         : undefined;
     const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount);
-    const draftCacheCutoff = new Date(Date.now() - 30 * 60_000).toISOString();
-    const { data: cachedDraft } = await supabase
+    // Keep the review draft stable until onboarding changes. A short TTL made
+    // a normal refresh generate a different paid plan after 30 minutes.
+    let cachedDraftQuery = supabase
       .from("fitness_os_ai_sessions")
       .select("prompt, response")
       .eq("user_id", user.id)
       .eq("session_type", "plan_generation")
-      .gte("created_at", draftCacheCutoff)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+    if (typeof profile.updated_at === "string" && profile.updated_at) {
+      cachedDraftQuery = cachedDraftQuery.gte("created_at", profile.updated_at);
+    }
+    const { data: cachedDraft } = await cachedDraftQuery.maybeSingle();
 
-    if (cachedDraft?.prompt === userPrompt && cachedDraft.response) {
+    if (cachedDraft?.response) {
       try {
         const cachedPlan = GeneratedPlanSchema.safeParse(
           JSON.parse(cachedDraft.response),
@@ -152,17 +155,19 @@ export async function POST(req: Request) {
       console.log(`Generation already in progress for user ${user.id}. Polling...`);
       for (let i = 0; i < 30; i++) {
         await new Promise((resolve) => setTimeout(resolve, 5000));
-        const { data: latestCachedDraft } = await supabase
+        let latestCachedDraftQuery = supabase
           .from("fitness_os_ai_sessions")
           .select("prompt, response")
           .eq("user_id", user.id)
           .eq("session_type", "plan_generation")
-          .gte("created_at", draftCacheCutoff)
           .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .limit(1);
+        if (typeof profile.updated_at === "string" && profile.updated_at) {
+          latestCachedDraftQuery = latestCachedDraftQuery.gte("created_at", profile.updated_at);
+        }
+        const { data: latestCachedDraft } = await latestCachedDraftQuery.maybeSingle();
 
-        if (latestCachedDraft?.prompt === userPrompt && latestCachedDraft.response) {
+        if (latestCachedDraft?.response) {
           try {
             const cachedPlan = GeneratedPlanSchema.safeParse(
               JSON.parse(latestCachedDraft.response),

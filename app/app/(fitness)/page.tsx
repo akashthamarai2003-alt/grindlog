@@ -44,16 +44,19 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     if (plan) {
       redirect("/payment?returnTo=/");
     } else {
-      // If they recently generated a draft or one is actively generating, resume from plan-setup
-      const draftCacheCutoff = new Date(Date.now() - 30 * 60_000).toISOString();
-      const { data: cachedDraft } = await supabase
+      // Resume the same review draft until onboarding changes. Do not send a
+      // user back to report merely because the draft is older than 30 minutes.
+      let cachedDraftQuery = supabase
         .from("fitness_os_ai_sessions")
         .select("id")
         .eq("user_id", user.id)
         .eq("session_type", "plan_generation")
-        .gte("created_at", draftCacheCutoff)
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (typeof profile.updated_at === "string" && profile.updated_at) {
+        cachedDraftQuery = cachedDraftQuery.gte("created_at", profile.updated_at);
+      }
+      const { data: cachedDraft } = await cachedDraftQuery.maybeSingle();
 
       const attemptCutoff = new Date(Date.now() - 3 * 60_000).toISOString();
       const { data: activeAttempt } = await supabase
