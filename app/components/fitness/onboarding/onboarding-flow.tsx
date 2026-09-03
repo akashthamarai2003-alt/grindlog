@@ -172,11 +172,6 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
   const totalSteps = 16;
   const showProgress = step > 1 && step < 16;
 
-  const handleNext = () => {
-    setDirection(1);
-    setStep(s => Math.min(s + 1, totalSteps));
-  };
-
   const handleBack = () => {
     setDirection(-1);
     setStep(s => Math.max(s - 1, 1));
@@ -376,6 +371,49 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     (data.target_deadline_days === undefined || data.target_deadline_days === null || (data.target_deadline_days >= 7 && data.target_deadline_days <= 365)) &&
     Object.keys(step4Errors).length === 0
   );
+
+  const hasMeaningfulChoice = (values: unknown): boolean =>
+    Array.isArray(values) && values.some((value) => typeof value === "string" && value.trim().length > 0);
+
+  // Every route to the next screen goes through this gate. Disabled buttons
+  // are useful UI, but this guard also protects direct links such as "Skip
+  // photos" and prevents stale event handlers from bypassing a required step.
+  const canAdvanceFromStep = (currentStep: number): boolean => {
+    switch (currentStep) {
+      case 1:
+      case 11:
+      case 15:
+        return true;
+      case 2: return isStep2Valid;
+      case 3: return isStep3Valid;
+      case 4: return isStep4Valid;
+      case 5: return Boolean(data.fitness_level && typeof data.training_days_per_week === "number" && data.training_days_per_week >= 3 && data.training_days_per_week <= 7);
+      case 6: return Boolean(data.training_location && hasMeaningfulChoice(data.equipment));
+      case 7: return Boolean(data.plan_start_preference && typeof data.workout_duration_minutes === "number" && data.workout_duration_minutes >= 10 && data.workout_duration_minutes <= 90 && data.preferred_training_time);
+      case 8: return Boolean(data.food_type && data.meals_per_day && data.food_environment);
+      case 9: return Boolean(data.nutrition_budget);
+      case 10: return Boolean(data.activity_level && data.daily_steps && data.sleep_duration);
+      case 12: {
+        const physicalProblems = Array.isArray(data.physical_problems)
+          ? data.physical_problems.filter((value) => typeof value === "string" && value.trim())
+          : [];
+        return physicalProblems.length > 0 &&
+          (physicalProblems.includes("None") || (typeof data.current_pain_severity === "number" && hasMeaningfulChoice(data.current_pain_triggers))) &&
+          typeof data.previous_injuries === "boolean" &&
+          (!data.previous_injuries || (hasMeaningfulChoice(data.previous_injury_areas) && Boolean(data.previous_injury_timeline))) &&
+          hasMeaningfulChoice(data.exercise_limitations);
+      }
+      case 13: return data.safety_acknowledged === true;
+      case 14: return Boolean(data.target_physique || data.goal_physique_image || data.body_scan_inspiration);
+      default: return false;
+    }
+  };
+
+  const handleNext = () => {
+    if (!canAdvanceFromStep(step)) return;
+    setDirection(1);
+    setStep((currentStep) => Math.min(currentStep + 1, totalSteps));
+  };
 
   const renderStep = () => {
     switch(step) {
@@ -601,10 +639,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.15 }} className="fixed bottom-0 left-0 right-0 z-30 max-w-[480px] mx-auto pb-[max(env(safe-area-inset-bottom),24px)] pt-8 px-4 bg-gradient-to-t from-[#050905] via-[#050905]/90 to-transparent pointer-events-none">
                <div className="pointer-events-auto flex justify-center">
                  <button 
-                   disabled={!isStep2Valid}
+                   disabled={!canAdvanceFromStep(2)}
                    onClick={handleNext}
                    className={`w-full max-w-[calc(100%-16px)] sm:max-w-[calc(100%-32px)] h-[60px] rounded-full font-[800] text-[16px] transition-all duration-200 active:scale-[0.98] ${
-                     isStep2Valid 
+                   canAdvanceFromStep(2)
                        ? "bg-[#A8FF00] text-[#050505] shadow-[0_8px_30px_rgba(168,255,0,0.16)]" 
                        : "bg-[#1C2920] text-[#687A70] cursor-not-allowed"
                    }`}
@@ -1071,7 +1109,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   </div>
                 </div>
               </div>
-              <BottomBar canProceed={!!data.fitness_level && !!data.training_days_per_week} onProceed={handleNext} />
+              <BottomBar canProceed={canAdvanceFromStep(5)} onProceed={handleNext} />
             </div>
           </div>
         );
@@ -1232,7 +1270,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             </div>
 
             <BottomBar 
-              canProceed={Boolean(data.training_location && data.equipment && data.equipment.length > 0)} 
+              canProceed={canAdvanceFromStep(6)}
               onProceed={handleNext} 
             />
               </div>
@@ -1367,7 +1405,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             </div>
           </div>
           <BottomBar 
-            canProceed={!!(data.plan_start_preference && data.workout_duration_minutes && data.preferred_training_time)} 
+            canProceed={canAdvanceFromStep(7)}
             onProceed={handleNext} 
           />
         </div>
@@ -1487,7 +1525,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 </div>
               </div>
             </div>
-            <BottomBar canProceed={!!(data.food_type && data.meals_per_day && data.food_environment)} onProceed={handleNext} />
+            <BottomBar canProceed={canAdvanceFromStep(8)} onProceed={handleNext} />
           </div>
         </div>
       </div>
@@ -1635,7 +1673,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
               </div>
             </div>
-            <BottomBar canProceed={!!data.nutrition_budget} onProceed={handleNext} />
+            <BottomBar canProceed={canAdvanceFromStep(9)} onProceed={handleNext} />
           </div>
         </div>
     );
@@ -1802,7 +1840,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
               </div>
             </div>
-            <BottomBar canProceed={!!(data.activity_level && data.daily_steps && data.sleep_duration)} onProceed={handleNext} />
+            <BottomBar canProceed={canAdvanceFromStep(10)} onProceed={handleNext} />
           </div>
         </div>
     );
@@ -2162,19 +2200,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
             </div>
             <BottomBar 
-              canProceed={
-                data.physical_problems !== undefined && data.physical_problems.length > 0 &&
-                (data.physical_problems.includes("None") || (
-                  data.current_pain_severity !== undefined &&
-                  data.current_pain_triggers !== undefined && data.current_pain_triggers.length > 0
-                )) &&
-                data.previous_injuries !== undefined &&
-                (data.previous_injuries === false || (
-                  data.previous_injury_areas !== undefined && data.previous_injury_areas.length > 0 &&
-                  Boolean(data.previous_injury_timeline)
-                )) &&
-                data.exercise_limitations !== undefined && data.exercise_limitations.length > 0
-              } 
+              canProceed={canAdvanceFromStep(12)}
               onProceed={handleNext} 
             />
           </div>
@@ -2223,7 +2249,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             <div className="pb-8">
               <button 
                 onClick={handleNext} 
-                disabled={!data.safety_acknowledged}
+                disabled={!canAdvanceFromStep(13)}
                 className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg shadow-[0_0_30px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none hover:bg-[#c4ff33]"
               >
                 <span>Continue</span>
@@ -2457,7 +2483,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 </p>
                 <button 
                   onClick={handleNext}
-                  className="text-xs font-bold text-[#ADFF00] hover:underline block mx-auto pt-1"
+                  disabled={!canAdvanceFromStep(14)}
+                  className="text-xs font-bold text-[#ADFF00] hover:underline block mx-auto pt-1 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Skip photos and analyze profile →
                 </button>
@@ -2466,7 +2493,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             </div>
 
             <BottomBar 
-              canProceed={Boolean(data.target_physique || data.goal_physique_image || data.body_scan_inspiration || data.body_scan_front)} 
+              canProceed={canAdvanceFromStep(14)}
               onProceed={handleNext} 
               label="Analyze & Generate Plan" 
             />

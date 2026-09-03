@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { OnboardingSchema } from "@/types/fitness/onboarding";
+import { getOnboardingCompletionIssues, OnboardingSchema } from "@/types/fitness/onboarding";
 import {
   generateStartingReport,
   hasGeneratedStartingReport,
@@ -65,6 +65,13 @@ export async function POST(req: Request) {
     }
 
     const data = result.data;
+    const completionIssues = getOnboardingCompletionIssues(data);
+    if (completionIssues.length > 0) {
+      return NextResponse.json(
+        { success: false, error: `Please complete onboarding before continuing: ${completionIssues.join("; ")}.` },
+        { status: 400 },
+      );
+    }
     const hasUploadedBodyScan = Boolean(
       data.body_scan_front ||
         data.body_scan_left ||
