@@ -309,7 +309,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 9. Persist the successful draft for the short-lived reopen cache.
+    // 9. Persist the successful draft for stable reopen/reload reuse.
     await logFitnessAIUsage(
       user.id,
       "plan_generation",

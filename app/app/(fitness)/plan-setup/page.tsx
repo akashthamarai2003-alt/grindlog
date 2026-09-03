@@ -25,7 +25,11 @@ async function requestPlanDraft() {
         const error = new Error(
           body?.error || `We could not start plan generation (request ${response.status}).`,
         ) as PlanGenerationError;
-        error.errorType = body?.errorType === "SAFETY" ? "SAFETY" : "SYSTEM";
+        error.errorType = body?.errorType === "SAFETY"
+          ? "SAFETY"
+          : body?.errorType === "PLAN_ACTIVE"
+            ? "PLAN_ACTIVE"
+            : "SYSTEM";
         throw error;
       }
 
@@ -237,7 +241,8 @@ export default function PlanSetupPage() {
             setLoading(true);
             setGenerationError(null);
             setGenerationErrorType(null);
-            // Trigger a fresh generation
+            // Retry only after a failed generation. The server reuses any
+            // valid saved draft and never bypasses safety or duplicate guards.
             requestPlanDraft()
               .then(res => {
                 setPlanData(res.data);
@@ -255,7 +260,7 @@ export default function PlanSetupPage() {
           }} 
           className="px-8 py-3 bg-[#ADFF00] text-black font-extrabold rounded-full flex items-center gap-2 hover:bg-[#c4ff33] transition-colors"
         >
-          <span>Force AI to Try Again</span>
+          <span>Try Again</span>
           <ArrowRight size={16} />
         </button>
       </div>
