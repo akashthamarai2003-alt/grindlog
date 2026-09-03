@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useWakeLock } from "@/hooks/fitness/useWakeLock";
 
 import { TodaysExercisesList } from "./todays-exercises-list";
 import { AiCoachNote } from "./ai-coach-note";
 import { WorkoutSummaryCard } from "./workout-summary-card";
-import { Pause, Play, CheckCircle, Loader2, Lock } from "lucide-react";
+import { Pause, Play, CheckCircle, Loader2, AlertTriangle, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
@@ -36,6 +37,7 @@ export function WorkoutExecution({
 }: WorkoutExecutionProps) {
   const router = useRouter();
   const [isFinishing, setIsFinishing] = useState(false);
+  const [showEarlyFinishModal, setShowEarlyFinishModal] = useState(false);
   
   const currentSession = (workout as any).fitness_os_workout_sessions?.find((s: any) => s.id === sessionId);
   const [localIsPaused, setLocalIsPaused] = useState(currentSession?.status === "paused");
@@ -64,12 +66,9 @@ export function WorkoutExecution({
   );
 
   const handleFinish = async () => {
-    if (!allExercisesCompleted) {
-      toast.error(`Please complete all ${totalExercises} exercises before finishing your workout.`);
-      return;
-    }
     if (isFinishing) return;
     setIsFinishing(true);
+    setShowEarlyFinishModal(false);
     
     // If it's a mock workout, skip real API call
     if (workout.id === "mock") {
@@ -100,7 +99,6 @@ export function WorkoutExecution({
       return;
     }
 
-    // Fallback if no onTogglePause prop provided
     const nextState = !isPaused;
     setLocalIsPaused(nextState);
     toast.success(nextState ? "Workout paused." : "Workout resumed!");
@@ -191,14 +189,78 @@ export function WorkoutExecution({
             <span className="text-xs font-black">{isFinishing ? "Finishing..." : "Finish Workout"}</span>
           </button>
         ) : (
-          <div className="w-full py-3.5 px-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-white/30 cursor-not-allowed select-none">
-            <Lock className="w-3.5 h-3.5 text-white/30 shrink-0" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-center">
-              Finish Workout ({completedExercises}/{totalExercises} Completed)
-            </span>
-          </div>
+          <button
+            onClick={() => setShowEarlyFinishModal(true)}
+            className="w-full py-3 text-white/40 hover:text-white/80 text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+          >
+            <span>End Workout Early ({completedExercises}/{totalExercises} Completed)</span>
+          </button>
         )}
       </div>
+
+      {/* Early Finish Confirmation Modal */}
+      <AnimatePresence>
+        {showEarlyFinishModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEarlyFinishModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md bg-[#0A1108] border-t border-white/10 sm:border sm:rounded-[24px] rounded-t-[32px] p-6 shadow-2xl z-10"
+            >
+              <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
+
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                    <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <h3 className="text-base font-black text-white uppercase tracking-wider">
+                    End Workout Early?
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowEarlyFinishModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-sm text-white/70 leading-relaxed mb-6">
+                You still have <strong className="text-white">{totalExercises - completedExercises} exercise{totalExercises - completedExercises > 1 ? "s" : ""}</strong> remaining. All <strong className="text-[#ADFF00]">{completedExercises} completed exercise{completedExercises > 1 ? "s" : ""}</strong> will be logged and saved to your history.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => setShowEarlyFinishModal(false)}
+                  className="w-full py-4 bg-[#ADFF00] text-black font-black uppercase tracking-widest rounded-xl active:scale-[0.98] transition-transform cursor-pointer hover:bg-[#b8ff1a]"
+                >
+                  Keep Training
+                </button>
+
+                <button
+                  onClick={handleFinish}
+                  disabled={isFinishing}
+                  className="w-full py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 font-bold uppercase tracking-widest text-xs rounded-xl active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {isFinishing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save & Finish Session</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
