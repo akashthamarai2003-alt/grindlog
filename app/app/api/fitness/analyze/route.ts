@@ -6,6 +6,11 @@ import {
   hasGeneratedStartingReport,
 } from "@/lib/services/fitness/starting-report-service";
 import {
+  getGenerationRetryAfterSeconds,
+  recordGenerationAttempt,
+} from "@/lib/services/fitness-ai-generation-guard";
+import { FITNESS_REPORT_MODEL } from "@/lib/services/openai/client";
+import {
   BODY_SCAN_RESPONSE_INSTRUCTIONS,
   parseBodyScanAnalysis,
 } from "@/lib/fitness/body-scan";
@@ -225,6 +230,28 @@ export async function POST(req: Request) {
     let aiStrategy: Record<string, unknown> = {};
     let reportGenerationFailed = false;
     try {
+      const retryAfterSeconds = await getGenerationRetryAfterSeconds(
+        supabase,
+        user.id,
+        "starting_report_attempt",
+      );
+      if (retryAfterSeconds > 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `A report is already being generated. Please wait ${retryAfterSeconds} seconds and try again.`,
+            retryAfterSeconds,
+          },
+          { status: 429 },
+        );
+      }
+      await recordGenerationAttempt(
+        supabase,
+        user.id,
+        "starting_report_attempt",
+        FITNESS_REPORT_MODEL,
+      );
+
       aiStrategy = await generateStartingReport({
         onboarding: data,
         bmi,
