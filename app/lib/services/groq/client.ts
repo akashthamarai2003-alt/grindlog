@@ -1,11 +1,8 @@
 import Groq from "groq-sdk";
-import OpenAI from "openai";
 
 // ------------------------------------------------------------------
-// 1. PROVIDER INITIALIZATION
+// 1. GROQ PROVIDER INITIALIZATION
 // ------------------------------------------------------------------
-
-// A. GROQ SETUP (Tier 1 Primary)
 const groqClients = new Map<string, Groq>();
 let globalKeyCounter = 0;
 
@@ -22,32 +19,19 @@ function getGroqClientForKey(apiKey: string): Groq {
   return groqClients.get(apiKey)!;
 }
 
-// B. NVIDIA SETUP (Tier 2 Emergency Fallback)
-let nvidiaClient: OpenAI | null = null;
-function getNvidiaClient(): OpenAI | null {
-  if (nvidiaClient) return nvidiaClient;
-  const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) return null;
-  nvidiaClient = new OpenAI({
-    apiKey,
-    baseURL: "https://integrate.api.nvidia.com/v1",
-  });
-  return nvidiaClient;
-}
-
 // ------------------------------------------------------------------
-// 2. MODEL ROUTING MAPS
+// 2. GROQ MODEL ROUTING MAP
 // ------------------------------------------------------------------
 export const GROQ_MODELS = {
-  primary: "llama-3.3-70b-versatile",
+  primary: "qwen/qwen3.8-27b",
   reasoning: "openai/gpt-oss-120b",
-  fast: "llama-3.1-8b-instant",
+  fast: "groq/compound-mini",
 } as const;
 
 export type RouteModel = keyof typeof GROQ_MODELS;
 
 // ------------------------------------------------------------------
-// 3. MASTER ROUTING LOGIC (2-Tier Tag-Team for Text)
+// 3. MASTER ROUTING LOGIC (Groq AI Only)
 // ------------------------------------------------------------------
 export async function generateAIResponse({
   systemPrompt,
@@ -73,115 +57,56 @@ export async function generateAIResponse({
     ...(userPrompt ? [{ role: "user" as const, content: userPrompt }] : []),
   ];
 
-  // ==================================================================
-  // TIER 1: GROQ (The High-Speed Round-Robin Primary)
-  // ==================================================================
   const groqKeys = getGroqApiKeys();
-  if (groqKeys.length > 0) {
-    console.log(`[AI ROUTER] Tier 1: Attempting Groq (${groqKeys.length} keys)...`);
-    
-    // We'll try the requested model, then gracefully degrade to instant if needed
-    const configuredModel = process.env.GROQ_MODEL?.trim();
-    const requestedGroqModel = configuredModel || GROQ_MODELS[model] || GROQ_MODELS.fast;
-    // Keep fallbacks on current production models; retired Mixtral IDs must
-    // never be retried because they turn a recoverable request into a failure.
-    const modelsToTry = Array.from(new Set([
-      requestedGroqModel,
-      GROQ_MODELS.fast,
-      GROQ_MODELS.primary,
-    ]));
+  if (groqKeys.length === 0) {
+    throw new Error("GROQ_API_KEY is not configured in your environment.");
+  }
 
-    for (let keyAttempt = 0; keyAttempt < groqKeys.length; keyAttempt++) {
-      const selectedKeyIndex = (globalKeyCounter + keyAttempt) % groqKeys.length;
-      const currentApiKey = groqKeys[selectedKeyIndex];
-      const groq = getGroqClientForKey(currentApiKey);
+  const configuredModel = process.env.GROQ_MODEL?.trim();
+  const requestedGroqModel = configuredModel || GROQ_MODELS[model] || GROQ_MODELS.fast;
 
-      for (const targetModel of modelsToTry) {
-        try {
-          const completion = await groq.chat.completions.create({
-            model: targetModel,
-            messages: finalMessages,
-            max_tokens: maxTokens,
-            temperature,
-            response_format: responseFormat ? { type: responseFormat } : undefined,
-          });
+  const modelsToTry = Array.from(new Set([
+    requestedGroqModel,
+    "qwen/qwen3.8-27b",
+    "groq/compound-mini",
+    "openai/gpt-oss-120b"
+  ]));
 
-          // Advance counter so next request starts on a fresh key
-          globalKeyCounter = (globalKeyCounter + 1) % groqKeys.length;
+  for (let keyAttempt = 0; keyAttempt < groqKeys.length; keyAttempt++) {
+    const selectedKeyIndex = (globalKeyCounter + keyAttempt) % groqKeys.length;
+    const currentApiKey = groqKeys[selectedKeyIndex];
+    const groq = getGroqClientForKey(currentApiKey);
 
-          const content = completion.choices[0]?.message?.content;
-          if (content) return content;
-        } catch (err: any) {
-          console.warn(`[AI ROUTER] Tier 1 Groq (Key ${selectedKeyIndex}, Model ${targetModel}) Failed:`, err.message);
-          errors.push(`Groq [${targetModel}]: ${err.message}`);
+    for (const targetModel of modelsToTry) {
+      try {
+        const completion = await groq.chat.completions.create({
+          model: targetModel,
+          messages: finalMessages,
+          max_tokens: maxTokens,
+          temperature,
+          response_format: responseFormat ? { type: responseFormat } : undefined,
+        });
+
+        // Advance counter so next request starts on a fresh key
+        globalKeyCounter = (globalKeyCounter + 1) % groqKeys.length;
+
+        const content = completion.choices[0]?.message?.content;
+        if (content && content.trim().length > 0) {
+          return content.trim();
         }
+      } catch (err: any) {
+        console.warn(`[GROQ AI] Key ${selectedKeyIndex}, Model ${targetModel} Failed:`, err.message);
+        errors.push(`Groq [${targetModel}]: ${err.message}`);
       }
     }
   }
 
-  // ==================================================================
-  // TIER 2: NVIDIA NIM (The Emergency Net)
-  // ==================================================================
-  const nvidia = getNvidiaClient();
-  if (nvidia) {
-    try {
-      console.log(`[AI ROUTER] Tier 2: Attempting NVIDIA NIM Emergency Backup...`);
-      const completion = await nvidia.chat.completions.create({
-        model: "meta/llama3-70b-instruct",
-        messages: finalMessages,
-        max_tokens: maxTokens,
-        temperature,
-      });
-
-      const content = completion.choices[0]?.message?.content;
-      if (content) return content;
-    } catch (err: any) {
-      console.warn(`[AI ROUTER] Tier 2 NVIDIA Failed:`, err.message);
-      errors.push(`NVIDIA: ${err.message}`);
-    }
-  }
-
-  // ==================================================================
-  // TIER 3: GOOGLE GEMINI (High-Speed Intelligence)
-  // ==================================================================
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (geminiKey) {
-    try {
-      console.log(`[AI ROUTER] Tier 3: Attempting Gemini 3.6 Flash...`);
-      const promptText = finalMessages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: promptText }] }],
-          generationConfig: {
-            maxOutputTokens: maxTokens,
-            temperature,
-            ...(responseFormat === "json_object" ? { responseMimeType: "application/json" } : {})
-          }
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text.trim();
-      } else {
-        const errText = await res.text();
-        errors.push(`Gemini [3.6-flash]: ${res.status} ${errText.slice(0, 100)}`);
-      }
-    } catch (err: any) {
-      errors.push(`Gemini: ${err.message}`);
-    }
-  }
-
-  // If we reach here, all providers are dead, rate-limited, or misconfigured.
-  console.error("[AI ROUTER] ALL TIERS EXHAUSTED. Errors:", errors);
-  throw new Error(`Our AI engines are currently experiencing extreme viral traffic! Please try again in 60 seconds. [DEBUG: ${errors.join(" | ")}]`);
+  console.error("[GROQ AI] All Groq model attempts failed. Errors:", errors);
+  throw new Error(`Groq AI request failed: ${errors.join(" | ")}`);
 }
 
 // ------------------------------------------------------------------
-// JSON HELPER FUNCTION
+// 4. JSON HELPER FUNCTION (Groq AI)
 // ------------------------------------------------------------------
 export async function generateAIResponseJSON<T>({
   systemPrompt,
@@ -202,32 +127,30 @@ export async function generateAIResponseJSON<T>({
     model,
     maxTokens,
     temperature,
-    responseFormat: "json_object", // Note: NVIDIA might ignore this, so the prompt enforces it
+    responseFormat: "json_object",
   });
 
   try {
     return JSON.parse(text.trim()) as T;
   } catch {
-    // Aggressive JSON extraction fallback if the AI ignores instructions
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[1].trim()) as T;
     }
     
-    // Find the first { and last }
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
+    const firstBrace = text.indexOf("{");
+    const lastBrace = text.lastIndexOf("}");
     if (firstBrace !== -1 && lastBrace !== -1) {
       const extracted = text.substring(firstBrace, lastBrace + 1);
       return JSON.parse(extracted) as T;
     }
 
-    throw new Error("AI generated an invalid JSON response structure.");
+    throw new Error("Groq AI generated an invalid JSON response structure.");
   }
 }
 
 // ------------------------------------------------------------------
-// BACKWARD COMPATIBILITY
+// 5. BACKWARD COMPATIBILITY
 // ------------------------------------------------------------------
 export function getGroqClient(): Groq {
   const keys = getGroqApiKeys();
