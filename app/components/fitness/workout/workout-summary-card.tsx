@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Flame, Clock, Zap, Circle, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Flame, Clock, Zap, Circle, CheckCircle2, X, CalendarClock } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -18,16 +18,13 @@ interface WorkoutSummaryCardProps {
 export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = false, eyebrow, scheduledLabel, isUpcoming = false }: WorkoutSummaryCardProps) {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
+  const [showEarlyStartConfirm, setShowEarlyStartConfirm] = useState(false);
 
   const isCompleted = workout?.status === "completed";
   const resolvedEyebrow = eyebrow || (isUpcoming ? "Early Start" : "Today's Workout");
 
-  const handleStart = async () => {
+  const startWorkout = async () => {
     if (isStarting) return;
-
-    if (isUpcoming && !window.confirm("This workout is scheduled for a future date. Start it early today?")) {
-      return;
-    }
     
     if (isCompleted) {
       router.push(`/workout/${workout.id}/summary`);
@@ -59,6 +56,15 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
     }
   };
 
+  const handleStart = () => {
+    if (isStarting) return;
+    if (isUpcoming) {
+      setShowEarlyStartConfirm(true);
+      return;
+    }
+    void startWorkout();
+  };
+
   const exercises = workout?.fitness_os_exercises || [];
   const completedCount = exercises.filter((ex: any) => 
     ex.fitness_os_sets && 
@@ -88,12 +94,13 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
   const muscleString = targetMuscles.join(" • ");
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6"
-    >
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6"
+      >
       <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
       
       <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col gap-6">
@@ -165,11 +172,65 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
             disabled={isStarting}
             className={`w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-70 ${isCompleted ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-[#ADFF00] text-black hover:bg-[#bfff33] shadow-[0_0_20px_rgba(173,255,0,0.2)]'}`}
           >
-            {isStarting ? "STARTING..." : isCompleted ? "VIEW WORKOUT SUMMARY" : "START WORKOUT"} <ArrowRight className="w-5 h-5" />
+            {isStarting ? "STARTING..." : isCompleted ? "VIEW WORKOUT SUMMARY" : isUpcoming ? "START EARLY" : "START WORKOUT"} <ArrowRight className="w-5 h-5" />
           </button>
         )}
 
-      </div>
-    </motion.div>
+        </div>
+      </motion.div>
+
+      {showEarlyStartConfirm && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-5 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="early-start-dialog-title"
+            className="w-full max-w-sm rounded-3xl border border-[#ADFF00]/25 bg-[#111A10] p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ADFF00]/10 text-[#ADFF00]">
+                  <CalendarClock className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#ADFF00]">Early start</p>
+                  <h3 id="early-start-dialog-title" className="mt-1 text-lg font-black text-white">Start this workout now?</h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEarlyStartConfirm(false)}
+                className="rounded-full bg-white/5 p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Close confirmation"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mt-5 text-sm leading-relaxed text-white/60">
+              This session is scheduled for <span className="font-bold text-white">{scheduledLabel || "a future date"}</span>. Starting early will keep the original schedule and record that you began it today.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setShowEarlyStartConfirm(false)}
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEarlyStartConfirm(false);
+                  void startWorkout();
+                }}
+                className="rounded-xl bg-[#ADFF00] px-4 py-3 text-sm font-black text-black transition-colors hover:bg-[#bfff33]"
+              >
+                Start Early
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
