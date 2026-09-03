@@ -37,13 +37,35 @@ export async function GET(req: NextRequest) {
     // Fetch recent exercises for the muscle map
     const cutoff30 = new Date();
     cutoff30.setDate(cutoff30.getDate() - 30);
-    const { data: exercises } = await supabase
-      .from("fitness_os_workout_exercises")
-      .select("name")
-      .eq("user_id", user.id)
-      .gte("created_at", cutoff30.toISOString());
+    const cutoff30Str = cutoff30.toISOString().split("T")[0];
 
-    const exerciseNames = (exercises || []).map(e => e.name);
+    const { data: recentWorkouts } = await supabase
+      .from("fitness_os_workouts")
+      .select("fitness_os_exercises(name)")
+      .eq("user_id", user.id)
+      .gte("workout_date", cutoff30Str);
+
+    let exerciseNames: string[] = [];
+    if (recentWorkouts && recentWorkouts.length > 0) {
+      exerciseNames = recentWorkouts.flatMap((w: any) =>
+        (w.fitness_os_exercises || []).map((e: any) => e.name)
+      ).filter(Boolean);
+    }
+
+    // Fallback: If no recent workouts logged yet, read targeted exercises from the user's active AI plan
+    if (exerciseNames.length === 0) {
+      const { data: activePlan } = await supabase
+        .from("fitness_os_workout_plans")
+        .select("plan_data")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      const planWorkouts = activePlan?.plan_data?.workouts || [];
+      exerciseNames = planWorkouts.flatMap((w: any) =>
+        (w.exercises || []).map((e: any) => e.name)
+      ).filter(Boolean);
+    }
 
     return NextResponse.json({ dates, exerciseNames }, { status: 200 });
   } catch (error: any) {
