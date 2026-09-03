@@ -125,6 +125,7 @@ export default async function AIStartingReportPage() {
       displayValue(profile.preferred_training_time || profile.workout_time),
     ],
   ];
+  const isFatLossGoal = profile.goal === "Lose Fat" || profile.goal === "Cut";
 
   const rawFitnessScore = aiStrategy.fitness_score;
   const fitnessScore =
@@ -332,6 +333,25 @@ export default async function AIStartingReportPage() {
             details; adjust them with real progress over time.
           </p>
         </section>
+
+        {isFatLossGoal && (
+          <section className="space-y-3 rounded-3xl border border-[#ADFF00]/20 bg-[#121E12] p-5">
+            <p className="text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
+              Fat-loss nutrition direction
+            </p>
+            <p className="text-sm leading-relaxed text-gray-300">
+              Limit added sugar, sugary drinks, deep-fried foods, and frequent fast food.
+              Use measured cooking oil, prioritise protein and vegetables, and keep
+              occasional treats within your calorie target.
+            </p>
+            {profile.goal === "Cut" && (
+              <p className="text-xs leading-relaxed text-gray-400">
+                Cut focus: keep resistance training and your protein target high to help
+                preserve muscle while body fat decreases.
+              </p>
+            )}
+          </section>
+        )}
 
         {/* REALITY CHECK SECTION */}
         <div className="relative space-y-4 overflow-hidden rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">

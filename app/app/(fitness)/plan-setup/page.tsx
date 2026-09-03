@@ -302,6 +302,7 @@ export default function PlanSetupPage() {
     ? planData._profile.food_environment
     : "";
   const nutritionGoal = String(planData?.plan?.goal || planData?._profile?.goal || "").trim();
+  const isFatLossGoal = nutritionGoal === "Lose Fat" || nutritionGoal === "Cut";
   const nutritionMealCount = Number(nutrition?.meals_per_day);
   const nutritionMealCountLabel = Number.isFinite(nutritionMealCount) && nutritionMealCount > 0
     ? `${nutritionMealCount} meals/day`
@@ -654,6 +655,25 @@ export default function PlanSetupPage() {
               <p className="mt-3 text-sm leading-relaxed text-gray-300">{String(nutrition.guidance)}</p>
             </section>
           ) : null}
+
+          {isFatLossGoal && (
+            <section className="mt-6 rounded-3xl border border-[#ADFF00]/20 bg-[#121E12] p-5">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]">
+                Fat-loss nutrition direction
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-gray-300">
+                Limit added sugar, sugary drinks, deep-fried foods, and frequent fast food.
+                Use measured cooking oil, prioritise protein and vegetables, and keep
+                occasional treats within your calorie target.
+              </p>
+              {nutritionGoal === "Cut" && (
+                <p className="mt-3 text-xs leading-relaxed text-gray-400">
+                  Cut focus: keep resistance training and your protein target high to help
+                  preserve muscle while body fat decreases.
+                </p>
+              )}
+            </section>
+          )}
 
           {nutritionFocusItems.length > 0 && (
             <section className="mt-6">
