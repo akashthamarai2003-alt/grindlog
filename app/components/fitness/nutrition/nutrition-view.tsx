@@ -198,6 +198,11 @@ export function NutritionView() {
   if (!data) return null;
 
   const { targets, consumed, remaining, budget, progress, meals, nutrition_score } = data;
+  const loggedFoods = Array.isArray(data.logged_foods) ? data.logged_foods : [];
+  const hasPlannedMeals = Array.isArray(meals) && meals.some((meal: any) => (
+    Array.isArray(meal?.meal_plan_items) && meal.meal_plan_items.length > 0
+  ));
+  const hasLoggedFoods = loggedFoods.length > 0;
 
   const getMealIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -213,7 +218,7 @@ export function NutritionView() {
     return data.logged_foods?.some((f: any) => f.meal_type === type);
   };
 
-  const foodsByMeal = (data.logged_foods || []).reduce((acc: any, log: any) => {
+  const foodsByMeal = loggedFoods.reduce((acc: any, log: any) => {
     const t = log.meal_type || 'snack';
     if (!acc[t]) acc[t] = [];
     acc[t].push(log);
@@ -316,7 +321,7 @@ export function NutritionView() {
           <h2 className="text-[13px] font-black tracking-widest text-white uppercase px-1">Today&apos;s Meals</h2>
         </div>
         
-        {meals.every((m: any) => m.id.startsWith('empty-') || m.id.startsWith('ai-')) ? (
+        {!hasPlannedMeals && !hasLoggedFoods ? (
           <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-8 text-center opacity-70">
              <p className="text-white/50 text-sm mb-4">Your baseline AI strategy is active, but you haven't generated today's specific meal plan.</p>
              <button 
