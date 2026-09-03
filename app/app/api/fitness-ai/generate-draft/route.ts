@@ -156,7 +156,11 @@ export async function POST(req: Request) {
           return NextResponse.json({
             success: true,
             cached: true,
-            data: { ...applyFitnessPlanEntitlements(enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), subscriptionPlan.id), _profile: profile },
+            data: {
+              ...applyFitnessPlanEntitlements(enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), subscriptionPlan.id),
+              _profile: profile,
+              _subscriptionPlan: subscriptionPlan.id,
+            },
           });
         }
       } catch {
@@ -204,7 +208,11 @@ export async function POST(req: Request) {
               return NextResponse.json({
                 success: true,
                 cached: true,
-                data: { ...applyFitnessPlanEntitlements(enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), subscriptionPlan.id), _profile: profile },
+                data: {
+                  ...applyFitnessPlanEntitlements(enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), subscriptionPlan.id),
+                  _profile: profile,
+                  _subscriptionPlan: subscriptionPlan.id,
+                },
               });
             }
           } catch {
@@ -340,7 +348,10 @@ export async function POST(req: Request) {
       0,
     );
 
-    return NextResponse.json({ success: true, data: { ...planData, _profile: profile } });
+    return NextResponse.json({
+      success: true,
+      data: { ...planData, _profile: profile, _subscriptionPlan: subscriptionPlan.id },
+    });
   } catch (error: any) {
     console.error("Fitness AI Generation Error:", error);
     return NextResponse.json(

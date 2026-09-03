@@ -63,6 +63,7 @@ export default function FitnessPaymentPage() {
   const [currentPremiumInfo, setCurrentPremiumInfo] = useState<{ premium_tier?: string; premium_level?: string } | null>(null);
   const [premiumStatusLoaded, setPremiumStatusLoaded] = useState(false);
   const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
+  const isUpgradeIntent = searchParams.get("intent") === "upgrade_pro";
 
   // Fetch current premium status
   useEffect(() => {
@@ -75,10 +76,10 @@ export default function FitnessPaymentPage() {
   // A user with an already active Fitness subscription should not pay again
   // when returning to generate a plan.
   useEffect(() => {
-    if (isPlanGenerationIntent && premiumStatusLoaded && currentPremiumInfo) {
+    if (isPlanGenerationIntent && !isUpgradeIntent && premiumStatusLoaded && currentPremiumInfo) {
       setIsSuccess(true);
     }
-  }, [currentPremiumInfo, isPlanGenerationIntent, premiumStatusLoaded]);
+  }, [currentPremiumInfo, isPlanGenerationIntent, isUpgradeIntent, premiumStatusLoaded]);
 
   // Reliable redirect effect
   useEffect(() => {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart, ShieldAlert, HeartPulse, CalendarDays, CircleCheck, Activity } from 'lucide-react';
+import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart, ShieldAlert, HeartPulse, CalendarDays, CircleCheck, Activity, LockKeyhole } from 'lucide-react';
 import { toast } from 'sonner';
 import GroceryTab from '@/components/fitness/plan/grocery-tab';
 import { AIPlanAnimation } from '@/components/fitness/plan-animation';
@@ -124,6 +124,42 @@ function planAnchorDate(workouts: any[]): Date {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return today;
+}
+
+function ProUpgradePanel({
+  section,
+  onUpgrade,
+}: {
+  section: "diet" | "grocery";
+  onUpgrade: () => void;
+}) {
+  const isDiet = section === "diet";
+
+  return (
+    <div className="mx-auto max-w-md px-6 pb-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <section className="overflow-hidden rounded-3xl border border-[#ADFF00]/25 bg-[linear-gradient(145deg,rgba(173,255,0,0.10),rgba(18,30,18,1)_48%)] p-6 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ADFF00]/15 text-[#ADFF00]">
+          <LockKeyhole size={26} />
+        </div>
+        <p className="mt-5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]">Pro feature</p>
+        <h2 className="mt-2 text-2xl font-black text-white">
+          {isDiet ? "Unlock your full nutrition plan" : "Unlock smart grocery add-ons"}
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-gray-300">
+          Core includes your workout plan and calorie/protein targets. Upgrade to Pro for
+          {isDiet ? " complete meals, macros, and nutrition guidance." : " meal-linked grocery quantities, prices, and protein details."}
+        </p>
+        <button
+          type="button"
+          onClick={onUpgrade}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#ADFF00] py-3.5 text-sm font-extrabold text-black transition-colors hover:bg-[#c4ff33]"
+        >
+          Upgrade to Pro <ArrowRight size={17} />
+        </button>
+        <p className="mt-3 text-[11px] text-gray-500">Your workout plan remains available on Core.</p>
+      </section>
+    </div>
+  );
 }
 
 export default function PlanSetupPage() {
@@ -308,6 +344,7 @@ export default function PlanSetupPage() {
   const trainingPausedForSafety = Boolean(safetyAcknowledgment) && !hasTrainingSessions;
   const groceryUsesProvidedCoreMeals = usesProvidedCoreMeals(planData?._profile);
   const nutrition = planData?.nutrition;
+  const isCorePlan = planData?._subscriptionPlan === "starter";
   const foodEnvironment = typeof planData?._profile?.food_environment === "string"
     ? planData._profile.food_environment
     : "";
@@ -335,7 +372,11 @@ export default function PlanSetupPage() {
       : null,
     foodRoutineLabel(foodEnvironment),
   ].filter((value): value is string => Boolean(value));
-  const tabTitle = trainingPausedForSafety && activeTab === "workout"
+  const tabTitle = isCorePlan && activeTab === "diet"
+    ? "Unlock Pro Nutrition"
+    : isCorePlan && activeTab === "grocery"
+      ? "Unlock Pro Grocery"
+      : trainingPausedForSafety && activeTab === "workout"
     ? "Your Recovery Plan"
     : activeTab === "workout"
       ? "Your Training Plan"
@@ -344,7 +385,11 @@ export default function PlanSetupPage() {
         : groceryUsesProvidedCoreMeals
           ? "Your Grocery Add-ons"
           : "Your Grocery Plan";
-  const tabDescription = activeTab === "workout"
+  const tabDescription = isCorePlan && activeTab === "diet"
+    ? "Full meal planning and nutrition guidance are available with Pro."
+    : isCorePlan && activeTab === "grocery"
+      ? "Smart grocery add-ons and food-level protein details are available with Pro."
+      : activeTab === "workout"
     ? trainingPausedForSafety
       ? "Your safety comes first. Keep the nutrition and recovery plan below while you arrange professional guidance."
       : String(planData?.plan?.description || "A weekly plan shaped around your goals, time, and equipment.")
@@ -383,14 +428,14 @@ export default function PlanSetupPage() {
             aria-pressed={activeTab === "diet"}
             className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "diet" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
           >
-            <Apple size={16} /> Diet
+            <Apple size={16} /> Diet {isCorePlan && <LockKeyhole size={13} />}
           </button>
           <button 
             onClick={() => setActiveTab("grocery")}
             aria-pressed={activeTab === "grocery"}
             className={`flex-1 py-2 text-sm font-bold rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "grocery" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
           >
-            <ShoppingCart size={16} /> Grocery
+            <ShoppingCart size={16} /> Grocery {isCorePlan && <LockKeyhole size={13} />}
           </button>
         </div>
       </div>
@@ -537,6 +582,11 @@ export default function PlanSetupPage() {
 
         </>
         )
+      ) : isCorePlan ? (
+        <ProUpgradePanel
+          section={activeTab === "grocery" ? "grocery" : "diet"}
+          onUpgrade={() => router.push("/payment?returnTo=/plan-setup&intent=upgrade_pro")}
+        />
       ) : activeTab === "diet" ? (
         <div className="mx-auto max-w-md px-6 pb-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <section className="mb-5 overflow-hidden rounded-3xl border border-[#ADFF00]/20 bg-[linear-gradient(145deg,rgba(173,255,0,0.10),rgba(18,30,18,1)_44%)] p-5">
