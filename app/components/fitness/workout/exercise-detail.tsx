@@ -129,6 +129,13 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
   const [isUpdatingRest, setIsUpdatingRest] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
 
+  // Always start at top of exercise view
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [exercise.id]);
+
   const handleUpdateRest = async (newRest: number) => {
     setIsUpdatingRest(true);
     try {

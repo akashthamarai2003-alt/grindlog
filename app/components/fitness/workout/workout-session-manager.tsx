@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { WorkoutHeader } from "./workout-header";
 import { ExerciseDetail } from "./exercise-detail";
@@ -61,10 +61,17 @@ export function WorkoutSessionManager({
     ? workout.fitness_os_exercises?.find((e: any) => e.id === activeExerciseId) || null
     : null;
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [activeExerciseId]);
+
   const handleSelectExercise = (exerciseId: string) => {
     setActiveExerciseId(exerciseId);
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", `/workout/${workout.id}?exercise=${exerciseId}`);
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
   };
 
@@ -72,6 +79,7 @@ export function WorkoutSessionManager({
     setActiveExerciseId(null);
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", `/workout/${workout.id}`);
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
   };
 

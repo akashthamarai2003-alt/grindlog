@@ -49,6 +49,9 @@ export function TodaysExercisesList({
       toast.info("Workout is paused. Tap 'Resume Workout' below to continue.");
       return;
     }
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
     if (onSelectExercise) {
       onSelectExercise(exerciseId);
       return;

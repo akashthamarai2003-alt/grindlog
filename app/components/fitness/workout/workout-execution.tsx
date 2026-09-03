@@ -166,6 +166,9 @@ export function WorkoutExecution({
                 toast.info("Workout is paused. Tap 'Resume Workout' above to continue.");
                 return;
               }
+              if (typeof window !== "undefined") {
+                window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+              }
               if (onSelectExercise) onSelectExercise(nextIncompleteExercise.id);
             }}
             disabled={isPaused}
