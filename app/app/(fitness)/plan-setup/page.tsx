@@ -74,6 +74,24 @@ function isCoreMeal(mealName: unknown): boolean {
   return typeof mealName === "string" && /breakfast|lunch|dinner/i.test(mealName);
 }
 
+function weekDayLabel(offset: number): string {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + offset);
+  return new Intl.DateTimeFormat("en-IN", { weekday: "short" }).format(date).toUpperCase();
+}
+
+function workoutDayOffset(workoutDate: unknown): number | null {
+  if (typeof workoutDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(workoutDate)) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [year, month, day] = workoutDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  const offset = Math.round((date.getTime() - today.getTime()) / 86400000);
+  return offset >= 0 && offset < 7 ? offset : null;
+}
+
 export default function PlanSetupPage() {
   const router = useRouter();
   const [planData, setPlanData] = useState<any>(null);
@@ -216,8 +234,16 @@ export default function PlanSetupPage() {
     ? planData.workouts.filter((workout: unknown) => workout && typeof workout === "object")
     : [];
   const meals = Array.isArray(planData?.nutrition?.meals) ? planData.nutrition.meals : [];
-  const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-  const activeWorkout = planData && selectedDay < workouts.length ? workouts[selectedDay] : null;
+  const days = Array.from({ length: 7 }, (_, index) => weekDayLabel(index));
+  const workoutForDay = (dayIndex: number) => {
+    const datedWorkout = workouts.find(
+      (workout: any) => workoutDayOffset(workout?.workout_date) === dayIndex,
+    );
+    // Older cached plans may not contain dates. Keep their original positional
+    // behaviour as a compatibility fallback.
+    return datedWorkout || (workouts.some((workout: any) => workout?.workout_date) ? null : workouts[dayIndex]) || null;
+  };
+  const activeWorkout = planData ? workoutForDay(selectedDay) : null;
   const activeExercises = Array.isArray(activeWorkout?.exercises) ? activeWorkout.exercises : [];
   const isRestOrRecoveryWorkout = (workout: any) =>
     !workout?.exercises?.length || /rest|recovery/i.test(workout?.title || "");
@@ -369,8 +395,8 @@ export default function PlanSetupPage() {
         <div className="w-3 shrink-0" /> {/* Left Spacer (3 + 3 gap = 6) */}
         {days.map((day, i) => {
           const isSelected = selectedDay === i;
-          const hasWorkout = i < workouts.length;
-          const wo = hasWorkout ? workouts[i] : null;
+          const wo = workoutForDay(i);
+          const hasWorkout = Boolean(wo);
           const workoutTitle = typeof wo?.title === "string" ? wo.title : "Workout";
           
           return (
