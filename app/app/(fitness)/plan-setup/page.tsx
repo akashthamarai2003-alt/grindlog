@@ -9,7 +9,7 @@ import GroceryTab from '@/components/fitness/plan/grocery-tab';
 import { AIPlanAnimation } from '@/components/fitness/plan-animation';
 
 type PlanGenerationError = Error & {
-  errorType: "SAFETY" | "SYSTEM";
+  errorType: "SAFETY" | "SYSTEM" | "PLAN_ACTIVE";
 };
 
 let activePlanDraftRequest: Promise<any> | null = null;
@@ -38,12 +38,12 @@ async function requestPlanDraft() {
   return activePlanDraftRequest;
 }
 
-function getPlanGenerationErrorType(error: unknown): "SAFETY" | "SYSTEM" {
+function getPlanGenerationErrorType(error: unknown): "SAFETY" | "SYSTEM" | "PLAN_ACTIVE" {
   return typeof error === "object" &&
     error !== null &&
     "errorType" in error &&
-    error.errorType === "SAFETY"
-    ? "SAFETY"
+    (error.errorType === "SAFETY" || error.errorType === "PLAN_ACTIVE")
+    ? error.errorType
     : "SYSTEM";
 }
 
@@ -125,7 +125,7 @@ export default function PlanSetupPage() {
   const [planData, setPlanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [generationErrorType, setGenerationErrorType] = useState<"SAFETY" | "SYSTEM" | null>(null);
+  const [generationErrorType, setGenerationErrorType] = useState<"SAFETY" | "SYSTEM" | "PLAN_ACTIVE" | null>(null);
   
   const [selectedDay, setSelectedDay] = useState(0);
   const [activeTab, setActiveTab] = useState<"workout" | "diet" | "grocery">("workout");
@@ -145,6 +145,10 @@ export default function PlanSetupPage() {
       })
       .catch((err: unknown) => {
         if (!isMounted) return;
+        if (getPlanGenerationErrorType(err) === "PLAN_ACTIVE") {
+          router.replace("/roadmap");
+          return;
+        }
         const message = err instanceof Error ? err.message : "Network error while generating the plan.";
         setGenerationError(message);
         setGenerationErrorType(getPlanGenerationErrorType(err));
@@ -239,6 +243,10 @@ export default function PlanSetupPage() {
                 setPlanData(res.data);
               })
               .catch((err: unknown) => {
+                if (getPlanGenerationErrorType(err) === "PLAN_ACTIVE") {
+                  router.replace("/roadmap");
+                  return;
+                }
                 setGenerationError(
                   err instanceof Error ? err.message : "Network error while generating the plan.",
                 );
