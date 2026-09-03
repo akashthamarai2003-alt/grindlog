@@ -59,13 +59,24 @@ export default function FitnessPaymentPage() {
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(DEFAULT_PRICING);
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [currentPremiumInfo, setCurrentPremiumInfo] = useState<{ premium_tier?: string; premium_level?: string } | null>(null);
+  const [premiumStatusLoaded, setPremiumStatusLoaded] = useState(false);
+  const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
 
   // Fetch current premium status
   useEffect(() => {
     getUserPremiumDetailsAction("fitness_os").then((res) => {
       if (res) setCurrentPremiumInfo(res as any);
+      setPremiumStatusLoaded(true);
     });
   }, []);
+
+  // A user with an already active Fitness subscription should not pay again
+  // when returning to generate a plan.
+  useEffect(() => {
+    if (isPlanGenerationIntent && premiumStatusLoaded && currentPremiumInfo) {
+      setIsSuccess(true);
+    }
+  }, [currentPremiumInfo, isPlanGenerationIntent, premiumStatusLoaded]);
 
   // Reliable redirect effect
   useEffect(() => {

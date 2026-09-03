@@ -22,6 +22,7 @@ import {
   getGenerationRetryAfterSeconds,
   recordGenerationAttempt,
 } from "@/lib/services/fitness-ai-generation-guard";
+import { requireFitnessSubscription } from "@/lib/fitness/subscription/access";
 
 // A high-reasoning, full weekly plan can take longer than one minute. Avoid a
 // platform timeout turning a valid in-progress response into an empty client
@@ -44,6 +45,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 },
+      );
+    }
+
+    // Payment is a hard server-side prerequisite. Check before reading a
+    // cached draft so an unpaid user cannot receive a previously generated plan.
+    if (!(await requireFitnessSubscription(user.id))) {
+      return NextResponse.json(
+        { success: false, error: "Please complete payment before generating your Fitness plan.", errorType: "PAYMENT_REQUIRED" },
+        { status: 402 },
       );
     }
 

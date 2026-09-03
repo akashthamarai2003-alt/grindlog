@@ -9,7 +9,7 @@ import GroceryTab from '@/components/fitness/plan/grocery-tab';
 import { AIPlanAnimation } from '@/components/fitness/plan-animation';
 
 type PlanGenerationError = Error & {
-  errorType: "SAFETY" | "SYSTEM" | "PLAN_ACTIVE";
+  errorType: "SAFETY" | "SYSTEM" | "PLAN_ACTIVE" | "PAYMENT_REQUIRED";
 };
 
 let activePlanDraftRequest: Promise<any> | null = null;
@@ -29,6 +29,8 @@ async function requestPlanDraft() {
           ? "SAFETY"
           : body?.errorType === "PLAN_ACTIVE"
             ? "PLAN_ACTIVE"
+            : body?.errorType === "PAYMENT_REQUIRED"
+              ? "PAYMENT_REQUIRED"
             : "SYSTEM";
         throw error;
       }
@@ -42,11 +44,11 @@ async function requestPlanDraft() {
   return activePlanDraftRequest;
 }
 
-function getPlanGenerationErrorType(error: unknown): "SAFETY" | "SYSTEM" | "PLAN_ACTIVE" {
+function getPlanGenerationErrorType(error: unknown): "SAFETY" | "SYSTEM" | "PLAN_ACTIVE" | "PAYMENT_REQUIRED" {
   return typeof error === "object" &&
     error !== null &&
     "errorType" in error &&
-    (error.errorType === "SAFETY" || error.errorType === "PLAN_ACTIVE")
+    (error.errorType === "SAFETY" || error.errorType === "PLAN_ACTIVE" || error.errorType === "PAYMENT_REQUIRED")
     ? error.errorType
     : "SYSTEM";
 }
@@ -129,7 +131,7 @@ export default function PlanSetupPage() {
   const [planData, setPlanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [generationErrorType, setGenerationErrorType] = useState<"SAFETY" | "SYSTEM" | "PLAN_ACTIVE" | null>(null);
+  const [generationErrorType, setGenerationErrorType] = useState<"SAFETY" | "SYSTEM" | "PLAN_ACTIVE" | "PAYMENT_REQUIRED" | null>(null);
   
   const [selectedDay, setSelectedDay] = useState(0);
   const [activeTab, setActiveTab] = useState<"workout" | "diet" | "grocery">("workout");
@@ -151,6 +153,10 @@ export default function PlanSetupPage() {
         if (!isMounted) return;
         if (getPlanGenerationErrorType(err) === "PLAN_ACTIVE") {
           router.replace("/roadmap");
+          return;
+        }
+        if (getPlanGenerationErrorType(err) === "PAYMENT_REQUIRED") {
+          router.replace("/payment?returnTo=/plan-setup&intent=generate_plan");
           return;
         }
         const message = err instanceof Error ? err.message : "Network error while generating the plan.";
@@ -250,6 +256,10 @@ export default function PlanSetupPage() {
               .catch((err: unknown) => {
                 if (getPlanGenerationErrorType(err) === "PLAN_ACTIVE") {
                   router.replace("/roadmap");
+                  return;
+                }
+                if (getPlanGenerationErrorType(err) === "PAYMENT_REQUIRED") {
+                  router.replace("/payment?returnTo=/plan-setup&intent=generate_plan");
                   return;
                 }
                 setGenerationError(

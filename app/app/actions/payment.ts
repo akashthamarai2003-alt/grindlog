@@ -108,10 +108,32 @@ export async function createRazorpayOrder(
         tier,
         level,
         couponId: couponId || "",
+        source: source === "fitness_os" ? "fitness_ai_os" : "grindlog",
       },
     };
     
     const order = await razorpay.orders.create(options);
+
+    if (source === "fitness_os") {
+      const adminClient = createAdminClient();
+      const { error: pendingSubscriptionError } = await adminClient
+        .from("fitness_os_subscriptions")
+        .upsert(
+          {
+            user_id: user.id,
+            plan: level === "pro" ? "pro" : "starter",
+            status: "created",
+            provider: "razorpay",
+            provider_order_id: order.id,
+          },
+          { onConflict: "user_id" },
+        );
+
+      if (pendingSubscriptionError) {
+        console.error("Failed to save pending Fitness subscription:", pendingSubscriptionError);
+        return { success: false, error: "Could not prepare secure payment access." };
+      }
+    }
     
     return {
       success: true,
@@ -209,6 +231,30 @@ export async function verifyRazorpayPayment(
       if (error) {
         console.error("Error updating fitness premium status: ", error);
         return { success: false, error: error.message };
+      }
+
+      // Fitness plan generation is authorized from the canonical subscription
+      // table. Keep it in sync with the legacy premium fields used by the
+      // existing payment screen so a verified payment is the only unlock path.
+      const { error: fitnessSubscriptionError } = await adminClient
+        .from("fitness_os_subscriptions")
+        .upsert(
+          {
+            user_id: user.id,
+            plan: level === "pro" ? "pro" : "starter",
+            status: "active",
+            provider: "razorpay",
+            provider_order_id: isBypass ? null : razorpayOrderId,
+            provider_payment_id: isBypass ? "bypass" : razorpayPaymentId,
+            current_period_start: new Date().toISOString(),
+            current_period_end: calculateExpiryDate(tier),
+          },
+          { onConflict: "user_id" },
+        );
+
+      if (fitnessSubscriptionError) {
+        console.error("Error creating Fitness subscription: ", fitnessSubscriptionError);
+        return { success: false, error: "Payment was verified, but Fitness access could not be activated." };
       }
     } else {
       const { error } = await adminClient
@@ -349,6 +395,22 @@ export async function checkUserPremiumStatusAction(
     const adminClient = createAdminClient();
     
     if (appName === "fitness_os") {
+      const { data: fitnessSubscription } = await adminClient
+        .from("fitness_os_subscriptions")
+        .select("plan, status, current_period_end")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const subscriptionIsActive = fitnessSubscription?.status === "active" &&
+        (!fitnessSubscription.current_period_end || new Date(fitnessSubscription.current_period_end) > new Date());
+      if (subscriptionIsActive) {
+        if (expectedTier && expectedLevel) {
+          return expectedTier === "monthly" &&
+            expectedLevel === (fitnessSubscription.plan === "pro" ? "pro" : "core");
+        }
+        return true;
+      }
+
       const { data: profile } = await adminClient
         .from("fitness_os_profiles")
         .select("fitness_is_premium, fitness_premium_expires_at, fitness_premium_tier, fitness_premium_level")
@@ -396,6 +458,23 @@ export async function getUserPremiumDetailsAction(appName: "grindlog" | "fitness
     const adminClient = createAdminClient();
     
     if (appName === "fitness_os") {
+      const { data: fitnessSubscription } = await adminClient
+        .from("fitness_os_subscriptions")
+        .select("plan, status, current_period_start, current_period_end")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const subscriptionIsActive = fitnessSubscription?.status === "active" &&
+        (!fitnessSubscription.current_period_end || new Date(fitnessSubscription.current_period_end) > new Date());
+      if (subscriptionIsActive) {
+        return {
+          is_premium: true,
+          premium_expires_at: fitnessSubscription.current_period_end,
+          premium_tier: "monthly",
+          premium_level: fitnessSubscription.plan === "pro" ? "pro" : "core",
+        };
+      }
+
       const { data: profile } = await adminClient
         .from("fitness_os_profiles")
         .select("fitness_is_premium, fitness_premium_expires_at, fitness_premium_tier, fitness_premium_level")

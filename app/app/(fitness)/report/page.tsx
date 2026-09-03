@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
-import { ArrowRight, Brain, Info } from "lucide-react";
+import { Brain, Info } from "lucide-react";
 import Link from "next/link";
 import { RegenerateReportButton } from "@/components/fitness/report/regenerate-report-button";
+import { GeneratePlanButton } from "@/components/fitness/report/generate-plan-button";
 import { hasGeneratedStartingReport } from "@/lib/services/fitness/starting-report-service";
 import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
 
@@ -519,13 +520,7 @@ export default async function AIStartingReportPage() {
 
         {/* Continue Button */}
         <div className="pt-4">
-          <Link
-            href="/plan-setup"
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#ADFF00] py-4 text-lg font-extrabold text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] transition-transform hover:bg-[#c4ff33] active:scale-[0.98]"
-          >
-            <span>Generate My Plan</span>
-            <ArrowRight size={20} />
-          </Link>
+          <GeneratePlanButton />
         </div>
       </div>
     </div>

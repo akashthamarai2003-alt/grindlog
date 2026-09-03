@@ -22,6 +22,7 @@ import {
   getGenerationRetryAfterSeconds,
   recordGenerationAttempt,
 } from "@/lib/services/fitness-ai-generation-guard";
+import { requireFitnessSubscription } from "@/lib/fitness/subscription/access";
 
 export const maxDuration = 60;
 const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 1;
@@ -39,6 +40,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 },
+      );
+    }
+
+    // Never spend AI tokens for an unpaid plan request, including direct API
+    // calls that bypass the payment page.
+    if (!(await requireFitnessSubscription(user.id))) {
+      return NextResponse.json(
+        { success: false, error: "Please complete payment before generating your Fitness plan.", errorType: "PAYMENT_REQUIRED" },
+        { status: 402 },
       );
     }
 
