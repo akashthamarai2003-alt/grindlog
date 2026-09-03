@@ -19,7 +19,7 @@ export default async function CustomExercisePage() {
   }
 
   return (
-    <FitnessGuard>
+    <FitnessGuard requirePro featureName="custom exercise tools">
       <FitnessShell>
         <CustomExerciseForm />
       </FitnessShell>

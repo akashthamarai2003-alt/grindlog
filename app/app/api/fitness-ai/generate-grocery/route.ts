@@ -8,6 +8,7 @@ import {
   validateGroceryListAgainstProfile,
 } from "@/lib/fitness/validation/fitness-plan-profile";
 import { z } from "zod";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 const GenerateGroceryResponseSchema = z.object({
   grocery_list: z.array(GeneratedGroceryItemSchema)
@@ -19,6 +20,10 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canUseFitnessFeature(user.id, "ai_plan_adjustments"))) {
+      return NextResponse.json({ success: false, error: "Grocery planning is available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
     }
 
     const limitCheck = await checkFitnessAILimit(supabase, user.id);

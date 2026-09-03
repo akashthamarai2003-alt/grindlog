@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 function generateSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 7);
@@ -12,6 +13,10 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canUseFitnessFeature(user.id, "exercise_library"))) {
+      return NextResponse.json({ error: "Custom exercise tools are available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
     }
 
     const body = await req.json();

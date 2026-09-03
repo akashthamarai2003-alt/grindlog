@@ -26,7 +26,7 @@ export default async function ScannerPage() {
   }
 
   return (
-    <FitnessGuard>
+    <FitnessGuard requirePro featureName="advanced body-scan analysis">
       <div className="min-h-screen bg-gray-50/50 flex flex-col pt-12 pb-24">
         <ScannerFlow />
       </div>

@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createServerSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+    if (!(await canUseFitnessFeature(user.id, "exercise_library"))) {
+      return NextResponse.json({ success: false, error: "The full exercise library is available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
+    }
     const { searchParams } = new URL(req.url);
     
     const query = searchParams.get("q") || "";

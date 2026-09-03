@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 // Configure R2 using env variables
 const r2Client = new S3Client({
@@ -19,6 +20,10 @@ export async function POST(req: Request) {
     
     if (!user) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+    }
+
+    if (!(await canUseFitnessFeature(user.id, "advanced_progress_analysis"))) {
+      return NextResponse.json({ success: false, error: "Progress scans are available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
     }
 
     const { frontImage, sideImage, leftImage, rightImage, backImage } = await req.json();

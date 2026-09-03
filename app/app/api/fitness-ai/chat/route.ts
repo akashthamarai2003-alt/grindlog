@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { AIInsightService } from "@/lib/services/analytics/ai-insight-service";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,6 +10,10 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canUseFitnessFeature(user.id, "ai_coach"))) {
+      return NextResponse.json({ error: "AI Coach support is available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
     }
 
     const body = await req.json();

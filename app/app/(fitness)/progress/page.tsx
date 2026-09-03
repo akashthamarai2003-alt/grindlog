@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { createClient } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
-import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { ProgressView } from "@/components/fitness/progress/progress-view";
 import { ProgressAnalyticsService } from "@/lib/services/analytics/progress-service";
 
@@ -20,10 +19,8 @@ export default async function ProgressPage() {
   const initialData = await ProgressAnalyticsService.getAggregatedProgress(user.id, '30D');
 
   return (
-    <FitnessGuard requirePro={true}>
-      <FitnessShell>
-        <ProgressView initialData={initialData} />
-      </FitnessShell>
+    <FitnessGuard featureName="advanced progress analysis">
+      <ProgressView initialData={initialData} />
     </FitnessGuard>
   );
 }

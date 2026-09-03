@@ -6,6 +6,7 @@ import {
   BODY_SCAN_RESPONSE_INSTRUCTIONS,
   parseBodyScanAnalysis,
 } from "@/lib/fitness/body-scan";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,6 +16,10 @@ export async function POST(req: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canUseFitnessFeature(user.id, "advanced_progress_analysis"))) {
+      return NextResponse.json({ success: false, error: "Advanced body-scan analysis is available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
     }
 
     const { images } = await req.json();

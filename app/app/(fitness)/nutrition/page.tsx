@@ -9,7 +9,7 @@ export default function NutritionIndexPage() {
   });
 
   return (
-    <FitnessGuard requirePro={true}>
+    <FitnessGuard requirePro featureName="nutrition and food logging">
       <div className="min-h-screen bg-[#0A1108] text-white">
         <div className="w-full max-w-md mx-auto px-5 pt-8 pb-32">
           

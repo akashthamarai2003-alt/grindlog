@@ -25,6 +25,7 @@ import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 const features = [
   { icon: Target, label: "Personalized 7-day plan", core: true, pro: true },
   { icon: Dumbbell, label: "Basic exercise guidance", core: true, pro: "Full AI guidance" },
+  { icon: Dumbbell, label: "Full exercise library", core: false, pro: true },
   { icon: Flame, label: "Calorie & protein targets", core: true, pro: "Full meal plan" },
   { icon: ShoppingCart, label: "Smart grocery add-ons", core: false, pro: true },
   { icon: Activity, label: "Basic dashboard", core: true, pro: "Advanced progress" },

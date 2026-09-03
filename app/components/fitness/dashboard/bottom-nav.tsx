@@ -4,14 +4,16 @@ import { Home, Dumbbell, Utensils, User, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export function BottomNav() {
+export function BottomNav({ isPro = false }: { isPro?: boolean }) {
   const pathname = usePathname();
 
   const navItems = [
     { icon: Home, label: "Home", href: "/" },
     { icon: Dumbbell, label: "Workout", href: "/workout" },
-    { icon: Utensils, label: "Meals", href: "/nutrition" },
-    { icon: TrendingUp, label: "Progress", href: "/progress" },
+    ...(isPro ? [
+      { icon: Utensils, label: "Meals", href: "/nutrition" },
+      { icon: TrendingUp, label: "Progress", href: "/progress" },
+    ] : []),
     { icon: User, label: "Profile", href: "/profile" }
   ];
 

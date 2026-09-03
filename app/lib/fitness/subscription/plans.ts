@@ -28,6 +28,7 @@ export const PRO_PLAN: FitnessPlanConfig = {
   features: [
     "fitness_dashboard",
     "workout_system",
+    "exercise_library",
     "ai_plan_generation",
     "ai_coach",
     "ai_weekly_review",

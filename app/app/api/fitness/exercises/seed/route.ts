@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createClient } from "@supabase/supabase-js";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 const FREE_EXERCISE_DB_URL = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json";
 
@@ -12,6 +13,10 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canUseFitnessFeature(user.id, "exercise_library"))) {
+      return NextResponse.json({ error: "The full exercise library is available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
     }
 
     // Create admin client to bypass RLS for seeding global exercises

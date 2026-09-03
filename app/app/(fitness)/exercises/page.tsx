@@ -19,7 +19,7 @@ export default async function ExercisesPage() {
   }
 
   return (
-    <FitnessGuard>
+    <FitnessGuard requirePro featureName="the full exercise library">
       <FitnessShell>
         <ExerciseBrowser />
       </FitnessShell>

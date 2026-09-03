@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 export async function POST(req: Request) {
   try {
@@ -8,6 +9,10 @@ export async function POST(req: Request) {
     
     if (!user) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+    }
+
+    if (!(await canUseFitnessFeature(user.id, "advanced_progress_analysis"))) {
+      return NextResponse.json({ success: false, error: "Progress tracking is available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
     }
 
     const { weight } = await req.json();

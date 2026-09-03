@@ -5,7 +5,7 @@ import { BottomNav } from "./dashboard/bottom-nav";
 import { motion, AnimatePresence } from "framer-motion";
 import { FitnessChatbot } from "./chatbot/fitness-chatbot";
 
-export function FitnessShell({ children }: { children: React.ReactNode }) {
+export function FitnessShell({ children, isPro = false }: { children: React.ReactNode; isPro?: boolean }) {
   const pathname = usePathname();
   
   // Pages that are part of the onboarding/setup flow should NOT have the bottom nav or chatbot
@@ -33,8 +33,8 @@ export function FitnessShell({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
         {!isSetupFlow && (
           <>
-            <FitnessChatbot />
-            <BottomNav />
+            {isPro && <FitnessChatbot />}
+            <BottomNav isPro={isPro} />
           </>
         )}
       </div>

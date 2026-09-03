@@ -5,6 +5,7 @@ export type FitnessSubscriptionStatus = "created" | "active" | "paused" | "cance
 export type FitnessFeature = 
   | "fitness_dashboard"
   | "workout_system"
+  | "exercise_library"
   | "ai_plan_generation"
   | "ai_coach"
   | "ai_weekly_review"
