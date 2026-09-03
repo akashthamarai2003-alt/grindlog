@@ -102,7 +102,6 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
 
             {/* Muscle Map */}
             <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest block mb-4">Muscle Activation Map</span>
               <MuscleMap exerciseNames={recentExercises} showLabel={true} />
             </div>
             

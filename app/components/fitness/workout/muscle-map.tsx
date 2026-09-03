@@ -2,26 +2,131 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Info } from "lucide-react";
+import { Zap, Info, CheckCircle2, RotateCcw } from "lucide-react";
 
 /**
  * High-Fidelity Anatomical Muscle Activation Map
- * Realistic athletic anatomical vector paths with dynamic neon heat-mapping.
+ * Accurate regex movement classification, isolated muscle inspection, and exercise tracking.
  */
 
-// Muscle group keyword mappings for exercise recognition
-const MUSCLE_KEYWORDS: Record<string, string[]> = {
-  chest: ["bench press", "chest press", "push-up", "pushup", "fly", "pec", "chest", "dip", "cable crossover"],
-  shoulders: ["shoulder press", "overhead press", "lateral raise", "front raise", "deltoid", "shoulder", "military press", "arnold press", "upright row", "face pull"],
-  biceps: ["curl", "bicep", "chin-up", "chinup", "hammer curl", "preacher"],
-  triceps: ["tricep", "skull crusher", "pushdown", "extension", "close-grip", "kickback", "diamond pushup"],
-  back: ["row", "pull-up", "pullup", "lat pulldown", "deadlift", "back", "lat", "rhomboid", "t-bar", "pullover", "shrug"],
-  core: ["crunch", "plank", "sit-up", "situp", "ab ", "core", "leg raise", "mountain climber", "russian twist", "hanging leg", "deadbug"],
-  glutes: ["hip thrust", "glute", "squat", "lunge", "leg press", "step-up", "kickback", "cable pull-through"],
-  quads: ["squat", "leg press", "quad", "leg extension", "lunge", "step-up", "hack squat", "goblet squat", "sissy squat", "bulgarian"],
-  hamstrings: ["hamstring", "rdl", "romanian", "leg curl", "deadlift", "good morning", "stiff-leg"],
-  calves: ["calf raise", "calf", "standing calf", "seated calf", "donkey calf"],
-  forearms: ["forearm", "wrist curl", "grip", "farmers walk", "reverse curl"],
+// Precise anatomical keyword rules (prevents "lateral" matching "lat", handles plurals and variations)
+const MUSCLE_RULES: Record<string, RegExp[]> = {
+  chest: [
+    /\bbench press\b/i,
+    /\bchest press\b/i,
+    /\bpush-?ups?\b/i,
+    /\bpecs?\b/i,
+    /\bchest flye?s?\b/i,
+    /\bpec flye?s?\b/i,
+    /\bchest\b/i,
+    /\bcable crossovers?\b/i,
+    /\bincline press\b/i,
+    /\bdecline press\b/i,
+  ],
+  shoulders: [
+    /\blateral raises?\b/i,
+    /\bshoulders?\b/i,
+    /\boverhead press(?:es)?\b/i,
+    /\bfront raises?\b/i,
+    /\bdeltoids?\b/i,
+    /\bmilitary press(?:es)?\b/i,
+    /\barnold press(?:es)?\b/i,
+    /\bface pulls?\b/i,
+    /\brear delts?\b/i,
+    /\bupright rows?\b/i,
+  ],
+  biceps: [
+    /\bbiceps?\b/i,
+    /\bcurls?\b/i,
+    /\bchin-?ups?\b/i,
+    /\bpreachers?\b/i,
+  ],
+  triceps: [
+    /\btriceps?\b/i,
+    /\bskull crushers?\b/i,
+    /\bpushdowns?\b/i,
+    /\btricep extensions?\b/i,
+    /\bclose-grip\b/i,
+    /\bkickbacks?\b/i,
+    /\bdips?\b/i,
+    /\bdiamond push-?ups?\b/i,
+  ],
+  back: [
+    /\bdumbbell rows?\b/i,
+    /\bbarbell rows?\b/i,
+    /\bcable rows?\b/i,
+    /\bseated rows?\b/i,
+    /\brows?\b/i,
+    /\bpull-?ups?\b/i,
+    /\blat pulldowns?\b/i,
+    /\blat pulls?\b/i,
+    /\bdeadlifts?\b/i,
+    /\bback\b/i,
+    /\blats?\b/i,
+    /\brhomboids?\b/i,
+    /\bt-bar\b/i,
+    /\bpullovers?\b/i,
+    /\bshrugs?\b/i,
+    /\bhyperextensions?\b/i,
+  ],
+  core: [
+    /\bcrunches?\b/i,
+    /\bplanks?\b/i,
+    /\bsit-?ups?\b/i,
+    /\babs?\b/i,
+    /\bcore\b/i,
+    /\bleg raises?\b/i,
+    /\bmountain climbers?\b/i,
+    /\brussian twists?\b/i,
+    /\bdeadbugs?\b/i,
+    /\bhollow body\b/i,
+  ],
+  glutes: [
+    /\bhip thrusts?\b/i,
+    /\bglutes?\b/i,
+    /\bglute bridges?\b/i,
+    /\bbridges?\b/i,
+    /\blunges?\b/i,
+    /\bkickbacks?\b/i,
+    /\bcable pull-through\b/i,
+    /\bsquats?\b/i,
+  ],
+  quads: [
+    /\bsquats?\b/i,
+    /\bleg press(?:es)?\b/i,
+    /\bquads?\b/i,
+    /\bleg extensions?\b/i,
+    /\blunges?\b/i,
+    /\bstep-?ups?\b/i,
+    /\bhack squats?\b/i,
+    /\bgoblet squats?\b/i,
+    /\bbulgarian\b/i,
+  ],
+  hamstrings: [
+    /\bhamstrings?\b/i,
+    /\brdls?\b/i,
+    /\bromanian\b/i,
+    /\bdeadlifts?\b/i,
+    /\bleg curls?\b/i,
+    /\bgood mornings?\b/i,
+    /\bstiff-leg\b/i,
+  ],
+  calves: [
+    /\bcalfs?\b/i,
+    /\bcalves?\b/i,
+    /\bcalf raises?\b/i,
+    /\bcalf press\b/i,
+    /\bsoleus\b/i,
+    /\bstanding calf\b/i,
+    /\bseated calf\b/i,
+  ],
+  forearms: [
+    /\bforearms?\b/i,
+    /\bwrist curls?\b/i,
+    /\bfarmers walk\b/i,
+    /\breverse curls?\b/i,
+    /\bgrip\b/i,
+  ],
 };
 
 const MUSCLE_LABELS: Record<string, string> = {
@@ -38,15 +143,6 @@ const MUSCLE_LABELS: Record<string, string> = {
   forearms: "Forearms",
 };
 
-function getMuscleActivation(exerciseName: string): Set<string> {
-  const lower = (exerciseName || "").toLowerCase();
-  const activated = new Set<string>();
-  for (const [muscle, keywords] of Object.entries(MUSCLE_KEYWORDS)) {
-    if (keywords.some(kw => lower.includes(kw))) activated.add(muscle);
-  }
-  return activated;
-}
-
 interface MuscleMapProps {
   exerciseNames: string[];
   showLabel?: boolean;
@@ -54,17 +150,31 @@ interface MuscleMapProps {
 
 export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapProps) {
   const [activeView, setActiveView] = useState<"both" | "front" | "back">("both");
-  const [hoveredMuscle, setHoveredMuscle] = useState<string | null>(null);
+  const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
 
-  const muscleCounts = useMemo(() => {
+  // Group matching exercises by muscle group
+  const { muscleCounts, muscleExercises } = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const name of exerciseNames) {
-      const muscles = getMuscleActivation(name);
-      muscles.forEach(m => {
-        counts[m] = (counts[m] || 0) + 1;
-      });
-    }
-    return counts;
+    const exercisesByMuscle: Record<string, string[]> = {};
+
+    exerciseNames.forEach(name => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+
+      for (const [muscle, patterns] of Object.entries(MUSCLE_RULES)) {
+        if (patterns.some(p => p.test(trimmed))) {
+          counts[muscle] = (counts[muscle] || 0) + 1;
+          if (!exercisesByMuscle[muscle]) {
+            exercisesByMuscle[muscle] = [];
+          }
+          if (!exercisesByMuscle[muscle].includes(trimmed)) {
+            exercisesByMuscle[muscle].push(trimmed);
+          }
+        }
+      }
+    });
+
+    return { muscleCounts: counts, muscleExercises: exercisesByMuscle };
   }, [exerciseNames]);
 
   const maxCount = useMemo(() => {
@@ -75,32 +185,53 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
   const totalActivated = Object.keys(muscleCounts).length;
   const topMuscle = Object.entries(muscleCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-  // Helper for muscle fill and glow style
+  // Helper for muscle fill, opacity, and isolated highlight
   const getMuscleStyle = (muscleKey: string) => {
     const count = muscleCounts[muscleKey] || 0;
-    const isHovered = hoveredMuscle === muscleKey;
+    const isSelected = selectedMuscle === muscleKey;
+    const hasActiveSelection = selectedMuscle !== null;
+
+    // When another muscle is selected, dim non-selected muscles
+    if (hasActiveSelection && !isSelected) {
+      return {
+        fill: count > 0 ? "#ADFF00" : "#131C13",
+        fillOpacity: count > 0 ? 0.12 : 0.05,
+        stroke: "rgba(255, 255, 255, 0.04)",
+        strokeWidth: 0.5,
+        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        cursor: "pointer",
+      };
+    }
 
     if (count === 0) {
       return {
-        fill: isHovered ? "rgba(173, 255, 0, 0.2)" : "#131C13",
-        stroke: isHovered ? "#ADFF00" : "rgba(255, 255, 255, 0.09)",
-        strokeWidth: isHovered ? 1.2 : 0.7,
-        transition: "all 0.25s ease",
+        fill: isSelected ? "rgba(173, 255, 0, 0.25)" : "#131C13",
+        stroke: isSelected ? "#ADFF00" : "rgba(255, 255, 255, 0.08)",
+        strokeWidth: isSelected ? 1.4 : 0.6,
+        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         cursor: "pointer",
       };
     }
 
     // Activated gradient levels
-    const intensity = Math.min(1, 0.35 + (count / maxCount) * 0.65);
+    const baseOpacity = Math.min(1, 0.45 + (count / maxCount) * 0.55);
     return {
-      fill: isHovered ? "#BFFF1A" : "#ADFF00",
-      fillOpacity: isHovered ? 1 : intensity,
-      stroke: "#ADFF00",
-      strokeWidth: isHovered ? 1.5 : 0.9,
-      filter: count >= 2 || isHovered ? "drop-shadow(0 0 5px rgba(173, 255, 0, 0.75))" : undefined,
-      transition: "all 0.25s ease",
+      fill: isSelected ? "#C6FF33" : "#ADFF00",
+      fillOpacity: isSelected ? 1 : baseOpacity,
+      stroke: isSelected ? "#FFFFFF" : "#ADFF00",
+      strokeWidth: isSelected ? 1.6 : 0.9,
+      filter: isSelected
+        ? "drop-shadow(0 0 10px rgba(173, 255, 0, 0.95))"
+        : count >= 2
+        ? "drop-shadow(0 0 5px rgba(173, 255, 0, 0.65))"
+        : undefined,
+      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
       cursor: "pointer",
     };
+  };
+
+  const handleSelect = (muscle: string) => {
+    setSelectedMuscle(prev => (prev === muscle ? null : muscle));
   };
 
   return (
@@ -108,15 +239,15 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
       {/* Header bar */}
       {showLabel && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-[#ADFF00]/10 flex items-center justify-center text-[#ADFF00]">
-              <Zap className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-xl bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center text-[#ADFF00]">
+              <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-white">Muscles Worked</h3>
-              <p className="text-[10px] text-gray-400">
+              <h3 className="text-sm font-black uppercase tracking-wider text-white">Muscle Activation Map</h3>
+              <p className="text-[11px] text-white/50">
                 {totalActivated > 0
-                  ? `${totalActivated} muscle groups targeted`
+                  ? `${totalActivated} muscle groups targeted in routine`
                   : "Targeted plan muscle anatomy"}
               </p>
             </div>
@@ -127,7 +258,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               <button
                 key={v}
                 onClick={() => setActiveView(v)}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                   activeView === v
                     ? "bg-[#ADFF00] text-black shadow-[0_0_10px_rgba(173,255,0,0.3)]"
                     : "text-gray-400 hover:text-white"
@@ -140,52 +271,86 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
         </div>
       )}
 
-      {/* Interactive Tooltip Banner */}
-      <div className="h-6 flex items-center justify-between px-3 bg-[#0A1108] rounded-xl border border-white/5 text-[11px]">
-        {hoveredMuscle ? (
-          <div className="flex items-center gap-2 w-full justify-between">
-            <span className="font-bold text-[#ADFF00]">{MUSCLE_LABELS[hoveredMuscle] || hoveredMuscle}</span>
-            <span className="text-gray-400 text-[10px] font-medium">
-              {muscleCounts[hoveredMuscle]
-                ? `${muscleCounts[hoveredMuscle]} exercise(s) targeting this area`
-                : "Resting in this routine"}
-            </span>
-          </div>
-        ) : topMuscle ? (
-          <div className="flex items-center gap-2 w-full justify-between">
-            <span className="text-gray-400 text-[10px]">Primary Focus:</span>
-            <span className="font-black text-[#ADFF00] uppercase text-[10px] tracking-wider">
-              {MUSCLE_LABELS[topMuscle] || topMuscle} ({muscleCounts[topMuscle]} exercises)
-            </span>
-          </div>
+      {/* Interactive Muscle Banner & Selected Detail */}
+      <AnimatePresence mode="wait">
+        {selectedMuscle ? (
+          <motion.div
+            key={selectedMuscle}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="p-3 bg-[#0E170C] rounded-2xl border border-[#ADFF00]/30 flex flex-col gap-2 shadow-[0_0_15px_rgba(173,255,0,0.08)]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ADFF00] animate-pulse" />
+                <span className="font-black text-sm text-[#ADFF00] uppercase tracking-wide">
+                  {MUSCLE_LABELS[selectedMuscle] || selectedMuscle}
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#ADFF00]/15 text-[#ADFF00] font-bold border border-[#ADFF00]/30">
+                  {muscleCounts[selectedMuscle] || 0} exercises
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedMuscle(null)}
+                className="flex items-center gap-1 text-[10px] font-bold text-white/50 hover:text-white px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset</span>
+              </button>
+            </div>
+
+            {/* List of matching exercises */}
+            {muscleExercises[selectedMuscle]?.length ? (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {muscleExercises[selectedMuscle].map(ex => (
+                  <span
+                    key={ex}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/40 border border-white/5 text-[10px] text-white/90 font-semibold"
+                  >
+                    <CheckCircle2 className="w-3 h-3 text-[#ADFF00]" />
+                    {ex}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-white/40 italic">
+                Resting in current routine • No direct exercises assigned yet.
+              </p>
+            )}
+          </motion.div>
         ) : (
-          <div className="flex items-center gap-1.5 text-gray-500 text-[10px]">
-            <Info className="w-3 h-3" />
-            <span>Hover or tap any muscle group to inspect load</span>
-          </div>
+          <motion.div
+            key="overview"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="h-8 flex items-center justify-between px-3.5 bg-[#0A1108] rounded-xl border border-white/5 text-[11px]"
+          >
+            {topMuscle ? (
+              <div className="flex items-center gap-2 w-full justify-between">
+                <span className="text-gray-400 text-[10px] font-medium">Primary Training Focus:</span>
+                <span className="font-black text-[#ADFF00] uppercase text-[10px] tracking-wider">
+                  {MUSCLE_LABELS[topMuscle] || topMuscle} ({muscleCounts[topMuscle]} exercises)
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-gray-400 text-[10px]">
+                <Info className="w-3.5 h-3.5 text-[#ADFF00]" />
+                <span>Tap any muscle or pill below to isolate and see targeting exercises</span>
+              </div>
+            )}
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       {/* Main Figures Canvas */}
-      <div className="relative bg-[radial-gradient(ellipse_at_center,rgba(173,255,0,0.04)_0%,transparent_70%)] py-3 px-2 rounded-2xl border border-white/5 flex items-center justify-center gap-6 sm:gap-12 overflow-hidden">
+      <div className="relative bg-[radial-gradient(ellipse_at_center,rgba(173,255,0,0.05)_0%,transparent_75%)] py-4 px-3 rounded-2xl border border-white/5 flex items-center justify-center gap-6 sm:gap-14 overflow-hidden">
         
-        {/* SVG Defs for Gradients & Glow */}
-        <svg className="absolute w-0 h-0" aria-hidden="true">
-          <defs>
-            <linearGradient id="neonGreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#D4FF4D" />
-              <stop offset="100%" stopColor="#8AE600" />
-            </linearGradient>
-            <filter id="muscleGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ADFF00" floodOpacity="0.8" />
-            </filter>
-          </defs>
-        </svg>
-
         {/* FRONT VIEW (ANTERIOR) */}
         {(activeView === "both" || activeView === "front") && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25 }}
             className="flex flex-col items-center"
@@ -211,22 +376,14 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
                 strokeWidth="0.7"
               />
 
-              {/* Traps (Front) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("back")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("back")}
-              >
+              {/* Traps (Front Clavicular Slope) */}
+              <g onClick={() => handleSelect("back")}>
                 <path d="M44.5 37 L33 42 C36.5 40 40.5 38 44.5 37 Z" style={getMuscleStyle("back")} />
                 <path d="M55.5 37 L67 42 C63.5 40 59.5 38 55.5 37 Z" style={getMuscleStyle("back")} />
               </g>
 
               {/* Shoulders (Deltoids - Front & Lateral) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("shoulders")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("shoulders")}
-              >
+              <g onClick={() => handleSelect("shoulders")}>
                 {/* Left Deltoid */}
                 <path
                   d="M33 42 C26 43 20 48 18 55 C17 59 19 64 22 66 C24 64 25.5 58 27 52 L33 44 Z"
@@ -240,11 +397,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               </g>
 
               {/* Chest (Pectoralis Major) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("chest")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("chest")}
-              >
+              <g onClick={() => handleSelect("chest")}>
                 {/* Left Pec */}
                 <path
                   d="M48.5 44 L34 44.5 C29.5 48 29 55 31.5 60 C35.5 63 44 63.5 48.5 60.5 Z"
@@ -258,11 +411,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               </g>
 
               {/* Biceps */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("biceps")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("biceps")}
-              >
+              <g onClick={() => handleSelect("biceps")}>
                 {/* Left Bicep */}
                 <path
                   d="M22 66 C18 69 17 76 18.5 82 C20 86 23 86 24.5 84 C26 80 26 73 24.5 67 Z"
@@ -276,11 +425,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               </g>
 
               {/* Forearms */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("forearms")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("forearms")}
-              >
+              <g onClick={() => handleSelect("forearms")}>
                 {/* Left Forearm */}
                 <path
                   d="M23 85 C18 89 16.5 98 17.5 107 C18.5 111 20.5 113 22 112 C23.5 107 24.5 98 24.5 86 Z"
@@ -298,11 +443,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               <path d="M82.5 113 C83.5 117 82 122 81 124 C80 123 79 120 79 114 Z" fill="#131C13" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6" />
 
               {/* Core / Abdominals (6-pack & Obliques) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("core")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("core")}
-              >
+              <g onClick={() => handleSelect("core")}>
                 {/* Upper Abs */}
                 <path d="M48.5 62 L36 63.5 C35.5 67 36.5 70 48.5 70 Z" style={getMuscleStyle("core")} />
                 <path d="M51.5 62 L64 63.5 C64.5 67 63.5 70 51.5 70 Z" style={getMuscleStyle("core")} />
@@ -315,7 +456,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
                 <path d="M48.5 80.5 L38 80.5 C38.5 85 43 89.5 48.5 90.5 Z" style={getMuscleStyle("core")} />
                 <path d="M51.5 80.5 L62 80.5 C61.5 85 57 89.5 51.5 90.5 Z" style={getMuscleStyle("core")} />
 
-                {/* Left & Right Obliques */}
+                {/* Obliques */}
                 <path d="M34 64 C30 72 31.5 81 36.5 88 L37.5 84 C34 78 33.5 71 35 65 Z" style={getMuscleStyle("core")} />
                 <path d="M66 64 C70 72 68.5 81 63.5 88 L62.5 84 C66 78 66.5 71 65 65 Z" style={getMuscleStyle("core")} />
               </g>
@@ -329,11 +470,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               />
 
               {/* Quadriceps (Front Thighs) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("quads")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("quads")}
-              >
+              <g onClick={() => handleSelect("quads")}>
                 {/* Left Quad */}
                 <path
                   d="M36.5 93 C29.5 100 28 112 29.5 127 C30.5 136 34 139.5 37 140 C41 139 42 129 43 120 C44 110 43 99 43 94 Z"
@@ -351,11 +488,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               <path d="M63 141 C65.5 143 65.5 148 63 150 C60.5 148 60.5 143 63 141 Z" fill="#162215" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6" />
 
               {/* Calves & Shins (Front) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("calves")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("calves")}
-              >
+              <g onClick={() => handleSelect("calves")}>
                 {/* Left Shin & Calf */}
                 <path
                   d="M33 152 C30.5 162 29.5 174 32.5 188 C33.5 196 34.5 202 35.5 204 C37.5 202 38.5 195 39.5 186 C40.5 174 40.5 162 38.5 152 Z"
@@ -372,14 +505,14 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               <path d="M33 205 C31 210 33.5 215 36.5 215 C38.5 215 38.5 210 38 205 Z" fill="#131C13" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6" />
               <path d="M67 205 C69 210 66.5 215 63.5 215 C61.5 215 61.5 210 62 205 Z" fill="#131C13" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6" />
             </svg>
-            <span className="text-[9px] font-black text-white/40 tracking-widest uppercase mt-1">Front</span>
+            <span className="text-[10px] font-black text-white/50 tracking-widest uppercase mt-1">Front</span>
           </motion.div>
         )}
 
         {/* BACK VIEW (POSTERIOR) */}
         {(activeView === "both" || activeView === "back") && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25 }}
             className="flex flex-col items-center"
@@ -401,11 +534,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               <path d="M46 33 L54 33 L53 38 L47 38 Z" fill="#131C13" stroke="rgba(255,255,255,0.08)" strokeWidth="0.7" />
 
               {/* Trapezius (Diamond Back) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("back")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("back")}
-              >
+              <g onClick={() => handleSelect("back")}>
                 <path
                   d="M50 34 L34 42 C38 46 43 47 46 47 L47 62 L50 68 L53 62 L54 47 C57 47 62 46 66 42 Z"
                   style={getMuscleStyle("back")}
@@ -413,11 +542,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               </g>
 
               {/* Rear Deltoids */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("shoulders")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("shoulders")}
-              >
+              <g onClick={() => handleSelect("shoulders")}>
                 {/* Left Rear Delt */}
                 <path
                   d="M32 42 C25 43 20 48 18 55 C17 59 19 64 22 66 C24 63 26 57 28 51 L32 44 Z"
@@ -431,11 +556,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               </g>
 
               {/* Latissimus Dorsi (Lats) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("back")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("back")}
-              >
+              <g onClick={() => handleSelect("back")}>
                 {/* Left Lat */}
                 <path
                   d="M46 56 L33 46 C28 54 28.5 66 32.5 78 C36.5 84 42.5 86 46.5 86 L47 70 Z"
@@ -453,11 +574,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               </g>
 
               {/* Triceps (Back) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("triceps")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("triceps")}
-              >
+              <g onClick={() => handleSelect("triceps")}>
                 {/* Left Tricep */}
                 <path
                   d="M22 66 C18 69 17.5 76 19 82 C20.5 86 23.5 85 24.5 83 C25.5 77 25.5 71 24.5 66 Z"
@@ -471,11 +588,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               </g>
 
               {/* Forearms (Back) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("forearms")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("forearms")}
-              >
+              <g onClick={() => handleSelect("forearms")}>
                 <path
                   d="M23 85 C18 89 16.5 98 17.5 107 C18.5 111 20.5 113 22 112 C23.5 107 24.5 98 24.5 86 Z"
                   style={getMuscleStyle("forearms")}
@@ -491,11 +604,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               <path d="M82.5 113 C83.5 117 82 122 81 124 C80 123 79 120 79 114 Z" fill="#131C13" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6" />
 
               {/* Glutes (Gluteus Maximus) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("glutes")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("glutes")}
-              >
+              <g onClick={() => handleSelect("glutes")}>
                 {/* Left Glute */}
                 <path
                   d="M48.5 92 C42 92 34 94 32 101 C30 110 35 118 46.5 118 C48.5 114 49.5 103 48.5 92 Z"
@@ -509,11 +618,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               </g>
 
               {/* Hamstrings */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("hamstrings")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("hamstrings")}
-              >
+              <g onClick={() => handleSelect("hamstrings")}>
                 {/* Left Hamstring */}
                 <path
                   d="M34 119 C30.5 127 30.5 137 33.5 143 C37.5 144 41.5 139 43.5 131 C44.5 124 44.5 119 43 119 Z"
@@ -527,11 +632,7 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               </g>
 
               {/* Calves (Back Gastrocnemius & Achilles) */}
-              <g
-                onMouseEnter={() => setHoveredMuscle("calves")}
-                onMouseLeave={() => setHoveredMuscle(null)}
-                onClick={() => setHoveredMuscle("calves")}
-              >
+              <g onClick={() => handleSelect("calves")}>
                 {/* Left Calf */}
                 <path
                   d="M32.5 148 C28.5 158 28.5 170 31.5 182 C33.5 192 34.5 200 35.5 204 C37.5 202 38.5 192 40.5 180 C41.5 168 40.5 156 37.5 148 Z"
@@ -548,43 +649,45 @@ export function MuscleMap({ exerciseNames = [], showLabel = true }: MuscleMapPro
               <path d="M33 205 C31 210 33.5 215 36.5 215 C38.5 215 38.5 210 38 205 Z" fill="#131C13" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6" />
               <path d="M67 205 C69 210 66.5 215 63.5 215 C61.5 215 61.5 210 62 205 Z" fill="#131C13" stroke="rgba(255,255,255,0.06)" strokeWidth="0.6" />
             </svg>
-            <span className="text-[9px] font-black text-white/40 tracking-widest uppercase mt-1">Back</span>
+            <span className="text-[10px] font-black text-white/50 tracking-widest uppercase mt-1">Back</span>
           </motion.div>
         )}
 
       </div>
 
-      {/* Muscle Breakdown Badges */}
+      {/* Interactive Muscle Pills */}
       <div className="flex flex-wrap gap-2 pt-1">
         {Object.entries(muscleCounts).length > 0 ? (
           Object.entries(muscleCounts)
             .sort((a, b) => b[1] - a[1])
             .map(([muscle, count]) => {
-              const isHovered = hoveredMuscle === muscle;
+              const isSelected = selectedMuscle === muscle;
               return (
                 <button
                   key={muscle}
-                  onMouseEnter={() => setHoveredMuscle(muscle)}
-                  onMouseLeave={() => setHoveredMuscle(null)}
-                  onClick={() => setHoveredMuscle(hoveredMuscle === muscle ? null : muscle)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    isHovered
-                      ? "bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.4)] scale-105"
-                      : "bg-[#111A10] border border-[#ADFF00]/30 text-white hover:border-[#ADFF00]"
+                  onClick={() => handleSelect(muscle)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.5)] scale-105"
+                      : "bg-[#111A10] border border-[#ADFF00]/30 text-white hover:border-[#ADFF00] hover:bg-[#162215]"
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#ADFF00]" />
+                  <span className={`w-2 h-2 rounded-full ${isSelected ? "bg-black" : "bg-[#ADFF00]"}`} />
                   <span>{MUSCLE_LABELS[muscle] || muscle}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${isHovered ? "bg-black/20 text-black" : "bg-[#ADFF00]/15 text-[#ADFF00]"}`}>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                      isSelected ? "bg-black/25 text-black" : "bg-[#ADFF00]/20 text-[#ADFF00]"
+                    }`}
+                  >
                     {count}
                   </span>
                 </button>
               );
             })
         ) : (
-          <div className="w-full flex items-center justify-between text-xs text-white/50 bg-[#0A1108] p-3 rounded-xl border border-white/5">
-            <span>Ready for training • Log a workout to activate heat signatures</span>
-            <span className="text-[10px] font-bold text-[#ADFF00]">0% Fatigue</span>
+          <div className="w-full flex items-center justify-between text-xs text-white/50 bg-[#0A1108] p-3.5 rounded-xl border border-white/5">
+            <span>All muscles fresh • Start a workout to log active volume</span>
+            <span className="text-[10px] font-black text-[#ADFF00] uppercase">100% Recovery</span>
           </div>
         )}
       </div>
