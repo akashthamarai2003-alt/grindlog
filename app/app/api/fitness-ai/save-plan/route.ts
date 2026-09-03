@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { GeneratedPlanSchema } from "@/lib/fitness/ai/schemas";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
+import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
 
 export async function POST(req: Request) {
   try {
@@ -62,9 +63,17 @@ export async function POST(req: Request) {
       );
     }
 
+    const { data: foodCatalog } = await supabase
+      .from("foods")
+      .select("name, serving_size, calories, protein, carbs, fat")
+      .eq("is_active", true)
+      .eq("plan_eligible", true)
+      .limit(250);
+    const validatedPlan = enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []);
+
     // Atomic Database Transaction via RPC
     const { data: planId, error: rpcError } = await supabase.rpc("create_fitness_os_plan_transaction", {
-      payload: profileCheck.plan
+      payload: validatedPlan
     });
 
     if (rpcError || !planId) {

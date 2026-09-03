@@ -20,6 +20,12 @@ type GroceryItem = {
   category?: string;
   is_optional?: boolean;
   reason?: string;
+  protein_grams_per_serving?: number;
+  carbs_grams_per_serving?: number;
+  fat_grams_per_serving?: number;
+  calories_per_serving?: number;
+  food_serving_size?: string;
+  nutrition_source?: string;
 };
 
 const PROVIDED_CORE_ENVIRONMENTS = ['PG', 'Hostel', 'Home', 'Office/Canteen'];
@@ -44,6 +50,27 @@ function getBudgetReference(value: unknown): { amount: number | null; isOpenEnde
 
 function isCoreMeal(mealName: unknown): boolean {
   return typeof mealName === 'string' && /breakfast|lunch|dinner/i.test(mealName);
+}
+
+function foodKey(value: unknown): string {
+  const name = String(value || '').toLowerCase();
+  if (/soy|soya/.test(name) && /chunk/.test(name)) return 'soy chunks';
+  if (/chickpea|chana/.test(name)) return 'chickpeas';
+  if (/kidney bean|rajma/.test(name)) return 'kidney beans';
+  if (/peanut/.test(name)) return 'peanuts';
+  if (/oat/.test(name)) return 'oats';
+  if (/mixed vegetable/.test(name)) return 'mixed vegetables';
+  if (/banana/.test(name)) return 'banana';
+  if (/apple/.test(name)) return 'apple';
+  return name.replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function isReferencedByDailyMeals(itemName: unknown, mealItems: string[]): boolean {
+  const key = foodKey(itemName);
+  return Boolean(key) && mealItems.some((mealItem) => {
+    const mealKey = foodKey(mealItem);
+    return mealKey.includes(key) || key.includes(mealKey);
+  });
 }
 
 function dailyQuantityLabel(item: GroceryItem): string | null {
@@ -118,6 +145,25 @@ export default function GroceryTab({
     return Object.entries(groups);
   }, [groceryList]);
 
+  const mealFoodNames = useMemo(() => {
+    if (!Array.isArray(planData?.nutrition?.meals)) return [];
+    return planData.nutrition.meals.flatMap((meal: any) =>
+      Array.isArray(meal?.items)
+        ? meal.items.filter((item: unknown): item is string => typeof item === 'string')
+        : [],
+    );
+  }, [planData?.nutrition?.meals]);
+
+  const rotationCost = useMemo(
+    () => groceryList.reduce(
+      (total, item) => isReferencedByDailyMeals(item.name, mealFoodNames)
+        ? total
+        : total + (Number(item.estimated_price) || 0),
+      0,
+    ),
+    [groceryList, mealFoodNames],
+  );
+
   const coveredCoreMeals = useMemo(() => {
     if (!usesProvidedCoreMeals || !Array.isArray(planData?.nutrition?.meals)) return [];
     return planData.nutrition.meals
@@ -183,7 +229,7 @@ export default function GroceryTab({
         <div className="flex items-start justify-between gap-4 pl-2">
           <div>
             <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]">Monthly grocery budget</p>
-            <p className="mt-1 text-xs leading-relaxed text-gray-500">Estimated 30-day add-ons, planned around the budget you selected.</p>
+            <p className="mt-1 text-xs leading-relaxed text-gray-500">Estimated 30-day add-ons, including practical rotation foods for variety.</p>
           </div>
           <ShoppingCart size={20} className="shrink-0 text-[#ADFF00]" />
         </div>
@@ -211,6 +257,9 @@ export default function GroceryTab({
         {targetFloor !== null && targetCeiling !== null && !isOverBudget && (
           <p className="mt-3 pl-2 text-[11px] leading-relaxed text-gray-500">Luna&apos;s useful spend range: {formatMoney(targetFloor)}–{formatMoney(targetCeiling)} for this selected budget.</p>
         )}
+        {rotationCost > 0 && (
+          <p className="mt-2 pl-2 text-[11px] leading-relaxed text-gray-500">Includes {formatMoney(rotationCost)} of rotation foods that can be used across the month, not necessarily every day.</p>
+        )}
       </section>
 
       <section>
@@ -224,6 +273,9 @@ export default function GroceryTab({
                   const price = Number(item.estimated_price) || 0;
                   const quantity = Number(item.monthly_quantity) || 0;
                   const dailyLabel = dailyQuantityLabel(item);
+                  const isRotation = !isReferencedByDailyMeals(item.name, mealFoodNames);
+                  const protein = Number(item.protein_grams_per_serving);
+                  const hasProtein = Number.isFinite(protein) && protein >= 0;
 
                   return (
                     <article key={`${item.name || 'item'}-${index}`} className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4">
@@ -232,9 +284,15 @@ export default function GroceryTab({
                           <div className="flex flex-wrap items-center gap-2">
                             <h5 className="text-base font-black text-white">{item.name || 'Food item'}</h5>
                             {item.is_optional && <span className="rounded-full border border-white/10 bg-black/20 px-2 py-0.5 text-[9px] font-bold uppercase text-gray-400">Optional</span>}
+                            {isRotation && !item.is_optional && <span className="rounded-full border border-[#ADFF00]/20 bg-[#ADFF00]/5 px-2 py-0.5 text-[9px] font-bold uppercase text-[#ADFF00]">Rotation</span>}
                           </div>
                           {dailyLabel && <p className="mt-2 text-sm font-bold text-gray-300">{dailyLabel}</p>}
                           <p className="mt-1 text-xs font-medium text-gray-500">{monthlyQuantityLabel(item)}</p>
+                          <p className="mt-2 text-xs font-bold text-[#ADFF00]">
+                            Protein: {hasProtein ? `${formatQuantity(protein)} g` : 'Not available'}
+                            {hasProtein && item.food_serving_size ? ` / ${item.food_serving_size}` : hasProtein ? ' / listed serving' : ' in verified library'}
+                          </p>
+                          {hasProtein && item.nutrition_source && <p className="mt-1 text-[10px] text-gray-500">{item.nutrition_source}; check the package label for brand differences.</p>}
                         </div>
 
                         <div className="shrink-0 text-right">

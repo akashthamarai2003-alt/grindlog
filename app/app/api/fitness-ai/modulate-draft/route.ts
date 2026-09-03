@@ -6,6 +6,7 @@ import { FITNESS_PLAN_SYSTEM_PROMPT } from "@/lib/fitness/ai/prompts";
 import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
+import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
 
 export async function POST(req: Request) {
   try {
@@ -84,7 +85,15 @@ Modify the JSON appropriately and return the full updated JSON.`;
       );
     }
 
-    return NextResponse.json({ success: true, data: { ...profileCheck.plan, _profile: profile } });
+    const { data: foodCatalog } = await supabase
+      .from("foods")
+      .select("name, serving_size, calories, protein, carbs, fat")
+      .eq("is_active", true)
+      .eq("plan_eligible", true)
+      .limit(250);
+    const validatedPlan = enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []);
+
+    return NextResponse.json({ success: true, data: { ...validatedPlan, _profile: profile } });
 
   } catch (error: any) {
     console.error("Modulate Error:", error);

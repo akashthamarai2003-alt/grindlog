@@ -50,7 +50,15 @@ export const GeneratedGroceryItemSchema = z.object({
   estimated_price: safeNumber.optional().default(0),
   category: z.coerce.string().optional().default("Other"),
   is_optional: z.coerce.boolean().optional().default(false),
-  reason: z.coerce.string().optional().default("")
+  reason: z.coerce.string().optional().default(""),
+  // These are added server-side from the verified food library. They are
+  // optional so older cached drafts remain readable.
+  protein_grams_per_serving: z.number().nonnegative().optional(),
+  carbs_grams_per_serving: z.number().nonnegative().optional(),
+  fat_grams_per_serving: z.number().nonnegative().optional(),
+  calories_per_serving: z.number().nonnegative().optional(),
+  food_serving_size: z.string().optional(),
+  nutrition_source: z.string().optional(),
 });
 
 export const GeneratedNutritionSchema = z.object({

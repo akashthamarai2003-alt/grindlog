@@ -17,6 +17,7 @@ import {
 } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
+import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
 import {
   getGenerationRetryAfterSeconds,
   recordGenerationAttempt,
@@ -206,7 +207,7 @@ export async function POST(req: Request) {
           continue;
         }
 
-        planData = profileCheck.plan;
+        planData = enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []);
         break; // Success!
       } catch (err: any) {
         console.error(`Attempt ${attempt} caught error:`, err);
