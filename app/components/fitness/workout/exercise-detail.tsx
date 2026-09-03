@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Bot, Check, Loader2, Pencil, X, Timer,
-  BookOpen, ChevronDown, ChevronUp, Dumbbell, Target, Trophy, ArrowRight
+  BookOpen, ChevronDown, ChevronUp, Dumbbell, Target, Trophy, ArrowRight, Pause
 } from "lucide-react";
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { toast } from "sonner";
@@ -167,6 +167,10 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
   }, [activeRestSeconds]);
 
   const handleCompleteSet = async (setRecord: FitnessSet) => {
+    if (isPaused) {
+      toast.info("Workout is paused. Return to overview and resume to log sets.");
+      return;
+    }
     if (setRecord.completed) return;
     const input = setInputs[setRecord.id];
     
@@ -248,6 +252,16 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
           </div>
         )}
       </div>
+
+      {isPaused && (
+        <div className="w-full mb-4 bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 rounded-xl flex items-center justify-between text-amber-400">
+          <div className="flex items-center gap-2">
+            <Pause className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Workout Paused</span>
+          </div>
+          <span className="text-[10px] uppercase font-bold text-amber-400/80">Go back to resume</span>
+        </div>
+      )}
 
       <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-2">
         {exercise.name}
@@ -380,6 +394,14 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
                   <Check className="w-4 h-4 text-[#ADFF00]" />
                   Completed
                 </div>
+              ) : isPaused ? (
+                <button
+                  onClick={() => toast.info("Workout is paused. Return to overview and resume to log sets.")}
+                  className="w-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-black uppercase tracking-widest py-3.5 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
+                >
+                  <Pause className="w-4 h-4" />
+                  Paused — Resume To Log
+                </button>
               ) : (
                 <button
                   onClick={() => { if (activeRestSeconds !== null) setActiveRestSeconds(null); handleCompleteSet(setRecord); }}

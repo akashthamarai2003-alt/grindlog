@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { WorkoutHeader } from "./workout-header";
 import { ExerciseDetail } from "./exercise-detail";
 import { WorkoutExecution } from "./workout-execution";
@@ -25,7 +26,7 @@ export function WorkoutSessionManager({
   workout: initialWorkout,
   sessionId,
   startedAt,
-  isPaused,
+  isPaused: initialIsPaused = false,
   avatarUrl,
   showAiCoach = false,
   isEarlyStart = false,
@@ -35,6 +36,26 @@ export function WorkoutSessionManager({
 }: WorkoutSessionManagerProps) {
   const [workout, setWorkout] = useState(initialWorkout);
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(initialExerciseId);
+  const [isPaused, setIsPaused] = useState<boolean>(initialIsPaused || false);
+
+  const handleTogglePause = async () => {
+    const nextState = !isPaused;
+    setIsPaused(nextState);
+    toast.success(nextState ? "Workout paused." : "Workout resumed!");
+
+    if (workout.id === "mock") return;
+
+    try {
+      await fetch(`/api/workouts/sessions/${sessionId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextState ? "paused" : "active" })
+      });
+    } catch {
+      setIsPaused(!nextState);
+      toast.error("Failed to update status");
+    }
+  };
 
   const activeExercise = activeExerciseId
     ? workout.fitness_os_exercises?.find((e: any) => e.id === activeExerciseId) || null
@@ -111,6 +132,8 @@ export function WorkoutSessionManager({
           isEarlyStart={isEarlyStart}
           onSelectExercise={handleSelectExercise}
           initialCoachNote={initialCoachNote}
+          isPaused={isPaused}
+          onTogglePause={handleTogglePause}
         />
       )}
     </>
