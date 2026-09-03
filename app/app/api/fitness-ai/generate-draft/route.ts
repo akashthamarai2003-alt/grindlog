@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     const todayStr = new Date().toISOString().split("T")[0];
     const { data: foodCatalog } = await supabase
       .from("foods")
-      .select("name, category, serving_size, calories, protein, estimated_cost, diet_type, is_pg_friendly, allergens")
+      .select("name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, allergens")
       .eq("is_active", true)
       .eq("plan_eligible", true)
       .limit(250);

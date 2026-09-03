@@ -346,14 +346,27 @@ function buildGoalCalorieTarget(profile: ProfileLike): number | null {
 export function getPlanNutritionTargets(profile: ProfileLike): {
   calories: number | null;
   protein: number | null;
+  carbs: number | null;
+  fat: number | null;
   mealsPerDay: number | null;
 } {
+  const calories = buildGoalCalorieTarget(profile);
+  const protein =
+    typeof profile.initial_protein_target === "number" && profile.initial_protein_target > 0
+      ? Math.round(profile.initial_protein_target)
+      : null;
+  const fat = calories !== null
+    ? Math.round((calories * 0.25) / 9)
+    : null;
+  const carbs = calories !== null && protein !== null && fat !== null
+    ? Math.max(0, Math.round((calories - protein * 4 - fat * 9) / 4))
+    : null;
+
   return {
-    calories: buildGoalCalorieTarget(profile),
-    protein:
-      typeof profile.initial_protein_target === "number" && profile.initial_protein_target > 0
-        ? Math.round(profile.initial_protein_target)
-        : null,
+    calories,
+    protein,
+    carbs,
+    fat,
     mealsPerDay: expectedMealCount(profile.meals_per_day),
   };
 }
@@ -397,6 +410,8 @@ export function normalisePlanProfileDetails(
     ...normalisedPlan.nutrition,
     ...(targets.calories !== null ? { daily_calories: targets.calories } : {}),
     ...(targets.protein !== null ? { protein_grams: targets.protein } : {}),
+    ...(targets.carbs !== null ? { carbs_grams: targets.carbs } : {}),
+    ...(targets.fat !== null ? { fat_grams: targets.fat } : {}),
     ...(targets.mealsPerDay !== null ? { meals_per_day: targets.mealsPerDay } : {}),
     meals: normalisedPlan.nutrition.meals.map((meal) => {
       const time = cleanText(meal.time_of_day);

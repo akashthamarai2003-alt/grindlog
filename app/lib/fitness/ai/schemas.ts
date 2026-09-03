@@ -56,6 +56,8 @@ export const GeneratedGroceryItemSchema = z.object({
 export const GeneratedNutritionSchema = z.object({
   daily_calories: safeNumber.nullable().optional(),
   protein_grams: safeNumber.nullable().optional(),
+  carbs_grams: safeNumber.nullable().optional(),
+  fat_grams: safeNumber.nullable().optional(),
   meals_per_day: safeNumber.nullable().optional(),
   meals: safeArray(GeneratedMealSchema),
   grocery_list: safeArray(GeneratedGroceryItemSchema),
@@ -163,6 +165,8 @@ export const FITNESS_PLAN_JSON_SCHEMA: Record<string, unknown> = {
       required: [
         "daily_calories",
         "protein_grams",
+        "carbs_grams",
+        "fat_grams",
         "meals_per_day",
         "guidance",
         "meals",
@@ -171,6 +175,8 @@ export const FITNESS_PLAN_JSON_SCHEMA: Record<string, unknown> = {
       properties: {
         daily_calories: { type: ["number", "null"] },
         protein_grams: { type: ["number", "null"] },
+        carbs_grams: { type: ["number", "null"] },
+        fat_grams: { type: ["number", "null"] },
         meals_per_day: { type: ["number", "null"] },
         guidance: { type: "string" },
         meals: {

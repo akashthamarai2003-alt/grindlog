@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart, ShieldAlert, HeartPulse, CalendarDays, CircleCheck } from 'lucide-react';
+import { Loader2, Send, Check, AlertTriangle, ArrowRight, Brain, Dumbbell, Apple, Droplets, Flame, ShoppingCart, ShieldAlert, HeartPulse, CalendarDays, CircleCheck, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import GroceryTab from '@/components/fitness/plan/grocery-tab';
 import { AIPlanAnimation } from '@/components/fitness/plan-animation';
@@ -532,7 +532,7 @@ export default function PlanSetupPage() {
             )}
           </section>
 
-          <div className="mb-7 grid grid-cols-3 gap-3">
+          <div className="mb-3 grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4 text-center">
               <Flame size={20} className="mx-auto mb-2 text-orange-500" />
               <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-500">Calories</span>
@@ -544,10 +544,29 @@ export default function PlanSetupPage() {
               <span className="text-lg font-black text-white">{nutrition?.protein_grams || '--'}g</span>
             </div>
             <div className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4 text-center">
-              <Droplets size={20} className="mx-auto mb-2 text-cyan-500" />
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-500">Water</span>
-              <span className="text-lg font-black text-white">{planData.lifestyle?.water_target_liters || 3}L</span>
+              <Activity size={20} className="mx-auto mb-2 text-violet-400" />
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-500">Carbs</span>
+              <span className="text-lg font-black text-white">{nutrition?.carbs_grams || '--'}g</span>
             </div>
+            <div className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4 text-center">
+              <Droplets size={20} className="mx-auto mb-2 text-amber-400" />
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-500">Fat</span>
+              <span className="text-lg font-black text-white">{nutrition?.fat_grams || '--'}g</span>
+            </div>
+          </div>
+          <div className="mb-7 flex items-center justify-between rounded-2xl border border-[#1A2619] bg-[#121E12] px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Droplets size={20} className="text-cyan-400" />
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Water target</span>
+                <span className="text-lg font-black text-white">{planData.lifestyle?.water_target_liters || 3}L</span>
+              </div>
+            </div>
+            <span className="max-w-[150px] text-right text-[10px] leading-snug text-gray-500">
+              {groceryUsesProvidedCoreMeals
+                ? "Daily targets; provided meal portions may vary."
+                : "Daily planning targets based on your saved profile."}
+            </span>
           </div>
 
           <div className="mb-4">

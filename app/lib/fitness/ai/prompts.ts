@@ -15,7 +15,7 @@ Return JSON only, with every field in this shape:
 {safety_acknowledgment, plan:{name,description,goal}, workouts:[{title,workout_date,duration_minutes,exercises:[{name,exercise_order,sets,reps_string,target_reps_num,rest_seconds,notes}]}], nutrition:{daily_calories,protein_grams,meals_per_day,guidance,meals:[{meal_name,time_of_day,items,total_calories,protein_grams,prep_instructions}],grocery_list:[{name,monthly_quantity,unit,estimated_price,category,is_optional,reason}]}, lifestyle:{sleep_target_hours,water_target_liters,daily_steps_target}}.
 CRITICAL: All numeric fields (e.g., sets, rest_seconds, estimated_price, total_calories) MUST be pure numbers (e.g. 60), NEVER strings with units (e.g. "60s" or "60 INR"). Use null only for genuinely unknown numeric values; otherwise include all fields. Never create IDs.`;
 
-export const FITNESS_PLAN_PRESENTATION_RULE = `When nutrition.provided_core_meals is true, use nutrition.provided_core_meal_label exactly for each breakfast, lunch, or dinner provided-meal item. Never output a combined label such as "PG/Hostel/Home Provided Core Meal (Free)" because the user's saved environment identifies the single correct source.`;
+export const FITNESS_PLAN_PRESENTATION_RULE = `Use nutrition.provided_core_meal_label exactly for each breakfast, lunch, or dinner provided-meal item; never output a combined PG/Hostel/Home label. Return nutrition.carbs_grams and nutrition.fat_grams as daily planning targets. The server may replace these targets with deterministic values, and provided-meal portions can vary.`;
 
 const PLAN_BODY_SCAN_CONTEXT_LIMIT = 2600;
 const PLAN_STRATEGY_TEXT_LIMIT = 360;
@@ -39,6 +39,8 @@ export type PlanFoodCatalogItem = {
   serving_size?: string | null;
   calories?: number | null;
   protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
   estimated_cost?: number | null;
   diet_type?: string | null;
   is_pg_friendly?: boolean | null;
@@ -203,6 +205,8 @@ Respond entirely in JSON format matching this exact schema:
   "nutrition": {
     "daily_calories": number,
     "protein_grams": number,
+    "carbs_grams": number,
+    "fat_grams": number,
     "meals_per_day": number,
     "guidance": "string",
     "meals": [
@@ -451,6 +455,8 @@ function buildCompactPlanProfile(
       targets: {
         daily_calories: nutritionTargets.calories,
         protein_grams: nutritionTargets.protein,
+        carbs_grams: nutritionTargets.carbs,
+        fat_grams: nutritionTargets.fat,
       },
       available_foods: stringList(profile.available_foods),
       allergies: profile.food_allergies,
@@ -462,6 +468,8 @@ function buildCompactPlanProfile(
             serving_size: food.serving_size,
             calories: food.calories,
             protein: food.protein,
+            carbs: food.carbs,
+            fat: food.fat,
             estimated_cost: food.estimated_cost,
             diet_type: food.diet_type,
             pg_friendly: food.is_pg_friendly,
