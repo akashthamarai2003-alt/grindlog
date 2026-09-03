@@ -19,9 +19,10 @@ interface TodaysExercisesListProps {
   workoutId: string;
   exercises?: Exercise[];
   readonly?: boolean;
+  sectionLabel?: string;
 }
 
-export function TodaysExercisesList({ workoutId, exercises = [], readonly = false }: TodaysExercisesListProps) {
+export function TodaysExercisesList({ workoutId, exercises = [], readonly = false, sectionLabel = "Today's Exercises" }: TodaysExercisesListProps) {
   const router = useRouter();
   const [navigatingExerciseId, setNavigatingExerciseId] = useState<string | null>(null);
 
@@ -42,7 +43,7 @@ export function TodaysExercisesList({ workoutId, exercises = [], readonly = fals
   return (
     <div className="w-full mt-8">
       <h3 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase mb-4 px-2">
-        Today's Exercises
+        {sectionLabel}
       </h3>
 
       <div className="flex flex-col gap-3">

@@ -16,9 +16,11 @@ interface WorkoutExecutionProps {
     fitness_os_exercises: (FitnessExercise & { fitness_os_sets: FitnessSet[] })[];
   };
   sessionId: string;
+  showAiCoach?: boolean;
+  isEarlyStart?: boolean;
 }
 
-export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) {
+export function WorkoutExecution({ workout, sessionId, showAiCoach = false, isEarlyStart = false }: WorkoutExecutionProps) {
   const router = useRouter();
   const [isFinishing, setIsFinishing] = useState(false);
   const [isPausing, setIsPausing] = useState(false);
@@ -91,9 +93,14 @@ export function WorkoutExecution({ workout, sessionId }: WorkoutExecutionProps) 
           workout={workout as any} 
           exerciseCount={workout.fitness_os_exercises?.length || 6} 
           hideStartButton={true}
+          eyebrow={isEarlyStart ? "Early Start" : undefined}
         />
-        <AiCoachNote />
-        <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises as any} />
+        {showAiCoach && <AiCoachNote workoutId={workout.id} isEarlyStart={isEarlyStart} />}
+        <TodaysExercisesList
+          workoutId={workout.id}
+          exercises={workout.fitness_os_exercises as any}
+          sectionLabel={isEarlyStart ? "Early Start Exercises" : undefined}
+        />
       </div>
 
       <div className="w-full h-px bg-white/10 my-8" />

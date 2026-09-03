@@ -12,16 +12,22 @@ interface WorkoutSummaryCardProps {
   hideStartButton?: boolean;
   eyebrow?: string;
   scheduledLabel?: string;
+  isUpcoming?: boolean;
 }
 
-export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = false, eyebrow = "Today's Workout", scheduledLabel }: WorkoutSummaryCardProps) {
+export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = false, eyebrow, scheduledLabel, isUpcoming = false }: WorkoutSummaryCardProps) {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
 
   const isCompleted = workout?.status === "completed";
+  const resolvedEyebrow = eyebrow || (isUpcoming ? "Early Start" : "Today's Workout");
 
   const handleStart = async () => {
     if (isStarting) return;
+
+    if (isUpcoming && !window.confirm("This workout is scheduled for a future date. Start it early today?")) {
+      return;
+    }
     
     if (isCompleted) {
       router.push(`/workout/${workout.id}/summary`);
@@ -39,7 +45,7 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
       const res = await fetch("/api/workouts/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workoutId: workout.id })
+        body: JSON.stringify({ workoutId: workout.id, allowEarlyStart: isUpcoming })
       });
       
       const data = await res.json();
@@ -95,7 +101,7 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
         {/* Title & Muscle Groups */}
         <div>
           <h2 className="text-[11px] font-black tracking-[0.2em] text-[#ADFF00] uppercase mb-2">
-            {eyebrow}
+            {resolvedEyebrow}
           </h2>
           <h3 className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-2">
             {workout?.name || "Upper Body"}

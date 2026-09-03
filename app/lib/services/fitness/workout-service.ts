@@ -189,19 +189,23 @@ export class WorkoutService {
   /**
    * Start or resume a session idempotently.
    */
-  static async startSession(userId: string, workoutId: string) {
+  static async startSession(userId: string, workoutId: string, options: { allowEarlyStart?: boolean } = {}) {
     const supabase = await createServerSupabase();
 
     // 1. Verify ownership and get workout status
     const { data: workout, error: wErr } = await supabase
       .from("fitness_os_workouts")
-      .select("user_id, status")
+      .select("user_id, status, workout_date")
       .eq("id", workoutId)
       .single();
 
     if (wErr || !workout) throw new Error("WORKOUT_NOT_FOUND");
     if (workout.user_id !== userId) throw new Error("UNAUTHORIZED");
     if (workout.status === "completed") throw new Error("ALREADY_COMPLETED");
+    const today = await this.getLocalDateString(userId);
+    if (workout.workout_date > today && !options.allowEarlyStart) {
+      throw new Error("WORKOUT_NOT_AVAILABLE_YET");
+    }
 
     // 2. Check for active session
     const { data: existingSessions, error: sErr } = await supabase

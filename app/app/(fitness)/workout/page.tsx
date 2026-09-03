@@ -85,6 +85,7 @@ export default async function WorkoutIndexPage() {
                   exerciseCount={nextWorkout.exerciseCount}
                   eyebrow="Next Workout"
                   scheduledLabel={nextWorkoutLabel}
+                  isUpcoming
                 />
               </div>
             ) : (

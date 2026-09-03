@@ -4,6 +4,7 @@ import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import { WorkoutExecution } from "@/components/fitness/workout/workout-execution";
 import { ExerciseDetail } from "@/components/fitness/workout/exercise-detail";
 import { redirect } from "next/navigation";
+import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
 export default async function ActiveWorkoutPage({ 
   params,
@@ -120,6 +121,29 @@ export default async function ActiveWorkoutPage({
     redirect("/workout");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("timezone")
+    .eq("id", user.id)
+    .maybeSingle();
+  const timezone = profile?.timezone || "UTC";
+  const todayInTimezone = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const isEarlyStart = typeof workout.workout_date === "string" && workout.workout_date > todayInTimezone;
+  const scheduledDateLabel = typeof workout.workout_date === "string"
+    ? new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      }).format(new Date(`${workout.workout_date}T12:00:00Z`))
+    : undefined;
+  const subscriptionPlan = await getFitnessPlan(user.id);
+
   // Find active exercise if specified
   const activeExercise = activeExerciseId 
     ? workout.fitness_os_exercises.find((e: any) => e.id === activeExerciseId)
@@ -132,6 +156,7 @@ export default async function ActiveWorkoutPage({
           {!activeExercise && (
             <WorkoutHeader 
               title={workout.name}
+              dateStr={isEarlyStart ? `Scheduled ${scheduledDateLabel} • Started early` : undefined}
               backUrl="/workout"
               avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
               startedAt={activeSession.started_at}
@@ -149,7 +174,12 @@ export default async function ActiveWorkoutPage({
               isPaused={activeSession.status === "paused"}
             />
           ) : (
-            <WorkoutExecution workout={workout as any} sessionId={activeSession.id} />
+            <WorkoutExecution
+              workout={workout as any}
+              sessionId={activeSession.id}
+              showAiCoach={subscriptionPlan?.id === "pro"}
+              isEarlyStart={isEarlyStart}
+            />
           )}
         </div>
       </div>

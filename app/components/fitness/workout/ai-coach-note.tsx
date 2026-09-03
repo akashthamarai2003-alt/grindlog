@@ -6,9 +6,10 @@ import { Bot, HelpCircle, X, Target, Activity, Dumbbell, Clock, HeartPulse, Tren
 
 interface AiCoachNoteProps {
   workoutId?: string;
+  isEarlyStart?: boolean;
 }
 
-export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
+export function AiCoachNote({ workoutId, isEarlyStart = false }: AiCoachNoteProps) {
   const [note, setNote] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,7 +40,7 @@ export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
 
   useEffect(() => {
     if (!workoutId || workoutId === "mock") {
-      setNote("Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.");
+      setNote(`${isEarlyStart ? "This early-start session" : "This workout"} focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.`);
       setDynamicInsights(defaultInsights);
       setIsLoading(false);
       return;
@@ -49,7 +50,7 @@ export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
       try {
         const res = await fetch(`/api/workouts/${workoutId}/ai-coach-note`);
         const data = await res.json();
-        setNote(data.note || "Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.");
+        setNote(data.note || `${isEarlyStart ? "This early-start session" : "This workout"} focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.`);
         
         if (data.insights && data.insights.length > 0) {
           setDynamicInsights(data.insights.map((i: any) => ({ ...i, icon: getIcon(i.icon) })));
@@ -57,7 +58,7 @@ export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
           setDynamicInsights(defaultInsights);
         }
       } catch (err) {
-        setNote("Today's workout focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.");
+        setNote(`${isEarlyStart ? "This early-start session" : "This workout"} focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.`);
         setDynamicInsights(defaultInsights);
       } finally {
         setIsLoading(false);
@@ -65,7 +66,7 @@ export function AiCoachNote({ workoutId }: AiCoachNoteProps) {
     };
 
     fetchNote();
-  }, [workoutId]);
+  }, [isEarlyStart, workoutId]);
 
   return (
     <>

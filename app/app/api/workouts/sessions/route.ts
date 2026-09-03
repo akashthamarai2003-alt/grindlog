@@ -11,13 +11,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { workoutId } = await req.json();
+    const { workoutId, allowEarlyStart = false } = await req.json();
 
     if (!workoutId) {
       return NextResponse.json({ error: "Missing workoutId" }, { status: 400 });
     }
 
-    const session = await WorkoutService.startSession(user.id, workoutId);
+    const session = await WorkoutService.startSession(user.id, workoutId, { allowEarlyStart: allowEarlyStart === true });
     
     return NextResponse.json({ session });
   } catch (error: any) {
