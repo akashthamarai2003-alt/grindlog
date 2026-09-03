@@ -40,6 +40,14 @@ export default async function WorkoutIndexPage() {
     timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' 
   });
   const dateStr = formatter.format(new Date());
+  const nextWorkoutLabel = nextWorkout?.workout_date
+    ? new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      }).format(new Date(`${nextWorkout.workout_date}T12:00:00Z`))
+    : undefined;
 
   return (
     <FitnessGuard>
@@ -75,6 +83,8 @@ export default async function WorkoutIndexPage() {
                 <WorkoutSummaryCard
                   workout={nextWorkout}
                   exerciseCount={nextWorkout.exerciseCount}
+                  eyebrow="Next Workout"
+                  scheduledLabel={nextWorkoutLabel}
                 />
               </div>
             ) : (

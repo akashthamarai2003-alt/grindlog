@@ -10,9 +10,11 @@ interface WorkoutSummaryCardProps {
   workout: any;
   exerciseCount: number;
   hideStartButton?: boolean;
+  eyebrow?: string;
+  scheduledLabel?: string;
 }
 
-export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = false }: WorkoutSummaryCardProps) {
+export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = false, eyebrow = "Today's Workout", scheduledLabel }: WorkoutSummaryCardProps) {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
 
@@ -93,7 +95,7 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
         {/* Title & Muscle Groups */}
         <div>
           <h2 className="text-[11px] font-black tracking-[0.2em] text-[#ADFF00] uppercase mb-2">
-            Today's Workout
+            {eyebrow}
           </h2>
           <h3 className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-2">
             {workout?.name || "Upper Body"}
@@ -101,6 +103,9 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
           <p className="text-sm font-semibold text-white/50 tracking-wide uppercase">
             {muscleString}
           </p>
+          {scheduledLabel && (
+            <p className="mt-2 text-xs font-bold text-[#ADFF00]">Scheduled for {scheduledLabel}</p>
+          )}
         </div>
 
         {/* Stats Grid */}
