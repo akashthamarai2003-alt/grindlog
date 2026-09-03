@@ -15,15 +15,14 @@ export class AiWorkoutCoachService {
     if (wErr || !workout) throw new Error("WORKOUT_NOT_FOUND");
     if (workout.user_id !== userId) throw new Error("UNAUTHORIZED");
 
-    // 2. Check if a note already exists
-    const { data: existingNote, error: nErr } = await supabase
+    // 2. Check if a note already exists (permanent cache)
+    const { data: existingNote } = await supabase
       .from("workout_ai_notes")
       .select("note")
       .eq("workout_id", workoutId)
-      .eq("prompt_version", "workout-coach-v1")
       .maybeSingle();
 
-    if (existingNote) {
+    if (existingNote?.note) {
       return existingNote.note;
     }
 

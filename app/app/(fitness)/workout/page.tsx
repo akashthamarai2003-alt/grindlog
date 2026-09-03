@@ -11,6 +11,7 @@ import { WorkoutService } from "@/lib/services/fitness/workout-service";
 import Link from "next/link";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import { CalendarClock } from "lucide-react";
+import { AiWorkoutCoachService } from "@/lib/services/ai/ai-workout-coach-service";
 
 export default async function WorkoutIndexPage() {
   const supabase = await createServerSupabase();
@@ -48,6 +49,12 @@ export default async function WorkoutIndexPage() {
         day: "numeric",
       }).format(new Date(`${nextWorkout.workout_date}T12:00:00Z`))
     : undefined;
+
+  // Resolve cached AI coach note on the server so client never refetches on refresh
+  const targetWorkoutId = workout?.id || nextWorkout?.id;
+  const initialCoachNote = targetWorkoutId && subscriptionPlan?.id === "pro"
+    ? await AiWorkoutCoachService.getOrGenerateCoachNote(user.id, targetWorkoutId).catch(() => null)
+    : null;
 
   return (
     <FitnessGuard>
@@ -87,6 +94,9 @@ export default async function WorkoutIndexPage() {
                   scheduledLabel={nextWorkoutLabel}
                   isUpcoming
                 />
+                {subscriptionPlan?.id === "pro" && (
+                  <AiCoachNote workoutId={nextWorkout.id} isEarlyStart initialNote={initialCoachNote} />
+                )}
               </div>
             ) : (
               <>
@@ -103,7 +113,9 @@ export default async function WorkoutIndexPage() {
                   />
                 )}
                 
-                {subscriptionPlan?.id === "pro" && <AiCoachNote workoutId={workout.id} />}
+                {subscriptionPlan?.id === "pro" && (
+                  <AiCoachNote workoutId={workout.id} initialNote={initialCoachNote} />
+                )}
                 
                 <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises || []} readonly={true} />
               </>

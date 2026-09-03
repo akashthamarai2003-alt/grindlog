@@ -3,6 +3,7 @@ import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { WorkoutSessionManager } from "@/components/fitness/workout/workout-session-manager";
 import { redirect } from "next/navigation";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
+import { AiWorkoutCoachService } from "@/lib/services/ai/ai-workout-coach-service";
 
 export default async function ActiveWorkoutPage({ 
   params,
@@ -74,7 +75,7 @@ export default async function ActiveWorkoutPage({
     { data: workout, error },
     { data: profile },
     subscriptionPlan,
-    { data: cachedNoteRow }
+    cachedCoachNote
   ] = await Promise.all([
     supabase
       .from("fitness_os_workouts")
@@ -90,7 +91,7 @@ export default async function ActiveWorkoutPage({
       .single(),
     supabase.from("profiles").select("timezone").eq("id", user.id).maybeSingle(),
     getFitnessPlan(user.id),
-    supabase.from("workout_ai_notes").select("note").eq("workout_id", workoutId).maybeSingle()
+    AiWorkoutCoachService.getOrGenerateCoachNote(user.id, workoutId).catch(() => null)
   ]);
 
   if (error || !workout) {
@@ -146,7 +147,7 @@ export default async function ActiveWorkoutPage({
             isEarlyStart={isEarlyStart}
             scheduledDateLabel={scheduledDateLabel}
             initialExerciseId={activeExerciseId}
-            initialCoachNote={cachedNoteRow?.note || null}
+            initialCoachNote={cachedCoachNote || null}
           />
         </div>
       </div>

@@ -11,8 +11,14 @@ interface AiCoachNoteProps {
 }
 
 export function AiCoachNote({ workoutId, isEarlyStart = false, initialNote = null }: AiCoachNoteProps) {
-  const [note, setNote] = useState<string | null>(initialNote);
-  const [isLoading, setIsLoading] = useState(!initialNote);
+  const [note, setNote] = useState<string | null>(() => {
+    if (initialNote) return initialNote;
+    if (typeof window !== "undefined" && workoutId) {
+      return localStorage.getItem(`grindlog_coach_note_${workoutId}`);
+    }
+    return null;
+  });
+  const [isLoading, setIsLoading] = useState(!initialNote && !note);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dynamicInsights, setDynamicInsights] = useState<any[]>([]);
   const [hasFetchedInsights, setHasFetchedInsights] = useState(false);
@@ -64,18 +70,32 @@ export function AiCoachNote({ workoutId, isEarlyStart = false, initialNote = nul
       return;
     }
 
-    // If initialNote is provided from the server, use it instantly without extra API calls
+    // 1. If initialNote is provided from server, cache and NEVER refetch
     if (initialNote) {
       setNote(initialNote);
+      setIsLoading(false);
+      try {
+        localStorage.setItem(`grindlog_coach_note_${workoutId}`, initialNote);
+      } catch {}
+      return;
+    }
+
+    // 2. If already loaded from state or localStorage, NEVER refetch
+    if (note) {
       setIsLoading(false);
       return;
     }
 
+    // 3. Fallback only if completely missing
     const fetchNote = async () => {
       try {
         const res = await fetch(`/api/workouts/${workoutId}/ai-coach-note`);
         const data = await res.json();
-        setNote(data.note || `${isEarlyStart ? "This early-start session" : "This workout"} focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.`);
+        const resolvedNote = data.note || `${isEarlyStart ? "This early-start session" : "This workout"} focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.`;
+        setNote(resolvedNote);
+        try {
+          localStorage.setItem(`grindlog_coach_note_${workoutId}`, resolvedNote);
+        } catch {}
         
         if (data.insights && data.insights.length > 0) {
           setDynamicInsights(data.insights.map((i: any) => ({ ...i, icon: getIcon(i.icon) })));
