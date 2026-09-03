@@ -7,13 +7,15 @@ import { Bot, HelpCircle, X, Target, Activity, Dumbbell, Clock, HeartPulse, Tren
 interface AiCoachNoteProps {
   workoutId?: string;
   isEarlyStart?: boolean;
+  initialNote?: string | null;
 }
 
-export function AiCoachNote({ workoutId, isEarlyStart = false }: AiCoachNoteProps) {
-  const [note, setNote] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AiCoachNote({ workoutId, isEarlyStart = false, initialNote = null }: AiCoachNoteProps) {
+  const [note, setNote] = useState<string | null>(initialNote);
+  const [isLoading, setIsLoading] = useState(!initialNote);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dynamicInsights, setDynamicInsights] = useState<any[]>([]);
+  const [hasFetchedInsights, setHasFetchedInsights] = useState(false);
 
   const defaultInsights = [
     { icon: Target, label: "Goal", value: "Hypertrophy (Muscle Growth)" },
@@ -38,10 +40,33 @@ export function AiCoachNote({ workoutId, isEarlyStart = false }: AiCoachNoteProp
     }
   };
 
+  const fetchInsightsIfNeeded = async () => {
+    if (hasFetchedInsights || !workoutId || workoutId === "mock") return;
+    try {
+      const res = await fetch(`/api/workouts/${workoutId}/ai-coach-note`);
+      const data = await res.json();
+      if (data.insights && data.insights.length > 0) {
+        setDynamicInsights(data.insights.map((i: any) => ({ ...i, icon: getIcon(i.icon) })));
+        setHasFetchedInsights(true);
+      } else {
+        setDynamicInsights(defaultInsights);
+      }
+    } catch {
+      setDynamicInsights(defaultInsights);
+    }
+  };
+
   useEffect(() => {
     if (!workoutId || workoutId === "mock") {
       setNote(`${isEarlyStart ? "This early-start session" : "This workout"} focuses on your upper body. Keep 1–2 reps in reserve on most sets and prioritize controlled repetitions.`);
       setDynamicInsights(defaultInsights);
+      setIsLoading(false);
+      return;
+    }
+
+    // If initialNote is provided from the server, use it instantly without extra API calls
+    if (initialNote) {
+      setNote(initialNote);
       setIsLoading(false);
       return;
     }
@@ -54,6 +79,7 @@ export function AiCoachNote({ workoutId, isEarlyStart = false }: AiCoachNoteProp
         
         if (data.insights && data.insights.length > 0) {
           setDynamicInsights(data.insights.map((i: any) => ({ ...i, icon: getIcon(i.icon) })));
+          setHasFetchedInsights(true);
         } else {
           setDynamicInsights(defaultInsights);
         }
@@ -66,7 +92,7 @@ export function AiCoachNote({ workoutId, isEarlyStart = false }: AiCoachNoteProp
     };
 
     fetchNote();
-  }, [isEarlyStart, workoutId]);
+  }, [isEarlyStart, workoutId, initialNote]);
 
   return (
     <>
@@ -97,8 +123,11 @@ export function AiCoachNote({ workoutId, isEarlyStart = false }: AiCoachNoteProp
           )}
 
           <button 
-            onClick={() => setIsModalOpen(true)}
-            className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 border border-white/5 group"
+            onClick={() => {
+              fetchInsightsIfNeeded();
+              setIsModalOpen(true);
+            }}
+            className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 border border-white/5 group cursor-pointer"
           >
             <HelpCircle className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" />
             <span className="text-[11px] font-black text-white/80 uppercase tracking-widest group-hover:text-white transition-colors">Why this workout?</span>
@@ -137,7 +166,7 @@ export function AiCoachNote({ workoutId, isEarlyStart = false }: AiCoachNoteProp
                 </div>
                 <button 
                   onClick={() => setIsModalOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -167,7 +196,7 @@ export function AiCoachNote({ workoutId, isEarlyStart = false }: AiCoachNoteProp
               
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="w-full mt-6 bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl active:scale-[0.98] transition-transform"
+                className="w-full mt-6 bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl active:scale-[0.98] transition-transform cursor-pointer"
               >
                 Got It
               </button>

@@ -141,6 +141,40 @@ export async function generateAIResponse({
     }
   }
 
+  // ==================================================================
+  // TIER 3: GOOGLE GEMINI (High-Speed Intelligence)
+  // ==================================================================
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      console.log(`[AI ROUTER] Tier 3: Attempting Gemini 3.6 Flash...`);
+      const promptText = finalMessages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: promptText }] }],
+          generationConfig: {
+            maxOutputTokens: maxTokens,
+            temperature,
+            ...(responseFormat === "json_object" ? { responseMimeType: "application/json" } : {})
+          }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text.trim();
+      } else {
+        const errText = await res.text();
+        errors.push(`Gemini [3.6-flash]: ${res.status} ${errText.slice(0, 100)}`);
+      }
+    } catch (err: any) {
+      errors.push(`Gemini: ${err.message}`);
+    }
+  }
+
   // If we reach here, all providers are dead, rate-limited, or misconfigured.
   console.error("[AI ROUTER] ALL TIERS EXHAUSTED. Errors:", errors);
   throw new Error(`Our AI engines are currently experiencing extreme viral traffic! Please try again in 60 seconds. [DEBUG: ${errors.join(" | ")}]`);

@@ -73,7 +73,8 @@ export default async function ActiveWorkoutPage({
   const [
     { data: workout, error },
     { data: profile },
-    subscriptionPlan
+    subscriptionPlan,
+    { data: cachedNoteRow }
   ] = await Promise.all([
     supabase
       .from("fitness_os_workouts")
@@ -88,7 +89,8 @@ export default async function ActiveWorkoutPage({
       .eq("id", workoutId)
       .single(),
     supabase.from("profiles").select("timezone").eq("id", user.id).maybeSingle(),
-    getFitnessPlan(user.id)
+    getFitnessPlan(user.id),
+    supabase.from("workout_ai_notes").select("note").eq("workout_id", workoutId).maybeSingle()
   ]);
 
   if (error || !workout) {
@@ -144,6 +146,7 @@ export default async function ActiveWorkoutPage({
             isEarlyStart={isEarlyStart}
             scheduledDateLabel={scheduledDateLabel}
             initialExerciseId={activeExerciseId}
+            initialCoachNote={cachedNoteRow?.note || null}
           />
         </div>
       </div>

@@ -19,9 +19,10 @@ interface WorkoutExecutionProps {
   showAiCoach?: boolean;
   isEarlyStart?: boolean;
   onSelectExercise?: (exerciseId: string) => void;
+  initialCoachNote?: string | null;
 }
 
-export function WorkoutExecution({ workout, sessionId, showAiCoach = false, isEarlyStart = false, onSelectExercise }: WorkoutExecutionProps) {
+export function WorkoutExecution({ workout, sessionId, showAiCoach = false, isEarlyStart = false, onSelectExercise, initialCoachNote }: WorkoutExecutionProps) {
   const router = useRouter();
   const [isFinishing, setIsFinishing] = useState(false);
   const [isPausing, setIsPausing] = useState(false);
@@ -103,7 +104,7 @@ export function WorkoutExecution({ workout, sessionId, showAiCoach = false, isEa
           hideStartButton={true}
           eyebrow={isEarlyStart ? "Early Start" : undefined}
         />
-        {showAiCoach && <AiCoachNote workoutId={workout.id} isEarlyStart={isEarlyStart} />}
+        {showAiCoach && <AiCoachNote workoutId={workout.id} isEarlyStart={isEarlyStart} initialNote={initialCoachNote} />}
         <TodaysExercisesList
           workoutId={workout.id}
           exercises={workout.fitness_os_exercises as any}

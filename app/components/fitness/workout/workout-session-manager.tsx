@@ -18,6 +18,7 @@ interface WorkoutSessionManagerProps {
   isEarlyStart?: boolean;
   scheduledDateLabel?: string;
   initialExerciseId?: string | null;
+  initialCoachNote?: string | null;
 }
 
 export function WorkoutSessionManager({
@@ -30,6 +31,7 @@ export function WorkoutSessionManager({
   isEarlyStart = false,
   scheduledDateLabel,
   initialExerciseId = null,
+  initialCoachNote = null,
 }: WorkoutSessionManagerProps) {
   const [workout, setWorkout] = useState(initialWorkout);
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(initialExerciseId);
@@ -108,6 +110,7 @@ export function WorkoutSessionManager({
           showAiCoach={showAiCoach}
           isEarlyStart={isEarlyStart}
           onSelectExercise={handleSelectExercise}
+          initialCoachNote={initialCoachNote}
         />
       )}
     </>

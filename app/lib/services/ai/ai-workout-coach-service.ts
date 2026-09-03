@@ -27,8 +27,9 @@ export class AiWorkoutCoachService {
       return existingNote.note;
     }
 
-    // 3. Generate Note via Groq
+    // 3. Generate Note via AI
     let note = "";
+    let isRealAI = false;
     try {
       const prompt = `You are an elite AI fitness coach analyzing a workout. 
 The user is performing: ${workout.name}.
@@ -40,27 +41,31 @@ Example: "Keep your core tight and control the negative on every rep to maximize
         userPrompt: prompt, 
         model: "fast" 
       });
+      if (note && note.trim().length > 10) {
+        isRealAI = true;
+      }
     } catch (e) {
-      console.error("Groq generation failed for AI Coach Note:", e);
+      console.error("AI generation failed for AI Coach Note:", e);
       // Fail gracefully
       note = `Focus on form and maintain intensity during your ${workout.name} workout.`;
     }
 
-    // Log AI Usage
-    await supabase.from("ai_usage_logs").insert({
-      user_id: userId,
-      feature: "workout_coach_note",
-      prompt_version: "workout-coach-v1",
-      tokens_used: 50 // approximate
-    });
+    // Only cache genuine AI responses so future page refreshes hit cache instantly
+    if (isRealAI) {
+      await supabase.from("ai_usage_logs").insert({
+        user_id: userId,
+        feature: "workout_coach_note",
+        prompt_version: "workout-coach-v1",
+        tokens_used: 50
+      });
 
-    // Save to cache table
-    await supabase.from("workout_ai_notes").insert({
-      user_id: userId,
-      workout_id: workoutId,
-      note: note,
-      prompt_version: "workout-coach-v1"
-    });
+      await supabase.from("workout_ai_notes").insert({
+        user_id: userId,
+        workout_id: workoutId,
+        note: note.trim(),
+        prompt_version: "workout-coach-v1"
+      });
+    }
 
     return note;
   }
