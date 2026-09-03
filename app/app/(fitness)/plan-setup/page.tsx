@@ -74,22 +74,38 @@ function isCoreMeal(mealName: unknown): boolean {
   return typeof mealName === "string" && /breakfast|lunch|dinner/i.test(mealName);
 }
 
-function weekDayLabel(offset: number): string {
-  const date = new Date();
+function weekDayLabel(offset: number, anchorDate: Date): string {
+  const date = new Date(anchorDate);
   date.setHours(0, 0, 0, 0);
   date.setDate(date.getDate() + offset);
   return new Intl.DateTimeFormat("en-IN", { weekday: "short" }).format(date).toUpperCase();
 }
 
-function workoutDayOffset(workoutDate: unknown): number | null {
+function workoutDayOffset(workoutDate: unknown, anchorDate: Date): number | null {
   if (typeof workoutDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(workoutDate)) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const anchor = new Date(anchorDate);
+  anchor.setHours(0, 0, 0, 0);
   const [year, month, day] = workoutDate.split("-").map(Number);
   const date = new Date(year, month - 1, day);
   date.setHours(0, 0, 0, 0);
-  const offset = Math.round((date.getTime() - today.getTime()) / 86400000);
+  const offset = Math.round((date.getTime() - anchor.getTime()) / 86400000);
   return offset >= 0 && offset < 7 ? offset : null;
+}
+
+function planAnchorDate(workouts: any[]): Date {
+  const datedWorkouts = workouts
+    .map((workout) => workout?.workout_date)
+    .filter((date): date is string => typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .sort();
+
+  if (datedWorkouts.length) {
+    const [year, month, day] = datedWorkouts[0].split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
 }
 
 export default function PlanSetupPage() {
@@ -234,10 +250,11 @@ export default function PlanSetupPage() {
     ? planData.workouts.filter((workout: unknown) => workout && typeof workout === "object")
     : [];
   const meals = Array.isArray(planData?.nutrition?.meals) ? planData.nutrition.meals : [];
-  const days = Array.from({ length: 7 }, (_, index) => weekDayLabel(index));
+  const planStartDate = planAnchorDate(workouts);
+  const days = Array.from({ length: 7 }, (_, index) => weekDayLabel(index, planStartDate));
   const workoutForDay = (dayIndex: number) => {
     const datedWorkout = workouts.find(
-      (workout: any) => workoutDayOffset(workout?.workout_date) === dayIndex,
+      (workout: any) => workoutDayOffset(workout?.workout_date, planStartDate) === dayIndex,
     );
     // Older cached plans may not contain dates. Keep their original positional
     // behaviour as a compatibility fallback.

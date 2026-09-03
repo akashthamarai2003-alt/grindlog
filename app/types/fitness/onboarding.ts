@@ -44,6 +44,7 @@ export const OnboardingSchema = z.object({
   
   training_days_per_week: z.number().min(1).max(7).optional(),
   workout_duration_minutes: z.number().min(10).max(180).optional(),
+  plan_start_preference: z.enum(["today", "monday"]).optional(),
   preferred_training_days: z.array(z.string()).optional(),
   preferred_training_time: z.string().optional(),
   

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
-import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, CircleDashed, Shirt, BicepsFlexed, Building2, House, Trees, RefreshCw, Cable, Weight, Armchair, CircleDot, Bike, Footprints, PersonStanding, StretchHorizontal, MoveHorizontal, Landmark, CircleGauge, Grip, Waves, Mountain, Accessibility, Box, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, CircleDashed, Shirt, BicepsFlexed, Building2, House, Trees, RefreshCw, Cable, Weight, Armchair, CircleDot, Bike, Footprints, PersonStanding, StretchHorizontal, MoveHorizontal, Landmark, CircleGauge, Grip, Waves, Mountain, Accessibility, Box, Play, type LucideIcon } from "lucide-react";
 import { BodySilhouette } from "./body-silhouette";
 import { toast } from "sonner";
 import frontImg from "../../../assets/images/placeholder-front.png";
@@ -158,7 +158,10 @@ const compressImage = (file: File): Promise<string> => {
 export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: Partial<OnboardingData>, sessionId?: string }) {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
-  const [data, setData] = useState<Partial<OnboardingData>>(initialData);
+  const [data, setData] = useState<Partial<OnboardingData>>({
+    plan_start_preference: "monday",
+    ...initialData,
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [showGenderSheet, setShowGenderSheet] = useState(false);
   const [showLanguageSheet, setShowLanguageSheet] = useState(false);
@@ -1282,6 +1285,34 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 </div>
             <div className="space-y-8">
               <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-1">When would you like to begin?</label>
+                <p className="text-xs text-gray-500 mb-3">Choose a fresh Monday start or begin as soon as your plan is ready.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: "monday", title: "Start Monday", description: "A clean weekly routine", icon: Calendar },
+                    { id: "today", title: "Start Today", description: "Begin your first session now", icon: Play },
+                  ].map((option) => {
+                    const selected = data.plan_start_preference === option.id;
+                    const StartIcon = option.icon;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => handleUpdate({ plan_start_preference: option.id as "today" | "monday" })}
+                        className={`min-h-[108px] rounded-2xl border-2 p-3 text-left transition-all ${selected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20"}`}
+                      >
+                        <div className={`mb-2 flex h-9 w-9 items-center justify-center rounded-xl ${selected ? "bg-[#ADFF00]/20 text-[#ADFF00]" : "bg-[#1A2619] text-gray-400"}`}>
+                          <StartIcon size={19} />
+                        </div>
+                        <span className={`block text-sm font-extrabold ${selected ? "text-[#ADFF00]" : "text-white"}`}>{option.title}</span>
+                        <span className={`mt-1 block text-[11px] leading-snug ${selected ? "text-[#ADFF00]/75" : "text-gray-500"}`}>{option.description}</span>
+                        {selected && <Check size={16} className="mt-2 text-[#ADFF00]" strokeWidth={3} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-3">Preferred Workout Duration</label>
                 <div className="grid grid-cols-3 gap-3">
                   {[10, 20, 30, 45, 60, 90].map(m => (
@@ -1336,7 +1367,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             </div>
           </div>
           <BottomBar 
-            canProceed={!!(data.workout_duration_minutes && data.preferred_training_time)} 
+            canProceed={!!(data.plan_start_preference && data.workout_duration_minutes && data.preferred_training_time)} 
             onProceed={handleNext} 
           />
         </div>

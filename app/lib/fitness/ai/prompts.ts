@@ -18,6 +18,19 @@ CRITICAL: All numeric fields (e.g., sets, rest_seconds, estimated_price, total_c
 const PLAN_BODY_SCAN_CONTEXT_LIMIT = 2600;
 const PLAN_STRATEGY_TEXT_LIMIT = 360;
 
+export function getPlanStartDate(todayDateStr: string, preference: unknown): string {
+  if (preference !== "monday") return todayDateStr;
+
+  const [year, month, day] = todayDateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (!Number.isFinite(date.getTime())) return todayDateStr;
+
+  // Monday is 1. If today is already Monday, use today rather than the next week.
+  const daysUntilMonday = (1 - date.getUTCDay() + 7) % 7;
+  date.setUTCDate(date.getUTCDate() + daysUntilMonday);
+  return date.toISOString().slice(0, 10);
+}
+
 export type PlanFoodCatalogItem = {
   name: string;
   category?: string | null;
@@ -374,13 +387,20 @@ function buildCompactPlanProfile(
   foodCatalog: PlanFoodCatalogItem[] = [],
 ): Record<string, unknown> {
   const foodEnvironment = profile.food_environment;
+  const savedOnboarding = isRecord(profile.onboarding_data) ? profile.onboarding_data : {};
+  const planStartPreference = profile.plan_start_preference || savedOnboarding.plan_start_preference || "today";
+  const planStartDate = getPlanStartDate(todayDateStr, planStartPreference);
   const providedCoreMeals = ["PG", "Hostel", "Home", "Office/Canteen"].includes(
     foodEnvironment,
   );
   const nutritionTargets = getPlanNutritionTargets(profile);
 
   return (pruneEmpty({
-    today: todayDateStr,
+    // Keep the legacy `today` field aligned with the selected plan window.
+    // The actual calendar date remains available for display and auditing.
+    today: planStartDate,
+    current_date: todayDateStr,
+    plan_start_date: planStartDate,
     goal: profile.goal,
     target_physique:
       profile.target_physique ||
@@ -404,6 +424,8 @@ function buildCompactPlanProfile(
       equipment: stringList(profile.equipment),
       sessions: profile.training_days_per_week,
       minutes: profile.workout_duration_minutes,
+      start_preference: planStartPreference,
+      plan_start_date: planStartDate,
       preferred_days: stringList(profile.preferred_training_days),
       preferred_time: profile.workout_time || profile.preferred_training_time,
     },
