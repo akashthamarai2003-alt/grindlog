@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { AIInsightService } from "@/lib/services/analytics/ai-insight-service";
 import { AnalyticsPeriod } from "@/types/fitness/analytics";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,10 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canUseFitnessFeature(user.id, "ai_weekly_review"))) {
+      return NextResponse.json({ error: "Weekly AI reviews are available on the Pro plan." }, { status: 403 });
     }
 
     const body = await req.json();

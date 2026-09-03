@@ -22,7 +22,8 @@ import {
   getGenerationRetryAfterSeconds,
   recordGenerationAttempt,
 } from "@/lib/services/fitness-ai-generation-guard";
-import { requireFitnessSubscription } from "@/lib/fitness/subscription/access";
+import { getFitnessPlan, requireFitnessSubscription } from "@/lib/fitness/subscription/access";
+import { applyFitnessPlanEntitlements } from "@/lib/fitness/subscription/plan-entitlements";
 
 export const maxDuration = 60;
 const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 1;
@@ -46,6 +47,13 @@ export async function POST(req: Request) {
     // Never spend AI tokens for an unpaid plan request, including direct API
     // calls that bypass the payment page.
     if (!(await requireFitnessSubscription(user.id))) {
+      return NextResponse.json(
+        { success: false, error: "Please complete payment before generating your Fitness plan.", errorType: "PAYMENT_REQUIRED" },
+        { status: 402 },
+      );
+    }
+    const subscriptionPlan = await getFitnessPlan(user.id);
+    if (!subscriptionPlan) {
       return NextResponse.json(
         { success: false, error: "Please complete payment before generating your Fitness plan.", errorType: "PAYMENT_REQUIRED" },
         { status: 402 },
@@ -217,7 +225,10 @@ export async function POST(req: Request) {
           continue;
         }
 
-        planData = enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []);
+        planData = applyFitnessPlanEntitlements(
+          enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []),
+          subscriptionPlan.id,
+        );
         break; // Success!
       } catch (err: any) {
         console.error(`Attempt ${attempt} caught error:`, err);

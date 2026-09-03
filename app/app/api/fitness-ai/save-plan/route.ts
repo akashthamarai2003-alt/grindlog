@@ -4,6 +4,8 @@ import { GeneratedPlanSchema } from "@/lib/fitness/ai/schemas";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
+import { getFitnessPlan } from "@/lib/fitness/subscription/access";
+import { applyFitnessPlanEntitlements } from "@/lib/fitness/subscription/plan-entitlements";
 
 export async function POST(req: Request) {
   try {
@@ -11,6 +13,11 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const subscriptionPlan = await getFitnessPlan(user.id);
+    if (!subscriptionPlan) {
+      return NextResponse.json({ success: false, error: "Please complete payment before saving your Fitness plan.", errorType: "PAYMENT_REQUIRED" }, { status: 402 });
     }
 
     const { data: activePlan } = await supabase
@@ -69,7 +76,10 @@ export async function POST(req: Request) {
       .eq("is_active", true)
       .eq("plan_eligible", true)
       .limit(250);
-    const validatedPlan = enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []);
+    const validatedPlan = applyFitnessPlanEntitlements(
+      enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []),
+      subscriptionPlan.id,
+    );
 
     // Atomic Database Transaction via RPC
     const { data: planId, error: rpcError } = await supabase.rpc("create_fitness_os_plan_transaction", {

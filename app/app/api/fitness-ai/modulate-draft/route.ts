@@ -7,6 +7,7 @@ import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +15,10 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canUseFitnessFeature(user.id, "ai_plan_adjustments"))) {
+      return NextResponse.json({ success: false, error: "AI plan adjustments are available on the Pro plan." }, { status: 403 });
     }
 
     const limitCheck = await checkFitnessAILimit(supabase, user.id);

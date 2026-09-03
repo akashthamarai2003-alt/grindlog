@@ -5,6 +5,7 @@ import { generateAIResponseJSON } from "@/lib/services/groq/client";
 import { CoachResponseSchema, CoachResponseData } from "@/lib/fitness/ai/schemas";
 import { buildFitnessCoachContext } from "@/lib/fitness/ai/context";
 import { FITNESS_COACH_SYSTEM_PROMPT, buildFitnessCoachPrompt } from "@/lib/fitness/ai/prompts";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,6 +16,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const userId = authData.user.id;
+
+    if (!(await canUseFitnessFeature(userId, "ai_coach"))) {
+      return NextResponse.json({ error: "AI coach support is available on the Pro plan." }, { status: 403 });
+    }
 
     // Check rate limit
     const limitCheck = await checkFitnessAILimit(supabase, userId);

@@ -4,6 +4,7 @@ import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-a
 import { generateAIResponseJSON } from "@/lib/services/groq/client";
 import { WeeklyReviewSchema, WeeklyReviewData } from "@/lib/fitness/ai/schemas";
 import { WEEKLY_REVIEW_SYSTEM_PROMPT, buildWeeklyReviewPrompt } from "@/lib/fitness/ai/prompts";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,6 +15,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const userId = authData.user.id;
+
+    if (!(await canUseFitnessFeature(userId, "ai_weekly_review"))) {
+      return NextResponse.json({ error: "Weekly AI reviews are available on the Pro plan." }, { status: 403 });
+    }
 
     // Check rate limit
     const limitCheck = await checkFitnessAILimit(supabase, userId);

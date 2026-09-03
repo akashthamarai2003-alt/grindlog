@@ -22,7 +22,8 @@ import {
   getGenerationRetryAfterSeconds,
   recordGenerationAttempt,
 } from "@/lib/services/fitness-ai-generation-guard";
-import { requireFitnessSubscription } from "@/lib/fitness/subscription/access";
+import { getFitnessPlan, requireFitnessSubscription } from "@/lib/fitness/subscription/access";
+import { applyFitnessPlanEntitlements } from "@/lib/fitness/subscription/plan-entitlements";
 
 // A high-reasoning, full weekly plan can take longer than one minute. Avoid a
 // platform timeout turning a valid in-progress response into an empty client
@@ -51,6 +52,13 @@ export async function POST(req: Request) {
     // Payment is a hard server-side prerequisite. Check before reading a
     // cached draft so an unpaid user cannot receive a previously generated plan.
     if (!(await requireFitnessSubscription(user.id))) {
+      return NextResponse.json(
+        { success: false, error: "Please complete payment before generating your Fitness plan.", errorType: "PAYMENT_REQUIRED" },
+        { status: 402 },
+      );
+    }
+    const subscriptionPlan = await getFitnessPlan(user.id);
+    if (!subscriptionPlan) {
       return NextResponse.json(
         { success: false, error: "Please complete payment before generating your Fitness plan.", errorType: "PAYMENT_REQUIRED" },
         { status: 402 },
@@ -148,7 +156,7 @@ export async function POST(req: Request) {
           return NextResponse.json({
             success: true,
             cached: true,
-            data: { ...enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), _profile: profile },
+            data: { ...applyFitnessPlanEntitlements(enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), subscriptionPlan.id), _profile: profile },
           });
         }
       } catch {
@@ -196,7 +204,7 @@ export async function POST(req: Request) {
               return NextResponse.json({
                 success: true,
                 cached: true,
-                data: { ...enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), _profile: profile },
+                data: { ...applyFitnessPlanEntitlements(enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), subscriptionPlan.id), _profile: profile },
               });
             }
           } catch {
@@ -299,7 +307,10 @@ export async function POST(req: Request) {
           continue;
         }
 
-        planData = enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []);
+        planData = applyFitnessPlanEntitlements(
+          enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []),
+          subscriptionPlan.id,
+        );
         break; // Success! Break out of the loop.
       } catch (err: any) {
         console.error(`Attempt ${attempt} caught error:`, err);

@@ -14,9 +14,7 @@ export const STARTER_PLAN: FitnessPlanConfig = {
   features: [
     "fitness_dashboard",
     "workout_system",
-    "ai_plan_generation",
-    "ai_coach",
-    "ai_weekly_review"
+    "ai_plan_generation"
   ],
   aiDailyLimit: 5, // Limited AI usage
 };

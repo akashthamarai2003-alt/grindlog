@@ -24,13 +24,13 @@ import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 
 const features = [
   { icon: Target, label: "Personalized 7-day plan", core: true, pro: true },
-  { icon: Dumbbell, label: "Workout & exercise guidance", core: true, pro: true },
-  { icon: Flame, label: "Personalized nutrition plan", core: true, pro: true },
-  { icon: ShoppingCart, label: "Smart grocery add-ons", core: true, pro: true },
-  { icon: Activity, label: "Dashboard & progress tracking", core: true, pro: true },
-  { icon: Activity, label: "Water and calorie logging", core: true, pro: true },
-  { icon: Brain, label: "AI coach support", core: true, pro: true },
-  { icon: ShieldCheck, label: "Weekly AI reviews", core: true, pro: true },
+  { icon: Dumbbell, label: "Basic exercise guidance", core: true, pro: "Full AI guidance" },
+  { icon: Flame, label: "Calorie & protein targets", core: true, pro: "Full meal plan" },
+  { icon: ShoppingCart, label: "Smart grocery add-ons", core: false, pro: true },
+  { icon: Activity, label: "Basic dashboard", core: true, pro: "Advanced progress" },
+  { icon: Activity, label: "Water and calorie logging", core: false, pro: true },
+  { icon: Brain, label: "AI coach support", core: false, pro: true },
+  { icon: ShieldCheck, label: "Weekly AI reviews", core: false, pro: true },
   { icon: Target, label: "AI plan adjustments", core: false, pro: true },
   { icon: Activity, label: "Advanced progress analysis", core: false, pro: true },
 ];
