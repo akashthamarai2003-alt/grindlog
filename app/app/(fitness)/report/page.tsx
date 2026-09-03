@@ -6,6 +6,10 @@ import { RegenerateReportButton } from "@/components/fitness/report/regenerate-r
 import { hasGeneratedStartingReport } from "@/lib/services/fitness/starting-report-service";
 import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
 
+// A newly completed photo analysis must be visible immediately after the
+// onboarding flow redirects here. Never serve a cached server-rendered report.
+export const dynamic = "force-dynamic";
+
 function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
