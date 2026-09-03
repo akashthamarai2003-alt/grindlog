@@ -367,7 +367,23 @@ export function normalisePlanProfileDetails(
   profile: ProfileLike,
 ): GeneratedPlanData {
   const shouldBlockWorkouts = typeof profile.current_pain_severity === "number" && profile.current_pain_severity >= 7;
-  const normalisedPlan = { ...plan };
+  const normalisedPlan: GeneratedPlanData = {
+    ...plan,
+    workouts: plan.workouts.map((workout) => {
+      const title = cleanText(workout.title);
+      const exerciseCount = workout.exercises.length;
+      const duration = Number(workout.duration_minutes);
+      const isOverloadedRecoveryLabel =
+        /\brecovery\b/i.test(title) && (exerciseCount >= 4 || duration > 30);
+
+      return isOverloadedRecoveryLabel
+        ? {
+            ...workout,
+            title: title.replace(/\bactive recovery\b|\brecovery\b/gi, "Training"),
+          }
+        : workout;
+    }),
+  };
 
   if (shouldBlockWorkouts && normalisedPlan.workouts) {
     normalisedPlan.workouts = [];

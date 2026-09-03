@@ -245,8 +245,12 @@ export default function PlanSetupPage() {
   };
   const activeWorkout = planData ? workoutForDay(selectedDay) : null;
   const activeExercises = Array.isArray(activeWorkout?.exercises) ? activeWorkout.exercises : [];
-  const isRestOrRecoveryWorkout = (workout: any) =>
-    !workout?.exercises?.length || /rest|recovery/i.test(workout?.title || "");
+  const isRestOrRecoveryWorkout = (workout: any) => !workout?.exercises?.length;
+  const isLightRecoveryWorkout = (workout: any) =>
+    !workout?.exercises?.length ||
+    (/recovery/i.test(workout?.title || "") &&
+      Number(workout?.duration_minutes || 0) <= 30 &&
+      workout.exercises.length <= 3);
   const hasTrainingSessions = workouts.some((workout: any) => !isRestOrRecoveryWorkout(workout));
   const safetyAcknowledgment = String(planData?.safety_acknowledgment || "").trim();
   const trainingPausedForSafety = Boolean(safetyAcknowledgment) && !hasTrainingSessions;
@@ -410,7 +414,7 @@ export default function PlanSetupPage() {
               }`}
             >
               <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-[#ADFF00]' : 'text-gray-500'}`}>{day}</span>
-              {hasWorkout && /rest|recovery/i.test(workoutTitle) ? (
+              {hasWorkout && isLightRecoveryWorkout(wo) ? (
                 <span className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-gray-400'}`}>Recovery</span>
               ) : hasWorkout ? (
                 <span className={`text-xs font-bold leading-tight text-left ${isSelected ? 'text-white' : 'text-gray-300'}`}>
