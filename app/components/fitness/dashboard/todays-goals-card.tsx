@@ -6,26 +6,31 @@ import { useState } from "react";
 
 interface TodaysGoalsCardProps {
   lifestyle?: any;
+  activity?: any;
   nutrition?: any;
   workoutCompleted?: boolean;
+  premiumLevel?: string;
 }
 
-export function TodaysGoalsCard({ lifestyle, nutrition, workoutCompleted = false }: TodaysGoalsCardProps) {
+export function TodaysGoalsCard({ lifestyle, activity, nutrition, workoutCompleted = false, premiumLevel = "core" }: TodaysGoalsCardProps) {
   // Use real targets if available
-  const stepsTarget = lifestyle?.daily_steps_target || 10000;
-  const waterTarget = lifestyle?.water_target_liters || 3;
-  const sleepTarget = lifestyle?.sleep_target_hours || 8;
-  const proteinTarget = nutrition?.protein_grams || 120;
+  const stepsTarget = Number(lifestyle?.daily_steps_target) > 0 ? Number(lifestyle.daily_steps_target) : null;
+  const waterTarget = Number(lifestyle?.water_target_liters) > 0 ? Number(lifestyle.water_target_liters) : null;
+  const sleepTarget = Number(lifestyle?.sleep_target_hours) > 0 ? Number(lifestyle.sleep_target_hours) : null;
+  const proteinTarget = Number(nutrition?.protein_grams) > 0 ? Number(nutrition.protein_grams) : null;
 
   // Use real data to determine if completed
-  const goals = [
+  const coreGoals = [
     { id: 'workout', text: "Complete workout", completed: workoutCompleted },
-    { id: 'breakfast', text: "Eat breakfast", completed: nutrition?.calories_consumed > 100 }, // Approximation
-    { id: 'protein', text: `Hit ${proteinTarget}g protein target`, completed: (nutrition?.protein_consumed || 0) >= proteinTarget },
-    { id: 'steps', text: `${stepsTarget.toLocaleString()} steps`, completed: (lifestyle?.steps || 0) >= stepsTarget },
-    { id: 'water', text: `${waterTarget}L water`, completed: (nutrition?.water_ml || 0) >= (waterTarget * 1000) },
-    { id: 'sleep', text: `Sleep before 11 PM (Target ${sleepTarget}h)`, completed: (lifestyle?.sleep_hours || 0) >= sleepTarget },
+    ...(nutrition?.daily_calories ? [{ id: 'calories', text: `${nutrition.daily_calories.toLocaleString()} kcal daily target`, completed: false }] : []),
+    ...(proteinTarget ? [{ id: 'protein', text: `Hit ${proteinTarget}g protein target`, completed: (nutrition?.protein_consumed || 0) >= proteinTarget }] : []),
   ];
+  const goals = premiumLevel === "pro" ? [
+    ...coreGoals,
+    ...(stepsTarget ? [{ id: 'steps', text: `${stepsTarget.toLocaleString()} steps`, completed: (activity?.steps || 0) >= stepsTarget }] : []),
+    ...(waterTarget ? [{ id: 'water', text: `${waterTarget}L water`, completed: (activity?.water_liters || 0) >= waterTarget }] : []),
+    ...(sleepTarget ? [{ id: 'sleep', text: `Sleep target ${sleepTarget}h`, completed: (activity?.sleep_hours || 0) >= sleepTarget }] : []),
+  ] : coreGoals;
 
   return (
     <motion.div

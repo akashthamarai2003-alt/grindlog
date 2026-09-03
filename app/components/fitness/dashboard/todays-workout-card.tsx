@@ -1,9 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Dumbbell, Clock, Activity, Play } from "lucide-react";
+import { Dumbbell, Clock, Activity, Play, CalendarX } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 interface TodaysWorkoutCardProps {
   workout?: any; // To receive today's workout plan
@@ -11,11 +10,32 @@ interface TodaysWorkoutCardProps {
 }
 
 export function TodaysWorkoutCard({ workout, targetDateStr }: TodaysWorkoutCardProps) {
-  // Use real data if available, fallback to mock data for the aesthetic
-  const title = workout?.name || "Chest + Triceps";
+  const todayStr = new Date().toISOString().split('T')[0];
+  const cardDateStr = workout?.workout_date || targetDateStr || todayStr;
+  const isFuture = cardDateStr > todayStr;
+
+  if (!workout) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full rounded-2xl border border-white/5 bg-[#111A10] p-6 text-center"
+      >
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#ADFF00]/10">
+          <CalendarX className="h-6 w-6 text-[#ADFF00]" />
+        </div>
+        <h3 className="text-lg font-black text-white">{isFuture ? "No workout scheduled" : "Rest & recovery day"}</h3>
+        <p className="mt-2 text-sm text-white/50">
+          {isFuture ? "Your saved AI plan has no training session on this date." : "No workout is scheduled in your saved plan today."}
+        </p>
+      </motion.div>
+    );
+  }
+
+  const title = workout.name || "Workout";
   const exercises = workout?.fitness_os_exercises || [];
-  const numExercises = exercises.length || 6;
-  const totalDuration = workout?.duration_minutes ? `${workout.duration_minutes} min` : "45–55 min";
+  const numExercises = exercises.length;
+  const totalDuration = workout?.duration_minutes ? `${workout.duration_minutes} min` : null;
   
   const completedCount = exercises.filter((ex: any) => 
     ex.fitness_os_sets && 
@@ -25,9 +45,6 @@ export function TodaysWorkoutCard({ workout, targetDateStr }: TodaysWorkoutCardP
 
   const isCompleted = workout?.status === "completed";
   
-  const todayStr = new Date().toISOString().split('T')[0];
-  const cardDateStr = workout?.workout_date || targetDateStr || todayStr;
-  const isFuture = cardDateStr > todayStr;
   const isRestDay = title.toLowerCase().includes("rest");
   
   return (
@@ -62,10 +79,10 @@ export function TodaysWorkoutCard({ workout, targetDateStr }: TodaysWorkoutCardP
                 <Activity className="w-4 h-4 text-[#ADFF00]" />
                 <span className="text-sm font-medium">{numExercises} Exercises</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              {totalDuration && <div className="flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-[#ADFF00]" />
                 <span className="text-sm font-medium">{totalDuration}</span>
-              </div>
+              </div>}
             </div>
           )}
         </div>

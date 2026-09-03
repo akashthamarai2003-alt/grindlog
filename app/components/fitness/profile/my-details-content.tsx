@@ -35,28 +35,13 @@ import {
 import { toast } from "sonner";
 
 interface ProfileContentProps {
-  user: {
-    id: string;
-    email?: string;
-    created_at?: string;
-  };
   fitnessProfile: any;
-  mainProfile: any;
   activePlan: any;
-  aiLimitInfo: {
-    allowed: boolean;
-    limit: number;
-    used: number;
-    remaining: number;
-  };
 }
 
 export function MyDetailsContent({
-  user,
   fitnessProfile: initialFitnessProfile,
-  mainProfile,
-  activePlan,
-  aiLimitInfo
+  activePlan
 }: ProfileContentProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -70,24 +55,14 @@ export function MyDetailsContent({
     weight: initialFitnessProfile?.weight || "",
     target_weight: initialFitnessProfile?.target_weight || "",
     height: initialFitnessProfile?.height || "",
-    fitness_level: initialFitnessProfile?.fitness_level || "Intermediate",
-    training_days_per_week: initialFitnessProfile?.training_days_per_week || 4,
-    goal: initialFitnessProfile?.goal || "Lose Fat + Build Muscle",
+    fitness_level: initialFitnessProfile?.fitness_level || "",
+    training_days_per_week: initialFitnessProfile?.training_days_per_week || "",
+    goal: initialFitnessProfile?.goal || "",
     waist_cm: initialFitnessProfile?.waist_cm || "",
     chest_cm: initialFitnessProfile?.chest_cm || "",
     arm_cm: initialFitnessProfile?.arm_cm || "",
     thigh_cm: initialFitnessProfile?.thigh_cm || ""
   });
-
-  const name = fitnessProfile?.name || mainProfile?.display_name || mainProfile?.name || user.email?.split("@")[0] || "Athlete";
-  const email = user.email || "";
-  const joinedDate = user.created_at 
-    ? new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
-    : "Recent Member";
-
-  const isPremium = Boolean(fitnessProfile?.fitness_is_premium);
-  const premiumLevel = fitnessProfile?.fitness_premium_level || (isPremium ? "core" : "free");
-  const isPro = premiumLevel === "pro";
 
   // Calculate BMI
   const heightM = fitnessProfile?.height ? fitnessProfile.height / 100 : null;
@@ -253,16 +228,17 @@ export function MyDetailsContent({
                   <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Training Routine</span>
                 </div>
                 <span className="text-xs font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-0.5 rounded-full border border-[#ADFF00]/20">
-                  {fitnessProfile?.fitness_level || "Standard"}
+                  {fitnessProfile?.fitness_level || "Not specified"}
                 </span>
               </div>
               <div className="flex items-center justify-between pt-1">
                 <div>
                   <p className="text-sm font-extrabold text-white">
-                    {fitnessProfile?.training_location || "Gym"} Training
+                    {fitnessProfile?.training_location ? `${fitnessProfile.training_location} Training` : "Training location not specified"}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {fitnessProfile?.training_days_per_week || 4} Days / week • {fitnessProfile?.workout_duration_minutes || 45} mins per session
+                    {fitnessProfile?.training_days_per_week ? `${fitnessProfile.training_days_per_week} days / week` : "Days not specified"}
+                    {fitnessProfile?.workout_duration_minutes ? ` • ${fitnessProfile.workout_duration_minutes} mins per session` : ""}
                   </p>
                 </div>
               </div>
@@ -291,7 +267,7 @@ export function MyDetailsContent({
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Primary Goal</p>
-                  <p className="text-sm font-extrabold text-white">{fitnessProfile?.goal || "Fat Loss & Muscle Building"}</p>
+                  <p className="text-sm font-extrabold text-white">{fitnessProfile?.goal || "Not specified"}</p>
                 </div>
               </div>
               {fitnessProfile?.target_physique && (
@@ -315,8 +291,8 @@ export function MyDetailsContent({
                   <Utensils className="w-3.5 h-3.5 text-orange-400" />
                   <span className="font-bold uppercase tracking-wider text-[10px]">Diet Profile</span>
                 </div>
-                <p className="text-xs font-bold text-gray-200">{fitnessProfile?.food_type || "Balanced Non-Veg"}</p>
-                <p className="text-[11px] text-gray-500 font-medium">{fitnessProfile?.meals_per_day || "3 meals"}/day</p>
+                <p className="text-xs font-bold text-gray-200">{fitnessProfile?.food_type || "Not specified"}</p>
+                <p className="text-[11px] text-gray-500 font-medium">{fitnessProfile?.meals_per_day || "Meal frequency not specified"}</p>
               </div>
 
               <div className="bg-[#0A1108] p-3 rounded-2xl border border-[#1A2619]">
@@ -324,8 +300,8 @@ export function MyDetailsContent({
                   <Activity className="w-3.5 h-3.5 text-cyan-400" />
                   <span className="font-bold uppercase tracking-wider text-[10px]">Active Plan</span>
                 </div>
-                <p className="text-xs font-bold text-gray-200 truncate">{activePlan?.name || "AI Personal Protocol"}</p>
-                <p className="text-[11px] text-[#ADFF00] font-medium">Status: Active</p>
+                <p className="text-xs font-bold text-gray-200 truncate">{activePlan?.name || "No active plan"}</p>
+                <p className={`text-[11px] font-medium ${activePlan ? "text-[#ADFF00]" : "text-gray-500"}`}>Status: {activePlan ? "Active" : "Not created"}</p>
               </div>
             </div>
           </div>
@@ -412,7 +388,13 @@ export function MyDetailsContent({
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Previous Injuries</span>
-              <span className="text-xs font-medium text-white">{fitnessProfile?.previous_injuries || "None"}</span>
+              <span className="text-xs font-medium text-white">
+                {typeof fitnessProfile?.previous_injuries === "boolean"
+                  ? fitnessProfile.previous_injuries
+                    ? `Yes${fitnessProfile?.previous_injury_areas?.length ? ` — ${fitnessProfile.previous_injury_areas.join(", ")}` : ""}`
+                    : "No"
+                  : "Not answered"}
+              </span>
             </div>
           </div>
         </motion.div>
@@ -436,7 +418,7 @@ export function MyDetailsContent({
             </div>
             <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Preferred Days</span>
-              <span className="text-xs font-extrabold text-white text-right max-w-[200px] truncate">{fitnessProfile?.preferred_training_days || "Not specified"}</span>
+              <span className="text-xs font-extrabold text-white text-right max-w-[200px] truncate">{fitnessProfile?.preferred_training_days?.length ? fitnessProfile.preferred_training_days.join(", ") : "Not specified"}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Preferred Time</span>
@@ -535,12 +517,14 @@ export function MyDetailsContent({
                     onChange={(e) => setFormData(prev => ({ ...prev, goal: e.target.value }))}
                     className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold appearance-none"
                   >
+                    <option value="" disabled className="bg-[#0A1108] text-white">Select goal</option>
                     <option value="Lose Fat" className="bg-[#0A1108] text-white">Lose Fat</option>
                     <option value="Cut" className="bg-[#0A1108] text-white">Cut</option>
                     <option value="Build Muscle" className="bg-[#0A1108] text-white">Build Muscle</option>
                     <option value="Gain Weight" className="bg-[#0A1108] text-white">Gain Weight</option>
                     <option value="Lose Fat + Build Muscle" className="bg-[#0A1108] text-white">Lose Fat + Build Muscle</option>
                     <option value="Build Strength" className="bg-[#0A1108] text-white">Build Strength</option>
+                    <option value="Improve Fitness" className="bg-[#0A1108] text-white">Improve Fitness</option>
                     <option value="Maintain" className="bg-[#0A1108] text-white">Maintain</option>
                   </select>
                 </div>
@@ -553,6 +537,7 @@ export function MyDetailsContent({
                     onChange={(e) => setFormData(prev => ({ ...prev, fitness_level: e.target.value }))}
                     className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold appearance-none"
                   >
+                    <option value="" disabled className="bg-[#0A1108] text-white">Select fitness level</option>
                     <option value="Beginner" className="bg-[#0A1108] text-white">Beginner</option>
                     <option value="Intermediate" className="bg-[#0A1108] text-white">Intermediate</option>
                     <option value="Advanced" className="bg-[#0A1108] text-white">Advanced</option>

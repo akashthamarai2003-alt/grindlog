@@ -4,54 +4,132 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/services/supabase/client';
-import { ArrowRight, CheckCircle2, Target, Calendar, Activity, Zap, ShieldCheck, Flame, ShoppingCart, User, Brain, TrendingDown } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Target, Calendar, Activity, Zap, ShieldCheck, Flame, ShoppingCart, User, Brain, TrendingDown, Dumbbell, LoaderCircle } from 'lucide-react';
 
 export default function RoadmapPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<any>(null);
   const [activePlan, setActivePlan] = useState<any>(null);
-  const [isPremium, setIsPremium] = useState(false);
+  const [planTier, setPlanTier] = useState<"starter" | "pro" | null>(null);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const [{ data: fitnessProfile }, { data: savedPlan }] = await Promise.all([
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          router.replace('/auth/signin?redirect=/roadmap');
+          return;
+        }
+
+        const [{ data: fitnessProfile }, { data: savedPlan }, subscriptionResponse] = await Promise.all([
           (supabase.from('fitness_os_profiles' as any) as any).select('*').eq('user_id', user.id).single(),
           (supabase.from('fitness_os_workout_plans' as any) as any)
             .select('id, name, description, goal, plan_data, created_at')
             .eq('user_id', user.id)
             .eq('status', 'active')
             .maybeSingle(),
+          fetch('/api/fitness-ai/subscription/status', { cache: 'no-store' }),
         ]);
-        if (fitnessProfile) {
-          setProfile(fitnessProfile);
-          setIsPremium(!!fitnessProfile.fitness_is_premium);
+
+        if (!subscriptionResponse.ok) {
+          router.replace('/payment?returnTo=/roadmap');
+          return;
         }
-        if (savedPlan) setActivePlan(savedPlan);
+
+        const subscriptionBody = await subscriptionResponse.json().catch(() => null);
+        const subscription = subscriptionBody?.subscription;
+
+        if (subscription?.status !== 'active') {
+          router.replace('/payment?returnTo=/roadmap');
+          return;
+        }
+        if (!fitnessProfile?.onboarding_completed) {
+          router.replace('/onboarding');
+          return;
+        }
+        if (!savedPlan) {
+          router.replace('/report');
+          return;
+        }
+        if (cancelled) return;
+
+        setProfile(fitnessProfile);
+        setActivePlan(savedPlan);
+        if (subscription.plan !== 'starter' && subscription.plan !== 'pro') {
+          router.replace('/payment?returnTo=/roadmap');
+          return;
+        }
+        setPlanTier(subscription.plan);
+      } catch {
+        router.replace('/');
+      } finally {
+        if (!cancelled) setIsLoadingPlan(false);
       }
     };
-    fetchProfile();
-  }, [supabase]);
+    void fetchProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [router, supabase]);
 
   useEffect(() => {
-    // Auto-advance from roadmap to 'ready' screen after 6 seconds of animation
-    if (step === 1) {
+    // Auto-advance from roadmap to the ready screen after the animation.
+    if (step === 1 && !isLoadingPlan) {
       const timer = setTimeout(() => {
         setStep(2);
       }, 7000);
       return () => clearTimeout(timer);
     }
-  }, [step]);
+  }, [isLoadingPlan, step]);
 
   const currentWeight = profile?.weight ? `${profile.weight} kg` : '-- kg';
   const planData = activePlan?.plan_data || {};
   const workoutsPerWeek = Array.isArray(planData.workouts) ? planData.workouts.length : null;
   const nutritionTarget = planData.nutrition;
   const lifestyleTarget = planData.lifestyle;
-  const weightTarget = profile?.target_weight ? `${currentWeight} → ${profile.target_weight} kg` : 'AI Target';
+  const weightTarget = profile?.target_weight ? `${currentWeight} to ${profile.target_weight} kg` : 'Not set';
+  const deadlineDays = Number(profile?.target_deadline_days) > 0 ? Number(profile.target_deadline_days) : null;
+  const deadlineWeeks = deadlineDays ? Math.max(1, Math.ceil(deadlineDays / 7)) : null;
+  const milestoneWeeks = deadlineWeeks
+    ? Array.from(
+        new Set(
+          Array.from({ length: Math.min(8, deadlineWeeks) }, (_, index) =>
+            Math.max(1, Math.round(1 + (index * (deadlineWeeks - 1)) / Math.max(1, Math.min(8, deadlineWeeks) - 1))),
+          ),
+        ),
+      )
+    : [1, 2, 3, 4, 5, 6, 7, 8];
+
+  const isPro = planTier === "pro";
+  const activatedFeatures = [
+    { icon: Target, label: "Personalized Workout Strategy" },
+    { icon: Dumbbell, label: "Exercise Sets, Reps & Safety Guidance" },
+    { icon: Flame, label: "Calorie & Protein Targets" },
+    { icon: User, label: "Goal, Physique & Schedule Mapping" },
+    ...(isPro ? [
+      { icon: Flame, label: "Personalized Diet Plan" },
+      { icon: ShoppingCart, label: "Smart Grocery Strategy" },
+      { icon: Activity, label: "Automated Progress Tracking" },
+      { icon: Brain, label: "AI Coach Support" },
+      { icon: ShieldCheck, label: "Weekly AI Reviews" },
+    ] : []),
+  ];
+
+  if (isLoadingPlan || !profile || !activePlan || !planTier) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0A1108] text-white">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <LoaderCircle className="h-8 w-8 animate-spin text-[#ADFF00]" />
+          <p className="text-sm font-semibold text-white/60">Loading your saved plan...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col relative overflow-hidden">
@@ -77,7 +155,11 @@ export default function RoadmapPage() {
             >
               <h2 className="text-[#ADFF00] font-bold tracking-widest text-xs uppercase mb-2">Transformation Roadmap</h2>
               <h1 className="text-3xl font-black">The Journey Ahead</h1>
-              <p className="text-gray-400 mt-2 text-sm max-w-xs mx-auto">Building sustainable habits over the next 8 weeks.</p>
+              <p className="text-gray-400 mt-2 text-sm max-w-xs mx-auto">
+                {deadlineDays
+                  ? `Building sustainable habits toward your ${deadlineDays}-day target.`
+                  : 'Building sustainable habits around your saved goal.'}
+              </p>
             </motion.div>
 
             {/* Timeline */}
@@ -107,7 +189,7 @@ export default function RoadmapPage() {
 
                 {/* Weeks Grid */}
                 <div className="flex flex-col items-center justify-center gap-4 my-8 z-10 relative">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((w, i) => (
+                  {milestoneWeeks.map((w, i) => (
                     <motion.div
                       key={w}
                       initial={{ opacity: 0, x: i % 2 === 0 ? -10 : 10 }}
@@ -149,21 +231,21 @@ export default function RoadmapPage() {
                  <div className="bg-[#1A2619] p-2 rounded-lg text-[#ADFF00]"><Target size={16} /></div>
                  <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase">Workout</p>
-                   <p className="text-xs font-bold text-gray-300">{workoutsPerWeek ? `${workoutsPerWeek} sessions/week` : 'AI Target'}</p>
+                   <p className="text-xs font-bold text-gray-300">{workoutsPerWeek ? `${workoutsPerWeek} sessions/week` : 'Not available'}</p>
                  </div>
                </div>
                <div className="bg-[#121E12] border border-[#1A2619] p-3 rounded-xl flex items-center gap-3">
                  <div className="bg-[#1A2619] p-2 rounded-lg text-[#ADFF00]"><Flame size={16} /></div>
                  <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase">Nutrition</p>
-                   <p className="text-xs font-bold text-gray-300">{nutritionTarget?.daily_calories ? `${nutritionTarget.daily_calories} kcal · ${nutritionTarget.protein_grams || '--'}g protein` : 'AI Target'}</p>
+                   <p className="text-xs font-bold text-gray-300">{nutritionTarget?.daily_calories ? `${nutritionTarget.daily_calories} kcal / ${nutritionTarget.protein_grams || '--'}g protein` : 'Not available'}</p>
                  </div>
                </div>
                <div className="bg-[#121E12] border border-[#1A2619] p-3 rounded-xl flex items-center gap-3">
                  <div className="bg-[#1A2619] p-2 rounded-lg text-[#ADFF00]"><Activity size={16} /></div>
                  <div>
                    <p className="text-[10px] text-gray-500 font-bold uppercase">Steps</p>
-                   <p className="text-xs font-bold text-gray-300">{lifestyleTarget?.daily_steps_target ? `${lifestyleTarget.daily_steps_target.toLocaleString()} steps/day` : 'AI Target'}</p>
+                   <p className="text-xs font-bold text-gray-300">{lifestyleTarget?.daily_steps_target ? `${lifestyleTarget.daily_steps_target.toLocaleString()} steps/day` : 'Not available'}</p>
                  </div>
                </div>
                <div className="bg-[#121E12] border border-[#1A2619] p-3 rounded-xl flex items-center gap-3">
@@ -177,7 +259,7 @@ export default function RoadmapPage() {
                  <div className="bg-[#1A2619] p-2 rounded-lg text-[#ADFF00]"><Calendar size={16} /></div>
                  <div className="text-left">
                    <p className="text-[10px] text-gray-500 font-bold uppercase">Tracking</p>
-                   <p className="text-xs font-bold text-gray-300">{activePlan?.name || 'Weekly Check-in'}</p>
+                   <p className="text-xs font-bold text-gray-300">{activePlan.name || 'Saved workout plan'}</p>
                  </div>
                </div>
             </motion.div>
@@ -206,20 +288,12 @@ export default function RoadmapPage() {
               </motion.div>
               
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-black mb-2 tracking-tight">Plan Ready</h2>
-                <p className="text-gray-400 text-sm">Your AI transformation protocol is generated and active.</p>
+                <h2 className="text-3xl font-black mb-2 tracking-tight">{isPro ? "Pro Plan Ready" : "Core Plan Ready"}</h2>
+                <p className="text-gray-400 text-sm">Your personalized plan is saved and active.</p>
               </div>
 
               <div className="space-y-4 mb-10">
-                {[
-                  { icon: Target, label: "Personalized Workout Strategy" },
-                  { icon: Flame, label: "Personalized Diet Plan" },
-                  { icon: ShoppingCart, label: "Smart Grocery Strategy" },
-                  { icon: User, label: "Goal Physique Mapping" },
-                  { icon: Activity, label: "Automated Progress Tracking" },
-                  { icon: Brain, label: "AI Coach Support" },
-                  { icon: ShieldCheck, label: "Weekly AI Reviews" },
-                ].map((item, idx) => (
+                {activatedFeatures.map((item, idx) => (
                   <motion.div 
                     key={idx}
                     initial={{ opacity: 0, x: -10 }}
@@ -240,7 +314,7 @@ export default function RoadmapPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.2 }}
                 onClick={() => {
-                  router.push('/payment?returnTo=/roadmap');
+                  router.replace('/');
                 }}
                 className="w-full bg-[#ADFF00] text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-[#9BE600] transition-colors"
               >

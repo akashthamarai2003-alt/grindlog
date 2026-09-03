@@ -11,19 +11,20 @@ interface TransformationCardProps {
 }
 
 export function TransformationCard({ profile, premiumLevel = "core" }: TransformationCardProps) {
-  const startWeight = (profile as any).weight_trend_baseline || profile.weight || 73;
-  const currentWeight = profile.weight || 73;
-  const targetWeight = profile.target_weight || 68;
+  const startWeight = (profile as any).weight_trend_baseline || profile.weight || null;
+  const currentWeight = profile.weight || null;
+  const targetWeight = profile.target_weight || null;
   
   // Calculate Progress Percentage
   let progressPercentage = 0;
-  const totalGoal = Math.abs(startWeight - targetWeight);
-  if (totalGoal > 0) {
+  const hasWeights = typeof startWeight === "number" && typeof currentWeight === "number" && typeof targetWeight === "number";
+  const totalGoal = hasWeights ? Math.abs(startWeight - targetWeight) : 0;
+  if (hasWeights && totalGoal > 0) {
     const isBulking = targetWeight > startWeight;
     let progressMade = isBulking ? (currentWeight - startWeight) : (startWeight - currentWeight);
     progressMade = Math.max(0, progressMade); // Floor at 0 if moving wrong direction
     progressPercentage = Math.round(Math.min(100, Math.max(0, (progressMade / totalGoal) * 100)));
-  } else {
+  } else if (hasWeights && totalGoal === 0) {
     progressPercentage = 100;
   }
 
@@ -57,7 +58,7 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
         <div className="flex items-center justify-between mt-2 px-2">
           <div className="flex flex-col items-center">
             <span className="text-xs text-white/50 uppercase tracking-wider mb-1">Start</span>
-            <span className="text-2xl font-black tracking-tight text-white">{startWeight} <span className="text-sm font-medium text-white/50">kg</span></span>
+            <span className="text-2xl font-black tracking-tight text-white">{startWeight ?? "--"} <span className="text-sm font-medium text-white/50">kg</span></span>
           </div>
 
           <div className="flex flex-col items-center justify-center pt-4">
@@ -74,7 +75,7 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
 
           <div className="flex flex-col items-center">
             <span className="text-xs text-white/50 uppercase tracking-wider mb-1">Target</span>
-            <span className="text-2xl font-black tracking-tight text-[#ADFF00] drop-shadow-[0_0_10px_rgba(173,255,0,0.3)]">{targetWeight} <span className="text-sm font-medium text-[#ADFF00]/50">kg</span></span>
+            <span className="text-2xl font-black tracking-tight text-[#ADFF00] drop-shadow-[0_0_10px_rgba(173,255,0,0.3)]">{targetWeight ?? "--"} <span className="text-sm font-medium text-[#ADFF00]/50">kg</span></span>
           </div>
         </div>
 
@@ -95,7 +96,7 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
         </div>
 
         {premiumLevel === "core" ? (
-          <Link href="/payment?returnTo=/" className="w-full mt-3">
+          <Link href="/payment?returnTo=/&intent=upgrade_pro" className="w-full mt-3">
             <button className="w-full py-3 px-4 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-[#ADFF00]/20">
               <span className="text-sm font-semibold text-[#ADFF00] group-hover/btn:text-[#ADFF00] transition-colors">Upgrade to unlock Automated AI Tracking</span>
               <div className="bg-[#ADFF00] text-black text-[9px] font-black uppercase px-2 py-1 rounded-full">Pro</div>

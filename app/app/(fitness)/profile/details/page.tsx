@@ -2,7 +2,6 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { MyDetailsContent } from "@/components/fitness/profile/my-details-content";
 import { redirect } from "next/navigation";
-import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 
 export default async function MyDetailsPage() {
   const supabase = await createServerSupabase();
@@ -18,12 +17,6 @@ export default async function MyDetailsPage() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const { data: mainProfile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
-
   const { data: activePlan } = await supabase
     .from("fitness_os_workout_plans")
     .select("*")
@@ -31,16 +24,11 @@ export default async function MyDetailsPage() {
     .eq("status", "active")
     .maybeSingle();
 
-  const aiLimitInfo = await checkFitnessAILimit(supabase, user.id);
-
   return (
     <FitnessGuard>
       <MyDetailsContent
-        user={user}
         fitnessProfile={fitnessProfile || {}}
-        mainProfile={mainProfile || {}}
         activePlan={activePlan || null}
-        aiLimitInfo={aiLimitInfo}
       />
     </FitnessGuard>
   );

@@ -3,6 +3,7 @@ import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/ser
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
 import { Suspense } from "react";
+import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
 
@@ -14,18 +15,27 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     return <FitnessLandingPage />;
   }
 
-  const targetDateStr = searchParams?.date || new Date().toISOString().split('T')[0];
+  const todayDateStr = new Date().toISOString().split('T')[0];
+  const requestedDateStr = searchParams?.date;
+  const targetDateStr = requestedDateStr
+    && /^\d{4}-\d{2}-\d{2}$/.test(requestedDateStr)
+    && Number.isFinite(new Date(`${requestedDateStr}T00:00:00.000Z`).getTime())
+      ? requestedDateStr
+      : todayDateStr;
+  const targetDateStart = new Date(`${targetDateStr}T00:00:00.000Z`);
+  const nextTargetDate = new Date(targetDateStart.getTime() + 24 * 60 * 60 * 1000);
 
   const [
     { data: profile },
-    { data: mainProfile },
     { data: plan },
     { data: workout },
-    { data: latestReview }
+    { data: activityLog },
+    { data: sleepLog },
+    { data: waterLogs },
+    subscriptionPlan,
   ] = await Promise.all([
     supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-    supabase.from("fitness_os_profiles").select("fitness_is_premium, fitness_premium_level").eq("user_id", user.id).maybeSingle(),
-    supabase.from("fitness_os_workout_plans").select("id, plan_data, created_at").eq("user_id", user.id).eq("status", "active").maybeSingle(),
+    supabase.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").maybeSingle(),
     supabase.from("fitness_os_workouts").select(`
       *,
       fitness_os_exercises (
@@ -33,14 +43,17 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
         fitness_os_sets (completed)
       )
     `).eq("user_id", user.id).eq("workout_date", targetDateStr).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("fitness_os_progress_reviews").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
+    supabase.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
+    supabase.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
+    (supabase as any).from("fitness_os_water_logs").select("amount_ml").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
+    getFitnessPlan(user.id),
   ]);
 
   if (!profile?.onboarding_completed) {
     redirect("/onboarding");
   }
 
-  if (!mainProfile?.fitness_is_premium) {
+  if (!subscriptionPlan) {
     if (plan) {
       redirect("/payment?returnTo=/");
     } else {
@@ -85,7 +98,17 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     dayNumber = Math.max(1, differenceInCalendarDays(new Date(), new Date(plan.created_at)) + 1);
   }
 
-  return <FitnessDashboard user={user} profile={profile || {}} todayWorkout={workout} hasPlan={!!plan} latestReview={latestReview} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dayNumber={dayNumber} premiumLevel={mainProfile?.fitness_premium_level || 'core'} targetDateStr={targetDateStr} />;
+  const dailyActivity = subscriptionPlan.id === "pro"
+    ? {
+        steps: Number(activityLog?.steps) || null,
+        sleep_hours: Number(sleepLog?.duration_hours) || null,
+        water_liters: Array.isArray(waterLogs)
+          ? waterLogs.reduce((total: number, entry: any) => total + (Number(entry?.amount_ml) || 0), 0) / 1000
+          : null,
+      }
+    : undefined;
+
+  return <FitnessDashboard user={user} profile={profile || {}} activePlan={plan} todayWorkout={workout} hasPlan={!!plan} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dailyActivity={dailyActivity} dayNumber={dayNumber} premiumLevel={subscriptionPlan.id === "pro" ? "pro" : "core"} targetDateStr={targetDateStr} />;
 }
 
 export default async function FitnessHome({ searchParams }: { searchParams: Promise<{ date?: string }> }) {

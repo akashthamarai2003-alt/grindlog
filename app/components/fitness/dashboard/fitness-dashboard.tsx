@@ -11,24 +11,23 @@ import { TodaysNutritionCard } from "./todays-nutrition-card";
 import { DailyActivityCard } from "./daily-activity-card";
 import { TodaysGoalsCard } from "./todays-goals-card";
 import { ExerciseLibraryCard } from "./exercise-library-card";
+import { Dumbbell, Target } from "lucide-react";
 
 interface FitnessDashboardProps {
   user: User;
   profile: Partial<OnboardingData>;
+  activePlan?: any;
   todayWorkout?: any;
   hasPlan?: boolean;
-  latestReview?: any;
   nutrition?: any;
   lifestyle?: any;
+  dailyActivity?: any;
   dayNumber?: number;
   premiumLevel?: string;
   targetDateStr?: string;
 }
 
-export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestReview, nutrition, lifestyle, dayNumber = 1, premiumLevel = "core", targetDateStr }: FitnessDashboardProps) {
-  // Extract user's first name, defaulting to "User" if missing
-  const firstName = profile?.name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || "User";
-
+export function FitnessDashboard({ user, profile, activePlan, todayWorkout, hasPlan, nutrition, lifestyle, dailyActivity, dayNumber = 1, premiumLevel = "core", targetDateStr }: FitnessDashboardProps) {
   return (
     <div className="flex flex-col min-h-screen bg-[#0A1108] text-white overflow-x-hidden">
       
@@ -44,6 +43,32 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
           avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
         />
       </div>
+
+        {hasPlan && activePlan && (
+          <section className="rounded-2xl border border-[#ADFF00]/20 bg-[#111A10] p-5 shadow-xl">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ADFF00]/10 text-[#ADFF00]">
+                <Target className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#ADFF00]">Your saved AI plan</p>
+                <h2 className="mt-1 truncate text-lg font-black text-white">{activePlan.name || "Saved workout plan"}</h2>
+                {activePlan.description && <p className="mt-1 text-xs leading-relaxed text-white/50">{activePlan.description}</p>}
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {profile.goal && <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">Goal: {profile.goal}</span>}
+              {profile.target_physique && <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">Physique: {profile.target_physique}</span>}
+              {profile.training_location && <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">{profile.training_location}</span>}
+              {profile.training_days_per_week && <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">{profile.training_days_per_week} days/week</span>}
+              {profile.workout_duration_minutes && (
+                <span className="flex items-center gap-1 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">
+                  <Dumbbell className="h-3 w-3 text-[#ADFF00]" /> {profile.workout_duration_minutes} min/session
+                </span>
+              )}
+            </div>
+          </section>
+        )}
 
         {!hasPlan && (
           <div className="bg-[#121E12] border border-[#ADFF00]/50 p-4 rounded-2xl flex items-center justify-between shadow-[0_0_15px_rgba(173,255,0,0.1)]">
@@ -67,16 +92,16 @@ export function FitnessDashboard({ user, profile, todayWorkout, hasPlan, latestR
         <TodaysWorkoutCard workout={todayWorkout} targetDateStr={targetDateStr} />
 
         {/* Exercise Library Entry */}
-        <ExerciseLibraryCard />
+        {premiumLevel === "pro" && <ExerciseLibraryCard />}
 
         {/* 6. Today's Nutrition Card */}
         <TodaysNutritionCard nutrition={nutrition} premiumLevel={premiumLevel} />
 
         {/* 7. Daily Activity Card */}
-        <DailyActivityCard lifestyle={lifestyle} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} />
+        <DailyActivityCard lifestyle={lifestyle} activity={dailyActivity} activityDate={targetDateStr} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} />
 
         {/* 8. Today's Goals Card */}
-        <TodaysGoalsCard lifestyle={lifestyle} nutrition={nutrition} workoutCompleted={todayWorkout?.status === 'completed'} />
+        <TodaysGoalsCard lifestyle={lifestyle} activity={dailyActivity} nutrition={nutrition} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} />
 
       </main>
 
