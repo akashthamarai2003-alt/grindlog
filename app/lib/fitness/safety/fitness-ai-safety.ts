@@ -81,6 +81,13 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
         { label: "resistance band", pattern: /resistance band|banded/, accepted: ["resistance band", "band"] },
         { label: "pull-up bar", pattern: /pull[- ]?up bar|hanging/, accepted: ["pull-up bar", "park benches & bars", "full commercial gym", "hybrid gym"] },
         { label: "bench", pattern: /bench press|bench dip|incline|decline/, accepted: ["bench", "adjustable bench", "park benches", "full commercial gym", "hybrid gym"] },
+        { label: "treadmill", pattern: /treadmill/, accepted: ["treadmill", "treadmill / cardio", "full commercial gym", "hybrid gym"] },
+        { label: "exercise bike", pattern: /exercise bike|stationary bike|spin bike|cycling/, accepted: ["exercise bike", "treadmill / exercise bike", "treadmill / cardio", "full commercial gym", "hybrid gym"] },
+        { label: "rowing machine", pattern: /rowing machine|rower/, accepted: ["rowing machine", "treadmill / cardio", "full commercial gym", "hybrid gym"] },
+        { label: "stair climber", pattern: /stair climber|stair machine/, accepted: ["stair climber", "treadmill / cardio", "full commercial gym", "hybrid gym"] },
+        { label: "jump rope", pattern: /jump rope|skipping rope/, accepted: ["jump rope", "full commercial gym", "hybrid gym"] },
+        { label: "medicine ball", pattern: /medicine ball|slam ball/, accepted: ["medicine ball", "full commercial gym", "hybrid gym"] },
+        { label: "exercise box", pattern: /plyo box|exercise box/, accepted: ["step / plyo box", "full commercial gym", "hybrid gym"] },
       ];
       if (!hasFullGym) {
         const missingEquipment = requiredEquipment.find(

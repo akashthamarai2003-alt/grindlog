@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
-import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, CircleDashed, Shirt, BicepsFlexed } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, CircleDashed, Shirt, BicepsFlexed, Building2, House, Trees, RefreshCw, Cable, Weight, Armchair, CircleDot, Bike, Footprints, PersonStanding, StretchHorizontal, MoveHorizontal, Landmark, CircleGauge, Grip, Waves, Mountain, Accessibility, Box, type LucideIcon } from "lucide-react";
 import { BodySilhouette } from "./body-silhouette";
 import { toast } from "sonner";
 import frontImg from "../../../assets/images/placeholder-front.png";
@@ -22,6 +22,104 @@ import frontImgMaleFat from "../../../assets/images/placeholder-front-male-fat.j
 import backImgMaleFat from "../../../assets/images/placeholder-back-male-fat.jpg";
 import leftImgMaleFat from "../../../assets/images/placeholder-left-male-fat.jpg";
 import rightImgMaleFat from "../../../assets/images/placeholder-right-male-fat.jpg";
+
+type EquipmentOption = {
+  id: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+const EQUIPMENT_ACCESS_MARKERS = new Set([
+  "Full Commercial Gym",
+  "Hybrid Gym & Home Equipment",
+]);
+
+const EQUIPMENT_OPTIONS: Record<"Gym" | "Home" | "Outdoor" | "Combination", EquipmentOption[]> = {
+  Gym: [
+    { id: "Full Commercial Gym", label: "Full commercial gym", description: "Barbells, racks, machines, cables and cardio", icon: Building2 },
+    { id: "Barbells", label: "Barbell", description: "Long bar used with weight plates", icon: Weight },
+    { id: "Squat Rack", label: "Squat rack", description: "Rack for squats, presses and barbell work", icon: Landmark },
+    { id: "Dumbbells", label: "Dumbbells", description: "Hand weights for one-arm or two-arm exercises", icon: Dumbbell },
+    { id: "Cable Machines", label: "Cable machine", description: "Adjustable cable and pulley station", icon: Cable },
+    { id: "Machines", label: "Weight machines", description: "Seated or guided resistance machines", icon: Armchair },
+    { id: "Bench", label: "Bench", description: "Flat or adjustable bench for supported exercises", icon: StretchHorizontal },
+    { id: "Kettlebells", label: "Kettlebell", description: "Single handled weight for strength work", icon: CircleDot },
+    { id: "Resistance Bands", label: "Resistance bands", description: "Elastic bands with different tensions", icon: MoveHorizontal },
+    { id: "Pull-up Bar", label: "Pull-up bar", description: "Bar for pull-ups, hangs and assisted work", icon: Grip },
+    { id: "Treadmill", label: "Treadmill", description: "Indoor walking or running machine", icon: CircleGauge },
+    { id: "Exercise Bike", label: "Exercise bike", description: "Stationary bike for low-impact cardio", icon: Bike },
+    { id: "Rowing Machine", label: "Rowing machine", description: "Seated full-body cardio machine", icon: Waves },
+    { id: "Stair Climber", label: "Stair climber", description: "Machine for controlled stair climbing", icon: Footprints },
+  ],
+  Home: [
+    { id: "No Equipment / Bodyweight", label: "No equipment", description: "Bodyweight and calisthenics only", icon: PersonStanding },
+    { id: "Dumbbells", label: "Dumbbells", description: "Hand weights kept at home", icon: Dumbbell },
+    { id: "Adjustable Bench", label: "Adjustable bench", description: "Bench that changes flat or incline angles", icon: StretchHorizontal },
+    { id: "Kettlebell", label: "Kettlebell", description: "Single handled weight for home strength work", icon: CircleDot },
+    { id: "Resistance Bands", label: "Resistance bands", description: "Elastic loop or tube bands", icon: MoveHorizontal },
+    { id: "Pull-up Bar", label: "Pull-up bar", description: "Door-frame or wall-mounted bar", icon: Grip },
+    { id: "Home Barbell", label: "Home barbell", description: "Barbell and plates available at home", icon: Weight },
+    { id: "Weight Plates", label: "Weight plates", description: "Loose plates for a bar or plate-loaded work", icon: CircleDot },
+    { id: "Cable / Pulley", label: "Cable / pulley", description: "Home pulley or cable attachment", icon: Cable },
+    { id: "Treadmill", label: "Treadmill", description: "Indoor walking or running machine", icon: CircleGauge },
+    { id: "Exercise Bike", label: "Exercise bike", description: "Stationary bike for low-impact cardio", icon: Bike },
+    { id: "Yoga Mat", label: "Yoga mat", description: "Floor support for mobility and core work", icon: Waves },
+    { id: "Foam Roller", label: "Foam roller", description: "Recovery and mobility tool", icon: Accessibility },
+    { id: "Jump Rope", label: "Jump rope", description: "Rope for skipping and conditioning", icon: Footprints },
+    { id: "Medicine Ball", label: "Medicine ball", description: "Weighted ball for controlled power work", icon: CircleDot },
+    { id: "Step / Plyo Box", label: "Step / exercise box", description: "Stable platform for step-ups and support", icon: Box },
+  ],
+  Outdoor: [
+    { id: "Bodyweight & Outdoor Running", label: "Bodyweight / open space", description: "Outdoor bodyweight training and walking", icon: Trees },
+    { id: "Park Benches & Bars", label: "Park benches & bars", description: "Bench, parallel bars or pull-up bars", icon: Landmark },
+    { id: "Sprinting Track", label: "Running track", description: "Track or measured outdoor running space", icon: Footprints },
+    { id: "Resistance Bands", label: "Resistance bands", description: "Portable bands for outdoor resistance work", icon: MoveHorizontal },
+    { id: "Stairs / Hill", label: "Stairs / hill", description: "Safe outdoor steps or an incline", icon: Mountain },
+    { id: "Jump Rope", label: "Jump rope", description: "Rope for skipping on a safe surface", icon: Footprints },
+  ],
+  Combination: [
+    { id: "Hybrid Gym & Home Equipment", label: "Gym + home access", description: "Use gym, home and outdoor sessions", icon: RefreshCw },
+    { id: "Full Commercial Gym", label: "Full commercial gym", description: "Full access on gym days", icon: Building2 },
+    { id: "No Equipment / Bodyweight", label: "Home bodyweight", description: "No-equipment sessions at home", icon: House },
+    { id: "Dumbbells", label: "Home dumbbells", description: "Dumbbells available at home", icon: Dumbbell },
+    { id: "Resistance Bands", label: "Home resistance bands", description: "Bands available for home sessions", icon: MoveHorizontal },
+    { id: "Treadmill", label: "Treadmill", description: "Treadmill available on gym days", icon: CircleGauge },
+    { id: "Exercise Bike", label: "Exercise bike", description: "Stationary bike available", icon: Bike },
+    { id: "Outdoor Facilities", label: "Outdoor facilities", description: "Park, track, stairs or outdoor space", icon: Trees },
+  ],
+};
+
+function getEquipmentOptions(location: unknown): EquipmentOption[] {
+  if (location === "Gym" || location === "Home" || location === "Outdoor" || location === "Combination") {
+    return EQUIPMENT_OPTIONS[location];
+  }
+  return [];
+}
+
+function toggleEquipmentSelection(current: string[], optionId: string): string[] {
+  if (EQUIPMENT_ACCESS_MARKERS.has(optionId)) {
+    return current.includes(optionId) ? ["No Equipment / Bodyweight"] : [optionId];
+  }
+
+  if (optionId === "No Equipment / Bodyweight") {
+    return [optionId];
+  }
+
+  // Selecting a specific item means the user is describing their real kit,
+  // so remove the broad all-access marker instead of pretending every machine
+  // is available.
+  let next = current.filter(
+    (item) => !EQUIPMENT_ACCESS_MARKERS.has(item) && item !== "No Equipment / Bodyweight",
+  );
+  if (next.includes(optionId)) {
+    next = next.filter((item) => item !== optionId);
+  } else {
+    next.push(optionId);
+  }
+
+  return next.length ? Array.from(new Set(next)) : ["No Equipment / Bodyweight"];
+}
 
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve) => {
@@ -1020,7 +1118,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     id: "Gym", 
                     emoji: "🏋️", 
                     desc: "Commercial Gym (Barbells, Dumbbells, Machines, Cables & Cardio)",
-                    defaultEq: ["Full Commercial Gym", "Barbells", "Dumbbells", "Cable Machines", "Machines", "Squat Rack", "Bench", "Treadmill / Cardio"]
+                    defaultEq: ["Full Commercial Gym"]
                   },
                   { 
                     id: "Home", 
@@ -1099,50 +1197,30 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                       <span className="text-[10px] text-gray-500">Tap to toggle</span>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {(data.training_location === "Gym" ? [
-                        "Full Commercial Gym", "Barbells", "Dumbbells", "Cable Machines", "Machines", "Squat Rack", "Bench", "Treadmill / Cardio"
-                      ] : data.training_location === "Home" ? [
-                        "No Equipment / Bodyweight", "Dumbbells", "Adjustable Bench", "Kettlebell", "Pull-up Bar", "Resistance Bands", "Home Barbell", "Treadmill / Exercise Bike", "Yoga Mat"
-                      ] : data.training_location === "Outdoor" ? [
-                        "Bodyweight & Outdoor Running", "Park Benches & Bars", "Sprinting Track"
-                      ] : [
-                        "Hybrid Gym & Home Equipment", "Full Commercial Gym", "No Equipment / Bodyweight", "Dumbbells", "Treadmill / Cardio"
-                      ]).map(opt => {
-                        const isSelected = data.equipment?.includes(opt) || false;
+                    <div className="grid grid-cols-2 gap-2">
+                      {getEquipmentOptions(data.training_location).map((opt) => {
+                        const isSelected = data.equipment?.includes(opt.id) || false;
+                        const EquipmentIcon = opt.icon;
                         return (
                           <button
-                            key={opt}
+                            key={opt.id}
                             onClick={() => {
-                              let newEq = [...(data.equipment || [])];
-                              if (opt === "No Equipment / Bodyweight") {
-                                newEq = ["No Equipment / Bodyweight"];
-                              } else {
-                                newEq = newEq.filter(e => e !== "No Equipment / Bodyweight");
-                                if (isSelected) {
-                                  newEq = newEq.filter(e => e !== opt);
-                                  if (opt === "Full Commercial Gym") {
-                                    newEq = [];
-                                  }
-                                } else {
-                                  newEq.push(opt);
-                                  if (opt === "Full Commercial Gym") {
-                                    newEq = ["Full Commercial Gym", "Barbells", "Dumbbells", "Cable Machines", "Machines", "Squat Rack", "Bench", "Treadmill / Cardio"];
-                                  }
-                                }
-                              }
-                              if (newEq.length === 0 && opt !== "Full Commercial Gym") {
-                                newEq = [opt];
-                              }
-                              handleUpdate({ equipment: Array.from(new Set(newEq)) });
+                              handleUpdate({
+                                equipment: toggleEquipmentSelection(data.equipment || [], opt.id),
+                              });
                             }}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
-                              isSelected 
-                                ? "bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]" 
-                                : "bg-black/30 border-white/10 text-gray-400 backdrop-blur-sm hover:border-white/20 hover:text-gray-200"
+                            className={`flex min-h-[74px] items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-bold transition-all ${
+                              isSelected
+                                ? "border-[#ADFF00] bg-[#ADFF00]/10 text-[#ADFF00]"
+                                : "border-white/10 bg-black/30 text-gray-400 backdrop-blur-sm hover:border-white/20 hover:text-gray-200"
                             }`}
                           >
-                            {isSelected ? `✓ ${opt}` : opt}
+                            <EquipmentIcon size={18} className="shrink-0" />
+                            <span className="min-w-0">
+                              <span className="block leading-tight">{opt.label}</span>
+                              <span className="mt-1 block text-[10px] font-medium leading-snug opacity-75">{opt.description}</span>
+                            </span>
+                            {isSelected && <Check size={15} className="ml-auto shrink-0" strokeWidth={3} />}
                           </button>
                         );
                       })}
