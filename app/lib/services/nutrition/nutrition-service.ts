@@ -1,5 +1,59 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
 
+type NutritionFoodReference = {
+  name: string;
+  category?: string | null;
+  serving_size?: string | null;
+  calories?: number | null;
+  protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
+  estimated_cost?: number | null;
+};
+
+function normalizeFoodName(value: unknown): string {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\beggs\b/g, "egg")
+    .replace(/\bpieces\b/g, "piece")
+    .replace(/\s+/g, " ")
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim();
+}
+
+function parseAIItemText(value: unknown): Array<{ name: string; servingSize: string; multiplier: number }> {
+  const text = String(value || "").trim();
+  if (!text) return [];
+
+  return text
+    .split(/\s+\+\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const match = part.match(/^(.+?),\s*(\d+(?:\.\d+)?)\s+(.+)$/);
+      if (!match) {
+        return { name: part, servingSize: "", multiplier: 1 };
+      }
+      return {
+        name: match[1].trim(),
+        multiplier: Math.max(Number(match[2]) || 1, 0.25),
+        servingSize: `${match[2]} ${match[3].trim()}`,
+      };
+    });
+}
+
+function findFoodReference(name: string, catalog: NutritionFoodReference[]): NutritionFoodReference | undefined {
+  const normalizedName = normalizeFoodName(name);
+  if (!normalizedName) return undefined;
+
+  return catalog.find((food) => normalizeFoodName(food.name) === normalizedName)
+    || catalog.find((food) => {
+      const candidate = normalizeFoodName(food.name);
+      return candidate.includes(normalizedName) || normalizedName.includes(candidate);
+    });
+}
+
 export interface LogFoodInput {
   food_id?: string;
   meal_type: string;
@@ -408,7 +462,7 @@ export class NutritionService {
     const monthStartISO = new Date(`${firstDayOfMonth}T00:00:00.000${mOffsetStr}`).toISOString();
 
     // Parallelize all data fetching
-    const [targets, foodsRes, watersRes, plansRes, monthFoodsRes, fitProfileRes, activePlanRes] = await Promise.all([
+    const [targets, foodsRes, watersRes, plansRes, monthFoodsRes, fitProfileRes, activePlanRes, foodCatalogRes] = await Promise.all([
       this.getEffectiveTargets(userId),
       supabase
         .from('food_logs')
@@ -443,7 +497,12 @@ export class NutritionService {
         .select('plan_data')
         .eq('user_id', userId)
         .eq('status', 'active')
-        .maybeSingle()
+        .maybeSingle(),
+      supabase
+        .from('foods')
+        .select('name, category, serving_size, calories, protein, carbs, fat, estimated_cost')
+        .eq('is_active', true)
+        .limit(300)
     ]);
 
     if (!targets) {
@@ -456,6 +515,7 @@ export class NutritionService {
     const monthFoods = monthFoodsRes.data;
     const fitProfile = fitProfileRes.data;
     const activePlan = activePlanRes.data;
+    const foodCatalog = (foodCatalogRes.data || []) as NutritionFoodReference[];
     const aiMeals = activePlan?.plan_data?.nutrition?.meals || [];
 
     // 3. Compute consumed
@@ -613,27 +673,55 @@ export class NutritionService {
           estCost = 0; // Core meals are provided
         }
 
+        // AI sometimes returns several foods as one string joined with "+".
+        // Normalize those foods into separate rows and use the verified food
+        // library for per-item nutrition whenever a match is available.
+        const parsedItems = (Array.isArray(aiMeal.items) ? aiMeal.items : [])
+          .flatMap((item: unknown) => parseAIItemText(item));
+        const itemParts: Array<{ name: string; servingSize: string; multiplier: number }> = parsedItems.length > 0
+          ? parsedItems
+          : [{ name: aiMeal.meal_name || `${mType} meal`, servingSize: '', multiplier: 1 }];
+        const fallbackCalories = Math.round((Number(aiMeal.total_calories) > 0 ? Number(aiMeal.total_calories) : estCals) / itemParts.length);
+        const fallbackProtein = Math.round((Number(aiMeal.protein_grams) > 0 ? Number(aiMeal.protein_grams) : estPro) / itemParts.length);
+        const fallbackCost = Math.round(estCost / itemParts.length);
+        const mealPlanItems = itemParts.map((part: { name: string; servingSize: string; multiplier: number }, index: number) => {
+          const reference = findFoodReference(part.name, foodCatalog);
+          const multiplier = part.multiplier;
+          const servingSize = part.servingSize || reference?.serving_size || '1 serving';
+
+          return {
+            id: `ai-item-${mType}-${index}`,
+            // The parsed quantity is represented in the serving label so the
+            // UI reads "2 bowls" while all nutrition values remain accurate.
+            quantity: 1,
+            foods: {
+              name: reference?.name || part.name,
+              category: reference?.category || mType,
+              serving_size: servingSize,
+              calories: Math.round(Number(reference?.calories || fallbackCalories) * (reference ? multiplier : 1)),
+              protein: Number((Number(reference?.protein || fallbackProtein) * (reference ? multiplier : 1)).toFixed(1)),
+              carbs: Number((Number(reference?.carbs || 0) * (reference ? multiplier : 1)).toFixed(1)),
+              fat: Number((Number(reference?.fat || 0) * (reference ? multiplier : 1)).toFixed(1)),
+              estimated_cost: Math.round(Number(reference?.estimated_cost || fallbackCost) * (reference ? multiplier : 1)),
+            }
+          };
+        });
+        const mealTotals = mealPlanItems.reduce((totals: { calories: number; protein: number; carbs: number; fat: number }, item: any) => ({
+          calories: totals.calories + Number(item.foods.calories || 0),
+          protein: totals.protein + Number(item.foods.protein || 0),
+          carbs: totals.carbs + Number(item.foods.carbs || 0),
+          fat: totals.fat + Number(item.foods.fat || 0),
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
         return {
           id: `ai-${mType}`,
           meal_type: mType,
           name: mType.charAt(0).toUpperCase() + mType.slice(1),
-          calories: estCals,
-          protein: estPro,
-          meal_plan_items: [
-            {
-              id: `ai-item-${mType}`,
-              quantity: 1,
-              foods: {
-                name: aiMeal.items?.join(" + ") || aiMeal.meal_name,
-                category: mType,
-                calories: estCals,
-                protein: estPro,
-                carbs: 0,
-                fat: 0,
-                estimated_cost: estCost
-              }
-            }
-          ]
+          calories: mealTotals.calories,
+          protein: mealTotals.protein,
+          carbs: mealTotals.carbs,
+          fat: mealTotals.fat,
+          meal_plan_items: mealPlanItems
         };
       }
 

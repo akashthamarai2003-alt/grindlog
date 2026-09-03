@@ -338,8 +338,18 @@ export function NutritionView() {
             {meals.map((meal: any) => {
               const completed = isMealCompleted(meal.meal_type);
               const loggedFoods = foodsByMeal[meal.meal_type] || [];
+              const plannedFoods = Array.isArray(meal.meal_plan_items) ? meal.meal_plan_items : [];
               const mealCals = loggedFoods.reduce((acc: number, f: any) => acc + f.calories, 0);
               const mealPro = loggedFoods.reduce((acc: number, f: any) => acc + f.protein, 0);
+              const plannedTotals = plannedFoods.reduce((totals: any, item: any) => {
+                const quantity = Number(item.quantity) || 1;
+                return {
+                  calories: totals.calories + Number(item.foods?.calories || 0) * quantity,
+                  protein: totals.protein + Number(item.foods?.protein || 0) * quantity,
+                  carbs: totals.carbs + Number(item.foods?.carbs || 0) * quantity,
+                  fat: totals.fat + Number(item.foods?.fat || 0) * quantity,
+                };
+              }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
               
               return (
                 <div key={meal.id} className={`bg-[#111A10] border rounded-[24px] p-5 ${completed ? 'border-[#ADFF00]/20 shadow-[0_0_15px_rgba(173,255,0,0.03)]' : 'border-white/5 opacity-90'}`}>
@@ -426,6 +436,21 @@ export function NutritionView() {
                       )}
                     </ul>
                   </div>
+                  {!completed && plannedFoods.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
+                      {[
+                        { label: 'Calories', value: Math.round(plannedTotals.calories), suffix: 'kcal', className: 'text-white' },
+                        { label: 'Fat', value: Math.round(plannedTotals.fat), suffix: 'g', className: 'text-orange-400' },
+                        { label: 'Carbs', value: Math.round(plannedTotals.carbs), suffix: 'g', className: 'text-red-400' },
+                        { label: 'Protein', value: Math.round(plannedTotals.protein), suffix: 'g', className: 'text-[#ADFF00]' },
+                      ].map((macro) => (
+                        <div key={macro.label} className="text-center">
+                          <p className={`text-xs font-black ${macro.className}`}>{macro.value}{macro.suffix}</p>
+                          <p className="text-[9px] text-white/40">{macro.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <button 
                       disabled={swappingMeal === meal.meal_type}
