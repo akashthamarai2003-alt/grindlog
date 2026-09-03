@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
-import { Suspense } from "react";
+import { Suspense } from 'react';
+import { differenceInCalendarDays } from 'date-fns';
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
@@ -94,7 +95,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
 
   let dayNumber = 1;
   if (plan?.created_at) {
-    const { differenceInCalendarDays } = require("date-fns");
+    
     dayNumber = Math.max(1, differenceInCalendarDays(new Date(), new Date(plan.created_at)) + 1);
   }
 

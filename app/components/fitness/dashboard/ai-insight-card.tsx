@@ -15,7 +15,7 @@ export function AIInsightCard({ review }: { review: ProgressReview | null }) {
             Complete a few workouts and your AI Coach will analyze your progress.
           </p>
         </div>
-        <Link href="/coach" className="relative z-10 ml-4 flex-shrink-0 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
+        <Link href="/coach" prefetch={true} className="relative z-10 ml-4 flex-shrink-0 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
           <ArrowRight className="w-5 h-5 text-white" />
         </Link>
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full" />
@@ -39,7 +39,7 @@ export function AIInsightCard({ review }: { review: ProgressReview | null }) {
           "{highlight}"
         </p>
       </div>
-      <Link href="/coach" className="relative z-10 ml-4 flex-shrink-0 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors shadow-sm">
+      <Link href="/coach" prefetch={true} className="relative z-10 ml-4 flex-shrink-0 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors shadow-sm">
         <ArrowRight className="w-5 h-5 text-white" />
       </Link>
       <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-2xl rounded-full" />

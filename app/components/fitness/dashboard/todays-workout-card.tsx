@@ -108,7 +108,7 @@ export function TodaysWorkoutCard({ workout, targetDateStr }: TodaysWorkoutCardP
 
         {/* Start Button */}
         {isCompleted ? (
-          <Link href={`/workout/${workout.id}/summary`} className="w-full mt-2">
+          <Link href={`/workout/${workout.id}/summary`} prefetch={true} className="w-full mt-2">
             <button className="w-full py-4 px-4 bg-[#1A2619] border border-[#ADFF00]/30 hover:bg-[#ADFF00]/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2">
               <Dumbbell className="w-5 h-5 text-[#ADFF00]" />
               <span className="text-base font-black text-[#ADFF00] uppercase tracking-wide">View Summary</span>
@@ -128,7 +128,7 @@ export function TodaysWorkoutCard({ workout, targetDateStr }: TodaysWorkoutCardP
             </button>
           </div>
         ) : (
-          <Link href={workout ? `/workout` : "#"} className="w-full mt-2">
+          <Link href={workout ? `/workout` : "#"} prefetch={true} className="w-full mt-2">
             <button className="w-full py-4 px-4 bg-[#ADFF00] hover:bg-[#bfff33] active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)]">
               <Play className="w-5 h-5 text-black fill-black" />
               <span className="text-base font-black text-black uppercase tracking-wide">Start Workout</span>

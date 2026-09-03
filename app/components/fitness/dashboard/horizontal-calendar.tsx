@@ -54,11 +54,12 @@ export function HorizontalCalendar() {
               key={idx}
               href={`/?date=${dateString}`}
               scroll={false}
+              prefetch={true}
               onClick={() => {
                 if (!isActive) setPendingDate(dateString);
               }}
               data-active={isActive}
-              className="flex flex-col items-center gap-2 snap-center shrink-0 cursor-pointer group relative"
+              className="flex flex-col items-center gap-2 snap-center shrink-0 cursor-pointer group relative active:scale-95 transition-transform"
             >
               <span className={`text-[10px] font-bold uppercase transition-colors ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`}>
                 {dayName}

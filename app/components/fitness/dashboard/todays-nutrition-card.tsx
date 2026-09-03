@@ -106,7 +106,7 @@ export function TodaysNutritionCard({ nutrition, premiumLevel = "core" }: Todays
               <p className="text-[10px] text-white/50 max-w-[200px]">
                 You currently have access to Macros Only. Upgrade to Pro for a hyper-personalized daily meal plan.
               </p>
-              <Link href="/payment?returnTo=/&intent=upgrade_pro" className="mt-1">
+              <Link href="/payment?returnTo=/&intent=upgrade_pro" prefetch={true} className="mt-1">
                 <button className="bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 text-[#ADFF00] text-[10px] font-black uppercase px-4 py-2 rounded-full border border-[#ADFF00]/20 transition-all flex items-center gap-1.5">
                   Unlock Pro <ArrowRight size={12} />
                 </button>
@@ -149,7 +149,7 @@ export function TodaysNutritionCard({ nutrition, premiumLevel = "core" }: Todays
         </div>
 
         {/* Link Button */}
-        <Link href={premiumLevel === "pro" ? "/nutrition" : "/payment?returnTo=/&intent=upgrade_pro"} className="w-full mt-1">
+        <Link href={premiumLevel === "pro" ? "/nutrition" : "/payment?returnTo=/&intent=upgrade_pro"} prefetch={true} className="w-full mt-1">
           <button className="w-full py-3.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2">
             <span className="text-[13px] font-bold text-white uppercase tracking-wider">{premiumLevel === "pro" ? "View Full Diet" : "Upgrade for Full Diet"}</span>
             <ArrowRight className="w-4 h-4 text-[#ADFF00]" />

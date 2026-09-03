@@ -15,7 +15,7 @@ export default function NutritionIndexPage() {
           
           {/* Nutrition header */}
           <div className="flex items-center justify-between mb-6">
-            <Link href="/" className="w-10 h-10 flex items-center justify-center rounded-full bg-[#111A10] border border-white/5 text-white/70 hover:text-white hover:bg-white/5 transition-all">
+            <Link href="/" prefetch={true} className="w-10 h-10 flex items-center justify-center rounded-full bg-[#111A10] border border-white/5 text-white/70 hover:text-white hover:bg-white/5 transition-all">
               <ChevronLeft size={20} />
             </Link>
             

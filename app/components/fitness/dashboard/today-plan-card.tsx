@@ -24,7 +24,7 @@ export function TodayPlanCard({ workout, hasPlan }: TodayPlanCardProps) {
         <h3 className="text-lg font-bold text-gray-900 mb-1">No plan found</h3>
         <p className="text-sm text-gray-500 font-medium mb-6">Let AI create a personalized plan for you</p>
         <Link 
-          href="/scanner"
+          href="/scanner" prefetch={true}
           className="bg-gray-900 text-white font-bold py-3 px-6 rounded-xl text-sm active:scale-[0.98] transition-transform"
         >
           Build My Fitness Plan
@@ -85,7 +85,7 @@ export function TodayPlanCard({ workout, hasPlan }: TodayPlanCardProps) {
       </div>
 
       <Link 
-        href="/workout"
+        href="/workout" prefetch={true}
         className="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-all text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.4)]"
       >
         <Play className="w-5 h-5 fill-current" />
