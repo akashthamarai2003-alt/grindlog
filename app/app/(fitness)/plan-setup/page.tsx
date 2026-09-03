@@ -70,6 +70,18 @@ function providedMealSourceLabel(foodEnvironment: unknown): string {
   return environment ? `${environment}-provided` : "Provided";
 }
 
+function normaliseProvidedMealItem(item: unknown, foodEnvironment: unknown): string {
+  const text = String(item ?? "").trim();
+  if (!/PG\/Hostel\/Home\s+Provided\s+Core\s+Meal\s*\(Free\)/i.test(text)) {
+    return text;
+  }
+
+  return text.replace(
+    /PG\/Hostel\/Home\s+Provided\s+Core\s+Meal\s*\(Free\)/gi,
+    `${providedMealSourceLabel(foodEnvironment)} core meal (free)`,
+  );
+}
+
 function isCoreMeal(mealName: unknown): boolean {
   return typeof mealName === "string" && /breakfast|lunch|dinner/i.test(mealName);
 }
@@ -570,7 +582,7 @@ export default function PlanSetupPage() {
                     {mealItems.length > 0 ? mealItems.map((item: string, itemIdx: number) => (
                       <div key={`${item}-${itemIdx}`} className="flex items-start gap-2">
                         <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#ADFF00]" />
-                        <span className="text-sm font-medium leading-relaxed text-gray-200">{item}</span>
+                        <span className="text-sm font-medium leading-relaxed text-gray-200">{normaliseProvidedMealItem(item, foodEnvironment)}</span>
                       </div>
                     )) : (
                       <p className="text-sm text-gray-500">No meal items were generated.</p>

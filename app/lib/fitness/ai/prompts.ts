@@ -15,6 +15,8 @@ Return JSON only, with every field in this shape:
 {safety_acknowledgment, plan:{name,description,goal}, workouts:[{title,workout_date,duration_minutes,exercises:[{name,exercise_order,sets,reps_string,target_reps_num,rest_seconds,notes}]}], nutrition:{daily_calories,protein_grams,meals_per_day,guidance,meals:[{meal_name,time_of_day,items,total_calories,protein_grams,prep_instructions}],grocery_list:[{name,monthly_quantity,unit,estimated_price,category,is_optional,reason}]}, lifestyle:{sleep_target_hours,water_target_liters,daily_steps_target}}.
 CRITICAL: All numeric fields (e.g., sets, rest_seconds, estimated_price, total_calories) MUST be pure numbers (e.g. 60), NEVER strings with units (e.g. "60s" or "60 INR"). Use null only for genuinely unknown numeric values; otherwise include all fields. Never create IDs.`;
 
+export const FITNESS_PLAN_PRESENTATION_RULE = `When nutrition.provided_core_meals is true, use nutrition.provided_core_meal_label exactly for each breakfast, lunch, or dinner provided-meal item. Never output a combined label such as "PG/Hostel/Home Provided Core Meal (Free)" because the user's saved environment identifies the single correct source.`;
+
 const PLAN_BODY_SCAN_CONTEXT_LIMIT = 2600;
 const PLAN_STRATEGY_TEXT_LIMIT = 360;
 
@@ -380,6 +382,15 @@ function budgetPlanningReference(value: unknown): number | undefined {
   return values.length ? Math.max(...values) : undefined;
 }
 
+function providedCoreMealLabel(foodEnvironment: unknown): string | undefined {
+  const environment = typeof foodEnvironment === "string" ? foodEnvironment.trim() : "";
+  if (environment === "PG") return "PG-provided core meal (free)";
+  if (environment === "Hostel") return "Hostel-provided core meal (free)";
+  if (environment === "Home") return "Home-provided core meal (free)";
+  if (environment === "Office/Canteen") return "Canteen-provided core meal (free)";
+  return undefined;
+}
+
 function buildCompactPlanProfile(
   profile: Record<string, any>,
   todayDateStr: string,
@@ -433,6 +444,7 @@ function buildCompactPlanProfile(
       diet: profile.food_type || profile.diet_preference,
       environment: foodEnvironment,
       provided_core_meals: providedCoreMeals,
+      provided_core_meal_label: providedCoreMealLabel(foodEnvironment),
       monthly_budget: profile.nutrition_budget,
       monthly_budget_reference_inr: budgetPlanningReference(profile.nutrition_budget),
       meals_per_day: profile.meals_per_day,

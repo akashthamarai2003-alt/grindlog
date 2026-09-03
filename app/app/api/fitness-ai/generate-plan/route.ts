@@ -12,6 +12,7 @@ import {
 } from "@/lib/fitness/ai/schemas";
 import {
   FITNESS_PLAN_SYSTEM_PROMPT,
+  FITNESS_PLAN_PRESENTATION_RULE,
   buildFitnessPlanPrompt,
 } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
@@ -157,7 +158,7 @@ export async function POST(req: Request) {
       try {
         console.log(`Fitness AI Generation Attempt ${attempt}...`);
         const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-          systemPrompt: FITNESS_PLAN_SYSTEM_PROMPT,
+          systemPrompt: `${FITNESS_PLAN_SYSTEM_PROMPT}\n\n${FITNESS_PLAN_PRESENTATION_RULE}`,
           userPrompt,
           model: FITNESS_PLAN_MODEL,
           // This route is also synchronous; Medium balances plan quality and
