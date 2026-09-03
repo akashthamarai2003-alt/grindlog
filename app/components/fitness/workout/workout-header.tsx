@@ -31,7 +31,7 @@ export function WorkoutHeader({ title, dateStr, avatarUrl, backUrl = "/", starte
           <ArrowLeft className="w-5 h-5 text-white/70 hover:text-white" />
         </Link>
         <div className="flex flex-col">
-          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase leading-none truncate max-w-[200px]">
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase leading-none truncate max-w-[280px] sm:max-w-none">
             {title}
           </h1>
           <div className="flex items-center gap-2 mt-1">

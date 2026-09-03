@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { redirect } from "next/navigation";
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ExerciseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCachedUser();
 
   if (!user) redirect(`/auth/signin?redirect=${encodeURIComponent(`/exercises/${slug}`)}`);
 
@@ -49,14 +49,12 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
                   {exercise.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <Link 
-                    href={`/exercises?muscle=${encodeURIComponent(exercise.target_muscle)}`}
+                  <Link prefetch={true} href={`/exercises?muscle=${encodeURIComponent(exercise.target_muscle)}`}
                     className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1 rounded-full hover:bg-[#ADFF00]/20 transition-colors"
                   >
                     <Target className="w-3 h-3" /> {exercise.target_muscle}
                   </Link>
-                  <Link 
-                    href={`/exercises?equipment=${encodeURIComponent(exercise.equipment)}`}
+                  <Link prefetch={true} href={`/exercises?equipment=${encodeURIComponent(exercise.equipment)}`}
                     className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/70 bg-white/5 border border-white/10 px-3 py-1 rounded-full hover:bg-white/10 transition-colors"
                   >
                     <Dumbbell className="w-3 h-3" /> {exercise.equipment}

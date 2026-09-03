@@ -20,7 +20,7 @@ interface LibraryExercise {
 
 const exerciseCache = new Map<string, LibraryExercise[]>();
 
-function ExerciseBrowserContent() {
+function ExerciseBrowserContent({ initialExercises }: { initialExercises?: LibraryExercise[] }) {
   const searchParams = useSearchParams();
   const initialMuscle = searchParams.get("muscle") || "All";
   const initialEquipment = searchParams.get("equipment") || "All";
@@ -34,8 +34,8 @@ function ExerciseBrowserContent() {
     setEquipmentFilter(searchParams.get("equipment") || "All");
   }, [searchParams]);
 
-  const [exercises, setExercises] = useState<LibraryExercise[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [exercises, setExercises] = useState<LibraryExercise[]>(initialExercises || []);
+  const [isLoading, setIsLoading] = useState(!initialExercises || initialExercises.length === 0);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 400);
   
@@ -75,8 +75,11 @@ function ExerciseBrowserContent() {
   }, [debouncedSearch, muscleFilter, equipmentFilter]);
 
   useEffect(() => {
+    if (initialExercises?.length && !debouncedSearch && muscleFilter === "All" && equipmentFilter === "All") {
+      return;
+    }
     fetchExercises();
-  }, [fetchExercises]);
+  }, [fetchExercises, initialExercises, debouncedSearch, muscleFilter, equipmentFilter]);
 
   const handleSeed = async () => {
     setIsSeeding(true);
@@ -114,6 +117,7 @@ function ExerciseBrowserContent() {
             
             <Link 
               href="/exercises/custom"
+              prefetch={true}
               className="p-3 bg-[#ADFF00] text-black rounded-xl border border-[#ADFF00] hover:bg-[#baff22] transition-colors flex items-center justify-center shrink-0"
             >
               <Plus className="w-5 h-5" />
@@ -191,8 +195,9 @@ function ExerciseBrowserContent() {
             exercises.map(ex => (
               <Link 
                 href={`/exercises/${ex.slug}`} 
+                prefetch={true}
                 key={ex.id}
-                className="bg-[#111A10] border border-white/5 rounded-2xl p-4 flex items-center gap-4 hover:bg-white/5 transition-colors group"
+                className="bg-[#111A10] border border-white/5 rounded-2xl p-4 flex items-center gap-4 hover:bg-white/5 active:scale-[0.99] transition-all group"
               >
                 {ex.image_urls && ex.image_urls[0] ? (
                   <div className="w-16 h-16 rounded-xl bg-white/5 overflow-hidden shrink-0 border border-white/10">
@@ -228,10 +233,10 @@ function ExerciseBrowserContent() {
   );
 }
 
-export function ExerciseBrowser() {
+export function ExerciseBrowser({ initialExercises }: { initialExercises?: LibraryExercise[] } = {}) {
   return (
     <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-[#0A1108]"><Loader2 className="w-8 h-8 animate-spin text-[#ADFF00]" /></div>}>
-      <ExerciseBrowserContent />
+      <ExerciseBrowserContent initialExercises={initialExercises} />
     </Suspense>
   );
 }
