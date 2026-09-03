@@ -12,6 +12,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
+    const { data: activePlan } = await supabase
+      .from("fitness_os_workout_plans")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (activePlan) {
+      return NextResponse.json(
+        { success: false, error: "Your plan is already locked in. Open your dashboard to view it." },
+        { status: 409 },
+      );
+    }
+
     const body = await req.json();
     const parsed = GeneratedPlanSchema.safeParse(body.plan);
     

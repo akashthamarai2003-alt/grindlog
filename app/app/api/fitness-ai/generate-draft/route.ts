@@ -46,6 +46,21 @@ export async function POST(req: Request) {
       );
     }
 
+    // A locked plan is the user's active source of truth. Do not start a new
+    // draft if the user revisits this URL after locking it in.
+    const { data: activePlan } = await supabase
+      .from("fitness_os_workout_plans")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (activePlan) {
+      return NextResponse.json(
+        { success: false, error: "Your plan is already locked in. Open your dashboard to view it.", errorType: "PLAN_ACTIVE" },
+        { status: 409 },
+      );
+    }
+
     // 2. Fetch Profile
     const { data: profile, error: profileError } = await supabase
       .from("fitness_os_profiles")
