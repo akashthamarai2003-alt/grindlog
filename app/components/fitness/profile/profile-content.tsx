@@ -43,6 +43,7 @@ interface ProfileContentProps {
   fitnessProfile: any;
   mainProfile: any;
   activePlan: any;
+  subscriptionPlan: { id: "starter" | "pro" } | null;
   aiLimitInfo: {
     allowed: boolean;
     limit: number;
@@ -56,6 +57,7 @@ export function ProfileContent({
   fitnessProfile: initialFitnessProfile,
   mainProfile,
   activePlan,
+  subscriptionPlan,
   aiLimitInfo
 }: ProfileContentProps) {
   const router = useRouter();
@@ -85,9 +87,18 @@ export function ProfileContent({
     ? new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
     : "Recent Member";
 
-  const isPremium = Boolean(fitnessProfile?.fitness_is_premium);
-  const premiumLevel = fitnessProfile?.fitness_premium_level || (isPremium ? "core" : "free");
+  // Use the canonical active Fitness subscription first. The fitness profile
+  // fields remain a fallback for accounts created before subscriptions were
+  // moved to fitness_os_subscriptions.
+  const activeSubscriptionLevel = subscriptionPlan?.id === "pro"
+    ? "pro"
+    : subscriptionPlan?.id === "starter"
+    ? "core"
+    : null;
+  const isPremium = Boolean(activeSubscriptionLevel || fitnessProfile?.fitness_is_premium);
+  const premiumLevel = activeSubscriptionLevel || fitnessProfile?.fitness_premium_level || (isPremium ? "core" : "free");
   const isPro = premiumLevel === "pro";
+  const membershipLabel = isPro ? "Pro" : premiumLevel === "core" ? "Core" : "Free";
 
   // Calculate BMI
   const heightM = fitnessProfile?.height ? fitnessProfile.height / 100 : null;
@@ -249,7 +260,7 @@ export function ProfileContent({
               <div>
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Current Membership</p>
                 <h3 className="text-xl font-black text-white capitalize mt-0.5">
-                  Fitness AI {premiumLevel} Plan
+                  Fitness AI {membershipLabel} Plan
                 </h3>
               </div>
               <Link 

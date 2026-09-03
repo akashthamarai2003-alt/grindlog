@@ -3,6 +3,7 @@ import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { ProfileContent } from "@/components/fitness/profile/profile-content";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
+import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
 export default async function FitnessProfilePage() {
   const supabase = await createServerSupabase();
@@ -34,8 +35,12 @@ export default async function FitnessProfilePage() {
     .eq("status", "active")
     .maybeSingle();
 
-  // 4. Fetch AI Limit Info
-  const aiLimitInfo = await checkFitnessAILimit(supabase, user.id);
+  // 4. Read the canonical active Fitness subscription. The profile badge must
+  // use the same source as feature access and AI limits.
+  const [subscriptionPlan, aiLimitInfo] = await Promise.all([
+    getFitnessPlan(user.id),
+    checkFitnessAILimit(supabase, user.id),
+  ]);
 
   return (
     <FitnessShell>
@@ -44,6 +49,7 @@ export default async function FitnessProfilePage() {
         fitnessProfile={fitnessProfile || {}}
         mainProfile={mainProfile || {}}
         activePlan={activePlan || null}
+        subscriptionPlan={subscriptionPlan}
         aiLimitInfo={aiLimitInfo}
       />
     </FitnessShell>
