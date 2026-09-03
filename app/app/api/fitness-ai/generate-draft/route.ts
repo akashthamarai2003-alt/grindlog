@@ -11,9 +11,9 @@ import {
   GeneratedPlanData,
 } from "@/lib/fitness/ai/schemas";
 import {
-  FITNESS_PLAN_SYSTEM_PROMPT,
   FITNESS_PLAN_PRESENTATION_RULE,
   buildFitnessPlanPrompt,
+  buildFitnessPlanSystemPrompt,
 } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
@@ -104,17 +104,21 @@ export async function POST(req: Request) {
     // 4. Reuse an identical recent draft. Reopening the tab must not spend on a
     // second plan while the user is still reviewing the first one.
     const todayStr = new Date().toISOString().split("T")[0];
-    const { data: foodCatalog } = await supabase
-      .from("foods")
-      .select("name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, allergens")
-      .eq("is_active", true)
-      .eq("plan_eligible", true)
-      .limit(250);
+    let foodCatalog: any[] = [];
+    if (subscriptionPlan.id === "pro") {
+      const { data } = await supabase
+        .from("foods")
+        .select("name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, allergens")
+        .eq("is_active", true)
+        .eq("plan_eligible", true)
+        .limit(250);
+      foodCatalog = data || [];
+    }
     const userPrompt = buildFitnessPlanPrompt(
       profile,
       todayStr,
       scan?.gemini_analysis,
-      foodCatalog || [],
+      foodCatalog,
     );
     const painSeverity = Number(profile.current_pain_severity);
     const exactWorkoutCount =
@@ -123,7 +127,7 @@ export async function POST(req: Request) {
           ? 0
           : profile.training_days_per_week
         : undefined;
-    const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount);
+    const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount, subscriptionPlan.id);
     // Keep the review draft stable until onboarding changes. A short TTL made
     // a normal refresh generate a different paid plan after 30 minutes.
     let cachedDraftQuery = supabase
@@ -150,6 +154,7 @@ export async function POST(req: Request) {
           ? validatePlanAgainstProfile(cachedPlan.data, profile, {
               enforceProfileRules: true,
               enforceBudgetUtilisation: false,
+              allowCoreNutrition: subscriptionPlan.id === "starter",
             })
           : null;
         if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
@@ -201,6 +206,7 @@ export async function POST(req: Request) {
               ? validatePlanAgainstProfile(cachedPlan.data, profile, {
               enforceProfileRules: true,
                   enforceBudgetUtilisation: false,
+                  allowCoreNutrition: subscriptionPlan.id === "starter",
                 })
               : null;
             if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
@@ -260,16 +266,16 @@ export async function POST(req: Request) {
       try {
         console.log(`Fitness AI Generation Attempt ${attempt}...`);
         const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-          systemPrompt: `${FITNESS_PLAN_SYSTEM_PROMPT}\n\n${FITNESS_PLAN_PRESENTATION_RULE}`,
+          systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${subscriptionPlan.id === "pro" ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
           userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
           model: FITNESS_PLAN_MODEL,
           // Setup is a synchronous request. Medium is the quality/latency
           // compromise; deterministic safety/profile validators remain the
           // safety barrier.
-          maxTokens: 10000,
-          minimumOutputTokens: 10000,
+          maxTokens: subscriptionPlan.id === "starter" ? 7000 : 10000,
+          minimumOutputTokens: subscriptionPlan.id === "starter" ? 7000 : 10000,
           reasoningEffort: "medium",
-          promptCacheKey: "fitness-plan-v3",
+          promptCacheKey: subscriptionPlan.id === "starter" ? "fitness-plan-core-v1" : "fitness-plan-pro-v3",
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
           jsonSchema: {
             name: "fitness_plan",
@@ -306,6 +312,7 @@ export async function POST(req: Request) {
         const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
           enforceProfileRules: true,
           enforceBudgetUtilisation: false,
+          allowCoreNutrition: subscriptionPlan.id === "starter",
         });
         if (!profileCheck.valid) {
           console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);

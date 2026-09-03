@@ -508,6 +508,20 @@ export function buildFitnessPlanPrompt(
   return `PROFILE_JSON:\n${JSON.stringify(compactProfile)}`;
 }
 
+/** Keep premium meal and grocery generation out of Core model requests. */
+export function buildFitnessPlanSystemPrompt(planTier: "starter" | "pro"): string {
+  if (planTier === "pro") return FITNESS_PLAN_SYSTEM_PROMPT;
+
+  return `${FITNESS_PLAN_SYSTEM_PROMPT}
+
+CORE PLAN SCOPE (MANDATORY):
+- Generate only personalised workouts, the plan summary, safety acknowledgement, calorie/protein targets, and lifestyle targets.
+- Do not generate meals, food items, grocery items, grocery prices, meal instructions, or premium nutrition guidance.
+- Return nutrition.meals as [] and nutrition.grocery_list as []. Set nutrition.meals_per_day, carbs_grams, and fat_grams to null.
+- Keep daily_calories and protein_grams as the saved deterministic targets when available.
+- Keep the Core response concise because meal planning and grocery add-ons are Pro features.`;
+}
+
 export const FITNESS_COACH_SYSTEM_PROMPT = `You are an elite, supportive Fitness AI Coach. Your primary job is to provide actionable fitness advice and progress analysis based strictly on the user's actual data.
 
 CRITICAL RULES:

@@ -11,9 +11,9 @@ import {
   GeneratedPlanData,
 } from "@/lib/fitness/ai/schemas";
 import {
-  FITNESS_PLAN_SYSTEM_PROMPT,
   FITNESS_PLAN_PRESENTATION_RULE,
   buildFitnessPlanPrompt,
+  buildFitnessPlanSystemPrompt,
 } from "@/lib/fitness/ai/prompts";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
@@ -110,17 +110,21 @@ export async function POST(req: Request) {
 
     // 5. Call AI Server-Side
     const todayStr = new Date().toISOString().split("T")[0];
-    const { data: foodCatalog } = await supabase
-      .from("foods")
-      .select("name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, allergens")
-      .eq("is_active", true)
-      .eq("plan_eligible", true)
-      .limit(250);
+    let foodCatalog: any[] = [];
+    if (subscriptionPlan.id === "pro") {
+      const { data } = await supabase
+        .from("foods")
+        .select("name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, allergens")
+        .eq("is_active", true)
+        .eq("plan_eligible", true)
+        .limit(250);
+      foodCatalog = data || [];
+    }
     const userPrompt = buildFitnessPlanPrompt(
       profile,
       todayStr,
       scan?.gemini_analysis,
-      foodCatalog || [],
+      foodCatalog,
     );
     const painSeverity = Number(profile.current_pain_severity);
     const exactWorkoutCount =
@@ -129,7 +133,7 @@ export async function POST(req: Request) {
           ? 0
           : profile.training_days_per_week
         : undefined;
-    const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount);
+    const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount, subscriptionPlan.id);
 
     const retryAfterSeconds = await getGenerationRetryAfterSeconds(
       supabase,
@@ -177,15 +181,15 @@ export async function POST(req: Request) {
       try {
         console.log(`Fitness AI Generation Attempt ${attempt}...`);
         const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-          systemPrompt: `${FITNESS_PLAN_SYSTEM_PROMPT}\n\n${FITNESS_PLAN_PRESENTATION_RULE}`,
+          systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${subscriptionPlan.id === "pro" ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
           userPrompt,
           model: FITNESS_PLAN_MODEL,
           // This route is also synchronous; Medium balances plan quality and
           // common 60-second serverless limits. Validation remains mandatory.
-          maxTokens: 10000,
-          minimumOutputTokens: 10000,
+          maxTokens: subscriptionPlan.id === "starter" ? 7000 : 10000,
+          minimumOutputTokens: subscriptionPlan.id === "starter" ? 7000 : 10000,
           reasoningEffort: "medium",
-          promptCacheKey: "fitness-plan-v3",
+          promptCacheKey: subscriptionPlan.id === "starter" ? "fitness-plan-core-v1" : "fitness-plan-pro-v3",
           temperature: 0.3,
           jsonSchema: {
             name: "fitness_plan",
@@ -218,6 +222,7 @@ export async function POST(req: Request) {
         const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
           enforceProfileRules: true,
           enforceBudgetUtilisation: false,
+          allowCoreNutrition: subscriptionPlan.id === "starter",
         });
         if (!profileCheck.valid) {
           console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);

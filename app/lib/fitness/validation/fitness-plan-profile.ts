@@ -18,6 +18,8 @@ type PlanValidationOptions = {
   enforceProfileRules?: boolean;
   /** Generation should honour the user's chosen spend level; manual saved edits may still use less. */
   enforceBudgetUtilisation?: boolean;
+  /** Core plans intentionally contain no meals or grocery items. */
+  allowCoreNutrition?: boolean;
 };
 
 const PROVIDED_CORE_ENVIRONMENTS = new Set([
@@ -445,7 +447,7 @@ export function validatePlanAgainstProfile(
   } else {
     if (enforceProfileRules) {
       const mealCount = expectedMealCount(profile.meals_per_day);
-      if (mealCount !== null && nutrition.meals.length !== mealCount) {
+      if (!options.allowCoreNutrition && mealCount !== null && nutrition.meals.length !== mealCount) {
         issues.push(`The plan must include exactly ${mealCount} meals from the saved profile.`);
       }
     }

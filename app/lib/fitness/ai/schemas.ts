@@ -252,11 +252,21 @@ export const FITNESS_PLAN_JSON_SCHEMA: Record<string, unknown> = {
 
 export function buildFitnessPlanJsonSchema(
   exactWorkoutCount?: number,
+  planTier: "starter" | "pro" = "pro",
 ): Record<string, unknown> {
   const schema = JSON.parse(JSON.stringify(FITNESS_PLAN_JSON_SCHEMA)) as Record<string, any>;
   if (typeof exactWorkoutCount === "number" && Number.isInteger(exactWorkoutCount) && exactWorkoutCount >= 0) {
     schema.properties.workouts.minItems = exactWorkoutCount;
     schema.properties.workouts.maxItems = exactWorkoutCount;
+  }
+  if (planTier === "starter") {
+    schema.properties.nutrition.properties.meals.minItems = 0;
+    schema.properties.nutrition.properties.meals.maxItems = 0;
+    schema.properties.nutrition.properties.grocery_list.minItems = 0;
+    schema.properties.nutrition.properties.grocery_list.maxItems = 0;
+    schema.properties.nutrition.properties.meals_per_day = { type: "null" };
+    schema.properties.nutrition.properties.carbs_grams = { type: "null" };
+    schema.properties.nutrition.properties.fat_grams = { type: "null" };
   }
   return schema;
 }
