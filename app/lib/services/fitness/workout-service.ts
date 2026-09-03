@@ -34,6 +34,36 @@ export class WorkoutService {
    */
   static async getTodayWorkout(userId: string) {
     const supabase = await createServerSupabase();
+
+    // 1. If any workout is already in progress, that is today's active workout
+    const { data: inProgressWorkout } = await supabase
+      .from("fitness_os_workouts")
+      .select(`
+        *,
+        fitness_os_exercises (
+          id, name, target_sets, target_reps, rest_seconds,
+          fitness_os_sets(completed)
+        )
+      `)
+      .eq("user_id", userId)
+      .eq("status", "in_progress")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (inProgressWorkout) {
+      const exerciseCount = inProgressWorkout.fitness_os_exercises?.length || 0;
+      const completedExercises = inProgressWorkout.fitness_os_exercises?.filter((e: any) => 
+        e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
+      ).length || 0;
+
+      return {
+        ...inProgressWorkout,
+        exerciseCount,
+        completedExercises
+      };
+    }
+
     const today = await this.getLocalDateString(userId);
 
     const { data: workout, error } = await supabase
@@ -47,7 +77,7 @@ export class WorkoutService {
       `)
       .eq("user_id", userId)
       .eq("workout_date", today)
-      .in("status", ["scheduled", "in_progress", "completed"])
+      .in("status", ["scheduled", "completed"])
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -202,12 +232,7 @@ export class WorkoutService {
     if (wErr || !workout) throw new Error("WORKOUT_NOT_FOUND");
     if (workout.user_id !== userId) throw new Error("UNAUTHORIZED");
     if (workout.status === "completed") throw new Error("ALREADY_COMPLETED");
-    const today = await this.getLocalDateString(userId);
-    if (workout.workout_date > today && !options.allowEarlyStart) {
-      throw new Error("WORKOUT_NOT_AVAILABLE_YET");
-    }
-
-    // 2. Check for active session
+    // 2. Check for active session first (idempotent resume)
     const { data: existingSessions, error: sErr } = await supabase
       .from("fitness_os_workout_sessions")
       .select("id")
@@ -218,8 +243,13 @@ export class WorkoutService {
     if (sErr) throw sErr;
 
     if (existingSessions && existingSessions.length > 0) {
-      // Idempotent: return existing session
+      // Idempotent: return existing session immediately
       return existingSessions[0];
+    }
+
+    const today = await this.getLocalDateString(userId);
+    if (workout.workout_date > today && !options.allowEarlyStart) {
+      throw new Error("WORKOUT_NOT_AVAILABLE_YET");
     }
 
     // 3. Create new session

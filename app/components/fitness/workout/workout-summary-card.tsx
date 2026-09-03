@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Flame, Clock, Zap, Circle, CheckCircle2, X, CalendarClock } from "lucide-react";
+import { ArrowRight, Flame, Clock, Zap, Circle, CheckCircle2, X, CalendarClock, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -15,12 +15,27 @@ interface WorkoutSummaryCardProps {
   isUpcoming?: boolean;
 }
 
-export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = false, eyebrow, scheduledLabel, isUpcoming = false }: WorkoutSummaryCardProps) {
+export function WorkoutSummaryCard({
+  workout,
+  exerciseCount,
+  hideStartButton = false,
+  eyebrow,
+  scheduledLabel,
+  isUpcoming = false
+}: WorkoutSummaryCardProps) {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
   const [showEarlyStartConfirm, setShowEarlyStartConfirm] = useState(false);
 
   const isCompleted = workout?.status === "completed";
+  const exercises = workout?.fitness_os_exercises || [];
+  const completedCount = exercises.filter((ex: any) => 
+    ex.fitness_os_sets && 
+    ex.fitness_os_sets.length > 0 && 
+    ex.fitness_os_sets.every((set: any) => set.completed)
+  ).length;
+  const isInProgress = workout?.status === "in_progress" || completedCount > 0;
+
   const resolvedEyebrow = eyebrow || (isUpcoming ? "Early Start" : "Today's Workout");
 
   useEffect(() => {
@@ -34,38 +49,41 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
 
   const startWorkout = async () => {
     if (isStarting) return;
-    
+    setIsStarting(true);
+
     if (isCompleted) {
       router.push(`/workout/${workout.id}/summary`);
       return;
     }
-    
-    setIsStarting(true);
-    if (workout.id === "mock") {
-      await new Promise(r => setTimeout(r, 500));
+
+    // Instant 0ms navigation if session is already active or in progress
+    if (isInProgress || workout.id === "mock") {
       router.push(`/workout/${workout.id}`);
       return;
     }
 
+    // Immediate optimistic navigation
+    router.push(`/workout/${workout.id}`);
+
+    // Create session in parallel
     try {
-      const res = await fetch("/api/workouts/sessions", {
+      await fetch("/api/workouts/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ workoutId: workout.id, allowEarlyStart: isUpcoming })
       });
-      
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to start workout");
-      
-      router.push(`/workout/${workout.id}`);
     } catch (e: any) {
-      toast.error(e.message || "Failed to start workout");
-      setIsStarting(false);
+      console.warn("Session initiation background notice:", e);
     }
   };
 
   const handleStart = () => {
     if (isStarting) return;
+    if (isInProgress) {
+      setIsStarting(true);
+      router.push(`/workout/${workout.id}`);
+      return;
+    }
     if (isUpcoming) {
       setShowEarlyStartConfirm(true);
       return;
@@ -73,13 +91,6 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
     void startWorkout();
   };
 
-  const exercises = workout?.fitness_os_exercises || [];
-  const completedCount = exercises.filter((ex: any) => 
-    ex.fitness_os_sets && 
-    ex.fitness_os_sets.length > 0 && 
-    ex.fitness_os_sets.every((set: any) => set.completed)
-  ).length;
-  
   // Extract target muscles from plan_data if available, otherwise infer from name
   let targetMuscles = workout?.plan_data?.target_muscles;
   
@@ -95,7 +106,7 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
     });
 
     if (targetMuscles.length === 0) {
-      targetMuscles = ["Full Body"]; // Ultimate fallback
+      targetMuscles = ["Full Body"];
     }
   }
 
@@ -109,80 +120,109 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
         transition={{ duration: 0.5, delay: 0.2 }}
         className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6"
       >
-      <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
-      
-      <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col gap-6">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
         
-        {/* Title & Muscle Groups */}
-        <div>
-          <h2 className="text-[11px] font-black tracking-[0.2em] text-[#ADFF00] uppercase mb-2">
-            {resolvedEyebrow}
-          </h2>
-          <h3 className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-2">
-            {workout?.name || "Upper Body"}
-          </h3>
-          <p className="text-sm font-semibold text-white/50 tracking-wide uppercase">
-            {muscleString}
-          </p>
-          {scheduledLabel && (
-            <p className="mt-2 text-xs font-bold text-[#ADFF00]">Scheduled for {scheduledLabel}</p>
-          )}
-        </div>
-
-        {/* Stats Grid */}
-        <div className="flex items-center gap-6">
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-1.5 text-white/60">
-              <span className="text-sm">🔥</span>
-              <span className="text-xs font-bold uppercase tracking-wider">Exercises</span>
-            </div>
-            <span className="text-lg font-black text-white">{exerciseCount}</span>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-1.5 text-white/60">
-              <span className="text-sm">⏱</span>
-              <span className="text-xs font-bold uppercase tracking-wider">Time</span>
-            </div>
-            <span className="text-lg font-black text-white">{workout?.duration_minutes ? `${workout.duration_minutes} min` : "Not set"}</span>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-1.5 text-white/60">
-              <span className="text-sm">💪</span>
-              <span className="text-xs font-bold uppercase tracking-wider">Intensity</span>
-            </div>
-            <span className="text-lg font-black text-white">{workout?.difficulty_level || "Not set"}</span>
-          </div>
-        </div>
-
-        {/* Progress Tracker */}
-        <div className="flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <span className="text-[11px] font-black text-white/50 tracking-[0.1em] uppercase">Progress</span>
-            <span className="text-[11px] font-black text-white uppercase">{completedCount} / {exerciseCount} Exercises</span>
-          </div>
+        <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col gap-6">
           
-          <div className="flex items-center justify-between gap-1 w-full">
-            {Array.from({ length: Math.max(exerciseCount, 1) }).map((_, i) => (
-              <div 
-                key={i} 
-                className={`flex-1 h-1.5 rounded-full ${i < completedCount ? 'bg-[#ADFF00] shadow-[0_0_8px_rgba(173,255,0,0.5)]' : 'bg-white/10'}`} 
-              />
-            ))}
+          {/* Title & Muscle Groups */}
+          <div>
+            <h2 className="text-[11px] font-black tracking-[0.2em] text-[#ADFF00] uppercase mb-2">
+              {resolvedEyebrow}
+            </h2>
+            <h3 className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-2">
+              {workout?.name || "Upper Body"}
+            </h3>
+            <p className="text-sm font-semibold text-white/50 tracking-wide uppercase">
+              {muscleString}
+            </p>
+            {scheduledLabel && (
+              <p className="mt-2 text-xs font-bold text-[#ADFF00]">Scheduled for {scheduledLabel}</p>
+            )}
           </div>
-        </div>
 
-        {/* Action Button */}
-        {!hideStartButton && (
-          <button
-            onClick={handleStart}
-            disabled={isStarting}
-            className={`w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-70 ${isCompleted ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-[#ADFF00] text-black hover:bg-[#bfff33] shadow-[0_0_20px_rgba(173,255,0,0.2)]'}`}
-          >
-            {isStarting ? "STARTING..." : isCompleted ? "VIEW WORKOUT SUMMARY" : isUpcoming ? "START EARLY" : "START WORKOUT"} <ArrowRight className="w-5 h-5" />
-          </button>
-        )}
+          {/* Stats Grid */}
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5 text-white/60">
+                <span className="text-sm">🔥</span>
+                <span className="text-xs font-bold uppercase tracking-wider">Exercises</span>
+              </div>
+              <span className="text-lg font-black text-white">{exerciseCount}</span>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5 text-white/60">
+                <span className="text-sm">⏱</span>
+                <span className="text-xs font-bold uppercase tracking-wider">Time</span>
+              </div>
+              <span className="text-lg font-black text-white">{workout?.duration_minutes ? `${workout.duration_minutes} min` : "Not set"}</span>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5 text-white/60">
+                <span className="text-sm">💪</span>
+                <span className="text-xs font-bold uppercase tracking-wider">Intensity</span>
+              </div>
+              <span className="text-lg font-black text-white">{workout?.difficulty_level || "Not set"}</span>
+            </div>
+          </div>
+
+          {/* Progress Tracker */}
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <span className="text-[11px] font-black text-white/50 tracking-[0.1em] uppercase">Progress</span>
+              <span className="text-[11px] font-black text-white uppercase">{completedCount} / {exerciseCount} Exercises</span>
+            </div>
+            
+            <div className="flex items-center justify-between gap-1 w-full">
+              {Array.from({ length: Math.max(exerciseCount, 1) }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className={`flex-1 h-1.5 rounded-full ${i < completedCount ? 'bg-[#ADFF00] shadow-[0_0_8px_rgba(173,255,0,0.5)]' : 'bg-white/10'}`} 
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Action Button */}
+          {!hideStartButton && (
+            <button
+              onClick={handleStart}
+              disabled={isStarting}
+              className={`w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-70 cursor-pointer ${
+                isCompleted 
+                  ? 'bg-white/10 text-white hover:bg-white/20' 
+                  : 'bg-[#ADFF00] text-black hover:bg-[#bfff33] shadow-[0_0_20px_rgba(173,255,0,0.2)]'
+              }`}
+            >
+              {isStarting ? (
+                <>
+                  <span>{isInProgress ? "RESUMING..." : "STARTING..."}</span>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </>
+              ) : isCompleted ? (
+                <>
+                  <span>VIEW WORKOUT SUMMARY</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              ) : isInProgress ? (
+                <>
+                  <span>CONTINUE WORKOUT</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              ) : isUpcoming ? (
+                <>
+                  <span>START EARLY</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              ) : (
+                <>
+                  <span>START WORKOUT</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          )}
 
         </div>
       </motion.div>
@@ -221,7 +261,7 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
               <button
                 type="button"
                 onClick={() => setShowEarlyStartConfirm(false)}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                className="rounded-xl border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-wider text-white/70 hover:bg-white/10"
               >
                 Cancel
               </button>
@@ -231,9 +271,9 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
                   setShowEarlyStartConfirm(false);
                   void startWorkout();
                 }}
-                className="rounded-xl bg-[#ADFF00] px-4 py-3 text-sm font-black text-black transition-colors hover:bg-[#bfff33]"
+                className="rounded-xl bg-[#ADFF00] py-3 text-xs font-black uppercase tracking-wider text-black shadow-[0_0_15px_rgba(173,255,0,0.3)] hover:bg-[#bfff33]"
               >
-                Start Early
+                Start now
               </button>
             </div>
           </div>
