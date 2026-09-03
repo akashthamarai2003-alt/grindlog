@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { AiWorkoutCoachService } from "@/lib/services/ai/ai-workout-coach-service";
 
 export async function GET(
@@ -8,61 +8,85 @@ export async function GET(
 ) {
   try {
     const { workoutId } = await params;
-    const supabase = await createServerSupabase();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getCachedUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const note = await AiWorkoutCoachService.getOrGenerateCoachNote(user.id, workoutId);
-    
-    // Fetch user profile to construct dynamic insights
-    const { data: profile } = await supabase
-      .from("fitness_os_profiles")
-      .select("fitness_goal, fitness_level, available_equipment, workout_duration")
-      .eq("user_id", user.id)
-      .single();
+    const supabase = await createServerSupabase();
 
-    // Map equipment array back to a friendly string
-    const equipmentMapping: Record<string, string> = {
-      dumbbells: "Dumbbells",
-      barbell: "Barbell & Weights",
-      pullup_bar: "Pull-up Bar",
-      treadmill: "Treadmill",
-      kettlebells: "Kettlebells",
-      resistance_bands: "Resistance Bands",
-      paid_gym: "Paid Gym Only (No Treadmill)",
-      full_gym: "Full Gym Access",
-      home_gym: "Home Gym",
-      none: "No Equipment (Bodyweight)"
-    };
+    // Fetch coach note, user profile, and workout info concurrently
+    const [note, { data: profile }, { data: workout }] = await Promise.all([
+      AiWorkoutCoachService.getOrGenerateCoachNote(user.id, workoutId),
+      supabase
+        .from("fitness_os_profiles")
+        .select("goal, target_physique, fitness_level, training_location, equipment, workout_duration_minutes, weight, target_weight, training_days_per_week, preferred_training_time")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("fitness_os_workouts")
+        .select("name, duration_minutes")
+        .eq("id", workoutId)
+        .maybeSingle()
+    ]);
 
-    let equipmentStr = "Mixed Equipment";
-    if (profile?.available_equipment && Array.isArray(profile.available_equipment)) {
-      if (profile.available_equipment.length === 0) {
-        equipmentStr = "No Equipment";
+    // 1. Goal
+    const goalStr = profile?.goal
+      ? (profile.target_physique ? `${profile.goal} (${profile.target_physique})` : profile.goal)
+      : "General Fitness";
+
+    // 2. Fitness Level
+    const levelStr = profile?.fitness_level || "Beginner";
+
+    // 3. Equipment
+    let equipStr = "Gym Access (Barbells, Cables, Dumbbells)";
+    if (profile?.training_location === "Home") {
+      equipStr = profile.equipment?.length ? profile.equipment.slice(0, 3).join(", ") : "Home Gym";
+    } else if (profile?.equipment && Array.isArray(profile.equipment) && profile.equipment.length > 0) {
+      if (profile.equipment.length <= 3) {
+        equipStr = profile.equipment.join(", ");
       } else {
-        equipmentStr = profile.available_equipment.map((e: string) => equipmentMapping[e] || e).join(", ");
+        equipStr = "Full Gym Access (Barbells, Cables, Dumbbells)";
       }
-    } else if (typeof profile?.available_equipment === "string") {
-      equipmentStr = equipmentMapping[profile.available_equipment] || profile.available_equipment;
     }
 
-    const durationStr = profile?.workout_duration === "15" ? "15-30 min optimized" 
-      : profile?.workout_duration === "30" ? "30-45 min optimized"
-      : profile?.workout_duration === "45" ? "45-60 min optimized"
-      : profile?.workout_duration === "60" ? "60+ min optimized"
-      : `${profile?.workout_duration || 45} min optimized`;
+    // 4. Duration
+    const durationStr = `${profile?.workout_duration_minutes || workout?.duration_minutes || 45} min optimized`;
+
+    // 5. Recovery tailored to workout muscle group
+    const workoutName = (workout?.name || "").toLowerCase();
+    let recoveryStr = "Target muscle groups fully recovered";
+    if (workoutName.includes("chest") || workoutName.includes("push") || workoutName.includes("shoulder") || workoutName.includes("tricep")) {
+      recoveryStr = "Chest, shoulders & triceps fully recovered";
+    } else if (workoutName.includes("back") || workoutName.includes("pull") || workoutName.includes("bicep") || workoutName.includes("lat")) {
+      recoveryStr = "Back, lats & biceps fully recovered";
+    } else if (workoutName.includes("leg") || workoutName.includes("lower") || workoutName.includes("squat")) {
+      recoveryStr = "Quads, hamstrings & glutes fully recovered";
+    } else if (workoutName.includes("core") || workoutName.includes("ab")) {
+      recoveryStr = "Core & stabilizing muscles fully recovered";
+    }
+
+    // 6. Progress
+    let progressStr = "Progressive overload applied";
+    if (profile?.weight && profile?.target_weight) {
+      progressStr = `Progressive overload • ${profile.weight} kg → ${profile.target_weight} kg target`;
+    }
+
+    // 7. Preferences
+    let prefStr = "Customized to your routine";
+    if (profile?.training_days_per_week) {
+      prefStr = `${profile.training_days_per_week} days/week${profile.preferred_training_time ? ` • ${profile.preferred_training_time}` : ""}`;
+    }
 
     const insights = [
-      { icon: "Target", label: "Goal", value: profile?.fitness_goal || "General Fitness" },
-      { icon: "Activity", label: "Fitness Level", value: profile?.fitness_level || "Intermediate" },
-      { icon: "Dumbbell", label: "Available Equipment", value: equipmentStr },
+      { icon: "Target", label: "Goal", value: goalStr },
+      { icon: "Activity", label: "Fitness Level", value: levelStr },
+      { icon: "Dumbbell", label: "Available Equipment", value: equipStr },
       { icon: "Clock", label: "Duration", value: durationStr },
-      { icon: "HeartPulse", label: "Recovery", value: "Muscle groups recovered" },
-      { icon: "TrendingUp", label: "Progress", value: "Progressive overload applied" },
-      { icon: "Settings2", label: "Preferences", value: "Tailored to your needs" },
+      { icon: "HeartPulse", label: "Recovery", value: recoveryStr },
+      { icon: "TrendingUp", label: "Progress", value: progressStr },
+      { icon: "Settings2", label: "Preferences", value: prefStr },
     ];
 
     return NextResponse.json({ note, insights });
