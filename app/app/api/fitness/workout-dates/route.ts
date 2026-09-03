@@ -21,17 +21,22 @@ export async function GET(req: NextRequest) {
 
     const { data: workouts, error } = await supabase
       .from("fitness_os_workouts")
-      .select("completed_at, workout_date")
+      .select("completed_at, workout_date, status")
       .eq("user_id", user.id)
-      .eq("status", "completed")
       .gte("workout_date", cutoffStr)
       .order("workout_date", { ascending: true });
 
     if (error) throw error;
 
-    // Return array of ISO date strings (YYYY-MM-DD)
-    const dates = (workouts || []).map(w =>
+    // Separate completed vs scheduled/in_progress workouts
+    const completedWorkouts = (workouts || []).filter(w => w.status === "completed");
+    const dates = completedWorkouts.map(w =>
       (w.completed_at || w.workout_date || "").split("T")[0]
+    ).filter(Boolean);
+
+    const scheduledWorkouts = (workouts || []).filter(w => w.status === "scheduled" || w.status === "in_progress");
+    const scheduledDates = scheduledWorkouts.map(w =>
+      (w.workout_date || "").split("T")[0]
     ).filter(Boolean);
 
     // Fetch recent exercises for the muscle map
@@ -67,7 +72,7 @@ export async function GET(req: NextRequest) {
       ).filter(Boolean);
     }
 
-    return NextResponse.json({ dates, exerciseNames }, { status: 200 });
+    return NextResponse.json({ dates, completedDates: dates, scheduledDates, exerciseNames }, { status: 200 });
   } catch (error: any) {
     console.error("GET /api/fitness/workout-dates error:", error);
     return NextResponse.json({ error: error.message || "Server error" }, { status: 500 });

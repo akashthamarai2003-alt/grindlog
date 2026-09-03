@@ -23,6 +23,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialData.period);
   const [isLoading, setIsLoading] = useState(false);
   const [workoutDates, setWorkoutDates] = useState<string[]>([]);
+  const [scheduledDates, setScheduledDates] = useState<string[]>([]);
   const [recentExercises, setRecentExercises] = useState<string[]>([]);
 
   // Fetch workout dates for the heatmap (last 365 days)
@@ -33,6 +34,9 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
         if (json) {
           if (json.dates && Array.isArray(json.dates)) {
             setWorkoutDates(json.dates);
+          }
+          if (json.scheduledDates && Array.isArray(json.scheduledDates)) {
+            setScheduledDates(json.scheduledDates);
           }
           if (json.exerciseNames && Array.isArray(json.exerciseNames)) {
             setRecentExercises(json.exerciseNames);
@@ -94,10 +98,9 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
             <TransformationOverview metrics={data.transformation} />
             <WeeklyConsistency metrics={data.consistency} />
 
-            {/* 52-Week Workout Heatmap */}
+            {/* Workout Heatmap Calendar */}
             <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest block mb-4">Training Calendar</span>
-              <WorkoutHeatmap completedDates={workoutDates} />
+              <WorkoutHeatmap completedDates={workoutDates} scheduledDates={scheduledDates} />
             </div>
 
             {/* Muscle Map */}
