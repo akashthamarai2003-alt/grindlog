@@ -18,6 +18,8 @@ interface ExerciseDetailProps {
   sessionId: string;
   startedAt?: string | null;
   isPaused?: boolean;
+  onBack?: () => void;
+  onSetCompleted?: (setId: string, reps: number, weightKg: number) => void;
 }
 
 // Bodyweight exercise keywords — show "BW" instead of "0 kg"
@@ -111,7 +113,7 @@ function generateInstructions(exercise: FitnessExercise): string[] {
   ];
 }
 
-export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused }: ExerciseDetailProps) {
+export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused, onBack, onSetCompleted }: ExerciseDetailProps) {
   const router = useRouter();
   const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
   
@@ -199,7 +201,12 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to complete set");
       setActiveRestSeconds(exercise.rest_seconds);
-      router.refresh();
+      setRecord.completed = true;
+      if (onSetCompleted) {
+        onSetCompleted(setRecord.id, reps, weight);
+      } else {
+        router.refresh();
+      }
     } catch (e: any) {
       toast.error(e.message || "Failed to complete set");
     } finally {
@@ -219,7 +226,14 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => { setIsNavigatingBack(true); router.push(`/workout/${workoutId}`); }}
+            onClick={() => {
+              if (onBack) {
+                onBack();
+              } else {
+                setIsNavigatingBack(true);
+                router.push(`/workout/${workoutId}`);
+              }
+            }}
             disabled={isNavigatingBack}
             className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50"
           >

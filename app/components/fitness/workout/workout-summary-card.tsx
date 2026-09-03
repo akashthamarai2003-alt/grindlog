@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Flame, Clock, Zap, Circle, CheckCircle2, X, CalendarClock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -22,6 +22,15 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
 
   const isCompleted = workout?.status === "completed";
   const resolvedEyebrow = eyebrow || (isUpcoming ? "Early Start" : "Today's Workout");
+
+  useEffect(() => {
+    if (workout?.id && workout.id !== "mock") {
+      router.prefetch(`/workout/${workout.id}`);
+      if (isCompleted) {
+        router.prefetch(`/workout/${workout.id}/summary`);
+      }
+    }
+  }, [workout?.id, isCompleted, router]);
 
   const startWorkout = async () => {
     if (isStarting) return;
@@ -46,7 +55,6 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
       });
       
       const data = await res.json();
-      
       if (!res.ok) throw new Error(data.error || "Failed to start workout");
       
       router.push(`/workout/${workout.id}`);

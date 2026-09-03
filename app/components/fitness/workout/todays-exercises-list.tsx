@@ -20,9 +20,10 @@ interface TodaysExercisesListProps {
   exercises?: Exercise[];
   readonly?: boolean;
   sectionLabel?: string;
+  onSelectExercise?: (exerciseId: string) => void;
 }
 
-export function TodaysExercisesList({ workoutId, exercises = [], readonly = false, sectionLabel = "Today's Exercises" }: TodaysExercisesListProps) {
+export function TodaysExercisesList({ workoutId, exercises = [], readonly = false, sectionLabel = "Today's Exercises", onSelectExercise }: TodaysExercisesListProps) {
   const router = useRouter();
   const [navigatingExerciseId, setNavigatingExerciseId] = useState<string | null>(null);
 
@@ -35,6 +36,10 @@ export function TodaysExercisesList({ workoutId, exercises = [], readonly = fals
   ];
 
   const handleStartExercise = (exerciseId: string) => {
+    if (onSelectExercise) {
+      onSelectExercise(exerciseId);
+      return;
+    }
     setNavigatingExerciseId(exerciseId);
     // Navigate to the specific exercise in the workout session
     router.push(`/workout/${workoutId}?exercise=${exerciseId}`);

@@ -1,8 +1,6 @@
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
-import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
-import { WorkoutExecution } from "@/components/fitness/workout/workout-execution";
-import { ExerciseDetail } from "@/components/fitness/workout/exercise-detail";
+import { WorkoutSessionManager } from "@/components/fitness/workout/workout-session-manager";
 import { redirect } from "next/navigation";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
@@ -16,8 +14,7 @@ export default async function ActiveWorkoutPage({
   const { workoutId } = await params;
   const { exercise: activeExerciseId } = await searchParams;
   
-  const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCachedUser();
   
   if (!user) {
     redirect(`/auth/signin?redirect=${encodeURIComponent(`/workout/${workoutId}`)}`);
@@ -47,57 +44,52 @@ export default async function ActiveWorkoutPage({
           ]
         }
       ],
-      fitness_os_workout_sessions: [{ id: "mock-session", status: "active" }]
+      fitness_os_workout_sessions: [{ id: "mock-session", status: "active", started_at: new Date().toISOString() }]
     };
-
-    const activeExercise = activeExerciseId 
-      ? mockWorkout.fitness_os_exercises.find((e: any) => e.id === activeExerciseId)
-      : null;
 
     return (
       <FitnessGuard>
         <div className="min-h-screen bg-[#0A1108] text-white">
           <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
-            {!activeExercise && (
-              <WorkoutHeader 
-                title={mockWorkout.name}
-                backUrl="/workout"
-                startedAt={new Date().toISOString()}
-                isPaused={false}
-                workoutId={mockWorkout.id}
-              />
-            )}
-            
-            {activeExercise ? (
-              <ExerciseDetail 
-                exercise={activeExercise as any} 
-                workoutId={mockWorkout.id} 
-                sessionId="mock-session"
-                startedAt={new Date().toISOString()}
-                isPaused={false}
-              />
-            ) : (
-              <WorkoutExecution workout={mockWorkout as any} sessionId="mock-session" />
-            )}
+            <WorkoutSessionManager
+              workout={mockWorkout as any}
+              sessionId="mock-session"
+              startedAt={mockWorkout.fitness_os_workout_sessions[0].started_at}
+              isPaused={false}
+              avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
+              showAiCoach={false}
+              isEarlyStart={false}
+              initialExerciseId={activeExerciseId}
+            />
           </div>
         </div>
       </FitnessGuard>
     );
   }
 
-  // Fetch full workout data
-  const { data: workout, error } = await supabase
-    .from("fitness_os_workouts")
-    .select(`
-      *,
-      fitness_os_exercises (
+  const supabase = await createServerSupabase();
+
+  // Run independent database and plan fetches in parallel
+  const [
+    { data: workout, error },
+    { data: profile },
+    subscriptionPlan
+  ] = await Promise.all([
+    supabase
+      .from("fitness_os_workouts")
+      .select(`
         *,
-        fitness_os_sets (*)
-      ),
-      fitness_os_workout_sessions (*)
-    `)
-    .eq("id", workoutId)
-    .single();
+        fitness_os_exercises (
+          *,
+          fitness_os_sets (*)
+        ),
+        fitness_os_workout_sessions (*)
+      `)
+      .eq("id", workoutId)
+      .single(),
+    supabase.from("profiles").select("timezone").eq("id", user.id).maybeSingle(),
+    getFitnessPlan(user.id)
+  ]);
 
   if (error || !workout) {
     redirect("/workout");
@@ -117,15 +109,9 @@ export default async function ActiveWorkoutPage({
   );
 
   if (!activeSession) {
-    // If no active session, they shouldn't be here executing it. Send back to start.
     redirect("/workout");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("timezone")
-    .eq("id", user.id)
-    .maybeSingle();
   const timezone = profile?.timezone || "UTC";
   const todayInTimezone = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
@@ -133,6 +119,7 @@ export default async function ActiveWorkoutPage({
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
+
   const isEarlyStart = typeof workout.workout_date === "string" && workout.workout_date > todayInTimezone;
   const scheduledDateLabel = typeof workout.workout_date === "string"
     ? new Intl.DateTimeFormat("en-US", {
@@ -142,45 +129,22 @@ export default async function ActiveWorkoutPage({
         day: "numeric",
       }).format(new Date(`${workout.workout_date}T12:00:00Z`))
     : undefined;
-  const subscriptionPlan = await getFitnessPlan(user.id);
-
-  // Find active exercise if specified
-  const activeExercise = activeExerciseId 
-    ? workout.fitness_os_exercises.find((e: any) => e.id === activeExerciseId)
-    : null;
 
   return (
     <FitnessGuard>
       <div className="min-h-screen bg-[#0A1108] text-white">
         <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
-          {!activeExercise && (
-            <WorkoutHeader 
-              title={workout.name}
-              dateStr={isEarlyStart ? `Scheduled ${scheduledDateLabel} • Started early` : undefined}
-              backUrl="/workout"
-              avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
-              startedAt={activeSession.started_at}
-              isPaused={activeSession.status === "paused"}
-              workoutId={workout.id}
-            />
-          )}
-          
-          {activeExercise ? (
-            <ExerciseDetail 
-              exercise={activeExercise} 
-              workoutId={workout.id} 
-              sessionId={activeSession.id}
-              startedAt={activeSession.started_at}
-              isPaused={activeSession.status === "paused"}
-            />
-          ) : (
-            <WorkoutExecution
-              workout={workout as any}
-              sessionId={activeSession.id}
-              showAiCoach={subscriptionPlan?.id === "pro"}
-              isEarlyStart={isEarlyStart}
-            />
-          )}
+          <WorkoutSessionManager
+            workout={workout as any}
+            sessionId={activeSession.id}
+            startedAt={activeSession.started_at}
+            isPaused={activeSession.status === "paused"}
+            avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
+            showAiCoach={subscriptionPlan?.id === "pro"}
+            isEarlyStart={isEarlyStart}
+            scheduledDateLabel={scheduledDateLabel}
+            initialExerciseId={activeExerciseId}
+          />
         </div>
       </div>
     </FitnessGuard>
