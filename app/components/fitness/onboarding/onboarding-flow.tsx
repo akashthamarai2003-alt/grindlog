@@ -930,6 +930,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 <div className="space-y-3">
                 {[
                   { id: "Lose Fat", img: "/images/goals/goal-1.png", desc: "Reduce body fat & get lean" },
+                  { id: "Cut", img: "/images/goals/goal-1.png", desc: "Reduce fat while preserving muscle" },
                   { id: "Build Muscle", img: "/images/goals/goal-2.png", desc: "Build size & muscular definition" },
                   { id: "Gain Weight", img: "/images/goals/goal-3.png", desc: "Increase healthy body weight" },
                   { id: "Lose Fat + Build Muscle", img: "/images/goals/goal-4.png", desc: "Get lean while building muscle" },

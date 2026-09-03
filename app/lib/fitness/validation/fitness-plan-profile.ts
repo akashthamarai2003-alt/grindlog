@@ -335,6 +335,7 @@ function buildGoalCalorieTarget(profile: ProfileLike): number | null {
 
   const adjustmentByGoal: Record<string, number> = {
     "Lose Fat": -350,
+    "Cut": -350,
     "Lose Fat + Build Muscle": -250,
     "Build Muscle": 250,
     "Gain Weight": 300,

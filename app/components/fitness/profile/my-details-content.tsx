@@ -536,6 +536,7 @@ export function MyDetailsContent({
                     className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold appearance-none"
                   >
                     <option value="Lose Fat" className="bg-[#0A1108] text-white">Lose Fat</option>
+                    <option value="Cut" className="bg-[#0A1108] text-white">Cut</option>
                     <option value="Build Muscle" className="bg-[#0A1108] text-white">Build Muscle</option>
                     <option value="Gain Weight" className="bg-[#0A1108] text-white">Gain Weight</option>
                     <option value="Lose Fat + Build Muscle" className="bg-[#0A1108] text-white">Lose Fat + Build Muscle</option>

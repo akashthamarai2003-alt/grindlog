@@ -321,7 +321,8 @@ export async function POST(req: Request) {
       if (
         data.goal === "Build Muscle" ||
         data.goal === "Gain Weight" ||
-        data.goal === "Lose Fat + Build Muscle"
+        data.goal === "Lose Fat + Build Muscle" ||
+        data.goal === "Cut"
       ) {
         proteinMultiplier = 2.0;
       } else if (data.goal === "Build Strength") {
