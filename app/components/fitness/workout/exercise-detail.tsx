@@ -124,7 +124,6 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
   const instructions = generateInstructions(exercise);
   
   const [activeRestSeconds, setActiveRestSeconds] = useState<number | null>(null);
-  const [submittingSetId, setSubmittingSetId] = useState<string | null>(null);
   const [isNavigatingBack, setIsNavigatingBack] = useState(false);
   const [isEditingRest, setIsEditingRest] = useState(false);
   const [isUpdatingRest, setIsUpdatingRest] = useState(false);
@@ -168,7 +167,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
   }, [activeRestSeconds]);
 
   const handleCompleteSet = async (setRecord: FitnessSet) => {
-    if (setRecord.completed || submittingSetId) return;
+    if (setRecord.completed) return;
     const input = setInputs[setRecord.id];
     
     if (!input.reps || input.reps.trim() === "") {
@@ -182,18 +181,19 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       return;
     }
 
-    setSubmittingSetId(setRecord.id);
     const reps = parseInt(input.reps, 10);
     const weight = parseFloat(weightRaw || "0");
 
-    if (workoutId === "mock") {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setActiveRestSeconds(exercise.rest_seconds);
-      setRecord.completed = true;
-      setSubmittingSetId(null);
-      return;
+    // Instant optimistic update (0ms delay)
+    setRecord.completed = true;
+    setActiveRestSeconds(exercise.rest_seconds);
+    if (onSetCompleted) {
+      onSetCompleted(setRecord.id, reps, weight);
     }
 
+    if (workoutId === "mock") return;
+
+    // Background sync to database
     try {
       const res = await fetch(`/api/workouts/sessions/${sessionId}/sets`, {
         method: "POST",
@@ -202,17 +202,10 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to complete set");
-      setActiveRestSeconds(exercise.rest_seconds);
-      setRecord.completed = true;
-      if (onSetCompleted) {
-        onSetCompleted(setRecord.id, reps, weight);
-      } else {
-        router.refresh();
-      }
     } catch (e: any) {
-      toast.error(e.message || "Failed to complete set");
-    } finally {
-      setSubmittingSetId(null);
+      // Revert if network error
+      setRecord.completed = false;
+      toast.error(e.message || "Failed to sync set. Please try again.");
     }
   };
 
@@ -317,7 +310,6 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
         {sortedSets.map((setRecord, idx) => {
           const isCompleted = setRecord.completed;
           const allSetsCompleted = sortedSets.every(s => s.completed);
-          const isSubmitting = submittingSetId === setRecord.id;
 
           // Compute estimated 1RM for this set
           const inputW = parseFloat(setInputs[setRecord.id]?.weight || "0");
@@ -360,7 +352,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
                         type="number"
                         value={setInputs[setRecord.id]?.weight}
                         onChange={(e) => handleInputChange(setRecord.id, "weight", e.target.value)}
-                        disabled={isCompleted || isSubmitting}
+                        disabled={isCompleted}
                         className="w-full bg-[#111A10] border border-white/10 rounded-xl px-4 py-3 text-lg font-black text-white text-center focus:outline-none focus:border-[#ADFF00] disabled:opacity-50"
                         placeholder="-"
                       />
@@ -376,7 +368,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
                     type="number"
                     value={setInputs[setRecord.id]?.reps}
                     onChange={(e) => handleInputChange(setRecord.id, "reps", e.target.value)}
-                    disabled={isCompleted || isSubmitting}
+                    disabled={isCompleted}
                     className="w-full bg-[#111A10] border border-white/10 rounded-xl px-4 py-3 text-lg font-black text-white text-center focus:outline-none focus:border-[#ADFF00] disabled:opacity-50"
                     placeholder="-"
                   />
@@ -391,11 +383,10 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
               ) : (
                 <button
                   onClick={() => { if (activeRestSeconds !== null) setActiveRestSeconds(null); handleCompleteSet(setRecord); }}
-                  disabled={isSubmitting}
-                  className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] disabled:opacity-50 transition-transform active:scale-[0.98]"
+                  className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] transition-transform active:scale-[0.98] cursor-pointer hover:bg-[#b8ff1a]"
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                  {isSubmitting ? "Saving..." : "Complete Set"}
+                  <Check className="w-4 h-4" />
+                  Complete Set
                 </button>
               )}
 

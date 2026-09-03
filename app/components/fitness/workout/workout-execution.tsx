@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWakeLock } from "@/hooks/fitness/useWakeLock";
 
 import { TodaysExercisesList } from "./todays-exercises-list";
@@ -31,6 +31,13 @@ export function WorkoutExecution({ workout, sessionId, showAiCoach = false, isEa
 
   // Keep screen awake during workout — released automatically on unmount
   useWakeLock(!isPaused);
+
+  // Prefetch workout summary route for instant transition on finish
+  useEffect(() => {
+    if (workout?.id && workout.id !== "mock") {
+      router.prefetch(`/workout/${workout.id}/summary`);
+    }
+  }, [workout?.id, router]);
 
   const handleFinish = async () => {
     if (isFinishing) return;
