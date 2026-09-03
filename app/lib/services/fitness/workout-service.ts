@@ -68,9 +68,46 @@ export class WorkoutService {
   }
 
   /**
+   * Returns the next saved workout after today. This is used when a plan starts
+   * on a future date or today is a planned rest day.
+   */
+  static async getNextWorkout(userId: string, planId?: string) {
+    const supabase = await createServerSupabase();
+    const today = await this.getLocalDateString(userId);
+    let query = supabase
+      .from("fitness_os_workouts")
+      .select(`
+        *,
+        fitness_os_exercises (
+          id, name, target_sets, target_reps, rest_seconds,
+          fitness_os_sets(completed)
+        )
+      `)
+      .eq("user_id", userId)
+      .gte("workout_date", today)
+      .in("status", ["scheduled", "in_progress"])
+      .order("workout_date", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    if (planId) query = query.eq("plan_id", planId);
+
+    const { data: workout, error } = await query.maybeSingle();
+    if (error) throw error;
+    if (!workout) return null;
+
+    const exerciseCount = workout.fitness_os_exercises?.length || 0;
+    const completedExercises = workout.fitness_os_exercises?.filter((e: any) =>
+      e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
+    ).length || 0;
+
+    return { ...workout, exerciseCount, completedExercises };
+  }
+
+  /**
    * Get Weekly Workout Plan.
    */
-  static async getWeeklyWorkout(userId: string) {
+  static async getWeeklyWorkout(userId: string, anchorDateStr?: string) {
     const supabase = await createServerSupabase();
     const todayStr = await this.getLocalDateString(userId);
     const tz = await this.getUserTimezone(userId);
@@ -84,7 +121,9 @@ export class WorkoutService {
     const d = parts.find(p => p.type === 'day')?.value;
     
     // We assume the week starts on Monday
-    const localDate = new Date(`${y}-${m}-${d}T00:00:00`);
+    const localDate = anchorDateStr && /^\d{4}-\d{2}-\d{2}$/.test(anchorDateStr)
+      ? new Date(`${anchorDateStr}T00:00:00`)
+      : new Date(`${y}-${m}-${d}T00:00:00`);
     const dayOfWeek = localDate.getDay(); // 0 is Sunday, 1 is Monday
     const distToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     

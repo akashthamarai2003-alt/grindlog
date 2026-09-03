@@ -9,7 +9,8 @@ import { WorkoutSummaryCard } from "@/components/fitness/workout/workout-summary
 import { redirect } from "next/navigation";
 import { WorkoutService } from "@/lib/services/fitness/workout-service";
 import Link from "next/link";
-import { GenerateWorkoutButton } from "@/components/fitness/workout/generate-workout-button";
+import { getFitnessPlan } from "@/lib/fitness/subscription/access";
+import { CalendarClock } from "lucide-react";
 
 export default async function WorkoutIndexPage() {
   const supabase = await createServerSupabase();
@@ -19,8 +20,20 @@ export default async function WorkoutIndexPage() {
     redirect("/auth/signin?redirect=/workout");
   }
 
-  const workout = await WorkoutService.getTodayWorkout(user.id);
-  const weekDays = await WorkoutService.getWeeklyWorkout(user.id);
+  const [{ data: activePlan }, workout, subscriptionPlan] = await Promise.all([
+    supabase
+      .from("fitness_os_workout_plans")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle(),
+    WorkoutService.getTodayWorkout(user.id),
+    getFitnessPlan(user.id),
+  ]);
+  const nextWorkout = !workout && activePlan
+    ? await WorkoutService.getNextWorkout(user.id, activePlan.id)
+    : null;
+  const weekDays = await WorkoutService.getWeeklyWorkout(user.id, nextWorkout?.workout_date);
 
   const tz = await WorkoutService.getUserTimezone(user.id);
   const formatter = new Intl.DateTimeFormat('en-US', { 
@@ -42,14 +55,27 @@ export default async function WorkoutIndexPage() {
           <div className="mt-2">
             <WeeklyWorkoutView weekDays={weekDays} />
 
-            {!workout ? (
+            {!workout && !nextWorkout ? (
               <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6 mb-6">
                 <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
                 <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 text-center py-12">
-                  <h3 className="text-xl font-black text-white uppercase tracking-tight">No Workout Scheduled</h3>
-                  <p className="text-sm font-medium text-white/60">Generate an AI-optimized workout for today.</p>
-                  <GenerateWorkoutButton />
+                  <h3 className="text-xl font-black text-white uppercase tracking-tight">Rest & Recovery Day</h3>
+                  <p className="text-sm font-medium text-white/60">
+                    {activePlan ? "Your saved AI plan has no workout scheduled for this day." : "Your saved workout plan is not available yet."}
+                  </p>
+                  {!activePlan && <Link href="/report" className="rounded-xl bg-[#ADFF00] px-6 py-3 font-black uppercase tracking-wider text-black">View Plan Setup</Link>}
                 </div>
+              </div>
+            ) : !workout && nextWorkout ? (
+              <div className="mt-6 mb-6">
+                <div className="mb-3 flex items-center gap-2 px-2 text-[#ADFF00]">
+                  <CalendarClock className="h-4 w-4" />
+                  <span className="text-[11px] font-black uppercase tracking-widest">Next saved workout</span>
+                </div>
+                <WorkoutSummaryCard
+                  workout={nextWorkout}
+                  exerciseCount={nextWorkout.exerciseCount}
+                />
               </div>
             ) : (
               <>
@@ -66,7 +92,7 @@ export default async function WorkoutIndexPage() {
                   />
                 )}
                 
-                <AiCoachNote workoutId={workout.id} />
+                {subscriptionPlan?.id === "pro" && <AiCoachNote workoutId={workout.id} />}
                 
                 <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises || []} readonly={true} />
               </>

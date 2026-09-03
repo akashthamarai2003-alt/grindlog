@@ -118,7 +118,7 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
               <span className="text-sm">⏱</span>
               <span className="text-xs font-bold uppercase tracking-wider">Time</span>
             </div>
-            <span className="text-lg font-black text-white">{workout?.duration_minutes || 48} min</span>
+            <span className="text-lg font-black text-white">{workout?.duration_minutes ? `${workout.duration_minutes} min` : "Not set"}</span>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -126,7 +126,7 @@ export function WorkoutSummaryCard({ workout, exerciseCount, hideStartButton = f
               <span className="text-sm">💪</span>
               <span className="text-xs font-bold uppercase tracking-wider">Intensity</span>
             </div>
-            <span className="text-lg font-black text-white">{workout?.difficulty_level || "Moderate"}</span>
+            <span className="text-lg font-black text-white">{workout?.difficulty_level || "Not set"}</span>
           </div>
         </div>
 
