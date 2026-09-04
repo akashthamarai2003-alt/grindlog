@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, Bot, Check, Loader2, Pencil, X, Timer,
+  ArrowLeft, Check, Loader2, Pencil, X, Timer,
   BookOpen, ChevronDown, ChevronUp, Dumbbell, Target, Trophy, ArrowRight, Pause
 } from "lucide-react";
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
@@ -536,17 +536,6 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
             ))}
           </motion.div>
         )}
-
-        {/* AI Tip */}
-        <div className="bg-[#111A10] border border-[#ADFF00]/10 rounded-2xl p-5 shadow-[0_0_15px_rgba(173,255,0,0.02)]">
-          <div className="flex items-center gap-2 mb-2">
-            <Bot className="w-4 h-4 text-[#ADFF00]" />
-            <h3 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">AI Tip</h3>
-          </div>
-          <p className="text-sm font-medium text-white/80 leading-relaxed italic border-l-2 border-[#ADFF00]/50 pl-3">
-            &ldquo;{exercise.notes || "Focus on perfect form and controlled movements to maximize muscle engagement and prevent injury."}&rdquo;
-          </p>
-        </div>
       </div>
     </div>
   );
