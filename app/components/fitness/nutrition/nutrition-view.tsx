@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2 } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
+import { WaterHistoryCard } from "./water-history-card";
 import { getFoodImage, getFoodSvgAvatar } from "@/lib/utils/food-images";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
@@ -740,6 +741,12 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
           onAddWater={handleAddWater}
           onRemoveWater={handleRemoveWater}
           onEditGoal={() => setShowTargetsModal(true)}
+        />
+
+        {/* Water Intake History & Heatmap Card */}
+        <WaterHistoryCard
+          todayConsumedMl={Number(consumed.water_ml) || 0}
+          targetMl={Number(targets.water_ml) || 2500}
         />
 
         {/* Today's Summary section */}

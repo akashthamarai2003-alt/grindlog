@@ -399,6 +399,94 @@ export class NutritionService {
     });
   }
 
+  static async getWaterHistory(userId: string, days: number = 90) {
+    const supabase = await createServerSupabase();
+    const tz = await this.getUserTimezone(userId);
+    const targets = await this.getEffectiveTargets(userId);
+    const targetMl = targets?.water_ml || 2500;
+
+    // Calculate cutoff date
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const { data: logs, error } = await supabase
+      .from('fitness_os_water_logs')
+      .select('amount_ml, logged_at')
+      .eq('user_id', userId)
+      .gte('logged_at', cutoffDate.toISOString())
+      .order('logged_at', { ascending: true });
+
+    if (error) {
+      console.error("Error fetching water history:", error);
+    }
+
+    // Map logs to user's local date YYYY-MM-DD
+    const waterByDate: Record<string, number> = {};
+    (logs || []).forEach(log => {
+      const d = new Date(log.logged_at);
+      const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d);
+      waterByDate[dateKey] = (waterByDate[dateKey] || 0) + log.amount_ml;
+    });
+
+    const generateRangeData = (rangeDays: number) => {
+      const dayList = [];
+      const now = new Date();
+      let totalMl = 0;
+      let loggedDaysCount = 0;
+      let goalDaysCount = 0;
+
+      for (let i = rangeDays - 1; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d);
+        const amountMl = waterByDate[dateKey] || 0;
+        const percent = Math.min(100, Math.round((amountMl / targetMl) * 100));
+
+        let level = 0;
+        if (amountMl > 0) {
+          if (percent < 25) level = 1;
+          else if (percent < 50) level = 2;
+          else if (percent < 75) level = 3;
+          else level = 4;
+        }
+
+        if (amountMl > 0) {
+          totalMl += amountMl;
+          loggedDaysCount++;
+        }
+        if (amountMl >= targetMl) {
+          goalDaysCount++;
+        }
+
+        dayList.push({
+          date: dateKey,
+          amount_ml: amountMl,
+          target_ml: targetMl,
+          percent,
+          level
+        });
+      }
+
+      const dailyAvgL = loggedDaysCount > 0 
+        ? `${(totalMl / loggedDaysCount / 1000).toFixed(1)}L` 
+        : "0.0L";
+
+      return {
+        daily_avg: dailyAvgL,
+        goal_days: goalDaysCount,
+        logged: loggedDaysCount,
+        target_ml: targetMl,
+        days: dayList
+      };
+    };
+
+    return {
+      week: generateRangeData(7),
+      month: generateRangeData(31),
+      threeMonth: generateRangeData(90)
+    };
+  }
+
   static async updateDailySummary(userId: string) {
     const supabase = await createServerSupabase();
     const localDate = await this.getLocalDateString(userId);
