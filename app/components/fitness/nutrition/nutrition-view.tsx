@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2 } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
@@ -14,9 +14,12 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
   const [data, setData] = useState<any>(initialData || null);
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<any>(null);
-  const [isWaterLoading, setIsWaterLoading] = useState(false);
   const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
   
+  // Water debouncing refs for instantaneous zero-lag tapping
+  const pendingWaterDeltaRef = useRef<number>(0);
+  const waterDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMealType, setModalMealType] = useState("lunch");
   const [modalPreselectedFoods, setModalPreselectedFoods] = useState<any[]>([]);
@@ -88,17 +91,6 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     }
   };
 
-  const handleDeleteFood = async (id: string, foodName?: string) => {
-    try {
-      toast.loading("Removing food...", { id: "delete-food" });
-      await nutritionApi.deleteFood(id);
-      toast.success(`Removed ${foodName || "food"}`, { id: "delete-food" });
-      await fetchToday();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to remove food", { id: "delete-food" });
-    }
-  };
-
   const handleGeneratePlan = async () => {
     setIsGenerating(true);
     try {
@@ -116,69 +108,229 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     }
   };
 
-  const handleAddWater = async (amount: number) => {
-    if (!data) return;
-    
-    // 1. Optimistic UI Update - Instant feedback
-    const previousWater = data.consumed?.water_ml || 0;
-    const newWater = previousWater + amount;
-    
-    setData((prev: any) => ({
-      ...prev,
-      consumed: { ...prev.consumed, water_ml: newWater }
-    }));
-    
-    toast.success(`Logged ${amount}ml of water`);
+  const flushWaterSync = () => {
+    const delta = pendingWaterDeltaRef.current;
+    if (delta === 0) return;
+    pendingWaterDeltaRef.current = 0;
 
-    setIsWaterLoading(true);
-    try {
-      // 2. Fire API in background
-      await nutritionApi.logWater(amount);
-      
-      // 3. Quietly sync with server to ensure consistency
-      nutritionApi.getToday().then(res => {
-        if (res) setData(res);
-      }).catch(() => {});
-      
-    } catch (err: any) {
-      // 4. Revert if the API call fails
-      setData((prev: any) => ({
-        ...prev,
-        consumed: { ...prev.consumed, water_ml: previousWater }
-      }));
-      toast.error(err?.message || "Failed to log water. Please check your connection.");
-    } finally {
-      setIsWaterLoading(false);
+    if (delta > 0) {
+      nutritionApi.logWater(delta).then(() => {
+        nutritionApi.getToday().then(res => { if (res) setData(res); }).catch(() => {});
+      }).catch(err => {
+        console.error("Failed to sync water to server:", err);
+        toast.error("Failed to sync water to server");
+      });
+    } else {
+      nutritionApi.removeWater(Math.abs(delta)).then(() => {
+        nutritionApi.getToday().then(res => { if (res) setData(res); }).catch(() => {});
+      }).catch(err => {
+        console.error("Failed to sync water removal:", err);
+        toast.error("Failed to sync water removal");
+      });
     }
   };
 
-  const handleRemoveWater = async (amount: number = 250) => {
+  useEffect(() => {
+    return () => {
+      if (waterDebounceTimerRef.current) {
+        clearTimeout(waterDebounceTimerRef.current);
+        flushWaterSync();
+      }
+    };
+  }, []);
+
+  const handleDeleteFood = async (id: string, foodName?: string) => {
     if (!data) return;
-    const previousWater = data.consumed?.water_ml || 0;
-    if (previousWater <= 0) return;
-    const newWater = Math.max(0, previousWater - amount);
 
-    setData((prev: any) => ({
-      ...prev,
-      consumed: { ...prev.consumed, water_ml: newWater }
-    }));
-    toast.success(`Removed ${amount}ml of water`);
+    const previousData = data;
+    const targetItem = data.logged_foods?.find((f: any) => f.id === id);
 
-    setIsWaterLoading(true);
+    // Instant optimistic removal (0ms!)
+    setData((prev: any) => {
+      if (!prev) return prev;
+      const updatedLogged = (prev.logged_foods || []).filter((f: any) => f.id !== id);
+      
+      const subCals = Number(targetItem?.calories) || 0;
+      const subPro = Number(targetItem?.protein) || 0;
+      const subCarbs = Number(targetItem?.carbs) || 0;
+      const subFat = Number(targetItem?.fat) || 0;
+      const subCost = Number(targetItem?.estimated_cost) || 0;
+
+      const newConsumedCals = Math.max(0, Math.round((Number(prev.consumed?.calories) || 0) - subCals));
+      const newConsumedPro = Math.max(0, Math.round(((Number(prev.consumed?.protein) || 0) - subPro) * 10) / 10);
+      const targetCals = Number(prev.targets?.calories) || 2000;
+      const targetPro = Number(prev.targets?.protein) || 130;
+
+      return {
+        ...prev,
+        logged_foods: updatedLogged,
+        consumed: {
+          ...prev.consumed,
+          calories: newConsumedCals,
+          protein: newConsumedPro,
+          carbs: Math.max(0, (Number(prev.consumed?.carbs) || 0) - subCarbs),
+          fat: Math.max(0, (Number(prev.consumed?.fat) || 0) - subFat),
+        },
+        remaining: {
+          ...prev.remaining,
+          calories: Math.max(0, targetCals - newConsumedCals),
+          protein: Math.max(0, targetPro - newConsumedPro),
+        },
+        budget: {
+          ...prev.budget,
+          spent: Math.max(0, Math.round(((Number(prev.budget?.spent) || 0) - subCost) * 100) / 100),
+          monthly_spent: Math.max(0, Math.round(((Number(prev.budget?.monthly_spent) || 0) - subCost) * 100) / 100),
+        },
+        progress: {
+          ...prev.progress,
+          calories_percent: Math.min(100, Math.round((newConsumedCals / (targetCals || 1)) * 100)),
+          protein_percent: Math.min(100, Math.round((newConsumedPro / (targetPro || 1)) * 100)),
+        }
+      };
+    });
+
+    toast.success(`Removed ${foodName || "food"}`);
+
     try {
-      await nutritionApi.removeWater(amount);
+      await nutritionApi.deleteFood(id);
+      // Quiet background reconciliation
       nutritionApi.getToday().then(res => {
         if (res) setData(res);
       }).catch(() => {});
     } catch (err: any) {
-      setData((prev: any) => ({
-        ...prev,
-        consumed: { ...prev.consumed, water_ml: previousWater }
-      }));
-      toast.error(err?.message || "Failed to remove water.");
-    } finally {
-      setIsWaterLoading(false);
+      // Revert if API failed
+      setData(previousData);
+      toast.error(err?.message || "Failed to remove food from server");
     }
+  };
+
+  const handleAddWater = (amount: number) => {
+    if (!data) return;
+    
+    // 1. Optimistic UI Update - Instant feedback (0ms)
+    const currentWater = Number(data.consumed?.water_ml) || 0;
+    const newWater = currentWater + amount;
+    const targetWater = Number(data.targets?.water_ml) || 2500;
+    
+    setData((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        consumed: { ...prev.consumed, water_ml: newWater },
+        progress: {
+          ...prev.progress,
+          water_percent: Math.min(100, Math.round((newWater / (targetWater || 1)) * 100))
+        }
+      };
+    });
+    
+    toast.success(`Logged ${amount}ml of water`);
+
+    // 2. Debounce background API sync so rapid taps batch together smoothly
+    pendingWaterDeltaRef.current += amount;
+    if (waterDebounceTimerRef.current) {
+      clearTimeout(waterDebounceTimerRef.current);
+    }
+    waterDebounceTimerRef.current = setTimeout(() => {
+      flushWaterSync();
+    }, 450);
+  };
+
+  const handleRemoveWater = (amount: number = 250) => {
+    if (!data) return;
+    const currentWater = Number(data.consumed?.water_ml) || 0;
+    if (currentWater <= 0) return;
+    const newWater = Math.max(0, currentWater - amount);
+    const targetWater = Number(data.targets?.water_ml) || 2500;
+
+    setData((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        consumed: { ...prev.consumed, water_ml: newWater },
+        progress: {
+          ...prev.progress,
+          water_percent: Math.min(100, Math.round((newWater / (targetWater || 1)) * 100))
+        }
+      };
+    });
+    toast.success(`Removed ${amount}ml of water`);
+
+    pendingWaterDeltaRef.current -= amount;
+    if (waterDebounceTimerRef.current) {
+      clearTimeout(waterDebounceTimerRef.current);
+    }
+    waterDebounceTimerRef.current = setTimeout(() => {
+      flushWaterSync();
+    }, 450);
+  };
+
+  const handleFoodLoggedSuccess = (optimisticData?: any) => {
+    if (optimisticData) {
+      const items = Array.isArray(optimisticData) ? optimisticData : [optimisticData];
+      if (items.length > 0) {
+        setData((prev: any) => {
+          if (!prev) return prev;
+          const currentLogged = Array.isArray(prev.logged_foods) ? [...prev.logged_foods] : [];
+          const updatedLogged = [...currentLogged, ...items];
+
+          let addedCals = 0;
+          let addedPro = 0;
+          let addedCarbs = 0;
+          let addedFat = 0;
+          let addedCost = 0;
+
+          items.forEach((item: any) => {
+            addedCals += Number(item.calories) || 0;
+            addedPro += Number(item.protein) || 0;
+            addedCarbs += Number(item.carbs) || 0;
+            addedFat += Number(item.fat) || 0;
+            addedCost += Number(item.estimated_cost) || 0;
+          });
+
+          const newConsumedCals = Math.round((Number(prev.consumed?.calories) || 0) + addedCals);
+          const newConsumedPro = Math.round(((Number(prev.consumed?.protein) || 0) + addedPro) * 10) / 10;
+          const newConsumedCarbs = Math.round(((Number(prev.consumed?.carbs) || 0) + addedCarbs) * 10) / 10;
+          const newConsumedFat = Math.round(((Number(prev.consumed?.fat) || 0) + addedFat) * 10) / 10;
+          const targetCals = Number(prev.targets?.calories) || 2000;
+          const targetPro = Number(prev.targets?.protein) || 130;
+
+          return {
+            ...prev,
+            logged_foods: updatedLogged,
+            consumed: {
+              ...prev.consumed,
+              calories: newConsumedCals,
+              protein: newConsumedPro,
+              carbs: newConsumedCarbs,
+              fat: newConsumedFat,
+            },
+            remaining: {
+              ...prev.remaining,
+              calories: Math.max(0, targetCals - newConsumedCals),
+              protein: Math.max(0, targetPro - newConsumedPro),
+            },
+            budget: {
+              ...prev.budget,
+              spent: Math.round(((Number(prev.budget?.spent) || 0) + addedCost) * 100) / 100,
+              monthly_spent: Math.round(((Number(prev.budget?.monthly_spent) || 0) + addedCost) * 100) / 100,
+            },
+            progress: {
+              ...prev.progress,
+              calories_percent: Math.min(100, Math.round((newConsumedCals / (targetCals || 1)) * 100)),
+              protein_percent: Math.min(100, Math.round((newConsumedPro / (targetPro || 1)) * 100)),
+            }
+          };
+        });
+
+        // Reconcile quietly in the background without disturbing the user
+        nutritionApi.getToday().then(res => {
+          if (res) setData(res);
+        }).catch(() => {});
+        return;
+      }
+    }
+    fetchToday();
   };
 
   const openLogModal = (mealType: string, preselected?: any[]) => {
@@ -588,7 +740,6 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
           onAddWater={handleAddWater}
           onRemoveWater={handleRemoveWater}
           onEditGoal={() => setShowTargetsModal(true)}
-          isLoading={isWaterLoading}
         />
 
         {/* Today's Summary section */}
@@ -632,7 +783,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
       <LogFoodModal 
         isOpen={modalOpen} 
         onClose={() => setModalOpen(false)} 
-        onSuccess={fetchToday}
+        onSuccess={handleFoodLoggedSuccess}
         defaultMealType={modalMealType}
         preselectedFoods={modalPreselectedFoods}
       />

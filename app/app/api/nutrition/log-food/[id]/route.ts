@@ -33,8 +33,10 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
 
     if (error) throw error;
 
-    // Trigger recalculation of daily summary
-    await NutritionService.updateDailySummary(user.id);
+    // Trigger recalculation of daily summary in background
+    NutritionService.updateDailySummary(user.id).catch(err => {
+      console.warn("Background updateDailySummary warning in deleteFood:", err);
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

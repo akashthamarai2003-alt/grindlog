@@ -33,15 +33,10 @@ export async function POST(request: Request) {
 
     await NutritionService.logWater(user.id, amount_ml);
 
-    // Fetch the updated summary to return the new percentage
-    const summary = await NutritionService.getTodaySummaryAndDetails(user.id);
-
     return NextResponse.json({ 
       success: true, 
       data: {
-        total_water: summary.consumed.water_ml,
-        target_water: summary.targets.water_ml,
-        percentage: summary.progress.water_percent
+        amount_ml
       } 
     });
   } catch (error: any) {
@@ -70,14 +65,10 @@ export async function DELETE(request: Request) {
 
     await NutritionService.removeWater(user.id, amount_ml);
 
-    const summary = await NutritionService.getTodaySummaryAndDetails(user.id);
-
     return NextResponse.json({ 
       success: true, 
       data: {
-        total_water: summary.consumed.water_ml,
-        target_water: summary.targets.water_ml,
-        percentage: summary.progress.water_percent
+        amount_ml
       } 
     });
   } catch (error: any) {

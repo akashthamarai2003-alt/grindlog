@@ -36,7 +36,7 @@ interface PlannedItem {
 interface LogFoodModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (optimisticData?: any) => void;
   defaultMealType?: string;
   preselectedFoods?: any[]; // for logging an existing meal plan
 }
@@ -60,7 +60,6 @@ export function LogFoodModal({
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Food[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [isLogging, setIsLogging] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
 
@@ -161,71 +160,131 @@ export function LogFoodModal({
       return;
     }
 
-    setIsLogging(true);
-    try {
-      for (const item of itemsToLog) {
-        const foodObj = item.rawItem?.foods || item.rawItem;
-        if (foodObj?.id) {
-          await nutritionApi.logFood({
-            food_id: foodObj.id,
-            meal_type: mealType,
-            quantity: item.quantity,
-          });
-        } else {
-          await nutritionApi.logFood({
-            meal_type: mealType,
-            quantity: item.quantity,
-            custom_food: {
-              name: item.name,
-              category: foodObj?.category || mealType,
-              calories: item.calories,
-              protein: item.protein,
-              carbs: item.carbs,
-              fat: item.fat,
-              estimated_cost: item.estimated_cost,
-            },
-          });
+    const optimisticItems = itemsToLog.map((item, idx) => {
+      const foodObj = item.rawItem?.foods || item.rawItem;
+      const q = Number(item.quantity) || 1;
+      return {
+        id: `temp-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`,
+        food_id: foodObj?.id,
+        meal_type: mealType,
+        quantity: q,
+        calories: Math.round((item.calories || 0) * q),
+        protein: Number(((item.protein || 0) * q).toFixed(1)),
+        carbs: Number(((item.carbs || 0) * q).toFixed(1)),
+        fat: Number(((item.fat || 0) * q).toFixed(1)),
+        estimated_cost: Number(((item.estimated_cost || 0) * q).toFixed(1)),
+        source: 'manual',
+        logged_at: new Date().toISOString(),
+        foods: {
+          id: foodObj?.id,
+          name: item.name,
+          category: foodObj?.category || mealType,
+          serving_size: item.serving_size || '1 serving',
+          image_url: foodObj?.image_url,
+          calories: item.calories,
+          protein: item.protein,
+          carbs: item.carbs,
+          fat: item.fat,
+          estimated_cost: item.estimated_cost
         }
-      }
+      };
+    });
 
-      toast.success(`Logged ${itemsToLog.length} foods for ${formatMealType(mealType)}!`);
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || "Failed to log meal");
-    } finally {
-      setIsLogging(false);
-    }
+    // INSTANT: Close modal immediately, trigger optimistic dashboard update, show toast
+    toast.success(`Logged ${itemsToLog.length} foods for ${formatMealType(mealType)}!`);
+    onSuccess(optimisticItems);
+    onClose();
+
+    // Fire all API requests in parallel via Promise.all in background
+    Promise.all(itemsToLog.map(item => {
+      const foodObj = item.rawItem?.foods || item.rawItem;
+      if (foodObj?.id) {
+        return nutritionApi.logFood({
+          food_id: foodObj.id,
+          meal_type: mealType,
+          quantity: item.quantity,
+        });
+      } else {
+        return nutritionApi.logFood({
+          meal_type: mealType,
+          quantity: item.quantity,
+          custom_food: {
+            name: item.name,
+            category: foodObj?.category || mealType,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+            estimated_cost: item.estimated_cost,
+          },
+        });
+      }
+    })).catch((err: any) => {
+      console.error("Background logMeal error:", err);
+      toast.error(err?.message || "Some meal items failed to save to server");
+    });
   };
 
   const handleLogSingle = async () => {
     if (!selectedFood) return;
-    setIsLogging(true);
-    try {
-      const payload: any = { meal_type: mealType, quantity };
-      if (selectedFood.id) {
-        payload.food_id = selectedFood.id;
-      } else {
-        payload.custom_food = {
-          name: selectedFood.name,
-          category: selectedFood.category || mealType,
-          calories: selectedFood.calories || 0,
-          protein: selectedFood.protein || 0,
-          carbs: selectedFood.carbs || 0,
-          fat: selectedFood.fat || 0,
-          estimated_cost: selectedFood.estimated_cost || 0,
-        };
+
+    const scaledCalories = Math.round((selectedFood.calories || 0) * quantity);
+    const scaledProtein = Number(((selectedFood.protein || 0) * quantity).toFixed(1));
+    const scaledCarbs = Number(((selectedFood.carbs || 0) * quantity).toFixed(1));
+    const scaledFat = Number(((selectedFood.fat || 0) * quantity).toFixed(1));
+    const scaledCost = Number(((selectedFood.estimated_cost || 0) * quantity).toFixed(1));
+
+    const optimisticItem = {
+      id: `temp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      food_id: selectedFood.id,
+      meal_type: mealType,
+      quantity,
+      calories: scaledCalories,
+      protein: scaledProtein,
+      carbs: scaledCarbs,
+      fat: scaledFat,
+      estimated_cost: scaledCost,
+      source: 'manual',
+      logged_at: new Date().toISOString(),
+      foods: {
+        id: selectedFood.id,
+        name: selectedFood.name,
+        category: selectedFood.category || mealType,
+        serving_size: selectedFood.serving_size || '1 serving',
+        image_url: selectedFood.image_url,
+        calories: selectedFood.calories,
+        protein: selectedFood.protein,
+        carbs: selectedFood.carbs,
+        fat: selectedFood.fat,
+        estimated_cost: selectedFood.estimated_cost
       }
-      await nutritionApi.logFood(payload);
-      toast.success(`Logged ${quantity}x ${selectedFood.name}`);
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to log food");
-    } finally {
-      setIsLogging(false);
+    };
+
+    const payload: any = { meal_type: mealType, quantity };
+    if (selectedFood.id) {
+      payload.food_id = selectedFood.id;
+    } else {
+      payload.custom_food = {
+        name: selectedFood.name,
+        category: selectedFood.category || mealType,
+        calories: selectedFood.calories || 0,
+        protein: selectedFood.protein || 0,
+        carbs: selectedFood.carbs || 0,
+        fat: selectedFood.fat || 0,
+        estimated_cost: selectedFood.estimated_cost || 0,
+      };
     }
+
+    // INSTANT: Close modal immediately, update parent dashboard UI, show toast
+    toast.success(`Logged ${quantity}x ${selectedFood.name}`);
+    onSuccess(optimisticItem);
+    onClose();
+
+    // Background server sync
+    nutritionApi.logFood(payload).catch((err: any) => {
+      console.error("Background logFood error:", err);
+      toast.error(err?.message || `Failed to save ${selectedFood.name} to server`);
+    });
   };
 
   if (!isOpen) return null;
@@ -390,14 +449,10 @@ export function LogFoodModal({
                 <button
                   type="button"
                   onClick={handleLogPlannedMeal}
-                  disabled={isLogging || plannedTotals.count === 0}
-                  className="flex-[2] py-3.5 rounded-xl bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  disabled={plannedTotals.count === 0}
+                  className="flex-[2] py-3.5 rounded-xl bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-[0_0_15px_rgba(173,255,0,0.2)]"
                 >
-                  {isLogging ? (
-                    <Loader2 className="animate-spin" size={16} />
-                  ) : (
-                    `Log Meal (${plannedTotals.count} items)`
-                  )}
+                  Log Meal ({plannedTotals.count} items)
                 </button>
               </div>
             </div>
@@ -547,10 +602,10 @@ export function LogFoodModal({
               <button
                 type="button"
                 onClick={handleLogSingle}
-                disabled={isLogging || quantity <= 0}
-                className="flex-[2] py-3.5 rounded-xl bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black text-xs font-black tracking-widest uppercase disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+                disabled={quantity <= 0}
+                className="flex-[2] py-3.5 rounded-xl bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black text-xs font-black tracking-widest uppercase disabled:opacity-50 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(173,255,0,0.2)]"
               >
-                {isLogging ? <Loader2 className="animate-spin" size={16} /> : "Log Food"}
+                Log Food
               </button>
             </div>
           </div>

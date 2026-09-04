@@ -338,8 +338,10 @@ export class NutritionService {
 
     if (logErr) throw logErr;
 
-    // 4. Trigger background summary update (could be done asynchronously in a real system)
-    await this.updateDailySummary(userId);
+    // 4. Trigger background summary update asynchronously without blocking the response
+    this.updateDailySummary(userId).catch(err => {
+      console.warn("Background updateDailySummary warning in logFood:", err);
+    });
 
     return log;
   }
@@ -359,7 +361,10 @@ export class NutritionService {
 
     if (error) throw error;
     
-    await this.updateDailySummary(userId);
+    // Non-blocking background summary update
+    this.updateDailySummary(userId).catch(err => {
+      console.warn("Background updateDailySummary warning in logWater:", err);
+    });
     return data;
   }
 
@@ -388,7 +393,10 @@ export class NutritionService {
           .eq('id', latestLog.id);
       }
     }
-    await this.updateDailySummary(userId);
+    // Non-blocking background summary update
+    this.updateDailySummary(userId).catch(err => {
+      console.warn("Background updateDailySummary warning in removeWater:", err);
+    });
   }
 
   static async updateDailySummary(userId: string) {

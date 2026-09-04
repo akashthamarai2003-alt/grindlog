@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Minus, Edit3, Loader2 } from "lucide-react";
+import { Plus, Minus, Edit3 } from "lucide-react";
 
 interface WaterBottleCardProps {
   consumedMl: number;
@@ -239,7 +239,7 @@ export function WaterBottleCard({
             {/* Minus Button */}
             <button
               type="button"
-              disabled={isLoading || safeConsumed <= 0}
+              disabled={safeConsumed <= 0}
               onClick={() => onRemoveWater(stepAmount)}
               className="w-10 h-10 rounded-xl bg-black/40 hover:bg-black/70 active:scale-95 disabled:opacity-30 disabled:pointer-events-none text-white flex items-center justify-center transition-all cursor-pointer"
               title={`Remove ${stepAmount}ml`}
@@ -260,16 +260,11 @@ export function WaterBottleCard({
             {/* Plus Button with Neon Cyan Highlight */}
             <button
               type="button"
-              disabled={isLoading}
               onClick={() => onAddWater(stepAmount)}
-              className="w-10 h-10 rounded-xl bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 disabled:opacity-50 text-black flex items-center justify-center font-black transition-all cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
+              className="w-10 h-10 rounded-xl bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 text-black flex items-center justify-center font-black transition-all cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
               title={`Add ${stepAmount}ml`}
             >
-              {isLoading ? (
-                <Loader2 size={15} className="animate-spin text-black" />
-              ) : (
-                <Plus size={16} strokeWidth={3.5} />
-              )}
+              <Plus size={16} strokeWidth={3.5} />
             </button>
           </div>
 
