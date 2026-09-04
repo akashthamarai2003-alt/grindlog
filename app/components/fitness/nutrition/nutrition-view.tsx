@@ -243,9 +243,15 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
 
   if (!data) return null;
 
-  const { targets, consumed, remaining, budget, progress, meals, nutrition_score } = data;
+  const targets = data.targets || {};
+  const consumed = data.consumed || {};
+  const remaining = data.remaining || {};
+  const budget = data.budget || { daily_limit: 200, spent: 0, monthly_limit: 6000, monthly_spent: 0 };
+  const progress = data.progress || {};
+  const meals = Array.isArray(data.meals) ? data.meals : [];
   const loggedFoods = Array.isArray(data.logged_foods) ? data.logged_foods : [];
-  const hasPlannedMeals = Array.isArray(meals) && meals.some((meal: any) => (
+  const nutrition_score = data.nutrition_score || 0;
+  const hasPlannedMeals = meals.some((meal: any) => (
     Array.isArray(meal?.meal_plan_items) && meal.meal_plan_items.length > 0
   ));
   const hasLoggedFoods = loggedFoods.length > 0;
@@ -539,18 +545,18 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
             <div>
               <h3 className="text-[10px] font-black tracking-widest text-[#ADFF00] uppercase mb-1">Protein Goal</h3>
               <div className="flex items-end gap-1">
-                <span className="text-3xl font-black text-white">{Math.round(consumed.protein)}</span>
-                <span className="text-sm font-bold text-white/40 pb-1">/ {Math.round(targets.protein)}g</span>
+                <span className="text-3xl font-black text-white">{Math.round(consumed.protein || 0)}</span>
+                <span className="text-sm font-bold text-white/40 pb-1">/ {Math.round(targets.protein || 130)}g</span>
               </div>
             </div>
             <div className="mt-4">
               <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
                 <div 
                   className="h-full bg-[#ADFF00] rounded-full transition-all duration-300" 
-                  style={{ width: `${Math.min(100, Math.round((consumed.protein / (targets.protein || 1)) * 100))}%` }} 
+                  style={{ width: `${Math.min(100, Math.round(((consumed.protein || 0) / (targets.protein || 1)) * 100))}%` }} 
                 />
               </div>
-              <p className="text-[10px] font-bold text-white/50">{Math.round(remaining.protein)}g remaining</p>
+              <p className="text-[10px] font-bold text-white/50">{Math.round(remaining.protein || 0)}g remaining</p>
             </div>
           </div>
 
@@ -558,27 +564,27 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
             <div>
               <h3 className="text-[10px] font-black tracking-widest text-emerald-400 uppercase mb-1">Food Budget</h3>
               <div className="flex items-end gap-1">
-                <span className="text-3xl font-black text-white">₹{Math.round(budget.spent)}</span>
-                <span className="text-sm font-bold text-white/40 pb-1">/ ₹{budget.daily_limit}</span>
+                <span className="text-3xl font-black text-white">₹{Math.round(budget.spent || 0)}</span>
+                <span className="text-sm font-bold text-white/40 pb-1">/ ₹{budget.daily_limit || 200}</span>
               </div>
               <p className="text-[10px] font-bold text-white/40 mt-1">Today</p>
             </div>
             <div className="mt-4">
               <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
                 <div 
-                  className={`h-full rounded-full transition-all duration-300 ${budget.spent > budget.daily_limit ? 'bg-rose-500' : 'bg-emerald-400'}`} 
-                  style={{ width: `${Math.min(100, Math.round((budget.spent / (budget.daily_limit || 1)) * 100))}%` }} 
+                  className={`h-full rounded-full transition-all duration-300 ${(budget.spent || 0) > (budget.daily_limit || 200) ? 'bg-rose-500' : 'bg-emerald-400'}`} 
+                  style={{ width: `${Math.min(100, Math.round(((budget.spent || 0) / (budget.daily_limit || 1)) * 100))}%` }} 
                 />
               </div>
-              <p className="text-[10px] font-bold text-white/60">₹{Math.round(budget.monthly_spent)} / ₹{budget.monthly_limit} Monthly</p>
+              <p className="text-[10px] font-bold text-white/60">₹{Math.round(budget.monthly_spent || 0)} / ₹{budget.monthly_limit || 6000} Monthly</p>
             </div>
           </div>
         </div>
 
         {/* Animated Water Intake Bottle Card */}
         <WaterBottleCard
-          consumedMl={consumed.water_ml || 0}
-          targetMl={targets.water_ml || 2500}
+          consumedMl={Number(consumed.water_ml) || 0}
+          targetMl={Number(targets.water_ml) || 2500}
           onAddWater={handleAddWater}
           onRemoveWater={handleRemoveWater}
           onEditGoal={() => setShowTargetsModal(true)}
@@ -595,21 +601,21 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40"><Zap size={14} /></div>
             <div>
               <p className="text-[10px] text-white/50 uppercase font-bold">Calories</p>
-              <p className="text-sm font-black text-white">{Math.round(consumed.calories)} / {Math.round(targets.calories)}</p>
+              <p className="text-sm font-black text-white">{Math.round(consumed.calories || 0)} / {Math.round(targets.calories || 2000)}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center text-[#ADFF00]"><Apple size={14} /></div>
             <div>
               <p className="text-[10px] text-white/50 uppercase font-bold">Protein</p>
-              <p className="text-sm font-black text-white">{Math.round(consumed.protein)} / {Math.round(targets.protein)}g</p>
+              <p className="text-sm font-black text-white">{Math.round(consumed.protein || 0)} / {Math.round(targets.protein || 130)}g</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-cyan-400/10 flex items-center justify-center text-cyan-400"><Droplet size={14} /></div>
             <div>
               <p className="text-[10px] text-white/50 uppercase font-bold">Water</p>
-              <p className="text-sm font-black text-white">{Math.round(consumed.water_ml)} / {Math.round(targets.water_ml)}ml</p>
+              <p className="text-sm font-black text-white">{Math.round(consumed.water_ml || 0)} / {Math.round(targets.water_ml || 2500)}ml</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

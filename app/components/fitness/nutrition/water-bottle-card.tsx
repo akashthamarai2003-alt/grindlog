@@ -22,20 +22,21 @@ export function WaterBottleCard({
 }: WaterBottleCardProps) {
   const [stepAmount, setStepAmount] = useState<number>(250);
 
-  const safeTarget = targetMl > 0 ? targetMl : 2500;
-  const percent = Math.min(100, Math.round((consumedMl / safeTarget) * 100));
+  const safeConsumed = typeof consumedMl === 'number' && !isNaN(consumedMl) ? Math.max(0, consumedMl) : 0;
+  const safeTarget = typeof targetMl === 'number' && !isNaN(targetMl) && targetMl > 0 ? targetMl : 2500;
+  const percent = Math.min(100, Math.max(0, Math.round((safeConsumed / safeTarget) * 100))) || 0;
   const targetInLiters = (safeTarget / 1000).toFixed(1).replace(/\.0$/, "");
-  const consumedInLiters = (consumedMl / 1000).toFixed(1);
+  const consumedInLiters = (safeConsumed / 1000).toFixed(1);
 
   // SVG Geometry Constants for Bottle ViewBox 0 0 110 230
   // Bottle liquid fills from base (y=196) up to shoulder (y=58) => height delta = 138
   const baseFillY = 196;
   const maxFillHeight = 138;
   const currentFillHeight = Math.max(0, (percent / 100) * maxFillHeight);
-  const currentFillY = baseFillY - currentFillHeight;
+  const currentFillY = Math.round(baseFillY - currentFillHeight);
   
   // Floating badge Y coordinate clamped inside bottle view
-  const badgeY = Math.min(176, Math.max(76, currentFillY));
+  const badgeY = Math.round(Math.min(176, Math.max(76, currentFillY)));
 
   return (
     <div className="bg-[#111A10] border border-white/5 rounded-[28px] p-5 sm:p-6 mt-3 relative overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
@@ -212,7 +213,7 @@ export function WaterBottleCard({
           {/* Value Display: 1500 / 2.5 L */}
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              {consumedMl}
+              {safeConsumed}
             </span>
             <span className="text-sm sm:text-base font-bold text-white/50 pb-0.5">
               / {targetInLiters} L
@@ -238,7 +239,7 @@ export function WaterBottleCard({
             {/* Minus Button */}
             <button
               type="button"
-              disabled={isLoading || consumedMl <= 0}
+              disabled={isLoading || safeConsumed <= 0}
               onClick={() => onRemoveWater(stepAmount)}
               className="w-10 h-10 rounded-xl bg-black/40 hover:bg-black/70 active:scale-95 disabled:opacity-30 disabled:pointer-events-none text-white flex items-center justify-center transition-all cursor-pointer"
               title={`Remove ${stepAmount}ml`}
