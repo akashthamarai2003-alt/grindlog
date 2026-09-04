@@ -499,23 +499,12 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                         </button>
                       </>
                     ) : (
-                      <>
-                        <button 
-                          onClick={() => openLogModal(meal.meal_type)} 
-                          className="flex-1 py-2.5 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/30 rounded-xl text-[11px] font-black tracking-widest uppercase text-[#ADFF00] transition-all flex justify-center items-center gap-1.5 cursor-pointer"
-                        >
-                          <Plus size={14} /> Add Food
-                        </button>
-                        <button 
-                          disabled={swappingMeal === meal.meal_type}
-                          onClick={() => handleSwapMeal(meal.meal_type)} 
-                          className="px-3.5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-bold text-white/40 hover:text-white/70 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                          title="Re-plan or swap this meal"
-                        >
-                          {swappingMeal === meal.meal_type ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                          Re-plan
-                        </button>
-                      </>
+                      <button 
+                        onClick={() => openLogModal(meal.meal_type)} 
+                        className="w-full py-2.5 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/30 rounded-xl text-[11px] font-black tracking-widest uppercase text-[#ADFF00] transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                      >
+                        <Plus size={14} /> Add Food
+                      </button>
                     )}
                   </div>
                 </div>
