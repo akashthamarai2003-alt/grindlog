@@ -592,6 +592,8 @@ export class WorkoutService {
     if (!planId) return null;
     const supabase = await createServerSupabase();
     const todayStr = await this.getLocalDateString(userId);
+    const todayDate = new Date(`${todayStr}T12:00:00Z`);
+    const todayDayOfWeek = todayDate.getUTCDay();
 
     const { data: workouts } = await supabase
       .from("fitness_os_workouts")
@@ -602,18 +604,37 @@ export class WorkoutService {
 
     if (!workouts || workouts.length === 0) return null;
 
-    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-    return workouts.map((w: any) => {
-      const d = new Date(`${w.workout_date}T12:00:00Z`);
-      const dayName = dayNames[d.getUTCDay()];
-      const isCompleted = w.status === "completed";
-      const isToday = w.workout_date === todayStr;
+    // Standard 7-day weekly split starting Monday
+    const dayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+    const dayIndices = [1, 2, 3, 4, 5, 6, 0]; // Monday (1) to Sunday (0)
+
+    return dayNames.map((dayName, idx) => {
+      const targetDayOfWeek = dayIndices[idx];
+      const isToday = targetDayOfWeek === todayDayOfWeek;
+
+      // Find workout whose workout_date falls on this day of the week
+      const matchingWorkout = workouts.find((w: any) => {
+        const d = new Date(`${w.workout_date}T12:00:00Z`);
+        return d.getUTCDay() === targetDayOfWeek;
+      });
+
+      if (matchingWorkout) {
+        const isCompleted = matchingWorkout.status === "completed";
+
+        return {
+          day: dayName,
+          status: isCompleted ? "completed" : isToday ? "today" : "upcoming",
+          name: matchingWorkout.name,
+          date: matchingWorkout.workout_date,
+          isToday
+        };
+      }
 
       return {
         day: dayName,
-        status: isCompleted ? "completed" : isToday ? "today" : "upcoming",
-        name: w.name,
-        date: w.workout_date,
+        status: "rest",
+        name: "Rest",
+        date: undefined,
         isToday
       };
     });
