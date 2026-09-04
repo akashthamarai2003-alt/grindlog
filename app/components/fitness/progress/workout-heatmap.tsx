@@ -76,11 +76,13 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
     const today = new Date(todayYear, todayMonth, todayDate);
     const todayStr = formatDate(today);
 
-    // Calculate start date based on selected time window
-    const startDate = new Date(todayYear, todayMonth, todayDate);
-    startDate.setDate(startDate.getDate() - (numWeeks * DAYS_IN_WEEK) + 1);
-    // Align to Sunday
-    startDate.setDate(startDate.getDate() - startDate.getDay());
+    // Current week's Sunday so the calendar always ends on the current week (containing today)
+    const currentWeekSunday = new Date(todayYear, todayMonth, todayDate);
+    currentWeekSunday.setDate(currentWeekSunday.getDate() - currentWeekSunday.getDay());
+
+    // Calculate start date by stepping back (numWeeks - 1) weeks from the current week
+    const startDate = new Date(currentWeekSunday);
+    startDate.setDate(startDate.getDate() - (numWeeks - 1) * DAYS_IN_WEEK);
 
     const grid: {
       date: string;
@@ -137,8 +139,8 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
 
     let lastCol = monthPositions.length > 0 ? monthPositions[0].col : -10;
     for (const item of firstOfMonthList) {
-      // Must be separated by at least 3 columns and not right at the boundary
-      if (item.col - lastCol >= 3 && item.col <= numWeeks - 2) {
+      // Must be separated by at least 3 columns and allow up to the current week
+      if (item.col - lastCol >= 3 && item.col <= numWeeks - 1) {
         monthPositions.push(item);
         lastCol = item.col;
       }
@@ -325,11 +327,11 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
       >
         <div className={`inline-flex flex-col gap-1 min-w-max select-none ${is3M ? "w-full items-center" : ""}`}>
           {/* Month labels accurately positioned */}
-          <div className="relative h-4" style={{ marginLeft: "20px", width: `${numWeeks * colStep}px` }}>
+          <div className="relative h-4" style={{ marginLeft: "20px", width: `${numWeeks * colStep + 28}px` }}>
             {monthPositions.map((mp, i) => (
               <div
                 key={i}
-                className="absolute text-[9px] font-black text-white/40 uppercase tracking-wider"
+                className="absolute text-[9px] font-black text-white/40 uppercase tracking-wider whitespace-nowrap"
                 style={{ left: `${mp.col * colStep}px` }}
               >
                 {MONTH_LABELS[mp.month]}
