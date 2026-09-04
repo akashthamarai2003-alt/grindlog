@@ -17,21 +17,27 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Try to save to fitness_os_workout_sessions's "notes" column if it exists, or just log it
-    // Many Supabase schemas use metadata or notes for JSON extensions.
-    // For now, since we don't have a guaranteed feedback column, we'll try updating a generic notes column
-    // or if it fails we just return success so the user can proceed.
+    const updatePayload: Record<string, any> = {
+      notes: JSON.stringify({
+        difficulty,
+        feel,
+        pain,
+        painLocation,
+        recorded_at: new Date().toISOString(),
+      }),
+    };
+
+    if (difficulty) updatePayload.difficulty = difficulty;
+    if (feel) updatePayload.feeling = feel;
+
     const { error } = await supabase
       .from("fitness_os_workout_sessions")
-      .update({
-        notes: JSON.stringify({ difficulty, feel, pain, painLocation, recorded_at: new Date().toISOString() })
-      } as any)
+      .update(updatePayload as any)
       .eq("id", sessionId)
       .eq("user_id", user.id);
 
     if (error) {
-       console.warn("Feedback column might not exist yet:", error.message);
-       // We don't fail the request if the column doesn't exist, as it's just telemetry data for now.
+      console.warn("Feedback column update warning:", error.message);
     }
 
     return NextResponse.json({ success: true, message: "Feedback saved" });

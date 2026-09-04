@@ -121,12 +121,52 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
   // Realistic strength training calories (~5.5 to 6.5 kcal/min, capped realistically)
   const caloriesBurned = Math.min(850, Math.max(120, Math.round(durationMin * 6.2)));
 
-  // Extract session ID for feedback logging
+  // Extract session ID and previous feedback for feedback logging
   const sessions = workout.fitness_os_workout_sessions || [];
-  const latestSession = [...sessions].sort(
+  let latestSession = [...sessions].sort(
     (a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
   )[0];
+
+  if (!latestSession) {
+    const { data: createdSession } = await supabase
+      .from("fitness_os_workout_sessions")
+      .insert({
+        user_id: user.id,
+        workout_id: workoutId,
+        started_at: workout.started_at || new Date().toISOString(),
+        completed_at: workout.completed_at || new Date().toISOString(),
+        duration_seconds: durationMin * 60,
+        status: "completed"
+      })
+      .select()
+      .single();
+    latestSession = createdSession;
+  }
   const sessionId = latestSession?.id;
+
+  let initialFeedback: { difficulty?: string | null; feel?: string | null; pain?: string | null; painLocation?: string | null } | undefined;
+  if (latestSession?.notes) {
+    try {
+      const parsedNotes = JSON.parse(latestSession.notes);
+      if (parsedNotes && typeof parsedNotes === "object") {
+        initialFeedback = {
+          difficulty: parsedNotes.difficulty || latestSession.difficulty || null,
+          feel: parsedNotes.feel || latestSession.feeling || null,
+          pain: parsedNotes.pain || null,
+          painLocation: parsedNotes.painLocation || null,
+        };
+      }
+    } catch {
+      // notes wasn't JSON
+    }
+  } else if (latestSession?.difficulty || latestSession?.feeling) {
+    initialFeedback = {
+      difficulty: latestSession.difficulty || null,
+      feel: latestSession.feeling || null,
+      pain: null,
+      painLocation: null,
+    };
+  }
 
   const userName = user.user_metadata?.first_name || 
     user.user_metadata?.full_name?.split(' ')[0] || 
@@ -148,6 +188,7 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
           exerciseNames={exerciseNames}
           sessionId={sessionId}
           userName={userName}
+          initialFeedback={initialFeedback}
         />
       </div>
     </FitnessGuard>

@@ -20,6 +20,12 @@ interface WorkoutCompleteProps {
   exerciseNames?: string[];
   sessionId?: string;
   userName?: string;
+  initialFeedback?: {
+    difficulty?: string | null;
+    feel?: string | null;
+    pain?: string | null;
+    painLocation?: string | null;
+  };
 }
 
 export function WorkoutComplete({ 
@@ -33,7 +39,8 @@ export function WorkoutComplete({
   recordsBroken,
   exerciseNames = [],
   sessionId,
-  userName = "Athlete"
+  userName = "Athlete",
+  initialFeedback
 }: WorkoutCompleteProps) {
   const workoutName = workout?.name || "Upper Body";
   const duration = actualDuration !== undefined 
@@ -47,11 +54,11 @@ export function WorkoutComplete({
   const calories = actualCalories !== undefined ? actualCalories : Math.min(850, Math.max(120, Math.round(duration * 6.2)));
   const records = recordsBroken !== undefined ? recordsBroken : 1;
 
-  // Feedback State
-  const [difficulty, setDifficulty] = useState<string | null>(null);
-  const [feel, setFeel] = useState<string | null>(null);
-  const [pain, setPain] = useState<string | null>(null);
-  const [painLocation, setPainLocation] = useState<string | null>(null);
+  // Feedback State (pre-populate if already submitted)
+  const [difficulty, setDifficulty] = useState<string | null>(initialFeedback?.difficulty || null);
+  const [feel, setFeel] = useState<string | null>(initialFeedback?.feel || null);
+  const [pain, setPain] = useState<string | null>(initialFeedback?.pain || null);
+  const [painLocation, setPainLocation] = useState<string | null>(initialFeedback?.painLocation || null);
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
@@ -364,7 +371,7 @@ export function WorkoutComplete({
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {isSaving ? "Saving..." : "Save Workout"}
+          {isSaving ? "Saving..." : initialFeedback?.difficulty ? "Update Workout" : "Save Workout"}
         </button>
       </motion.div>
       
