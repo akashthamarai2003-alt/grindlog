@@ -353,8 +353,8 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
               const completed = isMealCompleted(meal.meal_type);
               const loggedFoods = foodsByMeal[meal.meal_type] || [];
               const plannedFoods = Array.isArray(meal.meal_plan_items) ? meal.meal_plan_items : [];
-              const mealCals = loggedFoods.reduce((acc: number, f: any) => acc + f.calories, 0);
-              const mealPro = loggedFoods.reduce((acc: number, f: any) => acc + f.protein, 0);
+              const mealCals = Math.round(loggedFoods.reduce((acc: number, f: any) => acc + (Number(f.calories) || 0), 0));
+              const mealPro = Math.round(loggedFoods.reduce((acc: number, f: any) => acc + (Number(f.protein) || 0), 0));
               const plannedTotals = plannedFoods.reduce((totals: any, item: any) => {
                 const quantity = Number(item.quantity) || 1;
                 return {
@@ -406,18 +406,12 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                                 className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
                               />
                               <div>
-                                <span className="font-bold block">{f.foods?.name || 'Logged food'}</span>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[10px] text-white/40 font-medium">x{f.quantity} serving</span>
-                                  <span className="text-[10px] text-white/30">•</span>
-                                  <span className="text-[10px] text-[#ADFF00] font-semibold">{f.protein}g P</span>
-                                  <span className="text-[10px] text-sky-400 font-semibold">{f.carbs}g C</span>
-                                  <span className="text-[10px] text-amber-400 font-semibold">{f.fat}g F</span>
-                                </div>
+                                <span className="font-bold block text-white/90">{f.foods?.name || 'Logged food'}</span>
+                                <span className="text-[11px] text-white/40 font-medium">x{f.quantity} serving{f.quantity > 1 ? 's' : ''}</span>
                               </div>
                             </span>
                             <div className="flex items-center gap-2.5">
-                              <span className="text-xs font-black text-[#ADFF00]">{f.calories} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
+                              <span className="text-xs font-black text-[#ADFF00]">{Math.round(Number(f.calories) || 0)} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteFood(f.id, f.foods?.name)}
@@ -439,16 +433,10 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                               />
                               <div>
                                 <span className="font-bold block text-white/90">{item.foods?.name || 'Food item'}</span>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[10px] text-white/40 font-medium">{item.foods?.serving_size || '1 serving'}</span>
-                                  <span className="text-[10px] text-white/30">•</span>
-                                  <span className="text-[10px] text-[#ADFF00] font-semibold">{Math.round(item.foods?.protein * item.quantity)}g P</span>
-                                  <span className="text-[10px] text-sky-400 font-semibold">{Math.round(item.foods?.carbs * item.quantity)}g C</span>
-                                  <span className="text-[10px] text-amber-400 font-semibold">{Math.round(item.foods?.fat * item.quantity)}g F</span>
-                                </div>
+                                <span className="text-[11px] text-white/40 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
                               </div>
                             </span>
-                            <span className="text-xs font-black text-white/70">{Math.round(item.foods?.calories * item.quantity)} <span className="text-[9px] text-white/40 uppercase">kcal</span></span>
+                            <span className="text-xs font-black text-white/70">{Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span></span>
                           </li>
                         ))
                       ) : (
