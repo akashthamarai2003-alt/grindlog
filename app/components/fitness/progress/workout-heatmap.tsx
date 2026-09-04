@@ -226,6 +226,61 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
     }
   }, [timeRange, currentWeekCol, colStep]);
 
+  const scrollToToday = () => {
+    if (scrollRef.current) {
+      const targetLeft = Math.max(0, currentWeekCol * colStep - 40);
+      scrollRef.current.scrollTo({ left: targetLeft, behavior: "smooth" });
+    }
+  };
+
+  const todayCell = useMemo(() => {
+    for (const week of grid) {
+      for (const cell of week) {
+        if (cell.isToday) return cell;
+      }
+    }
+    return null;
+  }, [grid]);
+
+  const handleSelectToday = () => {
+    const now = new Date();
+    const todayStr = formatDate(now);
+
+    if (todayCell) {
+      setSelectedCell({
+        date: todayCell.date,
+        count: todayCell.count,
+        isScheduled: todayCell.isScheduled,
+        isToday: true,
+      });
+    } else {
+      setSelectedCell({
+        date: todayStr,
+        count: 0,
+        isScheduled: false,
+        isToday: true,
+      });
+    }
+
+    scrollToToday();
+  };
+
+  const handleSelectScheduled = () => {
+    for (const week of grid) {
+      for (const cell of week) {
+        if (cell.isScheduled && !cell.count) {
+          setSelectedCell({
+            date: cell.date,
+            count: cell.count,
+            isScheduled: true,
+            isToday: cell.isToday,
+          });
+          return;
+        }
+      }
+    }
+  };
+
   const formatDisplayDate = (dateStr: string) => {
     try {
       const [y, m, d] = dateStr.split("-").map(Number);
@@ -257,21 +312,35 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
           </div>
         </div>
 
-        {/* Time window selector */}
-        <div className="flex items-center gap-1 bg-[#0A1108] p-1 rounded-xl border border-white/5">
-          {(["3M", "6M", "1Y"] as const).map(range => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                timeRange === range
-                  ? "bg-[#ADFF00] text-black shadow-[0_0_10px_rgba(173,255,0,0.3)]"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              {range}
-            </button>
-          ))}
+        {/* Time window selector & Today button */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleSelectToday}
+            className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer border ${
+              selectedCell?.isToday
+                ? "bg-[#ADFF00] text-black border-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.3)] font-black"
+                : "bg-[#0A1108] text-white/70 hover:text-[#ADFF00] border-white/5 hover:border-[#ADFF00]/30"
+            }`}
+            title="Jump & select Today"
+          >
+            Today
+          </button>
+          <div className="flex items-center gap-1 bg-[#0A1108] p-1 rounded-xl border border-white/5">
+            {(["3M", "6M", "1Y"] as const).map(range => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  timeRange === range
+                    ? "bg-[#ADFF00] text-black shadow-[0_0_10px_rgba(173,255,0,0.3)]"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -311,9 +380,14 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
             exit={{ opacity: 0, y: -2 }}
             className="flex items-center justify-between px-3.5 py-2 bg-[#0E170C] rounded-xl border border-[#ADFF00]/30 text-xs"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className={`w-2 h-2 rounded-full ${selectedCell.count > 0 ? "bg-[#ADFF00]" : selectedCell.isScheduled ? "bg-[#ADFF00]/50" : "bg-white/20"}`} />
               <span className="font-bold text-white">{formatDisplayDate(selectedCell.date)}</span>
+              {selectedCell.isToday && (
+                <span className="px-1.5 py-0.5 rounded bg-[#ADFF00] text-black text-[9px] font-black uppercase tracking-wider shadow-sm">
+                  Today
+                </span>
+              )}
               <span className="text-white/40">•</span>
               <span className={`font-semibold ${selectedCell.count > 0 ? "text-[#ADFF00]" : selectedCell.isScheduled ? "text-emerald-400" : "text-white/50"}`}>
                 {selectedCell.count > 0
@@ -325,12 +399,26 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
                   : "Rest Day"}
               </span>
             </div>
-            <button
-              onClick={() => setSelectedCell(null)}
-              className="text-[10px] font-bold text-white/50 hover:text-white flex items-center gap-1 cursor-pointer"
-            >
-              <RotateCcw className="w-3 h-3" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {!selectedCell.isToday && (
+                <button
+                  type="button"
+                  onClick={handleSelectToday}
+                  className="text-[10px] font-bold text-[#ADFF00] hover:bg-[#ADFF00]/20 flex items-center gap-1 cursor-pointer bg-[#ADFF00]/10 px-2 py-0.5 rounded-lg border border-[#ADFF00]/20 transition-colors"
+                  title="Jump back to Today"
+                >
+                  Jump to Today
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setSelectedCell(null)}
+                className="text-[10px] font-bold text-white/50 hover:text-white flex items-center gap-1 cursor-pointer p-1 rounded-lg hover:bg-white/10 transition-colors"
+                title="Clear selection"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+            </div>
           </motion.div>
         ) : totalWorkouts === 0 ? (
           <motion.div
@@ -446,18 +534,34 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
           <span className="font-bold uppercase tracking-wider text-[9px]">More</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={handleSelectScheduled}
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 transition-all cursor-pointer active:scale-95"
+            title="View scheduled workouts in AI Plan"
+          >
             <div className="w-[10px] h-[10px] rounded-[2px] bg-[#ADFF00]/10 border border-[#ADFF00]/40 flex items-center justify-center">
               <span className="w-1 h-1 rounded-full bg-[#ADFF00]/70" />
             </div>
             <span className="text-[9px] uppercase font-bold tracking-wider">Scheduled</span>
-          </div>
+          </button>
 
-          <div className="flex items-center gap-1">
-            <div className="w-[10px] h-[10px] rounded-[2px] ring-1 ring-[#ADFF00] border border-white/10" />
-            <span className="text-[9px] uppercase font-bold tracking-wider">Today</span>
-          </div>
+          <button
+            type="button"
+            onClick={handleSelectToday}
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition-all cursor-pointer active:scale-95 ${
+              selectedCell?.isToday
+                ? "bg-[#ADFF00] text-black border-[#ADFF00] font-black shadow-sm"
+                : "bg-white/5 hover:bg-[#ADFF00]/15 text-white/70 hover:text-[#ADFF00] border-white/10 hover:border-[#ADFF00]/40"
+            }`}
+            title="Click to select & view Today"
+          >
+            <div className={`w-[10px] h-[10px] rounded-[2px] transition-all ${
+              selectedCell?.isToday ? "bg-black" : "ring-1 ring-[#ADFF00] border border-white/10"
+            }`} />
+            <span className="text-[9px] uppercase font-black tracking-wider">Today</span>
+          </button>
         </div>
       </div>
     </div>
