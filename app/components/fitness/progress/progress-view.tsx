@@ -25,6 +25,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
   const [workoutDates, setWorkoutDates] = useState<string[]>([]);
   const [scheduledDates, setScheduledDates] = useState<string[]>([]);
   const [recentExercises, setRecentExercises] = useState<string[]>([]);
+  const [joinedDate, setJoinedDate] = useState<string | undefined>(undefined);
 
   // Fetch workout dates for the heatmap (last 365 days)
   useEffect(() => {
@@ -40,6 +41,9 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
           }
           if (json.exerciseNames && Array.isArray(json.exerciseNames)) {
             setRecentExercises(json.exerciseNames);
+          }
+          if (json.joinedDate) {
+            setJoinedDate(json.joinedDate);
           }
         }
       })
@@ -100,7 +104,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
 
             {/* Workout Heatmap Calendar */}
             <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
-              <WorkoutHeatmap completedDates={workoutDates} scheduledDates={scheduledDates} />
+              <WorkoutHeatmap completedDates={workoutDates} scheduledDates={scheduledDates} joinedDate={joinedDate} />
             </div>
 
             {/* Muscle Map */}

@@ -10,6 +10,8 @@ interface HeatmapProps {
   completedDates: string[];
   /** Optional array of ISO date strings for scheduled or in-progress workouts */
   scheduledDates?: string[];
+  /** Optional date string when the user joined or started their plan */
+  joinedDate?: string;
 }
 
 const DAYS_IN_WEEK = 7;
@@ -39,7 +41,7 @@ function formatDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: HeatmapProps) {
+export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joinedDate }: HeatmapProps) {
   const [timeRange, setTimeRange] = useState<"3M" | "6M" | "1Y">("3M");
   const [selectedCell, setSelectedCell] = useState<{
     date: string;
@@ -54,7 +56,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
   const is3M = timeRange === "3M";
   const colStep = is3M ? 18 : 13; // cell width + gap
 
-  const { grid, monthPositions, totalWorkouts, longestStreak, currentStreak } = useMemo(() => {
+  const { grid, monthPositions, totalWorkouts, longestStreak, currentStreak, currentWeekCol } = useMemo(() => {
     // Frequency map for completed workouts
     const freqMap: Record<string, number> = {};
     for (const d of completedDates) {
@@ -76,13 +78,38 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
     const today = new Date(todayYear, todayMonth, todayDate);
     const todayStr = formatDate(today);
 
-    // Current week's Sunday so the calendar always ends on the current week (containing today)
+    // Current week's Sunday
     const currentWeekSunday = new Date(todayYear, todayMonth, todayDate);
     currentWeekSunday.setDate(currentWeekSunday.getDate() - currentWeekSunday.getDay());
 
-    // Calculate start date by stepping back (numWeeks - 1) weeks from the current week
-    const startDate = new Date(currentWeekSunday);
-    startDate.setDate(startDate.getDate() - (numWeeks - 1) * DAYS_IN_WEEK);
+    // Determine the user's start anchor:
+    // Earliest of: joinedDate, earliest completed workout, or today (never start in the future)
+    const dateCandidates = [
+      joinedDate ? joinedDate.split("T")[0] : null,
+      ...completedDates.map(d => d.split("T")[0]),
+      todayStr,
+    ].filter(Boolean) as string[];
+
+    const earliestActivityDateStr = [...dateCandidates].sort()[0];
+
+    // Start of the week the user began
+    const [ey, em, ed] = earliestActivityDateStr.split("-").map(Number);
+    const earliestWeekSunday = new Date(ey, em - 1, ed);
+    earliestWeekSunday.setDate(earliestWeekSunday.getDate() - earliestWeekSunday.getDay());
+
+    // How many weeks between user start and current week?
+    const msDiff = currentWeekSunday.getTime() - earliestWeekSunday.getTime();
+    const weeksSinceStart = Math.max(0, Math.floor(msDiff / (7 * 24 * 60 * 60 * 1000)));
+
+    let startDate: Date;
+    if (weeksSinceStart < numWeeks) {
+      // User is within initial cycle: start from the week they joined and project forward into the future!
+      startDate = new Date(earliestWeekSunday);
+    } else {
+      // User has a long history: anchor so they see recent history + upcoming weeks
+      startDate = new Date(currentWeekSunday);
+      startDate.setDate(startDate.getDate() - (numWeeks - 1) * DAYS_IN_WEEK);
+    }
 
     const grid: {
       date: string;
@@ -93,6 +120,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
     }[][] = [];
 
     const firstOfMonthList: { month: number; col: number }[] = [];
+    let currentWeekCol = 0;
 
     for (let week = 0; week < numWeeks; week++) {
       const col: {
@@ -111,6 +139,10 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
         const isToday = dateStr === todayStr;
         const count = isFuture ? 0 : (freqMap[dateStr] || 0);
         const isScheduled = scheduledSet.has(dateStr);
+
+        if (isToday) {
+          currentWeekCol = week;
+        }
 
         col.push({
           date: dateStr,
@@ -131,15 +163,17 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
     // Non-overlapping month labels
     const monthPositions: { month: number; col: number }[] = [];
 
-    // Only show initial month at col 0 if the next month is at least 3 columns away
-    if (firstOfMonthList.length > 0 && firstOfMonthList[0].col >= 3) {
-      const initialCell = new Date(startDate);
-      monthPositions.push({ month: initialCell.getMonth(), col: 0 });
+    // Week 0 month label:
+    if (firstOfMonthList.length === 0 || firstOfMonthList[0].col >= 3) {
+      monthPositions.push({ month: startDate.getMonth(), col: 0 });
+    } else {
+      // Month starts in the first week or two: label that month at col 0
+      monthPositions.push({ month: firstOfMonthList[0].month, col: 0 });
     }
 
     let lastCol = monthPositions.length > 0 ? monthPositions[0].col : -10;
     for (const item of firstOfMonthList) {
-      // Must be separated by at least 3 columns and allow up to the current week
+      // Must be separated by at least 3 columns and allow up to the end of the grid
       if (item.col - lastCol >= 3 && item.col <= numWeeks - 1) {
         monthPositions.push(item);
         lastCol = item.col;
@@ -181,15 +215,16 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
       }
     }
 
-    return { grid, monthPositions, totalWorkouts, longestStreak, currentStreak };
-  }, [completedDates, scheduledDates, numWeeks]);
+    return { grid, monthPositions, totalWorkouts, longestStreak, currentStreak, currentWeekCol };
+  }, [completedDates, scheduledDates, joinedDate, numWeeks]);
 
-  // Auto-scroll to current week (far right) whenever the range changes or on initial render
+  // Auto-scroll to current week column whenever range changes or on initial render
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+      const targetLeft = Math.max(0, currentWeekCol * colStep - 40);
+      scrollRef.current.scrollLeft = targetLeft;
     }
-  }, [timeRange]);
+  }, [timeRange, currentWeekCol, colStep]);
 
   const formatDisplayDate = (dateStr: string) => {
     try {
@@ -369,12 +404,14 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
                         })
                       }
                       className={`${is3M ? "w-[14px] h-[14px] rounded-[3px]" : "w-[10px] h-[10px] rounded-[2px]"} transition-all cursor-pointer relative ${
-                        cell.future
-                          ? "bg-transparent border border-transparent cursor-default pointer-events-none"
-                          : cell.count > 0
+                        cell.count > 0
                           ? getIntensityClass(cell.count)
                           : cell.isScheduled
-                          ? "bg-[#ADFF00]/10 border border-[#ADFF00]/40"
+                          ? "bg-[#ADFF00]/15 border border-[#ADFF00]/50 hover:border-[#ADFF00]"
+                          : cell.isToday
+                          ? "bg-white/10 border border-white/20"
+                          : cell.future
+                          ? "bg-white/[0.03] border border-white/[0.06] hover:border-white/20"
                           : "bg-white/5 border border-white/5 hover:border-white/20"
                       } ${
                         cell.isToday
@@ -387,8 +424,8 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
                       }`}
                     >
                       {/* Scheduled dot indicator */}
-                      {cell.isScheduled && cell.count === 0 && !cell.future && (
-                        <span className="absolute inset-0 m-auto w-1 h-1 rounded-full bg-[#ADFF00]/70" />
+                      {cell.isScheduled && cell.count === 0 && (
+                        <span className="absolute inset-0 m-auto w-1 h-1 rounded-full bg-[#ADFF00]" />
                       )}
                     </button>
                   );

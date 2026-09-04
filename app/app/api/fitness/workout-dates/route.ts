@@ -66,13 +66,35 @@ export async function GET(req: NextRequest) {
         .eq("status", "active")
         .maybeSingle();
 
-      const planWorkouts = activePlan?.plan_data?.workouts || [];
+      const planWorkouts = (activePlan?.plan_data as any)?.workouts || [];
       exerciseNames = planWorkouts.flatMap((w: any) =>
         (w.exercises || []).map((e: any) => e.name)
       ).filter(Boolean);
     }
 
-    return NextResponse.json({ dates, completedDates: dates, scheduledDates, exerciseNames }, { status: 200 });
+    // Fetch joined / plan start date
+    const { data: profile } = await supabase
+      .from("fitness_os_profiles")
+      .select("created_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const { data: activePlanRecord } = await supabase
+      .from("fitness_os_workout_plans")
+      .select("created_at")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    const joinedDate = profile?.created_at || activePlanRecord?.created_at || user.created_at;
+
+    return NextResponse.json({ 
+      dates, 
+      completedDates: dates, 
+      scheduledDates, 
+      exerciseNames,
+      joinedDate
+    }, { status: 200 });
   } catch (error: any) {
     console.error("GET /api/fitness/workout-dates error:", error);
     return NextResponse.json({ error: error.message || "Server error" }, { status: 500 });
