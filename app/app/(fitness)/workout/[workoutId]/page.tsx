@@ -3,7 +3,6 @@ import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { WorkoutSessionManager } from "@/components/fitness/workout/workout-session-manager";
 import { redirect } from "next/navigation";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
-import { AiWorkoutCoachService } from "@/lib/services/ai/ai-workout-coach-service";
 
 export default async function ActiveWorkoutPage({ 
   params,
@@ -75,7 +74,7 @@ export default async function ActiveWorkoutPage({
     { data: workout, error },
     { data: profile },
     subscriptionPlan,
-    cachedCoachNote
+    cachedNoteRes
   ] = await Promise.all([
     supabase
       .from("fitness_os_workouts")
@@ -91,12 +90,18 @@ export default async function ActiveWorkoutPage({
       .single(),
     supabase.from("profiles").select("timezone").eq("id", user.id).maybeSingle(),
     getFitnessPlan(user.id),
-    AiWorkoutCoachService.getOrGenerateCoachNote(user.id, workoutId).catch(() => null)
+    supabase
+      .from("workout_ai_notes")
+      .select("note")
+      .eq("workout_id", workoutId)
+      .maybeSingle()
   ]);
 
   if (error || !workout) {
     redirect("/workout");
   }
+
+  const cachedCoachNote = cachedNoteRes?.data?.note || null;
 
   if (workout.user_id !== user.id) {
     redirect("/workout");
@@ -107,9 +112,28 @@ export default async function ActiveWorkoutPage({
   }
 
   // Find active session
-  const activeSession = workout.fitness_os_workout_sessions?.find(
+  let activeSession = workout.fitness_os_workout_sessions?.find(
     (s: any) => s.status === "active" || s.status === "paused"
   );
+
+  if (!activeSession) {
+    if (workout.fitness_os_workout_sessions && workout.fitness_os_workout_sessions.length > 0) {
+      activeSession = [...workout.fitness_os_workout_sessions].sort(
+        (a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      )[0];
+    } else {
+      const { data: newSession } = await supabase
+        .from("fitness_os_workout_sessions")
+        .insert({
+          user_id: user.id,
+          workout_id: workoutId,
+          status: "active"
+        })
+        .select()
+        .single();
+      activeSession = newSession;
+    }
+  }
 
   if (!activeSession) {
     redirect("/workout");

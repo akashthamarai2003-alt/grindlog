@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Dumbbell, Play, Loader2, Check, Pause } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 interface Exercise {
@@ -35,6 +35,12 @@ export function TodaysExercisesList({
 }: TodaysExercisesListProps) {
   const router = useRouter();
   const [navigatingExerciseId, setNavigatingExerciseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (workoutId && workoutId !== "mock") {
+      router.prefetch(`/workout/${workoutId}`);
+    }
+  }, [workoutId, router]);
 
   // Mock exercises if none provided
   const displayExercises = exercises && exercises.length > 0 ? exercises : [
