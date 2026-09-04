@@ -67,7 +67,8 @@ export function BodyProgressPhotos({
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [goalPreview, setGoalPreview] = useState<string | null>(null);
   const [isSavingGoal, setIsSavingGoal] = useState(false);
-  const [lightboxMode, setLightboxMode] = useState<'both' | 'front' | 'goal' | null>(null);
+  const [lightboxMode, setLightboxMode] = useState<'both' | 'front' | 'goal' | 'timeline-both' | 'timeline-start' | 'timeline-current' | 'single-baseline' | null>(null);
+  const [timelineStyle, setTimelineStyle] = useState<'side-by-side' | 'slider'>('side-by-side');
   const goalInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -432,12 +433,15 @@ export function BodyProgressPhotos({
             {isSingleScan ? (
               /* Single Baseline View */
               <div className="flex flex-col gap-3">
-                <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden">
+                <div 
+                  onClick={() => setLightboxMode('single-baseline')}
+                  className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-lg cursor-pointer group"
+                >
                   {getImageForView(activeScan, view) ? (
                     <SafeImage 
                       src={getImageForView(activeScan, view)!} 
                       alt={`Baseline ${view} view`} 
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105" 
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-white/30 text-xs font-bold uppercase tracking-widest gap-2">
@@ -447,11 +451,14 @@ export function BodyProgressPhotos({
                   )}
 
                   {/* Badges Overlay */}
-                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-white/90 uppercase tracking-widest border border-white/10">
+                  <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[8px] font-black text-white/90 uppercase tracking-widest border border-white/10">
                     Baseline (Day 1)
                   </div>
+                  <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md p-1.5 rounded-md text-white/70 group-hover:text-white group-hover:bg-black/80 transition-colors">
+                    <Maximize2 className="w-3.5 h-3.5" />
+                  </div>
                   {activeScan?.date && (
-                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-bold text-[#ADFF00] tracking-wider border border-white/10">
+                    <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[8px] font-bold text-[#ADFF00] tracking-wider border border-white/10">
                       {new Date(activeScan.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </div>
                   )}
@@ -462,67 +469,187 @@ export function BodyProgressPhotos({
                   <Sparkles className="w-4 h-4 text-[#ADFF00] shrink-0 mt-0.5" />
                   <div className="flex-1 text-[11px] text-white/70 leading-relaxed">
                     <span className="text-white font-bold">Baseline established.</span> Next scan recommended in{" "}
-                    <span className="text-[#ADFF00] font-bold">14 days</span>. Taking your next check-in scan will automatically unlock the Before/After comparison slider!
+                    <span className="text-[#ADFF00] font-bold">14 days</span>. Taking your next check-in scan will automatically unlock the Before/After comparison!
                   </div>
                 </div>
               </div>
             ) : (
-              /* Two Scans: Interactive Comparison Slider */
-              <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden touch-none select-none">
-                {/* After Image (Base) */}
-                {afterImg ? (
-                  <SafeImage src={afterImg} alt="Latest Scan" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-white/20 text-xs font-bold uppercase tracking-widest">No Image</div>
-                )}
+              /* Two Scans: Side-by-Side (Default) or Interactive Slider */
+              <div className="flex flex-col gap-3">
+                {/* View Switcher Header: Side-by-Side vs Slider */}
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#ADFF00]" /> Full Compare: Baseline vs Current
+                  </span>
+                  <div className="flex items-center bg-white/5 rounded-lg p-0.5 border border-white/5 text-[9px] font-black uppercase tracking-wider">
+                    <button
+                      type="button"
+                      onClick={() => setTimelineStyle('side-by-side')}
+                      className={`px-2.5 py-1 rounded-md transition-all ${
+                        timelineStyle === 'side-by-side' ? 'bg-[#ADFF00] text-black font-extrabold shadow-sm' : 'text-white/50 hover:text-white'
+                      }`}
+                    >
+                      Side-by-Side
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTimelineStyle('slider')}
+                      className={`px-2.5 py-1 rounded-md transition-all ${
+                        timelineStyle === 'slider' ? 'bg-[#ADFF00] text-black font-extrabold shadow-sm' : 'text-white/50 hover:text-white'
+                      }`}
+                    >
+                      Slider
+                    </button>
+                  </div>
+                </div>
 
-                {/* Before Image (Clipped) */}
-                {beforeImg ? (
-                  <div 
-                    className="absolute inset-0 w-full h-full bg-[#111A10] pointer-events-none overflow-hidden"
-                    style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
-                  >
-                    <SafeImage 
-                      src={beforeImg} 
-                      className="w-full h-full object-cover pointer-events-none" 
+                {timelineStyle === 'side-by-side' ? (
+                  /* ======================================================== */
+                  /* TIMELINE: Side-by-Side Normal Full View                  */
+                  /* ======================================================== */
+                  <div className="flex flex-col gap-3">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3.5 w-full">
+                      {/* Left Column: Baseline / Start Photo */}
+                      <div className="flex flex-col gap-2">
+                        <div 
+                          onClick={() => setLightboxMode('timeline-start')}
+                          className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-lg cursor-pointer group transition-all active:scale-[0.98]"
+                          title="Tap to zoom"
+                        >
+                          <SafeImage 
+                            src={beforeImg || ''} 
+                            className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105" 
+                          />
+                          <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-black text-white uppercase tracking-wider border border-white/10">
+                            Baseline (Start)
+                          </div>
+                          <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md p-1.5 rounded-md text-white/70 group-hover:text-white group-hover:bg-black/80 transition-colors">
+                            <Maximize2 className="w-3 h-3" />
+                          </div>
+                          {first?.date && (
+                            <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-bold text-white/80 tracking-wider border border-white/10">
+                              {new Date(first.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-white/90">
+                            Baseline ({view})
+                          </span>
+                          <span className="text-[9px] font-bold text-white/40">
+                            {first?.date ? new Date(first.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Day 1'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right Column: Latest / Current Photo */}
+                      <div className="flex flex-col gap-2">
+                        <div 
+                          onClick={() => setLightboxMode('timeline-current')}
+                          className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-[#ADFF00]/40 shadow-lg shadow-[#ADFF00]/5 cursor-pointer group transition-all active:scale-[0.98]"
+                          title="Tap to zoom"
+                        >
+                          <SafeImage 
+                            src={afterImg || ''} 
+                            className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105" 
+                          />
+                          <div className="absolute top-2.5 left-2.5 bg-[#ADFF00] px-2 py-0.5 rounded-md text-[8px] font-black text-black uppercase tracking-wider shadow-sm">
+                            Current (Latest)
+                          </div>
+                          <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md p-1.5 rounded-md text-white/70 group-hover:text-white group-hover:bg-black/80 transition-colors">
+                            <Maximize2 className="w-3 h-3" />
+                          </div>
+                          {latest?.date && (
+                            <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-bold text-[#ADFF00] tracking-wider border border-white/10">
+                              {new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-[#ADFF00]">
+                            Current ({view})
+                          </span>
+                          <span className="text-[9px] font-bold text-white/40">
+                            {latest?.date ? new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Inspect Fullscreen Bar */}
+                    <button
+                      type="button"
+                      onClick={() => setLightboxMode('timeline-both')}
+                      className="w-full py-2 bg-[#142013] hover:bg-[#1A2A19] border border-[#ADFF00]/20 rounded-xl px-3 flex items-center justify-between text-[#ADFF00] transition-colors group shadow-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-[#ADFF00]" />
+                        <span className="text-[10px] font-black uppercase tracking-wider">Inspect Fullscreen Comparison</span>
+                      </div>
+                      <Maximize2 className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  </div>
+                ) : (
+                  /* ======================================================== */
+                  /* TIMELINE: Interactive Comparison Split Slider            */
+                  /* ======================================================== */
+                  <div className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden touch-none select-none">
+                    {/* After Image (Base) */}
+                    {afterImg ? (
+                      <SafeImage src={afterImg} alt="Latest Scan" className="absolute inset-0 w-full h-full object-cover object-top pointer-events-none" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-white/20 text-xs font-bold uppercase tracking-widest">No Image</div>
+                    )}
+
+                    {/* Before Image (Clipped) */}
+                    {beforeImg ? (
+                      <div 
+                        className="absolute inset-0 w-full h-full bg-[#111A10] pointer-events-none overflow-hidden"
+                        style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
+                      >
+                        <SafeImage 
+                          src={beforeImg} 
+                          className="w-full h-full object-cover object-top pointer-events-none" 
+                        />
+                      </div>
+                    ) : (
+                      <div 
+                        className="absolute inset-0 flex items-center justify-center bg-[#111A10] text-white/20 text-xs font-bold uppercase tracking-widest pointer-events-none" 
+                        style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
+                      >
+                        No Image
+                      </div>
+                    )}
+
+                    {/* Slider Handle */}
+                    <div 
+                      className="absolute top-0 bottom-0 w-1 bg-white/80 cursor-ew-resize hover:bg-[#ADFF00] transition-colors"
+                      style={{ left: `calc(${sliderPos}% - 2px)` }}
+                    >
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white text-black rounded-full shadow-2xl flex items-center justify-center border border-black/10">
+                        <SlidersHorizontal className="w-4 h-4 rotate-90" />
+                      </div>
+                    </div>
+                    
+                    {/* Interaction Area */}
+                    <input 
+                      type="range" 
+                      min="0" max="100" 
+                      value={sliderPos}
+                      onChange={(e) => setSliderPos(Number(e.target.value))}
+                      aria-label="Progress comparison slider"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-10"
                     />
-                  </div>
-                ) : (
-                  <div 
-                    className="absolute inset-0 flex items-center justify-center bg-[#111A10] text-white/20 text-xs font-bold uppercase tracking-widest pointer-events-none" 
-                    style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
-                  >
-                    No Image
+
+                    {/* Floating Date Labels */}
+                    <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-white/80 uppercase tracking-widest pointer-events-none border border-white/10">
+                      Start {first?.date ? `(${new Date(first.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''}
+                    </div>
+                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-[#ADFF00] uppercase tracking-widest pointer-events-none border border-white/10">
+                      Current {latest?.date ? `(${new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''}
+                    </div>
                   </div>
                 )}
-
-                {/* Slider Handle */}
-                <div 
-                  className="absolute top-0 bottom-0 w-1 bg-white/80 cursor-ew-resize hover:bg-[#ADFF00] transition-colors"
-                  style={{ left: `calc(${sliderPos}% - 2px)` }}
-                >
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white text-black rounded-full shadow-2xl flex items-center justify-center border border-black/10">
-                    <SlidersHorizontal className="w-4 h-4 rotate-90" />
-                  </div>
-                </div>
-                
-                {/* Interaction Area */}
-                <input 
-                  type="range" 
-                  min="0" max="100" 
-                  value={sliderPos}
-                  onChange={(e) => setSliderPos(Number(e.target.value))}
-                  aria-label="Progress comparison slider"
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-10"
-                />
-
-                {/* Floating Date Labels */}
-                <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-white/80 uppercase tracking-widest pointer-events-none border border-white/10">
-                  Start {first?.date ? `(${new Date(first.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''}
-                </div>
-                <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-[#ADFF00] uppercase tracking-widest pointer-events-none border border-white/10">
-                  Current {latest?.date ? `(${new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''}
-                </div>
               </div>
             )}
           </>
@@ -680,7 +807,7 @@ export function BodyProgressPhotos({
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-[#ADFF00]" />
               <span className="text-xs font-black text-white uppercase tracking-wider">
-                Physique Comparison Inspector
+                {lightboxMode.startsWith('timeline') ? 'Timeline Progress Inspector' : 'Physique Comparison Inspector'}
               </span>
             </div>
             <button
@@ -694,39 +821,121 @@ export function BodyProgressPhotos({
 
           {/* Mode Switcher Tabs */}
           <div className="flex justify-center py-3 shrink-0">
-            <div className="inline-flex p-1 bg-white/10 rounded-xl gap-1">
-              <button
-                type="button"
-                onClick={() => setLightboxMode('both')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                  lightboxMode === 'both' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Side-by-Side
-              </button>
-              <button
-                type="button"
-                onClick={() => setLightboxMode('front')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                  lightboxMode === 'front' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                My Front
-              </button>
-              <button
-                type="button"
-                onClick={() => setLightboxMode('goal')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                  lightboxMode === 'goal' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Target Goal
-              </button>
-            </div>
+            {lightboxMode.startsWith('timeline') ? (
+              <div className="inline-flex p-1 bg-white/10 rounded-xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => setLightboxMode('timeline-both')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                    lightboxMode === 'timeline-both' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  Side-by-Side
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLightboxMode('timeline-start')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                    lightboxMode === 'timeline-start' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  Baseline ({first?.date ? new Date(first.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Start'})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLightboxMode('timeline-current')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                    lightboxMode === 'timeline-current' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  Current ({latest?.date ? new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Latest'})
+                </button>
+              </div>
+            ) : lightboxMode === 'single-baseline' ? (
+              <div className="text-xs font-bold text-white/60 uppercase tracking-widest">
+                Baseline {view} photo
+              </div>
+            ) : (
+              <div className="inline-flex p-1 bg-white/10 rounded-xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => setLightboxMode('both')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                    lightboxMode === 'both' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  Side-by-Side
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLightboxMode('front')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                    lightboxMode === 'front' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  My Front
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLightboxMode('goal')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                    lightboxMode === 'goal' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  Target Goal
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Image Display Area */}
           <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 py-2">
+            {/* Timeline: Side-by-Side */}
+            {lightboxMode === 'timeline-both' && (
+              <div className="grid grid-cols-2 gap-3 w-full h-full max-h-[75vh]">
+                <div className="flex flex-col items-center h-full gap-2 min-h-0">
+                  <div className="relative w-full flex-1 rounded-2xl overflow-hidden bg-black/60 border border-white/10 flex items-center justify-center p-1">
+                    <SafeImage src={beforeImg || ''} className="w-full h-full object-contain" />
+                    <div className="absolute top-3 left-3 bg-black/80 px-2.5 py-1 rounded-lg text-[9px] font-black text-white uppercase tracking-wider border border-white/10">
+                      Baseline ({first?.date ? new Date(first.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Start'})
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider">Start Physique ({view})</span>
+                </div>
+
+                <div className="flex flex-col items-center h-full gap-2 min-h-0">
+                  <div className="relative w-full flex-1 rounded-2xl overflow-hidden bg-black/60 border border-[#ADFF00]/30 flex items-center justify-center p-1">
+                    <SafeImage src={afterImg || ''} className="w-full h-full object-contain" />
+                    <div className="absolute top-3 left-3 bg-[#ADFF00] px-2.5 py-1 rounded-lg text-[9px] font-black text-black uppercase tracking-wider shadow-sm">
+                      Current ({latest?.date ? new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Latest'})
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-[#ADFF00] uppercase tracking-wider">Current Physique ({view})</span>
+                </div>
+              </div>
+            )}
+
+            {/* Timeline: Single Start */}
+            {lightboxMode === 'timeline-start' && (
+              <div className="relative w-full h-full max-h-[78vh] flex flex-col items-center justify-center">
+                <SafeImage src={beforeImg || ''} className="w-full h-full object-contain rounded-2xl" />
+                <div className="mt-3 text-xs font-black uppercase tracking-wider text-white">
+                  Baseline Photo ({view}) • {first?.date ? new Date(first.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Day 1'}
+                </div>
+              </div>
+            )}
+
+            {/* Timeline: Single Current */}
+            {lightboxMode === 'timeline-current' && (
+              <div className="relative w-full h-full max-h-[78vh] flex flex-col items-center justify-center">
+                <SafeImage src={afterImg || ''} className="w-full h-full object-contain rounded-2xl" />
+                <div className="mt-3 text-xs font-black uppercase tracking-wider text-[#ADFF00]">
+                  Current Photo ({view}) • {latest?.date ? new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today'}
+                </div>
+              </div>
+            )}
+
+            {/* Goal: Side-by-Side */}
             {lightboxMode === 'both' && (
               <div className="grid grid-cols-2 gap-3 w-full h-full max-h-[75vh]">
                 <div className="flex flex-col items-center h-full gap-2 min-h-0">
@@ -751,6 +960,7 @@ export function BodyProgressPhotos({
               </div>
             )}
 
+            {/* Goal: Single Front */}
             {lightboxMode === 'front' && (
               <div className="relative w-full h-full max-h-[78vh] flex flex-col items-center justify-center">
                 <SafeImage src={userFrontPhoto!} className="w-full h-full object-contain rounded-2xl" />
@@ -760,11 +970,22 @@ export function BodyProgressPhotos({
               </div>
             )}
 
+            {/* Goal: Single Goal */}
             {lightboxMode === 'goal' && (
               <div className="relative w-full h-full max-h-[78vh] flex flex-col items-center justify-center">
                 <SafeImage src={goalUrl!} className="w-full h-full object-contain rounded-2xl" />
                 <div className="mt-3 text-xs font-black uppercase tracking-wider text-[#ADFF00]">
                   Target Goal Physique
+                </div>
+              </div>
+            )}
+
+            {/* Single Baseline Inspection */}
+            {lightboxMode === 'single-baseline' && (
+              <div className="relative w-full h-full max-h-[78vh] flex flex-col items-center justify-center">
+                <SafeImage src={getImageForView(activeScan, view) || ''} className="w-full h-full object-contain rounded-2xl" />
+                <div className="mt-3 text-xs font-black uppercase tracking-wider text-white">
+                  Baseline Photo ({view}) • {activeScan?.date ? new Date(activeScan.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Day 1'}
                 </div>
               </div>
             )}
