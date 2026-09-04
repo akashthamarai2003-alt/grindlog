@@ -210,7 +210,7 @@ export function BodyProgressPhotos({
     );
   }
 
-  const isSingleScan = Boolean(first && (!latest || first.id === latest.id || first.date === latest.date));
+  const isSingleScan = Boolean(first && (!latest || first.id === latest.id));
   const activeScan = latest || first;
   const userFrontPhoto = latest?.frontUrl || first?.frontUrl || null;
 

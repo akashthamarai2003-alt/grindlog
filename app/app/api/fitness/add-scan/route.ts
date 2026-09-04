@@ -104,46 +104,29 @@ export async function POST(req: Request) {
       }
     };
 
-    // Check if there is already a scan recorded for this date (e.g. retake or update)
-    const scanForSameDate = existingScans?.find(s => s.scan_date === finalScanDate);
+    // If the user currently has only 1 scan and its date matches the new scan:
+    // Ensure the initial scan is preserved as the Day 1 Baseline (backdated by 14 days so comparison is clear)
+    if (existingScans && existingScans.length === 1 && existingScans[0].scan_date === finalScanDate) {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 14);
+      const baselineDate = pastDate.toISOString().split('T')[0];
+      await supabase
+        .from('fitness_os_body_scans')
+        .update({ scan_date: baselineDate })
+        .eq('id', existingScans[0].id);
+    }
 
-    if (scanForSameDate) {
-      // Retake/update on the same date replaces that day's scan
-      const { error: scanError } = await supabase
-        .from('fitness_os_body_scans')
-        .update(scanPayload)
-        .eq('id', scanForSameDate.id);
-        
-      if (scanError) {
-        console.error("Update scan error:", scanError);
-        throw scanError;
-      }
-    } else if (existingScans && existingScans.length >= 2) {
-      // Replace the latest check-in scan record
-      const latestScan = existingScans[existingScans.length - 1];
-      
-      const { error: scanError } = await supabase
-        .from('fitness_os_body_scans')
-        .update(scanPayload)
-        .eq('id', latestScan.id);
-        
-      if (scanError) {
-        console.error("Update scan error:", scanError);
-        throw scanError;
-      }
-    } else {
-      // Insert new scan record (first baseline scan, or second check-in)
-      const { error: scanError } = await supabase
-        .from('fitness_os_body_scans')
-        .insert({
-          user_id: user.id,
-          ...scanPayload
-        });
+    // Always insert as a new scan milestone in user's transformation journey
+    const { error: scanError } = await supabase
+      .from('fitness_os_body_scans')
+      .insert({
+        user_id: user.id,
+        ...scanPayload
+      });
 
-      if (scanError) {
-        console.error("Insert scan error:", scanError);
-        throw scanError;
-      }
+    if (scanError) {
+      console.error("Insert scan error:", scanError);
+      throw scanError;
     }
 
     return NextResponse.json({ 
