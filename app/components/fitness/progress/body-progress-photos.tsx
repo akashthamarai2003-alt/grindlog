@@ -255,10 +255,10 @@ export function BodyProgressPhotos({
                 ? 'bg-[#ADFF00] text-black border-[#ADFF00] shadow-md shadow-[#ADFF00]/20 font-extrabold'
                 : 'bg-[#ADFF00]/10 text-[#ADFF00] border-[#ADFF00]/20 hover:bg-[#ADFF00]/20'
             }`}
-            title={activeMode === 'goal' ? "Switch to Timeline View" : "Compare Front Photo with Goal Picture"}
+            title="Compare Front Photo with Goal Picture"
           >
             <Target className="w-3.5 h-3.5" />
-            <span>{activeMode === 'goal' ? 'Timeline' : 'Compare Goal'}</span>
+            <span>Compare Goal</span>
           </button>
 
           {/* Add Scan Button */}
@@ -277,16 +277,14 @@ export function BodyProgressPhotos({
       <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
         {activeMode === 'goal' ? (
           /* ======================================================== */
-          /* GOAL COMPARE MODE: User Front Photo vs Goal Picture       */
+          /* GOAL COMPARE MODE: Side-by-Side Normal Full View          */
           /* ======================================================== */
           <div className="flex flex-col gap-3">
             {/* Mode Sub-header */}
             <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-white uppercase tracking-wider">
-                  Front vs Goal Physique
-                </span>
-              </div>
+              <span className="text-[11px] font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-[#ADFF00]" /> Full Compare: Front vs Goal
+              </span>
               <button
                 type="button"
                 onClick={() => setShowGoalModal(true)}
@@ -296,54 +294,71 @@ export function BodyProgressPhotos({
               </button>
             </div>
 
-            {/* Slider Container */}
+            {/* Side-by-Side Full View Grid */}
             {goalUrl && userFrontPhoto ? (
-              <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden touch-none select-none">
-                {/* Goal Image (Base / Right layer) */}
-                <SafeImage 
-                  src={goalUrl} 
-                  alt="Goal Physique" 
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none" 
-                />
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3 w-full">
+                  {/* Left Column: Full Front Photo */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                      <SafeImage 
+                        src={userFrontPhoto} 
+                        className="w-full h-full object-cover" 
+                      />
+                      <div className="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-black text-white uppercase tracking-wider border border-white/10">
+                        Current Front
+                      </div>
+                      {activeScan?.date && (
+                        <div className="absolute bottom-2.5 left-2.5 bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-bold text-[#ADFF00] tracking-wider border border-white/10">
+                          {new Date(activeScan.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-center text-white/80">
+                      My Front Photo
+                    </span>
+                  </div>
 
-                {/* User Front Image (Clipped / Left layer) */}
-                <div 
-                  className="absolute inset-0 w-full h-full bg-[#111A10] pointer-events-none overflow-hidden"
-                  style={{ clipPath: `inset(0 calc(100% - ${goalSliderPos}%) 0 0)` }}
-                >
-                  <SafeImage 
-                    src={userFrontPhoto} 
-                    className="w-full h-full object-cover pointer-events-none" 
-                  />
-                </div>
-
-                {/* Slider Handle */}
-                <div 
-                  className="absolute top-0 bottom-0 w-1 bg-white/80 cursor-ew-resize hover:bg-[#ADFF00] transition-colors"
-                  style={{ left: `calc(${goalSliderPos}% - 2px)` }}
-                >
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white text-black rounded-full shadow-2xl flex items-center justify-center border border-black/10">
-                    <SlidersHorizontal className="w-4 h-4 rotate-90" />
+                  {/* Right Column: Full Goal Photo */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden border border-[#ADFF00]/30 shadow-lg">
+                      <SafeImage 
+                        src={goalUrl} 
+                        className="w-full h-full object-cover" 
+                      />
+                      <div className="absolute top-2.5 left-2.5 bg-[#ADFF00] px-2 py-0.5 rounded-md text-[8px] font-black text-black uppercase tracking-wider shadow-sm">
+                        Target Goal
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowGoalModal(true)}
+                        className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md px-2 py-1 rounded-md text-[8px] font-bold text-[#ADFF00] hover:bg-black uppercase tracking-wider border border-white/10 flex items-center gap-1 shadow-sm"
+                      >
+                        <RefreshCw className="w-2.5 h-2.5" /> Change
+                      </button>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-center text-[#ADFF00]">
+                      Goal Physique
+                    </span>
                   </div>
                 </div>
-                
-                {/* Drag Overlay */}
-                <input 
-                  type="range" 
-                  min="0" max="100" 
-                  value={goalSliderPos}
-                  onChange={(e) => setGoalSliderPos(Number(e.target.value))}
-                  aria-label="Goal comparison slider"
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-10"
-                />
 
-                {/* Badges */}
-                <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-white/90 uppercase tracking-widest pointer-events-none border border-white/10">
-                  Current Front
+                {/* Motivational Comparison Tip */}
+                <div className="bg-[#142013] border border-[#ADFF00]/10 rounded-xl p-3 flex items-start gap-3">
+                  <Sparkles className="w-4 h-4 text-[#ADFF00] shrink-0 mt-0.5" />
+                  <div className="flex-1 text-[11px] text-white/70 leading-relaxed">
+                    <span className="text-white font-bold">Side-by-Side Comparison.</span> Full view of your current front physique alongside your target goal. Keep consistent with progressive overload and your daily macros to bridge the gap!
+                  </div>
                 </div>
-                <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-[#ADFF00] uppercase tracking-widest pointer-events-none border border-white/10">
-                  Target Goal
-                </div>
+
+                {/* Back to Scans Button */}
+                <button
+                  type="button"
+                  onClick={() => setActiveMode('timeline')}
+                  className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors border border-white/5 flex items-center justify-center gap-1.5"
+                >
+                  ← Back to My Scans
+                </button>
               </div>
             ) : (
               /* Goal Not Set Prompt */
@@ -353,7 +368,7 @@ export function BodyProgressPhotos({
                 </div>
                 <p className="text-sm font-bold text-white mb-1">Set Your Goal Physique</p>
                 <p className="text-xs text-white/50 mb-4 max-w-xs">
-                  Upload an inspiration photo of your target body shape to unlock the side-by-side comparison slider.
+                  Upload an inspiration photo of your target body shape to unlock side-by-side full comparison.
                 </p>
                 <button
                   onClick={() => setShowGoalModal(true)}
@@ -363,14 +378,6 @@ export function BodyProgressPhotos({
                 </button>
               </div>
             )}
-
-            {/* Motivational Banner */}
-            <div className="bg-[#142013] border border-[#ADFF00]/10 rounded-xl p-3 flex items-start gap-3">
-              <Sparkles className="w-4 h-4 text-[#ADFF00] shrink-0 mt-0.5" />
-              <div className="flex-1 text-[11px] text-white/70 leading-relaxed">
-                <span className="text-white font-bold">Target Comparison.</span> Drag the slider to compare your current front physique with your goal. Stay consistent with your progressive overload and macros to bridge the gap!
-              </div>
-            </div>
           </div>
         ) : (
           /* ======================================================== */
