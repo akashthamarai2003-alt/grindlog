@@ -299,29 +299,34 @@ export function BodyProgressPhotos({
               <div className="flex flex-col gap-3">
                 <div className="grid grid-cols-2 gap-3 w-full">
                   {/* Left Column: Full Front Photo */}
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-2">
                     <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden border border-white/10 shadow-lg">
                       <SafeImage 
                         src={userFrontPhoto} 
                         className="w-full h-full object-cover" 
                       />
-                      <div className="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-black text-white uppercase tracking-wider border border-white/10">
+                      <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-black text-white uppercase tracking-wider border border-white/10">
                         Current Front
                       </div>
                       {activeScan?.date && (
-                        <div className="absolute bottom-2.5 left-2.5 bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-bold text-[#ADFF00] tracking-wider border border-white/10">
+                        <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-bold text-[#ADFF00] tracking-wider border border-white/10">
                           {new Date(activeScan.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </div>
                       )}
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-center text-white/80">
-                      My Front Photo
-                    </span>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-white/90">
+                        My Physique
+                      </span>
+                      <span className="text-[9px] font-bold text-white/40">
+                        {activeScan?.date ? new Date(activeScan.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Baseline'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Right Column: Full Goal Photo */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden border border-[#ADFF00]/30 shadow-lg">
+                  <div className="flex flex-col gap-2">
+                    <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden border border-[#ADFF00]/40 shadow-lg shadow-[#ADFF00]/5">
                       <SafeImage 
                         src={goalUrl} 
                         className="w-full h-full object-cover" 
@@ -329,25 +334,30 @@ export function BodyProgressPhotos({
                       <div className="absolute top-2.5 left-2.5 bg-[#ADFF00] px-2 py-0.5 rounded-md text-[8px] font-black text-black uppercase tracking-wider shadow-sm">
                         Target Goal
                       </div>
+                      <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-bold text-[#ADFF00] tracking-wider border border-[#ADFF00]/20">
+                        Vision
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#ADFF00]">
+                        Goal Physique
+                      </span>
                       <button
                         type="button"
                         onClick={() => setShowGoalModal(true)}
-                        className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md px-2 py-1 rounded-md text-[8px] font-bold text-[#ADFF00] hover:bg-black uppercase tracking-wider border border-white/10 flex items-center gap-1 shadow-sm"
+                        className="text-[9px] font-bold text-white/40 hover:text-[#ADFF00] transition-colors flex items-center gap-1"
                       >
-                        <RefreshCw className="w-2.5 h-2.5" /> Change
+                        <RefreshCw className="w-2.5 h-2.5" /> Change Photo
                       </button>
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-center text-[#ADFF00]">
-                      Goal Physique
-                    </span>
                   </div>
                 </div>
 
                 {/* Motivational Comparison Tip */}
-                <div className="bg-[#142013] border border-[#ADFF00]/10 rounded-xl p-3 flex items-start gap-3">
+                <div className="bg-[#142013] border border-[#ADFF00]/15 rounded-xl p-3.5 flex items-start gap-3">
                   <Sparkles className="w-4 h-4 text-[#ADFF00] shrink-0 mt-0.5" />
                   <div className="flex-1 text-[11px] text-white/70 leading-relaxed">
-                    <span className="text-white font-bold">Side-by-Side Comparison.</span> Full view of your current front physique alongside your target goal. Keep consistent with progressive overload and your daily macros to bridge the gap!
+                    <span className="text-white font-bold">Side-by-Side Target.</span> Full view of your current front physique alongside your target goal. Stay consistent with progressive overload and your daily macros to bridge the gap!
                   </div>
                 </div>
 
@@ -355,7 +365,7 @@ export function BodyProgressPhotos({
                 <button
                   type="button"
                   onClick={() => setActiveMode('timeline')}
-                  className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors border border-white/5 flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 text-[#ADFF00] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-[#ADFF00]/20 flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   ← Back to My Scans
                 </button>
