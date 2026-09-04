@@ -68,10 +68,10 @@ export function BodyMeasurementsList({ measurements, isBulking = false }: { meas
             return (
               <div key={m.id} className={`grid grid-cols-4 p-3.5 items-center text-center ${idx !== measurements.length - 1 ? 'border-b border-white/5' : ''}`}>
                 <div className="text-xs font-bold text-white/80 text-left pl-2 uppercase tracking-wider">{m.name}</div>
-                <div className="text-xs font-medium text-white/50">{m.startValue ? `${m.startValue}${m.unit}` : '-'}</div>
-                <div className="text-xs font-black text-white">{m.currentValue ? `${m.currentValue}${m.unit}` : '-'}</div>
+                <div className="text-xs font-medium text-white/50">{m.startValue !== null && m.startValue !== undefined ? `${m.startValue} ${m.unit}` : '-'}</div>
+                <div className="text-xs font-black text-white">{m.currentValue !== null && m.currentValue !== undefined ? `${m.currentValue} ${m.unit}` : '-'}</div>
                 <div className={`text-xs font-black ${textColorClass}`}>
-                  {m.change > 0 ? '+' : ''}{m.change !== 0 ? `${m.change}${m.unit}` : '-'}
+                  {m.change > 0 ? '+' : ''}{m.change !== 0 ? `${m.change} ${m.unit}` : '-'}
                 </div>
               </div>
             );

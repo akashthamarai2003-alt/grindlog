@@ -35,7 +35,7 @@ export class ProgressAnalyticsService {
     const [
       { data: fitProfile },
       { data: scansFront },
-      { data: scansMeasurements },
+      { data: bodyMeasurementsData },
       { data: workoutsData },
       { data: nutritionTarget },
       { data: dailySummariesData },
@@ -47,7 +47,7 @@ export class ProgressAnalyticsService {
     ] = await Promise.all([
       supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target').eq('user_id', userId).maybeSingle(),
       supabase.from('fitness_os_scans').select('*').eq('user_id', userId).eq('pose', 'front').order('date', { ascending: false }).limit(2),
-      supabase.from('fitness_os_scans').select('*').eq('user_id', userId).not('chest', 'is', null).order('date', { ascending: false }).limit(2),
+      supabase.from('fitness_os_body_metrics').select('waist, chest, hip, neck, left_arm, right_arm, left_thigh, right_thigh, recorded_at').eq('user_id', userId).or('waist.not.is.null,chest.not.is.null,hip.not.is.null,neck.not.is.null,left_arm.not.is.null,right_arm.not.is.null,left_thigh.not.is.null,right_thigh.not.is.null').order('recorded_at', { ascending: true }),
       supabase.from('fitness_os_workouts').select(`
         id,
         user_id,
@@ -192,15 +192,46 @@ export class ProgressAnalyticsService {
 
     // 3. Body Measurements & Scans
     const measurements: BodyMeasurement[] = [];
-    if (scansMeasurements && scansMeasurements.length > 0) {
-      const latest = scansMeasurements[0];
-      const previous = scansMeasurements.length > 1 ? scansMeasurements[1] : null;
+    const bodyMeasurements = bodyMeasurementsData || [];
 
-      if (latest.chest) measurements.push({ id: 'chest', name: 'Chest', startValue: previous?.chest || null, currentValue: latest.chest, change: (latest.chest - (previous?.chest || latest.chest)), unit: 'cm' });
-      if (latest.waist) measurements.push({ id: 'waist', name: 'Waist', startValue: previous?.waist || null, currentValue: latest.waist, change: (latest.waist - (previous?.waist || latest.waist)), unit: 'cm' });
-      if (latest.hips) measurements.push({ id: 'hips', name: 'Hips', startValue: previous?.hips || null, currentValue: latest.hips, change: (latest.hips - (previous?.hips || latest.hips)), unit: 'cm' });
-      if (latest.thighs) measurements.push({ id: 'thighs', name: 'Thighs', startValue: previous?.thighs || null, currentValue: latest.thighs, change: (latest.thighs - (previous?.thighs || latest.thighs)), unit: 'cm' });
-      if (latest.arms) measurements.push({ id: 'arms', name: 'Arms', startValue: previous?.arms || null, currentValue: latest.arms, change: (latest.arms - (previous?.arms || latest.arms)), unit: 'cm' });
+    if (bodyMeasurements.length > 0) {
+      const partsConfig = [
+        { id: 'waist', name: 'Waist', key: 'waist' as const, minRealistic: 35, maxRealistic: 250 },
+        { id: 'chest', name: 'Chest', key: 'chest' as const, minRealistic: 40, maxRealistic: 250 },
+        { id: 'hip', name: 'Hips', key: 'hip' as const, minRealistic: 40, maxRealistic: 250 },
+        { id: 'neck', name: 'Neck', key: 'neck' as const, minRealistic: 15, maxRealistic: 80 },
+        { id: 'left_arm', name: 'Left Arm', key: 'left_arm' as const, minRealistic: 12, maxRealistic: 90 },
+        { id: 'right_arm', name: 'Right Arm', key: 'right_arm' as const, minRealistic: 12, maxRealistic: 90 },
+        { id: 'left_thigh', name: 'Left Thigh', key: 'left_thigh' as const, minRealistic: 20, maxRealistic: 140 },
+        { id: 'right_thigh', name: 'Right Thigh', key: 'right_thigh' as const, minRealistic: 20, maxRealistic: 140 },
+      ];
+
+      for (const part of partsConfig) {
+        // Collect realistic entries
+        const entries = bodyMeasurements
+          .map(row => {
+            const val = row[part.key];
+            return val !== null && val !== undefined ? Number(val) : null;
+          })
+          .filter((v): v is number => v !== null && !isNaN(v) && v >= part.minRealistic && v <= part.maxRealistic);
+
+        if (entries.length > 0) {
+          const startValue = Math.round(entries[0] * 10) / 10;
+          const currentValue = Math.round(entries[entries.length - 1] * 10) / 10;
+          const change = entries.length > 1
+            ? Math.round((currentValue - startValue) * 10) / 10
+            : 0;
+
+          measurements.push({
+            id: part.id,
+            name: part.name,
+            startValue,
+            currentValue,
+            change,
+            unit: 'cm'
+          });
+        }
+      }
     }
 
     const scans = {
