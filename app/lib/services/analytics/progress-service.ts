@@ -450,37 +450,91 @@ export class ProgressAnalyticsService {
     // 5. Nutrition & Water Logs
     const targetCalories = nutritionTarget?.calories || fitProfile?.baseline_calories || 2000;
     const targetProtein = nutritionTarget?.protein || fitProfile?.initial_protein_target || 130;
+    const targetCarbs = nutritionTarget?.carbs || 246;
+    const targetFat = nutritionTarget?.fat || 61;
     const targetWater = nutritionTarget?.water_ml || 3000;
 
-    const nutritionDays = dailySummaries.length;
-    const totalCals = dailySummaries.reduce((acc: number, m: any) => acc + (m.calories || 0), 0);
-    const totalPro = dailySummaries.reduce((acc: number, m: any) => acc + (Number(m.protein) || 0), 0);
-    const totalWater = dailySummaries.reduce((acc: number, m: any) => acc + (Number(m.water_ml) || 0), 0);
+    // Index daily summaries by date string (YYYY-MM-DD)
+    const summaryByDate = new Map<string, any>();
+    for (const s of dailySummaries) {
+      const d = (s.date || '').split('T')[0];
+      if (d) summaryByDate.set(d, s);
+    }
+
+    const todaySummary = summaryByDate.get(todayYMD);
+    const todayCalories = todaySummary ? (todaySummary.calories || 0) : 0;
+    const todayProtein = todaySummary ? Math.round(Number(todaySummary.protein) * 10) / 10 : 0;
+    const todayCarbs = todaySummary ? Math.round(Number(todaySummary.carbs) * 10) / 10 : 0;
+    const todayFat = todaySummary ? Math.round(Number(todaySummary.fat) * 10) / 10 : 0;
+
+    // Build standard 7-day rolling calendar chart (Mon-Sun ending today)
+    const calorieChart = [];
+    const proteinChart = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime());
+      d.setDate(d.getDate() - i);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(d.getDate()).padStart(2, '0');
+      const ds = `${y}-${m}-${dayNum}`;
+
+      const s = summaryByDate.get(ds);
+      const cals = s ? (s.calories || 0) : 0;
+      const pro = s ? Math.round(Number(s.protein) * 10) / 10 : 0;
+      const dayShort = d.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayInitial = dayShort.charAt(0);
+      const isToday = ds === todayYMD;
+
+      calorieChart.push({
+        day: dayInitial,
+        fullDay: dayShort,
+        date: ds,
+        calories: cals,
+        target: targetCalories,
+        isToday,
+        logged: cals > 0,
+      });
+
+      proteinChart.push({
+        day: dayInitial,
+        fullDay: dayShort,
+        date: ds,
+        protein: pro,
+        target: targetProtein,
+        isToday,
+        logged: pro > 0,
+      });
+    }
+
+    // Calculate real active daily averages (excluding empty days with 0 intake)
+    const loggedSummaries = dailySummaries.filter((m: any) => (m.calories || 0) > 0);
+    const loggedDaysCount = loggedSummaries.length;
+    const totalCals = loggedSummaries.reduce((acc: number, m: any) => acc + (m.calories || 0), 0);
+    const totalPro = loggedSummaries.reduce((acc: number, m: any) => acc + (Number(m.protein) || 0), 0);
     const totalNutScore = dailySummaries.reduce((acc: number, m: any) => acc + (Number(m.nutrition_score) || 0), 0);
+    const totalWater = dailySummaries.reduce((acc: number, m: any) => acc + (Number(m.water_ml) || 0), 0);
 
-    const calorieChart = dailySummaries.map((m: any) => ({
-      day: new Date(m.date).toLocaleDateString('en-US', { weekday: 'short' }).charAt(0),
-      calories: m.calories || 0,
-      target: targetCalories
-    })).slice(-7);
-
-    const proteinChart = dailySummaries.map((m: any) => ({
-      day: new Date(m.date).toLocaleDateString('en-US', { weekday: 'short' }).charAt(0),
-      protein: m.protein || 0,
-      target: targetProtein
-    })).slice(-7);
+    const averageCalories = loggedDaysCount > 0 ? Math.round(totalCals / loggedDaysCount) : todayCalories;
+    const averageProtein = loggedDaysCount > 0 ? Math.round(totalPro / loggedDaysCount) : todayProtein;
 
     const nutrition: NutritionAnalytics = {
-      averageCalories: nutritionDays > 0 ? Math.round(totalCals / nutritionDays) : 0,
+      averageCalories,
       calorieTarget: targetCalories,
-      averageProtein: nutritionDays > 0 ? Math.round(totalPro / nutritionDays) : 0,
+      averageProtein,
       proteinTarget: targetProtein,
-      nutritionConsistency: nutritionDays > 0 ? Math.round(totalNutScore / nutritionDays) : 0,
+      nutritionConsistency: dailySummaries.length > 0 ? Math.round(totalNutScore / dailySummaries.length) : 0,
       calorieChart,
-      proteinChart
+      proteinChart,
+      todayCalories,
+      todayProtein,
+      todayCarbs,
+      carbsTarget: targetCarbs,
+      todayFat,
+      fatTarget: targetFat,
     };
-    
-    const averageWater = nutritionDays > 0 ? Math.round(totalWater / nutritionDays) : 0;
+
+    const averageWater = dailySummaries.length > 0 ? Math.round(totalWater / dailySummaries.length) : 0;
 
     // 6. Activity & Sleep
     const totalSteps = activityLogs.reduce((acc: number, a: any) => acc + (a.steps || 0), 0);

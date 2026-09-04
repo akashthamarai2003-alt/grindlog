@@ -63,8 +63,30 @@ export interface NutritionAnalytics {
   averageProtein: number;
   proteinTarget: number;
   nutritionConsistency: number;
-  calorieChart: { day: string; calories: number; target: number }[];
-  proteinChart: { day: string; protein: number; target: number }[];
+  calorieChart: { 
+    day: string; 
+    calories: number; 
+    target: number; 
+    date?: string; 
+    fullDay?: string; 
+    isToday?: boolean; 
+    logged?: boolean; 
+  }[];
+  proteinChart: { 
+    day: string; 
+    protein: number; 
+    target: number; 
+    date?: string; 
+    fullDay?: string; 
+    isToday?: boolean; 
+    logged?: boolean; 
+  }[];
+  todayCalories?: number;
+  todayProtein?: number;
+  todayCarbs?: number;
+  carbsTarget?: number;
+  todayFat?: number;
+  fatTarget?: number;
 }
 
 export interface ActivityAnalytics {
