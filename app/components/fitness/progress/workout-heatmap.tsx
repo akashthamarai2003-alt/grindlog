@@ -360,7 +360,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
         className="overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        <div className={`inline-flex flex-col gap-1 min-w-max select-none ${is3M ? "w-full items-center" : ""}`}>
+        <div className="inline-flex flex-col gap-1 min-w-max select-none mx-auto">
           {/* Month labels accurately positioned */}
           <div className="relative h-4" style={{ marginLeft: "20px", width: `${numWeeks * colStep + 28}px` }}>
             {monthPositions.map((mp, i) => (
@@ -415,7 +415,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
                           : "bg-white/5 border border-white/5 hover:border-white/20"
                       } ${
                         cell.isToday
-                          ? "ring-1.5 ring-[#ADFF00] ring-offset-1 ring-offset-black z-10"
+                          ? "ring-2 ring-[#ADFF00] ring-offset-1 ring-offset-black z-10"
                           : ""
                       } ${
                         isSelected
