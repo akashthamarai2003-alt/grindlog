@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2 } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
+import { WaterBottleCard } from "./water-bottle-card";
 import { getFoodImage, getFoodSvgAvatar } from "@/lib/utils/food-images";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
@@ -129,6 +130,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     
     toast.success(`Logged ${amount}ml of water`);
 
+    setIsWaterLoading(true);
     try {
       // 2. Fire API in background
       await nutritionApi.logWater(amount);
@@ -145,6 +147,8 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
         consumed: { ...prev.consumed, water_ml: previousWater }
       }));
       toast.error(err?.message || "Failed to log water. Please check your connection.");
+    } finally {
+      setIsWaterLoading(false);
     }
   };
 
@@ -160,6 +164,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     }));
     toast.success(`Removed ${amount}ml of water`);
 
+    setIsWaterLoading(true);
     try {
       await nutritionApi.removeWater(amount);
       nutritionApi.getToday().then(res => {
@@ -171,6 +176,8 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
         consumed: { ...prev.consumed, water_ml: previousWater }
       }));
       toast.error(err?.message || "Failed to remove water.");
+    } finally {
+      setIsWaterLoading(false);
     }
   };
 
@@ -568,62 +575,15 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
           </div>
         </div>
 
-        {/* Hydration card */}
-        <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-5 mt-3 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400/5 blur-[30px] rounded-full pointer-events-none" />
-          <div className="flex justify-between items-center relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-cyan-400/10 flex items-center justify-center text-cyan-400 border border-cyan-400/20">
-                <Droplet size={24} />
-              </div>
-              <div>
-                <h3 className="text-[11px] font-black tracking-widest text-cyan-400 uppercase mb-1">Hydration</h3>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-white">{Math.round(consumed.water_ml)}</span>
-                  <span className="text-sm font-bold text-white/50">/ {targets.water_ml}ml</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {consumed.water_ml > 0 && (
-                <button 
-                  disabled={isWaterLoading}
-                  onClick={() => handleRemoveWater(250)} 
-                  className="px-3 py-1.5 bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 border border-white/10 hover:border-red-500/30 rounded-full text-[10px] font-black uppercase transition-all cursor-pointer disabled:opacity-50"
-                  title="Undo / Remove 250ml"
-                >
-                  - 250ml
-                </button>
-              )}
-              <button 
-                disabled={isWaterLoading} 
-                onClick={() => handleAddWater(250)} 
-                className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase text-white hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                + 250ml
-              </button>
-              <button 
-                disabled={isWaterLoading} 
-                onClick={() => handleAddWater(500)} 
-                className="px-4 py-1.5 bg-cyan-400/10 border border-cyan-400/20 rounded-full text-[10px] font-black uppercase text-cyan-400 hover:bg-cyan-400/20 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                + 500ml
-              </button>
-            </div>
-          </div>
-          <div className="mt-4 relative z-10">
-            <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
-              <div 
-                className="h-full bg-cyan-400 rounded-full transition-all duration-300" 
-                style={{ width: `${Math.min(100, Math.round((consumed.water_ml / (targets.water_ml || 3000)) * 100))}%` }} 
-              />
-            </div>
-            <div className="flex justify-between items-center text-[10px] font-bold text-white/50">
-              <span>{Math.max(0, Math.round((targets.water_ml || 3000) - consumed.water_ml))}ml remaining</span>
-              <span className="text-cyan-400">{Math.min(100, Math.round((consumed.water_ml / (targets.water_ml || 3000)) * 100))}%</span>
-            </div>
-          </div>
-        </div>
+        {/* Animated Water Intake Bottle Card */}
+        <WaterBottleCard
+          consumedMl={consumed.water_ml || 0}
+          targetMl={targets.water_ml || 2500}
+          onAddWater={handleAddWater}
+          onRemoveWater={handleRemoveWater}
+          onEditGoal={() => setShowTargetsModal(true)}
+          isLoading={isWaterLoading}
+        />
 
         {/* Today's Summary section */}
         <div className="mt-8 mb-4">
