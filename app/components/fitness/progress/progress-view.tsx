@@ -50,6 +50,24 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
       .catch(() => {});
   }, []);
 
+  // Keep local state in sync whenever server component provides fresh initialData
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
+
+  // Direct client refresh without needing full page reload
+  const refreshData = async () => {
+    try {
+      const res = await fetch(`/api/fitness-ai/progress-data?period=${period}`);
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      }
+    } catch (err) {
+      console.error("Failed to refresh progress data", err);
+    }
+  };
+
   const handlePeriodChange = async (newPeriod: AnalyticsPeriod) => {
     if (newPeriod === period) return;
     setPeriod(newPeriod);
@@ -126,7 +144,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
             </div>
             <WorkoutAnalyticsCard metrics={data.workout} />
             <NutritionAnalyticsCard metrics={data.nutrition} />
-            <ActivityRecoveryAnalyticsCard activity={data.activity} recovery={data.recovery} />
+            <ActivityRecoveryAnalyticsCard activity={data.activity} recovery={data.recovery} onRefresh={refreshData} />
             <AIProgressReviewCard initialReview={data.aiReview} period={data.period} />
             <AchievementsShowcase achievements={data.achievements} />
           </div>

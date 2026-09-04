@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ActivityAnalytics, RecoveryAnalytics } from "@/types/fitness/analytics";
 import { Footprints, Moon, Plus, Sparkles, X, Check, Loader2 } from "lucide-react";
@@ -10,11 +10,24 @@ import { toast } from "sonner";
 export function ActivityRecoveryAnalyticsCard({
   activity,
   recovery,
+  onRefresh,
 }: {
   activity: ActivityAnalytics;
   recovery: RecoveryAnalytics;
+  onRefresh?: () => Promise<void> | void;
 }) {
   const router = useRouter();
+  const [localActivity, setLocalActivity] = useState<ActivityAnalytics>(activity);
+  const [localRecovery, setLocalRecovery] = useState<RecoveryAnalytics>(recovery);
+
+  useEffect(() => {
+    setLocalActivity(activity);
+  }, [activity]);
+
+  useEffect(() => {
+    setLocalRecovery(recovery);
+  }, [recovery]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"steps" | "sleep">("steps");
 
@@ -22,22 +35,22 @@ export function ActivityRecoveryAnalyticsCard({
   const todayStr = new Date().toISOString().split("T")[0];
   const [logDate, setLogDate] = useState(todayStr);
   const [stepsInput, setStepsInput] = useState<string>(
-    activity.todaySteps && activity.todaySteps > 0 ? String(activity.todaySteps) : ""
+    localActivity.todaySteps && localActivity.todaySteps > 0 ? String(localActivity.todaySteps) : ""
   );
   const [sleepHoursInput, setSleepHoursInput] = useState<string>(
-    recovery.todaySleepHours && recovery.todaySleepHours > 0 ? String(recovery.todaySleepHours) : ""
+    localRecovery.todaySleepHours && localRecovery.todaySleepHours > 0 ? String(localRecovery.todaySleepHours) : ""
   );
   const [sleepQualityInput, setSleepQualityInput] = useState<number>(
-    recovery.todaySleepQuality ? Math.round(recovery.todaySleepQuality / 10) : 8
+    localRecovery.todaySleepQuality ? Math.round(localRecovery.todaySleepQuality / 10) : 8
   );
   const [isSaving, setIsSaving] = useState(false);
 
   const openLogModal = (tab: "steps" | "sleep" = "steps") => {
     setActiveTab(tab);
     setLogDate(todayStr);
-    setStepsInput(activity.todaySteps && activity.todaySteps > 0 ? String(activity.todaySteps) : "");
-    setSleepHoursInput(recovery.todaySleepHours && recovery.todaySleepHours > 0 ? String(recovery.todaySleepHours) : "");
-    setSleepQualityInput(recovery.todaySleepQuality ? Math.round(recovery.todaySleepQuality / 10) : 8);
+    setStepsInput(localActivity.todaySteps && localActivity.todaySteps > 0 ? String(localActivity.todaySteps) : "");
+    setSleepHoursInput(localRecovery.todaySleepHours && localRecovery.todaySleepHours > 0 ? String(localRecovery.todaySleepHours) : "");
+    setSleepQualityInput(localRecovery.todaySleepQuality ? Math.round(localRecovery.todaySleepQuality / 10) : 8);
     setIsModalOpen(true);
   };
 
@@ -48,6 +61,55 @@ export function ActivityRecoveryAnalyticsCard({
       return;
     }
 
+    const parsedSteps = stepsInput ? Number(stepsInput) : undefined;
+    const parsedSleep = sleepHoursInput ? Number(sleepHoursInput) : undefined;
+    const parsedQuality = sleepHoursInput ? sleepQualityInput * 10 : undefined;
+
+    // 1. OPTIMISTIC UPDATE: Update the UI immediately in 0ms!
+    if (parsedSteps !== undefined) {
+      setLocalActivity((prev) => {
+        const updatedChart = (prev.stepsChart || []).map((entry) => {
+          if (entry.date === logDate || (logDate === todayStr && entry.isToday)) {
+            return { ...entry, steps: parsedSteps, logged: true };
+          }
+          return entry;
+        });
+        const isToday = logDate === todayStr;
+        return {
+          ...prev,
+          todaySteps: isToday ? parsedSteps : prev.todaySteps,
+          stepsChart: updatedChart,
+        };
+      });
+    }
+
+    if (parsedSleep !== undefined) {
+      setLocalRecovery((prev) => {
+        const updatedChart = (prev.sleepChart || []).map((entry) => {
+          if (entry.date === logDate || (logDate === todayStr && entry.isToday)) {
+            return {
+              ...entry,
+              hours: parsedSleep,
+              quality: parsedQuality ?? entry.quality,
+              logged: true,
+            };
+          }
+          return entry;
+        });
+        const isToday = logDate === todayStr;
+        return {
+          ...prev,
+          todaySleepHours: isToday ? parsedSleep : prev.todaySleepHours,
+          todaySleepQuality: isToday ? (parsedQuality ?? prev.todaySleepQuality) : prev.todaySleepQuality,
+          sleepChart: updatedChart,
+        };
+      });
+    }
+
+    // Immediately close modal and notify user
+    setIsModalOpen(false);
+    toast.success("Activity & sleep logged successfully!");
+
     setIsSaving(true);
     try {
       const res = await fetch("/api/fitness/log-activity-recovery", {
@@ -55,8 +117,8 @@ export function ActivityRecoveryAnalyticsCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           date: logDate,
-          steps: stepsInput ? Number(stepsInput) : undefined,
-          sleepHours: sleepHoursInput ? Number(sleepHoursInput) : undefined,
+          steps: parsedSteps,
+          sleepHours: parsedSleep,
           sleepQuality: sleepHoursInput ? sleepQualityInput : undefined,
         }),
       });
@@ -66,12 +128,17 @@ export function ActivityRecoveryAnalyticsCard({
         throw new Error(data.error || "Failed to save log");
       }
 
-      toast.success("Activity & sleep logged successfully!");
-      setIsModalOpen(false);
+      // Re-fetch parent aggregated data to update streak, consistency score, etc.
+      if (onRefresh) {
+        await onRefresh();
+      }
       router.refresh();
     } catch (err: any) {
       console.error("Save activity/sleep error:", err);
       toast.error(err.message || "Failed to save log");
+      // Revert to props on failure
+      setLocalActivity(activity);
+      setLocalRecovery(recovery);
     } finally {
       setIsSaving(false);
     }
@@ -89,29 +156,29 @@ export function ActivityRecoveryAnalyticsCard({
   ];
 
   const stepsData =
-    activity.stepsChart && activity.stepsChart.length > 0
-      ? activity.stepsChart
-      : defaultChartData.map((d) => ({ ...d, steps: 0, target: activity.stepTarget || 8000 }));
+    localActivity.stepsChart && localActivity.stepsChart.length > 0
+      ? localActivity.stepsChart
+      : defaultChartData.map((d) => ({ ...d, steps: 0, target: localActivity.stepTarget || 8000 }));
 
   const sleepData =
-    recovery.sleepChart && recovery.sleepChart.length > 0
-      ? recovery.sleepChart
-      : defaultChartData.map((d) => ({ ...d, hours: 0, quality: 0, target: recovery.sleepTargetHours || 8 }));
+    localRecovery.sleepChart && localRecovery.sleepChart.length > 0
+      ? localRecovery.sleepChart
+      : defaultChartData.map((d) => ({ ...d, hours: 0, quality: 0, target: localRecovery.sleepTargetHours || 8 }));
 
   const currentSteps =
-    activity.todaySteps !== undefined && activity.todaySteps > 0
-      ? activity.todaySteps
-      : activity.averageDailySteps;
+    localActivity.todaySteps !== undefined && localActivity.todaySteps > 0
+      ? localActivity.todaySteps
+      : localActivity.averageDailySteps;
 
   const currentSleep =
-    recovery.todaySleepHours !== undefined && recovery.todaySleepHours > 0
-      ? recovery.todaySleepHours
-      : recovery.averageSleepHours;
+    localRecovery.todaySleepHours !== undefined && localRecovery.todaySleepHours > 0
+      ? localRecovery.todaySleepHours
+      : localRecovery.averageSleepHours;
 
   const stepPercentage =
-    activity.stepTarget > 0 ? Math.min(100, Math.round((currentSteps / activity.stepTarget) * 100)) : 0;
+    localActivity.stepTarget > 0 ? Math.min(100, Math.round((currentSteps / localActivity.stepTarget) * 100)) : 0;
   const sleepPercentage =
-    recovery.sleepTargetHours > 0 ? Math.min(100, Math.round((currentSleep / recovery.sleepTargetHours) * 100)) : 0;
+    localRecovery.sleepTargetHours > 0 ? Math.min(100, Math.round((currentSleep / localRecovery.sleepTargetHours) * 100)) : 0;
 
   return (
     <div className="w-full flex flex-col gap-3">
