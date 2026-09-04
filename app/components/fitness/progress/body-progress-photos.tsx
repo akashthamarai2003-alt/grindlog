@@ -39,6 +39,8 @@ function SafeImage({ src, alt, className, style }: { src: string; alt?: string; 
       ref={imgRef}
       src={src} 
       alt="" 
+      loading="lazy"
+      decoding="async"
       className={className} 
       style={style} 
       onError={() => setError(true)} 

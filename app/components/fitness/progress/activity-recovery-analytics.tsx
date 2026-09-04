@@ -258,7 +258,7 @@ export function ActivityRecoveryAnalyticsCard({
                       return item?.fullDay ? `${item.fullDay} ${item.date ? `(${item.date})` : ""}` : "";
                     }}
                   />
-                  <Bar dataKey="steps" radius={[4, 4, 0, 0]} minPointSize={4}>
+                  <Bar dataKey="steps" radius={[4, 4, 0, 0]} minPointSize={4} isAnimationActive={false}>
                     {stepsData.map((entry: any, index: number) => (
                       <Cell
                         key={`step-cell-${index}`}
@@ -352,7 +352,7 @@ export function ActivityRecoveryAnalyticsCard({
                       return item?.fullDay ? `${item.fullDay} ${item.date ? `(${item.date})` : ""}${qualityText}` : "";
                     }}
                   />
-                  <Bar dataKey="hours" radius={[4, 4, 0, 0]} minPointSize={4}>
+                  <Bar dataKey="hours" radius={[4, 4, 0, 0]} minPointSize={4} isAnimationActive={false}>
                     {sleepData.map((entry: any, index: number) => (
                       <Cell
                         key={`sleep-cell-${index}`}

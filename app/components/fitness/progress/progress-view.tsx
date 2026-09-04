@@ -86,7 +86,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
   };
 
   return (
-    <div className="w-full flex flex-col h-full bg-[#0A1108] overflow-y-auto pb-32">
+    <div className="w-full flex flex-col min-h-screen bg-[#0A1108] pb-32">
       <div className="px-5">
         <ProgressHeader 
           transformation={data.transformation} 
@@ -121,35 +121,74 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
             <WeeklyConsistency metrics={data.consistency} />
 
             {/* Workout Heatmap Calendar */}
-            <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
-              <WorkoutHeatmap completedDates={workoutDates} scheduledDates={scheduledDates} joinedDate={joinedDate} />
-            </div>
+            <SmoothSection minHeight="240px">
+              <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
+                <WorkoutHeatmap completedDates={workoutDates} scheduledDates={scheduledDates} joinedDate={joinedDate} />
+              </div>
+            </SmoothSection>
 
             {/* Muscle Map */}
-            <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
-              <MuscleMap exerciseNames={recentExercises} showLabel={true} />
-            </div>
+            <SmoothSection minHeight="380px">
+              <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
+                <MuscleMap exerciseNames={recentExercises} showLabel={true} />
+              </div>
+            </SmoothSection>
             
             <div id="transformation-details" className="flex flex-col gap-8 scroll-mt-6">
-              <WeightChart data={data.weightHistory} targetWeight={data.transformation.targetWeight} />
-              <BodyMeasurementsList 
-                measurements={data.measurements} 
-                isBulking={(data.transformation.targetWeight || 0) > (data.transformation.startingWeight || 0)} 
-              />
-              <BodyProgressPhotos 
-                first={data.scans.first} 
-                latest={data.scans.latest} 
-                initialGoalUrl={data.scans.goalUrl} 
-              />
+              <SmoothSection minHeight="320px">
+                <WeightChart data={data.weightHistory} targetWeight={data.transformation.targetWeight} />
+              </SmoothSection>
+              <SmoothSection minHeight="200px">
+                <BodyMeasurementsList 
+                  measurements={data.measurements} 
+                  isBulking={(data.transformation.targetWeight || 0) > (data.transformation.startingWeight || 0)} 
+                />
+              </SmoothSection>
+              <SmoothSection minHeight="340px">
+                <BodyProgressPhotos 
+                  first={data.scans.first} 
+                  latest={data.scans.latest} 
+                  initialGoalUrl={data.scans.goalUrl} 
+                />
+              </SmoothSection>
             </div>
-            <WorkoutAnalyticsCard metrics={data.workout} />
-            <NutritionAnalyticsCard metrics={data.nutrition} />
-            <ActivityRecoveryAnalyticsCard activity={data.activity} recovery={data.recovery} onRefresh={refreshData} />
-            <AIProgressReviewCard initialReview={data.aiReview} period={data.period} onRefresh={refreshData} />
-            <AchievementsShowcase achievements={data.achievements} />
+            <SmoothSection minHeight="260px">
+              <WorkoutAnalyticsCard metrics={data.workout} />
+            </SmoothSection>
+            <SmoothSection minHeight="260px">
+              <NutritionAnalyticsCard metrics={data.nutrition} />
+            </SmoothSection>
+            <SmoothSection minHeight="260px">
+              <ActivityRecoveryAnalyticsCard activity={data.activity} recovery={data.recovery} onRefresh={refreshData} />
+            </SmoothSection>
+            <SmoothSection minHeight="280px">
+              <AIProgressReviewCard initialReview={data.aiReview} period={data.period} onRefresh={refreshData} />
+            </SmoothSection>
+            <SmoothSection minHeight="200px">
+              <AchievementsShowcase achievements={data.achievements} />
+            </SmoothSection>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Mobile Performance Optimization Wrapper
+ * Uses CSS `content-visibility: auto` to defer layout and rendering of offscreen sections,
+ * saving CPU/GPU memory and preventing mobile scroll stutter.
+ */
+function SmoothSection({ children, minHeight = "260px", className = "" }: { children: React.ReactNode; minHeight?: string; className?: string }) {
+  return (
+    <div
+      className={`w-full ${className}`}
+      style={{
+        contentVisibility: "auto",
+        containIntrinsicSize: `auto ${minHeight}`,
+      }}
+    >
+      {children}
     </div>
   );
 }

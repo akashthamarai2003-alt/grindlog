@@ -65,7 +65,7 @@ export function WorkoutAnalyticsCard({ metrics }: { metrics: WorkoutAnalytics })
                   return item?.fullDay ? `${item.fullDay} (${item.date || ''})` : '';
                 }}
               />
-              <Bar dataKey="volume" radius={[4, 4, 4, 4]} barSize={24} minPointSize={4}>
+              <Bar dataKey="volume" radius={[4, 4, 4, 4]} barSize={24} minPointSize={4} isAnimationActive={false}>
                 {chartData.map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={entry.completed ? '#ADFF00' : 'rgba(255,255,255,0.05)'} />
                 ))}

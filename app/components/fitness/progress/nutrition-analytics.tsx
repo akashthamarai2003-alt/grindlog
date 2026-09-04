@@ -99,7 +99,7 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
                       return item?.fullDay ? `${item.fullDay} ${item.date ? `(${item.date})` : ''}` : '';
                     }}
                   />
-                  <Bar dataKey="calories" radius={[4, 4, 0, 0]} minPointSize={4}>
+                  <Bar dataKey="calories" radius={[4, 4, 0, 0]} minPointSize={4} isAnimationActive={false}>
                     {calorieData.map((entry: any, index: number) => (
                       <Cell 
                         key={`cal-cell-${index}`} 
@@ -169,7 +169,7 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
                       return item?.fullDay ? `${item.fullDay} ${item.date ? `(${item.date})` : ''}` : '';
                     }}
                   />
-                  <Bar dataKey="protein" radius={[4, 4, 0, 0]} minPointSize={4}>
+                  <Bar dataKey="protein" radius={[4, 4, 0, 0]} minPointSize={4} isAnimationActive={false}>
                     {proteinData.map((entry: any, index: number) => (
                       <Cell 
                         key={`pro-cell-${index}`} 
