@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Flame, Clock, Zap, Circle, CheckCircle2, X, CalendarClock, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 
 interface WorkoutSummaryCardProps {
@@ -34,7 +35,7 @@ export function WorkoutSummaryCard({
     ex.fitness_os_sets.length > 0 && 
     ex.fitness_os_sets.every((set: any) => set.completed)
   ).length;
-  const isInProgress = workout?.status === "in_progress" || completedCount > 0;
+  const isInProgress = !isCompleted && (workout?.status === "in_progress" || (completedCount > 0 && completedCount < exerciseCount));
 
   const resolvedEyebrow = eyebrow || (isUpcoming ? "Early Start" : "Today's Workout");
 
@@ -79,6 +80,10 @@ export function WorkoutSummaryCard({
 
   const handleStart = () => {
     if (isStarting) return;
+    if (isCompleted) {
+      router.push(`/workout/${workout.id}/summary`);
+      return;
+    }
     if (isInProgress) {
       setIsStarting(true);
       router.push(`/workout/${workout.id}`);
@@ -111,6 +116,13 @@ export function WorkoutSummaryCard({
   }
 
   const muscleString = targetMuscles.join(" • ");
+
+  const rawDuration = workout?.duration_minutes;
+  const displayDuration = rawDuration
+    ? (rawDuration > 180 || rawDuration < 2
+        ? (completedCount > 0 ? Math.round(completedCount * 8) : 45)
+        : rawDuration)
+    : "Not set";
 
   return (
     <>
@@ -155,7 +167,7 @@ export function WorkoutSummaryCard({
                 <span className="text-sm">⏱</span>
                 <span className="text-xs font-bold uppercase tracking-wider">Time</span>
               </div>
-              <span className="text-lg font-black text-white">{workout?.duration_minutes ? `${workout.duration_minutes} min` : "Not set"}</span>
+              <span className="text-lg font-black text-white">{displayDuration !== "Not set" ? `${displayDuration} min` : "Not set"}</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -186,42 +198,43 @@ export function WorkoutSummaryCard({
 
           {/* Action Button */}
           {!hideStartButton && (
-            <button
-              onClick={handleStart}
-              disabled={isStarting}
-              className={`w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-70 cursor-pointer ${
-                isCompleted 
-                  ? 'bg-white/10 text-white hover:bg-white/20' 
-                  : 'bg-[#ADFF00] text-black hover:bg-[#bfff33] shadow-[0_0_20px_rgba(173,255,0,0.2)]'
-              }`}
-            >
-              {isStarting ? (
-                <>
-                  <span>{isInProgress ? "RESUMING..." : "STARTING..."}</span>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                </>
-              ) : isCompleted ? (
-                <>
-                  <span>VIEW WORKOUT SUMMARY</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              ) : isInProgress ? (
-                <>
-                  <span>CONTINUE WORKOUT</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              ) : isUpcoming ? (
-                <>
-                  <span>START EARLY</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              ) : (
-                <>
-                  <span>START WORKOUT</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
+            isCompleted ? (
+              <Link
+                href={`/workout/${workout.id}/summary`}
+                className="w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] cursor-pointer bg-white/10 text-white hover:bg-white/20"
+              >
+                <span>VIEW WORKOUT SUMMARY</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            ) : (
+              <button
+                onClick={handleStart}
+                disabled={isStarting}
+                className="w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-70 cursor-pointer bg-[#ADFF00] text-black hover:bg-[#bfff33] shadow-[0_0_20px_rgba(173,255,0,0.2)]"
+              >
+                {isStarting ? (
+                  <>
+                    <span>{isInProgress ? "RESUMING..." : "STARTING..."}</span>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  </>
+                ) : isInProgress ? (
+                  <>
+                    <span>CONTINUE WORKOUT</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                ) : isUpcoming ? (
+                  <>
+                    <span>START EARLY</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                ) : (
+                  <>
+                    <span>START WORKOUT</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            )
           )}
 
         </div>

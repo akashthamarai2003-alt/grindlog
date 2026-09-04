@@ -45,7 +45,6 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
       fitness_os_exercises (
         id,
         name,
-        target_muscles,
         fitness_os_sets (completed, weight_kg, actual_reps, completed_at)
       ),
       fitness_os_workout_sessions (*)
@@ -54,6 +53,7 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
     .single();
 
   if (error || !workout) {
+    console.error("WorkoutSummaryPage query error:", error);
     redirect("/workout");
   }
 
