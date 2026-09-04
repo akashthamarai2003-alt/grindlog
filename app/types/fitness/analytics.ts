@@ -131,6 +131,7 @@ export interface AIProgressReview {
   weaknesses: string[];
   recommendations: string[];
   generatedAt: string;
+  canGenerateToday?: boolean;
 }
 
 export interface Achievement {

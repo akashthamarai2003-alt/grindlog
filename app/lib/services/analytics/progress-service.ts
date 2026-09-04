@@ -685,12 +685,16 @@ export class ProgressAnalyticsService {
     // 8. AI Review
     let aiReview: AIProgressReview | null = null;
     if (latestReview) {
+      const genDate = new Date(latestReview.generated_at);
+      const isGeneratedToday = genDate.toISOString().split('T')[0] === todayStr;
+
       aiReview = {
         summary: latestReview.summary,
         strengths: latestReview.strengths || [],
         weaknesses: latestReview.weaknesses || [],
         recommendations: latestReview.recommendations || [],
-        generatedAt: latestReview.generated_at
+        generatedAt: latestReview.generated_at,
+        canGenerateToday: !isGeneratedToday,
       };
     }
 

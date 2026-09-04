@@ -20,63 +20,163 @@ interface RawAIReview {
   };
 }
 
+// Prevent concurrent duplicate executions per user
+const activeUserGenerations = new Set<string>();
+
+function getLocalDateString(date: Date, timezoneOffsetMinutes?: number): string {
+  if (typeof timezoneOffsetMinutes === 'number' && !isNaN(timezoneOffsetMinutes)) {
+    // Subtract timezoneOffsetMinutes to convert UTC to local time
+    const localTime = new Date(date.getTime() - timezoneOffsetMinutes * 60 * 1000);
+    return localTime.toISOString().split('T')[0];
+  }
+  return date.toISOString().split('T')[0];
+}
+
+export interface DailyLimitCheckResult {
+  hasGeneratedToday: boolean;
+  canGenerateToday: boolean;
+  latestReview: AIProgressReview | null;
+  generatedAt: string | null;
+  todayDate: string;
+}
+
+export interface GenerateReviewResult {
+  review: AIProgressReview | null;
+  limitReached: boolean;
+  canGenerateToday: boolean;
+  error?: string;
+}
+
 export class AIInsightService {
   
-  static async generateWeeklyReview(userId: string, period: AnalyticsPeriod = '30D', forceRefresh = false): Promise<AIProgressReview | null> {
+  /**
+   * Check if a user has already generated an AI review today.
+   * Compares the user's local date or UTC date against the latest insight in fitness_os_ai_insights.
+   */
+  static async checkDailyGenerationLimit(
+    userId: string,
+    clientDate?: string,
+    timezoneOffset?: number
+  ): Promise<DailyLimitCheckResult> {
     const supabase = await createServerSupabase();
     const now = new Date();
-    const startDate = new Date(now.getTime());
-    
-    // Calculate period length
-    let periodDays = 30;
-    switch (period) {
-      case '7D': startDate.setDate(now.getDate() - 7); periodDays = 7; break;
-      case '30D': startDate.setDate(now.getDate() - 30); periodDays = 30; break;
-      case '3M': startDate.setMonth(now.getMonth() - 3); periodDays = 90; break;
-      case '6M': startDate.setMonth(now.getMonth() - 6); periodDays = 180; break;
-      case 'ALL': startDate.setFullYear(2000); periodDays = 365; break;
+    const todayDateStr = (clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate))
+      ? clientDate
+      : getLocalDateString(now, timezoneOffset);
+
+    const { data: latest } = await supabase
+      .from('fitness_os_ai_insights')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('insight_type', 'progress_review')
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!latest) {
+      return {
+        hasGeneratedToday: false,
+        canGenerateToday: true,
+        latestReview: null,
+        generatedAt: null,
+        todayDate: todayDateStr,
+      };
     }
 
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const nowStr = now.toISOString().split('T')[0];
+    const genDate = new Date(latest.generated_at);
+    const genLocalDateStr = getLocalDateString(genDate, timezoneOffset);
+    const genUtcDateStr = genDate.toISOString().split('T')[0];
+    const nowUtcDateStr = now.toISOString().split('T')[0];
 
-    // Check cache
-    if (!forceRefresh) {
-      const { data: cached } = await supabase
-        .from('fitness_os_ai_insights')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('period_start', startDateStr)
-        .eq('period_end', nowStr)
-        .eq('insight_type', 'progress_review')
-        .order('generated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    // Check if the review was generated today (local date, client date, or UTC date)
+    const hasGeneratedToday =
+      genLocalDateStr === todayDateStr ||
+      genUtcDateStr === nowUtcDateStr ||
+      (clientDate ? genUtcDateStr === clientDate : false);
 
-      if (cached) {
-        // Only return if it's less than 24 hours old
-        const ageHours = (now.getTime() - new Date(cached.generated_at).getTime()) / (1000 * 60 * 60);
-        if (ageHours < 24) {
-          return {
-            summary: cached.summary,
-            strengths: cached.strengths || [],
-            weaknesses: cached.weaknesses || [],
-            recommendations: cached.recommendations || [],
-            generatedAt: cached.generated_at
-          };
-        }
+    const mappedReview: AIProgressReview = {
+      summary: latest.summary,
+      strengths: latest.strengths || [],
+      weaknesses: latest.weaknesses || [],
+      recommendations: latest.recommendations || [],
+      generatedAt: latest.generated_at,
+      canGenerateToday: !hasGeneratedToday,
+    };
+
+    return {
+      hasGeneratedToday,
+      canGenerateToday: !hasGeneratedToday,
+      latestReview: mappedReview,
+      generatedAt: latest.generated_at,
+      todayDate: todayDateStr,
+    };
+  }
+
+  static async generateWeeklyReview(
+    userId: string,
+    period: AnalyticsPeriod = '30D',
+    forceRefresh = false,
+    clientDate?: string,
+    timezoneOffset?: number
+  ): Promise<GenerateReviewResult> {
+    const supabase = await createServerSupabase();
+    const now = new Date();
+
+    // 1. Strictly enforce 1-use-per-day rate limit per user
+    const limitCheck = await this.checkDailyGenerationLimit(userId, clientDate, timezoneOffset);
+    if (limitCheck.hasGeneratedToday) {
+      return {
+        review: limitCheck.latestReview,
+        limitReached: true,
+        canGenerateToday: false,
+        error: "Daily limit reached. You can generate 1 AI progress review per day. Next review available tomorrow.",
+      };
+    }
+
+    // 2. If not forceRefresh and we already have a review cached, return it
+    if (!forceRefresh && limitCheck.latestReview) {
+      return {
+        review: limitCheck.latestReview,
+        limitReached: false,
+        canGenerateToday: true,
+      };
+    }
+
+    // 3. Prevent duplicate in-flight requests from the same user
+    if (activeUserGenerations.has(userId)) {
+      return {
+        review: limitCheck.latestReview,
+        limitReached: false,
+        canGenerateToday: false,
+        error: "An AI review generation is already in progress. Please wait a moment.",
+      };
+    }
+
+    activeUserGenerations.add(userId);
+
+    try {
+      const startDate = new Date(now.getTime());
+      let periodDays = 30;
+      switch (period) {
+        case '7D': startDate.setDate(now.getDate() - 7); periodDays = 7; break;
+        case '30D': startDate.setDate(now.getDate() - 30); periodDays = 30; break;
+        case '3M': startDate.setMonth(now.getMonth() - 3); periodDays = 90; break;
+        case '6M': startDate.setMonth(now.getMonth() - 6); periodDays = 180; break;
+        case 'ALL': startDate.setFullYear(2000); periodDays = 365; break;
       }
-    }
 
-    // Fetch Analytics for Current and Previous Period in parallel
-    const previousDate = new Date(startDate.getTime());
-    const [current, previous] = await Promise.all([
-      ProgressAnalyticsService.getAggregatedProgress(userId, period),
-      ProgressAnalyticsService.getAggregatedProgress(userId, period, previousDate)
-    ]);
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const nowStr = now.toISOString().split('T')[0];
 
-    // Build Context String
-    const contextPrompt = `
+      // Fetch Analytics for Current and Previous Period in parallel
+      const previousDate = new Date(startDate.getTime());
+      const [current, previous] = await Promise.all([
+        ProgressAnalyticsService.getAggregatedProgress(userId, period),
+        ProgressAnalyticsService.getAggregatedProgress(userId, period, previousDate)
+      ]);
+
+      // Build Context String
+      const contextPrompt = `
       USER GOAL:
       Starting Weight: ${current.transformation.startingWeight || 'N/A'} kg
       Current Weight: ${current.transformation.currentWeight || 'N/A'} kg
@@ -96,7 +196,7 @@ export class AIInsightService {
       Steps Diff: ${current.activity.averageDailySteps - previous.activity.averageDailySteps} steps
     `;
 
-    const systemPrompt = `You are GrindLog's elite AI Fitness Coach. 
+      const systemPrompt = `You are GrindLog's elite AI Fitness Coach. 
 You are reviewing the user's progress analytics.
 Your job is to identify what is going well, what is limiting progress, and what they should prioritize next.
 Keep recommendations concise, highly actionable, and grounded ONLY in the provided metrics.
@@ -117,11 +217,13 @@ You MUST output perfectly formatted JSON matching this exact structure:
   }
 }`;
 
-    try {
+      // Exclusively call Groq AI with optimized token limits
       const response = await generateAIResponseJSON<RawAIReview>({
         systemPrompt,
         userPrompt: contextPrompt,
-        model: "fast"
+        model: "fast",
+        maxTokens: 800,
+        temperature: 0.2
       });
 
       // Map recommendations safely whether array of objects or array of strings
@@ -164,16 +266,30 @@ You MUST output perfectly formatted JSON matching this exact structure:
         console.error("Failed to save AI insight:", error);
       }
 
-      return {
+      const generatedReview: AIProgressReview = {
         summary: response.summary,
         strengths: strengthsList,
         weaknesses: weaknessesList,
         recommendations: recommendationsList,
-        generatedAt: inserted?.generated_at || new Date().toISOString()
+        generatedAt: inserted?.generated_at || new Date().toISOString(),
+        canGenerateToday: false,
       };
-    } catch (error) {
+
+      return {
+        review: generatedReview,
+        limitReached: true,
+        canGenerateToday: false,
+      };
+    } catch (error: any) {
       console.error("AI Insight Generation Failed:", error);
-      return null;
+      return {
+        review: null,
+        limitReached: false,
+        canGenerateToday: true,
+        error: error.message || "AI insight generation failed",
+      };
+    } finally {
+      activeUserGenerations.delete(userId);
     }
   }
 

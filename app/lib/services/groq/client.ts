@@ -67,9 +67,9 @@ export async function generateAIResponse({
 
   const modelsToTry = Array.from(new Set([
     requestedGroqModel,
-    "qwen/qwen3.8-27b",
     "groq/compound-mini",
-    "openai/gpt-oss-120b"
+    "qwen/qwen3.8-27b",
+    "openai/gpt-oss-20b"
   ]));
 
   for (let keyAttempt = 0; keyAttempt < groqKeys.length; keyAttempt++) {
