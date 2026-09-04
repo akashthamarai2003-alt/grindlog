@@ -25,8 +25,8 @@ export function WeightChart({ data, targetWeight }: { data: WeightPoint[], targe
   // Find min and max for chart domain
   const weights = data.map(d => d.weight);
   if (targetWeight) weights.push(targetWeight);
-  const minWeight = Math.min(...weights) - 2;
-  const maxWeight = Math.max(...weights) + 2;
+  const minWeight = Math.floor(Math.min(...weights) - 1);
+  const maxWeight = Math.ceil(Math.max(...weights) + 1);
 
   return (
     <div className="w-full flex flex-col gap-3">
@@ -41,12 +41,22 @@ export function WeightChart({ data, targetWeight }: { data: WeightPoint[], targe
 
       <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-4 pt-6 h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+          <LineChart data={data} margin={{ top: 5, right: 12, left: -25, bottom: 0 }}>
             <XAxis 
               dataKey="date" 
               tickFormatter={(val) => {
-                const date = new Date(val);
-                return `${date.getDate()}/${date.getMonth() + 1}`;
+                try {
+                  const parts = String(val).split('-');
+                  if (parts.length === 3) {
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const day = parseInt(parts[2], 10);
+                    const monthIdx = parseInt(parts[1], 10) - 1;
+                    return `${day} ${months[monthIdx] || ''}`;
+                  }
+                  return val;
+                } catch {
+                  return val;
+                }
               }}
               stroke="rgba(255,255,255,0.1)"
               tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700 }}
@@ -61,8 +71,25 @@ export function WeightChart({ data, targetWeight }: { data: WeightPoint[], targe
               axisLine={false}
               tickLine={false}
               dx={-5}
+              tickFormatter={(val) => `${Math.round(val)}`}
             />
             <Tooltip
+              formatter={(value: any) => [`${Number(value).toFixed(1)} kg`, 'Weight']}
+              labelFormatter={(label: any) => {
+                try {
+                  const parts = String(label).split('-');
+                  if (parts.length === 3) {
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const day = parseInt(parts[2], 10);
+                    const monthIdx = parseInt(parts[1], 10) - 1;
+                    const year = parts[0];
+                    return `${day} ${months[monthIdx] || ''} ${year}`;
+                  }
+                  return label;
+                } catch {
+                  return label;
+                }
+              }}
               contentStyle={{ backgroundColor: '#0A1108', border: '1px solid rgba(173,255,0,0.3)', borderRadius: '12px', color: '#fff', fontSize: '12px', fontWeight: 700 }}
               itemStyle={{ color: '#ADFF00' }}
               labelStyle={{ color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}

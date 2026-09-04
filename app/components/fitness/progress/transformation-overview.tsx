@@ -45,6 +45,18 @@ export function TransformationOverview({ metrics }: { metrics: TransformationMet
     }
   }, [hasData, metrics.completionPercentage, metrics.targetWeight]);
 
+  const formatWeight = (val: number | null | undefined) => {
+    if (val === null || val === undefined || isNaN(Number(val))) return "0";
+    const num = Number(val);
+    return Number.isInteger(num) ? num.toString() : num.toFixed(1);
+  };
+
+  const formatChange = (val: number | null | undefined) => {
+    if (val === null || val === undefined || isNaN(Number(val))) return "0";
+    const num = Math.abs(Number(val));
+    return Number.isInteger(num) ? num.toString() : num.toFixed(1);
+  };
+
   return (
     <div className="w-full flex flex-col gap-3">
       <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
@@ -66,34 +78,34 @@ export function TransformationOverview({ metrics }: { metrics: TransformationMet
             <div className="flex items-center justify-between mb-8">
               <div className="flex flex-col items-center">
                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Start</span>
-                <span className="text-xl font-black text-white">{metrics.startingWeight}<span className="text-[10px] text-white/50 ml-0.5">kg</span></span>
+                <span className="text-xl font-black text-white">{formatWeight(metrics.startingWeight)}<span className="text-[10px] text-white/50 ml-0.5">kg</span></span>
               </div>
               <ArrowRight className="w-4 h-4 text-[#ADFF00]" />
               <div className="flex flex-col items-center">
                 <span className="text-[10px] font-black text-[#ADFF00]/70 uppercase tracking-widest mb-1">Current</span>
-                <span className="text-2xl font-black text-[#ADFF00]">{metrics.currentWeight}<span className="text-[10px] text-[#ADFF00]/50 ml-0.5">kg</span></span>
+                <span className="text-2xl font-black text-[#ADFF00]">{formatWeight(metrics.currentWeight)}<span className="text-[10px] text-[#ADFF00]/50 ml-0.5">kg</span></span>
               </div>
               <ArrowRight className="w-4 h-4 text-white/30" />
               <div className="flex flex-col items-center">
                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Target</span>
-                <span className="text-xl font-black text-white">{metrics.targetWeight}<span className="text-[10px] text-white/50 ml-0.5">kg</span></span>
+                <span className="text-xl font-black text-white">{formatWeight(metrics.targetWeight)}<span className="text-[10px] text-white/50 ml-0.5">kg</span></span>
               </div>
             </div>
 
             {/* Progress Bar */}
             <div className="w-full flex flex-col gap-2 mb-6">
               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                <span className="text-[#ADFF00]">{metrics.totalChange}kg Changed</span>
+                <span className="text-[#ADFF00]">{formatChange(metrics.totalChange)} kg Changed</span>
                 {metrics.completionPercentage >= 100 ? (
                   <span className="text-[#ADFF00] drop-shadow-[0_0_8px_rgba(173,255,0,0.5)]">Goal Achieved 🏆</span>
                 ) : (
-                  <span className="text-white/40">{metrics.remainingChange}kg Left</span>
+                  <span className="text-white/40">{formatChange(metrics.remainingChange)} kg Left</span>
                 )}
               </div>
               <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden relative">
                 <div 
                   className="absolute top-0 left-0 h-full bg-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)] transition-all duration-1000 ease-out"
-                  style={{ width: `${metrics.completionPercentage}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, metrics.completionPercentage))}%` }}
                 />
               </div>
             </div>

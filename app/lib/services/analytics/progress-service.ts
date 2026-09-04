@@ -42,7 +42,8 @@ export class ProgressAnalyticsService {
       { data: activityLogsData },
       { data: sleepLogsData },
       { data: latestReview },
-      { data: userAchievementsData }
+      { data: userAchievementsData },
+      { data: bodyMetricsData }
     ] = await Promise.all([
       supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target').eq('user_id', userId).maybeSingle(),
       supabase.from('fitness_os_scans').select('*').eq('user_id', userId).eq('pose', 'front').order('date', { ascending: false }).limit(2),
@@ -76,7 +77,8 @@ export class ProgressAnalyticsService {
       supabase.from('fitness_os_activity_logs').select('*').eq('user_id', userId).gte('activity_date', startDateStr.split('T')[0]),
       supabase.from('fitness_os_sleep_logs').select('*').eq('user_id', userId).gte('sleep_date', startDateStr.split('T')[0]),
       supabase.from('fitness_os_ai_insights').select('*').eq('user_id', userId).order('generated_at', { ascending: false }).limit(1).maybeSingle(),
-      supabase.from('fitness_os_user_achievements').select('*, achievement:achievement_id(title, description, icon)').eq('user_id', userId)
+      supabase.from('fitness_os_user_achievements').select('*, achievement:achievement_id(title, description, icon)').eq('user_id', userId),
+      supabase.from('fitness_os_body_metrics').select('weight, recorded_at').eq('user_id', userId).not('weight', 'is', null).gte('recorded_at', startDateStr).order('recorded_at', { ascending: true })
     ]);
 
     const workouts = workoutsData || [];
@@ -91,25 +93,40 @@ export class ProgressAnalyticsService {
     const targetWeight = fitProfile?.target_weight || 0;
 
     let progressPercentage = 0;
-    let finalAmountLost = 0;
-    let finalAmountGained = 0;
-    let finalTotalToLose = 0;
-    let finalTotalToGain = 0;
+    let totalChange = 0;
+    let remainingChange = 0;
 
-    if (profileStartWeight > 0 && targetWeight > 0) {
-      const totalToLose = profileStartWeight - targetWeight;
-      const amountLost = profileStartWeight - currentWeight;
-      finalTotalToLose = totalToLose;
-      finalAmountLost = amountLost;
+    if (profileStartWeight > 0 && targetWeight > 0 && currentWeight > 0) {
+      const isWeightLoss = profileStartWeight > targetWeight;
+      const isBulking = targetWeight > profileStartWeight;
 
-      if (totalToLose > 0) {
-        progressPercentage = Math.max(0, Math.min(100, (amountLost / totalToLose) * 100));
-      } else if (totalToLose < 0) {
-        const totalToGain = targetWeight - profileStartWeight;
-        const amountGained = currentWeight - profileStartWeight;
-        finalTotalToGain = totalToGain;
-        finalAmountGained = amountGained;
-        progressPercentage = Math.max(0, Math.min(100, (amountGained / totalToGain) * 100));
+      if (isWeightLoss) {
+        const totalDistance = profileStartWeight - targetWeight;
+        const lost = profileStartWeight - currentWeight;
+        // Clean round to 1 decimal place to eliminate JS floating point bugs (e.g. 0.29999999999999716 -> 0.3)
+        totalChange = Math.round(lost * 10) / 10;
+        // Remaining weight left to lose to reach target from current weight
+        const remainingToLose = Math.max(0, currentWeight - targetWeight);
+        remainingChange = Math.round(remainingToLose * 10) / 10;
+
+        if (totalDistance > 0) {
+          progressPercentage = Math.max(0, Math.min(100, (lost / totalDistance) * 100));
+        }
+      } else if (isBulking) {
+        const totalDistance = targetWeight - profileStartWeight;
+        const gained = currentWeight - profileStartWeight;
+        totalChange = Math.round(gained * 10) / 10;
+        // Remaining weight left to gain to reach target from current weight
+        const remainingToGain = Math.max(0, targetWeight - currentWeight);
+        remainingChange = Math.round(remainingToGain * 10) / 10;
+
+        if (totalDistance > 0) {
+          progressPercentage = Math.max(0, Math.min(100, (gained / totalDistance) * 100));
+        }
+      } else {
+        totalChange = Math.round(Math.abs(currentWeight - profileStartWeight) * 10) / 10;
+        remainingChange = 0;
+        progressPercentage = 100;
       }
     }
 
@@ -121,25 +138,57 @@ export class ProgressAnalyticsService {
       startingWeight: profileStartWeight,
       currentWeight,
       targetWeight,
-      totalChange: finalAmountLost || finalAmountGained || 0,
-      remainingChange: finalTotalToLose || finalTotalToGain || 0,
+      totalChange: Math.abs(totalChange),
+      remainingChange: Math.abs(remainingChange),
       completionPercentage: Math.round(progressPercentage),
       transformationDay: elapsedDays,
       streak: 0
     };
 
-    // 2. Weight History
-    const weightHistory: WeightPoint[] = [];
-    if (fitProfile?.created_at) {
-      weightHistory.push({
-        date: new Date(fitProfile.created_at).toISOString().split('T')[0],
-        weight: profileStartWeight
-      });
+    // 2. Weight History (Integrated with real fitness_os_body_metrics logs)
+    const weightMap = new Map<string, number>();
+
+    // Include baseline starting weight at user join date
+    if (fitProfile?.created_at && profileStartWeight > 0) {
+      const joinDateStr = new Date(fitProfile.created_at).toISOString().split('T')[0];
+      weightMap.set(joinDateStr, Math.round(profileStartWeight * 100) / 100);
     }
-    weightHistory.push({
-      date: new Date().toISOString().split('T')[0],
-      weight: currentWeight
-    });
+
+    // Populate all user logs from fitness_os_body_metrics
+    if (bodyMetricsData && bodyMetricsData.length > 0) {
+      for (const m of bodyMetricsData) {
+        if (m.weight && m.recorded_at) {
+          const dateStr = new Date(m.recorded_at).toISOString().split('T')[0];
+          weightMap.set(dateStr, Math.round(Number(m.weight) * 100) / 100);
+        }
+      }
+    }
+
+    // Ensure current weight is included if available
+    const todayStr = now.toISOString().split('T')[0];
+    if (currentWeight > 0 && !weightMap.has(todayStr)) {
+      weightMap.set(todayStr, Math.round(currentWeight * 100) / 100);
+    }
+
+    // Convert to sorted array
+    let weightHistory: WeightPoint[] = Array.from(weightMap.entries())
+      .map(([date, weight]) => ({ date, weight }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Fallback: If only 1 point exists, ensure start baseline is plotted
+    if (weightHistory.length === 1 && profileStartWeight > 0) {
+      const singlePoint = weightHistory[0];
+      const startPointDate = fitProfile?.created_at 
+        ? new Date(fitProfile.created_at).toISOString().split('T')[0]
+        : startDateStr.split('T')[0];
+      
+      if (startPointDate < singlePoint.date) {
+        weightHistory.unshift({
+          date: startPointDate,
+          weight: Math.round(profileStartWeight * 100) / 100
+        });
+      }
+    }
 
     // 3. Body Measurements & Scans
     const measurements: BodyMeasurement[] = [];

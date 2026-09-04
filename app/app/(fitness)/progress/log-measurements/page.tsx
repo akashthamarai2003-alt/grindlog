@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Ruler } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 export default function LogMeasurementsPage() {
   const [measurements, setMeasurements] = useState({
@@ -22,22 +23,32 @@ export default function LogMeasurementsPage() {
 
   const handleSave = async () => {
     // Only proceed if at least one measurement is filled
-    if (Object.values(measurements).every(val => !val)) return;
+    if (Object.values(measurements).every(val => !val)) {
+      toast.error("Please enter at least one measurement");
+      return;
+    }
     
     setIsLoading(true);
-    
-    // 1. Fire the request in the background (Optimistic UI - do not await!)
-    fetch("/api/fitness/log-measurements", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(measurements),
-    }).catch(error => console.error("Background save error:", error));
+    try {
+      const res = await fetch("/api/fitness/log-measurements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(measurements),
+      });
 
-    // 2. Play the beautiful loading animation for exactly 600ms, then instantly navigate back
-    setTimeout(() => {
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to save measurements");
+      }
+
+      toast.success("Measurements logged successfully!");
       router.push("/progress");
-      router.refresh(); // Tell Next.js to pull the new data when we get there
-    }, 600);
+      router.refresh();
+    } catch (err: any) {
+      console.error("Save measurements error:", err);
+      toast.error(err.message || "Failed to save measurements");
+      setIsLoading(false);
+    }
   };
 
   const InputField = ({ label, field }: { label: string, field: keyof typeof measurements }) => (
@@ -47,10 +58,13 @@ export default function LogMeasurementsPage() {
         <input
           type="number"
           step="0.1"
+          min="10"
+          max="300"
+          inputMode="decimal"
           value={measurements[field]}
           onChange={(e) => setMeasurements({ ...measurements, [field]: e.target.value })}
           placeholder="0.0"
-          className="bg-transparent text-xl font-black text-[#ADFF00] outline-none w-20 text-right placeholder:text-[#ADFF00]/20"
+          className="bg-transparent text-xl font-black text-[#ADFF00] outline-none w-20 text-right placeholder:text-[#ADFF00]/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <span className="text-xs font-bold text-white/40">cm</span>
       </div>
