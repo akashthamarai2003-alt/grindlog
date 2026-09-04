@@ -118,7 +118,11 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
                 measurements={data.measurements} 
                 isBulking={(data.transformation.targetWeight || 0) > (data.transformation.startingWeight || 0)} 
               />
-              <BodyProgressPhotos first={data.scans.first} latest={data.scans.latest} />
+              <BodyProgressPhotos 
+                first={data.scans.first} 
+                latest={data.scans.latest} 
+                initialGoalUrl={data.scans.goalUrl} 
+              />
             </div>
             <WorkoutAnalyticsCard metrics={data.workout} />
             <NutritionAnalyticsCard metrics={data.nutrition} />

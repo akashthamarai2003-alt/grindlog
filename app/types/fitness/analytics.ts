@@ -42,6 +42,7 @@ export interface BodyPhotoScan {
   leftUrl: string | null;
   rightUrl: string | null;
   backUrl: string | null;
+  goalUrl?: string | null;
 }
 
 export interface WorkoutAnalytics {
@@ -106,7 +107,7 @@ export interface AggregatedProgressPayload {
   consistency: ConsistencyMetrics;
   weightHistory: WeightPoint[];
   measurements: BodyMeasurement[];
-  scans: { first: BodyPhotoScan | null; latest: BodyPhotoScan | null; shouldPromptForScan?: boolean };
+  scans: { first: BodyPhotoScan | null; latest: BodyPhotoScan | null; goalUrl?: string | null; shouldPromptForScan?: boolean };
   workout: WorkoutAnalytics;
   nutrition: NutritionAnalytics;
   activity: ActivityAnalytics;

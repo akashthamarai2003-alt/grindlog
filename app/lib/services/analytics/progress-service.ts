@@ -47,7 +47,7 @@ export class ProgressAnalyticsService {
       { data: userAchievementsData },
       { data: bodyMetricsData }
     ] = await Promise.all([
-      supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target').eq('user_id', userId).maybeSingle(),
+      supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target, goal_physique_image, target_physique').eq('user_id', userId).maybeSingle(),
       supabase.from('fitness_os_body_scans').select('*').eq('user_id', userId).order('scan_date', { ascending: true }),
       supabase.from('fitness_os_scans').select('*').eq('user_id', userId).eq('pose', 'front').order('date', { ascending: false }).limit(2),
       supabase.from('fitness_os_body_metrics').select('waist, chest, hip, neck, left_arm, right_arm, left_thigh, right_thigh, recorded_at').eq('user_id', userId).or('waist.not.is.null,chest.not.is.null,hip.not.is.null,neck.not.is.null,left_arm.not.is.null,right_arm.not.is.null,left_thigh.not.is.null,right_thigh.not.is.null').order('recorded_at', { ascending: true }),
@@ -275,9 +275,14 @@ export class ProgressAnalyticsService {
       };
     }
 
+    const userGoalUrl = (bodyScansData as any[])?.find((s: any) => s.goal_image_url)?.goal_image_url 
+      || (fitProfile as any)?.goal_physique_image 
+      || null;
+
     const scans = {
       first: firstScan,
       latest: latestScan,
+      goalUrl: userGoalUrl,
       shouldPromptForScan: !latestScan || (new Date().getTime() - new Date(latestScan.date).getTime()) > (14 * 24 * 60 * 60 * 1000)
     };
 
