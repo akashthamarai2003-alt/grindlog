@@ -59,6 +59,11 @@ export function WorkoutAnalyticsCard({ metrics }: { metrics: WorkoutAnalytics })
                 cursor={{ fill: 'rgba(255,255,255,0.02)' }}
                 contentStyle={{ backgroundColor: '#0A1108', border: '1px solid rgba(173,255,0,0.3)', borderRadius: '12px', color: '#fff', fontSize: '12px', fontWeight: 700 }}
                 itemStyle={{ color: '#ADFF00' }}
+                formatter={(val: any) => [`${Number(val || 0).toLocaleString()} kg`, "Volume"]}
+                labelFormatter={(_, items) => {
+                  const item = items?.[0]?.payload;
+                  return item?.fullDay ? `${item.fullDay} (${item.date || ''})` : '';
+                }}
               />
               <Bar dataKey="volume" radius={[4, 4, 4, 4]} barSize={24} minPointSize={4}>
                 {chartData.map((entry: any, index: number) => (
@@ -69,7 +74,14 @@ export function WorkoutAnalyticsCard({ metrics }: { metrics: WorkoutAnalytics })
           </ResponsiveContainer>
         </div>
         <div className="flex justify-between px-2 text-[9px] font-black tracking-widest text-white/40 uppercase">
-          {chartData.map((d: any) => <span key={d.day}>{d.day.charAt(0)}</span>)}
+          {chartData.map((d: any, index: number) => (
+            <span 
+              key={index}
+              className={d.completed ? "text-[#ADFF00] font-black" : "text-white/40"}
+            >
+              {d.day.charAt(0)}
+            </span>
+          ))}
         </div>
 
       </div>

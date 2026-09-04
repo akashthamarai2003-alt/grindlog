@@ -47,7 +47,30 @@ export class ProgressAnalyticsService {
       supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target').eq('user_id', userId).maybeSingle(),
       supabase.from('fitness_os_scans').select('*').eq('user_id', userId).eq('pose', 'front').order('date', { ascending: false }).limit(2),
       supabase.from('fitness_os_scans').select('*').eq('user_id', userId).not('chest', 'is', null).order('date', { ascending: false }).limit(2),
-      supabase.from('fitness_os_workouts').select('*').eq('user_id', userId).gte('workout_date', startDateStr.split('T')[0]),
+      supabase.from('fitness_os_workouts').select(`
+        id,
+        user_id,
+        workout_date,
+        name,
+        status,
+        started_at,
+        completed_at,
+        duration_minutes,
+        fitness_os_exercises (
+          id,
+          name,
+          target_sets,
+          target_reps,
+          fitness_os_sets (
+            id,
+            set_number,
+            target_reps,
+            actual_reps,
+            weight_kg,
+            completed
+          )
+        )
+      `).eq('user_id', userId).gte('workout_date', startDateStr.split('T')[0]),
       supabase.from('nutrition_targets').select('*').eq('user_id', userId).order('effective_date', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('nutrition_daily_summary').select('*').eq('user_id', userId).gte('date', startDateStr.split('T')[0]),
       supabase.from('fitness_os_activity_logs').select('*').eq('user_id', userId).gte('activity_date', startDateStr.split('T')[0]),
@@ -90,6 +113,10 @@ export class ProgressAnalyticsService {
       }
     }
 
+    const userCreatedAt = fitProfile?.created_at ? new Date(fitProfile.created_at) : startDate;
+    const effectiveStart = userCreatedAt > startDate ? userCreatedAt : startDate;
+    const elapsedDays = Math.max(1, Math.floor((now.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
     const transformation: TransformationMetrics = {
       startingWeight: profileStartWeight,
       currentWeight,
@@ -97,7 +124,7 @@ export class ProgressAnalyticsService {
       totalChange: finalAmountLost || finalAmountGained || 0,
       remainingChange: finalTotalToLose || finalTotalToGain || 0,
       completionPercentage: Math.round(progressPercentage),
-      transformationDay: 0,
+      transformationDay: elapsedDays,
       streak: 0
     };
 
@@ -148,9 +175,83 @@ export class ProgressAnalyticsService {
     };
 
     // 4. Workout Analytics
-    const totalWorkouts = workouts.length;
-    const completedWorkouts = workouts.filter((w: any) => w.status === 'completed');
-    const totalTrainingTimeMinutes = completedWorkouts.reduce((acc: number, w: any) => acc + (w.duration_minutes || 0), 0);
+    const userBodyweight = fitProfile?.weight || fitProfile?.weight_trend_baseline || 70;
+
+    const processedWorkouts = workouts.map((w: any) => {
+      let workoutSets = 0;
+      let workoutReps = 0;
+      let workoutVolumeKg = 0;
+
+      const exercises = w.fitness_os_exercises || [];
+      const isWorkoutCompleted = w.status === 'completed';
+
+      for (const ex of exercises) {
+        const sets = ex.fitness_os_sets || [];
+        const completedSets = sets.filter((s: any) => s.completed);
+
+        // If sets were explicitly marked completed, credit those.
+        // If workout was completed as a whole, credit planned sets.
+        const setsToCount = completedSets.length > 0 
+          ? completedSets 
+          : (isWorkoutCompleted ? sets : []);
+
+        const isBW = /pull[\s-]?up|chin[\s-]?up|push[\s-]?up|dip|plank|crunch|hanging|sit[\s-]?up|bodyweight/i.test(ex.name);
+
+        for (const s of setsToCount) {
+          workoutSets++;
+          
+          let reps = s.actual_reps;
+          if (!reps && s.target_reps) {
+            reps = typeof s.target_reps === 'number'
+              ? s.target_reps
+              : parseInt(String(s.target_reps).split('-')[0], 10) || 10;
+          }
+          if (!reps && ex.target_reps) {
+            reps = typeof ex.target_reps === 'number'
+              ? ex.target_reps
+              : parseInt(String(ex.target_reps).split('-')[0], 10) || 10;
+          }
+          reps = reps || 10;
+          workoutReps += reps;
+
+          let weight = Number(s.weight_kg) || 0;
+          if (weight === 0 && isBW) {
+            weight = userBodyweight;
+          }
+          workoutVolumeKg += weight * reps;
+        }
+
+        // Fallback: If workout is completed, but no set records exist in DB for this exercise
+        if (isWorkoutCompleted && sets.length === 0) {
+          const fallbackSets = ex.target_sets || 3;
+          let fallbackReps = 10;
+          if (ex.target_reps) {
+            fallbackReps = typeof ex.target_reps === 'number'
+              ? ex.target_reps
+              : parseInt(String(ex.target_reps).split('-')[0], 10) || 10;
+          }
+          workoutSets += fallbackSets;
+          workoutReps += fallbackSets * fallbackReps;
+          if (isBW) {
+            workoutVolumeKg += fallbackSets * fallbackReps * userBodyweight;
+          }
+        }
+      }
+
+      return {
+        ...w,
+        total_sets: workoutSets,
+        total_reps: workoutReps,
+        total_volume_kg: Math.round(workoutVolumeKg)
+      };
+    });
+
+    const totalWorkouts = processedWorkouts.length;
+    const completedWorkouts = processedWorkouts.filter((w: any) => w.status === 'completed');
+    const totalTrainingTimeMinutes = completedWorkouts.reduce((acc: number, w: any) => {
+      const dur = w.duration_minutes || (w.total_sets ? Math.max(20, Math.round(w.total_sets * 3)) : 45);
+      return acc + dur;
+    }, 0);
     const totalSets = completedWorkouts.reduce((acc: number, w: any) => acc + (w.total_sets || 0), 0);
     const totalReps = completedWorkouts.reduce((acc: number, w: any) => acc + (w.total_reps || 0), 0);
     const trainingVolumeKg = completedWorkouts.reduce((acc: number, w: any) => acc + (w.total_volume_kg || 0), 0);
@@ -159,14 +260,46 @@ export class ProgressAnalyticsService {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now.getTime());
       d.setDate(d.getDate() - i);
-      const ds = d.toISOString().split('T')[0];
-      const ws = workouts.filter((w: any) => w.workout_date === ds);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(d.getDate()).padStart(2, '0');
+      const ds = `${y}-${m}-${dayNum}`;
+
+      const ws = processedWorkouts.filter((w: any) => {
+        const wDate = (w.workout_date || '').split('T')[0];
+        const cDate = (w.completed_at || '').split('T')[0];
+        return wDate === ds || cDate === ds;
+      });
+
+      const dayVolume = ws.reduce((acc: number, w: any) => acc + (w.total_volume_kg || 0), 0);
+      const isCompleted = ws.some((w: any) => w.status === 'completed');
+      const dayShort = d.toLocaleDateString('en-US', { weekday: 'short' });
+
       weeklyChartData.push({
-        day: d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0),
-        volume: ws.reduce((acc: number, w: any) => acc + (w.total_volume_kg || 0), 0),
-        completed: ws.some((w: any) => w.status === 'completed')
+        day: dayShort,
+        fullDay: dayShort,
+        date: ds,
+        volume: dayVolume,
+        completed: isCompleted
       });
     }
+
+    // Calculate personal records
+    const exerciseMaxWeight = new Map<string, number>();
+    for (const w of processedWorkouts) {
+      if (w.status !== 'completed') continue;
+      for (const ex of (w.fitness_os_exercises || [])) {
+        for (const s of (ex.fitness_os_sets || [])) {
+          if (s.completed && s.weight_kg && s.weight_kg > 0) {
+            const current = exerciseMaxWeight.get(ex.name) || 0;
+            if (s.weight_kg > current) {
+              exerciseMaxWeight.set(ex.name, s.weight_kg);
+            }
+          }
+        }
+      }
+    }
+    const personalRecords = exerciseMaxWeight.size;
 
     const workoutAnalytics: WorkoutAnalytics = {
       totalWorkouts,
@@ -176,7 +309,7 @@ export class ProgressAnalyticsService {
       totalSets,
       totalReps,
       trainingVolumeKg,
-      personalRecords: 0,
+      personalRecords,
       weeklyChart: weeklyChartData
     };
 
@@ -242,22 +375,41 @@ export class ProgressAnalyticsService {
     const totalActiveMins = activityLogs.reduce((acc: number, a: any) => acc + (a.active_minutes || 0), 0);
     const totalDistance = activityLogs.reduce((acc: number, a: any) => acc + (Number(a.distance_km) || 0), 0);
 
+    const stepsChart = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime());
+      d.setDate(d.getDate() - i);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(d.getDate()).padStart(2, '0');
+      const ds = `${y}-${m}-${dayNum}`;
+
+      const log = activityLogs.find((a: any) => (a.activity_date || '').split('T')[0] === ds);
+      stepsChart.push({
+        day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        steps: log?.steps || 0,
+        target: 10000
+      });
+    }
+
     const activity: ActivityAnalytics = {
       averageDailySteps: activityLogs.length > 0 ? Math.round(totalSteps / activityLogs.length) : 0,
       stepTarget: 10000,
       averageActiveMinutes: activityLogs.length > 0 ? Math.round(totalActiveMins / activityLogs.length) : 0,
       weeklyDistanceKm: totalDistance,
-      stepsChart: []
+      stepsChart
     };
 
     const totalSleep = sleepLogs.reduce((acc: number, s: any) => acc + (Number(s.duration_hours) || 0), 0);
     const totalQuality = sleepLogs.reduce((acc: number, s: any) => acc + (s.quality_score || 0), 0);
 
+    const restDays = Math.max(0, elapsedDays - completedWorkoutDates.size);
+
     const recovery: RecoveryAnalytics = {
       averageSleepHours: sleepLogs.length > 0 ? Number((totalSleep / sleepLogs.length).toFixed(1)) : 0,
       sleepTargetHours: 8,
       averageSleepQuality: sleepLogs.length > 0 ? Math.round(totalQuality / sleepLogs.length * 10) : 0,
-      restDays: 0
+      restDays
     };
 
     // 7. Consistency Aggregation
