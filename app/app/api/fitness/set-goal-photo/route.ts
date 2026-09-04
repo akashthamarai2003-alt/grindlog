@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const isR2Configured = Boolean(
   process.env.R2_ACCOUNT_ID &&
@@ -19,6 +19,28 @@ const r2Client = isR2Configured
       },
     })
   : null;
+
+const deleteR2File = async (url: string | null | undefined) => {
+  if (!url || !isR2Configured || !r2Client || !process.env.R2_BUCKET_NAME) return;
+  try {
+    let key: string | null = null;
+    if (url.includes('grindlog/')) {
+      key = url.substring(url.indexOf('grindlog/'));
+    } else if (process.env.R2_PUBLIC_URL && url.startsWith(process.env.R2_PUBLIC_URL)) {
+      key = url.replace(`${process.env.R2_PUBLIC_URL}/`, '');
+    }
+
+    if (key) {
+      await r2Client.send(new DeleteObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: key
+      }));
+      console.log(`[R2] Deleted old goal photo from storage: ${key}`);
+    }
+  } catch (err) {
+    console.warn("Failed to delete old goal photo from R2:", err);
+  }
+};
 
 export async function POST(req: Request) {
   try {
@@ -62,6 +84,17 @@ export async function POST(req: Request) {
       } else if (typeof goalImage === 'string' && goalImage.startsWith('http')) {
         finalGoalUrl = goalImage;
       }
+    }
+
+    // Clean up old goal photo from R2 to strictly enforce 1 goal photo per user
+    const { data: currentProfile } = await supabase
+      .from('fitness_os_profiles')
+      .select('goal_physique_image')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (currentProfile?.goal_physique_image && currentProfile.goal_physique_image !== finalGoalUrl) {
+      await deleteR2File(currentProfile.goal_physique_image);
     }
 
     // 1. Update fitness_os_profiles

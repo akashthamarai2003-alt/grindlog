@@ -22,6 +22,47 @@ const r2Client = isR2Configured
     })
   : null;
 
+// Helper to delete an object from Cloudflare R2 to enforce storage cap
+const deleteR2File = async (url: string | null | undefined) => {
+  if (!url || !isR2Configured || !r2Client || !process.env.R2_BUCKET_NAME) return;
+  try {
+    let key: string | null = null;
+    if (url.includes('grindlog/')) {
+      key = url.substring(url.indexOf('grindlog/'));
+    } else if (process.env.R2_PUBLIC_URL && url.startsWith(process.env.R2_PUBLIC_URL)) {
+      key = url.replace(`${process.env.R2_PUBLIC_URL}/`, '');
+    }
+
+    if (key) {
+      await r2Client.send(new DeleteObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: key
+      }));
+      console.log(`[R2] Deleted old photo from storage: ${key}`);
+    }
+  } catch (err) {
+    console.warn(`[R2] Failed to delete old photo (${url}):`, err);
+  }
+};
+
+const deleteScanPhotosFromR2 = async (scan: any) => {
+  if (!scan) return;
+  const urls: (string | null | undefined)[] = [
+    scan.front_image_url,
+    scan.side_image_url,
+    scan.back_image_url,
+  ];
+
+  const analysis = scan.ai_analysis_ref as any;
+  if (analysis) {
+    if (analysis.left_image_url) urls.push(analysis.left_image_url);
+    if (analysis.right_image_url) urls.push(analysis.right_image_url);
+  }
+
+  const uniqueUrls = Array.from(new Set(urls.filter(Boolean))) as string[];
+  await Promise.all(uniqueUrls.map(u => deleteR2File(u)));
+};
+
 export async function POST(req: Request) {
   try {
     const supabase = await createServerSupabase();
@@ -91,7 +132,8 @@ export async function POST(req: Request) {
       .from('fitness_os_body_scans')
       .select('*')
       .eq('user_id', user.id)
-      .order('scan_date', { ascending: true });
+      .order('scan_date', { ascending: true })
+      .order('created_at', { ascending: true });
 
     const scanPayload = {
       front_image_url: frontUrl,
@@ -104,9 +146,30 @@ export async function POST(req: Request) {
       }
     };
 
-    // If the user currently has only 1 scan and its date matches the new scan:
-    // Ensure the initial scan is preserved as the Day 1 Baseline (backdated by 14 days so comparison is clear)
-    if (existingScans && existingScans.length === 1 && existingScans[0].scan_date === finalScanDate) {
+    // Enforce 9-photo storage ceiling per user (Baseline 4 + Current 4 + Goal 1 = 9 max):
+    // If the user already has 2 or more scans (Baseline + Current):
+    // 1. ALWAYS PRESERVE existingScans[0] (Day 1 Baseline scan) - never delete!
+    // 2. Clean up previous Current check-in photos from Cloudflare R2 to save storage.
+    // 3. Remove old check-in records from Supabase so only Baseline + Newest Current exist.
+    if (existingScans && existingScans.length >= 2) {
+      const scansToCleanup = existingScans.slice(1);
+      const idsToDelete = scansToCleanup.map((s: any) => s.id);
+
+      // Delete old check-in photos from Cloudflare R2 storage
+      for (const oldScan of scansToCleanup) {
+        await deleteScanPhotosFromR2(oldScan);
+      }
+
+      // Remove previous check-in rows from database
+      if (idsToDelete.length > 0) {
+        await supabase
+          .from('fitness_os_body_scans')
+          .delete()
+          .in('id', idsToDelete);
+      }
+    } else if (existingScans && existingScans.length === 1 && existingScans[0].scan_date === finalScanDate) {
+      // If the user currently has only 1 scan and its date matches the new scan:
+      // Ensure the initial scan is preserved as the Day 1 Baseline (backdated by 14 days so comparison is clear)
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 14);
       const baselineDate = pastDate.toISOString().split('T')[0];
@@ -116,7 +179,7 @@ export async function POST(req: Request) {
         .eq('id', existingScans[0].id);
     }
 
-    // Always insert as a new scan milestone in user's transformation journey
+    // Insert the new scan as the updated Current scan
     const { error: scanError } = await supabase
       .from('fitness_os_body_scans')
       .insert({
