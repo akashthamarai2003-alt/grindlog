@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Trophy, Activity, Save, Bot, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { FitnessWorkout } from "@/types/fitness/workout";
 import { MuscleMap } from "@/components/fitness/workout/muscle-map";
 
@@ -12,11 +13,13 @@ interface WorkoutCompleteProps {
   exerciseCount: number;
   completedSets: number;
   totalSets: number;
+  actualDuration?: number;
   actualVolume?: number;
   actualCalories?: number;
   recordsBroken?: number;
   exerciseNames?: string[];
-
+  sessionId?: string;
+  userName?: string;
 }
 
 export function WorkoutComplete({ 
@@ -24,17 +27,24 @@ export function WorkoutComplete({
   exerciseCount, 
   completedSets, 
   totalSets,
+  actualDuration,
   actualVolume,
   actualCalories,
   recordsBroken,
-  exerciseNames = []
+  exerciseNames = [],
+  sessionId,
+  userName = "Athlete"
 }: WorkoutCompleteProps) {
   const workoutName = workout?.name || "Upper Body";
-  const duration = workout?.duration_minutes || 48;
+  const duration = actualDuration !== undefined 
+    ? actualDuration 
+    : (workout?.duration_minutes && workout.duration_minutes <= 180 && workout.duration_minutes >= 5
+        ? workout.duration_minutes
+        : (completedSets > 0 ? Math.round(completedSets * 3.5) : 48));
   
   // Real math or fallback
   const volume = actualVolume !== undefined ? actualVolume.toLocaleString() : (totalSets * 10 * 25).toLocaleString();
-  const calories = actualCalories !== undefined ? actualCalories : Math.round(duration * 6.5);
+  const calories = actualCalories !== undefined ? actualCalories : Math.min(850, Math.max(120, Math.round(duration * 6.2)));
   const records = recordsBroken !== undefined ? recordsBroken : 1;
 
   // Feedback State
@@ -50,8 +60,12 @@ export function WorkoutComplete({
   // Dynamic AI Recommendations
   const getDynamicReview = () => {
     const exercises = (workout as any)?.fitness_os_exercises || [];
-    const firstEx = exercises.length > 0 ? exercises[0].name : "main compound lifts";
-    const lastEx = exercises.length > 0 ? exercises[exercises.length - 1].name : "accessories";
+    const names = (exerciseNames && exerciseNames.length > 0)
+      ? exerciseNames
+      : exercises.map((e: any) => e?.name).filter(Boolean);
+
+    const firstEx = names[0] || "main compound lifts";
+    const lastEx = names[names.length - 1] || "accessories";
 
     const recs: string[] = [];
     
@@ -79,32 +93,33 @@ export function WorkoutComplete({
   };
 
   const handleSaveWorkout = async () => {
-    if (!isFeedbackComplete) return;
     setIsSaving(true);
     
     try {
       // Find the active session for this workout
-      const session = (workout as any).fitness_os_workout_sessions?.[0];
-      const sessionId = session?.id;
+      const targetSessionId = sessionId || (workout as any).fitness_os_workout_sessions?.[0]?.id;
 
-      if (sessionId) {
-        await fetch(`/api/workouts/sessions/${sessionId}/feedback`, {
+      if (targetSessionId && (difficulty || feel || pain)) {
+        await fetch(`/api/workouts/sessions/${targetSessionId}/feedback`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ difficulty, feel, pain, painLocation })
         });
       }
       
-      router.push("/");
+      toast.success("Workout completed and saved!");
+      router.push("/workout");
       router.refresh();
     } catch (e) {
       console.error("Failed to save feedback", e);
+      router.push("/workout");
+    } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto px-5 py-12 flex flex-col items-center pb-32">
+    <div className="w-full max-w-md mx-auto px-5 py-12 flex flex-col items-center pb-44">
       <motion.div 
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -129,7 +144,7 @@ export function WorkoutComplete({
         transition={{ delay: 0.4 }}
         className="text-sm font-bold text-white/60 mb-10"
       >
-        Great work, Akash.
+        Great work, {userName}.
       </motion.p>
 
       {/* Stats Card */}

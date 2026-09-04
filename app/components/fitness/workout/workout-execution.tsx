@@ -23,6 +23,8 @@ interface WorkoutExecutionProps {
   initialCoachNote?: string | null;
   isPaused?: boolean;
   onTogglePause?: () => void;
+  isFinishing?: boolean;
+  onFinish?: () => void;
 }
 
 export function WorkoutExecution({
@@ -34,11 +36,14 @@ export function WorkoutExecution({
   initialCoachNote,
   isPaused: externalIsPaused,
   onTogglePause,
+  isFinishing: externalIsFinishing,
+  onFinish,
 }: WorkoutExecutionProps) {
   const router = useRouter();
   const [isFinishing, setIsFinishing] = useState(false);
   const [showEarlyFinishModal, setShowEarlyFinishModal] = useState(false);
   
+  const effectiveIsFinishing = externalIsFinishing !== undefined ? externalIsFinishing : isFinishing;
   const currentSession = (workout as any).fitness_os_workout_sessions?.find((s: any) => s.id === sessionId);
   const [localIsPaused, setLocalIsPaused] = useState(currentSession?.status === "paused");
 
@@ -66,9 +71,10 @@ export function WorkoutExecution({
   );
 
   const handleFinish = async () => {
-    if (isFinishing) return;
+    if (effectiveIsFinishing) return;
     setIsFinishing(true);
     setShowEarlyFinishModal(false);
+    toast.success("All exercises completed! Finishing workout...");
     
     // If it's a mock workout, skip real API call
     if (workout.id === "mock") {
@@ -92,6 +98,18 @@ export function WorkoutExecution({
       setIsFinishing(false);
     }
   };
+
+  const triggerFinish = onFinish || handleFinish;
+
+  // Auto-finish if all exercises completed and not already finishing
+  useEffect(() => {
+    if (allExercisesCompleted && !effectiveIsFinishing) {
+      const timer = setTimeout(() => {
+        triggerFinish();
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [allExercisesCompleted, effectiveIsFinishing, triggerFinish]);
 
   const handlePauseToggle = async () => {
     if (onTogglePause) {
@@ -184,12 +202,12 @@ export function WorkoutExecution({
         {/* Finish Workout button — enabled ONLY when all exercises completed */}
         {allExercisesCompleted ? (
           <button 
-            onClick={handleFinish}
-            disabled={isFinishing}
+            onClick={triggerFinish}
+            disabled={effectiveIsFinishing}
             className="w-full py-4 bg-[#ADFF00] text-black font-black uppercase tracking-widest active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(173,255,0,0.35)] cursor-pointer hover:bg-[#b8ff1a]"
           >
-            {isFinishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-            <span className="text-xs font-black">{isFinishing ? "Finishing..." : "Finish Workout"}</span>
+            {effectiveIsFinishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+            <span className="text-xs font-black">{effectiveIsFinishing ? "Finishing..." : "Finish Workout"}</span>
           </button>
         ) : (
           <button

@@ -404,7 +404,17 @@ export class WorkoutService {
     if (updateSessErr) throw updateSessErr;
 
     // 3. Update workout
-    const durationMin = Math.round(durationSec / 60);
+    let durationMin = Math.round(durationSec / 60);
+
+    // Realistic real-world safeguard:
+    // If a session was left active/unclosed for > 3 hours (180 mins) or < 2 mins,
+    // estimate realistic active lifting time based on completed sets (~3.5 mins/set).
+    if (durationMin > 180 || durationMin < 2) {
+      const completedSetsCount = setsData?.length || 0;
+      durationMin = completedSetsCount > 0 ? Math.round(completedSetsCount * 3.5) : 45;
+      durationSec = durationMin * 60;
+    }
+
     const { error: wErr } = await supabase
       .from("fitness_os_workouts")
       .update({

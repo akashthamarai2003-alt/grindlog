@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { WorkoutHeader } from "./workout-header";
 import { ExerciseDetail } from "./exercise-detail";
@@ -34,9 +35,62 @@ export function WorkoutSessionManager({
   initialExerciseId = null,
   initialCoachNote = null,
 }: WorkoutSessionManagerProps) {
+  const router = useRouter();
   const [workout, setWorkout] = useState(initialWorkout);
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(initialExerciseId);
   const [isPaused, setIsPaused] = useState<boolean>(initialIsPaused || false);
+  const [isFinishing, setIsFinishing] = useState(false);
+
+  const exercises = workout.fitness_os_exercises || [];
+  const totalExercises = exercises.length;
+  const completedExercises = exercises.filter((ex: any) =>
+    ex.fitness_os_sets && ex.fitness_os_sets.length > 0 && ex.fitness_os_sets.every((s: any) => s.completed)
+  ).length;
+  const allExercisesCompleted = totalExercises > 0 && completedExercises === totalExercises;
+
+  const handleFinish = async () => {
+    if (isFinishing) return;
+    setIsFinishing(true);
+
+    toast.success("All exercises completed! Finishing workout...");
+
+    // Prefetch summary route
+    if (workout.id !== "mock") {
+      router.prefetch(`/workout/${workout.id}/summary`);
+    }
+
+    if (workout.id === "mock") {
+      router.push(`/workout/${workout.id}/summary`);
+      return;
+    }
+
+    try {
+      // Optimistic navigation
+      router.push(`/workout/${workout.id}/summary`);
+
+      const res = await fetch(`/api/workouts/sessions/${sessionId}/complete`, {
+        method: "PATCH"
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to finish workout");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to finish workout");
+      setIsFinishing(false);
+    }
+  };
+
+  // Automatically finish when all exercises are completed
+  useEffect(() => {
+    if (allExercisesCompleted && !isFinishing) {
+      const delay = activeExerciseId ? 900 : 400;
+      const timer = setTimeout(() => {
+        handleFinish();
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [allExercisesCompleted, isFinishing, activeExerciseId]);
 
   const handleTogglePause = async () => {
     const nextState = !isPaused;
@@ -100,7 +154,6 @@ export function WorkoutSessionManager({
     });
   };
 
-  const exercises = workout.fitness_os_exercises || [];
   const currentIndex = exercises.findIndex((e: any) => e.id === activeExerciseId);
   const nextExercise = currentIndex >= 0 && currentIndex < exercises.length - 1
     ? { id: exercises[currentIndex + 1].id, name: exercises[currentIndex + 1].name }
@@ -142,6 +195,8 @@ export function WorkoutSessionManager({
           initialCoachNote={initialCoachNote}
           isPaused={isPaused}
           onTogglePause={handleTogglePause}
+          isFinishing={isFinishing}
+          onFinish={handleFinish}
         />
       )}
     </>
