@@ -20,6 +20,8 @@ interface RawAIReview {
   };
 }
 
+export const DAILY_AI_REVIEW_LIMIT = 3;
+
 // Prevent concurrent duplicate executions per user
 const activeUserGenerations = new Set<string>();
 
@@ -33,8 +35,11 @@ function getLocalDateString(date: Date, timezoneOffsetMinutes?: number): string 
 }
 
 export interface DailyLimitCheckResult {
-  hasGeneratedToday: boolean;
+  hasReachedDailyLimit: boolean;
   canGenerateToday: boolean;
+  usedTodayCount: number;
+  remainingToday: number;
+  dailyLimit: number;
   latestReview: AIProgressReview | null;
   generatedAt: string | null;
   todayDate: string;
@@ -44,14 +49,15 @@ export interface GenerateReviewResult {
   review: AIProgressReview | null;
   limitReached: boolean;
   canGenerateToday: boolean;
+  dailyQuotaRemaining: number;
   error?: string;
 }
 
 export class AIInsightService {
   
   /**
-   * Check if a user has already generated an AI review today.
-   * Compares the user's local date or UTC date against the latest insight in fitness_os_ai_insights.
+   * Check how many AI reviews the user has generated today (up to 3 per day).
+   * Compares the user's local date or UTC date against recent insights in fitness_os_ai_insights.
    */
   static async checkDailyGenerationLimit(
     userId: string,
@@ -64,50 +70,60 @@ export class AIInsightService {
       ? clientDate
       : getLocalDateString(now, timezoneOffset);
 
-    const { data: latest } = await supabase
+    // Fetch the recent insights for this user (up to 10) to accurately count today's usage
+    const { data: recentInsights } = await supabase
       .from('fitness_os_ai_insights')
       .select('*')
       .eq('user_id', userId)
       .eq('insight_type', 'progress_review')
       .order('generated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(10);
 
-    if (!latest) {
-      return {
-        hasGeneratedToday: false,
-        canGenerateToday: true,
-        latestReview: null,
-        generatedAt: null,
-        todayDate: todayDateStr,
+    const insights = recentInsights || [];
+    const latest = insights.length > 0 ? insights[0] : null;
+
+    // Filter which insights were generated today
+    const todayInsights = insights.filter((row: any) => {
+      if (!row.generated_at) return false;
+      const genDate = new Date(row.generated_at);
+      const genLocalDateStr = getLocalDateString(genDate, timezoneOffset);
+      const genUtcDateStr = genDate.toISOString().split('T')[0];
+      const nowUtcDateStr = now.toISOString().split('T')[0];
+      return (
+        genLocalDateStr === todayDateStr ||
+        genUtcDateStr === nowUtcDateStr ||
+        (clientDate ? genUtcDateStr === clientDate : false)
+      );
+    });
+
+    const usedTodayCount = todayInsights.length;
+    const remainingToday = Math.max(0, DAILY_AI_REVIEW_LIMIT - usedTodayCount);
+    const hasReachedDailyLimit = usedTodayCount >= DAILY_AI_REVIEW_LIMIT;
+    const canGenerateToday = !hasReachedDailyLimit;
+
+    let mappedReview: AIProgressReview | null = null;
+    if (latest) {
+      mappedReview = {
+        summary: latest.summary,
+        strengths: latest.strengths || [],
+        weaknesses: latest.weaknesses || [],
+        recommendations: latest.recommendations || [],
+        generatedAt: latest.generated_at,
+        canGenerateToday,
+        dailyQuotaRemaining: remainingToday,
+        dailyQuotaTotal: DAILY_AI_REVIEW_LIMIT,
+        dailyUsedCount: usedTodayCount,
       };
     }
 
-    const genDate = new Date(latest.generated_at);
-    const genLocalDateStr = getLocalDateString(genDate, timezoneOffset);
-    const genUtcDateStr = genDate.toISOString().split('T')[0];
-    const nowUtcDateStr = now.toISOString().split('T')[0];
-
-    // Check if the review was generated today (local date, client date, or UTC date)
-    const hasGeneratedToday =
-      genLocalDateStr === todayDateStr ||
-      genUtcDateStr === nowUtcDateStr ||
-      (clientDate ? genUtcDateStr === clientDate : false);
-
-    const mappedReview: AIProgressReview = {
-      summary: latest.summary,
-      strengths: latest.strengths || [],
-      weaknesses: latest.weaknesses || [],
-      recommendations: latest.recommendations || [],
-      generatedAt: latest.generated_at,
-      canGenerateToday: !hasGeneratedToday,
-    };
-
     return {
-      hasGeneratedToday,
-      canGenerateToday: !hasGeneratedToday,
+      hasReachedDailyLimit,
+      canGenerateToday,
+      usedTodayCount,
+      remainingToday,
+      dailyLimit: DAILY_AI_REVIEW_LIMIT,
       latestReview: mappedReview,
-      generatedAt: latest.generated_at,
+      generatedAt: latest?.generated_at || null,
       todayDate: todayDateStr,
     };
   }
@@ -122,14 +138,15 @@ export class AIInsightService {
     const supabase = await createServerSupabase();
     const now = new Date();
 
-    // 1. Strictly enforce 1-use-per-day rate limit per user
+    // 1. Strictly enforce 3-uses-per-day rate limit per user
     const limitCheck = await this.checkDailyGenerationLimit(userId, clientDate, timezoneOffset);
-    if (limitCheck.hasGeneratedToday) {
+    if (limitCheck.hasReachedDailyLimit) {
       return {
         review: limitCheck.latestReview,
         limitReached: true,
         canGenerateToday: false,
-        error: "Daily limit reached. You can generate 1 AI progress review per day. Next review available tomorrow.",
+        dailyQuotaRemaining: 0,
+        error: `Daily limit reached (${DAILY_AI_REVIEW_LIMIT}/${DAILY_AI_REVIEW_LIMIT} reviews used). You can generate up to ${DAILY_AI_REVIEW_LIMIT} AI reviews per day (e.g. Morning, Post-Workout, Evening). Next reviews reset tomorrow.`,
       };
     }
 
@@ -138,7 +155,8 @@ export class AIInsightService {
       return {
         review: limitCheck.latestReview,
         limitReached: false,
-        canGenerateToday: true,
+        canGenerateToday: limitCheck.canGenerateToday,
+        dailyQuotaRemaining: limitCheck.remainingToday,
       };
     }
 
@@ -148,6 +166,7 @@ export class AIInsightService {
         review: limitCheck.latestReview,
         limitReached: false,
         canGenerateToday: false,
+        dailyQuotaRemaining: limitCheck.remainingToday,
         error: "An AI review generation is already in progress. Please wait a moment.",
       };
     }
@@ -266,19 +285,26 @@ You MUST output perfectly formatted JSON matching this exact structure:
         console.error("Failed to save AI insight:", error);
       }
 
+      const newUsedCount = limitCheck.usedTodayCount + 1;
+      const newRemaining = Math.max(0, DAILY_AI_REVIEW_LIMIT - newUsedCount);
+
       const generatedReview: AIProgressReview = {
         summary: response.summary,
         strengths: strengthsList,
         weaknesses: weaknessesList,
         recommendations: recommendationsList,
         generatedAt: inserted?.generated_at || new Date().toISOString(),
-        canGenerateToday: false,
+        canGenerateToday: newRemaining > 0,
+        dailyQuotaRemaining: newRemaining,
+        dailyQuotaTotal: DAILY_AI_REVIEW_LIMIT,
+        dailyUsedCount: newUsedCount,
       };
 
       return {
         review: generatedReview,
-        limitReached: true,
-        canGenerateToday: false,
+        limitReached: newRemaining === 0,
+        canGenerateToday: newRemaining > 0,
+        dailyQuotaRemaining: newRemaining,
       };
     } catch (error: any) {
       console.error("AI Insight Generation Failed:", error);
@@ -286,6 +312,7 @@ You MUST output perfectly formatted JSON matching this exact structure:
         review: null,
         limitReached: false,
         canGenerateToday: true,
+        dailyQuotaRemaining: limitCheck.remainingToday,
         error: error.message || "AI insight generation failed",
       };
     } finally {

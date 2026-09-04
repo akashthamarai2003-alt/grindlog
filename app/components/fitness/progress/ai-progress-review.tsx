@@ -40,16 +40,17 @@ export function AIProgressReviewCard({
     setReview(initialReview);
   }, [initialReview]);
 
-  // Determine whether this user has already used their 1 generation for today
-  const isGeneratedToday = useMemo(() => {
-    if (review?.canGenerateToday === false) return true;
-    return isDateToday(review?.generatedAt);
-  }, [review]);
+  // Determine remaining daily quota (out of 3)
+  const quotaRemaining = typeof review?.dailyQuotaRemaining === "number"
+    ? review.dailyQuotaRemaining
+    : (review?.canGenerateToday === false ? 0 : 3);
+
+  const hasReachedDailyLimit = quotaRemaining <= 0;
 
   const generateReview = async (forceRefresh = false) => {
-    // Client-side guard: 1 use per day
-    if (isGeneratedToday && forceRefresh) {
-      toast.info("Daily limit reached (1 review per day). Your next review resets tomorrow.");
+    // Client-side guard: 3 uses per day
+    if (hasReachedDailyLimit && forceRefresh) {
+      toast.info("Daily quota reached (3/3 reviews used). Resets tomorrow.");
       return;
     }
 
@@ -113,7 +114,7 @@ export function AIProgressReviewCard({
               Groq AI Coach
             </span>
             <span className="text-[9px] font-mono font-bold text-white/50 bg-white/5 px-2 py-0.5 rounded border border-white/10 uppercase">
-              1 / Day
+              3 / Day Quota
             </span>
           </div>
         </div>
@@ -129,7 +130,7 @@ export function AIProgressReviewCard({
             Coach AI Progress Analysis
           </h3>
           <p className="text-xs font-medium text-white/50 max-w-md mb-5 leading-relaxed">
-            Generate an AI-driven synthesis of your workout volume, macronutrient targets, and sleep recovery for this {period} period. Available once per day.
+            Generate an AI-driven synthesis of your workout volume, macronutrient targets, and sleep recovery for this {period} period. Up to 3 reviews per day (morning, post-workout, evening).
           </p>
 
           {/* 3 Quick Value Badges */}
@@ -165,7 +166,7 @@ export function AIProgressReviewCard({
             className="flex items-center gap-2 px-6 py-3 bg-[#ADFF00] hover:bg-[#baff22] text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#ADFF00]/15 active:scale-95 transition-all cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Generate Today&apos;s Review (1/Day)</span>
+            <span>Generate Today&apos;s Review (3/Day)</span>
           </button>
         </div>
       </div>
@@ -203,17 +204,17 @@ export function AIProgressReviewCard({
           AI Progress Review
         </h2>
 
-        {isGeneratedToday ? (
+        {hasReachedDailyLimit ? (
           /* Locked / Limit Reached Pill for Today */
           <div
-            title="You can generate 1 AI review per calendar day. Your next review resets tomorrow."
+            title="You have used all 3 AI reviews for today. Quota resets tomorrow."
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/10 text-white/40 text-[10px] font-bold uppercase tracking-wider select-none cursor-default"
           >
             <CheckCircle2 className="w-3.5 h-3.5 text-[#ADFF00]/60" />
-            <span>Daily Limit Reached (1/1)</span>
+            <span>Daily Quota Reached (3/3)</span>
           </div>
         ) : (
-          /* Active Button to generate today's review when an older review is displayed */
+          /* Active Button to refresh or generate today's review when quota remains */
           <button
             type="button"
             onClick={() => generateReview(true)}
@@ -225,7 +226,11 @@ export function AIProgressReviewCard({
             ) : (
               <Sparkles className="w-3 h-3 text-[#ADFF00]" />
             )}
-            <span>{isGenerating ? "Analyzing..." : "Generate Today's Review"}</span>
+            <span>
+              {isGenerating
+                ? "Analyzing..."
+                : `Refresh Review (${quotaRemaining}/3 Left)`}
+            </span>
           </button>
         )}
       </div>
@@ -330,13 +335,13 @@ export function AIProgressReviewCard({
                   })}`
                 : `Active for ${period}`}
             </span>
-            {isGeneratedToday ? (
+            {hasReachedDailyLimit ? (
               <span className="text-[#ADFF00]/80 font-semibold flex items-center gap-1">
-                • <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF00] animate-pulse inline-block" /> 1/1 Used (Resets Tomorrow)
+                • <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF00] animate-pulse inline-block" /> 3/3 Used (Resets Tomorrow)
               </span>
             ) : (
-              <span className="text-amber-400/80 font-medium flex items-center gap-1">
-                • <Clock className="w-2.5 h-2.5 inline-block" /> 1 Review Available Today
+              <span className="text-white/60 font-medium flex items-center gap-1">
+                • <Clock className="w-2.5 h-2.5 inline-block text-[#ADFF00]" /> {quotaRemaining}/3 Reviews Left Today
               </span>
             )}
           </div>

@@ -132,6 +132,9 @@ export interface AIProgressReview {
   recommendations: string[];
   generatedAt: string;
   canGenerateToday?: boolean;
+  dailyQuotaRemaining?: number;
+  dailyQuotaTotal?: number;
+  dailyUsedCount?: number;
 }
 
 export interface Achievement {

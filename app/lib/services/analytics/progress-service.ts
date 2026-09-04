@@ -80,7 +80,7 @@ export class ProgressAnalyticsService {
       supabase.from('nutrition_daily_summary').select('*').eq('user_id', userId).gte('date', startDateStr.split('T')[0]),
       supabase.from('fitness_os_activity_logs').select('*').eq('user_id', userId).gte('activity_date', startDateStr.split('T')[0]),
       supabase.from('fitness_os_sleep_logs').select('*').eq('user_id', userId).gte('sleep_date', startDateStr.split('T')[0]),
-      supabase.from('fitness_os_ai_insights').select('*').eq('user_id', userId).order('generated_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('fitness_os_ai_insights').select('*').eq('user_id', userId).order('generated_at', { ascending: false }).limit(5),
       supabase.from('fitness_os_user_achievements').select('*, achievement:achievement_id(title, description, icon)').eq('user_id', userId),
       supabase.from('fitness_os_body_metrics').select('weight, recorded_at').eq('user_id', userId).not('weight', 'is', null).gte('recorded_at', startDateStr).order('recorded_at', { ascending: true }),
       supabase.from('fitness_os_workout_plans').select('plan_data').eq('user_id', userId).eq('status', 'active').maybeSingle()
@@ -684,17 +684,29 @@ export class ProgressAnalyticsService {
 
     // 8. AI Review
     let aiReview: AIProgressReview | null = null;
-    if (latestReview) {
-      const genDate = new Date(latestReview.generated_at);
-      const isGeneratedToday = genDate.toISOString().split('T')[0] === todayStr;
+    const insightsList = Array.isArray(latestReview)
+      ? latestReview
+      : (latestReview ? [latestReview] : []);
+    const topReview = insightsList[0] || null;
+
+    if (topReview) {
+      const todayInsightsCount = insightsList.filter((row: any) => {
+        if (!row.generated_at) return false;
+        return new Date(row.generated_at).toISOString().split('T')[0] === todayStr;
+      }).length;
+
+      const remainingToday = Math.max(0, 3 - todayInsightsCount);
 
       aiReview = {
-        summary: latestReview.summary,
-        strengths: latestReview.strengths || [],
-        weaknesses: latestReview.weaknesses || [],
-        recommendations: latestReview.recommendations || [],
-        generatedAt: latestReview.generated_at,
-        canGenerateToday: !isGeneratedToday,
+        summary: topReview.summary,
+        strengths: topReview.strengths || [],
+        weaknesses: topReview.weaknesses || [],
+        recommendations: topReview.recommendations || [],
+        generatedAt: topReview.generated_at,
+        canGenerateToday: remainingToday > 0,
+        dailyQuotaRemaining: remainingToday,
+        dailyQuotaTotal: 3,
+        dailyUsedCount: todayInsightsCount,
       };
     }
 

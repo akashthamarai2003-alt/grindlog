@@ -46,13 +46,14 @@ export async function POST(req: NextRequest) {
     const clientDate: string | undefined = body.clientDate;
     const timezoneOffset: number | undefined = typeof body.timezoneOffset === 'number' ? body.timezoneOffset : undefined;
 
-    // Check rate limit before executing AI generation
+    // Check rate limit before executing AI generation (3 generations per day)
     const limitCheck = await AIInsightService.checkDailyGenerationLimit(user.id, clientDate, timezoneOffset);
-    if (limitCheck.hasGeneratedToday) {
+    if (limitCheck.hasReachedDailyLimit) {
       return NextResponse.json({
-        error: "Daily limit reached. You can generate 1 AI progress review per day. Next review available tomorrow.",
+        error: "Daily limit reached (3/3 reviews used). You can generate up to 3 AI reviews per day (e.g. Morning, Post-Workout, Evening). Next reviews reset tomorrow.",
         limitReached: true,
         canGenerateToday: false,
+        dailyQuotaRemaining: 0,
         review: limitCheck.latestReview,
       }, { status: 429 });
     }
@@ -67,9 +68,10 @@ export async function POST(req: NextRequest) {
 
     if (result.limitReached && !result.review) {
       return NextResponse.json({
-        error: result.error || "Daily limit reached. Next review available tomorrow.",
+        error: result.error || "Daily limit reached (3/3). Next reviews reset tomorrow.",
         limitReached: true,
         canGenerateToday: false,
+        dailyQuotaRemaining: 0,
       }, { status: 429 });
     }
 
@@ -78,6 +80,7 @@ export async function POST(req: NextRequest) {
         error: result.error || "Could not generate AI review with Groq. Please try again in a moment.",
         limitReached: result.limitReached,
         canGenerateToday: result.canGenerateToday,
+        dailyQuotaRemaining: result.dailyQuotaRemaining,
       }, { status: 500 });
     }
 
@@ -85,6 +88,7 @@ export async function POST(req: NextRequest) {
       review: result.review,
       limitReached: result.limitReached,
       canGenerateToday: result.canGenerateToday,
+      dailyQuotaRemaining: result.dailyQuotaRemaining,
     });
   } catch (error: any) {
     console.error("AI Review API Error:", error);
