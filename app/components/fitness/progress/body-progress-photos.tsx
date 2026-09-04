@@ -228,47 +228,49 @@ export function BodyProgressPhotos({
     <div className="w-full flex flex-col gap-3">
       {/* Header Row: Title, Badges, and Action Buttons */}
       <div className="flex items-center justify-between gap-2 px-0.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase whitespace-nowrap">
             Body Progress
           </h2>
           {isSingleScan && activeMode === 'timeline' && (
-            <span className="px-2 py-0.5 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 text-[9px] font-bold text-[#ADFF00] uppercase tracking-wider">
-              Baseline Scan
+            <span className="px-1.5 py-0.5 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 text-[8px] font-bold text-[#ADFF00] uppercase tracking-wider whitespace-nowrap">
+              Baseline
             </span>
           )}
           {activeMode === 'goal' && (
-            <span className="px-2 py-0.5 rounded-full bg-[#ADFF00]/20 border border-[#ADFF00]/30 text-[9px] font-bold text-[#ADFF00] uppercase tracking-wider flex items-center gap-1">
-              <Target className="w-2.5 h-2.5" /> Goal Compare
+            <span className="px-1.5 py-0.5 rounded-full bg-[#ADFF00]/20 border border-[#ADFF00]/30 text-[8px] font-bold text-[#ADFF00] uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
+              <Target className="w-2.5 h-2.5" /> Goal
             </span>
           )}
         </div>
 
         {/* Buttons Near Add Scan */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           {/* Compare Goal Button */}
           <button
             type="button"
             onClick={handleGoalCompareToggle}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shrink-0 border ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 sm:px-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-wider transition-all shrink-0 border ${
               activeMode === 'goal'
-                ? 'bg-[#ADFF00] text-black border-[#ADFF00] shadow-md shadow-[#ADFF00]/20 font-extrabold'
+                ? 'bg-[#ADFF00] text-black border-[#ADFF00] shadow-sm font-extrabold'
                 : 'bg-[#ADFF00]/10 text-[#ADFF00] border-[#ADFF00]/20 hover:bg-[#ADFF00]/20'
             }`}
             title="Compare Front Photo with Goal Picture"
           >
-            <Target className="w-3.5 h-3.5" />
-            <span>Compare Goal</span>
+            <Target className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="sm:hidden">Goal</span>
+            <span className="hidden sm:inline">Compare Goal</span>
           </button>
 
           {/* Add Scan Button */}
           <Link 
             href="/progress/add-scan" 
             onClick={handleAddClick}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-[10px] uppercase tracking-wider border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors shrink-0 shadow-sm"
+            className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-wider border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors shrink-0 shadow-sm"
           >
-            <Camera className="w-3.5 h-3.5" />
-            <span>Add Scan</span>
+            <Camera className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="sm:hidden">Scan</span>
+            <span className="hidden sm:inline">Add Scan</span>
           </Link>
         </div>
       </div>
