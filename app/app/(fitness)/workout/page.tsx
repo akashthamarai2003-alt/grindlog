@@ -34,7 +34,8 @@ export default async function WorkoutIndexPage() {
   const nextWorkout = !workout && activePlan
     ? await WorkoutService.getNextWorkout(user.id, activePlan.id)
     : null;
-  const weekDays = await WorkoutService.getWeeklyWorkout(user.id, nextWorkout?.workout_date);
+  const weekDays = await WorkoutService.getWeeklyWorkout(user.id);
+  const planDays = activePlan ? await WorkoutService.getPlanSchedule(user.id, activePlan.id) : null;
 
   const tz = await WorkoutService.getUserTimezone(user.id);
   const formatter = new Intl.DateTimeFormat('en-US', { 
@@ -68,7 +69,7 @@ export default async function WorkoutIndexPage() {
           />
           
           <div className="mt-2">
-            <WeeklyWorkoutView weekDays={weekDays} />
+            <WeeklyWorkoutView weekDays={weekDays} planDays={planDays} />
 
             {!workout && !nextWorkout ? (
               <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6 mb-6">

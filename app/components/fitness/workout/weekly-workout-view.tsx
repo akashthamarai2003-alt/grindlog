@@ -4,7 +4,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, X, Check, Circle, Dot, Minus } from "lucide-react";
 
-export function WeeklyWorkoutView({ weekDays = [] }: { weekDays?: any[] }) {
+export function WeeklyWorkoutView({ 
+  weekDays = [],
+  planDays = null
+}: { 
+  weekDays?: any[];
+  planDays?: any[] | null;
+}) {
   const [isPlanOpen, setIsPlanOpen] = useState(false);
 
   const getStatusIcon = (status: string) => {
@@ -13,8 +19,11 @@ export function WeeklyWorkoutView({ weekDays = [] }: { weekDays?: any[] }) {
       case "today": return <div className="w-2 h-2 rounded-full bg-[#ADFF00]" />;
       case "upcoming": return <div className="w-2.5 h-2.5 rounded-full border border-white/30" />;
       case "rest": return <Minus className="w-4 h-4 text-white/20" />;
+      default: return <Minus className="w-4 h-4 text-white/20" />;
     }
   };
+
+  const modalDays = planDays && planDays.length > 0 ? planDays : weekDays;
 
   return (
     <>
@@ -36,7 +45,7 @@ export function WeeklyWorkoutView({ weekDays = [] }: { weekDays?: any[] }) {
         <div className="flex justify-between items-center bg-[#111A10] border border-white/5 rounded-2xl p-4">
           {weekDays.map((d, i) => (
             <div key={i} className="flex flex-col items-center gap-2">
-              <span className={`text-[10px] font-black tracking-widest ${d.status === 'today' ? 'text-[#ADFF00]' : 'text-white/40'}`}>
+              <span className={`text-[10px] font-black tracking-widest ${d.isToday || d.status === 'today' ? 'text-[#ADFF00]' : 'text-white/40'}`}>
                 {d.day.charAt(0)}
               </span>
               <div className="h-6 flex items-center justify-center">
@@ -84,29 +93,32 @@ export function WeeklyWorkoutView({ weekDays = [] }: { weekDays?: any[] }) {
               </div>
               
               <div className="flex flex-col gap-3">
-                {weekDays.map((day, idx) => (
-                  <div key={idx} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${day.status === 'today' ? 'bg-[#ADFF00]/10 border-[#ADFF00]/50' : 'bg-[#111A10] border-white/5'}`}>
-                    
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">
-                        {day.day}
-                      </span>
-                      <span className={`text-sm font-bold uppercase tracking-wider ${day.status === 'today' ? 'text-[#ADFF00]' : 'text-white'}`}>
-                        {day.name}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      <div className="h-5 flex items-center justify-center">
-                        {getStatusIcon(day.status)}
+                {modalDays.map((day: any, idx: number) => {
+                  const isCurrentDay = day.isToday || day.status === 'today';
+                  return (
+                    <div key={idx} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isCurrentDay ? 'bg-[#ADFF00]/10 border-[#ADFF00]/50' : 'bg-[#111A10] border-white/5'}`}>
+                      
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">
+                          {day.day}
+                        </span>
+                        <span className={`text-sm font-bold uppercase tracking-wider ${isCurrentDay ? 'text-[#ADFF00]' : 'text-white'}`}>
+                          {day.name}
+                        </span>
                       </div>
-                      <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">
-                        {day.status}
-                      </span>
-                    </div>
 
-                  </div>
-                ))}
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="h-5 flex items-center justify-center">
+                          {getStatusIcon(day.status)}
+                        </div>
+                        <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">
+                          {day.status}
+                        </span>
+                      </div>
+
+                    </div>
+                  );
+                })}
               </div>
               
             </motion.div>

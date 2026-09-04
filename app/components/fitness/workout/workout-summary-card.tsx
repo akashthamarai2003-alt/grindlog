@@ -255,7 +255,7 @@ export function WorkoutSummaryCard({
               </button>
             </div>
             <p className="mt-5 text-sm leading-relaxed text-white/60">
-              This session is scheduled for <span className="font-bold text-white">{scheduledLabel || "a future date"}</span>. Starting early will keep the original schedule and record that you began it today.
+              This session is scheduled for <span className="font-bold text-white">{scheduledLabel || "a future date"}</span>. Starting early will record this workout as completed today and keep your upcoming plan progression in sync.
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button

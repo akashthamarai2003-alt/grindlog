@@ -34,6 +34,7 @@ export class WorkoutService {
    */
   static async getTodayWorkout(userId: string) {
     const supabase = await createServerSupabase();
+    const today = await this.getLocalDateString(userId);
 
     // 1. If any workout is already in progress, that is today's active workout
     const { data: inProgressWorkout } = await supabase
@@ -52,6 +53,18 @@ export class WorkoutService {
       .maybeSingle();
 
     if (inProgressWorkout) {
+      if (inProgressWorkout.workout_date > today) {
+        const origDate = inProgressWorkout.workout_date;
+        await supabase
+          .from("fitness_os_workouts")
+          .update({ workout_date: today })
+          .eq("id", inProgressWorkout.id);
+        inProgressWorkout.workout_date = today;
+        if (inProgressWorkout.plan_id) {
+          await this.compactUpcomingPlanSchedule(supabase, inProgressWorkout.plan_id, origDate);
+        }
+      }
+
       const exerciseCount = inProgressWorkout.fitness_os_exercises?.length || 0;
       const completedExercises = inProgressWorkout.fitness_os_exercises?.filter((e: any) => 
         e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
@@ -64,8 +77,7 @@ export class WorkoutService {
       };
     }
 
-    const today = await this.getLocalDateString(userId);
-
+    // 2. Check for workout with workout_date = today
     const { data: workout, error } = await supabase
       .from("fitness_os_workouts")
       .select(`
@@ -83,18 +95,78 @@ export class WorkoutService {
       .maybeSingle();
 
     if (error) throw error;
-    if (!workout) return null;
+    if (workout) {
+      const exerciseCount = workout.fitness_os_exercises?.length || 0;
+      const completedExercises = workout.fitness_os_exercises?.filter((e: any) => 
+        e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
+      ).length || 0;
 
-    const exerciseCount = workout.fitness_os_exercises?.length || 0;
-    const completedExercises = workout.fitness_os_exercises?.filter((e: any) => 
-      e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
-    ).length || 0;
+      return {
+        ...workout,
+        exerciseCount,
+        completedExercises
+      };
+    }
 
-    return {
-      ...workout,
-      exerciseCount,
-      completedExercises
-    };
+    // 3. Self-healing / Early-completion recovery:
+    // If no workout is scheduled/completed for today, check if a workout was completed
+    // today in the user's timezone that still holds a future workout_date (e.g. started early from Monday).
+    const tz = await this.getUserTimezone(userId);
+    const { data: earlyCompletedWorkouts } = await supabase
+      .from("fitness_os_workouts")
+      .select(`
+        *,
+        fitness_os_exercises (
+          id, name, target_sets, target_reps, rest_seconds,
+          fitness_os_sets(completed)
+        )
+      `)
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .gt("workout_date", today)
+      .not("completed_at", "is", null)
+      .order("completed_at", { ascending: false })
+      .limit(5);
+
+    if (earlyCompletedWorkouts && earlyCompletedWorkouts.length > 0) {
+      const targetEarly = earlyCompletedWorkouts.find((w: any) => {
+        if (!w.completed_at) return false;
+        const compDate = new Intl.DateTimeFormat("en-CA", {
+          timeZone: tz,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(new Date(w.completed_at));
+        return compDate === today;
+      });
+
+      if (targetEarly) {
+        const origDate = targetEarly.workout_date;
+        await supabase
+          .from("fitness_os_workouts")
+          .update({ workout_date: today })
+          .eq("id", targetEarly.id);
+
+        targetEarly.workout_date = today;
+
+        if (targetEarly.plan_id) {
+          await this.compactUpcomingPlanSchedule(supabase, targetEarly.plan_id, origDate);
+        }
+
+        const exerciseCount = targetEarly.fitness_os_exercises?.length || 0;
+        const completedExercises = targetEarly.fitness_os_exercises?.filter((e: any) => 
+          e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
+        ).length || 0;
+
+        return {
+          ...targetEarly,
+          exerciseCount,
+          completedExercises
+        };
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -191,7 +263,11 @@ export class WorkoutService {
       const isRestDay = name.toLowerCase().includes("rest");
 
       if (iterStr === todayStr) {
-        status = "today";
+        if (dayWorkout && dayWorkout.status === "completed") {
+          status = "completed";
+        } else {
+          status = "today";
+        }
       } else if (dayWorkout && !isRestDay) {
         if (dayWorkout.status === "completed") {
           status = "completed";
@@ -209,11 +285,57 @@ export class WorkoutService {
         day: dayNames[i],
         status,
         name,
-        date: iterStr
+        date: iterStr,
+        isToday: iterStr === todayStr
       });
     }
 
     return weekDays;
+  }
+
+  /**
+   * When an upcoming workout is pulled forward (started early),
+   * advance subsequent scheduled workouts of the plan so the originally
+   * scheduled date slot is not left as an empty gap.
+   */
+  static async compactUpcomingPlanSchedule(
+    supabase: any,
+    planId: string,
+    pulledWorkoutOriginalDate: string
+  ) {
+    if (!planId || !pulledWorkoutOriginalDate) return;
+
+    try {
+      // Fetch remaining scheduled workouts for this plan ordered by date
+      const { data: scheduledWorkouts } = await supabase
+        .from("fitness_os_workouts")
+        .select("id, workout_date")
+        .eq("plan_id", planId)
+        .eq("status", "scheduled")
+        .gt("workout_date", pulledWorkoutOriginalDate)
+        .order("workout_date", { ascending: true });
+
+      if (!scheduledWorkouts || scheduledWorkouts.length === 0) return;
+
+      // The available slots begin with the pulled workout's original date
+      const targetDates = [
+        pulledWorkoutOriginalDate,
+        ...scheduledWorkouts.slice(0, -1).map((w: any) => w.workout_date)
+      ];
+
+      for (let i = 0; i < scheduledWorkouts.length; i++) {
+        const workout = scheduledWorkouts[i];
+        const newDate = targetDates[i];
+        if (workout.workout_date !== newDate) {
+          await supabase
+            .from("fitness_os_workouts")
+            .update({ workout_date: newDate })
+            .eq("id", workout.id);
+        }
+      }
+    } catch (e) {
+      console.error("compactUpcomingPlanSchedule error:", e);
+    }
   }
 
   /**
@@ -225,7 +347,7 @@ export class WorkoutService {
     // 1. Verify ownership and get workout status
     const { data: workout, error: wErr } = await supabase
       .from("fitness_os_workouts")
-      .select("user_id, status, workout_date")
+      .select("user_id, status, workout_date, plan_id")
       .eq("id", workoutId)
       .single();
 
@@ -267,10 +389,22 @@ export class WorkoutService {
 
     // 4. Update parent workout status to in_progress
     if (workout.status === "scheduled") {
+      const updateData: Record<string, any> = {
+        status: "in_progress",
+        started_at: new Date().toISOString()
+      };
+      if (workout.workout_date > today) {
+        updateData.workout_date = today;
+      }
+
       await supabase
         .from("fitness_os_workouts")
-        .update({ status: "in_progress", started_at: new Date().toISOString() })
+        .update(updateData)
         .eq("id", workoutId);
+
+      if (workout.workout_date > today && workout.plan_id) {
+        await this.compactUpcomingPlanSchedule(supabase, workout.plan_id, workout.workout_date);
+      }
     }
 
     return newSession;
@@ -415,20 +549,74 @@ export class WorkoutService {
       durationSec = durationMin * 60;
     }
 
+    const today = await this.getLocalDateString(userId);
+    const { data: workoutRecord } = await supabase
+      .from("fitness_os_workouts")
+      .select("workout_date, plan_id")
+      .eq("id", session.workout_id)
+      .single();
+
+    const updateWorkoutData: Record<string, any> = {
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      duration_minutes: durationMin
+    };
+
+    const isEarlyCompletion = Boolean(workoutRecord && workoutRecord.workout_date > today);
+    const originalDate = workoutRecord?.workout_date;
+    if (isEarlyCompletion) {
+      updateWorkoutData.workout_date = today;
+    }
+
     const { error: wErr } = await supabase
       .from("fitness_os_workouts")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-        duration_minutes: durationMin
-      })
+      .update(updateWorkoutData)
       .eq("id", session.workout_id);
       
     if (wErr) throw wErr;
+
+    if (isEarlyCompletion && workoutRecord?.plan_id && originalDate) {
+      await this.compactUpcomingPlanSchedule(supabase, workoutRecord.plan_id, originalDate);
+    }
 
     return {
       duration_seconds: durationSec,
       total_volume: totalVolume
     };
   }
+
+  /**
+   * Returns the active plan schedule with days and completion status.
+   */
+  static async getPlanSchedule(userId: string, planId?: string) {
+    if (!planId) return null;
+    const supabase = await createServerSupabase();
+    const todayStr = await this.getLocalDateString(userId);
+
+    const { data: workouts } = await supabase
+      .from("fitness_os_workouts")
+      .select("id, name, workout_date, status")
+      .eq("plan_id", planId)
+      .eq("user_id", userId)
+      .order("workout_date", { ascending: true });
+
+    if (!workouts || workouts.length === 0) return null;
+
+    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    return workouts.map((w: any) => {
+      const d = new Date(`${w.workout_date}T12:00:00Z`);
+      const dayName = dayNames[d.getUTCDay()];
+      const isCompleted = w.status === "completed";
+      const isToday = w.workout_date === todayStr;
+
+      return {
+        day: dayName,
+        status: isCompleted ? "completed" : isToday ? "today" : "upcoming",
+        name: w.name,
+        date: w.workout_date,
+        isToday
+      };
+    });
+  }
 }
+
