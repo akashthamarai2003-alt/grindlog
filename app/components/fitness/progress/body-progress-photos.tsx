@@ -71,6 +71,112 @@ export function BodyProgressPhotos({
   const [timelineStyle, setTimelineStyle] = useState<'side-by-side' | 'slider'>('side-by-side');
   const goalInputRef = useRef<HTMLInputElement>(null);
 
+  // Split comparison slider interaction handling (mobile scroll safe)
+  const sliderContainerRef = useRef<HTMLDivElement>(null);
+  const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number; isHorizontal?: boolean } | null>(null);
+
+  const updateSliderFromClientX = (clientX: number) => {
+    if (!sliderContainerRef.current) return;
+    const rect = sliderContainerRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const offsetX = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
+    setSliderPos(Math.round(percentage));
+  };
+
+  const handleSliderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse') {
+      if (e.button !== 0) return;
+      updateSliderFromClientX(e.clientX);
+      setIsDraggingSlider(true);
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {}
+      return;
+    }
+
+    // Touch interaction:
+    // Do NOT jump slider on touch down! Prevents accidental baseline trigger when user is vertically scrolling
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      isHorizontal: undefined,
+    };
+  };
+
+  const handleSliderPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse') {
+      if (isDraggingSlider) {
+        updateSliderFromClientX(e.clientX);
+      }
+      return;
+    }
+
+    // Touch interaction:
+    if (!dragStartRef.current) return;
+
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+
+    if (dragStartRef.current.isHorizontal === undefined) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+        // User is vertically scrolling the page - cancel slider drag so native scroll is smooth
+        dragStartRef.current = null;
+        return;
+      }
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+        // User is horizontally sliding to compare photos
+        dragStartRef.current.isHorizontal = true;
+        setIsDraggingSlider(true);
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        } catch {}
+      } else {
+        return;
+      }
+    }
+
+    if (dragStartRef.current?.isHorizontal) {
+      updateSliderFromClientX(e.clientX);
+    }
+  };
+
+  const handleSliderPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragStartRef.current = null;
+    setIsDraggingSlider(false);
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {}
+  };
+
+  const handleKnobPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    setIsDraggingSlider(true);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handleKnobPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingSlider) {
+      e.stopPropagation();
+      updateSliderFromClientX(e.clientX);
+    }
+  };
+
+  const handleKnobPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    setIsDraggingSlider(false);
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     if (initialGoalUrl) {
       setGoalUrl(initialGoalUrl);
@@ -304,7 +410,7 @@ export function BodyProgressPhotos({
                   <div className="flex flex-col gap-2">
                     <div 
                       onClick={() => setLightboxMode('front')}
-                      className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-lg cursor-pointer group transition-all active:scale-[0.98]"
+                      className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-lg cursor-pointer group transition-all active:scale-[0.98] touch-pan-y"
                       title="Tap to zoom"
                     >
                       <SafeImage 
@@ -337,7 +443,7 @@ export function BodyProgressPhotos({
                   <div className="flex flex-col gap-2">
                     <div 
                       onClick={() => setLightboxMode('goal')}
-                      className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-[#ADFF00]/40 shadow-lg shadow-[#ADFF00]/5 cursor-pointer group transition-all active:scale-[0.98]"
+                      className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-[#ADFF00]/40 shadow-lg shadow-[#ADFF00]/5 cursor-pointer group transition-all active:scale-[0.98] touch-pan-y"
                       title="Tap to zoom"
                     >
                       <SafeImage 
@@ -435,7 +541,7 @@ export function BodyProgressPhotos({
               <div className="flex flex-col gap-3">
                 <div 
                   onClick={() => setLightboxMode('single-baseline')}
-                  className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-lg cursor-pointer group"
+                  className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-lg cursor-pointer group touch-pan-y"
                 >
                   {getImageForView(activeScan, view) ? (
                     <SafeImage 
@@ -513,7 +619,7 @@ export function BodyProgressPhotos({
                       <div className="flex flex-col gap-2">
                         <div 
                           onClick={() => setLightboxMode('timeline-start')}
-                          className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-lg cursor-pointer group transition-all active:scale-[0.98]"
+                          className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-lg cursor-pointer group transition-all active:scale-[0.98] touch-pan-y"
                           title="Tap to zoom"
                         >
                           <SafeImage 
@@ -546,7 +652,7 @@ export function BodyProgressPhotos({
                       <div className="flex flex-col gap-2">
                         <div 
                           onClick={() => setLightboxMode('timeline-current')}
-                          className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-[#ADFF00]/40 shadow-lg shadow-[#ADFF00]/5 cursor-pointer group transition-all active:scale-[0.98]"
+                          className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-[#ADFF00]/40 shadow-lg shadow-[#ADFF00]/5 cursor-pointer group transition-all active:scale-[0.98] touch-pan-y"
                           title="Tap to zoom"
                         >
                           <SafeImage 
@@ -593,61 +699,136 @@ export function BodyProgressPhotos({
                   /* ======================================================== */
                   /* TIMELINE: Interactive Comparison Split Slider            */
                   /* ======================================================== */
-                  <div className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden touch-none select-none">
-                    {/* After Image (Base) */}
-                    {afterImg ? (
-                      <SafeImage src={afterImg} alt="Latest Scan" className="absolute inset-0 w-full h-full object-cover object-top pointer-events-none" />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-white/20 text-xs font-bold uppercase tracking-widest">No Image</div>
-                    )}
-
-                    {/* Before Image (Clipped) */}
-                    {beforeImg ? (
-                      <div 
-                        className="absolute inset-0 w-full h-full bg-[#111A10] pointer-events-none overflow-hidden"
-                        style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
-                      >
-                        <SafeImage 
-                          src={beforeImg} 
-                          className="w-full h-full object-cover object-top pointer-events-none" 
-                        />
-                      </div>
-                    ) : (
-                      <div 
-                        className="absolute inset-0 flex items-center justify-center bg-[#111A10] text-white/20 text-xs font-bold uppercase tracking-widest pointer-events-none" 
-                        style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
-                      >
-                        No Image
-                      </div>
-                    )}
-
-                    {/* Slider Handle */}
+                  <div className="flex flex-col gap-3">
                     <div 
-                      className="absolute top-0 bottom-0 w-1 bg-white/80 cursor-ew-resize hover:bg-[#ADFF00] transition-colors"
-                      style={{ left: `calc(${sliderPos}% - 2px)` }}
+                      ref={sliderContainerRef}
+                      onPointerDown={handleSliderPointerDown}
+                      onPointerMove={handleSliderPointerMove}
+                      onPointerUp={handleSliderPointerUp}
+                      onPointerCancel={handleSliderPointerUp}
+                      className="relative w-full aspect-[9/16] sm:aspect-[3/5] max-h-[62vh] sm:max-h-none bg-black rounded-2xl overflow-hidden touch-pan-y select-none cursor-ew-resize border border-white/10 shadow-lg"
                     >
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white text-black rounded-full shadow-2xl flex items-center justify-center border border-black/10">
-                        <SlidersHorizontal className="w-4 h-4 rotate-90" />
+                      {/* After Image (Base / Latest) */}
+                      {afterImg ? (
+                        <SafeImage src={afterImg} alt="Latest Scan" className="absolute inset-0 w-full h-full object-cover object-top pointer-events-none" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-white/20 text-xs font-bold uppercase tracking-widest pointer-events-none">No Image</div>
+                      )}
+
+                      {/* Before Image (Clipped / Baseline) */}
+                      {beforeImg ? (
+                        <div 
+                          className="absolute inset-0 w-full h-full bg-[#111A10] pointer-events-none overflow-hidden"
+                          style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
+                        >
+                          <SafeImage 
+                            src={beforeImg} 
+                            className="w-full h-full object-cover object-top pointer-events-none" 
+                          />
+                        </div>
+                      ) : (
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center bg-[#111A10] text-white/20 text-xs font-bold uppercase tracking-widest pointer-events-none" 
+                          style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
+                        >
+                          No Image
+                        </div>
+                      )}
+
+                      {/* Slider Divider Line & Knob */}
+                      <div 
+                        className="absolute top-0 bottom-0 pointer-events-none z-20"
+                        style={{ left: `${sliderPos}%` }}
+                      >
+                        {/* Divider Line */}
+                        <div className={`w-[2px] -ml-[1px] h-full shadow-lg transition-colors ${
+                          isDraggingSlider ? 'bg-[#ADFF00]' : 'bg-white/90'
+                        }`} />
+
+                        {/* Draggable Knob with Ample Touch Target */}
+                        <div 
+                          onPointerDown={handleKnobPointerDown}
+                          onPointerMove={handleKnobPointerMove}
+                          onPointerUp={handleKnobPointerUp}
+                          onPointerCancel={handleKnobPointerUp}
+                          className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center pointer-events-auto touch-none cursor-ew-resize"
+                          title="Drag to compare"
+                        >
+                          <div className={`w-9 h-9 rounded-full shadow-2xl flex items-center justify-center border border-black/10 transition-transform ${
+                            isDraggingSlider 
+                              ? 'bg-[#ADFF00] text-black scale-110 ring-4 ring-[#ADFF00]/30 shadow-[#ADFF00]/40' 
+                              : 'bg-white text-black hover:scale-105 active:scale-95'
+                          }`}>
+                            <SlidersHorizontal className="w-4 h-4 rotate-90" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Floating Date Badges */}
+                      <div className="absolute top-3 left-3 bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-white/90 uppercase tracking-widest pointer-events-none border border-white/10 z-10">
+                        Start {first?.date ? `(${new Date(first.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''}
+                      </div>
+                      <div className="absolute top-3 right-3 bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-[#ADFF00] uppercase tracking-widest pointer-events-none border border-white/10 z-10">
+                        Current {latest?.date ? `(${new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''}
                       </div>
                     </div>
-                    
-                    {/* Interaction Area */}
-                    <input 
-                      type="range" 
-                      min="0" max="100" 
-                      value={sliderPos}
-                      onChange={(e) => setSliderPos(Number(e.target.value))}
-                      aria-label="Progress comparison slider"
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-10"
-                    />
 
-                    {/* Floating Date Labels */}
-                    <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-white/80 uppercase tracking-widest pointer-events-none border border-white/10">
-                      Start {first?.date ? `(${new Date(first.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''}
+                    {/* Tactile Scrubber Bar Below Photo */}
+                    <div className="flex flex-col gap-2 p-3 bg-black/40 rounded-xl border border-white/5 shadow-sm">
+                      <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider">
+                        <button
+                          type="button"
+                          onClick={() => setSliderPos(0)}
+                          className={`transition-colors flex items-center gap-1 ${
+                            sliderPos === 0 ? 'text-white font-extrabold' : 'text-white/60 hover:text-white'
+                          }`}
+                        >
+                          ◀ Baseline (Start)
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSliderPos(50)}
+                          className="px-2 py-0.5 rounded bg-[#ADFF00]/10 border border-[#ADFF00]/20 text-[#ADFF00] font-mono font-bold hover:bg-[#ADFF00]/20 transition-all text-[10px]"
+                          title="Reset to 50% split"
+                        >
+                          {sliderPos <= 5 ? '100% Start' : sliderPos >= 95 ? '100% Current' : `${sliderPos}% Split`}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSliderPos(100)}
+                          className={`transition-colors flex items-center gap-1 ${
+                            sliderPos === 100 ? 'text-[#ADFF00] font-extrabold' : 'text-[#ADFF00]/70 hover:text-[#ADFF00]'
+                          }`}
+                        >
+                          Current (Latest) ▶
+                        </button>
+                      </div>
+
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value={sliderPos}
+                        onChange={(e) => setSliderPos(Number(e.target.value))}
+                        aria-label="Progress comparison slider scrubber"
+                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#ADFF00]"
+                      />
                     </div>
-                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[9px] font-black text-[#ADFF00] uppercase tracking-widest pointer-events-none border border-white/10">
-                      Current {latest?.date ? `(${new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})` : ''}
-                    </div>
+
+                    {/* Inspect Fullscreen Bar */}
+                    <button
+                      type="button"
+                      onClick={() => setLightboxMode('timeline-both')}
+                      className="w-full py-2 bg-[#142013] hover:bg-[#1A2A19] border border-[#ADFF00]/20 rounded-xl px-3 flex items-center justify-between text-[#ADFF00] transition-colors group shadow-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-[#ADFF00]" />
+                        <span className="text-[10px] font-black uppercase tracking-wider">Inspect Fullscreen Comparison</span>
+                      </div>
+                      <Maximize2 className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </button>
                   </div>
                 )}
               </div>
