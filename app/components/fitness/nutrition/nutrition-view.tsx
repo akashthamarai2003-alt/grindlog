@@ -127,7 +127,6 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
       consumed: { ...prev.consumed, water_ml: newWater }
     }));
     
-    // Optional: light haptic feedback/toast for instant gratification
     toast.success(`Logged ${amount}ml of water`);
 
     try {
@@ -146,6 +145,32 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
         consumed: { ...prev.consumed, water_ml: previousWater }
       }));
       toast.error(err?.message || "Failed to log water. Please check your connection.");
+    }
+  };
+
+  const handleRemoveWater = async (amount: number = 250) => {
+    if (!data) return;
+    const previousWater = data.consumed?.water_ml || 0;
+    if (previousWater <= 0) return;
+    const newWater = Math.max(0, previousWater - amount);
+
+    setData((prev: any) => ({
+      ...prev,
+      consumed: { ...prev.consumed, water_ml: newWater }
+    }));
+    toast.success(`Removed ${amount}ml of water`);
+
+    try {
+      await nutritionApi.removeWater(amount);
+      nutritionApi.getToday().then(res => {
+        if (res) setData(res);
+      }).catch(() => {});
+    } catch (err: any) {
+      setData((prev: any) => ({
+        ...prev,
+        consumed: { ...prev.consumed, water_ml: previousWater }
+      }));
+      toast.error(err?.message || "Failed to remove water.");
     }
   };
 
@@ -507,15 +532,18 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
             <div>
               <h3 className="text-[10px] font-black tracking-widest text-[#ADFF00] uppercase mb-1">Protein Goal</h3>
               <div className="flex items-end gap-1">
-                <span className="text-3xl font-black text-white">{consumed.protein}</span>
-                <span className="text-sm font-bold text-white/40 pb-1">/ {targets.protein}g</span>
+                <span className="text-3xl font-black text-white">{Math.round(consumed.protein)}</span>
+                <span className="text-sm font-bold text-white/40 pb-1">/ {Math.round(targets.protein)}g</span>
               </div>
             </div>
             <div className="mt-4">
-              <div className="h-1.5 w-full bg-white/5 rounded-full mb-2">
-                <div className="h-full bg-[#ADFF00] rounded-full" style={{ width: `${progress.protein_percent}%` }} />
+              <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
+                <div 
+                  className="h-full bg-[#ADFF00] rounded-full transition-all duration-300" 
+                  style={{ width: `${Math.min(100, Math.round((consumed.protein / (targets.protein || 1)) * 100))}%` }} 
+                />
               </div>
-              <p className="text-[10px] font-bold text-white/50">{remaining.protein}g remaining</p>
+              <p className="text-[10px] font-bold text-white/50">{Math.round(remaining.protein)}g remaining</p>
             </div>
           </div>
 
@@ -523,13 +551,19 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
             <div>
               <h3 className="text-[10px] font-black tracking-widest text-emerald-400 uppercase mb-1">Food Budget</h3>
               <div className="flex items-end gap-1">
-                <span className="text-3xl font-black text-white">₹{budget.spent}</span>
-                <span className="text-sm font-bold text-white/40 pb-1">/ {budget.daily_limit}</span>
+                <span className="text-3xl font-black text-white">₹{Math.round(budget.spent)}</span>
+                <span className="text-sm font-bold text-white/40 pb-1">/ ₹{budget.daily_limit}</span>
               </div>
               <p className="text-[10px] font-bold text-white/40 mt-1">Today</p>
             </div>
-            <div className="mt-2">
-              <p className="text-[10px] font-bold text-white/60">₹{budget.monthly_spent} / ₹{budget.monthly_limit} Monthly</p>
+            <div className="mt-4">
+              <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-300 ${budget.spent > budget.daily_limit ? 'bg-rose-500' : 'bg-emerald-400'}`} 
+                  style={{ width: `${Math.min(100, Math.round((budget.spent / (budget.daily_limit || 1)) * 100))}%` }} 
+                />
+              </div>
+              <p className="text-[10px] font-bold text-white/60">₹{Math.round(budget.monthly_spent)} / ₹{budget.monthly_limit} Monthly</p>
             </div>
           </div>
         </div>
@@ -545,14 +579,48 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
               <div>
                 <h3 className="text-[11px] font-black tracking-widest text-cyan-400 uppercase mb-1">Hydration</h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-white">{consumed.water_ml}</span>
+                  <span className="text-2xl font-black text-white">{Math.round(consumed.water_ml)}</span>
                   <span className="text-sm font-bold text-white/50">/ {targets.water_ml}ml</span>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <button disabled={isWaterLoading} onClick={() => handleAddWater(250)} className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase text-white hover:bg-white/10 transition-colors disabled:opacity-50">+ 250ml</button>
-              <button disabled={isWaterLoading} onClick={() => handleAddWater(500)} className="px-4 py-1.5 bg-cyan-400/10 border border-cyan-400/20 rounded-full text-[10px] font-black uppercase text-cyan-400 hover:bg-cyan-400/20 transition-colors disabled:opacity-50">+ 500ml</button>
+            <div className="flex items-center gap-2">
+              {consumed.water_ml > 0 && (
+                <button 
+                  disabled={isWaterLoading}
+                  onClick={() => handleRemoveWater(250)} 
+                  className="px-3 py-1.5 bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 border border-white/10 hover:border-red-500/30 rounded-full text-[10px] font-black uppercase transition-all cursor-pointer disabled:opacity-50"
+                  title="Undo / Remove 250ml"
+                >
+                  - 250ml
+                </button>
+              )}
+              <button 
+                disabled={isWaterLoading} 
+                onClick={() => handleAddWater(250)} 
+                className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase text-white hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                + 250ml
+              </button>
+              <button 
+                disabled={isWaterLoading} 
+                onClick={() => handleAddWater(500)} 
+                className="px-4 py-1.5 bg-cyan-400/10 border border-cyan-400/20 rounded-full text-[10px] font-black uppercase text-cyan-400 hover:bg-cyan-400/20 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                + 500ml
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 relative z-10">
+            <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
+              <div 
+                className="h-full bg-cyan-400 rounded-full transition-all duration-300" 
+                style={{ width: `${Math.min(100, Math.round((consumed.water_ml / (targets.water_ml || 3000)) * 100))}%` }} 
+              />
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-bold text-white/50">
+              <span>{Math.max(0, Math.round((targets.water_ml || 3000) - consumed.water_ml))}ml remaining</span>
+              <span className="text-cyan-400">{Math.min(100, Math.round((consumed.water_ml / (targets.water_ml || 3000)) * 100))}%</span>
             </div>
           </div>
         </div>
@@ -567,21 +635,21 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40"><Zap size={14} /></div>
             <div>
               <p className="text-[10px] text-white/50 uppercase font-bold">Calories</p>
-              <p className="text-sm font-black text-white">{consumed.calories} / {targets.calories}</p>
+              <p className="text-sm font-black text-white">{Math.round(consumed.calories)} / {Math.round(targets.calories)}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center text-[#ADFF00]"><Apple size={14} /></div>
             <div>
               <p className="text-[10px] text-white/50 uppercase font-bold">Protein</p>
-              <p className="text-sm font-black text-white">{consumed.protein} / {targets.protein}g</p>
+              <p className="text-sm font-black text-white">{Math.round(consumed.protein)} / {Math.round(targets.protein)}g</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-cyan-400/10 flex items-center justify-center text-cyan-400"><Droplet size={14} /></div>
             <div>
               <p className="text-[10px] text-white/50 uppercase font-bold">Water</p>
-              <p className="text-sm font-black text-white">{consumed.water_ml} / {targets.water_ml}ml</p>
+              <p className="text-sm font-black text-white">{Math.round(consumed.water_ml)} / {Math.round(targets.water_ml)}ml</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

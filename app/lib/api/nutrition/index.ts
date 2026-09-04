@@ -55,6 +55,15 @@ export const nutritionApi = {
     return json.data;
   },
 
+  async removeWater(amount_ml: number = 250) {
+    const res = await fetch(`/api/nutrition/water?amount=${amount_ml}`, {
+      method: 'DELETE'
+    });
+    const json = await res.json();
+    if (!res.ok) throw json.error;
+    return json.data;
+  },
+
   async swapMeal(mealType: string) {
     const res = await fetch('/api/nutrition/swap-meal', {
       method: 'POST',

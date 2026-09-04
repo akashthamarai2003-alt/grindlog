@@ -349,7 +349,7 @@ export class NutritionService {
     
     const supabase = await createServerSupabase();
     const { data, error } = await supabase
-      .from('water_logs')
+      .from('fitness_os_water_logs')
       .insert({
         user_id: userId,
         amount_ml: amountMl
@@ -361,6 +361,34 @@ export class NutritionService {
     
     await this.updateDailySummary(userId);
     return data;
+  }
+
+  static async removeWater(userId: string, amountMl: number = 250) {
+    const supabase = await createServerSupabase();
+    const { start, end } = await this.getLocalDateBoundaries(userId);
+
+    // Find the latest water log for today
+    const { data: latestLog } = await supabase
+      .from('fitness_os_water_logs')
+      .select('id, amount_ml')
+      .eq('user_id', userId)
+      .gte('logged_at', start)
+      .lte('logged_at', end)
+      .order('logged_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestLog) {
+      if (latestLog.amount_ml <= amountMl) {
+        await supabase.from('fitness_os_water_logs').delete().eq('id', latestLog.id);
+      } else {
+        await supabase
+          .from('fitness_os_water_logs')
+          .update({ amount_ml: latestLog.amount_ml - amountMl })
+          .eq('id', latestLog.id);
+      }
+    }
+    await this.updateDailySummary(userId);
   }
 
   static async updateDailySummary(userId: string) {
@@ -378,7 +406,7 @@ export class NutritionService {
 
     // Get today's water
     const { data: waters } = await supabase
-      .from('water_logs')
+      .from('fitness_os_water_logs')
       .select('amount_ml')
       .eq('user_id', userId)
       .gte('logged_at', start)
@@ -471,7 +499,7 @@ export class NutritionService {
         .gte('logged_at', start)
         .lte('logged_at', end),
       supabase
-        .from('water_logs')
+        .from('fitness_os_water_logs')
         .select('amount_ml')
         .eq('user_id', userId)
         .gte('logged_at', start)
@@ -735,13 +763,21 @@ export class NutritionService {
       };
     });
 
+    // Round consumed values
+    consumed.calories = Math.round(consumed.calories);
+    consumed.protein = Math.round(consumed.protein);
+    consumed.carbs = Math.round(consumed.carbs);
+    consumed.fat = Math.round(consumed.fat);
+    consumed.water_ml = Math.round(consumed.water_ml);
+    consumed.spent = Math.round(consumed.spent);
+
     // Remaining
     const remaining = {
-      calories: Math.max(targets.calories - consumed.calories, 0),
-      protein: Math.max(targets.protein - consumed.protein, 0),
-      carbs: Math.max(targets.carbs - consumed.carbs, 0),
-      fat: Math.max(targets.fat - consumed.fat, 0),
-      water_ml: Math.max(targets.water_ml - consumed.water_ml, 0)
+      calories: Math.round(Math.max(targets.calories - consumed.calories, 0)),
+      protein: Math.round(Math.max(targets.protein - consumed.protein, 0)),
+      carbs: Math.round(Math.max(targets.carbs - consumed.carbs, 0)),
+      fat: Math.round(Math.max(targets.fat - consumed.fat, 0)),
+      water_ml: Math.round(Math.max(targets.water_ml - consumed.water_ml, 0))
     };
 
     // Progress

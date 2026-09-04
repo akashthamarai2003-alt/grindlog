@@ -47,8 +47,45 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Error in POST /api/nutrition/water:", error);
     return NextResponse.json(
-      { success: false, error: { code: 'DATABASE_ERROR', message: 'Failed to log water.' } },
+      { success: false, error: { code: 'DATABASE_ERROR', message: error?.message || 'Failed to log water.' } },
       { status: 500 }
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated.' } },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const amount_ml = Number(searchParams.get('amount')) || 250;
+
+    await NutritionService.removeWater(user.id, amount_ml);
+
+    const summary = await NutritionService.getTodaySummaryAndDetails(user.id);
+
+    return NextResponse.json({ 
+      success: true, 
+      data: {
+        total_water: summary.consumed.water_ml,
+        target_water: summary.targets.water_ml,
+        percentage: summary.progress.water_percent
+      } 
+    });
+  } catch (error: any) {
+    console.error("Error in DELETE /api/nutrition/water:", error);
+    return NextResponse.json(
+      { success: false, error: { code: 'DATABASE_ERROR', message: error?.message || 'Failed to remove water.' } },
+      { status: 500 }
+    );
+  }
+}
+
