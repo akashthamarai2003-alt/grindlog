@@ -104,8 +104,22 @@ export async function POST(req: Request) {
       }
     };
 
-    if (existingScans && existingScans.length >= 2) {
-      // Replace the latest scan record
+    // Check if there is already a scan recorded for this date (e.g. retake or update)
+    const scanForSameDate = existingScans?.find(s => s.scan_date === finalScanDate);
+
+    if (scanForSameDate) {
+      // Retake/update on the same date replaces that day's scan
+      const { error: scanError } = await supabase
+        .from('fitness_os_body_scans')
+        .update(scanPayload)
+        .eq('id', scanForSameDate.id);
+        
+      if (scanError) {
+        console.error("Update scan error:", scanError);
+        throw scanError;
+      }
+    } else if (existingScans && existingScans.length >= 2) {
+      // Replace the latest check-in scan record
       const latestScan = existingScans[existingScans.length - 1];
       
       const { error: scanError } = await supabase
@@ -118,7 +132,7 @@ export async function POST(req: Request) {
         throw scanError;
       }
     } else {
-      // Insert new scan record
+      // Insert new scan record (first baseline scan, or second check-in)
       const { error: scanError } = await supabase
         .from('fitness_os_body_scans')
         .insert({

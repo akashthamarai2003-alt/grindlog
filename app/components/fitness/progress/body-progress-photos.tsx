@@ -1,29 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { BodyPhotoScan } from "@/types/fitness/analytics";
 import { Camera, Calendar, SlidersHorizontal, Sparkles, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-function SafeImage({ src, alt, className, style }: { src: string; alt: string; className?: string; style?: React.CSSProperties }) {
+function SafeImage({ src, alt, className, style }: { src: string; alt?: string; className?: string; style?: React.CSSProperties }) {
   const [error, setError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    setError(false);
+  }, [src]);
+
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth === 0) {
+      setError(true);
+    }
+  }, [src]);
+
   if (error || !src) {
     return (
       <div 
-        className={`flex items-center justify-center bg-[#111A10] text-white/20 text-xs font-bold uppercase tracking-widest pointer-events-none ${className}`}
+        className={`flex items-center justify-center bg-[#111A10] text-white/30 text-xs font-bold uppercase tracking-widest pointer-events-none ${className}`}
         style={style}
       >
-        No Image
+        <span className="opacity-40">No Image</span>
       </div>
     );
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img 
+      ref={imgRef}
       src={src} 
-      alt={alt} 
+      alt="" 
       className={className} 
       style={style} 
       onError={() => setError(true)} 
@@ -80,7 +93,7 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
     );
   }
 
-  const isSingleScan = Boolean(first && (!latest || first.id === latest.id));
+  const isSingleScan = Boolean(first && (!latest || first.id === latest.id || first.date === latest.date));
   const activeScan = latest || first;
 
   const getImageForView = (scan: BodyPhotoScan | null, angle: 'front' | 'left' | 'right' | 'back') => {
@@ -183,12 +196,15 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
 
             {/* Before Image (Clipped) */}
             {beforeImg ? (
-              <SafeImage 
-                src={beforeImg} 
-                alt="First Scan" 
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none" 
+              <div 
+                className="absolute inset-0 w-full h-full bg-[#111A10] pointer-events-none overflow-hidden"
                 style={{ clipPath: `inset(0 calc(100% - ${sliderPos}%) 0 0)` }}
-              />
+              >
+                <SafeImage 
+                  src={beforeImg} 
+                  className="w-full h-full object-cover pointer-events-none" 
+                />
+              </div>
             ) : (
               <div 
                 className="absolute inset-0 flex items-center justify-center bg-[#111A10] text-white/20 text-xs font-bold uppercase tracking-widest pointer-events-none" 
