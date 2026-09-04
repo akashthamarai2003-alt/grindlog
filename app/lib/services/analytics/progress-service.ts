@@ -6,6 +6,7 @@ import {
   ConsistencyMetrics,
   WeightPoint,
   BodyMeasurement,
+  BodyPhotoScan,
   WorkoutAnalytics,
   NutritionAnalytics,
   ActivityAnalytics,
@@ -34,6 +35,7 @@ export class ProgressAnalyticsService {
     // --- PARALLEL DATA FETCHING ---
     const [
       { data: fitProfile },
+      { data: bodyScansData },
       { data: scansFront },
       { data: bodyMeasurementsData },
       { data: workoutsData },
@@ -46,6 +48,7 @@ export class ProgressAnalyticsService {
       { data: bodyMetricsData }
     ] = await Promise.all([
       supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target').eq('user_id', userId).maybeSingle(),
+      supabase.from('fitness_os_body_scans').select('*').eq('user_id', userId).order('scan_date', { ascending: true }),
       supabase.from('fitness_os_scans').select('*').eq('user_id', userId).eq('pose', 'front').order('date', { ascending: false }).limit(2),
       supabase.from('fitness_os_body_metrics').select('waist, chest, hip, neck, left_arm, right_arm, left_thigh, right_thigh, recorded_at').eq('user_id', userId).or('waist.not.is.null,chest.not.is.null,hip.not.is.null,neck.not.is.null,left_arm.not.is.null,right_arm.not.is.null,left_thigh.not.is.null,right_thigh.not.is.null').order('recorded_at', { ascending: true }),
       supabase.from('fitness_os_workouts').select(`
@@ -234,24 +237,48 @@ export class ProgressAnalyticsService {
       }
     }
 
+    // 3. Body Scans
+    let firstScan: BodyPhotoScan | null = null;
+    let latestScan: BodyPhotoScan | null = null;
+
+    if (bodyScansData && bodyScansData.length > 0) {
+      const mapScan = (row: any): BodyPhotoScan => {
+        const analysis = (row.ai_analysis_ref as any) || {};
+        return {
+          id: row.id,
+          date: row.scan_date,
+          frontUrl: row.front_image_url || null,
+          leftUrl: analysis.left_image_url || row.side_image_url || null,
+          rightUrl: analysis.right_image_url || row.side_image_url || null,
+          backUrl: row.back_image_url || null,
+        };
+      };
+
+      firstScan = mapScan(bodyScansData[0]);
+      latestScan = mapScan(bodyScansData[bodyScansData.length - 1]);
+    } else if (scansFront && scansFront.length > 0) {
+      firstScan = {
+        id: (scansFront[scansFront.length - 1] as any).id || '1',
+        frontUrl: (scansFront[scansFront.length - 1] as any).image_url,
+        leftUrl: null,
+        rightUrl: null,
+        backUrl: null,
+        date: (scansFront[scansFront.length - 1] as any).date
+      };
+      latestScan = {
+        id: (scansFront[0] as any).id || '2',
+        frontUrl: (scansFront[0] as any).image_url,
+        leftUrl: null,
+        rightUrl: null,
+        backUrl: null,
+        date: (scansFront[0] as any).date
+      };
+    }
+
     const scans = {
-      latest: scansFront && scansFront.length > 0 ? {
-        id: scansFront[0].id || '1',
-        frontUrl: scansFront[0].image_url,
-        leftUrl: null,
-        rightUrl: null,
-        backUrl: null,
-        date: scansFront[0].date
-      } : null,
-      first: scansFront && scansFront.length > 0 ? {
-        id: scansFront[scansFront.length - 1].id || '2',
-        frontUrl: scansFront[scansFront.length - 1].image_url,
-        leftUrl: null,
-        rightUrl: null,
-        backUrl: null,
-        date: scansFront[scansFront.length - 1].date
-      } : null,
-      shouldPromptForScan: false
+      first: firstScan,
+      latest: latestScan,
+      shouldPromptForScan: !latestScan || (new Date().getTime() - new Date(latestScan.date).getTime()) > (14 * 24 * 60 * 60 * 1000)
     };
 
     // 4. Workout Analytics

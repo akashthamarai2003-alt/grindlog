@@ -728,6 +728,96 @@ export interface Database {
           };
         };
 
+        fitness_os_body_metrics: {
+          Row: {
+            id: string;
+            user_id: string;
+            weight: number | null;
+            waist: number | null;
+            chest: number | null;
+            hip: number | null;
+            neck: number | null;
+            left_arm: number | null;
+            right_arm: number | null;
+            left_thigh: number | null;
+            right_thigh: number | null;
+            recorded_at: string | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            weight?: number | null;
+            waist?: number | null;
+            chest?: number | null;
+            hip?: number | null;
+            neck?: number | null;
+            left_arm?: number | null;
+            right_arm?: number | null;
+            left_thigh?: number | null;
+            right_thigh?: number | null;
+            recorded_at?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            weight?: number | null;
+            waist?: number | null;
+            chest?: number | null;
+            hip?: number | null;
+            neck?: number | null;
+            left_arm?: number | null;
+            right_arm?: number | null;
+            left_thigh?: number | null;
+            right_thigh?: number | null;
+            recorded_at?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
+        fitness_os_body_scans: {
+          Row: {
+            id: string;
+            user_id: string;
+            front_image_url: string | null;
+            side_image_url: string | null;
+            back_image_url: string | null;
+            goal_image_url: string | null;
+            scan_date: string;
+            ai_analysis_ref: Record<string, any> | null;
+            created_at: string | null;
+            updated_at: string | null;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            front_image_url?: string | null;
+            side_image_url?: string | null;
+            back_image_url?: string | null;
+            goal_image_url?: string | null;
+            scan_date?: string;
+            ai_analysis_ref?: Record<string, any> | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            front_image_url?: string | null;
+            side_image_url?: string | null;
+            back_image_url?: string | null;
+            goal_image_url?: string | null;
+            scan_date?: string;
+            ai_analysis_ref?: Record<string, any> | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+          };
+        };
+
         fitness_os_scans: {
           Row: {
             id: string;

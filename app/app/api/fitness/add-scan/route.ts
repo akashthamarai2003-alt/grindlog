@@ -3,15 +3,24 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
-// Configure R2 using env variables
-const r2Client = new S3Client({
-  region: "auto",
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
-  },
-});
+// Optional Cloudflare R2 Client (only active if configured in env)
+const isR2Configured = Boolean(
+  process.env.R2_ACCOUNT_ID &&
+  process.env.R2_ACCESS_KEY_ID &&
+  process.env.R2_SECRET_ACCESS_KEY &&
+  process.env.R2_BUCKET_NAME
+);
+
+const r2Client = isR2Configured
+  ? new S3Client({
+      region: "auto",
+      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+      },
+    })
+  : null;
 
 export async function POST(req: Request) {
   try {
@@ -26,122 +35,115 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Progress scans are available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
     }
 
-    const { frontImage, sideImage, leftImage, rightImage, backImage } = await req.json();
+    const body = await req.json();
+    const { frontImage, sideImage, leftImage, rightImage, backImage, scanDate } = body;
 
     if (!frontImage && !sideImage && !leftImage && !rightImage && !backImage) {
-      return NextResponse.json({ success: false, error: 'At least one image is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'At least one photo is required' }, { status: 400 });
     }
 
-    const uploadImage = async (base64Img: string | undefined, tag: string) => {
+    // Process image: upload to R2 if available, otherwise persist compressed base64 data URL
+    const processImage = async (base64Img: string | undefined, tag: string): Promise<string | null> => {
       if (!base64Img || !base64Img.startsWith("data:image")) return null;
-      try {
-        const [meta, data] = base64Img.split(",");
-        const mimeType = meta.split(";")[0].split(":")[1];
-        const ext = mimeType.split("/")[1] || "jpeg";
-        const buffer = Buffer.from(data, "base64");
-        const fileName = `grindlog/${user.id}/body_scans/${Date.now()}-${tag}.${ext}`;
 
-        const command = new PutObjectCommand({
-          Bucket: process.env.R2_BUCKET_NAME,
-          Key: fileName,
-          Body: buffer,
-          ContentType: mimeType,
-        });
+      if (isR2Configured && r2Client) {
+        try {
+          const [meta, data] = base64Img.split(",");
+          const mimeType = meta.split(";")[0].split(":")[1];
+          const ext = mimeType.split("/")[1] || "jpeg";
+          const buffer = Buffer.from(data, "base64");
+          const fileName = `grindlog/${user.id}/body_scans/${Date.now()}-${tag}.${ext}`;
 
-        await r2Client.send(command);
+          const command = new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: fileName,
+            Body: buffer,
+            ContentType: mimeType,
+          });
 
-        // Construct the public URL
-        const publicUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
-        return publicUrl;
-      } catch (error) {
-        console.error(`Error uploading ${tag} image to R2:`, error);
-        return null;
+          await r2Client.send(command);
+          const publicUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+          return publicUrl;
+        } catch (error) {
+          console.warn(`R2 upload failed for ${tag}, falling back to direct storage:`, error);
+          return base64Img;
+        }
       }
+
+      // Default resilient fallback: direct compressed base64 URI
+      return base64Img;
     };
 
-    const frontUrl = await uploadImage(frontImage, 'front');
-    const sideUrl = await uploadImage(sideImage, 'side');
-    const leftUrl = await uploadImage(leftImage, 'left');
-    const rightUrl = await uploadImage(rightImage, 'right');
-    const backUrl = await uploadImage(backImage, 'back');
+    const frontUrl = await processImage(frontImage, 'front');
+    const leftUrl = await processImage(leftImage, 'left');
+    const rightUrl = await processImage(rightImage, 'right');
+    const backUrl = await processImage(backImage, 'back');
+    const sideUrl = (await processImage(sideImage, 'side')) || leftUrl || rightUrl;
 
     if (!frontUrl && !sideUrl && !leftUrl && !rightUrl && !backUrl) {
-       return NextResponse.json({ success: false, error: 'Failed to upload images' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Failed to process photos' }, { status: 400 });
     }
 
-    // Check existing scans
+    const finalScanDate = scanDate ? new Date(scanDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+
+    // Check existing scans in fitness_os_body_scans
     const { data: existingScans } = await supabase
       .from('fitness_os_body_scans')
       .select('*')
       .eq('user_id', user.id)
       .order('scan_date', { ascending: true });
 
+    const scanPayload = {
+      front_image_url: frontUrl,
+      side_image_url: sideUrl,
+      back_image_url: backUrl,
+      scan_date: finalScanDate,
+      ai_analysis_ref: {
+        left_image_url: leftUrl,
+        right_image_url: rightUrl
+      }
+    };
+
     if (existingScans && existingScans.length >= 2) {
-      // Replace the latest scan (the last one in the array)
+      // Replace the latest scan record
       const latestScan = existingScans[existingScans.length - 1];
       
-      // Delete old photos from R2
-      const deleteImage = async (url: string | null) => {
-        if (!url) return;
-        try {
-          const publicUrlBase = process.env.R2_PUBLIC_URL || '';
-          if (url.startsWith(publicUrlBase)) {
-            const key = url.slice(publicUrlBase.length + 1);
-            const command = new DeleteObjectCommand({
-              Bucket: process.env.R2_BUCKET_NAME,
-              Key: key
-            });
-            await r2Client.send(command);
-          }
-        } catch (err) {
-          console.error("Failed to delete old image:", err);
-        }
-      };
-
-      await Promise.all([
-        deleteImage(latestScan.front_image_url),
-        deleteImage(latestScan.side_image_url),
-        deleteImage(latestScan.left_image_url),
-        deleteImage(latestScan.right_image_url),
-        deleteImage(latestScan.back_image_url),
-      ]);
-
-      // Update record
       const { error: scanError } = await supabase
         .from('fitness_os_body_scans')
-        .update({
-          front_image_url: frontUrl,
-          side_image_url: sideUrl,
-          left_image_url: leftUrl,
-          right_image_url: rightUrl,
-          back_image_url: backUrl,
-          scan_date: new Date().toISOString().split('T')[0]
-        })
+        .update(scanPayload)
         .eq('id', latestScan.id);
         
-      if (scanError) throw scanError;
-
+      if (scanError) {
+        console.error("Update scan error:", scanError);
+        throw scanError;
+      }
     } else {
-      // Insert new scan
+      // Insert new scan record
       const { error: scanError } = await supabase
         .from('fitness_os_body_scans')
         .insert({
           user_id: user.id,
-          front_image_url: frontUrl,
-          side_image_url: sideUrl,
-          left_image_url: leftUrl,
-          right_image_url: rightUrl,
-          back_image_url: backUrl,
-          scan_date: new Date().toISOString().split('T')[0]
+          ...scanPayload
         });
 
-      if (scanError) throw scanError;
+      if (scanError) {
+        console.error("Insert scan error:", scanError);
+        throw scanError;
+      }
     }
 
-    return NextResponse.json({ success: true, frontUrl, sideUrl, leftUrl, rightUrl, backUrl });
+    return NextResponse.json({ 
+      success: true, 
+      frontUrl, 
+      sideUrl, 
+      leftUrl, 
+      rightUrl, 
+      backUrl, 
+      scanDate: finalScanDate 
+    });
 
   } catch (err: any) {
     console.error("Add Scan Error:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: err.message || "Failed to save scan" }, { status: 500 });
   }
 }
