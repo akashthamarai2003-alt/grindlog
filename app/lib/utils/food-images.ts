@@ -33,14 +33,18 @@ const FOOD_PHOTO_MAP: Record<string, string> = {
   "egg": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=300&auto=format&fit=crop&q=80",
   "paneer": "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=300&auto=format&fit=crop&q=80",
   "fish": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=300&auto=format&fit=crop&q=80",
+  "soy chunks": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&auto=format&fit=crop&q=80",
   "soy": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&auto=format&fit=crop&q=80",
 
   // Dairy, Nuts & Fruits
+  "curd (plain)": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=300&auto=format&fit=crop&q=80",
   "curd": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=300&auto=format&fit=crop&q=80",
   "milk": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=300&auto=format&fit=crop&q=80",
   "peanuts": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=300&auto=format&fit=crop&q=80",
   "banana": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300&auto=format&fit=crop&q=80",
   "apple": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300&auto=format&fit=crop&q=80",
+  "mixed vegetables": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&auto=format&fit=crop&q=80",
+  "mixed vegetable": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&auto=format&fit=crop&q=80",
   "vegetable": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&auto=format&fit=crop&q=80",
   "salad": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&auto=format&fit=crop&q=80"
 };
@@ -49,7 +53,7 @@ const FOOD_PHOTO_MAP: Record<string, string> = {
 const FOOD_AVATAR_CONFIG: Record<string, { emoji: string; colors: [string, string] }> = {
   "poha": { emoji: "🍚", colors: ["#F59E0B", "#B45309"] },
   "idli": { emoji: "⚪", colors: ["#374151", "#111827"] },
-  "dosa": { emoji: "🫓", colors: ["#D97706", "#78350F"] },
+  "dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
   "upma": { emoji: "🥣", colors: ["#D97706", "#92400E"] },
   "pongal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
   "chapati": { emoji: "🥞", colors: ["#B45309", "#78350F"] },
@@ -60,8 +64,8 @@ const FOOD_AVATAR_CONFIG: Record<string, { emoji: string; colors: [string, strin
   "sambar": { emoji: "🥘", colors: ["#EA580C", "#7C2D12"] },
   "dal tadka": { emoji: "🍲", colors: ["#EAB308", "#A16207"] },
   "dal": { emoji: "🍲", colors: ["#EAB308", "#A16207"] },
-  "chana": { emoji: "🧆", colors: ["#D97706", "#78350F"] },
-  "chickpeas": { emoji: "🧆", colors: ["#D97706", "#78350F"] },
+  "chana": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
+  "chickpeas": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
   "rajma": { emoji: "🍛", colors: ["#991B1B", "#450A0A"] },
   "aloo": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
   "chicken": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
@@ -69,7 +73,8 @@ const FOOD_AVATAR_CONFIG: Record<string, { emoji: string; colors: [string, strin
   "egg": { emoji: "🥚", colors: ["#F59E0B", "#B45309"] },
   "paneer": { emoji: "🧀", colors: ["#EAB308", "#A16207"] },
   "fish": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
-  "soy": { emoji: "🫘", colors: ["#16A34A", "#14532D"] },
+  "soy chunks": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
+  "soy": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
   "curd": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
   "milk": { emoji: "🥛", colors: ["#38BDF8", "#0369A1"] },
   "peanuts": { emoji: "🥜", colors: ["#D97706", "#78350F"] },

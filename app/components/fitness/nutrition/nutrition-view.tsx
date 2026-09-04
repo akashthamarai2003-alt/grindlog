@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check } from "lucide-react";
+import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2 } from "lucide-react";
+import { FoodAvatar } from "./food-avatar";
 import { getFoodImage, getFoodSvgAvatar } from "@/lib/utils/food-images";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
@@ -83,6 +84,17 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
       toast.error(err?.message || "Failed to swap meal", { id: "swap" });
     } finally {
       setSwappingMeal(null);
+    }
+  };
+
+  const handleDeleteFood = async (id: string, foodName?: string) => {
+    try {
+      toast.loading("Removing food...", { id: "delete-food" });
+      await nutritionApi.deleteFood(id);
+      toast.success(`Removed ${foodName || "food"}`, { id: "delete-food" });
+      await fetchToday();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to remove food", { id: "delete-food" });
     }
   };
 
@@ -387,11 +399,10 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                     <ul className="text-[13px] font-medium text-white/80 space-y-2.5">
                       {loggedFoods.length > 0 ? (
                         loggedFoods.map((f: any) => (
-                          <li key={f.id} className="flex justify-between items-center">
+                          <li key={f.id} className="flex justify-between items-center group">
                             <span className="flex items-center gap-2.5 text-white/90">
-                              <img 
-                                src={getFoodSvgAvatar(f.foods?.name || '')} 
-                                alt={f.foods?.name || 'Food'} 
+                              <FoodAvatar 
+                                name={f.foods?.name || ''} 
                                 className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
                               />
                               <div>
@@ -399,22 +410,31 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[10px] text-white/40 font-medium">x{f.quantity} serving</span>
                                   <span className="text-[10px] text-white/30">•</span>
-                                  <span className="text-[10px] text-[#ADFF00]/70 font-medium">{f.protein}g P</span>
-                                  <span className="text-[10px] text-blue-400/70 font-medium">{f.carbs}g C</span>
-                                  <span className="text-[10px] text-orange-400/70 font-medium">{f.fat}g F</span>
+                                  <span className="text-[10px] text-[#ADFF00] font-semibold">{f.protein}g P</span>
+                                  <span className="text-[10px] text-sky-400 font-semibold">{f.carbs}g C</span>
+                                  <span className="text-[10px] text-amber-400 font-semibold">{f.fat}g F</span>
                                 </div>
                               </div>
                             </span>
-                            <span className="text-xs font-black text-[#ADFF00]">{f.calories} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-xs font-black text-[#ADFF00]">{f.calories} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteFood(f.id, f.foods?.name)}
+                                className="w-6 h-6 rounded-md bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all cursor-pointer"
+                                title="Remove food"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
                           </li>
                         ))
                       ) : (meal.meal_plan_items && meal.meal_plan_items.length > 0) ? (
                         meal.meal_plan_items.map((item: any) => (
                            <li key={item.id} className="flex justify-between items-center">
                             <span className="flex items-center gap-2.5 text-white/80">
-                              <img 
-                                src={getFoodSvgAvatar(item.foods?.name || '')} 
-                                alt={item.foods?.name || 'Food'} 
+                              <FoodAvatar 
+                                name={item.foods?.name || ''} 
                                 className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
                               />
                               <div>
@@ -422,9 +442,9 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="text-[10px] text-white/40 font-medium">{item.foods?.serving_size || '1 serving'}</span>
                                   <span className="text-[10px] text-white/30">•</span>
-                                  <span className="text-[10px] text-[#ADFF00]/70 font-medium">{Math.round(item.foods?.protein * item.quantity)}g P</span>
-                                  <span className="text-[10px] text-blue-400/70 font-medium">{Math.round(item.foods?.carbs * item.quantity)}g C</span>
-                                  <span className="text-[10px] text-orange-400/70 font-medium">{Math.round(item.foods?.fat * item.quantity)}g F</span>
+                                  <span className="text-[10px] text-[#ADFF00] font-semibold">{Math.round(item.foods?.protein * item.quantity)}g P</span>
+                                  <span className="text-[10px] text-sky-400 font-semibold">{Math.round(item.foods?.carbs * item.quantity)}g C</span>
+                                  <span className="text-[10px] text-amber-400 font-semibold">{Math.round(item.foods?.fat * item.quantity)}g F</span>
                                 </div>
                               </div>
                             </span>
@@ -442,8 +462,8 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                     <div className="grid grid-cols-4 gap-2 bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
                       {[
                         { label: 'Calories', value: Math.round(plannedTotals.calories), suffix: 'kcal', className: 'text-white' },
-                        { label: 'Fat', value: Math.round(plannedTotals.fat), suffix: 'g', className: 'text-orange-400' },
-                        { label: 'Carbs', value: Math.round(plannedTotals.carbs), suffix: 'g', className: 'text-red-400' },
+                        { label: 'Fat', value: Math.round(plannedTotals.fat), suffix: 'g', className: 'text-amber-400' },
+                        { label: 'Carbs', value: Math.round(plannedTotals.carbs), suffix: 'g', className: 'text-sky-400' },
                         { label: 'Protein', value: Math.round(plannedTotals.protein), suffix: 'g', className: 'text-[#ADFF00]' },
                       ].map((macro) => (
                         <div key={macro.label} className="text-center">
@@ -454,22 +474,48 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                     </div>
                   )}
                   <div className="flex gap-2">
-                    <button 
-                      disabled={swappingMeal === meal.meal_type}
-                      onClick={() => handleSwapMeal(meal.meal_type)} 
-                      className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 transition-all flex justify-center items-center gap-2 cursor-pointer disabled:opacity-50"
-                    >
-                      {swappingMeal === meal.meal_type ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} 
-                      Swap
-                    </button>
                     {!completed ? (
-                      <button onClick={() => openLogModal(meal.meal_type, meal.meal_plan_items)} className="flex-[2] py-2.5 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2">
-                        Log Meal
-                      </button>
+                      <>
+                        <button 
+                          disabled={swappingMeal === meal.meal_type}
+                          onClick={() => handleSwapMeal(meal.meal_type)} 
+                          className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 transition-all flex justify-center items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          {swappingMeal === meal.meal_type ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} 
+                          Swap
+                        </button>
+                        <button 
+                          onClick={() => openLogModal(meal.meal_type, meal.meal_plan_items)} 
+                          className="flex-1 py-2.5 bg-[#ADFF00] hover:bg-[#baff22] text-black rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(173,255,0,0.15)] cursor-pointer"
+                        >
+                          Log Meal
+                        </button>
+                        <button 
+                          onClick={() => openLogModal(meal.meal_type)} 
+                          className="py-2.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center cursor-pointer"
+                          title="Add extra food to this meal"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </>
                     ) : (
-                      <button onClick={() => openLogModal(meal.meal_type)} className="py-2.5 px-4 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/20 rounded-xl text-[11px] font-black tracking-widest uppercase text-[#ADFF00] transition-all flex justify-center items-center">
-                        <Plus size={14} />
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => openLogModal(meal.meal_type)} 
+                          className="flex-1 py-2.5 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/30 rounded-xl text-[11px] font-black tracking-widest uppercase text-[#ADFF00] transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                        >
+                          <Plus size={14} /> Add Food
+                        </button>
+                        <button 
+                          disabled={swappingMeal === meal.meal_type}
+                          onClick={() => handleSwapMeal(meal.meal_type)} 
+                          className="px-3.5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-bold text-white/40 hover:text-white/70 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          title="Re-plan or swap this meal"
+                        >
+                          {swappingMeal === meal.meal_type ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                          Re-plan
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
