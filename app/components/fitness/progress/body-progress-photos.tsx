@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { BodyPhotoScan } from "@/types/fitness/analytics";
-import { Camera, Calendar, SlidersHorizontal, Sparkles, ArrowRight, Target, Upload, X, Loader2, RefreshCw } from "lucide-react";
+import { Camera, Calendar, SlidersHorizontal, Sparkles, ArrowRight, Target, Upload, X, Loader2, RefreshCw, Maximize2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -67,6 +67,7 @@ export function BodyProgressPhotos({
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [goalPreview, setGoalPreview] = useState<string | null>(null);
   const [isSavingGoal, setIsSavingGoal] = useState(false);
+  const [lightboxMode, setLightboxMode] = useState<'both' | 'front' | 'goal' | null>(null);
   const goalInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -274,7 +275,7 @@ export function BodyProgressPhotos({
       </div>
 
       {/* Main Showcase / Comparison Container */}
-      <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
+      <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-3 sm:p-5 flex flex-col gap-3.5">
         {activeMode === 'goal' ? (
           /* ======================================================== */
           /* GOAL COMPARE MODE: Side-by-Side Normal Full View          */
@@ -297,16 +298,23 @@ export function BodyProgressPhotos({
             {/* Side-by-Side Full View Grid */}
             {goalUrl && userFrontPhoto ? (
               <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3.5 w-full">
                   {/* Left Column: Full Front Photo */}
                   <div className="flex flex-col gap-2">
-                    <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                    <div 
+                      onClick={() => setLightboxMode('front')}
+                      className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-white/10 shadow-lg cursor-pointer group transition-all active:scale-[0.98]"
+                      title="Tap to zoom"
+                    >
                       <SafeImage 
                         src={userFrontPhoto} 
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105" 
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-black text-white uppercase tracking-wider border border-white/10">
                         Current Front
+                      </div>
+                      <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md p-1.5 rounded-md text-white/70 group-hover:text-white group-hover:bg-black/80 transition-colors">
+                        <Maximize2 className="w-3 h-3" />
                       </div>
                       {activeScan?.date && (
                         <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-bold text-[#ADFF00] tracking-wider border border-white/10">
@@ -326,13 +334,20 @@ export function BodyProgressPhotos({
 
                   {/* Right Column: Full Goal Photo */}
                   <div className="flex flex-col gap-2">
-                    <div className="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden border border-[#ADFF00]/40 shadow-lg shadow-[#ADFF00]/5">
+                    <div 
+                      onClick={() => setLightboxMode('goal')}
+                      className="relative w-full aspect-[9/16] sm:aspect-[3/5] bg-black rounded-2xl overflow-hidden border border-[#ADFF00]/40 shadow-lg shadow-[#ADFF00]/5 cursor-pointer group transition-all active:scale-[0.98]"
+                      title="Tap to zoom"
+                    >
                       <SafeImage 
                         src={goalUrl} 
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105" 
                       />
                       <div className="absolute top-2.5 left-2.5 bg-[#ADFF00] px-2 py-0.5 rounded-md text-[8px] font-black text-black uppercase tracking-wider shadow-sm">
                         Target Goal
+                      </div>
+                      <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md p-1.5 rounded-md text-white/70 group-hover:text-white group-hover:bg-black/80 transition-colors">
+                        <Maximize2 className="w-3 h-3" />
                       </div>
                       <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[8px] font-bold text-[#ADFF00] tracking-wider border border-[#ADFF00]/20">
                         Vision
@@ -353,13 +368,18 @@ export function BodyProgressPhotos({
                   </div>
                 </div>
 
-                {/* Motivational Comparison Tip */}
-                <div className="bg-[#142013] border border-[#ADFF00]/15 rounded-xl p-3.5 flex items-start gap-3">
-                  <Sparkles className="w-4 h-4 text-[#ADFF00] shrink-0 mt-0.5" />
-                  <div className="flex-1 text-[11px] text-white/70 leading-relaxed">
-                    <span className="text-white font-bold">Side-by-Side Target.</span> Full view of your current front physique alongside your target goal. Stay consistent with progressive overload and your daily macros to bridge the gap!
+                {/* Inspect Fullscreen Bar */}
+                <button
+                  type="button"
+                  onClick={() => setLightboxMode('both')}
+                  className="w-full py-2 bg-[#142013] hover:bg-[#1A2A19] border border-[#ADFF00]/20 rounded-xl px-3 flex items-center justify-between text-[#ADFF00] transition-colors group shadow-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-[#ADFF00]" />
+                    <span className="text-[10px] font-black uppercase tracking-wider">Inspect Fullscreen Comparison</span>
                   </div>
-                </div>
+                  <Maximize2 className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                </button>
 
                 {/* Back to Scans Button */}
                 <button
@@ -647,6 +667,108 @@ export function BodyProgressPhotos({
               </button>
             </div>
           </motion.div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* Fullscreen Lightbox Modal (Ultra High-Res Inspection)    */}
+      {/* ======================================================== */}
+      {lightboxMode && (
+        <div className="fixed inset-0 z-[110] bg-black/95 backdrop-blur-xl flex flex-col p-4 animate-in fade-in duration-200">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-[#ADFF00]" />
+              <span className="text-xs font-black text-white uppercase tracking-wider">
+                Physique Comparison Inspector
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLightboxMode(null)}
+              className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Mode Switcher Tabs */}
+          <div className="flex justify-center py-3 shrink-0">
+            <div className="inline-flex p-1 bg-white/10 rounded-xl gap-1">
+              <button
+                type="button"
+                onClick={() => setLightboxMode('both')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                  lightboxMode === 'both' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                Side-by-Side
+              </button>
+              <button
+                type="button"
+                onClick={() => setLightboxMode('front')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                  lightboxMode === 'front' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                My Front
+              </button>
+              <button
+                type="button"
+                onClick={() => setLightboxMode('goal')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                  lightboxMode === 'goal' ? 'bg-[#ADFF00] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                Target Goal
+              </button>
+            </div>
+          </div>
+
+          {/* Image Display Area */}
+          <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 py-2">
+            {lightboxMode === 'both' && (
+              <div className="grid grid-cols-2 gap-3 w-full h-full max-h-[75vh]">
+                <div className="flex flex-col items-center h-full gap-2 min-h-0">
+                  <div className="relative w-full flex-1 rounded-2xl overflow-hidden bg-black/60 border border-white/10 flex items-center justify-center p-1">
+                    <SafeImage src={userFrontPhoto!} className="w-full h-full object-contain" />
+                    <div className="absolute top-3 left-3 bg-black/80 px-2.5 py-1 rounded-lg text-[9px] font-black text-white uppercase tracking-wider border border-white/10">
+                      My Front
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider">Current Physique</span>
+                </div>
+
+                <div className="flex flex-col items-center h-full gap-2 min-h-0">
+                  <div className="relative w-full flex-1 rounded-2xl overflow-hidden bg-black/60 border border-[#ADFF00]/30 flex items-center justify-center p-1">
+                    <SafeImage src={goalUrl!} className="w-full h-full object-contain" />
+                    <div className="absolute top-3 left-3 bg-[#ADFF00] px-2.5 py-1 rounded-lg text-[9px] font-black text-black uppercase tracking-wider shadow-sm">
+                      Target Goal
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-[#ADFF00] uppercase tracking-wider">Goal Physique</span>
+                </div>
+              </div>
+            )}
+
+            {lightboxMode === 'front' && (
+              <div className="relative w-full h-full max-h-[78vh] flex flex-col items-center justify-center">
+                <SafeImage src={userFrontPhoto!} className="w-full h-full object-contain rounded-2xl" />
+                <div className="mt-3 text-xs font-black uppercase tracking-wider text-white">
+                  My Current Front Photo
+                </div>
+              </div>
+            )}
+
+            {lightboxMode === 'goal' && (
+              <div className="relative w-full h-full max-h-[78vh] flex flex-col items-center justify-center">
+                <SafeImage src={goalUrl!} className="w-full h-full object-contain rounded-2xl" />
+                <div className="mt-3 text-xs font-black uppercase tracking-wider text-[#ADFF00]">
+                  Target Goal Physique
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
