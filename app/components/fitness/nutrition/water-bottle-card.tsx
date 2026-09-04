@@ -22,8 +22,11 @@ export function WaterBottleCard({
 }: WaterBottleCardProps) {
   const [stepAmount, setStepAmount] = useState<number>(250);
 
-  const safeConsumed = typeof consumedMl === 'number' && !isNaN(consumedMl) ? Math.max(0, consumedMl) : 0;
+  const rawConsumed = typeof consumedMl === 'number' && !isNaN(consumedMl) ? Math.max(0, consumedMl) : 0;
   const safeTarget = typeof targetMl === 'number' && !isNaN(targetMl) && targetMl > 0 ? targetMl : 2500;
+  // Strictly cap at user's chosen goal
+  const safeConsumed = Math.min(safeTarget, rawConsumed);
+  const isGoalReached = safeConsumed >= safeTarget;
   const percent = Math.min(100, Math.max(0, Math.round((safeConsumed / safeTarget) * 100))) || 0;
   const targetInLiters = (safeTarget / 1000).toFixed(1).replace(/\.0$/, "");
   const consumedInLiters = (safeConsumed / 1000).toFixed(1);
@@ -232,6 +235,11 @@ export function WaterBottleCard({
               size={12}
               className="opacity-70 group-hover:opacity-100 transition-opacity"
             />
+            {isGoalReached && (
+              <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#00D2FF]/20 text-[#00D2FF] border border-[#00D2FF]/30">
+                Goal Reached!
+              </span>
+            )}
           </button>
 
           {/* Pill Stepper Logger: [ - ]  250 ml  [ + ] */}
@@ -260,9 +268,14 @@ export function WaterBottleCard({
             {/* Plus Button with Neon Cyan Highlight */}
             <button
               type="button"
+              disabled={isGoalReached}
               onClick={() => onAddWater(stepAmount)}
-              className="w-10 h-10 rounded-xl bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 text-black flex items-center justify-center font-black transition-all cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
-              title={`Add ${stepAmount}ml`}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${
+                isGoalReached
+                  ? "bg-white/10 text-white/30 cursor-not-allowed shadow-none"
+                  : "bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 text-black cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
+              }`}
+              title={isGoalReached ? `Daily goal of ${targetInLiters}L reached!` : `Add ${stepAmount}ml`}
             >
               <Plus size={16} strokeWidth={3.5} />
             </button>

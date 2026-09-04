@@ -61,6 +61,13 @@ export async function DELETE(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
+    const isReset = searchParams.get('reset') === 'true';
+
+    if (isReset) {
+      await NutritionService.resetTodayWater(user.id);
+      return NextResponse.json({ success: true, data: { reset: true } });
+    }
+
     const amount_ml = Number(searchParams.get('amount')) || 250;
 
     await NutritionService.removeWater(user.id, amount_ml);

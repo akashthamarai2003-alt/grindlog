@@ -208,10 +208,19 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
   const handleAddWater = (amount: number) => {
     if (!data) return;
     
-    // 1. Optimistic UI Update - Instant feedback (0ms)
-    const currentWater = Number(data.consumed?.water_ml) || 0;
-    const newWater = currentWater + amount;
     const targetWater = Number(data.targets?.water_ml) || 2500;
+    const currentWater = Math.min(targetWater, Number(data.consumed?.water_ml) || 0);
+    
+    // Check if goal is already reached
+    if (currentWater >= targetWater) {
+      toast.info(`Daily goal of ${(targetWater / 1000).toFixed(1)}L reached! Tap Goal ✏️ to increase.`);
+      return;
+    }
+
+    // Strictly cap at target
+    const newWater = Math.min(targetWater, currentWater + amount);
+    const addedActual = newWater - currentWater;
+    if (addedActual <= 0) return;
     
     setData((prev: any) => {
       if (!prev) return prev;
@@ -225,10 +234,14 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
       };
     });
     
-    toast.success(`Logged ${amount}ml of water`);
+    if (newWater >= targetWater) {
+      toast.success(`🎉 Daily water goal of ${(targetWater / 1000).toFixed(1)}L reached!`);
+    } else {
+      toast.success(`Logged ${addedActual}ml of water`);
+    }
 
-    // 2. Debounce background API sync so rapid taps batch together smoothly
-    pendingWaterDeltaRef.current += amount;
+    // Debounce background API sync
+    pendingWaterDeltaRef.current += addedActual;
     if (waterDebounceTimerRef.current) {
       clearTimeout(waterDebounceTimerRef.current);
     }
@@ -239,10 +252,10 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
 
   const handleRemoveWater = (amount: number = 250) => {
     if (!data) return;
-    const currentWater = Number(data.consumed?.water_ml) || 0;
+    const targetWater = Number(data.targets?.water_ml) || 2500;
+    const currentWater = Math.min(targetWater, Number(data.consumed?.water_ml) || 0);
     if (currentWater <= 0) return;
     const newWater = Math.max(0, currentWater - amount);
-    const targetWater = Number(data.targets?.water_ml) || 2500;
 
     setData((prev: any) => {
       if (!prev) return prev;
@@ -736,7 +749,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
 
         {/* Animated Water Intake Bottle Card */}
         <WaterBottleCard
-          consumedMl={Number(consumed.water_ml) || 0}
+          consumedMl={Math.min(Number(targets.water_ml) || 2500, Number(consumed.water_ml) || 0)}
           targetMl={Number(targets.water_ml) || 2500}
           onAddWater={handleAddWater}
           onRemoveWater={handleRemoveWater}
@@ -745,7 +758,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
 
         {/* Water Intake History & Heatmap Card */}
         <WaterHistoryCard
-          todayConsumedMl={Number(consumed.water_ml) || 0}
+          todayConsumedMl={Math.min(Number(targets.water_ml) || 2500, Number(consumed.water_ml) || 0)}
           targetMl={Number(targets.water_ml) || 2500}
         />
 
@@ -773,7 +786,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
             <div className="w-8 h-8 rounded-full bg-cyan-400/10 flex items-center justify-center text-cyan-400"><Droplet size={14} /></div>
             <div>
               <p className="text-[10px] text-white/50 uppercase font-bold">Water</p>
-              <p className="text-sm font-black text-white">{Math.round(consumed.water_ml || 0)} / {Math.round(targets.water_ml || 2500)}ml</p>
+              <p className="text-sm font-black text-white">{Math.min(Math.round(targets.water_ml || 2500), Math.round(consumed.water_ml || 0))} / {Math.round(targets.water_ml || 2500)}ml</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

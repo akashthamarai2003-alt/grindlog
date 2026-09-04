@@ -350,11 +350,31 @@ export class NutritionService {
     if (amountMl <= 0) throw new Error("Water amount must be positive");
     
     const supabase = await createServerSupabase();
+    const tz = await this.getUserTimezone(userId);
+    const { start, end } = await this.getLocalDateBoundaries(userId, tz);
+    const targets = await this.getEffectiveTargets(userId);
+    const targetMl = targets?.water_ml || 2500;
+
+    // Check today's current water total to prevent exceeding chosen goal
+    const { data: todayWaters } = await supabase
+      .from('fitness_os_water_logs')
+      .select('amount_ml')
+      .eq('user_id', userId)
+      .gte('logged_at', start)
+      .lte('logged_at', end);
+
+    const currentTotal = (todayWaters || []).reduce((sum, w) => sum + w.amount_ml, 0);
+    const allowedAmount = Math.max(0, Math.min(amountMl, targetMl - currentTotal));
+
+    if (allowedAmount <= 0) {
+      return { user_id: userId, amount_ml: 0, capped: true };
+    }
+
     const { data, error } = await supabase
       .from('fitness_os_water_logs')
       .insert({
         user_id: userId,
-        amount_ml: amountMl
+        amount_ml: allowedAmount
       })
       .select()
       .single();
@@ -370,33 +390,66 @@ export class NutritionService {
 
   static async removeWater(userId: string, amountMl: number = 250) {
     const supabase = await createServerSupabase();
-    const { start, end } = await this.getLocalDateBoundaries(userId);
+    const tz = await this.getUserTimezone(userId);
+    const { start, end } = await this.getLocalDateBoundaries(userId, tz);
+    const targets = await this.getEffectiveTargets(userId);
+    const targetMl = targets?.water_ml || 2500;
 
-    // Find the latest water log for today
-    const { data: latestLog } = await supabase
+    const { data: todayLogs } = await supabase
       .from('fitness_os_water_logs')
       .select('id, amount_ml')
       .eq('user_id', userId)
       .gte('logged_at', start)
       .lte('logged_at', end)
-      .order('logged_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order('logged_at', { ascending: false });
 
-    if (latestLog) {
-      if (latestLog.amount_ml <= amountMl) {
-        await supabase.from('fitness_os_water_logs').delete().eq('id', latestLog.id);
-      } else {
+    if (todayLogs && todayLogs.length > 0) {
+      const totalLogged = todayLogs.reduce((sum, l) => sum + l.amount_ml, 0);
+
+      // If user had bloated test logs (e.g. 8500ml), clean them to target - amountMl immediately
+      if (totalLogged > targetMl) {
+        const desiredTotal = Math.max(0, targetMl - amountMl);
         await supabase
           .from('fitness_os_water_logs')
-          .update({ amount_ml: latestLog.amount_ml - amountMl })
-          .eq('id', latestLog.id);
+          .delete()
+          .eq('user_id', userId)
+          .gte('logged_at', start)
+          .lte('logged_at', end);
+
+        if (desiredTotal > 0) {
+          await supabase.from('fitness_os_water_logs').insert({ user_id: userId, amount_ml: desiredTotal });
+        }
+      } else {
+        const latestLog = todayLogs[0];
+        if (latestLog.amount_ml <= amountMl) {
+          await supabase.from('fitness_os_water_logs').delete().eq('id', latestLog.id);
+        } else {
+          await supabase
+            .from('fitness_os_water_logs')
+            .update({ amount_ml: latestLog.amount_ml - amountMl })
+            .eq('id', latestLog.id);
+        }
       }
     }
+
     // Non-blocking background summary update
     this.updateDailySummary(userId).catch(err => {
       console.warn("Background updateDailySummary warning in removeWater:", err);
     });
+  }
+
+  static async resetTodayWater(userId: string) {
+    const supabase = await createServerSupabase();
+    const tz = await this.getUserTimezone(userId);
+    const { start, end } = await this.getLocalDateBoundaries(userId, tz);
+    await supabase
+      .from('fitness_os_water_logs')
+      .delete()
+      .eq('user_id', userId)
+      .gte('logged_at', start)
+      .lte('logged_at', end);
+
+    this.updateDailySummary(userId).catch(() => {});
   }
 
   static async getWaterHistory(userId: string, days: number = 90) {
@@ -535,11 +588,13 @@ export class NutritionService {
       });
     }
 
+    const targets = await this.getEffectiveTargets(userId);
+    const targetWater = Number(targets?.water_ml) || 2500;
     if (waters) {
       waters.forEach(w => consumed.water_ml += w.amount_ml);
     }
-
-    const targets = await this.getEffectiveTargets(userId);
+    // Strictly cap at user's chosen goal
+    consumed.water_ml = Math.min(targetWater, consumed.water_ml);
     const totalMeals = plans && plans.length > 0 ? plans.length : 0;
     
     // We only consider a meal "completed" if it is in the meal plan AND we have logged something for it
@@ -673,9 +728,12 @@ export class NutritionService {
       });
     }
 
+    const targetWater = Number(targets.water_ml) || 2500;
     if (waters) {
       waters.forEach(w => consumed.water_ml += w.amount_ml);
     }
+    // Strictly cap at user's chosen goal
+    consumed.water_ml = Math.min(targetWater, consumed.water_ml);
 
     const env = fitProfile?.food_environment?.toLowerCase() || '';
     const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home' || env === 'office/canteen';
