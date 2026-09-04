@@ -45,7 +45,8 @@ export class ProgressAnalyticsService {
       { data: sleepLogsData },
       { data: latestReview },
       { data: userAchievementsData },
-      { data: bodyMetricsData }
+      { data: bodyMetricsData },
+      { data: activePlanData }
     ] = await Promise.all([
       supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target, goal_physique_image, target_physique').eq('user_id', userId).maybeSingle(),
       supabase.from('fitness_os_body_scans').select('*').eq('user_id', userId).order('scan_date', { ascending: true }).order('created_at', { ascending: true }),
@@ -81,7 +82,8 @@ export class ProgressAnalyticsService {
       supabase.from('fitness_os_sleep_logs').select('*').eq('user_id', userId).gte('sleep_date', startDateStr.split('T')[0]),
       supabase.from('fitness_os_ai_insights').select('*').eq('user_id', userId).order('generated_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('fitness_os_user_achievements').select('*, achievement:achievement_id(title, description, icon)').eq('user_id', userId),
-      supabase.from('fitness_os_body_metrics').select('weight, recorded_at').eq('user_id', userId).not('weight', 'is', null).gte('recorded_at', startDateStr).order('recorded_at', { ascending: true })
+      supabase.from('fitness_os_body_metrics').select('weight, recorded_at').eq('user_id', userId).not('weight', 'is', null).gte('recorded_at', startDateStr).order('recorded_at', { ascending: true }),
+      supabase.from('fitness_os_workout_plans').select('plan_data').eq('user_id', userId).eq('status', 'active').maybeSingle()
     ]);
 
     const workouts = workoutsData || [];
@@ -89,6 +91,7 @@ export class ProgressAnalyticsService {
     const activityLogs = activityLogsData || [];
     const sleepLogs = sleepLogsData || [];
     const userAchievements = userAchievementsData || [];
+    const activePlan = activePlanData;
 
     // 1. Profile Data Processing
     const profileStartWeight = fitProfile?.weight_trend_baseline || fitProfile?.weight || 0;
@@ -537,6 +540,19 @@ export class ProgressAnalyticsService {
     const averageWater = dailySummaries.length > 0 ? Math.round(totalWater / dailySummaries.length) : 0;
 
     // 6. Activity & Sleep
+    const planLifestyle = activePlan?.plan_data?.lifestyle;
+    const userStepTarget = Number(planLifestyle?.daily_steps_target) > 0 ? Number(planLifestyle.daily_steps_target) : 8000;
+    const userSleepTarget = Number(planLifestyle?.sleep_target_hours) > 0 ? Number(planLifestyle.sleep_target_hours) : 8;
+
+    // Index activity logs by date
+    const activityByDate = new Map<string, any>();
+    for (const a of activityLogs) {
+      const d = (a.activity_date || '').split('T')[0];
+      if (d) activityByDate.set(d, a);
+    }
+    const todayActivity = activityByDate.get(todayYMD);
+    const todaySteps = todayActivity ? (todayActivity.steps || 0) : 0;
+
     const totalSteps = activityLogs.reduce((acc: number, a: any) => acc + (a.steps || 0), 0);
     const totalActiveMins = activityLogs.reduce((acc: number, a: any) => acc + (a.active_minutes || 0), 0);
     const totalDistance = activityLogs.reduce((acc: number, a: any) => acc + (Number(a.distance_km) || 0), 0);
@@ -550,32 +566,104 @@ export class ProgressAnalyticsService {
       const dayNum = String(d.getDate()).padStart(2, '0');
       const ds = `${y}-${m}-${dayNum}`;
 
-      const log = activityLogs.find((a: any) => (a.activity_date || '').split('T')[0] === ds);
+      const log = activityByDate.get(ds);
+      const stepsVal = log ? (log.steps || 0) : 0;
+      const dayShort = d.toLocaleDateString('en-US', { weekday: 'short' });
+      const isToday = ds === todayYMD;
+
       stepsChart.push({
-        day: d.toLocaleDateString('en-US', { weekday: 'short' }),
-        steps: log?.steps || 0,
-        target: 10000
+        day: dayShort.charAt(0),
+        fullDay: dayShort,
+        date: ds,
+        steps: stepsVal,
+        target: userStepTarget,
+        isToday,
+        logged: stepsVal > 0,
       });
     }
 
+    const loggedActivities = activityLogs.filter((a: any) => (a.steps || 0) > 0);
+    const averageDailySteps = loggedActivities.length > 0
+      ? Math.round(totalSteps / loggedActivities.length)
+      : todaySteps;
+
     const activity: ActivityAnalytics = {
-      averageDailySteps: activityLogs.length > 0 ? Math.round(totalSteps / activityLogs.length) : 0,
-      stepTarget: 10000,
-      averageActiveMinutes: activityLogs.length > 0 ? Math.round(totalActiveMins / activityLogs.length) : 0,
+      todaySteps,
+      averageDailySteps,
+      stepTarget: userStepTarget,
+      averageActiveMinutes: loggedActivities.length > 0 ? Math.round(totalActiveMins / loggedActivities.length) : 0,
       weeklyDistanceKm: totalDistance,
-      stepsChart
+      stepsChart,
     };
+
+    // Index sleep logs by date
+    const sleepByDate = new Map<string, any>();
+    for (const s of sleepLogs) {
+      const d = (s.sleep_date || '').split('T')[0];
+      if (d) sleepByDate.set(d, s);
+    }
+    const todaySleep = sleepByDate.get(todayYMD);
+    const todaySleepHours = todaySleep ? Number(todaySleep.duration_hours) || 0 : 0;
+    const todaySleepQuality = todaySleep ? (todaySleep.quality_score || 0) * 10 : 0;
 
     const totalSleep = sleepLogs.reduce((acc: number, s: any) => acc + (Number(s.duration_hours) || 0), 0);
     const totalQuality = sleepLogs.reduce((acc: number, s: any) => acc + (s.quality_score || 0), 0);
 
-    const restDays = Math.max(0, elapsedDays - completedWorkoutDates.size);
+    const sleepChart = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime());
+      d.setDate(d.getDate() - i);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(d.getDate()).padStart(2, '0');
+      const ds = `${y}-${m}-${dayNum}`;
+
+      const log = sleepByDate.get(ds);
+      const hoursVal = log ? Number(log.duration_hours) || 0 : 0;
+      const qualityVal = log ? (log.quality_score || 0) * 10 : 0;
+      const dayShort = d.toLocaleDateString('en-US', { weekday: 'short' });
+      const isToday = ds === todayYMD;
+
+      sleepChart.push({
+        day: dayShort.charAt(0),
+        fullDay: dayShort,
+        date: ds,
+        hours: hoursVal,
+        quality: qualityVal,
+        target: userSleepTarget,
+        isToday,
+        logged: hoursVal > 0,
+      });
+    }
+
+    const loggedSleeps = sleepLogs.filter((s: any) => (Number(s.duration_hours) || 0) > 0);
+    const averageSleepHours = loggedSleeps.length > 0
+      ? Number((totalSleep / loggedSleeps.length).toFixed(1))
+      : todaySleepHours;
+    const averageSleepQuality = loggedSleeps.length > 0
+      ? Math.round((totalQuality / loggedSleeps.length) * 10)
+      : todaySleepQuality;
+
+    // Calculate rest days in current 7-day rolling window
+    let workoutsInRollingWeek = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(now.getTime());
+      d.setDate(d.getDate() - i);
+      const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (completedWorkoutDates.has(ymd)) {
+        workoutsInRollingWeek++;
+      }
+    }
+    const restDays = Math.max(0, 7 - workoutsInRollingWeek);
 
     const recovery: RecoveryAnalytics = {
-      averageSleepHours: sleepLogs.length > 0 ? Number((totalSleep / sleepLogs.length).toFixed(1)) : 0,
-      sleepTargetHours: 8,
-      averageSleepQuality: sleepLogs.length > 0 ? Math.round(totalQuality / sleepLogs.length * 10) : 0,
-      restDays
+      todaySleepHours,
+      todaySleepQuality,
+      averageSleepHours,
+      sleepTargetHours: userSleepTarget,
+      averageSleepQuality,
+      restDays,
+      sleepChart,
     };
 
     // 7. Consistency Aggregation
@@ -584,8 +672,12 @@ export class ProgressAnalyticsService {
       nutrition: nutrition.nutritionConsistency,
       protein: nutrition.averageProtein >= nutrition.proteinTarget ? 100 : (nutrition.averageProtein / nutrition.proteinTarget) * 100,
       water: averageWater >= targetWater ? 100 : (averageWater / targetWater) * 100,
-      steps: activity.averageDailySteps >= activity.stepTarget ? 100 : (activity.averageDailySteps / activity.stepTarget) * 100,
-      sleep: recovery.averageSleepHours >= recovery.sleepTargetHours ? 100 : (recovery.averageSleepHours / recovery.sleepTargetHours) * 100,
+      steps: (todaySteps > 0 || activity.averageDailySteps > 0)
+        ? Math.min(100, (Math.max(todaySteps, activity.averageDailySteps) / activity.stepTarget) * 100)
+        : 0,
+      sleep: (todaySleepHours > 0 || recovery.averageSleepHours > 0)
+        ? Math.min(100, (Math.max(todaySleepHours, recovery.averageSleepHours) / recovery.sleepTargetHours) * 100)
+        : 0,
       overallScore: 0
     };
     consistency.overallScore = (consistency.workout + consistency.nutrition + consistency.protein + consistency.water + consistency.steps + consistency.sleep) / 6;

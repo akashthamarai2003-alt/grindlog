@@ -90,18 +90,39 @@ export interface NutritionAnalytics {
 }
 
 export interface ActivityAnalytics {
+  todaySteps?: number;
   averageDailySteps: number;
   stepTarget: number;
   averageActiveMinutes: number;
   weeklyDistanceKm: number;
-  stepsChart: { day: string; steps: number; target: number }[];
+  stepsChart: {
+    day: string;
+    fullDay?: string;
+    date?: string;
+    steps: number;
+    target: number;
+    isToday?: boolean;
+    logged?: boolean;
+  }[];
 }
 
 export interface RecoveryAnalytics {
+  todaySleepHours?: number;
+  todaySleepQuality?: number;
   averageSleepHours: number;
   sleepTargetHours: number;
   averageSleepQuality: number; // 0-100
   restDays: number;
+  sleepChart?: {
+    day: string;
+    fullDay?: string;
+    date?: string;
+    hours: number;
+    quality?: number;
+    target: number;
+    isToday?: boolean;
+    logged?: boolean;
+  }[];
 }
 
 export interface AIProgressReview {
