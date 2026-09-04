@@ -124,8 +124,25 @@ You MUST output perfectly formatted JSON matching this exact structure:
         model: "fast"
       });
 
-      // Map recommendations back to string format for the DB array
-      const recommendationsList = response.recommendations.map(r => `${r.title}: ${r.description}`);
+      // Map recommendations safely whether array of objects or array of strings
+      const rawRecs = Array.isArray(response?.recommendations) ? response.recommendations : [];
+      const recommendationsList = rawRecs.map((r: any) => {
+        if (typeof r === 'string') return r;
+        if (r && typeof r === 'object') {
+          if (r.title && r.description) return `${r.title}: ${r.description}`;
+          if (r.title) return r.title;
+          if (r.description) return r.description;
+        }
+        return String(r || '');
+      }).filter(Boolean);
+
+      const strengthsList = (Array.isArray(response?.strengths) ? response.strengths : [])
+        .map((s: any) => typeof s === 'string' ? s : JSON.stringify(s))
+        .filter(Boolean);
+
+      const weaknessesList = (Array.isArray(response?.weaknesses) ? response.weaknesses : [])
+        .map((w: any) => typeof w === 'string' ? w : JSON.stringify(w))
+        .filter(Boolean);
 
       // Save to database
       const { data: inserted, error } = await supabase
@@ -136,8 +153,8 @@ You MUST output perfectly formatted JSON matching this exact structure:
           period_end: nowStr,
           insight_type: 'progress_review',
           summary: response.summary,
-          strengths: response.strengths,
-          weaknesses: response.weaknesses,
+          strengths: strengthsList,
+          weaknesses: weaknessesList,
           recommendations: recommendationsList
         })
         .select()
@@ -149,8 +166,8 @@ You MUST output perfectly formatted JSON matching this exact structure:
 
       return {
         summary: response.summary,
-        strengths: response.strengths,
-        weaknesses: response.weaknesses,
+        strengths: strengthsList,
+        weaknesses: weaknessesList,
         recommendations: recommendationsList,
         generatedAt: inserted?.generated_at || new Date().toISOString()
       };

@@ -23,6 +23,10 @@ export async function POST(req: NextRequest) {
 
     const review = await AIInsightService.generateWeeklyReview(user.id, period, forceRefresh);
 
+    if (!review) {
+      return NextResponse.json({ error: "Could not generate AI review. Please try again in a moment." }, { status: 500 });
+    }
+
     return NextResponse.json({ review });
   } catch (error: any) {
     console.error("AI Review API Error:", error);
