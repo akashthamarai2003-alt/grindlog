@@ -33,7 +33,10 @@ function getIntensityClass(count: number): string {
 }
 
 function formatDate(date: Date): string {
-  return date.toISOString().split("T")[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: HeatmapProps) {
@@ -48,6 +51,8 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const numWeeks = timeRange === "3M" ? 13 : timeRange === "6M" ? 26 : 52;
+  const is3M = timeRange === "3M";
+  const colStep = is3M ? 18 : 13; // cell width + gap
 
   const { grid, monthPositions, totalWorkouts, longestStreak, currentStreak } = useMemo(() => {
     // Frequency map for completed workouts
@@ -64,12 +69,15 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
       scheduledSet.add(key);
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const todayYear = now.getFullYear();
+    const todayMonth = now.getMonth();
+    const todayDate = now.getDate();
+    const today = new Date(todayYear, todayMonth, todayDate);
     const todayStr = formatDate(today);
 
     // Calculate start date based on selected time window
-    const startDate = new Date(today);
+    const startDate = new Date(todayYear, todayMonth, todayDate);
     startDate.setDate(startDate.getDate() - (numWeeks * DAYS_IN_WEEK) + 1);
     // Align to Sunday
     startDate.setDate(startDate.getDate() - startDate.getDay());
@@ -82,8 +90,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
       future: boolean;
     }[][] = [];
 
-    const monthPositions: { month: number; col: number }[] = [];
-    let lastMonth = -1;
+    const firstOfMonthList: { month: number; col: number }[] = [];
 
     for (let week = 0; week < numWeeks; week++) {
       const col: {
@@ -98,7 +105,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
         const cellDate = new Date(startDate);
         cellDate.setDate(startDate.getDate() + week * 7 + day);
         const dateStr = formatDate(cellDate);
-        const isFuture = cellDate > today;
+        const isFuture = dateStr > todayStr;
         const isToday = dateStr === todayStr;
         const count = isFuture ? 0 : (freqMap[dateStr] || 0);
         const isScheduled = scheduledSet.has(dateStr);
@@ -111,13 +118,30 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
           future: isFuture,
         });
 
-        // Record month column position
-        if (day === 0 && cellDate.getMonth() !== lastMonth && (!isFuture || week < numWeeks - 1)) {
-          lastMonth = cellDate.getMonth();
-          monthPositions.push({ month: lastMonth, col: week });
+        // Track when a new month begins in this column
+        if (cellDate.getDate() === 1) {
+          firstOfMonthList.push({ month: cellDate.getMonth(), col: week });
         }
       }
       grid.push(col);
+    }
+
+    // Non-overlapping month labels
+    const monthPositions: { month: number; col: number }[] = [];
+
+    // Only show initial month at col 0 if the next month is at least 3 columns away
+    if (firstOfMonthList.length > 0 && firstOfMonthList[0].col >= 3) {
+      const initialCell = new Date(startDate);
+      monthPositions.push({ month: initialCell.getMonth(), col: 0 });
+    }
+
+    let lastCol = monthPositions.length > 0 ? monthPositions[0].col : -10;
+    for (const item of firstOfMonthList) {
+      // Must be separated by at least 3 columns and not right at the boundary
+      if (item.col - lastCol >= 3 && item.col <= numWeeks - 2) {
+        monthPositions.push(item);
+        lastCol = item.col;
+      }
     }
 
     // Unique completed workout days
@@ -126,7 +150,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
     // Streaks calculation
     let streak = 0;
     let longestStreak = 0;
-    const sorted = Object.keys(freqMap).sort();
+    const sorted = Object.keys(freqMap).filter(k => k <= todayStr).sort();
     for (let i = 0; i < sorted.length; i++) {
       if (i === 0) {
         streak = 1;
@@ -139,9 +163,9 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
       longestStreak = Math.max(longestStreak, streak);
     }
 
-    // Current streak (checking backwards from today)
+    // Current streak (checking backwards from today in local time)
     let currentStreak = 0;
-    let checkDate = new Date(today);
+    let checkDate = new Date(todayYear, todayMonth, todayDate);
     while (true) {
       const dStr = formatDate(checkDate);
       if (freqMap[dStr]) {
@@ -299,14 +323,14 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
         className="overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        <div className="inline-flex flex-col gap-1 min-w-max select-none">
+        <div className={`inline-flex flex-col gap-1 min-w-max select-none ${is3M ? "w-full items-center" : ""}`}>
           {/* Month labels accurately positioned */}
-          <div className="relative h-4 ml-6">
+          <div className="relative h-4" style={{ marginLeft: "20px", width: `${numWeeks * colStep}px` }}>
             {monthPositions.map((mp, i) => (
               <div
                 key={i}
                 className="absolute text-[9px] font-black text-white/40 uppercase tracking-wider"
-                style={{ left: `${mp.col * 13}px` }}
+                style={{ left: `${mp.col * colStep}px` }}
               >
                 {MONTH_LABELS[mp.month]}
               </div>
@@ -314,11 +338,11 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
           </div>
 
           {/* Grid: Day labels + Week columns */}
-          <div className="flex gap-[3px]">
+          <div className={`flex ${is3M ? "gap-[4px]" : "gap-[3px]"}`}>
             {/* Day of week labels */}
-            <div className="flex flex-col gap-[3px] mr-1.5">
+            <div className={`flex flex-col ${is3M ? "gap-[4px]" : "gap-[3px]"} mr-1.5`}>
               {DAY_LABELS.map((d, i) => (
-                <div key={i} className="w-3.5 h-[10px] flex items-center justify-center">
+                <div key={i} className={`w-3.5 ${is3M ? "h-[14px]" : "h-[10px]"} flex items-center justify-center`}>
                   {i % 2 === 1 && (
                     <span className="text-[8px] font-black text-white/30">{d}</span>
                   )}
@@ -328,7 +352,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
 
             {/* Week Columns */}
             {grid.map((week, wi) => (
-              <div key={wi} className="flex flex-col gap-[3px]">
+              <div key={wi} className={`flex flex-col ${is3M ? "gap-[4px]" : "gap-[3px]"}`}>
                 {week.map((cell, di) => {
                   const isSelected = selectedCell?.date === cell.date;
                   return (
@@ -342,7 +366,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [] }: Hea
                           isToday: cell.isToday,
                         })
                       }
-                      className={`w-[10px] h-[10px] rounded-[2px] transition-all cursor-pointer relative ${
+                      className={`${is3M ? "w-[14px] h-[14px] rounded-[3px]" : "w-[10px] h-[10px] rounded-[2px]"} transition-all cursor-pointer relative ${
                         cell.future
                           ? "bg-transparent border border-transparent cursor-default pointer-events-none"
                           : cell.count > 0

@@ -180,6 +180,28 @@ export class ProgressAnalyticsService {
       weeklyChart: weeklyChartData
     };
 
+    // Calculate current workout streak
+    const completedWorkoutDates = new Set<string>(
+      completedWorkouts
+        .map((w: any) => (w.completed_at || w.workout_date || '').split('T')[0])
+        .filter(Boolean)
+    );
+    let calcStreak = 0;
+    const checkD = new Date(now.getTime());
+    const todayYMD = `${checkD.getFullYear()}-${String(checkD.getMonth() + 1).padStart(2, '0')}-${String(checkD.getDate()).padStart(2, '0')}`;
+    while (true) {
+      const ymd = `${checkD.getFullYear()}-${String(checkD.getMonth() + 1).padStart(2, '0')}-${String(checkD.getDate()).padStart(2, '0')}`;
+      if (completedWorkoutDates.has(ymd)) {
+        calcStreak++;
+        checkD.setDate(checkD.getDate() - 1);
+      } else if (ymd === todayYMD) {
+        checkD.setDate(checkD.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    transformation.streak = calcStreak;
+
     // 5. Nutrition & Water Logs
     const targetCalories = nutritionTarget?.calories || fitProfile?.baseline_calories || 2000;
     const targetProtein = nutritionTarget?.protein || fitProfile?.initial_protein_target || 130;
