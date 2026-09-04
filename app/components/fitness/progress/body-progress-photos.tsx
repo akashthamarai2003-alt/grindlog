@@ -96,56 +96,44 @@ export function BodyProgressPhotos({ first, latest }: { first: BodyPhotoScan | n
 
   return (
     <div className="w-full flex flex-col gap-3">
-      {/* Header & Angle Controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
-              Body Progress
-            </h2>
-            {isSingleScan && (
-              <span className="px-2 py-0.5 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 text-[9px] font-bold text-[#ADFF00] uppercase tracking-wider">
-                Baseline Scan
-              </span>
-            )}
-          </div>
-          <Link 
-            href="/progress/add-scan" 
-            onClick={handleAddClick}
-            className="sm:hidden flex items-center justify-center w-7 h-7 bg-[#ADFF00]/10 text-[#ADFF00] rounded-full border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors"
-          >
-            <Camera className="w-3.5 h-3.5" />
-          </Link>
+      {/* Header Row: Title, Badge, and Add Scan Button */}
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
+            Body Progress
+          </h2>
+          {isSingleScan && (
+            <span className="px-2 py-0.5 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 text-[9px] font-bold text-[#ADFF00] uppercase tracking-wider">
+              Baseline Scan
+            </span>
+          )}
         </div>
-
-        <div className="flex items-center justify-between gap-2">
-          {/* Angle tabs */}
-          <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/5">
-            {(['front', 'left', 'right', 'back'] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md transition-all ${
-                  view === v ? 'bg-[#ADFF00] text-black font-extrabold shadow-sm' : 'text-white/40 hover:text-white'
-                }`}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
-
-          <Link 
-            href="/progress/add-scan" 
-            onClick={handleAddClick}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#ADFF00]/10 text-[#ADFF00] rounded-md font-black text-[9px] uppercase tracking-widest border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors"
-          >
-            <Camera className="w-3 h-3" /> Add Scan
-          </Link>
-        </div>
+        <Link 
+          href="/progress/add-scan" 
+          onClick={handleAddClick}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-[10px] uppercase tracking-wider border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors shrink-0 shadow-sm"
+        >
+          <Camera className="w-3.5 h-3.5" />
+          <span>Add Scan</span>
+        </Link>
       </div>
 
       {/* Main Showcase / Comparison Container */}
       <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
+        {/* Full-width Angle Switcher */}
+        <div className="grid grid-cols-4 bg-[#0D150D] p-1 rounded-xl border border-white/5 w-full">
+          {(['front', 'left', 'right', 'back'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all text-center ${
+                view === v ? 'bg-[#ADFF00] text-black font-extrabold shadow-sm' : 'text-white/40 hover:text-white'
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
         {isSingleScan ? (
           /* Single Baseline View */
           <div className="flex flex-col gap-3">
