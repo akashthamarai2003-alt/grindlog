@@ -2,6 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import { adminMessaging } from "@/lib/firebase/server";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const APP_ICON = "https://www.grindlog.in/icons/icon-192.png";
 const NOTIFICATION_BADGE = "https://www.grindlog.in/icons/notification-badge.png";
 const NOTIFICATION_URL = "/";
