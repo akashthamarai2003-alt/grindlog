@@ -22,8 +22,6 @@ interface ExerciseDetailProps {
   onSetCompleted?: (setId: string, reps: number, weightKg: number) => void;
   nextExercise?: { id: string; name: string } | null;
   onNextExercise?: (exerciseId: string) => void;
-  onVisibilityPause?: () => void;
-  onVisibilityResume?: () => void;
 }
 
 // Bodyweight exercise keywords — show "BW" instead of "0 kg"
@@ -117,9 +115,9 @@ function generateInstructions(exercise: FitnessExercise): string[] {
   ];
 }
 
-export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused, onBack, onSetCompleted, nextExercise, onNextExercise, onVisibilityPause, onVisibilityResume }: ExerciseDetailProps) {
+export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused, onBack, onSetCompleted, nextExercise, onNextExercise }: ExerciseDetailProps) {
   const router = useRouter();
-  const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused, sessionId, onVisibilityPause, onVisibilityResume);
+  const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
   
   const sortedSets = [...exercise.fitness_os_sets].sort((a, b) => a.set_number - b.set_number);
   const isBW = isBodyweightExercise(exercise.name);

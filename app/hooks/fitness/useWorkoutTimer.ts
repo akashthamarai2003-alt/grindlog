@@ -39,66 +39,16 @@ export function clearWorkoutTimer(workoutId: string) {
 export function useWorkoutTimer(
   workoutId?: string,
   startedAt?: string | null,
-  isPaused?: boolean,
-  sessionId?: string,
-  onVisibilityPause?: () => void,
-  onVisibilityResume?: () => void
+  isPaused?: boolean
 ) {
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const hiddenAtRef = useRef<number | null>(null);
+  const elapsedRef = useRef(0); // always track latest elapsed for cleanup
 
-  // Save current elapsed to localStorage as paused
-  const saveAsPaused = useCallback((currentElapsed: number) => {
-    if (!workoutId) return;
-    const storageKey = `workout_timer_${workoutId}`;
-    try {
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({ elapsed: currentElapsed, lastTick: Date.now(), isPaused: true })
-      );
-    } catch { /* ignore */ }
-  }, [workoutId]);
-
-  // Handle page visibility change — auto-pause when user leaves, auto-resume when they return
+  // Keep elapsedRef in sync
   useEffect(() => {
-    if (!workoutId || !startedAt || !sessionId) return;
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Page hidden → pause the timer and notify parent to pause session in DB
-        hiddenAtRef.current = Date.now();
-        
-        // Stop the interval immediately
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        
-        // Save current elapsed as paused in localStorage
-        setElapsed(prev => {
-          saveAsPaused(prev);
-          return prev;
-        });
-
-        // Notify parent component to pause the session in DB
-        if (onVisibilityPause && !isPaused) {
-          onVisibilityPause();
-        }
-      } else {
-        // Page visible again → resume
-        hiddenAtRef.current = null;
-
-        // Notify parent component to resume the session in DB
-        if (onVisibilityResume && isPaused) {
-          onVisibilityResume();
-        }
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [workoutId, startedAt, sessionId, isPaused, onVisibilityPause, onVisibilityResume, saveAsPaused]);
+    elapsedRef.current = elapsed;
+  }, [elapsed]);
 
   useEffect(() => {
     if (!workoutId || !startedAt) return;
@@ -130,8 +80,7 @@ export function useWorkoutTimer(
           currentElapsed = Math.min(rawElapsedSinceStart, MAX_WORKOUT_SECONDS);
         } else {
           currentElapsed = parsed.elapsed || 0;
-          // Don't add idle time if timer was paused — this is the key fix
-          // When user left the page, we saved as paused, so idleDiff should NOT accumulate
+          // Don't add idle time if timer was saved as paused
           if (!parsed.isPaused && !isPaused) {
             currentElapsed += Math.max(0, idleDiff);
           }
@@ -145,6 +94,7 @@ export function useWorkoutTimer(
 
     currentElapsed = Math.min(currentElapsed, MAX_WORKOUT_SECONDS);
     setElapsed(currentElapsed);
+    elapsedRef.current = currentElapsed;
 
     if (isPaused) {
       localStorage.setItem(
@@ -171,6 +121,7 @@ export function useWorkoutTimer(
           return MAX_WORKOUT_SECONDS;
         }
         const next = prev + 1;
+        elapsedRef.current = next;
         localStorage.setItem(
           storageKey,
           JSON.stringify({ elapsed: next, lastTick: Date.now(), isPaused: false })
@@ -179,11 +130,20 @@ export function useWorkoutTimer(
       });
     }, 1000);
 
+    // CLEANUP: When component unmounts (user navigates away), save timer as PAUSED
+    // This ensures time doesn't accumulate while user is on a different page
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      // Save current elapsed as paused so it doesn't drift
+      try {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({ elapsed: elapsedRef.current, lastTick: Date.now(), isPaused: true })
+        );
+      } catch { /* ignore */ }
     };
   }, [workoutId, startedAt, isPaused]);
 

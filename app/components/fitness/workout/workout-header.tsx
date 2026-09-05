@@ -13,11 +13,8 @@ interface WorkoutHeaderProps {
   startedAt?: string | null;
   isPaused?: boolean;
   workoutId?: string;
-  sessionId?: string;
   isMainPage?: boolean;
   planBadge?: string;
-  onVisibilityPause?: () => void;
-  onVisibilityResume?: () => void;
 }
 
 export function WorkoutHeader({
@@ -28,20 +25,10 @@ export function WorkoutHeader({
   startedAt,
   isPaused,
   workoutId,
-  sessionId,
   isMainPage = false,
   planBadge,
-  onVisibilityPause,
-  onVisibilityResume
 }: WorkoutHeaderProps) {
-  const { formattedTime } = useWorkoutTimer(
-    workoutId,
-    startedAt,
-    isPaused,
-    sessionId,
-    onVisibilityPause,
-    onVisibilityResume
-  );
+  const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
 
   if (isMainPage) {
     return (

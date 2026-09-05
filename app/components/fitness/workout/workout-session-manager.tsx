@@ -41,9 +41,30 @@ export function WorkoutSessionManager({
   const [isPaused, setIsPaused] = useState<boolean>(initialIsPaused || false);
   const [isFinishing, setIsFinishing] = useState(false);
 
-  // Track whether the pause was triggered by user leaving the page (auto-pause)
-  // so we can auto-resume when they come back without showing a toast
+  // Refs to track state for cleanup without stale closures
+  const isPausedRef = useRef(isPaused);
+  const isFinishingRef = useRef(isFinishing);
   const autoPausedRef = useRef(false);
+
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  useEffect(() => { isFinishingRef.current = isFinishing; }, [isFinishing]);
+
+  // Auto-resume on mount: When user returns to the workout page and the session was
+  // auto-paused (from navigating away), immediately resume it
+  useEffect(() => {
+    if (initialIsPaused && workout.id !== "mock") {
+      // Session was paused (likely from our auto-pause on leave) — resume immediately
+      setIsPaused(false);
+      const url = `/api/workouts/sessions/${sessionId}/status`;
+      fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "active" }),
+      }).catch(() => { /* silently handle */ });
+    }
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const exercises = workout.fitness_os_exercises || [];
   const totalExercises = exercises.length;
@@ -51,6 +72,29 @@ export function WorkoutSessionManager({
     ex.fitness_os_sets && ex.fitness_os_sets.length > 0 && ex.fitness_os_sets.every((s: any) => s.completed)
   ).length;
   const allExercisesCompleted = totalExercises > 0 && completedExercises === totalExercises;
+
+  // Pause/Resume session in the database (fire-and-forget)
+  const updateSessionStatus = useCallback((status: "paused" | "active") => {
+    if (workout.id === "mock") return;
+    // Use navigator.sendBeacon for reliability on unmount, fall back to fetch
+    const url = `/api/workouts/sessions/${sessionId}/status`;
+    const body = JSON.stringify({ status });
+    
+    if (status === "paused" && typeof navigator !== "undefined" && navigator.sendBeacon) {
+      // sendBeacon is guaranteed to fire even during page unload
+      const blob = new Blob([body], { type: "application/json" });
+      const sent = navigator.sendBeacon(url, blob);
+      if (sent) return;
+    }
+    
+    // Fallback to fetch
+    fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true, // ensures request survives page navigation
+    }).catch(() => { /* silently handle */ });
+  }, [workout.id, sessionId]);
 
   const handleFinish = async () => {
     if (isFinishing) return;
@@ -89,47 +133,63 @@ export function WorkoutSessionManager({
     }
   }, [allExercisesCompleted, isFinishing, activeExerciseId]);
 
-  // Pause/Resume session in the database (fire-and-forget)
-  const updateSessionStatus = useCallback(async (status: "paused" | "active") => {
-    if (workout.id === "mock") return;
-    try {
-      await fetch(`/api/workouts/sessions/${sessionId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
-      });
-    } catch {
-      // Silently handle — DB sync is best-effort for visibility changes
-    }
-  }, [workout.id, sessionId]);
-
   const handleTogglePause = async () => {
     const nextState = !isPaused;
     setIsPaused(nextState);
     autoPausedRef.current = false; // manual toggle clears auto-pause flag
     toast.success(nextState ? "Workout paused." : "Workout resumed!");
-
-    await updateSessionStatus(nextState ? "paused" : "active");
+    updateSessionStatus(nextState ? "paused" : "active");
   };
 
-  // Auto-pause when user leaves the page (tab hidden, navigates away)
-  const handleVisibilityPause = useCallback(() => {
-    if (isPaused) return; // already paused
-    setIsPaused(true);
-    autoPausedRef.current = true;
-    updateSessionStatus("paused");
-  }, [isPaused, updateSessionStatus]);
+  // Auto-pause the DB session when user leaves the page (visibilitychange + beforeunload)
+  useEffect(() => {
+    if (workout.id === "mock") return;
 
-  // Auto-resume when user returns to the page
-  const handleVisibilityResume = useCallback(() => {
-    if (!isPaused) return; // already running
-    // Only auto-resume if it was auto-paused (not manually paused by user)
-    if (!autoPausedRef.current) return;
-    setIsPaused(false);
-    autoPausedRef.current = false;
-    toast.success("Welcome back! Workout resumed.");
-    updateSessionStatus("active");
-  }, [isPaused, updateSessionStatus]);
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab hidden → pause session in DB if not already paused
+        if (!isPausedRef.current && !isFinishingRef.current) {
+          setIsPaused(true);
+          autoPausedRef.current = true;
+          updateSessionStatus("paused");
+        }
+      } else {
+        // Tab visible again → auto-resume ONLY if it was auto-paused (not manually paused)
+        if (autoPausedRef.current && isPausedRef.current && !isFinishingRef.current) {
+          setIsPaused(false);
+          autoPausedRef.current = false;
+          toast.success("Welcome back! Workout resumed.");
+          updateSessionStatus("active");
+        }
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // User closing/refreshing the tab → pause session
+      if (!isPausedRef.current && !isFinishingRef.current) {
+        updateSessionStatus("paused");
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [workout.id, updateSessionStatus]);
+
+  // CRITICAL: Auto-pause session in DB when component unmounts (user navigates away within the app)
+  // This fires when user clicks the back arrow to go from /workout/[id] → /workout
+  useEffect(() => {
+    return () => {
+      // On unmount: if session is active (not paused, not finishing), pause it in the DB
+      if (!isPausedRef.current && !isFinishingRef.current && workout.id !== "mock") {
+        updateSessionStatus("paused");
+      }
+    };
+  }, [workout.id, updateSessionStatus]);
 
   const activeExercise = activeExerciseId
     ? workout.fitness_os_exercises?.find((e: any) => e.id === activeExerciseId) || null
@@ -190,9 +250,6 @@ export function WorkoutSessionManager({
           startedAt={startedAt}
           isPaused={isPaused}
           workoutId={workout.id}
-          sessionId={sessionId}
-          onVisibilityPause={handleVisibilityPause}
-          onVisibilityResume={handleVisibilityResume}
         />
       )}
 
@@ -207,8 +264,6 @@ export function WorkoutSessionManager({
           onSetCompleted={handleSetCompleted}
           nextExercise={nextExercise}
           onNextExercise={handleSelectExercise}
-          onVisibilityPause={handleVisibilityPause}
-          onVisibilityResume={handleVisibilityResume}
         />
       ) : (
         <WorkoutExecution
