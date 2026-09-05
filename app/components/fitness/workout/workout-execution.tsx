@@ -11,7 +11,7 @@ import { Pause, Play, CheckCircle, Loader2, AlertTriangle, X, Trash2 } from "luc
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
-import { discardWorkoutSessionAction, quickCompleteWorkoutAction } from "@/app/actions/fitness";
+import { discardWorkoutSessionAction } from "@/app/actions/fitness";
 import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 
 interface WorkoutExecutionProps {
@@ -22,6 +22,7 @@ interface WorkoutExecutionProps {
   showAiCoach?: boolean;
   isEarlyStart?: boolean;
   onSelectExercise?: (exerciseId: string) => void;
+  onCompleteExercise?: (exerciseId: string) => void;
   initialCoachNote?: string | null;
   isPaused?: boolean;
   onTogglePause?: () => void;
@@ -35,6 +36,7 @@ export function WorkoutExecution({
   showAiCoach = false,
   isEarlyStart = false,
   onSelectExercise,
+  onCompleteExercise,
   initialCoachNote,
   isPaused: externalIsPaused,
   onTogglePause,
@@ -44,7 +46,6 @@ export function WorkoutExecution({
   const router = useRouter();
   const [isFinishing, setIsFinishing] = useState(false);
   const [showEarlyFinishModal, setShowEarlyFinishModal] = useState(false);
-  const [showQuickFinishModal, setShowQuickFinishModal] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
   
@@ -122,32 +123,6 @@ export function WorkoutExecution({
     }
   };
 
-  const handleQuickComplete = async () => {
-    if (effectiveIsFinishing) return;
-    setIsFinishing(true);
-    setShowQuickFinishModal(false);
-
-    if (workout.id === "mock") {
-      clearWorkoutTimer("mock");
-      toast.success("Workout completed!");
-      router.push(`/workout/${workout.id}/summary`);
-      return;
-    }
-
-    try {
-      clearWorkoutTimer(workout.id);
-      const res = await quickCompleteWorkoutAction({ workoutId: workout.id });
-      if (!res.success) {
-        throw new Error(res.error || "Failed to finish workout");
-      }
-      toast.success("Workout completed! Great job today.");
-      router.push(`/workout/${workout.id}/summary`);
-    } catch (e: any) {
-      toast.error(e.message || "Failed to finish workout");
-      setIsFinishing(false);
-    }
-  };
-
   const triggerFinish = onFinish || handleFinish;
 
   // Auto-finish if all exercises completed and not already finishing
@@ -199,6 +174,7 @@ export function WorkoutExecution({
           exercises={workout.fitness_os_exercises as any}
           sectionLabel={isEarlyStart ? "Early Start Exercises" : undefined}
           onSelectExercise={onSelectExercise}
+          onCompleteExercise={onCompleteExercise}
           isPaused={isPaused}
         />
       </div>
@@ -257,18 +233,6 @@ export function WorkoutExecution({
           >
             <Play className="w-4 h-4 fill-current shrink-0" />
             <span className="truncate">Next: {nextIncompleteExercise.name}</span>
-          </button>
-        )}
-
-        {/* Finish Workout button directly below Next Exercise button */}
-        {!allExercisesCompleted && (
-          <button
-            onClick={() => setShowQuickFinishModal(true)}
-            disabled={effectiveIsFinishing}
-            className="w-full py-3.5 bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer"
-          >
-            <CheckCircle className="w-4 h-4 text-[#ADFF00]" />
-            <span className="text-xs font-black tracking-widest">Finish Workout</span>
           </button>
         )}
 
@@ -434,70 +398,6 @@ export function WorkoutExecution({
                 >
                   {isDiscarding && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{isDiscarding ? "Discarding..." : "Yes, Discard Workout"}</span>
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Quick Finish Workout Confirmation Modal */}
-      <AnimatePresence>
-        {showQuickFinishModal && (
-          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowQuickFinishModal(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-md bg-[#0A1108] border-t border-white/10 sm:border sm:rounded-[24px] rounded-t-[32px] p-6 shadow-2xl z-10"
-            >
-              <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
-
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-[#ADFF00]" />
-                  </div>
-                  <h3 className="text-base font-black text-white uppercase tracking-wider">
-                    Finish Workout?
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setShowQuickFinishModal(false)}
-                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-sm text-white/70 leading-relaxed mb-6">
-                Ready to complete today's session? All <strong className="text-white">{totalExercises} exercises</strong> in <strong className="text-[#ADFF00]">{workout.name}</strong> will be marked as completed and saved to your history.
-              </p>
-
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={handleQuickComplete}
-                  disabled={effectiveIsFinishing}
-                  className="w-full py-4 bg-[#ADFF00] text-black font-black uppercase tracking-widest rounded-xl active:scale-[0.98] transition-transform cursor-pointer hover:bg-[#b8ff1a] flex items-center justify-center gap-2"
-                >
-                  {effectiveIsFinishing && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>{effectiveIsFinishing ? "Finishing..." : "Yes, Finish Workout"}</span>
-                </button>
-
-                <button
-                  onClick={() => setShowQuickFinishModal(false)}
-                  className="w-full py-3 text-white/50 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                >
-                  Keep Training
                 </button>
               </div>
             </motion.div>

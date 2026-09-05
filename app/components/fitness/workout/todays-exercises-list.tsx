@@ -5,6 +5,7 @@ import { Dumbbell, Play, Loader2, Check, Pause } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { completeExerciseSetsAction } from "@/app/actions/fitness";
 
 interface Exercise {
   id: string;
@@ -22,6 +23,7 @@ interface TodaysExercisesListProps {
   readonly?: boolean;
   sectionLabel?: string;
   onSelectExercise?: (exerciseId: string) => void;
+  onCompleteExercise?: (exerciseId: string) => void;
   isPaused?: boolean;
 }
 
@@ -31,10 +33,12 @@ export function TodaysExercisesList({
   readonly = false,
   sectionLabel = "Today's Exercises",
   onSelectExercise,
+  onCompleteExercise,
   isPaused = false
 }: TodaysExercisesListProps) {
   const router = useRouter();
   const [navigatingExerciseId, setNavigatingExerciseId] = useState<string | null>(null);
+  const [finishingExerciseId, setFinishingExerciseId] = useState<string | null>(null);
 
   useEffect(() => {
     if (workoutId && workoutId !== "mock") {
@@ -64,6 +68,27 @@ export function TodaysExercisesList({
     }
     setNavigatingExerciseId(exerciseId);
     router.push(`/workout/${workoutId}?exercise=${exerciseId}`);
+  };
+
+  const handleFinishExercise = async (exerciseId: string) => {
+    if (isPaused) {
+      toast.info("Workout is paused. Tap 'Resume Workout' below to continue.");
+      return;
+    }
+    setFinishingExerciseId(exerciseId);
+    try {
+      if (onCompleteExercise) {
+        onCompleteExercise(exerciseId);
+      } else {
+        await completeExerciseSetsAction({ exerciseId });
+        toast.success("Exercise marked completed!");
+        router.refresh();
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Could not complete exercise");
+    } finally {
+      setFinishingExerciseId(null);
+    }
   };
 
   return (
@@ -152,49 +177,73 @@ export function TodaysExercisesList({
                   </div>
                 </div>
 
-                {/* Right side: Start / Completed button (Hidden if readonly) */}
+                {/* Right side: Start & Finish buttons (or Completed badge) */}
                 {!readonly && (
-                  <button
-                    onClick={() => !isCompleted && handleStartExercise(exercise.id)}
-                    disabled={navigatingExerciseId !== null || isCompleted}
-                    className={`shrink-0 h-10 px-4 transition-all duration-300 rounded-xl flex items-center justify-center gap-1.5 border group/btn disabled:opacity-50 ${
-                      isCompleted
-                        ? "bg-white/5 border-white/10 text-white/50 cursor-default"
-                        : isPaused
-                        ? "bg-amber-500/10 border-amber-500/20 text-amber-400 cursor-not-allowed"
-                        : "bg-white/5 border-white/5 hover:bg-[#ADFF00] hover:text-black active:scale-95 cursor-pointer"
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <>
-                        <span className="text-[10px] font-black uppercase tracking-widest">
-                          Completed
-                        </span>
-                        <Check className="w-3 h-3 text-[#ADFF00]" />
-                      </>
-                    ) : isPaused ? (
-                      <>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
-                          Paused
-                        </span>
-                        <Pause className="w-3 h-3 text-amber-400" />
-                      </>
-                    ) : navigatingExerciseId === exercise.id ? (
-                      <>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/70">
-                          Loading
-                        </span>
-                        <Loader2 className="w-3 h-3 text-white/50 animate-spin" />
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/70 group-hover/btn:text-black transition-colors">
-                          Start
-                        </span>
-                        <Play className="w-3 h-3 text-white/50 group-hover/btn:text-black fill-current transition-colors" />
-                      </>
-                    )}
-                  </button>
+                  isCompleted ? (
+                    <div className="shrink-0 h-10 px-3.5 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-1.5 text-white/50">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#ADFF00]">
+                        Completed
+                      </span>
+                      <Check className="w-3.5 h-3.5 text-[#ADFF00]" />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      {/* START button */}
+                      <button
+                        onClick={() => handleStartExercise(exercise.id)}
+                        disabled={navigatingExerciseId !== null || isPaused || finishingExerciseId === exercise.id}
+                        className={`h-9 px-4 transition-all duration-200 rounded-xl flex items-center justify-center gap-1.5 border group/btn disabled:opacity-50 ${
+                          isPaused
+                            ? "bg-amber-500/10 border-amber-500/20 text-amber-400 cursor-not-allowed"
+                            : "bg-white/5 border-white/10 hover:bg-[#ADFF00] hover:text-black active:scale-95 cursor-pointer"
+                        }`}
+                      >
+                        {isPaused ? (
+                          <>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                              Paused
+                            </span>
+                            <Pause className="w-3 h-3 text-amber-400" />
+                          </>
+                        ) : navigatingExerciseId === exercise.id ? (
+                          <>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/70">
+                              Loading
+                            </span>
+                            <Loader2 className="w-3 h-3 text-white/50 animate-spin" />
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/80 group-hover/btn:text-black transition-colors">
+                              Start
+                            </span>
+                            <Play className="w-3 h-3 text-white/50 group-hover/btn:text-black fill-current transition-colors" />
+                          </>
+                        )}
+                      </button>
+
+                      {/* FINISH button directly below Start button */}
+                      <button
+                        onClick={() => handleFinishExercise(exercise.id)}
+                        disabled={navigatingExerciseId !== null || isPaused || finishingExerciseId === exercise.id}
+                        className="h-7 px-3 bg-[#111A10] border border-[#ADFF00]/30 hover:bg-[#ADFF00] hover:text-black rounded-lg flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer text-[#ADFF00] disabled:opacity-50 group/finish"
+                      >
+                        {finishingExerciseId === exercise.id ? (
+                          <>
+                            <Loader2 className="w-2.5 h-2.5 animate-spin text-[#ADFF00]" />
+                            <span className="text-[9px] font-black uppercase tracking-wider text-[#ADFF00]">Saving</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-[#ADFF00] group-hover/finish:text-black transition-colors">
+                              Finish
+                            </span>
+                            <Check className="w-2.5 h-2.5 text-[#ADFF00] group-hover/finish:text-black transition-colors" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
             </motion.div>

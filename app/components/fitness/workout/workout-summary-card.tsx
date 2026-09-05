@@ -6,8 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { reopenWorkoutAction, quickCompleteWorkoutAction } from "@/app/actions/fitness";
-import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
+import { reopenWorkoutAction } from "@/app/actions/fitness";
 
 interface WorkoutSummaryCardProps {
   workout: any;
@@ -29,8 +28,6 @@ export function WorkoutSummaryCard({
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
   const [showEarlyStartConfirm, setShowEarlyStartConfirm] = useState(false);
-  const [isFinishingDirectly, setIsFinishingDirectly] = useState(false);
-  const [showQuickFinishConfirm, setShowQuickFinishConfirm] = useState(false);
 
   const isCompleted = workout?.status === "completed";
   const exercises = workout?.fitness_os_exercises || [];
@@ -114,32 +111,6 @@ export function WorkoutSummaryCard({
       return;
     }
     void startWorkout();
-  };
-
-  const handleQuickFinish = async () => {
-    if (isFinishingDirectly) return;
-    setIsFinishingDirectly(true);
-    setShowQuickFinishConfirm(false);
-
-    if (workout?.id === "mock") {
-      clearWorkoutTimer("mock");
-      toast.success("Workout completed!");
-      router.push(`/workout/${workout.id}/summary`);
-      return;
-    }
-
-    try {
-      clearWorkoutTimer(workout.id);
-      const res = await quickCompleteWorkoutAction({ workoutId: workout.id });
-      if (!res.success) {
-        throw new Error(res.error || "Failed to finish workout");
-      }
-      toast.success("Workout completed! Great job today.");
-      router.push(`/workout/${workout.id}/summary`);
-    } catch (e: any) {
-      toast.error(e.message || "Failed to complete workout");
-      setIsFinishingDirectly(false);
-    }
   };
 
   // Extract target muscles from plan_data if available, otherwise infer from name
@@ -313,26 +284,6 @@ export function WorkoutSummaryCard({
                   )}
                 </button>
 
-                {/* Finish Workout button directly below Start */}
-                <button
-                  type="button"
-                  onClick={() => setShowQuickFinishConfirm(true)}
-                  disabled={isStarting || isFinishingDirectly}
-                  className="w-full font-black uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 cursor-pointer border border-white/10 bg-[#111A10] hover:bg-white/5 text-white/80 hover:text-white"
-                >
-                  {isFinishingDirectly ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-[#ADFF00]" />
-                      <span className="text-xs font-black text-[#ADFF00]">COMPLETING...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 text-[#ADFF00]" />
-                      <span className="text-xs font-black tracking-widest">FINISH WORKOUT</span>
-                    </>
-                  )}
-                </button>
-
                 {isTrulyCompleted && completedCount < exerciseCount && (
                   <Link
                     href={`/workout/${workout.id}/summary`}
@@ -395,64 +346,6 @@ export function WorkoutSummaryCard({
                 className="rounded-xl bg-[#ADFF00] py-3 text-xs font-black uppercase tracking-wider text-black shadow-[0_0_15px_rgba(173,255,0,0.3)] hover:bg-[#bfff33]"
               >
                 Start now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showQuickFinishConfirm && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-5 backdrop-blur-sm">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="quick-finish-dialog-title"
-            className="w-full max-w-sm rounded-3xl border border-[#ADFF00]/25 bg-[#111A10] p-6 shadow-2xl"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ADFF00]/10 text-[#ADFF00]">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#ADFF00]">Finish Workout</p>
-                  <h3 id="quick-finish-dialog-title" className="mt-1 text-lg font-black text-white">Mark as Finished?</h3>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowQuickFinishConfirm(false)}
-                className="rounded-full bg-white/5 p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-                aria-label="Close confirmation"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="mt-5 text-sm leading-relaxed text-white/60">
-              Already completed this workout offline? This will mark all <span className="font-bold text-white">{exerciseCount} exercises</span> in <span className="font-bold text-[#ADFF00]">{workout?.name || "today's workout"}</span> as completed, count toward your streak, and save your workout summary.
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setShowQuickFinishConfirm(false)}
-                className="rounded-xl border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-wider text-white/70 hover:bg-white/10 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleQuickFinish}
-                disabled={isFinishingDirectly}
-                className="rounded-xl bg-[#ADFF00] py-3 text-xs font-black uppercase tracking-wider text-black shadow-[0_0_15px_rgba(173,255,0,0.3)] hover:bg-[#bfff33] cursor-pointer flex items-center justify-center gap-1.5 font-black"
-              >
-                {isFinishingDirectly ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Finishing...</span>
-                  </>
-                ) : (
-                  <span>Yes, Finish</span>
-                )}
               </button>
             </div>
           </div>

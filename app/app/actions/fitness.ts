@@ -714,6 +714,62 @@ export async function endWorkoutAction(payload: { workoutId: string }) {
   return await quickCompleteWorkoutAction(payload);
 }
 
+export async function completeExerciseSetsAction(payload: { exerciseId: string }) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  const { exerciseId } = payload;
+  if (!exerciseId) return { success: false, error: "Invalid exercise ID" };
+
+  const now = new Date().toISOString();
+
+  // 1. Fetch sets for this exercise
+  const { data: sets, error: setsErr } = await supabase
+    .from("fitness_os_sets")
+    .select("id, target_reps, actual_reps, weight_kg, completed")
+    .eq("exercise_id", exerciseId);
+
+  if (setsErr) return { success: false, error: setsErr.message };
+
+  if (!sets || sets.length === 0) {
+    // If no sets created yet, fetch exercise info and insert completed sets
+    const { data: exercise } = await supabase
+      .from("fitness_os_exercises")
+      .select("target_sets, target_reps")
+      .eq("id", exerciseId)
+      .single();
+
+    const targetSets = exercise?.target_sets || 3;
+    const targetReps = typeof exercise?.target_reps === "number" ? exercise.target_reps : 10;
+    const newSets = Array.from({ length: targetSets }).map((_, i) => ({
+      exercise_id: exerciseId,
+      set_number: i + 1,
+      target_reps: targetReps,
+      actual_reps: targetReps,
+      weight_kg: 0,
+      completed: true,
+      completed_at: now
+    }));
+
+    await supabase.from("fitness_os_sets").insert(newSets);
+  } else {
+    // Mark all existing uncompleted sets as completed
+    const uncompletedIds = sets.filter(s => !s.completed).map(s => s.id);
+    if (uncompletedIds.length > 0) {
+      await supabase
+        .from("fitness_os_sets")
+        .update({
+          completed: true,
+          completed_at: now
+        })
+        .in("id", uncompletedIds);
+    }
+  }
+
+  return { success: true };
+}
+
 export async function updateRemindersAction(enabled: boolean, reminders: any[]) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();

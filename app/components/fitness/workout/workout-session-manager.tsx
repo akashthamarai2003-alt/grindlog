@@ -7,6 +7,7 @@ import { WorkoutHeader } from "./workout-header";
 import { ExerciseDetail } from "./exercise-detail";
 import { WorkoutExecution } from "./workout-execution";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
+import { completeExerciseSetsAction } from "@/app/actions/fitness";
 
 interface WorkoutSessionManagerProps {
   workout: FitnessWorkout & {
@@ -234,6 +235,37 @@ export function WorkoutSessionManager({
     });
   };
 
+  const handleCompleteExercise = (exerciseId: string) => {
+    const targetEx = workout.fitness_os_exercises?.find((e: any) => e.id === exerciseId);
+    setWorkout((prev: any) => {
+      if (!prev?.fitness_os_exercises) return prev;
+      const updatedExercises = prev.fitness_os_exercises.map((ex: any) => {
+        if (ex.id === exerciseId) {
+          const sets = ex.fitness_os_sets || [];
+          const updatedSets = (sets.length > 0 ? sets : Array.from({ length: ex.target_sets || 3 })).map((s: any, idx: number) => ({
+            id: s?.id || `temp-${exerciseId}-${idx}`,
+            exercise_id: exerciseId,
+            set_number: s?.set_number || idx + 1,
+            target_reps: s?.target_reps || 10,
+            actual_reps: s?.actual_reps || s?.target_reps || 10,
+            weight_kg: s?.weight_kg ?? 0,
+            completed: true,
+            completed_at: new Date().toISOString()
+          }));
+          return { ...ex, fitness_os_sets: updatedSets };
+        }
+        return ex;
+      });
+      return { ...prev, fitness_os_exercises: updatedExercises };
+    });
+
+    toast.success(`${targetEx?.name || "Exercise"} completed!`);
+
+    completeExerciseSetsAction({ exerciseId }).catch((err) => {
+      console.error("Failed to persist completeExerciseSetsAction:", err);
+    });
+  };
+
   const currentIndex = exercises.findIndex((e: any) => e.id === activeExerciseId);
   const nextExercise = currentIndex >= 0 && currentIndex < exercises.length - 1
     ? { id: exercises[currentIndex + 1].id, name: exercises[currentIndex + 1].name }
@@ -272,6 +304,7 @@ export function WorkoutSessionManager({
           showAiCoach={showAiCoach}
           isEarlyStart={isEarlyStart}
           onSelectExercise={handleSelectExercise}
+          onCompleteExercise={handleCompleteExercise}
           initialCoachNote={initialCoachNote}
           isPaused={isPaused}
           onTogglePause={handleTogglePause}
