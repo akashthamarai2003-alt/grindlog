@@ -4,24 +4,30 @@ import { usePathname } from "next/navigation";
 import { BottomNav } from "./dashboard/bottom-nav";
 import { FitnessChatbot } from "./chatbot/fitness-chatbot";
 
+// Only primary root tab pages show the bottom navigation bar and floating AI coach button
+const MAIN_PAGES = new Set([
+  "/",
+  "/workout",
+  "/nutrition",
+  "/diet",
+  "/progress",
+  "/profile",
+]);
+
 export function FitnessShell({ children, isPro = false }: { children: React.ReactNode; isPro?: boolean }) {
   const pathname = usePathname();
   
-  // Pages that are part of the onboarding/setup flow should NOT have the bottom nav or chatbot
-  const isSetupFlow = pathname?.includes("/onboarding") || 
-                      pathname?.includes("/report") || 
-                      pathname?.includes("/plan-setup") || 
-                      pathname?.includes("/roadmap") ||
-                      pathname?.includes("/generating") ||
-                      pathname?.includes("/payment");
+  // Normalize pathname by stripping trailing slashes for robust matching
+  const cleanPath = pathname ? (pathname.replace(/\/+$/, "") || "/") : "/";
+  const isMainPage = MAIN_PAGES.has(cleanPath);
 
   return (
     <div className="flex justify-center min-h-screen bg-[#0A1108]">
       <div className="w-full min-h-[100dvh] relative flex flex-col overflow-x-hidden">
-        <main className={`flex-1 ${isSetupFlow ? '' : 'pb-24'}`}>
+        <main className={`flex-1 ${isMainPage ? 'pb-24' : ''}`}>
           {children}
         </main>
-        {!isSetupFlow && (
+        {isMainPage && (
           <>
             {isPro && <FitnessChatbot />}
             <BottomNav isPro={isPro} />
