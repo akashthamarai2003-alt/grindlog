@@ -135,6 +135,9 @@ export function TodaysNutritionCard({
       const next = { ...prev, [id]: !prev[id] };
       try {
         localStorage.setItem(storageKey, JSON.stringify(next));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("grindlog_meals_updated"));
+        }
       } catch (err) {
         console.warn("Failed to persist completed meals:", err);
       }

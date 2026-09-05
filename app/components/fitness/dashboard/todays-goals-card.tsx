@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, Circle, Target, Sparkles } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { CheckCircle2, Circle, Target, Sparkles, Zap } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
 interface TodaysGoalsCardProps {
   lifestyle?: any;
@@ -43,25 +43,71 @@ export function TodaysGoalsCard({
   const targetCalories = Number(nutrition?.daily_calories) > 0 ? Number(nutrition.daily_calories) : null;
   const proteinTarget = Number(nutrition?.protein_grams) > 0 ? Number(nutrition.protein_grams) : null;
 
-  // Auto-detect meal completion from nutrition card's local storage
-  const [mealsCompleted, setMealsCompleted] = useState(false);
+  // Track meal completion from Today's Nutrition card
+  const [nutritionProgress, setNutritionProgress] = useState({
+    caloriesHit: false,
+    proteinHit: false,
+    consumedCalories: 0,
+    consumedProtein: 0,
+  });
 
-  useEffect(() => {
+  const checkNutritionStorage = useCallback(() => {
     try {
       const savedMeals = localStorage.getItem(mealsStorageKey);
       if (savedMeals && nutrition?.meals && Array.isArray(nutrition.meals) && nutrition.meals.length > 0) {
-        const parsed = JSON.parse(savedMeals);
-        const count = Object.values(parsed).filter(Boolean).length;
-        if (count >= nutrition.meals.length) {
-          setMealsCompleted(true);
-        }
+        const parsed: Record<string, boolean> = JSON.parse(savedMeals);
+        const totalMeals = nutrition.meals.length;
+        const checkedCount = Object.entries(parsed).filter(([_, v]) => Boolean(v)).length;
+
+        let sumCals = 0;
+        let sumPro = 0;
+        nutrition.meals.forEach((m: any, idx: number) => {
+          if (parsed[idx]) {
+            const cal = Number(m.total_calories ?? m.calories) || (targetCalories ? Math.round(targetCalories / totalMeals) : 0);
+            const pro = Number(m.protein_grams ?? m.protein) || (proteinTarget ? Math.round(proteinTarget / totalMeals) : 0);
+            sumCals += cal;
+            sumPro += pro;
+          }
+        });
+
+        const allMealsDone = checkedCount >= totalMeals;
+        const calsMet = allMealsDone || (targetCalories ? sumCals >= targetCalories * 0.9 : false);
+        const proMet = allMealsDone || (proteinTarget ? sumPro >= proteinTarget * 0.9 : false);
+
+        setNutritionProgress({
+          caloriesHit: calsMet,
+          proteinHit: proMet,
+          consumedCalories: sumCals,
+          consumedProtein: sumPro,
+        });
+      } else {
+        setNutritionProgress({
+          caloriesHit: false,
+          proteinHit: false,
+          consumedCalories: 0,
+          consumedProtein: 0,
+        });
       }
     } catch {
       // ignore
     }
-  }, [mealsStorageKey, nutrition?.meals]);
+  }, [mealsStorageKey, nutrition?.meals, targetCalories, proteinTarget]);
 
-  // User manual check/uncheck overrides
+  // Initial check and live event listener for instant reactivity across cards
+  useEffect(() => {
+    checkNutritionStorage();
+
+    const handleUpdate = () => checkNutritionStorage();
+    window.addEventListener("grindlog_meals_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    return () => {
+      window.removeEventListener("grindlog_meals_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, [checkNutritionStorage]);
+
+  // User manual check/uncheck overrides (only used when a goal is not yet automatically reached)
   const [manualGoals, setManualGoals] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -77,10 +123,27 @@ export function TodaysGoalsCard({
     }
   }, [goalsStorageKey]);
 
-  const toggleGoal = (id: string, autoDefault: boolean) => {
+  // Automatic conditions: ALWAYS TRUE when user completes the real-world action!
+  const autoWorkout = Boolean(workoutCompleted);
+  const autoCalories = Boolean(nutritionProgress.caloriesHit);
+  const autoProtein = Boolean(nutritionProgress.proteinHit);
+  const autoSteps = Boolean(stepsTarget !== null && Number(activity?.steps) >= stepsTarget);
+  const autoWater = Boolean(waterTarget !== null && Number(activity?.water_liters) >= waterTarget);
+  const autoSleep = Boolean(sleepTarget !== null && Number(activity?.sleep_hours) >= sleepTarget);
+
+  // Resolution: if autoCompleted is true, it is ALWAYS complete!
+  // Otherwise, user can manually toggle it.
+  const isGoalDone = (id: string, autoCompleted: boolean) => {
+    if (autoCompleted) return true;
+    return Boolean(manualGoals[id]);
+  };
+
+  const toggleGoal = (id: string, autoCompleted: boolean) => {
+    // If it's already automatically completed by real logs, it stays completed!
+    if (autoCompleted) return;
+
     setManualGoals((prev) => {
-      const current = prev[id] !== undefined ? prev[id] : autoDefault;
-      const next = { ...prev, [id]: !current };
+      const next = { ...prev, [id]: !prev[id] };
       try {
         localStorage.setItem(goalsStorageKey, JSON.stringify(next));
       } catch (err) {
@@ -90,38 +153,30 @@ export function TodaysGoalsCard({
     });
   };
 
-  const isGoalDone = (id: string, autoCompleted: boolean) => {
-    if (manualGoals[id] !== undefined) {
-      return manualGoals[id];
-    }
-    return autoCompleted;
-  };
+  // Activity logged values
+  const loggedSteps = Number(activity?.steps) || 0;
+  const loggedWater = Number(activity?.water_liters) || 0;
+  const loggedSleep = Number(activity?.sleep_hours) || 0;
 
-  // Automatic conditions
-  const autoWorkout = workoutCompleted;
-  const autoCalories = mealsCompleted;
-  const autoProtein = mealsCompleted;
-  const autoSteps = stepsTarget !== null && Number(activity?.steps) >= stepsTarget;
-  const autoWater = waterTarget !== null && Number(activity?.water_liters) >= waterTarget;
-  const autoSleep = sleepTarget !== null && Number(activity?.sleep_hours) >= sleepTarget;
-
-  // Goal items definition
+  // Goals definitions with live status hints
   const coreGoals = [
     {
       id: "workout",
       text: "Complete workout",
+      autoCompleted: autoWorkout,
       completed: isGoalDone("workout", autoWorkout),
-      autoDefault: autoWorkout,
-      hint: workoutCompleted ? "Done" : undefined,
+      hint: autoWorkout ? "Auto-Checked" : "Pending session",
     },
     ...(targetCalories
       ? [
           {
             id: "calories",
             text: `${targetCalories.toLocaleString()} kcal daily target`,
+            autoCompleted: autoCalories,
             completed: isGoalDone("calories", autoCalories),
-            autoDefault: autoCalories,
-            hint: mealsCompleted ? "Hit" : undefined,
+            hint: autoCalories
+              ? "Auto-Checked"
+              : `${nutritionProgress.consumedCalories.toLocaleString()} / ${targetCalories.toLocaleString()} kcal`,
           },
         ]
       : []),
@@ -130,9 +185,11 @@ export function TodaysGoalsCard({
           {
             id: "protein",
             text: `Hit ${proteinTarget}g protein target`,
+            autoCompleted: autoProtein,
             completed: isGoalDone("protein", autoProtein),
-            autoDefault: autoProtein,
-            hint: mealsCompleted ? "Hit" : undefined,
+            hint: autoProtein
+              ? "Auto-Checked"
+              : `${nutritionProgress.consumedProtein} / ${proteinTarget}g`,
           },
         ]
       : []),
@@ -147,12 +204,11 @@ export function TodaysGoalsCard({
                 {
                   id: "steps",
                   text: `${stepsTarget.toLocaleString()} steps`,
+                  autoCompleted: autoSteps,
                   completed: isGoalDone("steps", autoSteps),
-                  autoDefault: autoSteps,
-                  hint:
-                    Number(activity?.steps) > 0
-                      ? `${Number(activity.steps).toLocaleString()} logged`
-                      : undefined,
+                  hint: autoSteps
+                    ? "Auto-Checked"
+                    : `${loggedSteps.toLocaleString()} / ${stepsTarget.toLocaleString()}`,
                 },
               ]
             : []),
@@ -161,12 +217,11 @@ export function TodaysGoalsCard({
                 {
                   id: "water",
                   text: `${waterTarget.toFixed(1)}L water`,
+                  autoCompleted: autoWater,
                   completed: isGoalDone("water", autoWater),
-                  autoDefault: autoWater,
-                  hint:
-                    Number(activity?.water_liters) > 0
-                      ? `${Number(activity.water_liters).toFixed(1)}L`
-                      : undefined,
+                  hint: autoWater
+                    ? "Auto-Checked"
+                    : `${loggedWater.toFixed(1)} / ${waterTarget.toFixed(1)} L`,
                 },
               ]
             : []),
@@ -175,12 +230,13 @@ export function TodaysGoalsCard({
                 {
                   id: "sleep",
                   text: `Sleep target ${sleepTarget}h`,
+                  autoCompleted: autoSleep,
                   completed: isGoalDone("sleep", autoSleep),
-                  autoDefault: autoSleep,
-                  hint:
-                    Number(activity?.sleep_hours) > 0
-                      ? `${Number(activity.sleep_hours).toFixed(1)}h`
-                      : undefined,
+                  hint: autoSleep
+                    ? `${loggedSleep.toFixed(1)}h · Auto-Checked`
+                    : loggedSleep > 0
+                    ? `${loggedSleep.toFixed(1)} / ${sleepTarget}h`
+                    : undefined,
                 },
               ]
             : []),
@@ -200,16 +256,18 @@ export function TodaysGoalsCard({
     >
       <div className="absolute inset-0 bg-gradient-to-br from-[#ADFF00]/10 via-transparent to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" />
 
-      <div className="relative bg-[#111A10] rounded-2xl p-4 sm:p-5 flex flex-col gap-4 shadow-xl border border-white/5 backdrop-blur-md">
+      <div className="relative bg-[#111A10] rounded-2xl p-4 sm:p-5 flex flex-col gap-3.5 sm:gap-4 shadow-xl border border-white/5 backdrop-blur-md">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center shrink-0">
               <Target className="w-4 h-4 text-[#ADFF00]" />
             </div>
-            <h3 className="text-sm font-black tracking-wider text-white uppercase leading-none">
-              Today&apos;s Goals
-            </h3>
+            <div>
+              <h3 className="text-sm font-black tracking-wider text-white uppercase leading-none">
+                Today&apos;s Goals
+              </h3>
+            </div>
           </div>
 
           <span
@@ -221,6 +279,12 @@ export function TodaysGoalsCard({
           >
             {allComplete ? "All Hit! 🎉" : `${completedCount}/${goals.length} Done`}
           </span>
+        </div>
+
+        {/* User-facing explanation: Automatically fills in from workouts, meals & activity */}
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-1.5 rounded-xl border border-[#ADFF00]/20">
+          <Zap className="w-3.5 h-3.5 text-[#ADFF00] shrink-0" />
+          <span>Automatically checks in as you complete workouts, meals & activity</span>
         </div>
 
         {/* Progress Bar */}
@@ -235,16 +299,20 @@ export function TodaysGoalsCard({
           </div>
         </div>
 
-        {/* Interactive Goals List */}
+        {/* Goals Checklist */}
         <div className="flex flex-col gap-1">
           {goals.map((goal) => (
             <div
               key={goal.id}
-              onClick={() => toggleGoal(goal.id, goal.autoDefault)}
+              onClick={() => toggleGoal(goal.id, goal.autoCompleted)}
               role="button"
               tabIndex={0}
-              className={`flex items-center gap-3 p-2.5 -mx-1.5 rounded-xl cursor-pointer transition-all duration-200 select-none ${
-                goal.completed ? "bg-[#ADFF00]/[0.03]" : "hover:bg-white/[0.03] active:scale-[0.99]"
+              className={`flex items-center gap-2.5 sm:gap-3 p-2.5 -mx-1.5 rounded-xl transition-all duration-200 select-none ${
+                goal.autoCompleted
+                  ? "bg-[#ADFF00]/[0.05] cursor-default"
+                  : goal.completed
+                  ? "bg-[#ADFF00]/[0.03] cursor-pointer"
+                  : "hover:bg-white/[0.03] active:scale-[0.99] cursor-pointer"
               }`}
             >
               <div className="shrink-0 flex items-center justify-center">
@@ -265,8 +333,17 @@ export function TodaysGoalsCard({
                 {goal.text}
               </span>
 
+              {/* Status Indicator */}
               {goal.hint && (
-                <span className="text-[10px] font-semibold text-[#ADFF00]/70 shrink-0 ml-auto bg-[#ADFF00]/10 px-1.5 py-0.5 rounded border border-[#ADFF00]/20">
+                <span
+                  className={`text-[10px] font-bold shrink-0 ml-auto px-2 py-0.5 rounded-full border transition-all ${
+                    goal.autoCompleted
+                      ? "text-[#ADFF00] bg-[#ADFF00]/15 border-[#ADFF00]/30 shadow-[0_0_6px_rgba(173,255,0,0.15)]"
+                      : goal.completed
+                      ? "text-[#ADFF00]/90 bg-white/5 border-white/10"
+                      : "text-white/40 bg-white/[0.03] border-white/5 tabular-nums"
+                  }`}
+                >
                   {goal.hint}
                 </span>
               )}
