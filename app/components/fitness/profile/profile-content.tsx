@@ -455,26 +455,8 @@ export function ProfileContent({
               <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
             </Link>
 
-            {/* Re-take Onboarding */}
-            <Link 
-              href="/onboarding?mode=edit"
-              prefetch={true}
-              className="p-4 flex items-center justify-between hover:bg-white/5 active:bg-white/10 active:scale-[0.99] transition-all group duration-75"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-[#ADFF00]">
-                  <RefreshCw className="w-4.5 h-4.5 group-hover:rotate-180 transition-transform duration-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white">Re-generate AI Plan</p>
-                  <p className="text-xs text-gray-400">Re-take questionnaire to update your strategy</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
-            </Link>
-
             {/* Notification ON/OFF Option */}
-            <div className="p-4 flex items-center justify-between hover:bg-white/[0.03] transition-colors border-b border-white/5">
+            <div className="p-4 flex items-center justify-between hover:bg-white/[0.03] transition-colors">
               <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${notificationsEnabled ? 'bg-[#1A2619] text-[#ADFF00]' : 'bg-[#1C201A] text-gray-500'}`}>
                   {notificationsEnabled ? (
