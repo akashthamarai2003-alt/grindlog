@@ -94,8 +94,11 @@ export const nutritionApi = {
     return json;
   },
 
-  async searchFoods(query: string) {
-    const res = await fetch(`/api/nutrition/foods?search=${encodeURIComponent(query)}`);
+  async searchFoods(query: string, category?: string) {
+    const params = new URLSearchParams();
+    if (query) params.append('search', query);
+    if (category && category !== 'All') params.append('category', category);
+    const res = await fetch(`/api/nutrition/foods?${params.toString()}`);
     const json = await res.json();
     if (!res.ok) throw json.error;
     return json.data;

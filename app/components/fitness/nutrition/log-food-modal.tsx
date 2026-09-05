@@ -17,7 +17,22 @@ interface Food {
   fat: number;
   estimated_cost: number;
   image_url?: string;
+  source?: 'verified' | 'open_food_facts';
+  source_name?: string;
+  brand?: string;
 }
+
+const FOOD_CATEGORIES = [
+  { id: "All", label: "All Foods" },
+  { id: "Protein", label: "🍗 High Protein" },
+  { id: "Breakfast", label: "🥣 Breakfast" },
+  { id: "Curry", label: "🍛 Curries & Dals" },
+  { id: "Staple", label: "🍞 Staples & Grains" },
+  { id: "Dairy", label: "🥛 Dairy" },
+  { id: "Nuts & Snacks", label: "🥜 Nuts & Snacks" },
+  { id: "Fruit", label: "🍎 Fruits" },
+  { id: "Vegetables", label: "🥗 Vegetables" },
+];
 
 interface PlannedItem {
   key: string;
@@ -56,17 +71,32 @@ export function LogFoodModal({
   const [isReviewingPlan, setIsReviewingPlan] = useState(false);
   const [plannedFoods, setPlannedFoods] = useState<PlannedItem[]>([]);
 
-  // Search & single food selection state
+  // Search, category filter & single food selection state
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [results, setResults] = useState<Food[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
 
+  const fetchFoods = async (q: string, cat?: string) => {
+    setIsSearching(true);
+    const categoryToQuery = cat !== undefined ? cat : selectedCategory;
+    try {
+      const data = await nutritionApi.searchFoods(q, categoryToQuery);
+      setResults(data || []);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to search foods");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       setMealType(defaultMealType);
       setSearch("");
+      setSelectedCategory("All");
       setSelectedFood(null);
       setQuantity(1);
 
@@ -94,7 +124,7 @@ export function LogFoodModal({
       } else {
         setIsReviewingPlan(false);
         setPlannedFoods([]);
-        fetchFoods("");
+        fetchFoods("", "All");
       }
     }
   }, [isOpen, defaultMealType, preselectedFoods]);
@@ -102,23 +132,11 @@ export function LogFoodModal({
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (isOpen && !isReviewingPlan && !selectedFood) {
-        fetchFoods(search);
+        fetchFoods(search, selectedCategory);
       }
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [search, isOpen, isReviewingPlan, selectedFood]);
-
-  const fetchFoods = async (q: string) => {
-    setIsSearching(true);
-    try {
-      const data = await nutritionApi.searchFoods(q);
-      setResults(data || []);
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to search foods");
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  }, [search, selectedCategory, isOpen, isReviewingPlan, selectedFood]);
 
   // Calculations for planned meal
   const plannedTotals = useMemo(() => {
@@ -261,12 +279,14 @@ export function LogFoodModal({
     };
 
     const payload: any = { meal_type: mealType, quantity };
-    if (selectedFood.id) {
+    const isExternalOff = selectedFood.source === 'open_food_facts' || String(selectedFood.id || '').startsWith('off-');
+    if (selectedFood.id && !isExternalOff) {
       payload.food_id = selectedFood.id;
     } else {
       payload.custom_food = {
         name: selectedFood.name,
         category: selectedFood.category || mealType,
+        serving_size: selectedFood.serving_size || '1 serving',
         calories: selectedFood.calories || 0,
         protein: selectedFood.protein || 0,
         carbs: selectedFood.carbs || 0,
@@ -461,15 +481,36 @@ export function LogFoodModal({
           /* =================== SEARCH FOOD VIEW =================== */
           <div className="flex-1 flex flex-col min-h-0">
             <div className="p-4 sm:p-5 flex-1 overflow-y-auto">
-              <div className="relative mb-4">
+              <div className="relative mb-3">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
                 <input
                   type="text"
-                  placeholder="Search foods (e.g. Eggs, Oats, Chicken)..."
+                  placeholder="Search foods (e.g. Eggs, Oats, Whey, Chicken)..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm outline-none focus:border-[#ADFF00]/50 focus:bg-white/10 transition-all"
                 />
+              </div>
+
+              {/* Category Filter Pills */}
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 mb-3">
+                {FOOD_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      fetchFoods(search, cat.id);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      selectedCategory === cat.id
+                        ? 'bg-[#ADFF00] text-black font-black shadow-[0_0_10px_rgba(173,255,0,0.3)]'
+                        : 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/5'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
               </div>
 
               {isSearching ? (
@@ -480,14 +521,25 @@ export function LogFoodModal({
                 <div className="space-y-2">
                   {results.map(food => (
                     <button
-                      key={food.id}
+                      key={food.id || food.name}
                       onClick={() => setSelectedFood(food)}
-                      className="w-full text-left bg-black/40 hover:bg-white/5 border border-transparent hover:border-white/10 rounded-2xl p-3 transition-all flex justify-between items-center gap-3 cursor-pointer"
+                      className="w-full text-left bg-black/40 hover:bg-white/5 border border-transparent hover:border-white/10 rounded-2xl p-3 transition-all flex justify-between items-center gap-3 cursor-pointer group"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         <FoodAvatar name={food.name} className="w-11 h-11 rounded-xl object-cover border border-white/10 shrink-0" />
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-white text-sm truncate">{food.name}</h4>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="font-bold text-white text-sm truncate">{food.name}</h4>
+                            {food.source === 'open_food_facts' ? (
+                              <span className="text-[9px] font-black text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 px-1.5 py-0.5 rounded">
+                                Open Food Facts
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-[#ADFF00]/80 bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-1.5 py-0.5 rounded">
+                                Verified
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-white/50 mt-0.5 truncate">
                             {food.serving_size} • ₹{food.estimated_cost}
                           </p>
@@ -504,7 +556,7 @@ export function LogFoodModal({
 
                   {results.length === 0 && !isSearching && (
                     <div className="text-center py-10 text-white/40 text-sm">
-                      No foods found for "{search}".
+                      No foods found for &quot;{search}&quot;.
                     </div>
                   )}
                 </div>
@@ -518,7 +570,18 @@ export function LogFoodModal({
               <div className="relative h-32 rounded-xl overflow-hidden mb-4 border border-white/10">
                 <FoodAvatar name={selectedFood.name} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-3 flex flex-col justify-end">
-                  <h3 className="text-lg font-black text-white">{selectedFood.name}</h3>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="text-lg font-black text-white">{selectedFood.name}</h3>
+                    {selectedFood.source === 'open_food_facts' ? (
+                      <span className="text-[10px] font-bold text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 px-2 py-0.5 rounded-full">
+                        Open Food Facts
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full">
+                        ICMR-NIN / USDA Verified
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-[#ADFF00] font-bold">{selectedFood.serving_size}</p>
                 </div>
               </div>

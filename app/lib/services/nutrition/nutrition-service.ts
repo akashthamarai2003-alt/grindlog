@@ -297,7 +297,7 @@ export class NutritionService {
           .insert({
             name: input.custom_food.name,
             category: input.custom_food.category,
-            serving_size: '1 serving',
+            serving_size: (input.custom_food as any).serving_size || '1 serving',
             calories: input.custom_food.calories,
             protein: input.custom_food.protein,
             carbs: input.custom_food.carbs,
