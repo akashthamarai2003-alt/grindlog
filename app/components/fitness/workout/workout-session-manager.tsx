@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { WorkoutHeader } from "./workout-header";
@@ -41,6 +41,10 @@ export function WorkoutSessionManager({
   const [isPaused, setIsPaused] = useState<boolean>(initialIsPaused || false);
   const [isFinishing, setIsFinishing] = useState(false);
 
+  // Track whether the pause was triggered by user leaving the page (auto-pause)
+  // so we can auto-resume when they come back without showing a toast
+  const autoPausedRef = useRef(false);
+
   const exercises = workout.fitness_os_exercises || [];
   const totalExercises = exercises.length;
   const completedExercises = exercises.filter((ex: any) =>
@@ -74,7 +78,7 @@ export function WorkoutSessionManager({
     }
   };
 
-  // Automatically finish when all exercises are completed
+  // Automatically finish ONLY when ALL exercises are completed
   useEffect(() => {
     if (allExercisesCompleted && !isFinishing) {
       const delay = activeExerciseId ? 900 : 400;
@@ -85,24 +89,47 @@ export function WorkoutSessionManager({
     }
   }, [allExercisesCompleted, isFinishing, activeExerciseId]);
 
-  const handleTogglePause = async () => {
-    const nextState = !isPaused;
-    setIsPaused(nextState);
-    toast.success(nextState ? "Workout paused." : "Workout resumed!");
-
+  // Pause/Resume session in the database (fire-and-forget)
+  const updateSessionStatus = useCallback(async (status: "paused" | "active") => {
     if (workout.id === "mock") return;
-
     try {
       await fetch(`/api/workouts/sessions/${sessionId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextState ? "paused" : "active" })
+        body: JSON.stringify({ status })
       });
     } catch {
-      setIsPaused(!nextState);
-      toast.error("Failed to update status");
+      // Silently handle — DB sync is best-effort for visibility changes
     }
+  }, [workout.id, sessionId]);
+
+  const handleTogglePause = async () => {
+    const nextState = !isPaused;
+    setIsPaused(nextState);
+    autoPausedRef.current = false; // manual toggle clears auto-pause flag
+    toast.success(nextState ? "Workout paused." : "Workout resumed!");
+
+    await updateSessionStatus(nextState ? "paused" : "active");
   };
+
+  // Auto-pause when user leaves the page (tab hidden, navigates away)
+  const handleVisibilityPause = useCallback(() => {
+    if (isPaused) return; // already paused
+    setIsPaused(true);
+    autoPausedRef.current = true;
+    updateSessionStatus("paused");
+  }, [isPaused, updateSessionStatus]);
+
+  // Auto-resume when user returns to the page
+  const handleVisibilityResume = useCallback(() => {
+    if (!isPaused) return; // already running
+    // Only auto-resume if it was auto-paused (not manually paused by user)
+    if (!autoPausedRef.current) return;
+    setIsPaused(false);
+    autoPausedRef.current = false;
+    toast.success("Welcome back! Workout resumed.");
+    updateSessionStatus("active");
+  }, [isPaused, updateSessionStatus]);
 
   const activeExercise = activeExerciseId
     ? workout.fitness_os_exercises?.find((e: any) => e.id === activeExerciseId) || null
@@ -163,6 +190,9 @@ export function WorkoutSessionManager({
           startedAt={startedAt}
           isPaused={isPaused}
           workoutId={workout.id}
+          sessionId={sessionId}
+          onVisibilityPause={handleVisibilityPause}
+          onVisibilityResume={handleVisibilityResume}
         />
       )}
 
@@ -177,6 +207,8 @@ export function WorkoutSessionManager({
           onSetCompleted={handleSetCompleted}
           nextExercise={nextExercise}
           onNextExercise={handleSelectExercise}
+          onVisibilityPause={handleVisibilityPause}
+          onVisibilityResume={handleVisibilityResume}
         />
       ) : (
         <WorkoutExecution

@@ -22,6 +22,8 @@ interface ExerciseDetailProps {
   onSetCompleted?: (setId: string, reps: number, weightKg: number) => void;
   nextExercise?: { id: string; name: string } | null;
   onNextExercise?: (exerciseId: string) => void;
+  onVisibilityPause?: () => void;
+  onVisibilityResume?: () => void;
 }
 
 // Bodyweight exercise keywords — show "BW" instead of "0 kg"
@@ -115,9 +117,9 @@ function generateInstructions(exercise: FitnessExercise): string[] {
   ];
 }
 
-export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused, onBack, onSetCompleted, nextExercise, onNextExercise }: ExerciseDetailProps) {
+export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused, onBack, onSetCompleted, nextExercise, onNextExercise, onVisibilityPause, onVisibilityResume }: ExerciseDetailProps) {
   const router = useRouter();
-  const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
+  const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused, sessionId, onVisibilityPause, onVisibilityResume);
   
   const sortedSets = [...exercise.fitness_os_sets].sort((a, b) => a.set_number - b.set_number);
   const isBW = isBodyweightExercise(exercise.name);
@@ -251,10 +253,14 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
           <h1 className="text-xl font-black text-white tracking-tight uppercase">BACK</h1>
         </div>
         {startedAt && (
-          <div className="flex items-center gap-1.5 bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1.5 rounded-xl shrink-0">
-            <Timer className={`w-3.5 h-3.5 ${isPaused ? "text-white/50" : "text-[#ADFF00]"}`} />
-            <span className={`text-xs font-black tracking-widest tabular-nums ${isPaused ? "text-white/50" : "text-[#ADFF00]"}`}>
-              {formattedTime}
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl shrink-0 ${
+            isPaused 
+              ? 'bg-amber-500/10 border border-amber-500/20' 
+              : 'bg-[#ADFF00]/10 border border-[#ADFF00]/20'
+          }`}>
+            <Timer className={`w-3.5 h-3.5 ${isPaused ? "text-amber-400" : "text-[#ADFF00]"}`} />
+            <span className={`text-xs font-black tracking-widest tabular-nums ${isPaused ? "text-amber-400" : "text-[#ADFF00]"}`}>
+              {isPaused ? "PAUSED" : formattedTime}
             </span>
           </div>
         )}

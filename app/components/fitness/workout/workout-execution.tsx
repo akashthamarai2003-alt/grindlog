@@ -176,6 +176,18 @@ export function WorkoutExecution({
         />
       </div>
 
+      {/* Auto-complete & auto-pause info */}
+      {!allExercisesCompleted && (
+        <div className="mt-4 mx-1 px-4 py-3 bg-[#111A10] border border-white/5 rounded-xl">
+          <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider leading-relaxed">
+            ✓ Automatically completes when all exercises are done
+          </p>
+          <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider leading-relaxed mt-1">
+            ⏸ Timer auto-pauses when you leave this page
+          </p>
+        </div>
+      )}
+
       <div className="w-full h-px bg-white/10 my-8" />
 
       <div className="flex flex-col gap-3 px-2">

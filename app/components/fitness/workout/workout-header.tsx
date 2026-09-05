@@ -13,8 +13,11 @@ interface WorkoutHeaderProps {
   startedAt?: string | null;
   isPaused?: boolean;
   workoutId?: string;
+  sessionId?: string;
   isMainPage?: boolean;
   planBadge?: string;
+  onVisibilityPause?: () => void;
+  onVisibilityResume?: () => void;
 }
 
 export function WorkoutHeader({
@@ -25,10 +28,20 @@ export function WorkoutHeader({
   startedAt,
   isPaused,
   workoutId,
+  sessionId,
   isMainPage = false,
-  planBadge
+  planBadge,
+  onVisibilityPause,
+  onVisibilityResume
 }: WorkoutHeaderProps) {
-  const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
+  const { formattedTime } = useWorkoutTimer(
+    workoutId,
+    startedAt,
+    isPaused,
+    sessionId,
+    onVisibilityPause,
+    onVisibilityResume
+  );
 
   if (isMainPage) {
     return (
@@ -96,10 +109,14 @@ export function WorkoutHeader({
       
       {/* Right side: Active Timer pill during workout session */}
       {startedAt && (
-        <div className="flex items-center gap-1.5 bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1.5 rounded-xl shrink-0">
-          <Timer className={`w-3.5 h-3.5 ${isPaused ? 'text-white/50' : 'text-[#ADFF00]'}`} />
-          <span className={`text-xs font-black tracking-widest tabular-nums ${isPaused ? 'text-white/50' : 'text-[#ADFF00]'}`}>
-            {formattedTime}
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl shrink-0 ${
+          isPaused 
+            ? 'bg-amber-500/10 border border-amber-500/20' 
+            : 'bg-[#ADFF00]/10 border border-[#ADFF00]/20'
+        }`}>
+          <Timer className={`w-3.5 h-3.5 ${isPaused ? 'text-amber-400' : 'text-[#ADFF00]'}`} />
+          <span className={`text-xs font-black tracking-widest tabular-nums ${isPaused ? 'text-amber-400' : 'text-[#ADFF00]'}`}>
+            {isPaused ? "PAUSED" : formattedTime}
           </span>
         </div>
       )}

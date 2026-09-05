@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 // Maximum realistic workout duration (4 hours = 14,400 seconds)
 export const MAX_WORKOUT_SECONDS = 4 * 3600;
@@ -36,8 +36,69 @@ export function clearWorkoutTimer(workoutId: string) {
   }
 }
 
-export function useWorkoutTimer(workoutId?: string, startedAt?: string | null, isPaused?: boolean) {
+export function useWorkoutTimer(
+  workoutId?: string,
+  startedAt?: string | null,
+  isPaused?: boolean,
+  sessionId?: string,
+  onVisibilityPause?: () => void,
+  onVisibilityResume?: () => void
+) {
   const [elapsed, setElapsed] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hiddenAtRef = useRef<number | null>(null);
+
+  // Save current elapsed to localStorage as paused
+  const saveAsPaused = useCallback((currentElapsed: number) => {
+    if (!workoutId) return;
+    const storageKey = `workout_timer_${workoutId}`;
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ elapsed: currentElapsed, lastTick: Date.now(), isPaused: true })
+      );
+    } catch { /* ignore */ }
+  }, [workoutId]);
+
+  // Handle page visibility change — auto-pause when user leaves, auto-resume when they return
+  useEffect(() => {
+    if (!workoutId || !startedAt || !sessionId) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page hidden → pause the timer and notify parent to pause session in DB
+        hiddenAtRef.current = Date.now();
+        
+        // Stop the interval immediately
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        
+        // Save current elapsed as paused in localStorage
+        setElapsed(prev => {
+          saveAsPaused(prev);
+          return prev;
+        });
+
+        // Notify parent component to pause the session in DB
+        if (onVisibilityPause && !isPaused) {
+          onVisibilityPause();
+        }
+      } else {
+        // Page visible again → resume
+        hiddenAtRef.current = null;
+
+        // Notify parent component to resume the session in DB
+        if (onVisibilityResume && isPaused) {
+          onVisibilityResume();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [workoutId, startedAt, sessionId, isPaused, onVisibilityPause, onVisibilityResume, saveAsPaused]);
 
   useEffect(() => {
     if (!workoutId || !startedAt) return;
@@ -69,6 +130,8 @@ export function useWorkoutTimer(workoutId?: string, startedAt?: string | null, i
           currentElapsed = Math.min(rawElapsedSinceStart, MAX_WORKOUT_SECONDS);
         } else {
           currentElapsed = parsed.elapsed || 0;
+          // Don't add idle time if timer was paused — this is the key fix
+          // When user left the page, we saved as paused, so idleDiff should NOT accumulate
           if (!parsed.isPaused && !isPaused) {
             currentElapsed += Math.max(0, idleDiff);
           }
@@ -88,13 +151,23 @@ export function useWorkoutTimer(workoutId?: string, startedAt?: string | null, i
         storageKey,
         JSON.stringify({ elapsed: currentElapsed, lastTick: Date.now(), isPaused: true })
       );
+      // Clear any running interval
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       return;
     }
 
-    const interval = setInterval(() => {
+    // Clear previous interval before starting new one
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    intervalRef.current = setInterval(() => {
       setElapsed(prev => {
         if (prev >= MAX_WORKOUT_SECONDS) {
-          clearInterval(interval);
+          if (intervalRef.current) clearInterval(intervalRef.current);
           return MAX_WORKOUT_SECONDS;
         }
         const next = prev + 1;
@@ -106,7 +179,12 @@ export function useWorkoutTimer(workoutId?: string, startedAt?: string | null, i
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [workoutId, startedAt, isPaused]);
 
   return { 
