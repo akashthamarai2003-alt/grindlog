@@ -537,6 +537,7 @@ export class NutritionService {
     };
 
     return {
+      waterByDate,
       week: generateRangeData(7),
       month: generateRangeData(31),
       threeMonth: generateRangeData(90)
