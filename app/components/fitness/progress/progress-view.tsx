@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AnalyticsPeriod, AggregatedProgressPayload } from "@/types/fitness/analytics";
 import { ProgressHeader } from "./progress-header";
 import { TransformationOverview } from "./transformation-overview";
@@ -15,17 +15,58 @@ import { AIProgressReviewCard } from "./ai-progress-review";
 import { AchievementsShowcase } from "./achievements-showcase";
 import { WorkoutHeatmap } from "./workout-heatmap";
 import { MuscleMap } from "../workout/muscle-map";
-import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export function ProgressView({ initialData }: { initialData: AggregatedProgressPayload }) {
   const [data, setData] = useState<AggregatedProgressPayload>(initialData);
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialData.period);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [workoutDates, setWorkoutDates] = useState<string[]>([]);
   const [scheduledDates, setScheduledDates] = useState<string[]>([]);
   const [recentExercises, setRecentExercises] = useState<string[]>([]);
   const [joinedDate, setJoinedDate] = useState<string | undefined>(undefined);
+
+  // In-memory cache for instant 0ms switching between periods
+  const cacheRef = useRef<Record<string, AggregatedProgressPayload>>({
+    [initialData.period]: initialData,
+  });
+
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Background pre-fetch for common periods (7D, 30D, 3M, 6M, ALL) so clicks are instant
+  useEffect(() => {
+    const allPeriods: AnalyticsPeriod[] = ['7D', '30D', '3M', '6M', 'ALL'];
+    const toPrefetch = allPeriods.filter(p => p !== initialData.period);
+
+    let isMounted = true;
+    let timer: NodeJS.Timeout;
+
+    const prefetchSequence = async (index: number) => {
+      if (!isMounted || index >= toPrefetch.length) return;
+      const targetPeriod = toPrefetch[index];
+
+      if (!cacheRef.current[targetPeriod]) {
+        try {
+          const res = await fetch(`/api/fitness-ai/progress-data?period=${targetPeriod}`);
+          if (res.ok && isMounted) {
+            const json = await res.json();
+            cacheRef.current[targetPeriod] = json;
+          }
+        } catch {}
+      }
+
+      if (isMounted) {
+        timer = setTimeout(() => prefetchSequence(index + 1), 350);
+      }
+    };
+
+    timer = setTimeout(() => prefetchSequence(0), 500);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [initialData.period]);
 
   // Fetch workout dates for the heatmap (last 365 days)
   useEffect(() => {
@@ -52,6 +93,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
 
   // Keep local state in sync whenever server component provides fresh initialData
   useEffect(() => {
+    cacheRef.current[initialData.period] = initialData;
     setData(initialData);
   }, [initialData]);
 
@@ -61,6 +103,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
       const res = await fetch(`/api/fitness-ai/progress-data?period=${period}`);
       if (res.ok) {
         const json = await res.json();
+        cacheRef.current[period] = json;
         setData(json);
       }
     } catch (err) {
@@ -70,18 +113,39 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
 
   const handlePeriodChange = async (newPeriod: AnalyticsPeriod) => {
     if (newPeriod === period) return;
+
+    // 1. INSTANT CACHE HIT: 0ms switch if already in memory
+    if (cacheRef.current[newPeriod]) {
+      setPeriod(newPeriod);
+      setData(cacheRef.current[newPeriod]);
+      setIsFetching(false);
+      return;
+    }
+
+    // 2. Optimistic UI: update active tab immediately, keep content on screen (no full-page unmounting!)
     setPeriod(newPeriod);
-    setIsLoading(true);
+    setIsFetching(true);
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const res = await fetch(`/api/fitness-ai/progress-data?period=${newPeriod}`);
+      const res = await fetch(`/api/fitness-ai/progress-data?period=${newPeriod}`, {
+        signal: controller.signal,
+      });
       if (!res.ok) throw new Error("Failed to fetch");
       const json = await res.json();
+      cacheRef.current[newPeriod] = json;
       setData(json);
-    } catch (err) {
-      console.error(err);
-      // In a real app we'd show an error toast here
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        console.error("Failed to fetch progress data:", err);
+      }
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
     }
   };
 
@@ -92,15 +156,10 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
           transformation={data.transformation} 
           period={period} 
           onPeriodChange={handlePeriodChange} 
+          isFetching={isFetching}
         />
         
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-[#ADFF00] animate-spin mb-4" />
-            <p className="text-xs font-black text-white/50 uppercase tracking-widest">Loading Analytics...</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-8 pb-8">
+        <div className={`flex flex-col gap-8 pb-8 transition-opacity duration-200 ${isFetching ? 'opacity-85' : 'opacity-100'}`}>
             {data.scans.shouldPromptForScan && (
               <div className="w-full bg-gradient-to-br from-[#ADFF00]/20 to-[#ADFF00]/5 border border-[#ADFF00]/30 rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden">
                 <div className="absolute -right-10 -top-10 text-8xl opacity-10 blur-sm pointer-events-none">🔥</div>
@@ -168,7 +227,6 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
               <AchievementsShowcase achievements={data.achievements} />
             </SmoothSection>
           </div>
-        )}
       </div>
     </div>
   );

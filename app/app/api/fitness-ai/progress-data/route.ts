@@ -25,7 +25,11 @@ export async function GET(req: Request) {
 
     const data = await ProgressAnalyticsService.getAggregatedProgress(user.id, period);
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "private, max-age=120, stale-while-revalidate=600",
+      },
+    });
   } catch (error: any) {
     console.error("Failed to fetch progress data:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
