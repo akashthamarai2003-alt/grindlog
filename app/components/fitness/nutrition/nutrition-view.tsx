@@ -210,16 +210,77 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     });
   };
 
+  const openTargetsModal = () => {
+    if (data?.targets) {
+      setTargetForm({
+        calories: Number(data.targets.calories) || 2000,
+        protein: Number(data.targets.protein) || 130,
+        carbs: Number(data.targets.carbs) || 225,
+        fat: Number(data.targets.fat) || 55,
+        water_ml: Number(data.targets.water_ml) || 3000
+      });
+    }
+    setShowTargetsModal(true);
+  };
+
   const handleSetDailyTargets = async (customPayload?: any) => {
+    const payload = customPayload || targetForm;
+    const previousData = data;
     setIsGenerating(true);
+
+    const targetCals = Number(payload.calories) || 2000;
+    const targetPro = Number(payload.protein) || 130;
+    const targetCarbs = Number(payload.carbs) || 225;
+    const targetFat = Number(payload.fat) || 55;
+    const targetWater = Number(payload.water_ml) || 3000;
+
+    // 0ms Instant optimistic UI update
+    setData((prev: any) => {
+      if (!prev) return prev;
+      const consumedCals = Number(prev.consumed?.calories) || 0;
+      const consumedPro = Number(prev.consumed?.protein) || 0;
+      const consumedWater = Number(prev.consumed?.water_ml) || 0;
+
+      return {
+        ...prev,
+        targets: {
+          ...prev.targets,
+          calories: targetCals,
+          protein: targetPro,
+          carbs: targetCarbs,
+          fat: targetFat,
+          water_ml: targetWater
+        },
+        remaining: {
+          ...prev.remaining,
+          calories: Math.max(0, targetCals - consumedCals),
+          protein: Math.max(0, targetPro - consumedPro)
+        },
+        progress: {
+          ...prev.progress,
+          calories_percent: Math.min(100, Math.round((consumedCals / (targetCals || 1)) * 100)),
+          protein_percent: Math.min(100, Math.round((consumedPro / (targetPro || 1)) * 100)),
+          water_percent: Math.min(100, Math.round((consumedWater / (targetWater || 1)) * 100))
+        }
+      };
+    });
+
+    setShowTargetsModal(false);
+    toast.success("Daily nutrition targets saved!");
+
     try {
-      await nutritionApi.setTargets(customPayload || targetForm);
-      toast.success("Daily nutrition targets initialized!");
-      setShowTargetsModal(false);
-      dateCacheRef.current = {}; // Invalidate cache so all days reflect updated targets
-      await fetchToday(selectedDate, true);
+      await nutritionApi.setTargets(payload);
+      // Clear cache so other days refresh with new target thresholds
+      dateCacheRef.current = {};
+      const updated = await nutritionApi.getToday(selectedDateRef.current);
+      if (updated) {
+        setData(updated);
+        dateCacheRef.current[updated.date || selectedDateRef.current] = updated;
+      }
     } catch (err: any) {
-      toast.error(err?.message || "Failed to set daily targets");
+      console.error("Failed to save targets:", err);
+      setData(previousData);
+      toast.error(err?.message || "Failed to save daily targets");
     } finally {
       setIsGenerating(false);
     }
@@ -694,7 +755,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
             <div className="flex items-center gap-2">
               <h3 className="text-[11px] font-black tracking-widest text-white uppercase">Your Daily Targets</h3>
               <button 
-                onClick={() => setShowTargetsModal(true)} 
+                onClick={openTargetsModal} 
                 className="text-[10px] font-bold text-[#ADFF00] hover:underline flex items-center gap-1"
               >
                 <Edit3 size={12} /> Edit
@@ -1010,7 +1071,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
           targetMl={Number(targets.water_ml) || 2500}
           onAddWater={handleAddWater}
           onRemoveWater={handleRemoveWater}
-          onEditGoal={() => setShowTargetsModal(true)}
+          onEditGoal={openTargetsModal}
         />
 
         {/* Water Intake History & Heatmap Card */}
@@ -1152,9 +1213,10 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                 </div>
 
                 <button
+                  type="button"
                   disabled={isGenerating}
                   onClick={() => handleSetDailyTargets()}
-                  className="w-full py-4 mt-2 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-4 mt-2 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all duration-150 active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 select-none"
                 >
                   {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
                   <span>{isGenerating ? "Saving Targets..." : "Save Daily Targets"}</span>

@@ -47,29 +47,74 @@ export async function POST(request: Request) {
     const fat = Number(body.fat) || Math.round((calories * 0.25) / 9);
     const water_ml = Number(body.water_ml) || 3000;
 
-    const { data: target, error: insertErr } = await supabase
+    // 1. Check if a target record already exists for this user on this effective_date
+    const { data: existing } = await supabase
       .from('nutrition_targets')
-      .upsert({
-        user_id: user.id,
-        calories,
-        protein,
-        carbs,
-        fat,
-        water_ml,
-        daily_budget: Number(body.daily_budget) || 300,
-        monthly_budget: Number(body.monthly_budget) || 6000,
-        effective_date: localDate
-      }, { onConflict: 'user_id, effective_date' })
-      .select()
-      .single();
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('effective_date', localDate)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (insertErr) {
-      console.error("Insert target error:", insertErr);
-      return NextResponse.json(
-        { success: false, error: { code: 'SAVE_FAILED', message: 'Failed to save targets.' } },
-        { status: 500 }
-      );
+    let target;
+    if (existing?.id) {
+      const { data: updated, error: updateErr } = await supabase
+        .from('nutrition_targets')
+        .update({
+          calories,
+          protein,
+          carbs,
+          fat,
+          water_ml,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (updateErr) {
+        console.error("Update target error:", updateErr);
+        return NextResponse.json(
+          { success: false, error: { code: 'UPDATE_FAILED', message: updateErr.message || 'Failed to update targets.' } },
+          { status: 500 }
+        );
+      }
+      target = updated;
+    } else {
+      const { data: inserted, error: insertErr } = await supabase
+        .from('nutrition_targets')
+        .insert({
+          user_id: user.id,
+          calories,
+          protein,
+          carbs,
+          fat,
+          water_ml,
+          effective_date: localDate
+        })
+        .select()
+        .single();
+
+      if (insertErr) {
+        console.error("Insert target error:", insertErr);
+        return NextResponse.json(
+          { success: false, error: { code: 'SAVE_FAILED', message: insertErr.message || 'Failed to save targets.' } },
+          { status: 500 }
+        );
+      }
+      target = inserted;
     }
+
+    // 2. Also keep baseline calories and protein in fitness_os_profiles in sync
+    await supabase
+      .from('fitness_os_profiles')
+      .update({
+        baseline_calories: calories,
+        initial_protein_target: protein,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', user.id);
 
     return NextResponse.json({ success: true, data: target });
   } catch (error: any) {
