@@ -97,29 +97,63 @@ export function useAnimationTimeline(
 
     completionStarted.current = true;
 
-    const revealFinishedPlan = () => {
+    const elapsed = Date.now() - startedAt.current;
+    const effectiveMinDuration = minDurationMs ?? MINIMUM_VISIBLE_DURATION_MS;
+
+    const stopScanning = () => {
       if (scanInterval.current) {
         clearInterval(scanInterval.current);
         scanInterval.current = null;
       }
-
       setScanIndex(-1);
-      setPhase("FINAL_REVEAL");
     };
 
-    const elapsed = Date.now() - startedAt.current;
-    // The rotating profile network remains on-screen until the last 750ms.
-    // The final reveal then slides that still-rotating scene into the actual
-    // plan, so users never see an early static replacement for the rotation.
-    const effectiveMinDuration = minDurationMs ?? MINIMUM_VISIBLE_DURATION_MS;
-    const earliestRevealAt = Math.max(0, effectiveMinDuration - EXIT_DURATION_MS);
+    const runFullEnding = (collapseDelay: number) => {
+      schedule(() => {
+        stopScanning();
+        setPhase("DATA_COLLAPSE");
+      }, collapseDelay);
 
-    if (elapsed < earliestRevealAt) {
-      schedule(revealFinishedPlan, earliestRevealAt - elapsed);
+      schedule(() => {
+        setPhase("AI_ALONE");
+      }, collapseDelay + 1700);
+
+      schedule(() => {
+        setPhase("FINAL_REVEAL");
+      }, collapseDelay + 1700 + 1600);
+
+      schedule(() => {
+        setPhase("COMPLETE");
+      }, collapseDelay + 1700 + 1600 + 1200);
+    };
+
+    // Full sequence takes 4500ms (1700ms collapse + 1600ms atomic rings + 1200ms final reveal badge)
+    const targetCollapseAt = Math.max(0, effectiveMinDuration - 4500);
+
+    if (elapsed < targetCollapseAt) {
+      runFullEnding(targetCollapseAt - elapsed);
       return;
     }
 
-    revealFinishedPlan();
+    // Compressed ending if time remaining is shorter than full sequence
+    const remaining = Math.max(0, effectiveMinDuration - elapsed);
+    if (remaining <= 2400) {
+      stopScanning();
+      setPhase("DATA_COLLAPSE");
+      schedule(() => setPhase("AI_ALONE"), Math.round(remaining * 0.35));
+      schedule(() => setPhase("FINAL_REVEAL"), Math.round(remaining * 0.7));
+      schedule(() => setPhase("COMPLETE"), remaining);
+    } else {
+      const collapseDur = Math.round(remaining * 0.38);
+      const aloneDur = Math.round(remaining * 0.35);
+      schedule(() => {
+        stopScanning();
+        setPhase("DATA_COLLAPSE");
+      }, 0);
+      schedule(() => setPhase("AI_ALONE"), collapseDur);
+      schedule(() => setPhase("FINAL_REVEAL"), collapseDur + aloneDur);
+      schedule(() => setPhase("COMPLETE"), remaining);
+    }
   }, [isPlanReady, phase, schedule, minDurationMs]);
 
   return { phase, scanIndex, isComplete: phase === "COMPLETE" };

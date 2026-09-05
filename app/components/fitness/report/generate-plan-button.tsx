@@ -12,10 +12,12 @@ export function GeneratePlanButton() {
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
+    router.prefetch("/payment?returnTo=/plan-setup&intent=generate_plan");
+    router.prefetch("/plan-setup");
     checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((res) => {
       setIsSubscribed(Boolean(res));
     });
-  }, []);
+  }, [router]);
 
   const handleClick = () => {
     if (isPreparing) return;
@@ -23,11 +25,10 @@ export function GeneratePlanButton() {
   };
 
   const handleAnimationComplete = () => {
-    if (isSubscribed) {
-      router.push("/plan-setup");
-    } else {
-      router.push("/payment?returnTo=/plan-setup&intent=generate_plan");
-    }
+    const targetUrl = isSubscribed
+      ? "/plan-setup"
+      : "/payment?returnTo=/plan-setup&intent=generate_plan";
+    router.push(targetUrl);
   };
 
   return (
@@ -57,6 +58,7 @@ export function GeneratePlanButton() {
         <AIPlanAnimation
           isReady={true}
           minDurationMs={12000}
+          exitMode="hold"
           onAnimationComplete={handleAnimationComplete}
         />
       )}

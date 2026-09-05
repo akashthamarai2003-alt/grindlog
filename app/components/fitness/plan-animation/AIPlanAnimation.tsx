@@ -65,6 +65,7 @@ interface AIPlanAnimationProps {
   isReady?: boolean;
   hasError?: boolean;
   minDurationMs?: number;
+  exitMode?: "slide" | "hold";
   onAnimationComplete?: () => void;
 }
 
@@ -72,6 +73,7 @@ export default function AIPlanAnimation({
   isReady = false,
   hasError = false,
   minDurationMs = 12_000,
+  exitMode = "slide",
   onAnimationComplete,
 }: AIPlanAnimationProps) {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
@@ -107,19 +109,20 @@ export default function AIPlanAnimation({
   // Start the timeline from the actual pill count.
   const timeline = useAnimationTimeline(pills.length, reducedMotion, isReady, minDurationMs);
 
-  // The animation timeline is only visual. Do not reveal a failure screen
-  // while the real model call is still running; exit after both are ready.
-  const isTransitioning =
-    (timeline.phase === "FINAL_REVEAL" ||
-      timeline.phase === "TRANSITION" ||
-      timeline.phase === "COMPLETE") && isReady;
+  // In "slide" mode (plan-setup page), slide down when complete to reveal the plan underneath.
+  // In "hold" mode (report page), stay full-screen and never reveal the report page before navigating.
+  const isTransitioning = exitMode === "slide" && timeline.phase === "COMPLETE";
 
   useEffect(() => {
-    if (!isTransitioning || !onAnimationComplete) return;
+    if (timeline.phase !== "COMPLETE" || !onAnimationComplete) return;
 
-    const timer = window.setTimeout(onAnimationComplete, 750);
-    return () => window.clearTimeout(timer);
-  }, [isTransitioning, onAnimationComplete]);
+    if (exitMode === "slide") {
+      const timer = window.setTimeout(onAnimationComplete, 750);
+      return () => window.clearTimeout(timer);
+    } else {
+      onAnimationComplete();
+    }
+  }, [timeline.phase, onAnimationComplete, exitMode]);
 
   // Derived states for components
   const isCharVisible = timeline.phase !== "BOOT";
