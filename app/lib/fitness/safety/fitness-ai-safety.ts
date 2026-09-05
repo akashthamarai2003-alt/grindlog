@@ -66,8 +66,18 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
     for (const exercise of workout.exercises) {
       const name = normalise(exercise.name);
       
+      const isBodyweight = /(?:push[- ]?up|plank|mountain climber|bodyweight|jumping jack|burpee|air squat|bodyweight squat|crunch|sit[- ]?up|glute bridge|lunges?|high knees?|wall sit)/i.test(name);
+
       if (hasNoEquipment) {
-        if (name.includes("barbell") || name.includes("dumbbell") || name.includes("cable") || name.includes("machine") || /bench press|bench dip|incline|decline/.test(name)) {
+        if (
+          name.includes("barbell") ||
+          name.includes("dumbbell") ||
+          name.includes("cable") ||
+          name.includes("machine") ||
+          name.includes("kettlebell") ||
+          /bench press|\bbench dip\b/.test(name) ||
+          (!isBodyweight && /incline|decline/.test(name))
+        ) {
           return { safe: false, reason: `Exercise '${exercise.name}' requires equipment that is not in the saved profile.` };
         }
       }
@@ -80,7 +90,11 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
         { label: "kettlebell", pattern: /kettlebell/, accepted: ["kettlebell"] },
         { label: "resistance band", pattern: /resistance band|banded/, accepted: ["resistance band", "band"] },
         { label: "pull-up bar", pattern: /pull[- ]?up bar|hanging/, accepted: ["pull-up bar", "park benches & bars", "full commercial gym"] },
-        { label: "bench", pattern: /bench press|bench dip|incline|decline/, accepted: ["bench", "adjustable bench", "park benches", "full commercial gym"] },
+        {
+          label: "bench",
+          pattern: /(?:bench press|bench dip|incline (?:bench|dumbbell|barbell|chest|press|fly|curl)|decline (?:bench|dumbbell|barbell|chest|press|fly))/,
+          accepted: ["bench", "adjustable bench", "park benches", "full commercial gym"],
+        },
         { label: "treadmill", pattern: /treadmill/, accepted: ["treadmill", "treadmill / cardio", "full commercial gym"] },
         { label: "exercise bike", pattern: /exercise bike|stationary bike|spin bike|cycling/, accepted: ["exercise bike", "treadmill / exercise bike", "treadmill / cardio", "full commercial gym"] },
         { label: "rowing machine", pattern: /rowing machine|rower/, accepted: ["rowing machine", "treadmill / cardio", "full commercial gym"] },
