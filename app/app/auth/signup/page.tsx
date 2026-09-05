@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -24,7 +24,7 @@ function SignUpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect");
-  const safeRedirect = getSafeRedirect(redirectParam);
+  const safeRedirect = redirectParam ? getSafeRedirect(redirectParam) : "/onboarding";
   
   const { signUp, signInWithGoogle } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +33,22 @@ function SignUpContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      if (
+        errorParam.toLowerCase().includes("bad_oauth_state") ||
+        errorParam.toLowerCase().includes("state not found")
+      ) {
+        setError("Google sign-up timed out or was cancelled. Please try again.");
+      } else if (errorParam === "auth_callback_error") {
+        setError("Sign-up could not be completed. Please try again.");
+      } else {
+        setError(decodeURIComponent(errorParam));
+      }
+    }
+  }, [searchParams]);
 
   const cleanEmail = form.email.trim();
   const cleanName = form.name.trim();

@@ -31,6 +31,18 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Intercept any OAuth errors (e.g. bad_oauth_state) landing on / or /auth/callback
+  const errorParam = request.nextUrl.searchParams.get("error") || request.nextUrl.searchParams.get("error_code");
+  if (errorParam && (pathname === "/" || pathname.startsWith("/auth/callback"))) {
+    const errorDesc = request.nextUrl.searchParams.get("error_description") || errorParam;
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/signin";
+    url.searchParams.set("error", errorDesc);
+    url.searchParams.delete("error_code");
+    url.searchParams.delete("error_description");
+    return NextResponse.redirect(url);
+  }
+
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin-login")) {
     const adminCookie = request.cookies.get("admin_auth")?.value;
     const validPwd = process.env.ADMIN_PASSWORD || "admin";

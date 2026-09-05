@@ -5,8 +5,10 @@ import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skel
 import { Suspense } from 'react';
 import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
-
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 async function DashboardContent({ searchParams }: { searchParams?: { date?: string } }) {
   const supabase = await createServerSupabase();
@@ -135,8 +137,18 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
   );
 }
 
-export default async function FitnessHome({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
+export default async function FitnessHome({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string; error?: string; error_code?: string; error_description?: string }>;
+}) {
   const params = await searchParams;
+
+  if (params?.error || params?.error_code) {
+    const errorMsg = params.error_description || params.error || "Authentication failed. Please sign in again.";
+    redirect(`/auth/signin?error=${encodeURIComponent(errorMsg)}`);
+  }
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Suspense fallback={
@@ -149,4 +161,3 @@ export default async function FitnessHome({ searchParams }: { searchParams: Prom
     </div>
   );
 }
-

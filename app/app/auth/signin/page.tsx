@@ -47,6 +47,23 @@ function SignInContent() {
     }
   }, []);
 
+  // Display error from query param if redirected from OAuth failure
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      if (
+        errorParam.toLowerCase().includes("bad_oauth_state") ||
+        errorParam.toLowerCase().includes("state not found")
+      ) {
+        setError("Google sign-in timed out or was cancelled. Please try again.");
+      } else if (errorParam === "auth_callback_error") {
+        setError("Authentication could not be completed. Please try again.");
+      } else {
+        setError(decodeURIComponent(errorParam));
+      }
+    }
+  }, [searchParams]);
+
   const cleanEmail = form.email.trim();
   const isValidEmail = EMAIL_REGEX.test(cleanEmail);
   const showEmailError = touched.email && cleanEmail.length > 0 && !isValidEmail;
