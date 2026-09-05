@@ -1,17 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Trash2, Plus, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ArrowLeft, Trash2, Plus, Loader2, Clock, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateRemindersAction } from "@/app/actions/fitness";
 import { ReminderTypeSheet } from "@/components/fitness/reminders/reminder-type-sheet";
+import {
+  WaterReminderSheet,
+  WaterScheduleConfig,
+  formatTo12Hour,
+} from "@/components/fitness/reminders/water-reminder-sheet";
 
 interface ReminderItem {
   id: string;
   type: string;
   time: string;
   days?: number[];
+  isWaterSchedule?: boolean;
 }
 
 const WEEK_DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -30,6 +36,105 @@ export function RemindersClient({
   const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isWaterModalOpen, setIsWaterModalOpen] = useState(false);
+  const [waterSchedule, setWaterSchedule] = useState<WaterScheduleConfig | null>(null);
+
+  // Initialize or detect water schedule on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("grindlog_water_schedule");
+      if (saved) {
+        setWaterSchedule(JSON.parse(saved));
+        return;
+      }
+    } catch {}
+
+    const hydrationItems = initialReminders.filter((r) => r.type === "Hydration" || r.isWaterSchedule);
+    if (hydrationItems.length >= 2) {
+      const sorted = [...hydrationItems].sort((a, b) => a.time.localeCompare(b.time));
+      const start = sorted[0].time;
+      const end = sorted[sorted.length - 1].time;
+      const [h1, m1] = sorted[0].time.split(":").map(Number);
+      const [h2, m2] = sorted[1].time.split(":").map(Number);
+      const diffHours = Math.max(1, Math.round(((h2 * 60 + m2) - (h1 * 60 + m1)) / 60));
+      setWaterSchedule({
+        startTime: start,
+        endTime: end,
+        interval: diffHours,
+      });
+    }
+  }, [initialReminders]);
+
+  const activeWaterCount = reminders.filter((r) => r.type === "Hydration" || r.isWaterSchedule).length;
+
+  const waterScheduleSummary = useMemo(() => {
+    if (waterSchedule && activeWaterCount > 0) {
+      return `Every ${waterSchedule.interval} hrs · ${formatTo12Hour(waterSchedule.startTime)} - ${formatTo12Hour(waterSchedule.endTime)}`;
+    }
+    if (activeWaterCount > 0) {
+      return `${activeWaterCount} reminders active · tap to adjust`;
+    }
+    return "Every 2 hrs · set start & end";
+  }, [waterSchedule, activeWaterCount]);
+
+  const handleSaveWaterSchedule = async ({
+    startTime,
+    endTime,
+    interval,
+    times,
+  }: {
+    startTime: string;
+    endTime: string;
+    interval: number;
+    times: string[];
+  }) => {
+    const newWaterReminders: ReminderItem[] = times.map((t, idx) => ({
+      id: `water_${Date.now()}_${idx}`,
+      type: "Hydration",
+      time: t,
+      days: [0, 1, 2, 3, 4, 5, 6],
+      isWaterSchedule: true,
+    }));
+
+    // Filter out prior hydration reminders to prevent duplicates
+    const nonWater = reminders.filter((r) => r.type !== "Hydration" && !r.isWaterSchedule);
+    const updated = [...nonWater, ...newWaterReminders].sort((a, b) => a.time.localeCompare(b.time));
+
+    setReminders(updated);
+    const config: WaterScheduleConfig = { startTime, endTime, interval };
+    setWaterSchedule(config);
+
+    try {
+      localStorage.setItem("grindlog_water_schedule", JSON.stringify(config));
+    } catch {}
+
+    setIsSaving(true);
+    const res = await updateRemindersAction(enabled, updated);
+    setIsSaving(false);
+    if (res.success) {
+      toast.success(`Water schedule created! ${times.length} hydration reminders active.`);
+    } else {
+      toast.error(res.error || "Failed to update reminders.");
+    }
+  };
+
+  const handleClearWaterSchedule = async () => {
+    const nonWater = reminders.filter((r) => r.type !== "Hydration" && !r.isWaterSchedule);
+    setReminders(nonWater);
+    setWaterSchedule(null);
+    try {
+      localStorage.removeItem("grindlog_water_schedule");
+    } catch {}
+
+    setIsSaving(true);
+    const res = await updateRemindersAction(enabled, nonWater);
+    setIsSaving(false);
+    if (res.success) {
+      toast.success("Water schedule turned off.");
+    } else {
+      toast.error(res.error || "Failed to update reminders.");
+    }
+  };
 
   const handleAddReminder = () => {
     const newId = Math.random().toString(36).substr(2, 9);
@@ -87,7 +192,7 @@ export function RemindersClient({
 
       <div className="px-5 pb-32 max-w-md mx-auto">
         {/* Main Toggle Card */}
-        <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-5 mb-8 flex items-center justify-between">
+        <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-5 mb-4 flex items-center justify-between">
           <span className="font-bold text-white text-[15px]">Reminders</span>
           
           <button 
@@ -97,6 +202,33 @@ export function RemindersClient({
             <div className={`w-5 h-5 rounded-full bg-white transition-transform ${enabled ? 'translate-x-5' : 'translate-x-0'}`} />
           </button>
         </div>
+
+        {/* Water Reminder Schedule Banner Card (as requested) */}
+        <button
+          type="button"
+          onClick={() => setIsWaterModalOpen(true)}
+          className="w-full bg-[#081F24] hover:bg-[#0C2930] border border-[#00D2FF]/30 hover:border-[#00D2FF]/60 rounded-2xl p-4 mb-7 flex items-center justify-between text-left transition-all group shadow-[0_0_24px_rgba(0,210,255,0.08)] active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-11 h-11 rounded-xl bg-[#00D2FF]/15 border border-[#00D2FF]/30 flex items-center justify-center shrink-0 text-[#00D2FF] group-hover:scale-105 transition-transform">
+              <Clock className="w-5 h-5 text-[#00D2FF]" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h4 className="text-white font-bold text-sm tracking-tight">Water reminder schedule</h4>
+                {activeWaterCount > 0 && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-[#00D2FF]/20 text-[#00D2FF] px-2 py-0.5 rounded-full border border-[#00D2FF]/30">
+                    {activeWaterCount} Active
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#00D2FF]/85 font-medium truncate mt-0.5">
+                {waterScheduleSummary}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-[#00D2FF] shrink-0 group-hover:translate-x-0.5 transition-transform" />
+        </button>
 
         {/* Reminders List */}
         <div className="space-y-6">
@@ -188,11 +320,21 @@ export function RemindersClient({
         </div>
       </div>
 
-      {/* Sheet */}
+      {/* Type Sheet */}
       <ReminderTypeSheet 
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
         onSelect={handleTypeSelect}
+      />
+
+      {/* Water Reminder Schedule Sheet Modal */}
+      <WaterReminderSheet
+        isOpen={isWaterModalOpen}
+        onClose={() => setIsWaterModalOpen(false)}
+        currentSchedule={waterSchedule}
+        hasActiveSchedule={activeWaterCount > 0}
+        onSaveSchedule={handleSaveWaterSchedule}
+        onClearSchedule={handleClearWaterSchedule}
       />
     </div>
   );

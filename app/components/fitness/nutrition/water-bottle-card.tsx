@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Minus, Edit3 } from "lucide-react";
+import Link from "next/link";
+import { Plus, Minus, Edit3, Bell } from "lucide-react";
 
 interface WaterBottleCardProps {
   consumedMl: number;
@@ -223,24 +224,35 @@ export function WaterBottleCard({
             </span>
           </div>
 
-          {/* Goal Link with Edit Icon */}
-          <button
-            type="button"
-            onClick={onEditGoal}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00D2FF] hover:text-[#52e5ff] transition-colors mt-1 mb-3.5 group cursor-pointer w-fit"
-            title="Edit daily water target"
-          >
-            <span>Goal - {targetInLiters}L</span>
-            <Edit3
-              size={12}
-              className="opacity-70 group-hover:opacity-100 transition-opacity"
-            />
-            {isGoalReached && (
-              <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#00D2FF]/20 text-[#00D2FF] border border-[#00D2FF]/30">
-                Goal Reached!
-              </span>
-            )}
-          </button>
+          {/* Goal Link with Edit Icon & Reminders Shortcut */}
+          <div className="flex items-center gap-3 mt-1 mb-3.5 flex-wrap">
+            <button
+              type="button"
+              onClick={onEditGoal}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00D2FF] hover:text-[#52e5ff] transition-colors group cursor-pointer w-fit"
+              title="Edit daily water target"
+            >
+              <span>Goal - {targetInLiters}L</span>
+              <Edit3
+                size={12}
+                className="opacity-70 group-hover:opacity-100 transition-opacity"
+              />
+              {isGoalReached && (
+                <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#00D2FF]/20 text-[#00D2FF] border border-[#00D2FF]/30">
+                  Goal Reached!
+                </span>
+              )}
+            </button>
+
+            <Link
+              href="/reminders"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-white/50 hover:text-[#00D2FF] transition-colors"
+              title="Configure water reminder schedule"
+            >
+              <Bell size={11} className="text-[#00D2FF]" />
+              <span>Reminders</span>
+            </Link>
+          </div>
 
           {/* Pill Stepper Logger: [ - ]  250 ml  [ + ] */}
           <div className="w-full max-w-[200px] bg-[#1E261D] border border-white/10 rounded-2xl p-1.5 flex items-center justify-between shadow-inner">

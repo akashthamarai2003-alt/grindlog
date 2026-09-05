@@ -115,6 +115,7 @@ export async function GET(req: Request) {
         "Dinner": "🍛",
         "Protein Target": "🥩",
         "Hydration": "💧",
+        "Water": "💧",
         "Steps Goal": "🚶‍♂️",
         "Bed Time": "🛌"
       };
@@ -171,13 +172,18 @@ export async function GET(req: Request) {
             if (timeDiff >= 0 && timeDiff < 15) {
               const userTokens = usersTokens.get(profile.user_id);
               if (userTokens) {
+                const isWater = reminder.type === "Hydration" || reminder.type === "Water";
                 notificationsToSend.push({
                   userId: profile.user_id,
                   tokens: userTokens,
-                  title: `Time for ${reminder.type}! ${getEmojiForType(reminder.type)}`,
-                  body: `Your ${reminder.type} is scheduled for ${reminder.time}. Stay on track!`,
+                  title: isWater 
+                    ? "Time to hydrate! 💧" 
+                    : `Time for ${reminder.type}! ${getEmojiForType(reminder.type)}`,
+                  body: isWater 
+                    ? "Drink a glass of water to stay hydrated and hit your daily goal!" 
+                    : `Your ${reminder.type} is scheduled for ${reminder.time}. Stay on track!`,
                   tag: `custom_reminder:${profile.user_id}:${reminder.type}:${istDateKey}`,
-                  url: "/",
+                  url: isWater ? "/nutrition" : reminder.type === "Workout" ? "/workout" : "/",
                 });
               }
             }
