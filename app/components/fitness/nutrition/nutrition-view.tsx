@@ -18,8 +18,14 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
   const [error, setError] = useState<any>(null);
   const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
 
+  const todayDateStr = useMemo(() => {
+    return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  }, []);
+
   // Date navigation & swap modal states
-  const [selectedDate, setSelectedDate] = useState<string>(initialData?.date || "");
+  const [selectedDate, setSelectedDate] = useState<string>(initialData?.date || todayDateStr);
+  const selectedDateRef = useRef<string>(initialData?.date || todayDateStr);
+  const dateCacheRef = useRef<Record<string, any>>({});
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [swapMealType, setSwapMealType] = useState<string>("breakfast");
   
@@ -42,10 +48,6 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     fat: initialData?.targets?.fat || 55,
     water_ml: initialData?.targets?.water_ml || 3000
   });
-
-  const todayDateStr = useMemo(() => {
-    return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-  }, []);
 
   const weekDates = useMemo(() => {
     const baseDate = new Date();
@@ -79,13 +81,52 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     return 'breakfast';
   };
 
-  const fetchToday = async (dateParam?: string) => {
+  // Sync cache whenever data changes
+  useEffect(() => {
+    if (data?.date) {
+      dateCacheRef.current[data.date] = data;
+    }
+  }, [data]);
+
+  // Background prefetch all 7 days of the week so date switching is 0ms instant
+  useEffect(() => {
+    if (!data) return;
+
+    if (data.date) {
+      dateCacheRef.current[data.date] = data;
+    }
+
+    weekDates.forEach((w) => {
+      const d = w.dateStr;
+      if (d !== data.date && !dateCacheRef.current[d]) {
+        nutritionApi.getToday(d).then((res) => {
+          if (res?.date) {
+            dateCacheRef.current[res.date] = res;
+            if (selectedDateRef.current === res.date) {
+              setData(res);
+            }
+          }
+        }).catch(() => {});
+      }
+    });
+  }, [weekDates, !data]);
+
+  const fetchToday = async (dateParam?: string, isInitial: boolean = false) => {
     try {
-      setIsLoading(true);
-      const res = await nutritionApi.getToday(dateParam || selectedDate);
-      setData(res);
-      if (res?.date && !selectedDate) {
-        setSelectedDate(res.date);
+      if (isInitial || !data) {
+        setIsLoading(true);
+      }
+      const targetDate = dateParam || selectedDateRef.current || selectedDate;
+      const res = await nutritionApi.getToday(targetDate);
+      if (res?.date) {
+        dateCacheRef.current[res.date] = res;
+      }
+      if (!selectedDateRef.current || selectedDateRef.current === (res?.date || targetDate)) {
+        setData(res);
+        if (res?.date) {
+          setSelectedDate(res.date);
+          selectedDateRef.current = res.date;
+        }
       }
       if (res?.targets) {
         setTargetForm({
@@ -98,21 +139,75 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
       }
       setError(null);
     } catch (err: any) {
-      setError(err);
+      if (isInitial || !data) {
+        setError(err);
+      }
     } finally {
-      setIsLoading(false);
+      if (isInitial || !data) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     if (!initialData) {
-      fetchToday();
+      fetchToday(undefined, true);
     }
   }, [initialData]);
 
   const handleSelectDate = (dateStr: string) => {
+    if (selectedDate === dateStr) return;
     setSelectedDate(dateStr);
-    fetchToday(dateStr);
+    selectedDateRef.current = dateStr;
+
+    // 1. Instant Cache HIT (0ms switch)
+    if (dateCacheRef.current[dateStr]) {
+      setData(dateCacheRef.current[dateStr]);
+      // Quiet background revalidation
+      nutritionApi.getToday(dateStr).then((res) => {
+        if (res?.date) {
+          dateCacheRef.current[res.date] = res;
+          if (selectedDateRef.current === res.date) {
+            setData(res);
+          }
+        }
+      }).catch(() => {});
+      return;
+    }
+
+    // 2. Cache MISS: Optimistic instant switch in 0ms without skeleton/unmount
+    const clickedDateObj = new Date(dateStr + 'T00:00:00');
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = dayNames[clickedDateObj.getDay()] || 'Day';
+
+    setData((prev: any) => {
+      if (!prev) return prev;
+      const t = prev.targets || { calories: 2000, protein: 130, carbs: 225, fat: 55, water_ml: 3000 };
+      return {
+        ...prev,
+        date: dateStr,
+        day_of_week: dayName,
+        logged_foods: [],
+        water_logs: [],
+        water_consumed_ml: 0,
+        consumed: { calories: 0, protein: 0, carbs: 0, fat: 0, water_ml: 0 },
+        remaining: { calories: t.calories, protein: t.protein, carbs: t.carbs, fat: t.fat },
+        progress: { calories_percent: 0, protein_percent: 0, water_percent: 0 },
+        nutrition_score: 0
+      };
+    });
+
+    // 3. Fetch from API in background quietly
+    nutritionApi.getToday(dateStr).then((res) => {
+      if (res?.date) {
+        dateCacheRef.current[res.date] = res;
+        if (selectedDateRef.current === res.date) {
+          setData(res);
+        }
+      }
+    }).catch((err) => {
+      console.error("Failed to load date details:", err);
+    });
   };
 
   const handleSetDailyTargets = async (customPayload?: any) => {
@@ -121,7 +216,8 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
       await nutritionApi.setTargets(customPayload || targetForm);
       toast.success("Daily nutrition targets initialized!");
       setShowTargetsModal(false);
-      await fetchToday(selectedDate);
+      dateCacheRef.current = {}; // Invalidate cache so all days reflect updated targets
+      await fetchToday(selectedDate, true);
     } catch (err: any) {
       toast.error(err?.message || "Failed to set daily targets");
     } finally {
@@ -193,7 +289,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
       } else {
         toast.success("Meal plan generated successfully!");
       }
-      await fetchToday();
+      await fetchToday(selectedDateRef.current);
     } catch (err: any) {
       toast.error(err?.message || "Failed to generate plan");
     } finally {
@@ -208,14 +304,14 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
 
     if (delta > 0) {
       nutritionApi.logWater(delta).then(() => {
-        nutritionApi.getToday().then(res => { if (res) setData(res); }).catch(() => {});
+        nutritionApi.getToday(selectedDateRef.current).then(res => { if (res) setData(res); }).catch(() => {});
       }).catch(err => {
         console.error("Failed to sync water to server:", err);
         toast.error("Failed to sync water to server");
       });
     } else {
       nutritionApi.removeWater(Math.abs(delta)).then(() => {
-        nutritionApi.getToday().then(res => { if (res) setData(res); }).catch(() => {});
+        nutritionApi.getToday(selectedDateRef.current).then(res => { if (res) setData(res); }).catch(() => {});
       }).catch(err => {
         console.error("Failed to sync water removal:", err);
         toast.error("Failed to sync water removal");
@@ -287,7 +383,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     try {
       await nutritionApi.deleteFood(id);
       // Quiet background reconciliation
-      nutritionApi.getToday().then(res => {
+      nutritionApi.getToday(selectedDateRef.current).then(res => {
         if (res) setData(res);
       }).catch(() => {});
     } catch (err: any) {
@@ -430,13 +526,13 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
         });
 
         // Reconcile quietly in the background without disturbing the user
-        nutritionApi.getToday().then(res => {
+        nutritionApi.getToday(selectedDateRef.current).then(res => {
           if (res) setData(res);
         }).catch(() => {});
         return;
       }
     }
-    fetchToday();
+    fetchToday(selectedDateRef.current);
   };
 
   const openLogModal = (mealType: string, preselected?: any[]) => {
@@ -461,7 +557,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <div className="flex flex-col gap-4 animate-pulse pt-4">
         <div className="h-48 bg-white/5 rounded-[24px]"></div>
@@ -636,7 +732,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                   key={d.dateStr}
                   type="button"
                   onClick={() => handleSelectDate(d.dateStr)}
-                  className={`flex-1 min-w-[42px] py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                  className={`flex-1 min-w-[42px] py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all duration-150 active:scale-95 cursor-pointer select-none ${
                     isSelected
                       ? 'bg-[#ADFF00] text-black font-black shadow-[0_0_12px_rgba(173,255,0,0.3)]'
                       : d.isToday
