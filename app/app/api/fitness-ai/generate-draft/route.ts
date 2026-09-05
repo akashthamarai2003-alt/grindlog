@@ -15,10 +15,12 @@ import {
   buildFitnessPlanPrompt,
   buildFitnessPlanSystemPrompt,
 } from "@/lib/fitness/ai/prompts";
-import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
+import { autoRepairPlanSafety, runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
 import {
+  clearGenerationAttempt,
+  clearUserGenerationAttempts,
   getGenerationRetryAfterSeconds,
   recordGenerationAttempt,
 } from "@/lib/services/fitness-ai-generation-guard";
@@ -29,9 +31,8 @@ import { applyFitnessPlanEntitlements } from "@/lib/fitness/subscription/plan-en
 // platform timeout turning a valid in-progress response into an empty client
 // payload. This remains below Vercel's current Hobby function limit.
 export const maxDuration = 180;
-// Keep one paid model call per user action. If the model returns an invalid
-// plan, the user can retry explicitly instead of silently doubling spend.
-const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 1;
+// Allow up to 2 attempts with targeted self-correction before fallback
+const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 2;
 
 export async function POST(req: Request) {
   try {
@@ -47,6 +48,24 @@ export async function POST(req: Request) {
         { success: false, error: "Unauthorized" },
         { status: 401 },
       );
+    }
+
+    let isRetry = false;
+    try {
+      const body = await req.json().catch(() => null);
+      if (body && typeof body === "object" && body.retry === true) {
+        isRetry = true;
+      }
+    } catch {
+      // Body may not be JSON or may be empty
+    }
+    if (req.headers.get("x-retry") === "true") {
+      isRetry = true;
+    }
+
+    if (isRetry) {
+      console.log(`Explicit retry requested by user ${user.id}. Clearing any pending locks.`);
+      await clearUserGenerationAttempts(supabase, user.id, "plan_generation_attempt");
     }
 
     // Payment is a hard server-side prerequisite. Check before reading a
@@ -173,66 +192,64 @@ export async function POST(req: Request) {
       }
     }
 
-    const retryAfterSeconds = await getGenerationRetryAfterSeconds(
-      supabase,
-      user.id,
-      "plan_generation_attempt",
-    );
-    if (retryAfterSeconds > 0) {
-      console.log(`Generation already in progress for user ${user.id}. Polling...`);
-      for (let i = 0; i < 30; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        let latestCachedDraftQuery = supabase
-          .from("fitness_os_ai_sessions")
-          .select("prompt, response")
-          .eq("user_id", user.id)
-          .eq("session_type", "plan_generation")
-          .order("created_at", { ascending: false })
-          .limit(1);
-        if (typeof profile.updated_at === "string" && profile.updated_at) {
-          latestCachedDraftQuery = latestCachedDraftQuery.gte("created_at", profile.updated_at);
-        }
-        const { data: latestCachedDraft } = await latestCachedDraftQuery.maybeSingle();
+    if (!isRetry) {
+      const retryAfterSeconds = await getGenerationRetryAfterSeconds(
+        supabase,
+        user.id,
+        "plan_generation_attempt",
+      );
+      if (retryAfterSeconds > 0) {
+        console.log(`Generation already in progress for user ${user.id}. Polling briefly...`);
+        for (let i = 0; i < 6; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 2500));
+          let latestCachedDraftQuery = supabase
+            .from("fitness_os_ai_sessions")
+            .select("prompt, response")
+            .eq("user_id", user.id)
+            .eq("session_type", "plan_generation")
+            .order("created_at", { ascending: false })
+            .limit(1);
+          if (typeof profile.updated_at === "string" && profile.updated_at) {
+            latestCachedDraftQuery = latestCachedDraftQuery.gte("created_at", profile.updated_at);
+          }
+          const { data: latestCachedDraft } = await latestCachedDraftQuery.maybeSingle();
 
-        if (latestCachedDraft?.response) {
-          try {
-            const cachedPlan = GeneratedPlanSchema.safeParse(
-              JSON.parse(latestCachedDraft.response),
-            );
-            const safetyCheck = cachedPlan.success
-              ? runFitnessAISafetyCheck(cachedPlan.data, profile)
-              : null;
-            const profileCheck = cachedPlan.success
-              ? validatePlanAgainstProfile(cachedPlan.data, profile, {
-              enforceProfileRules: true,
-                  enforceBudgetUtilisation: false,
-                  allowCoreNutrition: subscriptionPlan.id === "starter",
-                })
-              : null;
-            if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
-              console.log(`Polling succeeded for user ${user.id}.`);
-              return NextResponse.json({
-                success: true,
-                cached: true,
-                data: {
-                  ...applyFitnessPlanEntitlements(enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), subscriptionPlan.id),
-                  _profile: profile,
-                  _subscriptionPlan: subscriptionPlan.id,
-                },
-              });
+          if (latestCachedDraft?.response) {
+            try {
+              const cachedPlan = GeneratedPlanSchema.safeParse(
+                JSON.parse(latestCachedDraft.response),
+              );
+              const safetyCheck = cachedPlan.success
+                ? runFitnessAISafetyCheck(cachedPlan.data, profile)
+                : null;
+              const profileCheck = cachedPlan.success
+                ? validatePlanAgainstProfile(cachedPlan.data, profile, {
+                    enforceProfileRules: true,
+                    enforceBudgetUtilisation: false,
+                    allowCoreNutrition: subscriptionPlan.id === "starter",
+                  })
+                : null;
+              if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
+                console.log(`Polling succeeded for user ${user.id}.`);
+                return NextResponse.json({
+                  success: true,
+                  cached: true,
+                  data: {
+                    ...applyFitnessPlanEntitlements(enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), subscriptionPlan.id),
+                    _profile: profile,
+                    _subscriptionPlan: subscriptionPlan.id,
+                  },
+                });
+              }
+            } catch {
+              // Ignore parse errors during polling
             }
-          } catch {
-            // Ignore parse errors during polling
           }
         }
+        // If polling timed out after 15 seconds, clear the stale attempt and proceed to generate
+        console.log(`Polling timed out for user ${user.id}. Clearing stale attempt and generating fresh plan...`);
+        await clearUserGenerationAttempts(supabase, user.id, "plan_generation_attempt");
       }
-      return NextResponse.json(
-        {
-          success: false,
-          error: "A plan generation is already in progress and taking longer than expected. Please wait a moment and try again.",
-        },
-        { status: 429 },
-      );
     }
 
     // 5. Rate limit completed daily plan generations only. A provider failure
@@ -248,93 +265,114 @@ export async function POST(req: Request) {
       );
     }
 
-    // 6. Record before calling OpenAI so a failed request cannot be retried
-    // repeatedly by refreshes, browser back, or multiple open tabs.
-    await recordGenerationAttempt(
-      supabase,
-      user.id,
-      "plan_generation_attempt",
-      FITNESS_PLAN_MODEL,
-    );
-
+    // 6. Record before calling OpenAI and guarantee cleanup in finally block
+    let attemptId: string | null = null;
     let planData: GeneratedPlanData | null = null;
     let lastErrorType = "SYSTEM";
     let lastErrorMessage = "We couldn't build your plan right now.";
     let correctionNote = "";
 
-    for (let attempt = 1; attempt <= MAX_AUTOMATIC_GENERATION_ATTEMPTS; attempt++) {
-      try {
-        console.log(`Fitness AI Generation Attempt ${attempt}...`);
-        const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-          systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${subscriptionPlan.id === "pro" ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
-          userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
-          model: FITNESS_PLAN_MODEL,
-          // Setup is a synchronous request. Medium is the quality/latency
-          // compromise; deterministic safety/profile validators remain the
-          // safety barrier.
-          maxTokens: subscriptionPlan.id === "pro" ? 10000 : 7000,
-          minimumOutputTokens: subscriptionPlan.id === "pro" ? 10000 : 7000,
-          reasoningEffort: "medium",
-          promptCacheKey: subscriptionPlan.id === "pro" ? "fitness-plan-pro-v3" : "fitness-plan-core-v1",
-          temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
-          jsonSchema: {
-            name: "fitness_plan",
-            schema: planJsonSchema,
-            description: "A complete personalized 7-day Grindlog fitness plan.",
-            strict: true,
-          },
-          verbosity: "low",
-        });
+    try {
+      attemptId = await recordGenerationAttempt(
+        supabase,
+        user.id,
+        "plan_generation_attempt",
+        FITNESS_PLAN_MODEL,
+      );
 
-        // 7. Validate AI JSON
-        const parsed = GeneratedPlanSchema.safeParse(aiResponse);
-        if (!parsed.success) {
-          console.warn(`Attempt ${attempt} Zod validation failed:`, parsed.error);
+      for (let attempt = 1; attempt <= MAX_AUTOMATIC_GENERATION_ATTEMPTS; attempt++) {
+        try {
+          console.log(`Fitness AI Generation Attempt ${attempt}...`);
+          const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
+            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${subscriptionPlan.id === "pro" ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
+            userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
+            model: FITNESS_PLAN_MODEL,
+            // Setup is a synchronous request. Medium is the quality/latency
+            // compromise; deterministic safety/profile validators remain the
+            // safety barrier.
+            maxTokens: subscriptionPlan.id === "pro" ? 10000 : 7000,
+            minimumOutputTokens: subscriptionPlan.id === "pro" ? 10000 : 7000,
+            reasoningEffort: "medium",
+            promptCacheKey: subscriptionPlan.id === "pro" ? "fitness-plan-pro-v3" : "fitness-plan-core-v1",
+            temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
+            jsonSchema: {
+              name: "fitness_plan",
+              schema: planJsonSchema,
+              description: "A complete personalized 7-day Grindlog fitness plan.",
+              strict: true,
+            },
+            verbosity: "low",
+          });
+
+          // 7. Validate AI JSON
+          const parsed = GeneratedPlanSchema.safeParse(aiResponse);
+          if (!parsed.success) {
+            console.warn(`Attempt ${attempt} Zod validation failed:`, parsed.error);
+            lastErrorType = "SYSTEM";
+            lastErrorMessage = `Failed to parse AI output: ${parsed.error.errors.map(e => e.path.join(".") + " " + e.message).join(", ")}`;
+            correctionNote = "The prior output did not match the required JSON shape. Return the exact requested JSON object with every required section.";
+            continue; // Try again
+          }
+
+          let candidatePlan = parsed.data;
+
+          // 8. Safety Validation
+          let safetyCheck = runFitnessAISafetyCheck(candidatePlan, profile);
+          if (!safetyCheck.safe) {
+            console.warn(`Attempt ${attempt} Safety check failed:`, safetyCheck.reason);
+            if (attempt < MAX_AUTOMATIC_GENERATION_ATTEMPTS) {
+              lastErrorType = "SAFETY";
+              lastErrorMessage =
+                safetyCheck.reason || "Generated plan violated safety checks.";
+              correctionNote = `CRITICAL SAFETY CORRECTION: The previous plan violated safety checks: "${safetyCheck.reason}". Fix this immediately: follow every constraint in profile.safety and profile.training.equipment strictly. Do NOT include forbidden movements.`;
+              continue; // Try again with correction
+            }
+
+            // Attempt 2 fallback: auto-repair minor exercise mismatches
+            const autoRepaired = autoRepairPlanSafety(candidatePlan, profile);
+            const repairedCheck = runFitnessAISafetyCheck(autoRepaired, profile);
+            if (repairedCheck.safe) {
+              console.log("Auto-repair succeeded in resolving safety violations.");
+              candidatePlan = autoRepaired;
+              safetyCheck = repairedCheck;
+            } else {
+              lastErrorType = "SAFETY";
+              lastErrorMessage = repairedCheck.reason || safetyCheck.reason || "Generated plan violated safety checks.";
+              continue;
+            }
+          }
+
+          const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
+            enforceProfileRules: true,
+            enforceBudgetUtilisation: false,
+            allowCoreNutrition: subscriptionPlan.id === "starter",
+          });
+          if (!profileCheck.valid) {
+            console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);
+            lastErrorType = "SYSTEM";
+            lastErrorMessage = `The generated plan did not match the saved profile: ${profileCheck.issues.join("; ")}`;
+            correctionNote = `The prior output conflicted with saved onboarding data: ${profileCheck.issues.join(" ")} Fix every listed issue and return the complete plan again.`;
+            continue;
+          }
+
+          planData = applyFitnessPlanEntitlements(
+            enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []),
+            subscriptionPlan.id,
+          );
+          break; // Success! Break out of the loop.
+        } catch (err: any) {
+          console.error(`Attempt ${attempt} caught error:`, err);
           lastErrorType = "SYSTEM";
-          lastErrorMessage = `Failed to parse AI output: ${parsed.error.errors.map(e => e.path.join(".") + " " + e.message).join(", ")}`;
-          correctionNote = "The prior output did not match the required JSON shape. Return the exact requested JSON object with every required section.";
-          continue; // Try again
+          lastErrorMessage = err.message || "Network or API error.";
+          if (String(lastErrorMessage).toLowerCase().includes("incomplete")) {
+            correctionNote =
+              "The previous generation was interrupted before JSON was complete. Return the full required JSON object in one response; keep descriptions concise, but do not omit any required section.";
+          }
         }
-
-        const candidatePlan = parsed.data;
-
-        // 8. Safety Validation
-        const safetyCheck = runFitnessAISafetyCheck(candidatePlan, profile);
-        if (!safetyCheck.safe) {
-          console.warn(`Attempt ${attempt} Safety check failed:`, safetyCheck.reason);
-          lastErrorType = "SAFETY";
-          lastErrorMessage =
-            safetyCheck.reason || "Generated plan violated safety checks.";
-          correctionNote = "The prior output violated a safety restriction. Follow every value in profile.safety exactly; do not include blocked workouts or movements.";
-          continue; // Try again
-        }
-
-        const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
-          enforceProfileRules: true,
-          enforceBudgetUtilisation: false,
-          allowCoreNutrition: subscriptionPlan.id === "starter",
-        });
-        if (!profileCheck.valid) {
-          console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);
-          lastErrorType = "SYSTEM";
-          lastErrorMessage = `The generated plan did not match the saved profile: ${profileCheck.issues.join("; ")}`;
-          correctionNote = `The prior output conflicted with saved onboarding data: ${profileCheck.issues.join(" ")} Fix every listed issue and return the complete plan again.`;
-          continue;
-        }
-
-        planData = applyFitnessPlanEntitlements(
-          enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []),
-          subscriptionPlan.id,
-        );
-        break; // Success! Break out of the loop.
-      } catch (err: any) {
-        console.error(`Attempt ${attempt} caught error:`, err);
-        lastErrorType = "SYSTEM";
-        lastErrorMessage = err.message || "Network or API error.";
-        if (String(lastErrorMessage).toLowerCase().includes("incomplete")) {
-          correctionNote =
-            "The previous generation was interrupted before JSON was complete. Return the full required JSON object in one response; keep descriptions concise, but do not omit any required section.";
-        }
+      }
+    } finally {
+      if (attemptId) {
+        await clearGenerationAttempt(supabase, attemptId);
       }
     }
 

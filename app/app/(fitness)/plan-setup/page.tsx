@@ -14,10 +14,14 @@ type PlanGenerationError = Error & {
 
 let activePlanDraftRequest: Promise<any> | null = null;
 
-async function requestPlanDraft() {
-  if (activePlanDraftRequest) return activePlanDraftRequest;
+async function requestPlanDraft(options?: { retry?: boolean }) {
+  if (activePlanDraftRequest && !options?.retry) return activePlanDraftRequest;
 
-  activePlanDraftRequest = fetch('/api/fitness-ai/generate-draft', { method: 'POST' })
+  activePlanDraftRequest = fetch('/api/fitness-ai/generate-draft', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ retry: Boolean(options?.retry) }),
+  })
     .then(async (response) => {
       const body = await response.json().catch(() => null);
 
@@ -285,7 +289,7 @@ export default function PlanSetupPage() {
             setGenerationErrorType(null);
             // Retry only after a failed generation. The server reuses any
             // valid saved draft and never bypasses safety or duplicate guards.
-            requestPlanDraft()
+            requestPlanDraft({ retry: true })
               .then(res => {
                 setPlanData(res.data);
               })

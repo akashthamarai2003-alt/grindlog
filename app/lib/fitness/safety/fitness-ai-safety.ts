@@ -223,3 +223,122 @@ export function runFitnessAISafetyCheck(plan: GeneratedPlanData, profile: Partia
 
   return { safe: true };
 }
+
+/**
+ * Automatically repairs minor safety or equipment issues in a generated plan,
+ * substituting conflicting exercises with safe, profile-compliant alternatives.
+ */
+export function autoRepairPlanSafety(
+  plan: GeneratedPlanData,
+  profile: Partial<OnboardingData>,
+): GeneratedPlanData {
+  const painSeverity = profile.current_pain_severity;
+  if (typeof painSeverity === "number" && painSeverity >= 7) {
+    return {
+      ...plan,
+      workouts: [],
+    };
+  }
+
+  const limitations = (profile.exercise_limitations || []).map(normalise);
+  const equipment = (profile.equipment || []).map(normalise);
+  const problems = (profile.physical_problems || []).map(normalise);
+
+  const hasNoEquipment =
+    equipment.length === 0 ||
+    equipment.some(
+      (item) =>
+        item === "none" ||
+        item.includes("no equipment") ||
+        item.includes("bodyweight only"),
+    );
+  const hasTreadmill = equipment.some((e) => e.includes("treadmill"));
+
+  const repairedWorkouts = plan.workouts.map((workout) => {
+    let title = workout.title;
+    if (!hasTreadmill && /cardio/i.test(title)) {
+      title = title.replace(/cardio/gi, "Active Recovery");
+    }
+
+    const exercises = workout.exercises.map((exercise) => {
+      let name = exercise.name;
+      const lower = normalise(name);
+
+      if (!hasTreadmill && lower.includes("treadmill")) {
+        name = "Brisk Outdoor Walking";
+      }
+
+      if (hasChoice(limitations, "jumping") && /jump|plyo|box jump|jump rope|burpee/.test(lower)) {
+        name = "Glute Bridge";
+      }
+
+      if (hasChoice(limitations, "squatting") && /squat|leg press|hack press/.test(lower)) {
+        name = "Glute Bridge";
+      }
+
+      if (hasChoice(limitations, "running") && /\brun\b|running|treadmill|sprint|jog/.test(lower)) {
+        name = "Brisk Walking";
+      }
+
+      if (hasChoice(limitations, "push-ups") && /push[- ]?up/.test(lower)) {
+        name = "Plank Hold";
+      }
+
+      if (hasChoice(limitations, "pull-ups") && /pull[- ]?up|chin[- ]?up/.test(lower)) {
+        name = "Prone Y-T-W Raises";
+      }
+
+      if (hasChoice(limitations, "lunges") && /lunge|split squat/.test(lower)) {
+        name = "Wall Sit";
+      }
+
+      if (hasChoice(problems, "back pain") && /deadlift|good morning|back squat|bent[- ]over row/.test(lower)) {
+        name = "Bird Dog";
+      }
+
+      if (hasChoice(problems, "knee pain") && /squat|lunge|leg press|leg extension|jump|plyo|box jump/.test(lower)) {
+        name = "Glute Bridge";
+      }
+
+      if (hasChoice(problems, "shoulder pain") && /overhead|military press|shoulder press|push press|dips?|upright row/.test(lower)) {
+        name = "Side-Lying External Rotation";
+      }
+
+      if (hasNoEquipment) {
+        if (/bench press|\bbench dip\b|dumbbell press|barbell bench/.test(lower)) {
+          name = "Standard Push-Up";
+        } else if (/barbell squat|dumbbell squat|leg press/.test(lower)) {
+          name = hasChoice(limitations, "squatting") ? "Glute Bridge" : "Bodyweight Squat";
+        } else if (/dumbbell row|barbell row|lat pulldown|cable row/.test(lower)) {
+          name = "Doorway Bodyweight Row";
+        } else if (/dumbbell|barbell|kettlebell|cable|machine/.test(lower)) {
+          if (/curl|bicep/.test(lower)) {
+            name = "Towel Isometric Bicep Curl";
+          } else if (/tricep|skull crusher|extension/.test(lower)) {
+            name = "Diamond Push-Up (or Knee Variation)";
+          } else if (/shoulder|lateral raise|press/.test(lower)) {
+            name = "Pike Push-Up";
+          } else {
+            name = "Bodyweight Glute Bridge";
+          }
+        }
+      }
+
+      return {
+        ...exercise,
+        name,
+      };
+    });
+
+    return {
+      ...workout,
+      title,
+      exercises,
+    };
+  });
+
+  return {
+    ...plan,
+    workouts: repairedWorkouts,
+  };
+}
