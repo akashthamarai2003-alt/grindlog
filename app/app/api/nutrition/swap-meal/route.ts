@@ -78,6 +78,58 @@ function totalsForFoods(foods: any[]) {
   }), { calories: 0, protein: 0, carbs: 0, fat: 0, estimated_cost: 0 });
 }
 
+export async function GET(request: Request) {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: { code: "UNAUTHORIZED", message: "Not authenticated." } },
+        { status: 401 },
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const mealType = String(searchParams.get("meal_type") || "breakfast").toLowerCase().trim();
+
+    const [profileRes, targetsRes, foodCatalogRes] = await Promise.all([
+      supabase
+        .from("fitness_os_profiles")
+        .select("diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods, nutrition_budget, food_environment, meals_per_day")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      NutritionService.getEffectiveTargets(user.id),
+      supabase
+        .from("foods")
+        .select("id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly")
+        .eq("is_active", true)
+        .limit(300)
+    ]);
+
+    const profile: any = (profileRes.data as any) || {};
+    const targets = targetsRes || { calories: 2000, protein: 130 };
+    const foodCatalog = (foodCatalogRes.data || []) as any[];
+
+    const options = NutritionService.getCuratedSwapOptions(mealType, profile, targets, foodCatalog);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        meal_type: mealType,
+        options,
+        profile_diet: profile.diet_preference || profile.food_type || "Balanced",
+      }
+    });
+  } catch (error: any) {
+    console.error("Error in GET /api/nutrition/swap-meal:", error);
+    return NextResponse.json(
+      { success: false, error: { code: "SERVER_ERROR", message: error.message || "Failed to load swap alternatives." } },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabase();
@@ -109,7 +161,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const localDate = await NutritionService.getLocalDateString(user.id);
+    const localDate = body.date || await NutritionService.getLocalDateString(user.id);
     const { data: profile, error: profileError } = await supabase
       .from("fitness_os_profiles")
       .select("diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods")
@@ -156,15 +208,7 @@ export async function POST(request: Request) {
     });
     const candidates = categoryFoods.length >= 2 ? categoryFoods : compatibleFoods;
 
-    if (candidates.length < 2) {
-      return NextResponse.json(
-        { success: false, error: { code: "NO_SAFE_ALTERNATIVES", message: "There are not enough safe foods in your saved food list for this swap." } },
-        { status: 409 },
-      );
-    }
-
-    // Read only the selected meal override. A daily plan is never used as the
-    // swap target because deleting it would remove every meal for today.
+    // Read only the selected meal override.
     const { data: existingPlans, error: plansError } = await supabase
       .from("meal_plans")
       .select("id, meal_type, meal_plan_items(food_id, quantity, serving_size)")
@@ -174,13 +218,49 @@ export async function POST(request: Request) {
     if (plansError) throw plansError;
 
     const targetPlan = (existingPlans || []).find((planRow: any) => planRow.meal_type === mealType);
-    const previousItems = targetPlan?.meal_plan_items || [];
-    const previousFoodIds = new Set(previousItems.map((item: any) => item.food_id));
-    const withoutCurrent = candidates.filter((food) => !previousFoodIds.has(food.id));
-    const selectionPool = withoutCurrent.length >= 2 ? withoutCurrent : candidates;
-    const selectedFoods = [...selectionPool]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 2);
+
+    let optionName = `${mealType.replace("_", " ")} alternative`;
+    let selectedFoods: any[] = [];
+
+    if (body.selected_option && Array.isArray(body.selected_option.items) && body.selected_option.items.length > 0) {
+      optionName = body.selected_option.name || optionName;
+      selectedFoods = body.selected_option.items.map((it: any) => ({
+        id: it.food_id || it.id,
+        name: it.name,
+        serving_size: it.serving_size || '1 serving',
+        calories: Number(it.calories) || 0,
+        protein: Number(it.protein) || 0,
+        carbs: Number(it.carbs) || 0,
+        fat: Number(it.fat) || 0,
+        estimated_cost: Number(it.estimated_cost) || 0,
+        quantity: Number(it.quantity) || 1,
+      }));
+    } else if (Array.isArray(body.foods) && body.foods.length > 0) {
+      selectedFoods = body.foods.map((it: any) => ({
+        id: it.food_id || it.id,
+        name: it.name,
+        serving_size: it.serving_size || '1 serving',
+        calories: Number(it.calories) || 0,
+        protein: Number(it.protein) || 0,
+        carbs: Number(it.carbs) || 0,
+        fat: Number(it.fat) || 0,
+        estimated_cost: Number(it.estimated_cost) || 0,
+        quantity: Number(it.quantity) || 1,
+      }));
+    } else {
+      const previousItems = targetPlan?.meal_plan_items || [];
+      const previousFoodIds = new Set(previousItems.map((item: any) => item.food_id));
+      const withoutCurrent = candidates.filter((food) => !previousFoodIds.has(food.id));
+      const selectionPool = withoutCurrent.length >= 2 ? withoutCurrent : candidates;
+      selectedFoods = [...selectionPool]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 2)
+        .map((food) => ({
+          ...food,
+          quantity: 1,
+        }));
+    }
+
     const totals = totalsForFoods(selectedFoods);
 
     let swapPlan = targetPlan;
@@ -192,7 +272,7 @@ export async function POST(request: Request) {
           user_id: user.id,
           date: localDate,
           meal_type: mealType,
-          name: `${mealType.replace("_", " ")} alternative`,
+          name: optionName,
           calories: Math.round(totals.calories),
           protein: totals.protein,
           carbs: totals.carbs,
@@ -217,21 +297,14 @@ export async function POST(request: Request) {
       .from("meal_plan_items")
       .insert(selectedFoods.map((food) => ({
         meal_plan_id: swapPlan.id,
-        food_id: food.id,
-        quantity: 1,
-        serving_size: food.serving_size,
+        food_id: food.id || food.food_id,
+        quantity: food.quantity || 1,
+        serving_size: food.serving_size || '1 serving',
       })));
 
     if (itemError) {
       if (createdPlan) {
         await supabase.from("meal_plans").delete().eq("id", swapPlan.id).eq("user_id", user.id);
-      } else if (previousItems.length > 0) {
-        await supabase.from("meal_plan_items").insert(previousItems.map((item: any) => ({
-          meal_plan_id: swapPlan.id,
-          food_id: item.food_id,
-          quantity: item.quantity,
-          serving_size: item.serving_size,
-        })));
       }
       throw itemError;
     }
@@ -240,7 +313,7 @@ export async function POST(request: Request) {
       const { error: updateError } = await supabase
         .from("meal_plans")
         .update({
-          name: `${mealType.replace("_", " ")} alternative`,
+          name: optionName,
           calories: Math.round(totals.calories),
           protein: totals.protein,
           carbs: totals.carbs,

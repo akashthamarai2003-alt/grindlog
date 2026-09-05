@@ -6,8 +6,9 @@ export interface LogFoodRequest {
 }
 
 export const nutritionApi = {
-  async getToday() {
-    const res = await fetch(`/api/nutrition/today?t=${Date.now()}`);
+  async getToday(date?: string) {
+    const url = `/api/nutrition/today?t=${Date.now()}${date ? `&date=${encodeURIComponent(date)}` : ''}`;
+    const res = await fetch(url);
     const json = await res.json();
     if (!res.ok) throw json.error;
     return json.data;
@@ -71,11 +72,22 @@ export const nutritionApi = {
     return json.data;
   },
 
-  async swapMeal(mealType: string) {
+  async getSwapOptions(mealType: string) {
+    const res = await fetch(`/api/nutrition/swap-meal?meal_type=${encodeURIComponent(mealType)}&t=${Date.now()}`);
+    const json = await res.json();
+    if (!res.ok) throw json.error;
+    return json.data;
+  },
+
+  async swapMeal(mealType: string, selectedOption?: any, date?: string) {
     const res = await fetch('/api/nutrition/swap-meal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ meal_type: mealType })
+      body: JSON.stringify({
+        meal_type: mealType,
+        selected_option: selectedOption,
+        date
+      })
     });
     const json = await res.json();
     if (!res.ok) throw json.error;

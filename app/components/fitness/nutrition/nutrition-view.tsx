@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2, Sparkles, Calendar } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
 import { getFoodImage, getFoodSvgAvatar } from "@/lib/utils/food-images";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
+import { SwapMealModal } from "./swap-meal-modal";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,6 +17,11 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<any>(null);
   const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
+
+  // Date navigation & swap modal states
+  const [selectedDate, setSelectedDate] = useState<string>(initialData?.date || "");
+  const [swapModalOpen, setSwapModalOpen] = useState(false);
+  const [swapMealType, setSwapMealType] = useState<string>("breakfast");
   
   // Water debouncing refs for instantaneous zero-lag tapping
   const pendingWaterDeltaRef = useRef<number>(0);
@@ -37,10 +43,50 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     water_ml: initialData?.targets?.water_ml || 3000
   });
 
-  const fetchToday = async () => {
+  const todayDateStr = useMemo(() => {
+    return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  }, []);
+
+  const weekDates = useMemo(() => {
+    const baseDate = new Date();
+    const currentDay = baseDate.getDay();
+    const distanceToMonday = (currentDay + 6) % 7;
+    const monday = new Date(baseDate);
+    monday.setDate(baseDate.getDate() - distanceToMonday);
+
+    const dates = [];
+    const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const iso = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+      dates.push({
+        dateStr: iso,
+        dayName: dayNames[d.getDay()],
+        dayNumber: d.getDate(),
+        isToday: iso === todayDateStr
+      });
+    }
+    return dates;
+  }, [todayDateStr]);
+
+  const getActiveMealType = () => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 11) return 'breakfast';
+    if (hour >= 11 && hour < 16) return 'lunch';
+    if (hour >= 16 && hour < 19) return 'pre_workout';
+    if (hour >= 19 && hour <= 23) return 'dinner';
+    return 'breakfast';
+  };
+
+  const fetchToday = async (dateParam?: string) => {
     try {
-      const res = await nutritionApi.getToday();
+      setIsLoading(true);
+      const res = await nutritionApi.getToday(dateParam || selectedDate);
       setData(res);
+      if (res?.date && !selectedDate) {
+        setSelectedDate(res.date);
+      }
       if (res?.targets) {
         setTargetForm({
           calories: res.targets.calories || 2000,
@@ -64,13 +110,18 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     }
   }, [initialData]);
 
+  const handleSelectDate = (dateStr: string) => {
+    setSelectedDate(dateStr);
+    fetchToday(dateStr);
+  };
+
   const handleSetDailyTargets = async (customPayload?: any) => {
     setIsGenerating(true);
     try {
       await nutritionApi.setTargets(customPayload || targetForm);
       toast.success("Daily nutrition targets initialized!");
       setShowTargetsModal(false);
-      await fetchToday();
+      await fetchToday(selectedDate);
     } catch (err: any) {
       toast.error(err?.message || "Failed to set daily targets");
     } finally {
@@ -78,17 +129,58 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     }
   };
 
-  const handleSwapMeal = async (mealType: string) => {
+  const handleSelectSwapOption = async (chosenOption: any) => {
+    if (!data) return;
+    const previousData = data;
+    const targetDate = selectedDate || data.date;
+
+    // Instant optimistic swap in 0ms!
+    setData((prev: any) => {
+      if (!prev) return prev;
+      const updatedMeals = (prev.meals || []).map((m: any) => {
+        if (m.meal_type !== swapMealType) return m;
+
+        const newItems = chosenOption.items.map((it: any, idx: number) => ({
+          id: `swapped-${idx}`,
+          quantity: it.quantity || 1,
+          foods: {
+            id: it.food_id || it.id,
+            name: it.name,
+            category: it.category || 'General',
+            serving_size: it.serving_size,
+            calories: it.calories,
+            protein: it.protein,
+            carbs: it.carbs,
+            fat: it.fat,
+            estimated_cost: it.estimated_cost
+          }
+        }));
+
+        return {
+          ...m,
+          name: chosenOption.name,
+          calories: chosenOption.calories,
+          protein: chosenOption.protein,
+          carbs: chosenOption.carbs,
+          fat: chosenOption.fat,
+          meal_plan_items: newItems
+        };
+      });
+
+      return {
+        ...prev,
+        meals: updatedMeals
+      };
+    });
+
+    toast.success(`Swapped to ${chosenOption.name}!`);
+
     try {
-      setSwappingMeal(mealType);
-      toast.loading("Swapping meal...", { id: "swap" });
-      const res = await nutritionApi.swapMeal(mealType);
-      toast.success(res.message || `Swapped ${mealType} meal!`, { id: "swap" });
-      await fetchToday();
+      await nutritionApi.swapMeal(swapMealType, chosenOption, targetDate);
+      nutritionApi.getToday(targetDate).then(res => { if (res) setData(res); }).catch(() => {});
     } catch (err: any) {
-      toast.error(err?.message || "Failed to swap meal", { id: "swap" });
-    } finally {
-      setSwappingMeal(null);
+      setData(previousData);
+      toast.error(err?.message || "Failed to save meal swap to server");
     }
   };
 
@@ -402,7 +494,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
     return (
       <div className="bg-red-500/10 border border-red-500/20 rounded-[24px] p-5 text-center mt-8">
         <p className="text-red-400 font-bold">{error.message || "An error occurred."}</p>
-        <button onClick={fetchToday} className="mt-4 px-4 py-2 bg-white/5 rounded-full text-xs font-bold text-white hover:bg-white/10">Try Again</button>
+        <button onClick={() => fetchToday()} className="mt-4 px-4 py-2 bg-white/5 rounded-full text-xs font-bold text-white hover:bg-white/10">Try Again</button>
       </div>
     );
   }
@@ -534,9 +626,52 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
           </div>
         </div>
 
-        {/* Meals */}
-        <div className="mt-8 mb-4">
-          <h2 className="text-[13px] font-black tracking-widest text-white uppercase px-1">Today&apos;s Meals</h2>
+        {/* 7-Day Interactive Strip */}
+        <div className="bg-[#111A10] border border-white/5 rounded-2xl p-2 mt-6 mb-2">
+          <div className="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar">
+            {weekDates.map((d) => {
+              const isSelected = (selectedDate || todayDateStr) === d.dateStr;
+              return (
+                <button
+                  key={d.dateStr}
+                  type="button"
+                  onClick={() => handleSelectDate(d.dateStr)}
+                  className={`flex-1 min-w-[42px] py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#ADFF00] text-black font-black shadow-[0_0_12px_rgba(173,255,0,0.3)]'
+                      : d.isToday
+                      ? 'bg-white/10 text-white font-bold border border-[#ADFF00]/40'
+                      : 'text-white/50 hover:text-white hover:bg-white/5 font-medium'
+                  }`}
+                >
+                  <span className="text-[9px] uppercase tracking-wider">{d.dayName}</span>
+                  <span className="text-xs font-bold mt-0.5">{d.dayNumber}</span>
+                  {d.isToday && !isSelected && (
+                    <span className="w-1.5 h-1.5 bg-[#ADFF00] rounded-full mt-0.5" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Meals Header */}
+        <div className="mt-4 mb-4 flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[13px] font-black tracking-widest text-white uppercase">
+              {(!selectedDate || selectedDate === todayDateStr) ? "Today's Meals" : `${weekDates.find(w => w.dateStr === selectedDate)?.dayName || 'Selected'}'s Meals`}
+            </h2>
+            {data.day_of_week && (
+              <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                <Sparkles size={10} /> 7-Day Variety
+              </span>
+            )}
+          </div>
+          {data.food_type && (
+            <span className="text-[10px] font-bold text-white/50 capitalize bg-white/5 px-2.5 py-0.5 rounded-md border border-white/5">
+              {data.food_type}
+            </span>
+          )}
         </div>
         
         {!hasPlannedMeals && !hasLoggedFoods ? (
@@ -548,7 +683,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
              >
                {isGenerating ? <Loader2 className="animate-spin" size={14} /> : null}
-               {isGenerating ? "Generating..." : "Generate AI Meal Plan"}
+               {isGenerating ? "Generate AI Meal Plan" : "Generate AI Meal Plan"}
              </button>
           </div>
         ) : (
@@ -569,16 +704,39 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                 };
               }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
               
+              const isToday = !selectedDate || selectedDate === todayDateStr;
+              const isActive = !completed && isToday && getActiveMealType() === meal.meal_type;
+
               return (
-                <div key={meal.id} className={`bg-[#111A10] border rounded-[24px] p-5 ${completed ? 'border-[#ADFF00]/20 shadow-[0_0_15px_rgba(173,255,0,0.03)]' : 'border-white/5 opacity-90'}`}>
+                <div 
+                  key={meal.id} 
+                  className={`bg-[#111A10] border rounded-[24px] p-5 transition-all ${
+                    isActive 
+                      ? 'border-[#ADFF00]/60 shadow-[0_0_25px_rgba(173,255,0,0.12)] ring-1 ring-[#ADFF00]/30' 
+                      : completed 
+                      ? 'border-[#ADFF00]/20 shadow-[0_0_15px_rgba(173,255,0,0.03)]' 
+                      : 'border-white/5 opacity-90'
+                  }`}
+                >
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${completed ? 'bg-[#ADFF00]/10 text-[#ADFF00]' : 'bg-white/5 text-white/60'}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        isActive 
+                          ? 'bg-[#ADFF00] text-black font-black' 
+                          : completed 
+                          ? 'bg-[#ADFF00]/10 text-[#ADFF00]' 
+                          : 'bg-white/5 text-white/60'
+                      }`}>
                         {getMealIcon(meal.meal_type)}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-bold text-white">{formatMealType(meal.meal_type)}</h3>
+                          {isActive && (
+                            <span className="text-[9px] font-black text-black bg-[#ADFF00] px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(173,255,0,0.4)] animate-pulse">
+                              NOW
+                            </span>
+                          )}
                           <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/20">
                             {getMealTiming(meal.meal_type)}
                           </span>
@@ -669,11 +827,14 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                     {!completed ? (
                       <>
                         <button 
-                          disabled={swappingMeal === meal.meal_type}
-                          onClick={() => handleSwapMeal(meal.meal_type)} 
-                          className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 transition-all flex justify-center items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          type="button"
+                          onClick={() => {
+                            setSwapMealType(meal.meal_type);
+                            setSwapModalOpen(true);
+                          }} 
+                          className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ADFF00]/40 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center gap-1.5 cursor-pointer"
                         >
-                          {swappingMeal === meal.meal_type ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} 
+                          <RefreshCw size={14} /> 
                           Swap
                         </button>
                         <button 
@@ -806,6 +967,17 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
         onSuccess={handleFoodLoggedSuccess}
         defaultMealType={modalMealType}
         preselectedFoods={modalPreselectedFoods}
+      />
+
+      <SwapMealModal
+        isOpen={swapModalOpen}
+        onClose={() => setSwapModalOpen(false)}
+        mealType={swapMealType}
+        onSelectOption={handleSelectSwapOption}
+        onCustomFoodClick={() => {
+          setSwapModalOpen(false);
+          openLogModal(swapMealType);
+        }}
       />
 
       {/* Edit Daily Targets Modal */}

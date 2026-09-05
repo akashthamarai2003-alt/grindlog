@@ -14,7 +14,10 @@ export async function GET(request: Request) {
       );
     }
 
-    const data = await NutritionService.getTodaySummaryAndDetails(user.id);
+    const { searchParams } = new URL(request.url);
+    const dateParam = searchParams.get('date') || undefined;
+
+    const data = await NutritionService.getTodaySummaryAndDetails(user.id, dateParam);
     
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
