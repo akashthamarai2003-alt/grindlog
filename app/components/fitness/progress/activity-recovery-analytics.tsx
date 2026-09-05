@@ -416,15 +416,15 @@ export function ActivityRecoveryAnalyticsCard({
       {/* Interactive Quick Log Modal */}
       {isModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="w-full max-w-md bg-[#0D140C] border border-white/10 rounded-2xl p-5 shadow-2xl flex flex-col gap-4 text-white animate-in zoom-in-95 duration-200"
+            className="w-full max-w-md bg-[#0D140C] border border-white/10 rounded-t-[28px] sm:rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col gap-3.5 text-white max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain animate-in slide-in-from-bottom duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-lg">⚡</span>
                 <h3 className="text-sm font-black tracking-widest text-white uppercase">
@@ -434,23 +434,23 @@ export function ActivityRecoveryAnalyticsCard({
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveLogs} className="flex flex-col gap-4">
-              {/* Date Quick Selector */}
+            <form onSubmit={handleSaveLogs} className="flex flex-col gap-3.5 flex-1">
+              {/* Date Quick Selector - 3 equal columns */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black uppercase tracking-widest text-white/50">
                   Select Date
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setLogDate(todayStr)}
-                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
+                    className={`py-2 px-1 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                       logDate === todayStr
                         ? "bg-[#ADFF00] text-black shadow-md shadow-[#ADFF00]/20"
                         : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/5"
@@ -465,7 +465,7 @@ export function ActivityRecoveryAnalyticsCard({
                       y.setDate(y.getDate() - 1);
                       setLogDate(y.toISOString().split("T")[0]);
                     }}
-                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
+                    className={`py-2 px-1 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                       logDate !== todayStr
                         ? "bg-[#ADFF00] text-black shadow-md shadow-[#ADFF00]/20"
                         : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/5"
@@ -478,7 +478,7 @@ export function ActivityRecoveryAnalyticsCard({
                     value={logDate}
                     max={todayStr}
                     onChange={(e) => setLogDate(e.target.value)}
-                    className="w-32 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/80 focus:outline-none focus:border-[#ADFF00]"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-xs text-white/80 focus:outline-none focus:border-[#ADFF00] text-center"
                   />
                 </div>
               </div>
@@ -488,7 +488,7 @@ export function ActivityRecoveryAnalyticsCard({
                 <button
                   type="button"
                   onClick={() => setActiveTab("steps")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     activeTab === "steps"
                       ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                       : "text-white/50 hover:text-white"
@@ -500,7 +500,7 @@ export function ActivityRecoveryAnalyticsCard({
                 <button
                   type="button"
                   onClick={() => setActiveTab("sleep")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     activeTab === "sleep"
                       ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
                       : "text-white/50 hover:text-white"
@@ -533,8 +533,8 @@ export function ActivityRecoveryAnalyticsCard({
                     <span className="absolute right-3 top-3 text-xs font-bold text-white/40">steps</span>
                   </div>
 
-                  {/* Quick Preset Chips */}
-                  <div className="flex flex-wrap gap-1.5 pt-1">
+                  {/* Quick Preset Chips - 5 equal columns: zero wrapping */}
+                  <div className="grid grid-cols-5 gap-1.5 pt-1">
                     {[
                       { label: "+1,000", val: 1000, add: true },
                       { label: "+2,500", val: 2500, add: true },
@@ -552,7 +552,7 @@ export function ActivityRecoveryAnalyticsCard({
                             setStepsInput(String(chip.val));
                           }
                         }}
-                        className="text-[10px] font-bold px-2 py-1 rounded bg-white/5 border border-white/5 text-white/70 hover:bg-emerald-400/20 hover:text-emerald-300 hover:border-emerald-400/30 transition-colors"
+                        className="text-[10px] font-bold py-1.5 px-0.5 rounded-lg bg-white/5 border border-white/5 text-white/80 hover:bg-emerald-400/20 hover:text-emerald-300 hover:border-emerald-400/30 transition-colors text-center truncate cursor-pointer active:scale-95"
                       >
                         {chip.label}
                       </button>
@@ -584,14 +584,14 @@ export function ActivityRecoveryAnalyticsCard({
                     <span className="absolute right-3 top-3 text-xs font-bold text-white/40">hours</span>
                   </div>
 
-                  {/* Sleep Duration Presets */}
-                  <div className="flex flex-wrap gap-1.5 pt-1">
+                  {/* Sleep Duration Presets - 7 equal columns */}
+                  <div className="grid grid-cols-7 gap-1 pt-1">
                     {[6, 6.5, 7, 7.5, 8, 8.5, 9].map((hrs) => (
                       <button
                         key={hrs}
                         type="button"
                         onClick={() => setSleepHoursInput(String(hrs))}
-                        className={`text-[10px] font-bold px-2 py-1 rounded transition-colors ${
+                        className={`text-[10px] font-bold py-1.5 px-0.5 rounded-lg text-center transition-colors cursor-pointer active:scale-95 ${
                           sleepHoursInput === String(hrs)
                             ? "bg-indigo-400/20 text-indigo-300 border border-indigo-400/40"
                             : "bg-white/5 border border-white/5 text-white/70 hover:bg-white/10"
@@ -620,13 +620,13 @@ export function ActivityRecoveryAnalyticsCard({
                           key={q.label}
                           type="button"
                           onClick={() => setSleepQualityInput(q.rating)}
-                          className={`py-1.5 px-1 rounded-lg flex flex-col items-center gap-0.5 text-[9px] font-bold transition-all ${
+                          className={`py-2 px-1 rounded-xl flex flex-col items-center gap-0.5 text-[10px] font-bold transition-all cursor-pointer active:scale-95 ${
                             sleepQualityInput === q.rating
-                              ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40"
+                              ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm shadow-indigo-500/20"
                               : "bg-white/5 text-white/50 hover:bg-white/10 border border-transparent"
                           }`}
                         >
-                          <span className="text-sm">{q.icon}</span>
+                          <span className="text-base">{q.icon}</span>
                           <span>{q.label}</span>
                         </button>
                       ))}
@@ -635,28 +635,28 @@ export function ActivityRecoveryAnalyticsCard({
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 pt-2">
+              {/* Action Buttons - Pinned at bottom */}
+              <div className="flex items-center gap-2 pt-2 shrink-0 border-t border-white/5 mt-auto">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 text-xs font-bold transition-colors cursor-pointer"
+                  className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 text-xs font-bold transition-colors cursor-pointer active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex-1 py-2.5 rounded-xl bg-[#ADFF00] hover:bg-[#baff22] text-black text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-[#ADFF00]/20 disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-3 rounded-xl bg-[#ADFF00] hover:bg-[#baff22] text-black text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-[#ADFF00]/20 disabled:opacity-50 cursor-pointer active:scale-95"
                 >
                   {isSaving ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Saving...</span>
                     </>
                   ) : (
                     <>
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-4 h-4" />
                       <span>Save Log</span>
                     </>
                   )}

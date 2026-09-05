@@ -87,7 +87,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
 
   return (
     <div className="w-full flex flex-col min-h-screen bg-[#0A1108] pb-32">
-      <div className="px-5">
+      <div className="w-full max-w-md mx-auto px-3.5 sm:px-5">
         <ProgressHeader 
           transformation={data.transformation} 
           period={period} 
