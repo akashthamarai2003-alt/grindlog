@@ -78,6 +78,22 @@ export function MyDetailsContent({
 
   const bmiStatus = bmi ? getBmiCategory(parseFloat(bmi)) : null;
 
+  const openEditModal = () => {
+    setFormData({
+      weight: fitnessProfile?.weight || "",
+      target_weight: fitnessProfile?.target_weight || "",
+      height: fitnessProfile?.height || "",
+      fitness_level: fitnessProfile?.fitness_level || "",
+      training_days_per_week: fitnessProfile?.training_days_per_week || "",
+      goal: fitnessProfile?.goal || "",
+      waist_cm: fitnessProfile?.waist_cm || "",
+      chest_cm: fitnessProfile?.chest_cm || "",
+      arm_cm: fitnessProfile?.arm_cm || "",
+      thigh_cm: fitnessProfile?.thigh_cm || ""
+    });
+    setShowEditModal(true);
+  };
+
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
@@ -140,7 +156,15 @@ export function MyDetailsContent({
             <User className="w-4 h-4 text-[#ADFF00]" />
             <span className="text-xs font-bold text-gray-200 uppercase tracking-wider">My Details</span>
           </div>
-          <div className="w-10 h-10" />
+          <button
+            type="button"
+            onClick={openEditModal}
+            className="h-10 px-3.5 rounded-full bg-[#121E12] border border-[#1A2619] hover:border-[#ADFF00]/40 hover:bg-[#ADFF00]/10 text-gray-300 hover:text-[#ADFF00] flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+            aria-label="Edit Profile Details"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-[#ADFF00]" />
+            <span>Edit</span>
+          </button>
         </div>
 
         {/* Physical Body Metrics Grid */}
@@ -155,13 +179,24 @@ export function MyDetailsContent({
               <Scale className="w-4 h-4 text-[#ADFF00]" />
               <span>Physical Baseline</span>
             </h2>
+            <button
+              type="button"
+              onClick={openEditModal}
+              className="text-[11px] font-bold text-[#ADFF00] hover:text-[#bfff33] flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <Edit3 className="w-3 h-3" />
+              <span>Update</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             {/* Weight Card */}
-            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex flex-col justify-between">
+            <div 
+              onClick={openEditModal}
+              className="bg-[#121E12] border border-[#1A2619] hover:border-[#ADFF00]/40 p-4 rounded-2xl flex flex-col justify-between cursor-pointer transition-all group"
+            >
               <div className="flex justify-between items-start mb-2">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Weight</span>
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider group-hover:text-white transition-colors">Weight</span>
                 <Scale className="w-4 h-4 text-[#ADFF00]" />
               </div>
               <div>
@@ -175,9 +210,12 @@ export function MyDetailsContent({
             </div>
 
             {/* Height Card */}
-            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex flex-col justify-between">
+            <div 
+              onClick={openEditModal}
+              className="bg-[#121E12] border border-[#1A2619] hover:border-[#ADFF00]/40 p-4 rounded-2xl flex flex-col justify-between cursor-pointer transition-all group"
+            >
               <div className="flex justify-between items-start mb-2">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Height & BMI</span>
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider group-hover:text-white transition-colors">Height & BMI</span>
                 <Ruler className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
@@ -193,12 +231,19 @@ export function MyDetailsContent({
             </div>
 
             {/* Measurements Grid */}
-            <div className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex flex-col justify-between col-span-2">
+            <div 
+              onClick={openEditModal}
+              className="bg-[#121E12] border border-[#1A2619] hover:border-[#ADFF00]/40 p-4 rounded-2xl flex flex-col justify-between col-span-2 cursor-pointer transition-all group"
+            >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Ruler className="w-4 h-4 text-[#ADFF00]" />
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Body Measurements</span>
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider group-hover:text-white transition-colors">Body Measurements</span>
                 </div>
+                <span className="text-[10px] font-bold text-[#ADFF00]/80 group-hover:text-[#ADFF00] flex items-center gap-1 transition-colors">
+                  <Edit3 className="w-2.5 h-2.5" />
+                  <span>{fitnessProfile?.waist_cm || fitnessProfile?.chest_cm ? "Edit" : "Tap to add"}</span>
+                </span>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 <div className="bg-[#0A1108] p-2 rounded-xl border border-[#1A2619] text-center">
@@ -292,7 +337,13 @@ export function MyDetailsContent({
                   <span className="font-bold uppercase tracking-wider text-[10px]">Diet Profile</span>
                 </div>
                 <p className="text-xs font-bold text-gray-200">{fitnessProfile?.food_type || "Not specified"}</p>
-                <p className="text-[11px] text-gray-500 font-medium">{fitnessProfile?.meals_per_day || "Meal frequency not specified"}</p>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  {fitnessProfile?.meals_per_day 
+                    ? (String(fitnessProfile.meals_per_day).toLowerCase().includes("meal") 
+                        ? fitnessProfile.meals_per_day 
+                        : `${fitnessProfile.meals_per_day} meals / day`)
+                    : "Meal frequency not specified"}
+                </p>
               </div>
 
               <div className="bg-[#0A1108] p-3 rounded-2xl border border-[#1A2619]">
@@ -300,8 +351,12 @@ export function MyDetailsContent({
                   <Activity className="w-3.5 h-3.5 text-cyan-400" />
                   <span className="font-bold uppercase tracking-wider text-[10px]">Active Plan</span>
                 </div>
-                <p className="text-xs font-bold text-gray-200 truncate">{activePlan?.name || "No active plan"}</p>
-                <p className={`text-[11px] font-medium ${activePlan ? "text-[#ADFF00]" : "text-gray-500"}`}>Status: {activePlan ? "Active" : "Not created"}</p>
+                <p className="text-xs font-bold text-gray-200 line-clamp-1 leading-snug" title={activePlan?.name || "No active plan"}>
+                  {activePlan?.name || "No active plan"}
+                </p>
+                <p className={`text-[11px] font-medium mt-0.5 ${activePlan ? "text-[#ADFF00]" : "text-gray-500"}`}>
+                  Status: {activePlan ? "Active" : "Not created"}
+                </p>
               </div>
             </div>
           </div>

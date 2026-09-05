@@ -149,6 +149,25 @@ export async function updateFitnessProfilePartialAction(payload: Record<string, 
     return { success: false, error: "Failed to update details" };
   }
 
+  // Also log to fitness_os_body_metrics if weight or tape measurements updated
+  if (updates.weight || updates.waist_cm || updates.chest_cm || updates.arm_cm || updates.thigh_cm) {
+    const metricRecord: Record<string, any> = {
+      user_id: user.id,
+      recorded_at: new Date().toISOString()
+    };
+    if (updates.weight) metricRecord.weight = updates.weight;
+    if (updates.waist_cm) metricRecord.waist = updates.waist_cm;
+    if (updates.chest_cm) metricRecord.chest = updates.chest_cm;
+    if (updates.arm_cm) metricRecord.left_arm = updates.arm_cm;
+    if (updates.thigh_cm) metricRecord.left_thigh = updates.thigh_cm;
+
+    try {
+      await supabase.from("fitness_os_body_metrics").insert(metricRecord);
+    } catch (e) {
+      console.warn("Could not insert body metrics log:", e);
+    }
+  }
+
   // Also update the main profile's display_name if a name was updated
   if (updates.name) {
     await supabase
@@ -159,6 +178,9 @@ export async function updateFitnessProfilePartialAction(payload: Record<string, 
 
   revalidatePath("/");
   revalidatePath("/profile");
+  revalidatePath("/profile/details");
+  revalidatePath("/progress");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
