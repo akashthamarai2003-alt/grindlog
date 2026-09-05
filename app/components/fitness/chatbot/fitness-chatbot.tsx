@@ -27,7 +27,10 @@ export function FitnessChatbot() {
 
   const fetchLimitInfo = async () => {
     try {
-      const res = await fetch("/api/fitness-ai/chat");
+      const res = await fetch(`/api/fitness-ai/chat?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         if (typeof data.limit === "number") {

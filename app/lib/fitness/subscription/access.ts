@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { createClient } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { FitnessSubscription, FitnessFeature, FitnessPlanConfig } from "./types";
 import { FITNESS_PLANS } from "./plans";
 
@@ -7,12 +7,14 @@ import { FITNESS_PLANS } from "./plans";
  * Gets the raw subscription record for a user (memoized per request).
  */
 export const getFitnessSubscription = cache(async (userId: string): Promise<FitnessSubscription | null> => {
-  const supabase = await createClient();
-  const { data } = await supabase
+  const admin = createAdminClient();
+  const { data } = await admin
     .from("fitness_os_subscriptions")
     .select("*")
     .eq("user_id", userId)
-    .single();
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
     
   return data || null;
 });
@@ -29,8 +31,8 @@ export const getFitnessPlan = cache(async (userId: string): Promise<FitnessPlanC
   }
 
   // Fallback to fitness_os_profiles in case user upgraded via direct payment or legacy fields
-  const supabase = await createClient();
-  const { data: fitnessProfile } = await supabase
+  const admin = createAdminClient();
+  const { data: fitnessProfile } = await admin
     .from("fitness_os_profiles")
     .select("fitness_is_premium, fitness_premium_level, fitness_premium_expires_at")
     .eq("user_id", userId)
@@ -44,7 +46,7 @@ export const getFitnessPlan = cache(async (userId: string): Promise<FitnessPlanC
   }
 
   // Fallback to main profile
-  const { data: mainProfile } = await supabase
+  const { data: mainProfile } = await admin
     .from("profiles")
     .select("is_premium, premium_level, premium_expires_at")
     .eq("id", userId)

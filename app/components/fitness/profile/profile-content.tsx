@@ -93,7 +93,10 @@ export function ProfileContent({
 
     const fetchLatestLimit = async () => {
       try {
-        const res = await fetch("/api/fitness-ai/chat");
+        const res = await fetch(`/api/fitness-ai/chat?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         if (res.ok) {
           const data = await res.json();
           if (typeof data.limit === "number") {
@@ -104,6 +107,9 @@ export function ProfileContent({
         // ignore
       }
     };
+
+    // Immediately fetch live limit from database on mount
+    fetchLatestLimit();
 
     window.addEventListener("fitness_ai_usage_updated", handleUsageUpdated);
     window.addEventListener("focus", fetchLatestLimit);

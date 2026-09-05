@@ -45,6 +45,14 @@ export function CoachChat() {
         warnings: data.warnings
       });
 
+      if (typeof data.remaining === "number") {
+        window.dispatchEvent(
+          new CustomEvent("fitness_ai_usage_updated", {
+            detail: { remaining: data.remaining, limit: data.limit, used: data.used },
+          }),
+        );
+      }
+
       setMessages(prev => [...prev, { role: "assistant", content: aiContent }]);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");

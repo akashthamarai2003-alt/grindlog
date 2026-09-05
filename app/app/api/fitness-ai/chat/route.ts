@@ -4,6 +4,9 @@ import { AIInsightService } from "@/lib/services/analytics/ai-insight-service";
 import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-ai-limit";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const supabase = await createServerSupabase();
@@ -14,7 +17,13 @@ export async function GET() {
     }
 
     const limitCheck = await checkFitnessAILimit(supabase, user.id);
-    return NextResponse.json(limitCheck);
+    return NextResponse.json(limitCheck, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to check limit" }, { status: 500 });
   }

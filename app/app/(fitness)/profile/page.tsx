@@ -4,6 +4,9 @@ import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/ser
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function FitnessProfilePage() {
   const supabase = await createServerSupabase();
   const { data: { user } } = await getCachedUser();
