@@ -278,12 +278,8 @@ export function TodaySummaryCard({
           </div>
         </div>
 
-        {/* Dynamic Metric Tiles Grid - Immune to text wrapping or overflow */}
-        <div className={`grid gap-3 relative z-10 ${
-          viewMode === "core" 
-            ? "grid-cols-2" 
-            : "grid-cols-2 sm:grid-cols-3"
-        }`}>
+        {/* Dynamic Metric Tiles Grid - 2 columns ensures full width & zero truncation */}
+        <div className="grid grid-cols-2 gap-3 relative z-10">
           {displayedMetrics.map((item) => (
             <div
               key={item.id}
@@ -292,34 +288,34 @@ export function TodaySummaryCard({
               {/* Subtle hover background sheen */}
               <div className="absolute inset-0 bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-              {/* Tier 1: Header (Icon + Label + Percentage Pill) */}
-              <div className="flex items-center justify-between gap-1.5 mb-2.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg} ${item.iconColor}`}>
-                    {item.icon}
-                  </div>
-                  <span className="text-[11px] font-black text-white/70 uppercase tracking-wider truncate">
-                    {item.label}
-                  </span>
+              {/* Tier 1: Icon on left, Percentage badge on right */}
+              <div className="flex items-center justify-between mb-2">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg} ${item.iconColor}`}>
+                  {item.icon}
                 </div>
 
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-0.5 ${item.badgeBg} ${item.badgeColor}`}>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1 ${item.badgeBg} ${item.badgeColor}`}>
                   {item.isCompleted && <Check size={10} className="stroke-[3]" />}
                   <span>{item.percent}%</span>
                 </span>
               </div>
 
-              {/* Tier 2: Dedicated Value Row - Full width prevents any text wrapping */}
-              <div className="flex items-baseline justify-between gap-1 mb-2.5">
-                <span className="text-lg sm:text-xl font-black text-white tracking-tight leading-none whitespace-nowrap">
+              {/* Tier 2: Category Title - Dedicated full-width line, never truncated */}
+              <p className="text-[11px] font-black text-white/75 uppercase tracking-wider mb-1.5">
+                {item.label}
+              </p>
+
+              {/* Tier 3: Value Row - Natural baseline alignment with clear unit */}
+              <div className="flex items-baseline gap-1 mb-2.5">
+                <span className="text-xl font-black text-white tracking-tight leading-none">
                   {item.consumed.toLocaleString()}
                 </span>
-                <span className="text-[11px] font-bold text-white/40 leading-none whitespace-nowrap">
+                <span className="text-[11px] font-bold text-white/40 leading-none">
                   / {item.target.toLocaleString()}{item.unit ? ` ${item.unit}` : ""}
                 </span>
               </div>
 
-              {/* Tier 3: Smooth Progress Bar Track */}
+              {/* Tier 4: Smooth Progress Bar Track */}
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-0">
                 <div
                   className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${item.progressGradient}`}
@@ -334,10 +330,10 @@ export function TodaySummaryCard({
         <div className="mt-3.5 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] text-white/40 relative z-10">
           <span className="flex items-center gap-1">
             <CheckCircle2 size={12} className="text-[#ADFF00]" />
-            <span>Updated live from your daily food & water logs</span>
+            <span>Live synced with food & water logs</span>
           </span>
-          <span className="text-white/30 hidden sm:inline">
-            Zero-overlap responsive architecture
+          <span className="text-white/40 font-medium">
+            Auto-resets at midnight
           </span>
         </div>
       </div>
