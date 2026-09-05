@@ -379,19 +379,21 @@ export function RemindersClient({
 
         {/* SECTION 1: Automated Water Reminder Schedule Card */}
         <div className="bg-[#081F24] border border-[#00D2FF]/30 hover:border-[#00D2FF]/50 rounded-2xl p-4 sm:p-5 transition-all shadow-[0_0_24px_rgba(0,210,255,0.08)]">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-2.5">
             <div 
               onClick={() => setIsWaterModalOpen(true)}
-              className="flex items-center gap-3.5 cursor-pointer flex-1 min-w-0"
+              className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
             >
-              <div className="w-11 h-11 rounded-xl bg-[#00D2FF]/15 border border-[#00D2FF]/30 flex items-center justify-center shrink-0 text-[#00D2FF]">
+              <div className="w-10 h-10 rounded-xl bg-[#00D2FF]/15 border border-[#00D2FF]/30 flex items-center justify-center shrink-0 text-[#00D2FF]">
                 <Droplets className="w-5 h-5 text-[#00D2FF]" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-white font-bold text-sm tracking-tight">Water reminder schedule</h4>
+                  <h4 className="text-white font-extrabold text-sm tracking-tight truncate">
+                    Water reminder schedule
+                  </h4>
                   {activeWaterCount > 0 ? (
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#00D2FF]/20 text-[#00D2FF] px-2 py-0.5 rounded-full border border-[#00D2FF]/30">
+                    <span className="text-[10px] font-black tracking-wider bg-[#00D2FF]/20 text-[#00D2FF] px-2 py-0.5 rounded-full border border-[#00D2FF]/30 shrink-0">
                       {activeWaterCount} Active
                     </span>
                   ) : (
@@ -407,7 +409,7 @@ export function RemindersClient({
             <button
               type="button"
               onClick={() => setIsWaterModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg bg-[#00D2FF]/15 hover:bg-[#00D2FF]/25 active:scale-95 text-[#00D2FF] font-bold text-xs transition-all border border-[#00D2FF]/30 shrink-0 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-[#00D2FF]/15 hover:bg-[#00D2FF]/25 active:scale-95 text-[#00D2FF] font-black text-xs transition-all border border-[#00D2FF]/30 shrink-0 cursor-pointer"
             >
               {activeWaterCount > 0 ? "Edit" : "Set"}
             </button>
@@ -416,19 +418,24 @@ export function RemindersClient({
           {/* Horizontal Active Times Pill Preview */}
           {activeWaterCount > 0 && (
             <div className="mt-4 pt-3.5 border-t border-[#00D2FF]/15">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-2.5 px-0.5">
                 <span className="text-[11px] font-semibold text-gray-400">Scheduled Check-ins</span>
-                <span className="text-[11px] font-bold text-[#00D2FF]">{activeWaterCount} times daily</span>
+                <span className="text-[11px] font-black text-[#00D2FF]">{activeWaterCount} times daily</span>
               </div>
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-white/10">
-                {waterReminders.map((wr) => (
-                  <span
-                    key={wr.id}
-                    className="text-[11px] font-extrabold px-2.5 py-1 rounded-lg bg-[#00D2FF]/10 text-[#00D2FF] border border-[#00D2FF]/20 shrink-0"
-                  >
-                    {formatTo12Hour(wr.time)}
-                  </span>
-                ))}
+              
+              <div className="relative">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {waterReminders.map((wr) => (
+                    <span
+                      key={wr.id}
+                      className="text-[11px] font-black px-3 py-1.5 rounded-xl bg-[#00D2FF]/10 text-[#00D2FF] border border-[#00D2FF]/25 shrink-0 shadow-sm"
+                    >
+                      {formatTo12Hour(wr.time)}
+                    </span>
+                  ))}
+                </div>
+                {/* Subtle Edge Fade to hint at horizontal swipe */}
+                <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-6 bg-gradient-to-l from-[#081F24] to-transparent" />
               </div>
             </div>
           )}
