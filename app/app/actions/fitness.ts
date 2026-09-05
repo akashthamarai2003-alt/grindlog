@@ -818,3 +818,30 @@ export async function updateRemindersAction(enabled: boolean, reminders: any[]) 
   
   return { success: true };
 }
+
+export async function toggleRemindersEnabledAction(enabled: boolean) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const { error } = await supabase
+    .from("fitness_os_profiles")
+    .update({
+      reminders_enabled: enabled,
+    })
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error toggling reminders:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/reminders");
+  revalidatePath("/profile");
+  
+  return { success: true };
+}
+

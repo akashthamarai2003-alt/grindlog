@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/services/supabase/client";
-import { updateFitnessProfilePartialAction } from "@/app/actions/fitness";
+import { updateFitnessProfilePartialAction, toggleRemindersEnabledAction } from "@/app/actions/fitness";
+import { requestFirebaseNotificationPermission } from "@/lib/firebase/client";
 import { 
   ArrowLeft, 
   User, 
@@ -30,6 +31,7 @@ import {
   Edit3,
   Clock,
   Bell,
+  BellOff,
   Loader2
 } from "lucide-react";
 import { toast } from "sonner";
@@ -66,6 +68,50 @@ export function ProfileContent({
   const [fitnessProfile, setFitnessProfile] = useState(initialFitnessProfile);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(
+    initialFitnessProfile?.reminders_enabled ?? true
+  );
+  const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
+
+  const handleToggleNotifications = async () => {
+    const next = !notificationsEnabled;
+    setNotificationsEnabled(next);
+    setIsTogglingNotifications(true);
+
+    // If turning ON, trigger push permission request if not granted yet
+    if (next && typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        try {
+          const token = await requestFirebaseNotificationPermission();
+          if (token) {
+            const oldToken = localStorage.getItem("fcm_token");
+            const res = await fetch("/api/fcm/register", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token, oldToken }),
+            });
+            if (res.ok) {
+              localStorage.setItem("fcm_token", token);
+              localStorage.setItem("fcm_registered", "true");
+            }
+          }
+        } catch (err) {
+          console.warn("Could not register push token during toggle:", err);
+        }
+      }
+    }
+
+    const res = await toggleRemindersEnabledAction(next);
+    setIsTogglingNotifications(false);
+
+    if (res.success) {
+      toast.success(next ? "Notifications turned ON 🔔" : "Notifications turned OFF 🔕");
+      setFitnessProfile((prev: any) => ({ ...prev, reminders_enabled: next }));
+    } else {
+      setNotificationsEnabled(!next);
+      toast.error(res.error || "Failed to update notification setting.");
+    }
+  };
 
   // Edit Modal Form State
   const [formData, setFormData] = useState({
@@ -426,6 +472,48 @@ export function ProfileContent({
               </div>
               <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
             </Link>
+
+            {/* Notification ON/OFF Option */}
+            <div className="p-4 flex items-center justify-between hover:bg-white/[0.03] transition-colors border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${notificationsEnabled ? 'bg-[#1A2619] text-[#ADFF00]' : 'bg-[#1C201A] text-gray-500'}`}>
+                  {notificationsEnabled ? (
+                    <Bell className="w-4.5 h-4.5" />
+                  ) : (
+                    <BellOff className="w-4.5 h-4.5" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-white">Notifications</p>
+                    <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${
+                      notificationsEnabled 
+                        ? 'bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30' 
+                        : 'bg-gray-800 text-gray-400 border border-gray-700'
+                    }`}>
+                      {notificationsEnabled ? "ON" : "OFF"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400">Workout and hydration push alerts</p>
+                </div>
+              </div>
+              
+              <button
+                type="button"
+                onClick={handleToggleNotifications}
+                disabled={isTogglingNotifications}
+                className={`w-12 h-7 rounded-full flex items-center transition-colors px-1 cursor-pointer ${
+                  notificationsEnabled ? "bg-[#ADFF00]" : "bg-gray-700"
+                }`}
+                title={notificationsEnabled ? "Turn notifications OFF" : "Turn notifications ON"}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform shadow-md ${
+                    notificationsEnabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
 
             {/* Set Reminders */}
             <Link 
