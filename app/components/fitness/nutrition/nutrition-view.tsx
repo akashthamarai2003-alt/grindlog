@@ -671,6 +671,26 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
   ));
   const hasLoggedFoods = loggedFoods.length > 0;
 
+  // Safe numerical calculations resistant to overflow/wrapping
+  const targetCals = Number(targets.calories) || 2000;
+  const targetPro = Number(targets.protein) || 130;
+  const targetCarbs = Number(targets.carbs) || 225;
+  const targetFat = Number(targets.fat) || 55;
+
+  const consumedCals = Math.round(Number(consumed.calories) || 0);
+  const consumedPro = Math.round(Number(consumed.protein) || 0);
+  const consumedCarbs = Math.round(Number(consumed.carbs) || 0);
+  const consumedFat = Math.round(Number(consumed.fat) || 0);
+
+  const isCalorieSurplus = consumedCals > targetCals;
+  const surplusCals = consumedCals - targetCals;
+  const calsRemaining = Math.max(0, targetCals - consumedCals);
+
+  const proPercent = Math.min(100, Math.round((consumedPro / (targetPro || 1)) * 100));
+  const carbsPercent = Math.min(100, Math.round((consumedCarbs / (targetCarbs || 1)) * 100));
+  const fatPercent = Math.min(100, Math.round((consumedFat / (targetFat || 1)) * 100));
+  const calsPercent = Math.min(100, Math.round((consumedCals / (targetCals || 1)) * 100));
+
   const getMealIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case 'breakfast': return <Coffee size={20} />;
@@ -695,90 +715,131 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
   return (
     <>
       <div className="space-y-4">
-        {/* Today's Nutrition card */}
+        {/* Master Nutrition Card: Zero-Overlap, Dynamic Scaling */}
         <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-5 relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#ADFF00]/5 blur-[40px] rounded-full pointer-events-none" />
           
-          <div className="flex justify-between items-end mb-6 relative z-10">
-            <div>
-              <p className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase mb-1">Calories Remaining</p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black text-white tracking-tighter">{remaining.calories}</span>
-                <span className="text-sm font-bold text-white/50">kcal</span>
-              </div>
+          {/* Header Row: Title & Action Controls */}
+          <div className="flex justify-between items-center mb-5 relative z-10">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse" />
+              <p className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">Daily Nutrition</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs font-bold text-white/60">{consumed.calories} / {targets.calories} consumed</p>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black tracking-widest text-white/50 uppercase bg-black/40 px-2.5 py-1 rounded-full border border-white/5">
+                Score: <span className={nutrition_score >= 80 ? "text-[#ADFF00]" : "text-white"}>{nutrition_score}</span>
+              </span>
+              <button 
+                type="button"
+                onClick={openTargetsModal} 
+                className="text-[10px] font-bold text-black bg-[#ADFF00] hover:bg-[#ADFF00]/90 px-2.5 py-1 rounded-full flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-[0_0_10px_rgba(173,255,0,0.2)]"
+              >
+                <Edit3 size={11} /> Targets
+              </button>
             </div>
           </div>
 
-          <div className="h-3 w-full bg-black/40 rounded-full mb-6 overflow-hidden relative z-10 p-0.5">
-            <div className="h-full bg-gradient-to-r from-[#ADFF00] to-[#88cc00] rounded-full relative" style={{ width: `${progress.calories_percent}%` }}>
+          {/* Hero Calorie Section: Resilient against any number length */}
+          <div className="flex flex-wrap justify-between items-end gap-2 mb-4 relative z-10">
+            <div>
+              <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
+                {isCalorieSurplus ? "Calorie Surplus" : "Calories Remaining"}
+              </p>
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-4xl font-black tracking-tighter ${isCalorieSurplus ? "text-amber-400" : "text-white"}`}>
+                  {isCalorieSurplus ? `+${surplusCals}` : calsRemaining}
+                </span>
+                <span className="text-sm font-bold text-white/50">
+                  {isCalorieSurplus ? "kcal over" : "kcal left"}
+                </span>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="inline-block text-[11px] font-bold text-white/70 bg-black/40 px-3 py-1.5 rounded-full border border-white/5 whitespace-nowrap">
+                {consumedCals} <span className="text-white/40">/ {targetCals} kcal</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Calorie Progress Bar */}
+          <div className="h-3 w-full bg-black/40 rounded-full mb-5 overflow-hidden relative z-10 p-0.5">
+            <div 
+              className={`h-full rounded-full relative transition-all duration-500 ${
+                isCalorieSurplus 
+                  ? "bg-gradient-to-r from-amber-400 to-rose-500" 
+                  : "bg-gradient-to-r from-[#ADFF00] to-[#88cc00]"
+              }`} 
+              style={{ width: `${Math.min(100, calsPercent)}%` }}
+            >
               <div className="absolute inset-0 bg-white/20 w-full rounded-full" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 relative z-10">
-            <div className="bg-[#0A1108] rounded-2xl p-3 border border-white/5">
-              <div className="flex items-center justify-between mb-2">
+          {/* 3 Macro Cards: Zero-Overlap Vertical Layout */}
+          <div className="grid grid-cols-3 gap-2.5 relative z-10">
+            {/* Protein Card */}
+            <div className="bg-[#0A1108] rounded-2xl p-3 border border-white/5 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">Protein</span>
-                <span className="text-[10px] font-bold text-[#ADFF00]">{consumed.protein}/{targets.protein}g</span>
+                <span className="text-[9px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-1.5 py-0.5 rounded-md">
+                  {proPercent}%
+                </span>
+              </div>
+              <div className="flex items-baseline gap-0.5 mb-2">
+                <span className="text-base font-black text-white tracking-tight leading-none">
+                  {consumedPro}
+                </span>
+                <span className="text-[11px] font-bold text-white/40 leading-none">
+                  /{targetPro}g
+                </span>
               </div>
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-[#ADFF00] rounded-full" style={{ width: `${progress.protein_percent}%` }} />
+                <div className="h-full bg-[#ADFF00] rounded-full transition-all duration-300" style={{ width: `${proPercent}%` }} />
               </div>
             </div>
-            <div className="bg-[#0A1108] rounded-2xl p-3 border border-white/5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">Carbs</span>
-                <span className="text-[10px] font-bold text-blue-400">{consumed.carbs}/{targets.carbs}g</span>
-              </div>
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-400 rounded-full" style={{ width: `${Math.min(100, (consumed.carbs/targets.carbs)*100)}%` }} />
-              </div>
-            </div>
-            <div className="bg-[#0A1108] rounded-2xl p-3 border border-white/5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">Fat</span>
-                <span className="text-[10px] font-bold text-orange-400">{consumed.fat}/{targets.fat}g</span>
-              </div>
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-400 rounded-full" style={{ width: `${Math.min(100, (consumed.fat/targets.fat)*100)}%` }} />
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Daily Target card */}
-        <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-5">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-[11px] font-black tracking-widest text-white uppercase">Your Daily Targets</h3>
-              <button 
-                onClick={openTargetsModal} 
-                className="text-[10px] font-bold text-[#ADFF00] hover:underline flex items-center gap-1"
-              >
-                <Edit3 size={12} /> Edit
-              </button>
+            {/* Carbs Card */}
+            <div className="bg-[#0A1108] rounded-2xl p-3 border border-white/5 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">Carbs</span>
+                <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded-md">
+                  {carbsPercent}%
+                </span>
+              </div>
+              <div className="flex items-baseline gap-0.5 mb-2">
+                <span className="text-base font-black text-white tracking-tight leading-none">
+                  {consumedCarbs}
+                </span>
+                <span className="text-[11px] font-bold text-white/40 leading-none">
+                  /{targetCarbs}g
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-400 rounded-full transition-all duration-300" style={{ width: `${carbsPercent}%` }} />
+              </div>
             </div>
-            <span className="text-[10px] font-black tracking-widest text-white/40 uppercase">Score: <span className={nutrition_score > 80 ? "text-[#ADFF00]" : "text-white"}>{nutrition_score}</span></span>
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="flex flex-col items-center justify-center bg-black/30 rounded-xl py-3 border border-white/5">
-              <span className="text-[10px] text-white/50 font-bold uppercase mb-1">Cals</span>
-              <span className="text-sm font-black text-white">{targets.calories}</span>
-            </div>
-            <div className="flex flex-col items-center justify-center bg-black/30 rounded-xl py-3 border border-white/5">
-              <span className="text-[10px] text-white/50 font-bold uppercase mb-1">Pro</span>
-              <span className="text-sm font-black text-[#ADFF00]">{targets.protein}g</span>
-            </div>
-            <div className="flex flex-col items-center justify-center bg-black/30 rounded-xl py-3 border border-white/5">
-              <span className="text-[10px] text-white/50 font-bold uppercase mb-1">Carb</span>
-              <span className="text-sm font-black text-blue-400">{targets.carbs}g</span>
-            </div>
-            <div className="flex flex-col items-center justify-center bg-black/30 rounded-xl py-3 border border-white/5">
-              <span className="text-[10px] text-white/50 font-bold uppercase mb-1">Fat</span>
-              <span className="text-sm font-black text-orange-400">{targets.fat}g</span>
+
+            {/* Fat Card */}
+            <div className="bg-[#0A1108] rounded-2xl p-3 border border-white/5 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">Fat</span>
+                <span className="text-[9px] font-bold text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded-md">
+                  {fatPercent}%
+                </span>
+              </div>
+              <div className="flex items-baseline gap-0.5 mb-2">
+                <span className="text-base font-black text-white tracking-tight leading-none">
+                  {consumedFat}
+                </span>
+                <span className="text-[11px] font-bold text-white/40 leading-none">
+                  /{targetFat}g
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-orange-400 rounded-full transition-all duration-300" style={{ width: `${fatPercent}%` }} />
+              </div>
             </div>
           </div>
         </div>
