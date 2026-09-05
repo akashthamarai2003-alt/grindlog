@@ -77,18 +77,16 @@ export async function GET(req: Request) {
       .from("fcm_tokens")
       .select("user_id, token");
 
-    if (tokensError || !tokensData) {
-      throw new Error("Failed to fetch FCM tokens");
-    }
-
-    if (tokensData.length === 0) {
-      return NextResponse.json({ message: "No devices registered for notifications." });
+    if (tokensError) {
+      throw new Error("Failed to fetch FCM tokens: " + tokensError.message);
     }
 
     const usersTokens = new Map<string, string[]>();
-    for (const row of tokensData) {
-      if (!usersTokens.has(row.user_id)) usersTokens.set(row.user_id, []);
-      usersTokens.get(row.user_id)!.push(row.token);
+    if (tokensData && tokensData.length > 0) {
+      for (const row of tokensData) {
+        if (!usersTokens.has(row.user_id)) usersTokens.set(row.user_id, []);
+        usersTokens.get(row.user_id)!.push(row.token);
+      }
     }
 
     const istTime = getIstDate();
@@ -139,17 +137,15 @@ export async function GET(req: Request) {
               .maybeSingle();
 
             if (workout && workout.status !== "completed") {
-              const userTokens = usersTokens.get(profile.user_id);
-              if (userTokens) {
-                notificationsToSend.push({
-                  userId: profile.user_id,
-                  tokens: userTokens,
-                  title: `Time to sweat! 🏋️‍♂️`,
-                  body: `Your daily workout is scheduled for ${profile.workout_time}. Let's get to work!`,
-                  tag: `workout:${profile.user_id}:${istDateKey}`,
-                  url: "/workout",
-                });
-              }
+              const userTokens = usersTokens.get(profile.user_id) || [];
+              notificationsToSend.push({
+                userId: profile.user_id,
+                tokens: userTokens,
+                title: `Time to sweat! 🏋️‍♂️`,
+                body: `Your daily workout is scheduled for ${profile.workout_time}. Let's get to work!`,
+                tag: `workout:${profile.user_id}:${istDateKey}`,
+                url: "/workout",
+              });
             }
           }
         }
@@ -170,22 +166,21 @@ export async function GET(req: Request) {
 
             // Check if reminder time is within the last 15 minutes
             if (timeDiff >= 0 && timeDiff < 15) {
-              const userTokens = usersTokens.get(profile.user_id);
-              if (userTokens) {
-                const isWater = reminder.type === "Hydration" || reminder.type === "Water";
-                notificationsToSend.push({
-                  userId: profile.user_id,
-                  tokens: userTokens,
-                  title: isWater 
-                    ? "Time to hydrate! 💧" 
-                    : `Time for ${reminder.type}! ${getEmojiForType(reminder.type)}`,
-                  body: isWater 
-                    ? "Drink a glass of water to stay hydrated and hit your daily goal!" 
-                    : `Your ${reminder.type} is scheduled for ${reminder.time}. Stay on track!`,
-                  tag: `custom_reminder:${profile.user_id}:${reminder.type}:${istDateKey}`,
-                  url: isWater ? "/nutrition" : reminder.type === "Workout" ? "/workout" : "/",
-                });
-              }
+              const userTokens = usersTokens.get(profile.user_id) || [];
+              const isWater = reminder.type === "Hydration" || reminder.type === "Water";
+              const reminderTimeFormatted = reminder.time;
+              notificationsToSend.push({
+                userId: profile.user_id,
+                tokens: userTokens,
+                title: isWater 
+                  ? "Time to hydrate! 💧" 
+                  : `Time for ${reminder.type}! ${getEmojiForType(reminder.type)}`,
+                body: isWater 
+                  ? `Drink a glass of water for your ${reminderTimeFormatted} hydration goal!` 
+                  : `Your ${reminder.type} is scheduled for ${reminderTimeFormatted}. Stay on track!`,
+                tag: `custom_reminder:${profile.user_id}:${reminder.type}:${reminder.time}:${istDateKey}`,
+                url: isWater ? "/nutrition" : reminder.type === "Workout" ? "/workout" : "/",
+              });
             }
           }
         }
@@ -281,6 +276,9 @@ export async function GET(req: Request) {
     return NextResponse.json({
       success: true,
       type,
+      evaluated: notificationsToSend.length,
+      pending: pendingNotifications.length,
+      registeredDevices: tokensData?.length || 0,
       sent: successCount,
       failed: failureCount,
       skippedDuplicates: skippedDuplicateCount,

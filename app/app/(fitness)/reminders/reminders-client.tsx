@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft, Trash2, Plus, Loader2, Clock, ChevronRight } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Loader2, Clock, ChevronRight, Bell, BellRing, BellOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateRemindersAction } from "@/app/actions/fitness";
+import { requestFirebaseNotificationPermission } from "@/lib/firebase/client";
 import { ReminderTypeSheet } from "@/components/fitness/reminders/reminder-type-sheet";
 import {
   WaterReminderSheet,
@@ -38,6 +39,48 @@ export function RemindersClient({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isWaterModalOpen, setIsWaterModalOpen] = useState(false);
   const [waterSchedule, setWaterSchedule] = useState<WaterScheduleConfig | null>(null);
+  const [devicePermission, setDevicePermission] = useState<NotificationPermission | "default">("default");
+  const [isRegisteringDevice, setIsRegisteringDevice] = useState(false);
+
+  // Check device notification permission
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setDevicePermission(Notification.permission);
+    }
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    setIsRegisteringDevice(true);
+    try {
+      const token = await requestFirebaseNotificationPermission();
+      if (token) {
+        const oldToken = localStorage.getItem("fcm_token");
+        const res = await fetch("/api/fcm/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, oldToken }),
+        });
+        if (res.ok) {
+          localStorage.setItem("fcm_token", token);
+          localStorage.setItem("fcm_registered", "true");
+          setDevicePermission("granted");
+          toast.success("Device registered for push notifications! 🔔");
+        } else {
+          toast.error("Failed to register device token.");
+        }
+      } else {
+        if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+          setDevicePermission("denied");
+          toast.error("Notifications blocked in browser settings.");
+        }
+      }
+    } catch (err: any) {
+      console.error("Failed to request notification permission:", err);
+      toast.error(err.message || "Failed to enable notifications.");
+    } finally {
+      setIsRegisteringDevice(false);
+    }
+  };
 
   // Initialize or detect water schedule on mount
   useEffect(() => {
@@ -191,12 +234,56 @@ export function RemindersClient({
       </div>
 
       <div className="px-5 pb-32 max-w-md mx-auto">
+        {/* Push Notification Device Permission Banner */}
+        {devicePermission !== "granted" && (
+          <div className="bg-[#182313] border border-[#ADFF00]/30 rounded-2xl p-4 mb-4 flex items-start gap-3.5 shadow-[0_0_20px_rgba(173,255,0,0.06)]">
+            <div className="w-10 h-10 rounded-xl bg-[#ADFF00]/15 border border-[#ADFF00]/30 flex items-center justify-center shrink-0 text-[#ADFF00]">
+              {devicePermission === "denied" ? <BellOff className="w-5 h-5 text-red-400" /> : <BellRing className="w-5 h-5 text-[#ADFF00]" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-white font-bold text-sm">
+                {devicePermission === "denied" ? "Device Notifications Blocked" : "Enable Device Notifications"}
+              </h4>
+              <p className="text-gray-400 text-xs mt-0.5 leading-relaxed">
+                {devicePermission === "denied" 
+                  ? "Notifications are blocked in your browser. Tap the tune or lock icon in your browser address bar to allow notifications."
+                  : "Allow push notifications so your device receives your workout & water reminder alerts."}
+              </p>
+              {devicePermission !== "denied" && (
+                <button
+                  type="button"
+                  onClick={handleEnableNotifications}
+                  disabled={isRegisteringDevice}
+                  className="mt-3 px-3.5 py-1.5 rounded-lg bg-[#ADFF00] hover:bg-[#9BE600] active:scale-95 text-black font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-[0_0_10px_rgba(173,255,0,0.2)]"
+                >
+                  {isRegisteringDevice && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Allow Notifications
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Main Toggle Card */}
         <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-5 mb-4 flex items-center justify-between">
-          <span className="font-bold text-white text-[15px]">Reminders</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-white text-[15px]">Reminders</span>
+            {devicePermission === "granted" && (
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] px-2 py-0.5 rounded-full border border-[#ADFF00]/30">
+                Push Active
+              </span>
+            )}
+          </div>
           
           <button 
-            onClick={() => setEnabled(!enabled)}
+            type="button"
+            onClick={() => {
+              const next = !enabled;
+              setEnabled(next);
+              if (next && devicePermission === "default") {
+                handleEnableNotifications();
+              }
+            }}
             className={`w-12 h-7 rounded-full flex items-center transition-colors px-1 ${enabled ? 'bg-[#ADFF00]' : 'bg-gray-600'}`}
           >
             <div className={`w-5 h-5 rounded-full bg-white transition-transform ${enabled ? 'translate-x-5' : 'translate-x-0'}`} />
