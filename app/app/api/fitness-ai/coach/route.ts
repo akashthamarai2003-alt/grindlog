@@ -24,7 +24,16 @@ export async function POST(req: NextRequest) {
     // Check rate limit
     const limitCheck = await checkFitnessAILimit(supabase, userId);
     if (!limitCheck.allowed) {
-      return NextResponse.json({ error: "Fitness AI daily limit reached." }, { status: 429 });
+      return NextResponse.json(
+        {
+          error: `Daily AI limit reached (${limitCheck.limit}/${limitCheck.limit} used). Your daily quota resets tomorrow.`,
+          limitReached: true,
+          remaining: 0,
+          limit: limitCheck.limit,
+          used: limitCheck.used,
+        },
+        { status: 429 },
+      );
     }
 
     const body = await req.json();
@@ -94,12 +103,17 @@ export async function POST(req: NextRequest) {
     // Log Usage
     await logFitnessAIUsage(userId, "coach_message", userPrompt, JSON.stringify(validatedData), "fast", 500);
 
+    const updatedCheck = await checkFitnessAILimit(supabase, userId);
+
     return NextResponse.json({
       sessionId: activeSessionId,
       message: validatedData.message,
       tone: validatedData.tone,
       recommendations: validatedData.recommendations,
-      warnings: validatedData.warnings
+      warnings: validatedData.warnings,
+      remaining: updatedCheck.remaining,
+      limit: updatedCheck.limit,
+      used: updatedCheck.used,
     });
 
   } catch (error: any) {

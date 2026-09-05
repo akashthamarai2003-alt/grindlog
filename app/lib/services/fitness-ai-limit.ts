@@ -26,7 +26,7 @@ export async function checkFitnessAILimit(supabase: SupabaseClient, userId: stri
     .from("fitness_os_ai_sessions")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
-    .eq("session_type", "plan_generation")
+    .neq("session_type", "plan_generation_attempt")
     .gte("created_at", startOfDay.toISOString());
 
   if (error) {

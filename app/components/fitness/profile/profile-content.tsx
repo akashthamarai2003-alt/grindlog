@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -60,18 +60,59 @@ export function ProfileContent({
   mainProfile,
   activePlan,
   subscriptionPlan,
-  aiLimitInfo
+  aiLimitInfo: initialAiLimitInfo
 }: ProfileContentProps) {
   const router = useRouter();
   const supabase = createClient();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [fitnessProfile, setFitnessProfile] = useState(initialFitnessProfile);
+  const [aiLimitInfo, setAiLimitInfo] = useState(initialAiLimitInfo);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(
     initialFitnessProfile?.reminders_enabled ?? true
   );
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
+
+  useEffect(() => {
+    setAiLimitInfo(initialAiLimitInfo);
+  }, [initialAiLimitInfo]);
+
+  useEffect(() => {
+    const handleUsageUpdated = (e: any) => {
+      if (e?.detail && typeof e.detail.remaining === "number") {
+        setAiLimitInfo((prev) => ({
+          ...prev,
+          limit: e.detail.limit ?? prev.limit,
+          used: e.detail.used ?? prev.used,
+          remaining: e.detail.remaining,
+          allowed: e.detail.remaining > 0,
+        }));
+      }
+    };
+
+    const fetchLatestLimit = async () => {
+      try {
+        const res = await fetch("/api/fitness-ai/chat");
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.limit === "number") {
+            setAiLimitInfo(data);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener("fitness_ai_usage_updated", handleUsageUpdated);
+    window.addEventListener("focus", fetchLatestLimit);
+
+    return () => {
+      window.removeEventListener("fitness_ai_usage_updated", handleUsageUpdated);
+      window.removeEventListener("focus", fetchLatestLimit);
+    };
+  }, []);
 
   const handleToggleNotifications = async () => {
     const next = !notificationsEnabled;

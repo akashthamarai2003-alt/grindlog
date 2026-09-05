@@ -22,7 +22,22 @@ export function FitnessChatbot() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [vvh, setVvh] = useState("100dvh");
+  const [limitInfo, setLimitInfo] = useState<{ limit: number; remaining: number; used?: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const fetchLimitInfo = async () => {
+    try {
+      const res = await fetch("/api/fitness-ai/chat");
+      if (res.ok) {
+        const data = await res.json();
+        if (typeof data.limit === "number") {
+          setLimitInfo({ limit: data.limit, remaining: data.remaining, used: data.used });
+        }
+      }
+    } catch {
+      // Gracefully ignore network errors
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -31,6 +46,12 @@ export function FitnessChatbot() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading, isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchLimitInfo();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const updateHeight = () => {
@@ -73,10 +94,31 @@ export function FitnessChatbot() {
 
       if (response.ok && data.reply) {
         setMessages([...newMessages, { role: "assistant", content: data.reply }]);
+        if (typeof data.remaining === "number") {
+          setLimitInfo({ limit: data.limit, remaining: data.remaining, used: data.used });
+          window.dispatchEvent(
+            new CustomEvent("fitness_ai_usage_updated", {
+              detail: { remaining: data.remaining, limit: data.limit, used: data.used },
+            }),
+          );
+        }
+      } else if (response.status === 429 || data.limitReached) {
+        if (typeof data.remaining === "number") {
+          setLimitInfo({ limit: data.limit, remaining: data.remaining, used: data.used });
+        }
+        setMessages([
+          ...newMessages,
+          {
+            role: "assistant",
+            content:
+              data.error ||
+              "⚠️ You've reached your daily AI limit for today. Your daily quota will reset tomorrow!",
+          },
+        ]);
       } else {
         setMessages([
           ...newMessages,
-          { role: "assistant", content: "Sorry, I'm having trouble analyzing your progress right now. Please try again later." },
+          { role: "assistant", content: data.error || "Sorry, I'm having trouble analyzing your progress right now. Please try again later." },
         ]);
       }
     } catch (error) {
@@ -149,7 +191,18 @@ export function FitnessChatbot() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold text-sm">AI Progress Coach</h3>
-                    <p className="text-[#ADFF00] text-[10px] font-black tracking-widest uppercase">Online</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-[#ADFF00] text-[10px] font-black tracking-widest uppercase">Online</p>
+                      {limitInfo && typeof limitInfo.remaining === "number" && (
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                          limitInfo.remaining === 0
+                            ? "bg-red-500/10 text-red-400 border-red-500/30"
+                            : "bg-[#ADFF00]/10 text-[#ADFF00] border-[#ADFF00]/25 shadow-[0_0_10px_rgba(173,255,0,0.15)]"
+                        }`}>
+                          ⚡ {limitInfo.remaining} / {limitInfo.limit} left today
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <button onClick={() => setIsOpen(false)} className="p-2 rounded-full bg-white/5 text-white/60 hover:text-white transition-colors">
@@ -198,12 +251,13 @@ export function FitnessChatbot() {
                       type="text"
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      placeholder="Ask about your progress..."
-                      className="w-full bg-[#111A10] border border-white/10 rounded-full py-4 pl-5 pr-14 text-[16px] font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#ADFF00]/50 transition-colors"
+                      disabled={limitInfo?.remaining === 0 || isLoading}
+                      placeholder={limitInfo?.remaining === 0 ? "Daily AI generation limit reached for today" : "Ask about your progress..."}
+                      className="w-full bg-[#111A10] border border-white/10 rounded-full py-4 pl-5 pr-14 text-[16px] font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#ADFF00]/50 transition-colors disabled:opacity-50"
                     />
                   <button 
                     type="submit"
-                    disabled={!input.trim() || isLoading}
+                    disabled={!input.trim() || isLoading || limitInfo?.remaining === 0}
                     className="absolute right-2 top-2 bottom-2 w-10 bg-[#ADFF00] rounded-full flex items-center justify-center text-black disabled:opacity-50 disabled:bg-white/10 disabled:text-white/40 transition-all"
                   >
                     <Send className="w-4 h-4 ml-0.5" />
