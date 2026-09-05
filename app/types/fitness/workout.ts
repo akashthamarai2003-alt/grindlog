@@ -31,6 +31,10 @@ export const EndWorkoutSchema = z.object({
   workoutId: z.string().uuid("Invalid workout ID"),
 });
 
+export const QuickCompleteWorkoutSchema = z.object({
+  workoutId: z.string().uuid("Invalid workout ID"),
+});
+
 export type WorkoutStatus = z.infer<typeof WorkoutStatusSchema>;
 export type SessionStatus = z.infer<typeof SessionStatusSchema>;
 

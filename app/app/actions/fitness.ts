@@ -8,8 +8,10 @@ import {
   SessionActionSchema,
   DiscardWorkoutSchema,
   ReopenWorkoutSchema,
-  EndWorkoutSchema
+  EndWorkoutSchema,
+  QuickCompleteWorkoutSchema
 } from "@/types/fitness/workout";
+import { WorkoutService } from "@/lib/services/fitness/workout-service";
 import { revalidatePath } from "next/cache";
 
 export async function saveFitnessOnboardingAction(payload: Partial<OnboardingData>) {
@@ -570,46 +572,146 @@ export async function reopenWorkoutAction(payload: { workoutId: string }) {
   return { success: true };
 }
 
-export async function endWorkoutAction(payload: { workoutId: string }) {
+export async function quickCompleteWorkoutAction(payload: { workoutId: string }) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  const parsed = EndWorkoutSchema.safeParse(payload);
+  const parsed = QuickCompleteWorkoutSchema.safeParse(payload);
   if (!parsed.success) return { success: false, error: "Invalid workout ID" };
   const { workoutId } = parsed.data;
 
-  // 1. Find active or paused session for this workout
-  const { data: session } = await supabase
-    .from("fitness_os_workout_sessions")
-    .select("id")
-    .eq("workout_id", workoutId)
-    .eq("user_id", user.id)
-    .in("status", ["active", "paused"])
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // 1. Fetch workout with its exercises and sets
+  const { data: workout, error: wErr } = await supabase
+    .from("fitness_os_workouts")
+    .select(`
+      id, user_id, status, workout_date, plan_id,
+      fitness_os_exercises (
+        id, target_sets, target_reps,
+        fitness_os_sets (
+          id, target_reps, actual_reps, weight_kg, completed
+        )
+      ),
+      fitness_os_workout_sessions (
+        id, status, started_at
+      )
+    `)
+    .eq("id", workoutId)
+    .single();
 
-  if (session) {
-    return await finishWorkoutSessionAction({ sessionId: session.id });
+  if (wErr || !workout) return { success: false, error: "Workout not found" };
+  if (workout.user_id !== user.id) return { success: false, error: "Unauthorized" };
+
+  const now = new Date().toISOString();
+
+  // 2. Mark all uncompleted sets as completed so completedExercises matches totalExercises
+  const exercises = workout.fitness_os_exercises || [];
+  const uncompletedSetIds: string[] = [];
+
+  for (const ex of exercises) {
+    const sets = ex.fitness_os_sets || [];
+    for (const set of sets) {
+      if (!set.completed) {
+        uncompletedSetIds.push(set.id);
+      }
+    }
   }
 
-  // If no active session found, complete parent workout directly with realistic duration
-  const now = new Date().toISOString();
-  await supabase
+  if (uncompletedSetIds.length > 0) {
+    const { error: setsErr } = await supabase
+      .from("fitness_os_sets")
+      .update({
+        completed: true,
+        completed_at: now
+      })
+      .in("id", uncompletedSetIds);
+
+    if (setsErr) {
+      console.error("Failed to mark sets as completed:", setsErr);
+    }
+  }
+
+  // 3. Compute realistic duration based on total sets
+  const totalSetsCount = exercises.reduce((sum: number, ex: any) => {
+    return sum + (ex.fitness_os_sets?.length || ex.target_sets || 3);
+  }, 0) || 15;
+  const durationMinutes = Math.min(90, Math.max(20, Math.round(totalSetsCount * 3.5)));
+  const durationSeconds = durationMinutes * 60;
+
+  // 4. Update or create session
+  const activeSession = workout.fitness_os_workout_sessions?.find(
+    (s: any) => s.status === "active" || s.status === "paused"
+  );
+
+  if (activeSession) {
+    await supabase
+      .from("fitness_os_workout_sessions")
+      .update({
+        status: "completed",
+        completed_at: now,
+        duration_seconds: durationSeconds
+      })
+      .eq("id", activeSession.id);
+  } else {
+    await supabase
+      .from("fitness_os_workout_sessions")
+      .insert({
+        user_id: user.id,
+        workout_id: workoutId,
+        status: "completed",
+        started_at: new Date(Date.now() - durationSeconds * 1000).toISOString(),
+        completed_at: now,
+        duration_seconds: durationSeconds
+      });
+  }
+
+  // 5. Update parent workout
+  const tz = await WorkoutService.getUserTimezone(user.id);
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+
+  const isEarly = Boolean(workout.workout_date && workout.workout_date > today);
+  const originalDate = workout.workout_date;
+
+  const workoutUpdate: Record<string, any> = {
+    status: "completed",
+    completed_at: now,
+    duration_minutes: durationMinutes
+  };
+
+  if (isEarly) {
+    workoutUpdate.workout_date = today;
+  }
+
+  const { error: updateErr } = await supabase
     .from("fitness_os_workouts")
-    .update({ 
-      status: "completed", 
-      completed_at: now, 
-      duration_minutes: 45 
-    })
+    .update(workoutUpdate)
     .eq("id", workoutId);
+
+  if (updateErr) {
+    return { success: false, error: updateErr.message };
+  }
+
+  if (isEarly && workout.plan_id && originalDate) {
+    await WorkoutService.compactUpcomingPlanSchedule(supabase, workout.plan_id, originalDate);
+  }
 
   revalidatePath("/workout");
   revalidatePath(`/workout/${workoutId}`);
+  revalidatePath(`/workout/${workoutId}/summary`);
   revalidatePath("/dashboard");
 
   return { success: true };
+}
+
+export async function endWorkoutAction(payload: { workoutId: string }) {
+  // Delegate directly to quickCompleteWorkoutAction so all sets are marked complete
+  // and the workout is not falsely reverted by zero-exercise self-healing
+  return await quickCompleteWorkoutAction(payload);
 }
 
 export async function updateRemindersAction(enabled: boolean, reminders: any[]) {
