@@ -2,6 +2,16 @@
 -- Sourced from ICMR-NIN (National Institute of Nutrition, IFCT) & USDA FoodData Central Foundation Foods
 -- Includes accurate Indian market costs, portions, diet types, and PG-friendly tags.
 
+-- 1. Ensure unique constraint exists on food name so ON CONFLICT (name) succeeds in SQL Editor
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'foods_name_unique'
+    ) THEN
+        ALTER TABLE public.foods ADD CONSTRAINT foods_name_unique UNIQUE (name);
+    END IF;
+END $$;
+
 INSERT INTO public.foods (
     name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, is_active,
     source_name, verification_status, nutrition_verified, dietary_classification_verified, cost_verification_status, plan_eligible
