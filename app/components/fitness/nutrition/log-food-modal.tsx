@@ -74,16 +74,18 @@ export function LogFoodModal({
   // Search, category filter & single food selection state
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [dietFilter, setDietFilter] = useState<'onboarding' | 'all'>('onboarding');
   const [results, setResults] = useState<Food[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
 
-  const fetchFoods = async (q: string, cat?: string) => {
+  const fetchFoods = async (q: string, cat?: string, dietMode?: 'onboarding' | 'all') => {
     setIsSearching(true);
     const categoryToQuery = cat !== undefined ? cat : selectedCategory;
+    const mode = dietMode !== undefined ? dietMode : dietFilter;
     try {
-      const data = await nutritionApi.searchFoods(q, categoryToQuery);
+      const data = await nutritionApi.searchFoods(q, categoryToQuery, mode === 'all' ? 'all' : undefined);
       setResults(data || []);
     } catch (err: any) {
       toast.error(err?.message || "Failed to search foods");
@@ -97,6 +99,7 @@ export function LogFoodModal({
       setMealType(defaultMealType);
       setSearch("");
       setSelectedCategory("All");
+      setDietFilter("onboarding");
       setSelectedFood(null);
       setQuantity(1);
 
@@ -124,7 +127,7 @@ export function LogFoodModal({
       } else {
         setIsReviewingPlan(false);
         setPlannedFoods([]);
-        fetchFoods("", "All");
+        fetchFoods("", "All", "onboarding");
       }
     }
   }, [isOpen, defaultMealType, preselectedFoods]);
@@ -132,11 +135,11 @@ export function LogFoodModal({
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (isOpen && !isReviewingPlan && !selectedFood) {
-        fetchFoods(search, selectedCategory);
+        fetchFoods(search, selectedCategory, dietFilter);
       }
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [search, selectedCategory, isOpen, isReviewingPlan, selectedFood]);
+  }, [search, selectedCategory, dietFilter, isOpen, isReviewingPlan, selectedFood]);
 
   // Calculations for planned meal
   const plannedTotals = useMemo(() => {
@@ -481,6 +484,29 @@ export function LogFoodModal({
           /* =================== SEARCH FOOD VIEW =================== */
           <div className="flex-1 flex flex-col min-h-0">
             <div className="p-4 sm:p-5 flex-1 overflow-y-auto">
+              {/* Diet filter status bar */}
+              <div className="flex items-center justify-between mb-2.5 px-1 text-[11px]">
+                <span className="text-white/60 font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#ADFF00] shadow-[0_0_8px_rgba(173,255,0,0.6)]" />
+                  Personalized to your diet
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextMode = dietFilter === 'onboarding' ? 'all' : 'onboarding';
+                    setDietFilter(nextMode);
+                    fetchFoods(search, selectedCategory, nextMode);
+                  }}
+                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border transition-all cursor-pointer ${
+                    dietFilter === 'onboarding'
+                      ? 'text-[#ADFF00] bg-[#ADFF00]/10 border-[#ADFF00]/30 hover:bg-[#ADFF00]/20'
+                      : 'text-white/60 bg-white/5 border-white/10 hover:text-white'
+                  }`}
+                >
+                  {dietFilter === 'onboarding' ? 'Diet Filter: Active' : 'Diet Filter: All Foods'}
+                </button>
+              </div>
+
               <div className="relative mb-3">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
                 <input
