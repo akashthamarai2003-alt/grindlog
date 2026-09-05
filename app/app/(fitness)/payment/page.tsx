@@ -254,7 +254,7 @@ export default function FitnessPaymentPage() {
           <ChevronLeft className="w-5 h-5 text-gray-300" />
         </button>
         <div className="font-bold tracking-widest text-[10px] uppercase text-[#ADFF00]">
-          Fitness OS Pro
+          Fitness OS {level === "pro" ? "Pro" : "Core"}
         </div>
         <div className="w-10 h-10" />
       </div>
@@ -426,7 +426,7 @@ export default function FitnessPaymentPage() {
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                Get Fitness OS Pro <ChevronLeft className="w-5 h-5 rotate-180" />
+                Get Fitness OS {level === "pro" ? "Pro" : "Core"} <ChevronLeft className="w-5 h-5 rotate-180" />
               </span>
             )}
           </button>
