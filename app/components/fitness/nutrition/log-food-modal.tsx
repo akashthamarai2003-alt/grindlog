@@ -313,8 +313,8 @@ export function LogFoodModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 backdrop-blur-sm p-4 pb-28 sm:items-center sm:pb-4">
-      <div className="bg-[#111A10] w-full max-w-md rounded-t-[32px] sm:rounded-[32px] border border-white/10 overflow-hidden shadow-2xl flex flex-col max-h-[calc(100dvh-7rem)] sm:max-h-[85vh]">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 backdrop-blur-sm p-2 pb-24 sm:p-4 sm:pb-4">
+      <div className="bg-[#111A10] w-full max-w-md rounded-t-[28px] sm:rounded-[32px] border border-white/10 overflow-hidden shadow-2xl flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[85vh]">
         
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-white/5 flex items-center justify-between shrink-0">

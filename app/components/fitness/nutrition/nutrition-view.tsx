@@ -1175,26 +1175,26 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
       {/* Edit Daily Targets Modal */}
       <AnimatePresence>
         {showTargetsModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-[#111A10] border border-white/10 rounded-3xl p-6 shadow-2xl relative"
+              className="w-full max-w-md bg-[#111A10] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl relative max-h-[90dvh] overflow-y-auto overscroll-contain"
             >
-              <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center text-[#ADFF00]">
+              <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center text-[#ADFF00] shrink-0">
                     <Edit3 size={16} />
                   </div>
-                  <h2 className="text-base font-black text-white uppercase tracking-wider">Set Daily Nutrition Targets</h2>
+                  <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-wider truncate">Daily Targets</h2>
                 </div>
-                <button onClick={() => setShowTargetsModal(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white">
+                <button onClick={() => setShowTargetsModal(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white shrink-0">
                   <X size={16} />
                 </button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3.5 sm:space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold text-white/60 uppercase tracking-wider mb-1">Calories (kcal)</label>

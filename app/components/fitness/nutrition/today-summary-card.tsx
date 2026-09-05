@@ -258,59 +258,59 @@ export function TodaySummaryCard({
       </div>
 
       {/* Main Container Card */}
-      <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-4 sm:p-5 relative overflow-hidden shadow-xl">
+      <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-3.5 sm:p-5 relative overflow-hidden shadow-xl">
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#ADFF00]/5 blur-[50px] rounded-full pointer-events-none" />
 
         {/* Top Adherence Banner */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-white/5 relative z-10">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-white/50 uppercase tracking-wider">
-              Daily Target Completion
+        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-2.5 mb-3.5 border-b border-white/5 relative z-10">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] sm:text-[11px] font-bold text-white/50 uppercase tracking-wider">
+              Daily Targets
             </span>
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[#ADFF00]">
+            <span className="text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 text-[#ADFF00]">
               {goalsHitCount}/{displayedMetrics.length} Met
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-white/40">
-            <Sparkles size={12} className="text-[#ADFF00]" />
+          <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-white/50">
+            <Sparkles size={11} className="text-[#ADFF00]" />
             <span>Score: <strong className="text-white font-black">{nutritionScore}</strong></span>
           </div>
         </div>
 
-        {/* Dynamic Metric Tiles Grid - 2 columns ensures full width & zero truncation */}
-        <div className="grid grid-cols-2 gap-3 relative z-10">
+        {/* Dynamic Metric Tiles Grid - 2 columns ensures full width & zero truncation on all mobile devices */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 relative z-10">
           {displayedMetrics.map((item) => (
             <div
               key={item.id}
-              className="bg-[#0A1108] border border-white/5 rounded-2xl p-3.5 flex flex-col justify-between hover:border-white/15 transition-all group relative overflow-hidden"
+              className="bg-[#0A1108] border border-white/5 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between hover:border-white/15 transition-all group relative overflow-hidden"
             >
               {/* Subtle hover background sheen */}
               <div className="absolute inset-0 bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
               {/* Tier 1: Icon on left, Percentage badge on right */}
               <div className="flex items-center justify-between mb-2">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg} ${item.iconColor}`}>
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg} ${item.iconColor}`}>
                   {item.icon}
                 </div>
 
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1 ${item.badgeBg} ${item.badgeColor}`}>
-                  {item.isCompleted && <Check size={10} className="stroke-[3]" />}
+                <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1 ${item.badgeBg} ${item.badgeColor}`}>
+                  {item.isCompleted && <Check size={9} className="stroke-[3]" />}
                   <span>{item.percent}%</span>
                 </span>
               </div>
 
               {/* Tier 2: Category Title - Dedicated full-width line, never truncated */}
-              <p className="text-[11px] font-black text-white/75 uppercase tracking-wider mb-1.5">
+              <p className="text-[10px] sm:text-[11px] font-black text-white/75 uppercase tracking-wider mb-1">
                 {item.label}
               </p>
 
-              {/* Tier 3: Value Row - Natural baseline alignment with clear unit */}
-              <div className="flex items-baseline gap-1 mb-2.5">
-                <span className="text-xl font-black text-white tracking-tight leading-none">
+              {/* Tier 3: Value Row - Resilient on all mobile sizes with uniform row height */}
+              <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 mb-2.5 min-h-[28px] sm:min-h-[30px]">
+                <span className="text-base sm:text-lg font-black text-white tracking-tight leading-snug">
                   {item.consumed.toLocaleString()}
                 </span>
-                <span className="text-[11px] font-bold text-white/40 leading-none">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-white/40 leading-snug">
                   / {item.target.toLocaleString()}{item.unit ? ` ${item.unit}` : ""}
                 </span>
               </div>
@@ -327,13 +327,13 @@ export function TodaySummaryCard({
         </div>
 
         {/* Insight Footer */}
-        <div className="mt-3.5 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] text-white/40 relative z-10">
+        <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[10px] text-white/40 relative z-10">
           <span className="flex items-center gap-1">
-            <CheckCircle2 size={12} className="text-[#ADFF00]" />
-            <span>Live synced with food & water logs</span>
+            <CheckCircle2 size={11} className="text-[#ADFF00]" />
+            <span>Live synced with logs</span>
           </span>
-          <span className="text-white/40 font-medium">
-            Auto-resets at midnight
+          <span className="text-white/40 font-medium text-[9px] sm:text-[10px]">
+            Resets at midnight
           </span>
         </div>
       </div>
