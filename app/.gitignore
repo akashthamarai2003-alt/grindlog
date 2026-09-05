@@ -26,3 +26,9 @@ Thumbs.db
 
 # Firebase Admin
 lib/firebase/admin-config.json
+
+# PWA generated service worker
+public/sw.js*
+public/workbox-*.js*
+public/swe-worker-*.js*
+tsconfig.tsbuildinfo

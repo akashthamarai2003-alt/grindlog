@@ -13,14 +13,23 @@ export function useAuth() {
 
   const loadProfile = useCallback(
     async (userId: string) => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
+      try {
+        const { data, error: profileErr } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
 
-      if (data) {
-        setUser(data as Profile);
+        if (profileErr) {
+          console.warn("Failed to load user profile:", profileErr.message);
+          return;
+        }
+
+        if (data) {
+          setUser(data as Profile);
+        }
+      } catch (err) {
+        console.warn("Error loading user profile:", err);
       }
     },
     [supabase, setUser],
@@ -30,12 +39,17 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await loadProfile(session.user.id);
-      } else {
-        setUser(null);
+      try {
+        if (session?.user) {
+          await loadProfile(session.user.id);
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.warn("Auth state change error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

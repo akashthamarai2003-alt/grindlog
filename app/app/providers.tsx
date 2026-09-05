@@ -17,6 +17,11 @@ export function Providers({ children, initialTheme = "default" }: { children: Re
   useEffect(() => {
     const root = document.documentElement;
     root.classList.add("dark");
+
+    // Clean up any deprecated 'cross-origin' CacheStorage entries left by earlier service workers
+    if (typeof window !== "undefined" && "caches" in window) {
+      caches.delete("cross-origin").catch(() => {});
+    }
   }, []);
 
   return (

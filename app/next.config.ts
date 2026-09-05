@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import withPWA from "@ducanh2912/next-pwa";
+import withPWA, { runtimeCaching } from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -32,10 +32,20 @@ const nextConfig: NextConfig = {
   },
 };
 
+const filteredRuntimeCaching = runtimeCaching.filter(
+  (entry) => entry.options?.cacheName !== "cross-origin"
+);
+
 const config = withPWA({
   dest: "public",
   register: true,
   disable: process.env.NODE_ENV === "development",
+  workboxOptions: {
+    cleanupOutdatedCaches: true,
+    skipWaiting: true,
+    clientsClaim: true,
+    runtimeCaching: filteredRuntimeCaching,
+  },
 })(nextConfig);
 
 export default config;
