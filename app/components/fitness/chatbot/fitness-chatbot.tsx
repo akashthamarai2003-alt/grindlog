@@ -90,18 +90,35 @@ export function FitnessChatbot() {
     }
   };
 
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener("open_fitness_chatbot", handleOpen);
+    return () => window.removeEventListener("open_fitness_chatbot", handleOpen);
+  }, []);
+
   return (
     <>
       <AnimatePresence>
         {!isOpen && (
           <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 60, opacity: 0 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-[110px] right-[24px] p-3 rounded-full border-2 border-[#ADFF00] bg-[#0A1108] text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.4)] z-[60] hover:scale-105 transition-transform"
+            className="fixed bottom-28 right-0 z-40 flex items-center gap-1.5 pl-3 pr-2.5 py-2.5 bg-[#111A10]/95 backdrop-blur-md border-y border-l border-[#ADFF00]/40 rounded-l-full text-[#ADFF00] shadow-[0_0_20px_rgba(173,255,0,0.25)] hover:translate-x-[-2px] active:scale-95 transition-all cursor-pointer group"
+            title="Open AI Fitness Coach"
           >
-            <Bot className="w-5 h-5" />
+            <div className="relative flex items-center justify-center">
+              <Bot className="w-5 h-5 text-[#ADFF00] group-hover:scale-110 transition-transform" />
+              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF00] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ADFF00]" />
+              </span>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-white/90 group-hover:text-[#ADFF00] transition-colors pr-0.5 select-none hidden min-[360px]:inline">
+              AI Coach
+            </span>
           </motion.button>
         )}
       </AnimatePresence>

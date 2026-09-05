@@ -1262,12 +1262,6 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
         )}
       </AnimatePresence>
       
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-[174px] right-5 flex flex-col gap-3 z-40">
-        <button onClick={() => openLogModal('snack')} className="w-14 h-14 rounded-full bg-[#ADFF00] flex items-center justify-center shadow-[0_0_20px_rgba(173,255,0,0.3)] hover:scale-105 transition-transform">
-          <Plus size={24} className="text-black" />
-        </button>
-      </div>
     </>
   );
 }

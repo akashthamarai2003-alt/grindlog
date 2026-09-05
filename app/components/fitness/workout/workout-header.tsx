@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, UserCircle, Timer } from "lucide-react";
+import { ArrowLeft, UserCircle, Timer, Bot } from "lucide-react";
 import Link from "next/link";
 import { useWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 
@@ -63,21 +63,38 @@ export function WorkoutHeader({
           </span>
         </div>
       ) : (
-        <Link
-          href="/profile"
-          prefetch={true}
-          className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 transition-colors shrink-0 overflow-hidden"
-        >
-          {avatarUrl ? (
-            <img 
-              src={avatarUrl} 
-              alt="Profile" 
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <UserCircle className="h-6 w-6 stroke-[1.5]" />
-          )}
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("open_fitness_chatbot"));
+            }}
+            className="w-10 h-10 rounded-full bg-[#121E12] border border-[#ADFF00]/40 text-[#ADFF00] shadow-[0_0_12px_rgba(173,255,0,0.2)] flex items-center justify-center relative hover:bg-[#1A2619] active:scale-95 transition-all cursor-pointer group shrink-0"
+            title="Open AI Fitness Coach"
+          >
+            <Bot size={18} className="group-hover:scale-110 transition-transform" />
+            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF00] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ADFF00]" />
+            </span>
+          </button>
+
+          <Link
+            href="/profile"
+            prefetch={true}
+            className="h-10 w-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/10 transition-colors shrink-0 overflow-hidden"
+          >
+            {avatarUrl ? (
+              <img 
+                src={avatarUrl} 
+                alt="Profile" 
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <UserCircle className="h-6 w-6 stroke-[1.5]" />
+            )}
+          </Link>
+        </div>
       )}
     </motion.div>
   );

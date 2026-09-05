@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, Bot } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/services/supabase/client";
@@ -67,7 +67,22 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent("open_fitness_chatbot"));
+          }}
+          className="w-10 h-10 rounded-full bg-[#121E12] border border-[#ADFF00]/40 text-[#ADFF00] shadow-[0_0_12px_rgba(173,255,0,0.2)] flex items-center justify-center relative hover:bg-[#1A2619] active:scale-95 transition-all cursor-pointer group"
+          title="Open AI Fitness Coach"
+        >
+          <Bot size={18} className="group-hover:scale-110 transition-transform" />
+          <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF00] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ADFF00]" />
+          </span>
+        </button>
+
         <Link href="/notifications" prefetch={true} className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center relative hover:bg-[#1A2619] transition-colors">
           <Bell size={18} className="text-gray-300" />
           {/* Notification Dot */}
