@@ -50,7 +50,7 @@ export class ProgressAnalyticsService {
     ] = await Promise.all([
       supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target, goal_physique_image, target_physique').eq('user_id', userId).maybeSingle(),
       supabase.from('fitness_os_body_scans').select('*').eq('user_id', userId).order('scan_date', { ascending: true }).order('created_at', { ascending: true }),
-      supabase.from('fitness_os_scans').select('*').eq('user_id', userId).eq('pose', 'front').order('date', { ascending: false }).limit(2),
+      supabase.from('fitness_os_scans').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(2),
       supabase.from('fitness_os_body_metrics').select('waist, chest, hip, neck, left_arm, right_arm, left_thigh, right_thigh, recorded_at').eq('user_id', userId).or('waist.not.is.null,chest.not.is.null,hip.not.is.null,neck.not.is.null,left_arm.not.is.null,right_arm.not.is.null,left_thigh.not.is.null,right_thigh.not.is.null').order('recorded_at', { ascending: true }),
       supabase.from('fitness_os_workouts').select(`
         id,
@@ -262,19 +262,19 @@ export class ProgressAnalyticsService {
     } else if (scansFront && scansFront.length > 0) {
       firstScan = {
         id: (scansFront[scansFront.length - 1] as any).id || '1',
-        frontUrl: (scansFront[scansFront.length - 1] as any).image_url,
-        leftUrl: null,
+        frontUrl: (scansFront[scansFront.length - 1] as any).front_url || (scansFront[scansFront.length - 1] as any).image_url || null,
+        leftUrl: (scansFront[scansFront.length - 1] as any).side_url || null,
         rightUrl: null,
-        backUrl: null,
-        date: (scansFront[scansFront.length - 1] as any).date
+        backUrl: (scansFront[scansFront.length - 1] as any).back_url || null,
+        date: (scansFront[scansFront.length - 1] as any).created_at || (scansFront[scansFront.length - 1] as any).date
       };
       latestScan = {
         id: (scansFront[0] as any).id || '2',
-        frontUrl: (scansFront[0] as any).image_url,
-        leftUrl: null,
+        frontUrl: (scansFront[0] as any).front_url || (scansFront[0] as any).image_url || null,
+        leftUrl: (scansFront[0] as any).side_url || null,
         rightUrl: null,
-        backUrl: null,
-        date: (scansFront[0] as any).date
+        backUrl: (scansFront[0] as any).back_url || null,
+        date: (scansFront[0] as any).created_at || (scansFront[0] as any).date
       };
     }
 

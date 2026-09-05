@@ -8,10 +8,50 @@ interface ProgressHeaderProps {
   period: AnalyticsPeriod;
   onPeriodChange: (period: AnalyticsPeriod) => void;
   isFetching?: boolean;
+  joinedDate?: string;
 }
 
-export function ProgressHeader({ transformation, period, onPeriodChange, isFetching }: ProgressHeaderProps) {
+function getPeriodDescription(period: AnalyticsPeriod, joinedDate?: string): string {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const now = new Date();
+  
+  const formatDate = (d: Date) => `${months[d.getMonth()]} ${d.getDate()}`;
+  
+  if (period === '7D') {
+    const start = new Date(now.getTime());
+    start.setDate(start.getDate() - 7);
+    return `Past 7 Days • ${formatDate(start)} – ${formatDate(now)}`;
+  }
+  if (period === '30D') {
+    const start = new Date(now.getTime());
+    start.setDate(start.getDate() - 30);
+    return `Past 30 Days • ${formatDate(start)} – ${formatDate(now)}`;
+  }
+  if (period === '3M') {
+    const start = new Date(now.getTime());
+    start.setMonth(start.getMonth() - 3);
+    return `Past 3 Months • ${formatDate(start)} – ${formatDate(now)}`;
+  }
+  if (period === '6M') {
+    const start = new Date(now.getTime());
+    start.setMonth(start.getMonth() - 6);
+    return `Past 6 Months • ${formatDate(start)} – ${formatDate(now)}`;
+  }
+  if (period === 'ALL') {
+    if (joinedDate) {
+      try {
+        const jd = new Date(joinedDate);
+        return `All Time • Since ${months[jd.getMonth()]} ${jd.getDate()}, ${jd.getFullYear()}`;
+      } catch {}
+    }
+    return `All Time • All recorded logs`;
+  }
+  return '';
+}
+
+export function ProgressHeader({ transformation, period, onPeriodChange, isFetching, joinedDate }: ProgressHeaderProps) {
   const periods: AnalyticsPeriod[] = ['7D', '30D', '3M', '6M', 'ALL'];
+  const periodDesc = getPeriodDescription(period, joinedDate);
 
   return (
     <div className="w-full flex flex-col pt-8 pb-4">
@@ -55,6 +95,25 @@ export function ProgressHeader({ transformation, period, onPeriodChange, isFetch
         {isFetching && (
           <div className="absolute -bottom-1 left-3 right-3 h-[2px] bg-gradient-to-r from-transparent via-[#ADFF00] to-transparent animate-pulse rounded-full" />
         )}
+      </div>
+
+      {/* Active Timeframe Context & Sync Status */}
+      <div className="flex items-center justify-between mt-2.5 px-1">
+        <span className="text-[11px] font-bold text-white/50 tracking-wide flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF00]/80 inline-block" />
+          {periodDesc}
+        </span>
+        <div className="flex items-center gap-1">
+          {isFetching ? (
+            <span className="text-[10px] font-bold text-[#ADFF00] uppercase tracking-wider animate-pulse">
+              Updating...
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider">
+              Synced ✓
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
