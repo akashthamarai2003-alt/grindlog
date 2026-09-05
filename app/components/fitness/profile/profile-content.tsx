@@ -164,20 +164,15 @@ export function ProfileContent({
 
       <div className="relative z-10 max-w-md mx-auto px-5 pt-6 space-y-6">
         
-        {/* Navigation Bar */}
-        <div className="flex items-center justify-between">
-          <Link 
-            href="/" 
-            prefetch={true}
-            className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center text-gray-300 hover:text-white hover:border-[#ADFF00]/50 transition-all active:scale-95"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
+        {/* Header */}
+        <div className="w-full flex items-center justify-between pt-2 pb-1">
+          <h1 className="text-3xl font-black text-white uppercase tracking-tight">
+            Your Profile
+          </h1>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#121E12] border border-[#1A2619]">
             <User className="w-4 h-4 text-[#ADFF00]" />
-            <span className="text-xs font-bold text-gray-200 uppercase tracking-wider">Profile & Account</span>
+            <span className="text-xs font-bold text-gray-200 uppercase tracking-wider">Account</span>
           </div>
-          <div className="w-10 h-10" />
         </div>
 
         {/* User Hero Avatar Card */}

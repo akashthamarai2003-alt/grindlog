@@ -62,10 +62,10 @@ export default async function WorkoutIndexPage() {
       <div className="min-h-screen bg-[#0A1108] text-white">
         <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">
           <WorkoutHeader 
-            title="Workout" 
+            title="Your Workouts" 
             dateStr={dateStr}
-            avatarUrl={user.user_metadata?.avatar_url}
-            backUrl="/"
+            isMainPage={true}
+            planBadge={planDays && planDays.length > 0 ? `${planDays.length}-Day Split` : activePlan ? "Active Plan" : undefined}
           />
           
           <div className="mt-2">
