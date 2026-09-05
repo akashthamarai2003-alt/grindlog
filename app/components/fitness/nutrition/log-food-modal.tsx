@@ -552,7 +552,12 @@ export function LogFoodModal({
                       className="w-full text-left bg-black/40 hover:bg-white/5 border border-transparent hover:border-white/10 rounded-2xl p-3 transition-all flex justify-between items-center gap-3 cursor-pointer group"
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <FoodAvatar name={food.name} className="w-11 h-11 rounded-xl object-cover border border-white/10 shrink-0" />
+                        <FoodAvatar 
+                          name={food.name} 
+                          category={food.category} 
+                          imageUrl={food.image_url} 
+                          className="w-11 h-11 rounded-xl object-cover border border-white/10 shrink-0" 
+                        />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <h4 className="font-bold text-white text-sm truncate">{food.name}</h4>
@@ -594,7 +599,12 @@ export function LogFoodModal({
           <div className="p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col justify-between">
             <div className="bg-black/40 rounded-2xl p-4 mb-6 border border-white/5 overflow-hidden">
               <div className="relative h-32 rounded-xl overflow-hidden mb-4 border border-white/10">
-                <FoodAvatar name={selectedFood.name} className="w-full h-full object-cover" />
+                <FoodAvatar 
+                  name={selectedFood.name} 
+                  category={selectedFood.category} 
+                  imageUrl={selectedFood.image_url} 
+                  className="w-full h-full object-cover" 
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-3 flex flex-col justify-end">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <h3 className="text-lg font-black text-white">{selectedFood.name}</h3>
