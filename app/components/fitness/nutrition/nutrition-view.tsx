@@ -5,6 +5,7 @@ import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
+import { TodaySummaryCard } from "./today-summary-card";
 import { getFoodImage, getFoodSvgAvatar } from "@/lib/utils/food-images";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
@@ -1142,40 +1143,13 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
         />
 
         {/* Today's Summary section */}
-        <div className="mt-8 mb-4">
-          <h2 className="text-[13px] font-black tracking-widest text-white uppercase px-1">Today&apos;s Summary</h2>
-        </div>
-        
-        <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-5 grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40"><Zap size={14} /></div>
-            <div>
-              <p className="text-[10px] text-white/50 uppercase font-bold">Calories</p>
-              <p className="text-sm font-black text-white">{Math.round(consumed.calories || 0)} / {Math.round(targets.calories || 2000)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center text-[#ADFF00]"><Apple size={14} /></div>
-            <div>
-              <p className="text-[10px] text-white/50 uppercase font-bold">Protein</p>
-              <p className="text-sm font-black text-white">{Math.round(consumed.protein || 0)} / {Math.round(targets.protein || 130)}g</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-cyan-400/10 flex items-center justify-center text-cyan-400"><Droplet size={14} /></div>
-            <div>
-              <p className="text-[10px] text-white/50 uppercase font-bold">Water</p>
-              <p className="text-sm font-black text-white">{Math.min(Math.round(targets.water_ml || 2500), Math.round(consumed.water_ml || 0))} / {Math.round(targets.water_ml || 2500)}ml</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40"><Apple size={14} /></div>
-            <div>
-              <p className="text-[10px] text-white/50 uppercase font-bold">Meals</p>
-              <p className="text-sm font-black text-white">{Object.keys(foodsByMeal).length} / {meals.length || 4} done</p>
-            </div>
-          </div>
-        </div>
+        <TodaySummaryCard
+          consumed={consumed}
+          targets={targets}
+          meals={meals}
+          loggedFoods={loggedFoods}
+          nutritionScore={nutrition_score}
+        />
 
       </div>
 
