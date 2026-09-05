@@ -175,19 +175,11 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
 }
 
 /**
- * Mobile Performance Optimization Wrapper
- * Uses CSS `content-visibility: auto` to defer layout and rendering of offscreen sections,
- * saving CPU/GPU memory and preventing mobile scroll stutter.
+ * Progress Section Container Wrapper
  */
-function SmoothSection({ children, minHeight = "260px", className = "" }: { children: React.ReactNode; minHeight?: string; className?: string }) {
+function SmoothSection({ children, className = "" }: { children: React.ReactNode; minHeight?: string; className?: string }) {
   return (
-    <div
-      className={`w-full ${className}`}
-      style={{
-        contentVisibility: "auto",
-        containIntrinsicSize: `auto ${minHeight}`,
-      }}
-    >
+    <div className={`w-full ${className}`}>
       {children}
     </div>
   );

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ActivityAnalytics, RecoveryAnalytics } from "@/types/fitness/analytics";
-import { Footprints, Moon, Plus, Sparkles, X, Check, Loader2 } from "lucide-react";
+import { Footprints, Moon, Plus, Sparkles, X, Check, Loader2, Calendar, Zap } from "lucide-react";
 import { BarChart, Bar, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { toast } from "sonner";
 
@@ -33,6 +34,10 @@ export function ActivityRecoveryAnalyticsCard({
 
   // Logging modal form state
   const todayStr = new Date().toISOString().split("T")[0];
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
+
   const [logDate, setLogDate] = useState(todayStr);
   const [stepsInput, setStepsInput] = useState<string>(
     localActivity.todaySteps && localActivity.todaySteps > 0 ? String(localActivity.todaySteps) : ""
@@ -44,6 +49,23 @@ export function ActivityRecoveryAnalyticsCard({
     localRecovery.todaySleepQuality ? Math.round(localRecovery.todaySleepQuality / 10) : 8
   );
   const [isSaving, setIsSaving] = useState(false);
+
+  // Client-side hydration check for createPortal
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll when modal is open to prevent background shifting/scrolling
+  useEffect(() => {
+    if (isModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isModalOpen]);
 
   const openLogModal = (tab: "steps" | "sleep" = "steps") => {
     setActiveTab(tab);
@@ -413,23 +435,28 @@ export function ActivityRecoveryAnalyticsCard({
         </div>
       </div>
 
-      {/* Interactive Quick Log Modal */}
-      {isModalOpen && (
+      {/* Interactive Quick Log Modal with createPortal */}
+      {mounted && isModalOpen && createPortal(
         <div
-          className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
+          className="fixed inset-0 z-[999] bg-black/85 backdrop-blur-md flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4"
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="w-full max-w-md bg-[#0D140C] border border-white/10 rounded-t-[28px] sm:rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col gap-3.5 text-white max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain animate-in slide-in-from-bottom duration-200"
+            className="relative z-10 w-full sm:max-w-md bg-[#0D140C] border-t sm:border border-white/15 rounded-t-[28px] sm:rounded-3xl shadow-2xl flex flex-col max-h-[88dvh] sm:max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">⚡</span>
-                <h3 className="text-sm font-black tracking-widest text-white uppercase">
-                  Log Activity & Recovery
-                </h3>
+            {/* Pinned Sticky Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0 bg-[#0D140C]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center border border-[#ADFF00]/20">
+                  <Zap className="w-4 h-4 text-[#ADFF00]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black tracking-wider text-white uppercase">
+                    Log Activity & Recovery
+                  </h3>
+                  <p className="text-[10px] text-white/50 font-medium">Quick update daily metrics</p>
+                </div>
               </div>
               <button
                 type="button"
@@ -440,214 +467,215 @@ export function ActivityRecoveryAnalyticsCard({
               </button>
             </div>
 
-            <form onSubmit={handleSaveLogs} className="flex flex-col gap-3.5 flex-1">
-              {/* Date Quick Selector - 3 equal columns */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/50">
-                  Select Date
-                </label>
-                <div className="grid grid-cols-3 gap-2">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveLogs} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 flex flex-col gap-4">
+                {/* Date Selector */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                    Select Date
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLogDate(todayStr)}
+                      className={`py-2 px-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        logDate === todayStr
+                          ? "bg-[#ADFF00] text-black shadow-md shadow-[#ADFF00]/20"
+                          : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/5"
+                      }`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLogDate(yesterdayStr)}
+                      className={`py-2 px-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        logDate === yesterdayStr
+                          ? "bg-[#ADFF00] text-black shadow-md shadow-[#ADFF00]/20"
+                          : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/5"
+                      }`}
+                    >
+                      Yesterday
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                    <Calendar className="w-4 h-4 text-white/40 shrink-0" />
+                    <span className="text-[11px] text-white/50 shrink-0 font-medium">Other Date:</span>
+                    <input
+                      type="date"
+                      value={logDate}
+                      max={todayStr}
+                      onChange={(e) => setLogDate(e.target.value)}
+                      className="bg-transparent text-xs text-white/90 focus:outline-none w-full cursor-pointer font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Tab Selector: Steps vs Sleep */}
+                <div className="flex p-1 bg-white/5 rounded-xl border border-white/5">
                   <button
                     type="button"
-                    onClick={() => setLogDate(todayStr)}
-                    className={`py-2 px-1 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      logDate === todayStr
-                        ? "bg-[#ADFF00] text-black shadow-md shadow-[#ADFF00]/20"
-                        : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/5"
+                    onClick={() => setActiveTab("steps")}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      activeTab === "steps"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                        : "text-white/50 hover:text-white"
                     }`}
                   >
-                    Today
+                    <Footprints className="w-3.5 h-3.5" />
+                    Daily Steps
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      const y = new Date();
-                      y.setDate(y.getDate() - 1);
-                      setLogDate(y.toISOString().split("T")[0]);
-                    }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      logDate !== todayStr
-                        ? "bg-[#ADFF00] text-black shadow-md shadow-[#ADFF00]/20"
-                        : "bg-white/5 text-white/70 hover:bg-white/10 border border-white/5"
+                    onClick={() => setActiveTab("sleep")}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      activeTab === "sleep"
+                        ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                        : "text-white/50 hover:text-white"
                     }`}
                   >
-                    Yesterday
+                    <Moon className="w-3.5 h-3.5" />
+                    Sleep & Recovery
                   </button>
-                  <input
-                    type="date"
-                    value={logDate}
-                    max={todayStr}
-                    onChange={(e) => setLogDate(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-xs text-white/80 focus:outline-none focus:border-[#ADFF00] text-center"
-                  />
                 </div>
-              </div>
 
-              {/* Tab Selector: Steps vs Sleep */}
-              <div className="flex p-1 bg-white/5 rounded-xl border border-white/5">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("steps")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    activeTab === "steps"
-                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  <Footprints className="w-3.5 h-3.5" />
-                  Daily Steps
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("sleep")}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    activeTab === "sleep"
-                      ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  <Moon className="w-3.5 h-3.5" />
-                  Sleep & Recovery
-                </button>
-              </div>
-
-              {/* Steps Tab Content */}
-              {activeTab === "steps" && (
-                <div className="flex flex-col gap-3 p-3 bg-[#111A10] border border-white/5 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                      <Footprints className="w-4 h-4" /> Steps Count
-                    </span>
-                    <span className="text-[10px] text-white/40">Goal: {activity.stepTarget.toLocaleString()}</span>
-                  </div>
-
-                  <div className="relative">
-                    <input
-                      type="number"
-                      placeholder="e.g. 7500"
-                      value={stepsInput}
-                      onChange={(e) => setStepsInput(e.target.value)}
-                      className="w-full bg-[#0A1108] border border-white/10 rounded-xl px-3.5 py-2.5 text-base font-black text-white focus:outline-none focus:border-emerald-400 placeholder:text-white/20"
-                      autoFocus
-                    />
-                    <span className="absolute right-3 top-3 text-xs font-bold text-white/40">steps</span>
-                  </div>
-
-                  {/* Quick Preset Chips - 5 equal columns: zero wrapping */}
-                  <div className="grid grid-cols-5 gap-1.5 pt-1">
-                    {[
-                      { label: "+1,000", val: 1000, add: true },
-                      { label: "+2,500", val: 2500, add: true },
-                      { label: "5,000", val: 5000 },
-                      { label: "7,000", val: 7000 },
-                      { label: "10,000", val: 10000 },
-                    ].map((chip, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => {
-                          if (chip.add) {
-                            setStepsInput((prev) => String((Number(prev) || 0) + chip.val));
-                          } else {
-                            setStepsInput(String(chip.val));
-                          }
-                        }}
-                        className="text-[10px] font-bold py-1.5 px-0.5 rounded-lg bg-white/5 border border-white/5 text-white/80 hover:bg-emerald-400/20 hover:text-emerald-300 hover:border-emerald-400/30 transition-colors text-center truncate cursor-pointer active:scale-95"
-                      >
-                        {chip.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Sleep Tab Content */}
-              {activeTab === "sleep" && (
-                <div className="flex flex-col gap-3 p-3 bg-[#111A10] border border-white/5 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-indigo-400 flex items-center gap-1.5">
-                      <Moon className="w-4 h-4" /> Sleep Duration
-                    </span>
-                    <span className="text-[10px] text-white/40">Target: {recovery.sleepTargetHours} hours</span>
-                  </div>
-
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.1"
-                      placeholder="e.g. 7.5"
-                      value={sleepHoursInput}
-                      onChange={(e) => setSleepHoursInput(e.target.value)}
-                      className="w-full bg-[#0A1108] border border-white/10 rounded-xl px-3.5 py-2.5 text-base font-black text-white focus:outline-none focus:border-indigo-400 placeholder:text-white/20"
-                      autoFocus
-                    />
-                    <span className="absolute right-3 top-3 text-xs font-bold text-white/40">hours</span>
-                  </div>
-
-                  {/* Sleep Duration Presets - 7 equal columns */}
-                  <div className="grid grid-cols-7 gap-1 pt-1">
-                    {[6, 6.5, 7, 7.5, 8, 8.5, 9].map((hrs) => (
-                      <button
-                        key={hrs}
-                        type="button"
-                        onClick={() => setSleepHoursInput(String(hrs))}
-                        className={`text-[10px] font-bold py-1.5 px-0.5 rounded-lg text-center transition-colors cursor-pointer active:scale-95 ${
-                          sleepHoursInput === String(hrs)
-                            ? "bg-indigo-400/20 text-indigo-300 border border-indigo-400/40"
-                            : "bg-white/5 border border-white/5 text-white/70 hover:bg-white/10"
-                        }`}
-                      >
-                        {hrs}h
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Sleep Quality */}
-                  <div className="flex flex-col gap-1.5 mt-2">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-white/60 uppercase">
-                      <span>Sleep Quality</span>
-                      <span className="text-indigo-400 font-mono">{sleepQualityInput * 10}%</span>
+                {/* Steps Tab Content */}
+                {activeTab === "steps" && (
+                  <div className="flex flex-col gap-3 p-3.5 bg-[#111A10] border border-white/5 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                        <Footprints className="w-4 h-4" /> Steps Count
+                      </span>
+                      <span className="text-[10px] text-white/40">Goal: {activity.stepTarget.toLocaleString()}</span>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        placeholder="e.g. 7500"
+                        value={stepsInput}
+                        onChange={(e) => setStepsInput(e.target.value)}
+                        className="w-full bg-[#0A1108] border border-white/10 rounded-xl px-3.5 py-2.5 text-base font-black text-white focus:outline-none focus:border-emerald-400 placeholder:text-white/20"
+                      />
+                      <span className="absolute right-3 top-3 text-xs font-bold text-white/40">steps</span>
+                    </div>
+
+                    {/* Quick Preset Chips - 5 equal columns */}
+                    <div className="grid grid-cols-5 gap-1.5 pt-1">
                       {[
-                        { label: "Poor", rating: 3, icon: "😴" },
-                        { label: "Fair", rating: 6, icon: "😐" },
-                        { label: "Good", rating: 8, icon: "😊" },
-                        { label: "Great", rating: 10, icon: "⚡" },
-                      ].map((q) => (
+                        { label: "+1,000", val: 1000, add: true },
+                        { label: "+2,500", val: 2500, add: true },
+                        { label: "5,000", val: 5000 },
+                        { label: "7,000", val: 7000 },
+                        { label: "10,000", val: 10000 },
+                      ].map((chip, i) => (
                         <button
-                          key={q.label}
+                          key={i}
                           type="button"
-                          onClick={() => setSleepQualityInput(q.rating)}
-                          className={`py-2 px-1 rounded-xl flex flex-col items-center gap-0.5 text-[10px] font-bold transition-all cursor-pointer active:scale-95 ${
-                            sleepQualityInput === q.rating
-                              ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm shadow-indigo-500/20"
-                              : "bg-white/5 text-white/50 hover:bg-white/10 border border-transparent"
-                          }`}
+                          onClick={() => {
+                            if (chip.add) {
+                              setStepsInput((prev) => String((Number(prev) || 0) + chip.val));
+                            } else {
+                              setStepsInput(String(chip.val));
+                            }
+                          }}
+                          className="text-[10px] font-bold py-1.5 px-0.5 rounded-lg bg-white/5 border border-white/5 text-white/80 hover:bg-emerald-400/20 hover:text-emerald-300 hover:border-emerald-400/30 transition-colors text-center truncate cursor-pointer active:scale-95"
                         >
-                          <span className="text-base">{q.icon}</span>
-                          <span>{q.label}</span>
+                          {chip.label}
                         </button>
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Action Buttons - Pinned at bottom */}
-              <div className="flex items-center gap-2 pt-2 shrink-0 border-t border-white/5 mt-auto">
+                {/* Sleep Tab Content */}
+                {activeTab === "sleep" && (
+                  <div className="flex flex-col gap-3 p-3.5 bg-[#111A10] border border-white/5 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                        <Moon className="w-4 h-4" /> Sleep Duration
+                      </span>
+                      <span className="text-[10px] text-white/40">Target: {recovery.sleepTargetHours} hours</span>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="e.g. 7.5"
+                        value={sleepHoursInput}
+                        onChange={(e) => setSleepHoursInput(e.target.value)}
+                        className="w-full bg-[#0A1108] border border-white/10 rounded-xl px-3.5 py-2.5 text-base font-black text-white focus:outline-none focus:border-indigo-400 placeholder:text-white/20"
+                      />
+                      <span className="absolute right-3 top-3 text-xs font-bold text-white/40">hours</span>
+                    </div>
+
+                    {/* Sleep Duration Presets - 7 equal columns */}
+                    <div className="grid grid-cols-7 gap-1 pt-1">
+                      {[6, 6.5, 7, 7.5, 8, 8.5, 9].map((hrs) => (
+                        <button
+                          key={hrs}
+                          type="button"
+                          onClick={() => setSleepHoursInput(String(hrs))}
+                          className={`text-[10px] font-bold py-1.5 px-0.5 rounded-lg text-center transition-colors cursor-pointer active:scale-95 ${
+                            sleepHoursInput === String(hrs)
+                              ? "bg-indigo-400/20 text-indigo-300 border border-indigo-400/40"
+                              : "bg-white/5 border border-white/5 text-white/70 hover:bg-white/10"
+                          }`}
+                        >
+                          {hrs}h
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Sleep Quality */}
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <div className="flex items-center justify-between text-[10px] font-bold text-white/60 uppercase">
+                        <span>Sleep Quality</span>
+                        <span className="text-indigo-400 font-mono">{sleepQualityInput * 10}%</span>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {[
+                          { label: "Poor", rating: 3, icon: "😴" },
+                          { label: "Fair", rating: 6, icon: "😐" },
+                          { label: "Good", rating: 8, icon: "😊" },
+                          { label: "Great", rating: 10, icon: "⚡" },
+                        ].map((q) => (
+                          <button
+                            key={q.label}
+                            type="button"
+                            onClick={() => setSleepQualityInput(q.rating)}
+                            className={`py-2 px-1 rounded-xl flex flex-col items-center gap-0.5 text-[10px] font-bold transition-all cursor-pointer active:scale-95 ${
+                              sleepQualityInput === q.rating
+                                ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm shadow-indigo-500/20"
+                                : "bg-white/5 text-white/50 hover:bg-white/10 border border-transparent"
+                            }`}
+                          >
+                            <span className="text-base">{q.icon}</span>
+                            <span>{q.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Pinned Action Buttons Footer */}
+              <div className="p-4 border-t border-white/10 bg-[#0D140C] shrink-0 grid grid-cols-2 gap-2.5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 text-xs font-bold transition-colors cursor-pointer active:scale-95"
+                  className="py-3 px-3 rounded-xl border border-white/10 text-white/70 hover:text-white hover:bg-white/5 text-xs font-bold transition-colors cursor-pointer active:scale-95 text-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex-1 py-3 rounded-xl bg-[#ADFF00] hover:bg-[#baff22] text-black text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-[#ADFF00]/20 disabled:opacity-50 cursor-pointer active:scale-95"
+                  className="py-3 px-3 rounded-xl bg-[#ADFF00] hover:bg-[#baff22] text-black text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-[#ADFF00]/20 disabled:opacity-50 cursor-pointer active:scale-95 text-center"
                 >
                   {isSaving ? (
                     <>
@@ -656,7 +684,7 @@ export function ActivityRecoveryAnalyticsCard({
                     </>
                   ) : (
                     <>
-                      <Check className="w-4 h-4" />
+                      <Check className="w-4 h-4 stroke-[3]" />
                       <span>Save Log</span>
                     </>
                   )}
@@ -664,7 +692,8 @@ export function ActivityRecoveryAnalyticsCard({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
