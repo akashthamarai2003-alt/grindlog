@@ -122,7 +122,7 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
 
             {/* Workout Heatmap Calendar */}
             <SmoothSection minHeight="240px">
-              <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-5">
+              <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-4 sm:p-5">
                 <WorkoutHeatmap completedDates={workoutDates} scheduledDates={scheduledDates} joinedDate={joinedDate} />
               </div>
             </SmoothSection>
