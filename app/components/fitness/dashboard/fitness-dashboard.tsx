@@ -112,7 +112,7 @@ export function FitnessDashboard({
         {premiumLevel === "pro" && <ExerciseLibraryCard />}
 
         {/* 6. Today's Nutrition Card */}
-        <TodaysNutritionCard nutrition={nutrition} premiumLevel={premiumLevel} />
+        <TodaysNutritionCard nutrition={nutrition} premiumLevel={premiumLevel} targetDateStr={targetDateStr} />
 
         {/* 7. Daily Activity Card */}
         <DailyActivityCard lifestyle={lifestyle} activity={dailyActivity} activityDate={targetDateStr} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} />
