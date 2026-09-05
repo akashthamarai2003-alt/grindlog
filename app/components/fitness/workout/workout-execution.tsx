@@ -56,13 +56,6 @@ export function WorkoutExecution({
   // Keep screen awake during workout — released automatically on unmount
   useWakeLock(!isPaused);
 
-  // Prefetch workout summary route for instant transition on finish
-  useEffect(() => {
-    if (workout?.id && workout.id !== "mock") {
-      router.prefetch(`/workout/${workout.id}/summary`);
-    }
-  }, [workout?.id, router]);
-
   // Compute completed exercises status
   const exercises = workout.fitness_os_exercises || [];
   const totalExercises = exercises.length;
@@ -78,18 +71,16 @@ export function WorkoutExecution({
     if (effectiveIsFinishing) return;
     setIsFinishing(true);
     setShowEarlyFinishModal(false);
-    toast.success("All exercises completed! Finishing workout...");
+    toast.success("Finishing workout...");
     
     // If it's a mock workout, skip real API call
     if (workout.id === "mock") {
+      clearWorkoutTimer("mock");
       router.push(`/workout/${workout.id}/summary`);
       return;
     }
 
     try {
-      // Optimistic navigation
-      router.push(`/workout/${workout.id}/summary`);
-
       const res = await fetch(`/api/workouts/sessions/${sessionId}/complete`, {
         method: "PATCH"
       });
@@ -97,6 +88,8 @@ export function WorkoutExecution({
         const data = await res.json();
         throw new Error(data.error || "Failed to finish workout");
       }
+      clearWorkoutTimer(workout.id);
+      router.push(`/workout/${workout.id}/summary`);
     } catch (e: any) {
       toast.error(e.message || "Failed to finish workout");
       setIsFinishing(false);

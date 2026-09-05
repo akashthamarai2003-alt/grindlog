@@ -54,20 +54,12 @@ export function WorkoutSessionManager({
 
     toast.success("All exercises completed! Finishing workout...");
 
-    // Prefetch summary route
-    if (workout.id !== "mock") {
-      router.prefetch(`/workout/${workout.id}/summary`);
-    }
-
     if (workout.id === "mock") {
       router.push(`/workout/${workout.id}/summary`);
       return;
     }
 
     try {
-      // Optimistic navigation
-      router.push(`/workout/${workout.id}/summary`);
-
       const res = await fetch(`/api/workouts/sessions/${sessionId}/complete`, {
         method: "PATCH"
       });
@@ -75,6 +67,7 @@ export function WorkoutSessionManager({
         const data = await res.json();
         throw new Error(data.error || "Failed to finish workout");
       }
+      router.push(`/workout/${workout.id}/summary`);
     } catch (e: any) {
       toast.error(e.message || "Failed to finish workout");
       setIsFinishing(false);

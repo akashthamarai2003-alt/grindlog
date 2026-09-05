@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Trophy, Activity, Save, Bot, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
+import { Flame, Trophy, Activity, Save, Bot, ChevronRight, AlertCircle, Loader2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FitnessWorkout } from "@/types/fitness/workout";
 import { MuscleMap } from "@/components/fitness/workout/muscle-map";
+import { reopenWorkoutAction } from "@/app/actions/fitness";
+import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 
 interface WorkoutCompleteProps {
   workout: FitnessWorkout;
@@ -60,7 +62,23 @@ export function WorkoutComplete({
   const [pain, setPain] = useState<string | null>(initialFeedback?.pain || null);
   const [painLocation, setPainLocation] = useState<string | null>(initialFeedback?.painLocation || null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isReopening, setIsReopening] = useState(false);
   const router = useRouter();
+
+  const handleReopenWorkout = async () => {
+    if (isReopening) return;
+    setIsReopening(true);
+    try {
+      clearWorkoutTimer(workout.id);
+      const res = await reopenWorkoutAction({ workoutId: workout.id });
+      if (!res.success) throw new Error(res.error || "Failed to reopen workout");
+      toast.success("Workout re-opened! Returning to session...");
+      router.push(`/workout/${workout.id}`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reopen workout");
+      setIsReopening(false);
+    }
+  };
 
   const isFeedbackComplete = difficulty && feel && (pain === "No" || (pain === "Yes" && painLocation));
 
@@ -359,20 +377,52 @@ export function WorkoutComplete({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
-        className="w-full"
+        className="w-full flex flex-col gap-3"
       >
-        <button 
-          onClick={handleSaveWorkout}
-          disabled={!isFeedbackComplete || isSaving}
-          className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
-        >
-          {isSaving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )}
-          {isSaving ? "Saving..." : initialFeedback?.difficulty ? "Update Workout" : "Save Workout"}
-        </button>
+        {completedSets === 0 && (
+          <div className="w-full p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-semibold leading-relaxed text-center">
+            No sets were recorded for this workout yet. Tap below to start your training session.
+          </div>
+        )}
+
+        {completedSets === 0 ? (
+          <button
+            onClick={handleReopenWorkout}
+            disabled={isReopening}
+            className="w-full bg-[#ADFF00] hover:bg-[#bfff33] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+          >
+            {isReopening ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <RotateCcw className="w-4 h-4" />}
+            <span>{isReopening ? "Reopening..." : "Start Workout Now"}</span>
+          </button>
+        ) : (
+          <>
+            <button 
+              onClick={handleSaveWorkout}
+              disabled={!isFeedbackComplete || isSaving}
+              className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale cursor-pointer"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {isSaving ? "Saving..." : initialFeedback?.difficulty ? "Update Workout" : "Save Workout"}
+            </button>
+
+            <button
+              onClick={handleReopenWorkout}
+              disabled={isReopening}
+              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 font-bold uppercase tracking-widest text-xs py-3.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isReopening ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+              ) : (
+                <RotateCcw className="w-3.5 h-3.5 text-[#ADFF00]" />
+              )}
+              <span>{isReopening ? "Reopening..." : "Re-open & Continue Training"}</span>
+            </button>
+          </>
+        )}
       </motion.div>
       
     </div>

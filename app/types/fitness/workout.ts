@@ -23,6 +23,14 @@ export const DiscardWorkoutSchema = z.object({
   sessionId: z.string().uuid("Invalid session ID").optional(),
 });
 
+export const ReopenWorkoutSchema = z.object({
+  workoutId: z.string().uuid("Invalid workout ID"),
+});
+
+export const EndWorkoutSchema = z.object({
+  workoutId: z.string().uuid("Invalid workout ID"),
+});
+
 export type WorkoutStatus = z.infer<typeof WorkoutStatusSchema>;
 export type SessionStatus = z.infer<typeof SessionStatusSchema>;
 

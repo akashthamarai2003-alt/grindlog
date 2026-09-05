@@ -61,19 +61,10 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
     redirect("/workout");
   }
 
-  // Ensure workout and session status are completed in database
+  // Guard: If workout is not completed, redirect back to active workout execution.
+  // A GET route must NEVER have side-effects marking an in-progress workout as completed!
   if (workout.status !== "completed") {
-    const activeSession = workout.fitness_os_workout_sessions?.find(
-      (s: any) => s.status === "active" || s.status === "paused"
-    );
-    if (activeSession) {
-      await WorkoutService.completeSession(user.id, activeSession.id).catch(console.error);
-    } else {
-      await supabase
-        .from("fitness_os_workouts")
-        .update({ status: "completed", completed_at: new Date().toISOString() })
-        .eq("id", workoutId);
-    }
+    redirect(`/workout/${workoutId}`);
   }
 
   const exerciseCount = workout.fitness_os_exercises?.length || 0;
@@ -109,13 +100,6 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
   // or not recorded, estimate active lifting time based on completed sets (~3.5 min/set)
   if (rawDurationMin > 180 || rawDurationMin < 5) {
     durationMin = completedSets > 0 ? Math.round(completedSets * 3.5) : 45;
-    
-    // Update the workout record with realistic duration
-    supabase
-      .from("fitness_os_workouts")
-      .update({ duration_minutes: durationMin })
-      .eq("id", workoutId)
-      .then(() => {});
   }
 
   // Realistic strength training calories (~5.5 to 6.5 kcal/min, capped realistically)

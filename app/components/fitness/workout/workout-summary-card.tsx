@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { reopenWorkoutAction } from "@/app/actions/fitness";
 
 interface WorkoutSummaryCardProps {
   workout: any;
@@ -35,24 +36,27 @@ export function WorkoutSummaryCard({
     ex.fitness_os_sets.length > 0 && 
     ex.fitness_os_sets.every((set: any) => set.completed)
   ).length;
-  const isInProgress = !isCompleted && (workout?.status === "in_progress" || (completedCount > 0 && completedCount < exerciseCount));
+
+  // A workout is ONLY genuinely complete if at least 1 exercise was completed
+  const isTrulyCompleted = isCompleted && completedCount > 0;
+  const isInProgress = !isTrulyCompleted && (workout?.status === "in_progress" || (completedCount > 0 && completedCount < exerciseCount));
 
   const resolvedEyebrow = eyebrow || (isUpcoming ? "Early Start" : "Today's Workout");
 
   useEffect(() => {
     if (workout?.id && workout.id !== "mock") {
       router.prefetch(`/workout/${workout.id}`);
-      if (isCompleted) {
+      if (isTrulyCompleted && completedCount === exerciseCount) {
         router.prefetch(`/workout/${workout.id}/summary`);
       }
     }
-  }, [workout?.id, isCompleted, router]);
+  }, [workout?.id, isTrulyCompleted, completedCount, exerciseCount, router]);
 
   const startWorkout = async () => {
     if (isStarting) return;
     setIsStarting(true);
 
-    if (isCompleted) {
+    if (isTrulyCompleted && completedCount === exerciseCount) {
       router.push(`/workout/${workout.id}/summary`);
       return;
     }
@@ -78,12 +82,25 @@ export function WorkoutSummaryCard({
     }
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (isStarting) return;
-    if (isCompleted) {
+    if (isTrulyCompleted && completedCount === exerciseCount) {
       router.push(`/workout/${workout.id}/summary`);
       return;
     }
+
+    // If workout was falsely marked completed with 0 sets (or partial sets), reopen it!
+    if (workout?.status === "completed") {
+      setIsStarting(true);
+      try {
+        await reopenWorkoutAction({ workoutId: workout.id });
+        router.push(`/workout/${workout.id}`);
+      } catch {
+        router.push(`/workout/${workout.id}`);
+      }
+      return;
+    }
+
     if (isInProgress) {
       setIsStarting(true);
       router.push(`/workout/${workout.id}`);
@@ -198,7 +215,7 @@ export function WorkoutSummaryCard({
 
           {/* Action Button */}
           {!hideStartButton && (
-            isCompleted ? (
+            isTrulyCompleted && completedCount === exerciseCount ? (
               <Link
                 href={`/workout/${workout.id}/summary`}
                 className="w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] cursor-pointer bg-white/10 text-white hover:bg-white/20"
@@ -207,33 +224,44 @@ export function WorkoutSummaryCard({
                 <ArrowRight className="w-5 h-5" />
               </Link>
             ) : (
-              <button
-                onClick={handleStart}
-                disabled={isStarting}
-                className="w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-70 cursor-pointer bg-[#ADFF00] text-black hover:bg-[#bfff33] shadow-[0_0_20px_rgba(173,255,0,0.2)]"
-              >
-                {isStarting ? (
-                  <>
-                    <span>{isInProgress ? "RESUMING..." : "STARTING..."}</span>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  </>
-                ) : isInProgress ? (
-                  <>
-                    <span>CONTINUE WORKOUT</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                ) : isUpcoming ? (
-                  <>
-                    <span>START EARLY</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                ) : (
-                  <>
-                    <span>START WORKOUT</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleStart}
+                  disabled={isStarting}
+                  className="w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-70 cursor-pointer bg-[#ADFF00] text-black hover:bg-[#bfff33] shadow-[0_0_20px_rgba(173,255,0,0.2)]"
+                >
+                  {isStarting ? (
+                    <>
+                      <span>{isInProgress ? "RESUMING..." : "STARTING..."}</span>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    </>
+                  ) : isInProgress ? (
+                    <>
+                      <span>CONTINUE WORKOUT</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  ) : isUpcoming ? (
+                    <>
+                      <span>START EARLY</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  ) : (
+                    <>
+                      <span>START WORKOUT</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+
+                {isTrulyCompleted && completedCount < exerciseCount && (
+                  <Link
+                    href={`/workout/${workout.id}/summary`}
+                    className="w-full text-center text-xs font-bold text-white/50 hover:text-white py-1 uppercase tracking-wider transition-colors"
+                  >
+                    View Incomplete Summary
+                  </Link>
                 )}
-              </button>
+              </div>
             )
           )}
 

@@ -101,6 +101,16 @@ export class WorkoutService {
         e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
       ).length || 0;
 
+      // Self-healing: If workout was falsely marked completed with 0 exercises completed,
+      // revert it back to scheduled so the user can actually train!
+      if (workout.status === "completed" && completedExercises === 0) {
+        await supabase
+          .from("fitness_os_workouts")
+          .update({ status: "scheduled", completed_at: null, duration_minutes: null })
+          .eq("id", workout.id);
+        workout.status = "scheduled";
+      }
+
       return {
         ...workout,
         exerciseCount,
@@ -157,6 +167,16 @@ export class WorkoutService {
         const completedExercises = targetEarly.fitness_os_exercises?.filter((e: any) => 
           e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
         ).length || 0;
+
+        // Self-healing: If an early workout was falsely marked completed with 0 completed exercises,
+        // revert its status so the user is not locked out!
+        if (targetEarly.status === "completed" && completedExercises === 0) {
+          await supabase
+            .from("fitness_os_workouts")
+            .update({ status: "scheduled", completed_at: null, duration_minutes: null })
+            .eq("id", targetEarly.id);
+          targetEarly.status = "scheduled";
+        }
 
         return {
           ...targetEarly,

@@ -6,7 +6,7 @@ import { Play, Square, Loader2, Check, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { discardWorkoutSessionAction } from "@/app/actions/fitness";
+import { discardWorkoutSessionAction, endWorkoutAction } from "@/app/actions/fitness";
 import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 
 interface ActiveWorkoutResumeCardProps {
@@ -40,15 +40,31 @@ export function ActiveWorkoutResumeCard({
     }
   };
 
+  const handleEndWorkout = async () => {
+    if (isEnding) return;
+    setIsEnding(true);
+    try {
+      clearWorkoutTimer(workoutId);
+      const res = await endWorkoutAction({ workoutId });
+      if (!res.success) throw new Error(res.error || "Failed to end workout");
+      router.push(`/workout/${workoutId}/summary`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to end workout");
+      setIsEnding(false);
+    }
+  };
+
   const isAllDone = totalExercises > 0 && completedExercises >= totalExercises;
 
-  // Proactively prefetch the workout and summary routes on mount so navigation is instant
+  // Only prefetch summary route if workout is genuinely complete
   useEffect(() => {
     if (workoutId && workoutId !== "mock") {
       router.prefetch(`/workout/${workoutId}`);
-      router.prefetch(`/workout/${workoutId}/summary`);
+      if (isAllDone) {
+        router.prefetch(`/workout/${workoutId}/summary`);
+      }
     }
-  }, [workoutId, router]);
+  }, [workoutId, isAllDone, router]);
 
   return (
     <motion.div 
@@ -100,13 +116,10 @@ export function ActiveWorkoutResumeCard({
 
         {!isAllDone && (
           <div className="flex gap-2">
-            <Link
-              href={`/workout/${workoutId}/summary`}
-              prefetch={true}
-              onClick={() => setIsEnding(true)}
-              onMouseEnter={() => router.prefetch(`/workout/${workoutId}/summary`)}
-              onTouchStart={() => router.prefetch(`/workout/${workoutId}/summary`)}
-              className={`flex-1 py-3.5 bg-[#111A10] border border-white/10 hover:bg-white/5 active:scale-[0.98] transition-all duration-200 rounded-xl flex items-center justify-center gap-2 ${
+            <button
+              onClick={handleEndWorkout}
+              disabled={isEnding || isDiscarding}
+              className={`flex-1 py-3.5 bg-[#111A10] border border-white/10 hover:bg-white/5 active:scale-[0.98] transition-all duration-200 rounded-xl flex items-center justify-center gap-2 cursor-pointer ${
                 isEnding || isDiscarding ? "opacity-80 pointer-events-none" : ""
               }`}
             >
@@ -121,7 +134,7 @@ export function ActiveWorkoutResumeCard({
                   <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">End Workout</span>
                 </>
               )}
-            </Link>
+            </button>
 
             <button
               onClick={handleDiscard}
