@@ -357,7 +357,7 @@ export class WorkoutService {
     // 2. Check for active session first (idempotent resume)
     const { data: existingSessions, error: sErr } = await supabase
       .from("fitness_os_workout_sessions")
-      .select("id")
+      .select("id, started_at, status")
       .eq("workout_id", workoutId)
       .in("status", ["active", "paused"])
       .limit(1);
@@ -365,8 +365,22 @@ export class WorkoutService {
     if (sErr) throw sErr;
 
     if (existingSessions && existingSessions.length > 0) {
-      // Idempotent: return existing session immediately
-      return existingSessions[0];
+      const sess = existingSessions[0];
+      const sessionAgeMs = sess.started_at ? Date.now() - new Date(sess.started_at).getTime() : 0;
+      // Stale check: If older than 4 hours (14,400s), auto-retire and don't re-serve stale session
+      if (sessionAgeMs > 4 * 60 * 60 * 1000 || sessionAgeMs < 0) {
+        await supabase
+          .from("fitness_os_workout_sessions")
+          .update({
+            status: "cancelled",
+            completed_at: new Date().toISOString(),
+            duration_seconds: 3600
+          })
+          .eq("id", sess.id);
+      } else {
+        // Idempotent: return valid existing session immediately
+        return sess;
+      }
     }
 
     const today = await this.getLocalDateString(userId);
@@ -525,6 +539,16 @@ export class WorkoutService {
       }
     }
 
+    // Apply realistic real-world safeguard before database persistence:
+    // If a session was left active/unclosed for > 3 hours (180 mins) or < 2 mins with completed sets,
+    // estimate realistic active lifting time based on completed sets (~3.5 mins/set).
+    let durationMin = Math.round(durationSec / 60);
+    if (durationMin > 180 || durationMin < 2) {
+      const completedSetsCount = setsData?.length || 0;
+      durationMin = completedSetsCount > 0 ? Math.round(completedSetsCount * 3.5) : 45;
+      durationSec = durationMin * 60;
+    }
+
     // 2. Update session
     const { error: updateSessErr } = await supabase
       .from("fitness_os_workout_sessions")
@@ -538,16 +562,6 @@ export class WorkoutService {
     if (updateSessErr) throw updateSessErr;
 
     // 3. Update workout
-    let durationMin = Math.round(durationSec / 60);
-
-    // Realistic real-world safeguard:
-    // If a session was left active/unclosed for > 3 hours (180 mins) or < 2 mins,
-    // estimate realistic active lifting time based on completed sets (~3.5 mins/set).
-    if (durationMin > 180 || durationMin < 2) {
-      const completedSetsCount = setsData?.length || 0;
-      durationMin = completedSetsCount > 0 ? Math.round(completedSetsCount * 3.5) : 45;
-      durationSec = durationMin * 60;
-    }
 
     const today = await this.getLocalDateString(userId);
     const { data: workoutRecord } = await supabase

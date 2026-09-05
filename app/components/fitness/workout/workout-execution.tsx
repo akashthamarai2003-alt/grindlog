@@ -7,10 +7,12 @@ import { useWakeLock } from "@/hooks/fitness/useWakeLock";
 import { TodaysExercisesList } from "./todays-exercises-list";
 import { AiCoachNote } from "./ai-coach-note";
 import { WorkoutSummaryCard } from "./workout-summary-card";
-import { Pause, Play, CheckCircle, Loader2, AlertTriangle, X } from "lucide-react";
+import { Pause, Play, CheckCircle, Loader2, AlertTriangle, X, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
+import { discardWorkoutSessionAction } from "@/app/actions/fitness";
+import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 
 interface WorkoutExecutionProps {
   workout: FitnessWorkout & {
@@ -42,6 +44,8 @@ export function WorkoutExecution({
   const router = useRouter();
   const [isFinishing, setIsFinishing] = useState(false);
   const [showEarlyFinishModal, setShowEarlyFinishModal] = useState(false);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const [isDiscarding, setIsDiscarding] = useState(false);
   
   const effectiveIsFinishing = externalIsFinishing !== undefined ? externalIsFinishing : isFinishing;
   const currentSession = (workout as any).fitness_os_workout_sessions?.find((s: any) => s.id === sessionId);
@@ -96,6 +100,31 @@ export function WorkoutExecution({
     } catch (e: any) {
       toast.error(e.message || "Failed to finish workout");
       setIsFinishing(false);
+    }
+  };
+
+  const handleDiscard = async () => {
+    if (isDiscarding) return;
+    setIsDiscarding(true);
+
+    if (workout.id === "mock") {
+      clearWorkoutTimer("mock");
+      toast.success("Workout session discarded.");
+      router.push("/workout");
+      return;
+    }
+
+    try {
+      clearWorkoutTimer(workout.id);
+      const res = await discardWorkoutSessionAction({ workoutId: workout.id, sessionId });
+      if (!res.success) {
+        throw new Error(res.error || "Failed to discard workout");
+      }
+      toast.success("Workout session discarded.");
+      router.push("/workout");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to discard workout");
+      setIsDiscarding(false);
     }
   };
 
@@ -210,12 +239,21 @@ export function WorkoutExecution({
             <span className="text-xs font-black">{effectiveIsFinishing ? "Finishing..." : "Finish Workout"}</span>
           </button>
         ) : (
-          <button
-            onClick={() => setShowEarlyFinishModal(true)}
-            className="w-full py-3 text-white/40 hover:text-white/80 text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer mt-1"
-          >
-            <span>End Workout Early ({completedExercises}/{totalExercises} Completed)</span>
-          </button>
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => setShowEarlyFinishModal(true)}
+              className="w-full py-3 text-white/40 hover:text-white/80 text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+            >
+              <span>End Workout Early ({completedExercises}/{totalExercises} Completed)</span>
+            </button>
+            <button
+              onClick={() => setShowDiscardModal(true)}
+              className="w-full py-2 text-rose-400/50 hover:text-rose-400 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Discard Workout Session</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -276,6 +314,82 @@ export function WorkoutExecution({
                 >
                   {isFinishing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Save & Finish Session</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowEarlyFinishModal(false);
+                    setShowDiscardModal(true);
+                  }}
+                  className="w-full py-2 text-rose-400/50 hover:text-rose-400 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Discard Workout Completely</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Discard Workout Confirmation Modal */}
+      <AnimatePresence>
+        {showDiscardModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isDiscarding && setShowDiscardModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md bg-[#0A1108] border-t border-white/10 sm:border sm:rounded-[24px] rounded-t-[32px] p-6 shadow-2xl z-10"
+            >
+              <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
+
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                    <Trash2 className="w-4 h-4 text-rose-400" />
+                  </div>
+                  <h3 className="text-base font-black text-white uppercase tracking-wider">
+                    Discard Workout?
+                  </h3>
+                </div>
+                <button
+                  onClick={() => !isDiscarding && setShowDiscardModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-sm text-white/70 leading-relaxed mb-6">
+                Are you sure you want to discard this workout session? Your active timer will be reset, no sets will be recorded, and the workout will return to scheduled.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => setShowDiscardModal(false)}
+                  disabled={isDiscarding}
+                  className="w-full py-4 bg-[#ADFF00] text-black font-black uppercase tracking-widest rounded-xl active:scale-[0.98] transition-transform cursor-pointer hover:bg-[#b8ff1a] disabled:opacity-50"
+                >
+                  Keep Training
+                </button>
+
+                <button
+                  onClick={handleDiscard}
+                  disabled={isDiscarding}
+                  className="w-full py-3.5 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-bold uppercase tracking-widest text-xs rounded-xl active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isDiscarding && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{isDiscarding ? "Discarding..." : "Yes, Discard Workout"}</span>
                 </button>
               </div>
             </motion.div>

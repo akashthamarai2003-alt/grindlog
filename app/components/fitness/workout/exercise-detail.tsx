@@ -251,9 +251,9 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
           <h1 className="text-xl font-black text-white tracking-tight uppercase">BACK</h1>
         </div>
         {startedAt && (
-          <div className="flex items-center gap-1.5 bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1 rounded-md">
+          <div className="flex items-center gap-1.5 bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1.5 rounded-xl shrink-0">
             <Timer className={`w-3.5 h-3.5 ${isPaused ? "text-white/50" : "text-[#ADFF00]"}`} />
-            <span className={`text-xs font-black tracking-widest ${isPaused ? "text-white/50" : "text-[#ADFF00]"}`}>
+            <span className={`text-xs font-black tracking-widest tabular-nums ${isPaused ? "text-white/50" : "text-[#ADFF00]"}`}>
               {formattedTime}
             </span>
           </div>

@@ -18,6 +18,11 @@ export const SessionActionSchema = z.object({
   sessionId: z.string().uuid("Invalid session ID"),
 });
 
+export const DiscardWorkoutSchema = z.object({
+  workoutId: z.string().uuid("Invalid workout ID"),
+  sessionId: z.string().uuid("Invalid session ID").optional(),
+});
+
 export type WorkoutStatus = z.infer<typeof WorkoutStatusSchema>;
 export type SessionStatus = z.infer<typeof SessionStatusSchema>;
 

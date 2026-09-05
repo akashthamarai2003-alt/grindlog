@@ -116,23 +116,42 @@ export default async function ActiveWorkoutPage({
     (s: any) => s.status === "active" || s.status === "paused"
   );
 
-  if (!activeSession) {
-    if (workout.fitness_os_workout_sessions && workout.fitness_os_workout_sessions.length > 0) {
-      activeSession = [...workout.fitness_os_workout_sessions].sort(
-        (a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
-      )[0];
-    } else {
-      const { data: newSession } = await supabase
+  // Stale check: If an active/paused session is older than 4 hours, auto-retire it as cancelled
+  const MAX_SESSION_AGE_MS = 4 * 60 * 60 * 1000;
+  if (activeSession && activeSession.started_at) {
+    const sessionAgeMs = Date.now() - new Date(activeSession.started_at).getTime();
+    if (sessionAgeMs > MAX_SESSION_AGE_MS || sessionAgeMs < 0) {
+      await supabase
         .from("fitness_os_workout_sessions")
-        .insert({
-          user_id: user.id,
-          workout_id: workoutId,
-          status: "active"
+        .update({
+          status: "cancelled",
+          completed_at: new Date().toISOString(),
+          duration_seconds: 3600
         })
-        .select()
-        .single();
-      activeSession = newSession;
+        .eq("id", activeSession.id);
+      activeSession = null;
     }
+  }
+
+  if (!activeSession) {
+    const nowIso = new Date().toISOString();
+    const { data: newSession } = await supabase
+      .from("fitness_os_workout_sessions")
+      .insert({
+        user_id: user.id,
+        workout_id: workoutId,
+        status: "active",
+        started_at: nowIso
+      })
+      .select()
+      .single();
+    activeSession = newSession;
+
+    // Keep parent workout started_at in sync with the fresh session
+    await supabase
+      .from("fitness_os_workouts")
+      .update({ started_at: nowIso })
+      .eq("id", workoutId);
   }
 
   if (!activeSession) {

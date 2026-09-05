@@ -1,4 +1,41 @@
 import { useState, useEffect } from "react";
+
+// Maximum realistic workout duration (4 hours = 14,400 seconds)
+export const MAX_WORKOUT_SECONDS = 4 * 3600;
+
+// Maximum idle gap before treating an open tab as abandoned (2 hours)
+export const MAX_IDLE_GAP_SECONDS = 2 * 3600;
+
+/**
+ * Cleanly format seconds into MM:SS (under 1 hour) or HH:MM:SS (1 hour or more).
+ * Guaranteed to never display runaway uncapped minutes like 1615:01.
+ */
+export function formatWorkoutTime(seconds: number): string {
+  const clamped = Math.max(0, Math.min(Math.floor(seconds), MAX_WORKOUT_SECONDS));
+  const hours = Math.floor(clamped / 3600);
+  const minutes = Math.floor((clamped % 3600) / 60);
+  const secs = clamped % 60;
+
+  const pad = (n: number) => n.toString().padStart(2, "0");
+
+  if (hours > 0) {
+    return `${hours}:${pad(minutes)}:${pad(secs)}`;
+  }
+  return `${pad(minutes)}:${pad(secs)}`;
+}
+
+/**
+ * Remove local storage timer data for a workout when finished or discarded.
+ */
+export function clearWorkoutTimer(workoutId: string) {
+  if (typeof window === "undefined" || !workoutId) return;
+  try {
+    localStorage.removeItem(`workout_timer_${workoutId}`);
+  } catch (e) {
+    console.error("Failed to clear workout timer from localStorage", e);
+  }
+}
+
 export function useWorkoutTimer(workoutId?: string, startedAt?: string | null, isPaused?: boolean) {
   const [elapsed, setElapsed] = useState(0);
 
@@ -6,36 +43,65 @@ export function useWorkoutTimer(workoutId?: string, startedAt?: string | null, i
     if (!workoutId || !startedAt) return;
 
     const storageKey = `workout_timer_${workoutId}`;
-    const saved = localStorage.getItem(storageKey);
+    const startedAtMs = new Date(startedAt).getTime();
+    const nowMs = Date.now();
+    const rawElapsedSinceStart = Math.floor((nowMs - startedAtMs) / 1000);
+
+    // Stale check: If startedAt is older than 4 hours, purge stale cache and reset
+    if (rawElapsedSinceStart > MAX_WORKOUT_SECONDS || rawElapsedSinceStart < 0) {
+      clearWorkoutTimer(workoutId);
+      setElapsed(0);
+      return;
+    }
+
     let currentElapsed = 0;
-    let lastTick = Date.now();
+    const saved = localStorage.getItem(storageKey);
 
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        currentElapsed = parsed.elapsed || 0;
-        lastTick = parsed.lastTick || Date.now();
-        
-        if (!parsed.isPaused && !isPaused) {
-          const diff = Math.floor((Date.now() - lastTick) / 1000);
-          currentElapsed += diff;
+        const lastTick = parsed.lastTick || nowMs;
+        const idleDiff = Math.floor((nowMs - lastTick) / 1000);
+
+        // If the tab was suspended for more than 2 hours or saved elapsed exceeds max, discard stale cache
+        if (idleDiff > MAX_IDLE_GAP_SECONDS || (parsed.elapsed || 0) > MAX_WORKOUT_SECONDS) {
+          clearWorkoutTimer(workoutId);
+          currentElapsed = Math.min(rawElapsedSinceStart, MAX_WORKOUT_SECONDS);
+        } else {
+          currentElapsed = parsed.elapsed || 0;
+          if (!parsed.isPaused && !isPaused) {
+            currentElapsed += Math.max(0, idleDiff);
+          }
         }
-      } catch (e) {}
+      } catch {
+        currentElapsed = Math.max(0, Math.min(rawElapsedSinceStart, MAX_WORKOUT_SECONDS));
+      }
     } else {
-      currentElapsed = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
+      currentElapsed = Math.max(0, Math.min(rawElapsedSinceStart, MAX_WORKOUT_SECONDS));
     }
 
-    setElapsed(Math.max(0, currentElapsed));
+    currentElapsed = Math.min(currentElapsed, MAX_WORKOUT_SECONDS);
+    setElapsed(currentElapsed);
 
     if (isPaused) {
-      localStorage.setItem(storageKey, JSON.stringify({ elapsed: currentElapsed, lastTick: Date.now(), isPaused: true }));
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ elapsed: currentElapsed, lastTick: Date.now(), isPaused: true })
+      );
       return;
     }
 
     const interval = setInterval(() => {
       setElapsed(prev => {
+        if (prev >= MAX_WORKOUT_SECONDS) {
+          clearInterval(interval);
+          return MAX_WORKOUT_SECONDS;
+        }
         const next = prev + 1;
-        localStorage.setItem(storageKey, JSON.stringify({ elapsed: next, lastTick: Date.now(), isPaused: false }));
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({ elapsed: next, lastTick: Date.now(), isPaused: false })
+        );
         return next;
       });
     }, 1000);
@@ -43,11 +109,8 @@ export function useWorkoutTimer(workoutId?: string, startedAt?: string | null, i
     return () => clearInterval(interval);
   }, [workoutId, startedAt, isPaused]);
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  return { 
+    elapsed, 
+    formattedTime: formatWorkoutTime(elapsed) 
   };
-
-  return { elapsed, formattedTime: formatTime(elapsed) };
 }
