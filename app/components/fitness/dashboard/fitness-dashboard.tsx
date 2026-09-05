@@ -19,6 +19,7 @@ interface FitnessDashboardProps {
   profile: Partial<OnboardingData>;
   activePlan?: any;
   todayWorkout?: any;
+  weekWorkouts?: any[];
   hasPlan?: boolean;
   nutrition?: any;
   lifestyle?: any;
@@ -28,22 +29,33 @@ interface FitnessDashboardProps {
   targetDateStr?: string;
 }
 
-export function FitnessDashboard({ user, profile, activePlan, todayWorkout, hasPlan, nutrition, lifestyle, dailyActivity, dayNumber = 1, premiumLevel = "core", targetDateStr }: FitnessDashboardProps) {
+export function FitnessDashboard({
+  user,
+  profile,
+  activePlan,
+  todayWorkout,
+  weekWorkouts = [],
+  hasPlan,
+  nutrition,
+  lifestyle,
+  dailyActivity,
+  dayNumber = 1,
+  premiumLevel = "core",
+  targetDateStr,
+}: FitnessDashboardProps) {
   return (
     <div className="flex flex-col min-h-screen bg-[#0A1108] text-white overflow-x-hidden">
-      
       {/* Background ambient glow matching the dark neon aesthetic */}
       <div className="absolute top-0 left-0 right-0 h-64 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-50 z-0" />
-      
+
       <main className="flex-1 flex flex-col w-full max-w-md mx-auto pt-6 pb-28 px-5 z-10 relative gap-6">
-        
         <div className="mb-6 relative z-10">
-        <DashboardHeader 
-          name={profile.name || user.user_metadata?.full_name || "Athlete"} 
-          dayNumber={dayNumber} 
-          avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
-        />
-      </div>
+          <DashboardHeader
+            name={profile.name || user.user_metadata?.full_name || "Athlete"}
+            dayNumber={dayNumber}
+            avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
+          />
+        </div>
 
         {hasPlan && activePlan && (
           <section className="rounded-2xl border border-[#ADFF00]/20 bg-[#111A10] p-5 shadow-xl">
@@ -91,7 +103,7 @@ export function FitnessDashboard({ user, profile, activePlan, todayWorkout, hasP
         <TransformationCard profile={profile} premiumLevel={premiumLevel} />
 
         {/* 4. Horizontal Calendar */}
-        <HorizontalCalendar />
+        <HorizontalCalendar weekWorkouts={weekWorkouts} targetDateStr={targetDateStr} />
 
         {/* 5. Today's Workout Card */}
         <TodaysWorkoutCard workout={todayWorkout} targetDateStr={targetDateStr} />

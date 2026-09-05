@@ -3,7 +3,7 @@ import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/ser
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
 import { Suspense } from 'react';
-import { differenceInCalendarDays } from 'date-fns';
+import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
@@ -26,10 +26,18 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
   const targetDateStart = new Date(`${targetDateStr}T00:00:00.000Z`);
   const nextTargetDate = new Date(targetDateStart.getTime() + 24 * 60 * 60 * 1000);
 
+  // Compute active week range (Monday to Sunday) for weekly consistency & calendar
+  const activeDate = parseISO(targetDateStr);
+  const weekStart = startOfWeek(activeDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(activeDate, { weekStartsOn: 1 });
+  const weekStartStr = format(weekStart, "yyyy-MM-dd");
+  const weekEndStr = format(weekEnd, "yyyy-MM-dd");
+
   const [
     { data: profile },
     { data: plan },
     { data: workout },
+    { data: weekWorkouts },
     { data: activityLog },
     { data: sleepLog },
     { data: waterLogs },
@@ -44,12 +52,12 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
         fitness_os_sets (completed)
       )
     `).eq("user_id", user.id).eq("workout_date", targetDateStr).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("fitness_os_workouts").select("id, workout_date, status, name").eq("user_id", user.id).gte("workout_date", weekStartStr).lte("workout_date", weekEndStr),
     supabase.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
     supabase.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
     (supabase as any).from("fitness_os_water_logs").select("amount_ml").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
     getFitnessPlan(user.id),
   ]);
-
   if (!profile?.onboarding_completed) {
     redirect("/onboarding");
   }
@@ -109,7 +117,22 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       }
     : undefined;
 
-  return <FitnessDashboard user={user} profile={profile || {}} activePlan={plan} todayWorkout={workout} hasPlan={!!plan} nutrition={plan?.plan_data?.nutrition} lifestyle={plan?.plan_data?.lifestyle} dailyActivity={dailyActivity} dayNumber={dayNumber} premiumLevel={subscriptionPlan.id === "pro" ? "pro" : "core"} targetDateStr={targetDateStr} />;
+  return (
+    <FitnessDashboard
+      user={user}
+      profile={profile || {}}
+      activePlan={plan}
+      todayWorkout={workout}
+      weekWorkouts={weekWorkouts || []}
+      hasPlan={!!plan}
+      nutrition={plan?.plan_data?.nutrition}
+      lifestyle={plan?.plan_data?.lifestyle}
+      dailyActivity={dailyActivity}
+      dayNumber={dayNumber}
+      premiumLevel={subscriptionPlan.id === "pro" ? "pro" : "core"}
+      targetDateStr={targetDateStr}
+    />
+  );
 }
 
 export default async function FitnessHome({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
