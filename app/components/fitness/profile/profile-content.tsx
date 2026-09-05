@@ -244,6 +244,92 @@ export function ProfileContent({
           </div>
         </motion.div>
 
+        {/* Your Saved AI Plan Card */}
+        {activePlan ? (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="relative bg-[#121E12] border border-[#1A2619] hover:border-[#ADFF00]/30 rounded-3xl p-5 shadow-xl transition-all overflow-hidden"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center text-[#ADFF00] shrink-0">
+                <Target className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#ADFF00]">
+                    Your Saved AI Plan
+                  </p>
+                  <Link
+                    href="/workout"
+                    prefetch={true}
+                    className="text-[10px] font-bold text-[#ADFF00] hover:underline flex items-center gap-0.5"
+                  >
+                    View Workouts →
+                  </Link>
+                </div>
+                <h2 className="mt-1 text-lg font-black text-white tracking-tight leading-snug truncate">
+                  {activePlan.name || "Saved Workout Plan"}
+                </h2>
+                {activePlan.description && (
+                  <p className="mt-1.5 text-xs leading-relaxed text-gray-400 font-medium">
+                    {activePlan.description}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3.5 border-t border-white/5 flex flex-wrap gap-2">
+              {fitnessProfile?.goal && (
+                <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[10px] font-bold text-gray-200">
+                  Goal: {fitnessProfile.goal}
+                </span>
+              )}
+              {fitnessProfile?.target_physique && (
+                <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[10px] font-bold text-gray-200">
+                  Physique: {fitnessProfile.target_physique}
+                </span>
+              )}
+              {fitnessProfile?.training_location && (
+                <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[10px] font-bold text-gray-200 capitalize">
+                  {fitnessProfile.training_location}
+                </span>
+              )}
+              {fitnessProfile?.training_days_per_week && (
+                <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[10px] font-bold text-gray-200">
+                  {fitnessProfile.training_days_per_week} days/week
+                </span>
+              )}
+              {fitnessProfile?.workout_duration_minutes && (
+                <span className="flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[10px] font-bold text-gray-200">
+                  <Dumbbell className="h-3 w-3 text-[#ADFF00]" /> {fitnessProfile.workout_duration_minutes} min/session
+                </span>
+              )}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="bg-[#121E12] border border-[#1A2619] p-5 rounded-3xl flex items-center justify-between"
+          >
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#ADFF00]">AI Workout Plan</p>
+              <h3 className="font-bold text-white text-sm mt-0.5">No Active Plan</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Generate your personalized AI strategy.</p>
+            </div>
+            <Link
+              href="/report"
+              prefetch={true}
+              className="px-4 py-2 bg-[#ADFF00] text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(173,255,0,0.25)] hover:bg-[#b8ff1a] transition-all"
+            >
+              Generate
+            </Link>
+          </motion.div>
+        )}
+
         {/* Subscription & AI Usage Meter */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}

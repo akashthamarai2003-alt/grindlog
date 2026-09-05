@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { ProfileContent } from "@/components/fitness/profile/profile-content";
 import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
@@ -42,15 +41,13 @@ export default async function FitnessProfilePage() {
   ]);
 
   return (
-    <FitnessShell>
-      <ProfileContent
-        user={user}
-        fitnessProfile={fitnessProfile || {}}
-        mainProfile={mainProfile || {}}
-        activePlan={activePlan || null}
-        subscriptionPlan={subscriptionPlan}
-        aiLimitInfo={aiLimitInfo}
-      />
-    </FitnessShell>
+    <ProfileContent
+      user={user}
+      fitnessProfile={fitnessProfile || {}}
+      mainProfile={mainProfile || {}}
+      activePlan={activePlan || null}
+      subscriptionPlan={subscriptionPlan}
+      aiLimitInfo={aiLimitInfo}
+    />
   );
 }

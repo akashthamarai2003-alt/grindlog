@@ -12,7 +12,6 @@ import { DailyActivityCard } from "./daily-activity-card";
 import { TodaysGoalsCard } from "./todays-goals-card";
 import { ExerciseLibraryCard } from "./exercise-library-card";
 import { ProNutritionGenerationCard } from "./pro-nutrition-generation-card";
-import { Dumbbell, Target } from "lucide-react";
 
 interface FitnessDashboardProps {
   user: User;
@@ -56,32 +55,6 @@ export function FitnessDashboard({
             avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
           />
         </div>
-
-        {hasPlan && activePlan && (
-          <section className="rounded-2xl border border-[#ADFF00]/20 bg-[#111A10] p-5 shadow-xl">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ADFF00]/10 text-[#ADFF00]">
-                <Target className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#ADFF00]">Your saved AI plan</p>
-                <h2 className="mt-1 truncate text-lg font-black text-white">{activePlan.name || "Saved workout plan"}</h2>
-                {activePlan.description && <p className="mt-1 text-xs leading-relaxed text-white/50">{activePlan.description}</p>}
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {profile.goal && <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">Goal: {profile.goal}</span>}
-              {profile.target_physique && <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">Physique: {profile.target_physique}</span>}
-              {profile.training_location && <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">{profile.training_location}</span>}
-              {profile.training_days_per_week && <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">{profile.training_days_per_week} days/week</span>}
-              {profile.workout_duration_minutes && (
-                <span className="flex items-center gap-1 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold text-white/80">
-                  <Dumbbell className="h-3 w-3 text-[#ADFF00]" /> {profile.workout_duration_minutes} min/session
-                </span>
-              )}
-            </div>
-          </section>
-        )}
 
         {premiumLevel === "pro" && hasPlan && activePlan && (!Array.isArray(nutrition?.meals) || nutrition.meals.length === 0) && (
           <ProNutritionGenerationCard />
