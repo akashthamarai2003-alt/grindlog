@@ -134,12 +134,43 @@ export function WorkoutSummaryCard({
 
   const muscleString = targetMuscles.join(" • ");
 
+  // Smart TIME estimation from exercise data when duration_minutes is not set
   const rawDuration = workout?.duration_minutes;
-  const displayDuration = rawDuration
-    ? (rawDuration > 180 || rawDuration < 2
-        ? (completedCount > 0 ? Math.round(completedCount * 8) : 45)
-        : rawDuration)
-    : "Not set";
+  let displayDuration: string | number;
+  if (rawDuration && rawDuration >= 2 && rawDuration <= 180) {
+    displayDuration = rawDuration;
+  } else {
+    // Estimate from exercises: ~3.5 min per set (including rest)
+    const totalSets = exercises.reduce((sum: number, ex: any) => {
+      const sets = ex.fitness_os_sets?.length || ex.target_sets || 3;
+      return sum + sets;
+    }, 0);
+    const estimatedMinutes = totalSets > 0 ? Math.round(totalSets * 3.5) : Math.round(exerciseCount * 10);
+    displayDuration = Math.max(15, Math.min(estimatedMinutes, 120));
+  }
+
+  // Smart INTENSITY inference when difficulty_level is not set
+  const rawIntensity = workout?.difficulty_level;
+  let displayIntensity: string;
+  if (rawIntensity) {
+    displayIntensity = rawIntensity;
+  } else {
+    const totalSets = exercises.reduce((sum: number, ex: any) => {
+      return sum + (ex.fitness_os_sets?.length || ex.target_sets || 3);
+    }, 0);
+    const workoutName = (workout?.name || "").toLowerCase();
+    
+    // Infer from workout name or volume
+    if (workoutName.includes("hiit") || workoutName.includes("intense") || workoutName.includes("heavy")) {
+      displayIntensity = "High";
+    } else if (totalSets >= 20 || exerciseCount >= 6) {
+      displayIntensity = "High";
+    } else if (totalSets >= 12 || exerciseCount >= 4) {
+      displayIntensity = "Moderate";
+    } else {
+      displayIntensity = "Light";
+    }
+  }
 
   return (
     <>
@@ -184,7 +215,7 @@ export function WorkoutSummaryCard({
                 <span className="text-sm">⏱</span>
                 <span className="text-xs font-bold uppercase tracking-wider">Time</span>
               </div>
-              <span className="text-lg font-black text-white">{displayDuration !== "Not set" ? `${displayDuration} min` : "Not set"}</span>
+              <span className="text-lg font-black text-white">{displayDuration} min</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -192,7 +223,7 @@ export function WorkoutSummaryCard({
                 <span className="text-sm">💪</span>
                 <span className="text-xs font-bold uppercase tracking-wider">Intensity</span>
               </div>
-              <span className="text-lg font-black text-white">{workout?.difficulty_level || "Not set"}</span>
+              <span className="text-lg font-black text-white">{displayIntensity}</span>
             </div>
           </div>
 
