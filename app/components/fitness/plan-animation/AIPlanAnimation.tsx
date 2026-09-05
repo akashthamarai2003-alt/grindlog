@@ -41,23 +41,37 @@ const PILL_CONFIGS: PillConfig[] = [
   { key: "activity", field: "activity_level", icon: Activity, format: (v) => String(v) },
   { key: "fitness", field: "fitness_level", icon: TrendingUp, format: (v) => String(v) },
   { key: "height", field: "height", icon: Ruler, format: (v) => `${v} cm` },
-  { key: "weight", field: "weight", icon: Weight, format: (v) => `${v} kg` },
   { key: "gender", field: "gender", icon: User, format: (v) => String(v) },
   { key: "food", field: "food_type", icon: Utensils, format: (v) => String(v) },
   { key: "location", field: "training_location", icon: Dumbbell, format: (v) => String(v) },
   { key: "goal", field: "goal", icon: Target, format: (v) => String(v) },
 ];
 
+const DEFAULT_FALLBACK_PROFILE: ProfileSummary = {
+  training_days_per_week: 4,
+  workout_duration_minutes: 45,
+  activity_level: "Active",
+  fitness_level: "Intermediate",
+  height: 175,
+  weight: 70,
+  gender: "Member",
+  food_type: "Balanced",
+  training_location: "Fitness",
+  goal: "Custom Plan",
+};
+
 interface AIPlanAnimationProps {
   /** Keep the final state visible until the live plan request settles. */
   isReady?: boolean;
   hasError?: boolean;
+  minDurationMs?: number;
   onAnimationComplete?: () => void;
 }
 
 export default function AIPlanAnimation({
   isReady = false,
   hasError = false,
+  minDurationMs = 12_000,
   onAnimationComplete,
 }: AIPlanAnimationProps) {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
@@ -77,23 +91,21 @@ export default function AIPlanAnimation({
     };
   }, []);
 
-  // Dynamically build real user data pills
+  // Dynamically build real user data pills with immediate fallback while loading
   const pills: PillData[] = useMemo(() => {
-    if (!profile) return [];
+    const activeData = profile || DEFAULT_FALLBACK_PROFILE;
     return PILL_CONFIGS.filter((c) => {
-      const v = profile[c.field];
+      const v = activeData[c.field];
       return v !== null && v !== undefined && v !== "";
     }).map((c) => ({
       key: c.key,
       icon: c.icon,
-      label: c.format(profile[c.field]),
+      label: c.format(activeData[c.field]),
     }));
   }, [profile]);
 
-  // Start the timeline from the actual pill count. This guarantees that when
-  // profile data arrives—even with exactly eight pills—the opening sequence
-  // begins at DATA_ENTER and each pill/line can enter in order.
-  const timeline = useAnimationTimeline(pills.length, reducedMotion, isReady);
+  // Start the timeline from the actual pill count.
+  const timeline = useAnimationTimeline(pills.length, reducedMotion, isReady, minDurationMs);
 
   // The animation timeline is only visual. Do not reveal a failure screen
   // while the real model call is still running; exit after both are ready.
@@ -123,10 +135,9 @@ export default function AIPlanAnimation({
   return (
     <motion.div
       className="fixed inset-0 w-screen h-[100dvh] bg-[#061506] overflow-hidden select-none"
-      style={{ zIndex: 50 }}
+      style={{ zIndex: 100 }}
       initial={{ y: "0%" }}
       animate={{
-        // Critical Rule #20 & AE: Slide DOWNWARD (translateY(0) -> translateY(100%))
         y: isTransitioning ? "100%" : "0%",
       }}
       transition={{

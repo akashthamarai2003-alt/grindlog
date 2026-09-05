@@ -23,7 +23,7 @@ export interface AnimationTimeline {
 // The loading scene is part of the product experience. A quick model response
 // must not skip it, but a slow response must never be hidden behind a fake
 // countdown either.
-const MINIMUM_VISIBLE_DURATION_MS = 13_000;
+const MINIMUM_VISIBLE_DURATION_MS = 12_000;
 const EXIT_DURATION_MS = 750;
 
 /**
@@ -35,6 +35,7 @@ export function useAnimationTimeline(
   pillCount: number,
   reducedMotion: boolean,
   isPlanReady: boolean,
+  minDurationMs: number = 12_000,
 ): AnimationTimeline {
   const [phase, setPhase] = useState<AnimationPhase>("BOOT");
   const [scanIndex, setScanIndex] = useState(-1);
@@ -110,7 +111,8 @@ export function useAnimationTimeline(
     // The rotating profile network remains on-screen until the last 750ms.
     // The final reveal then slides that still-rotating scene into the actual
     // plan, so users never see an early static replacement for the rotation.
-    const earliestRevealAt = MINIMUM_VISIBLE_DURATION_MS - EXIT_DURATION_MS;
+    const effectiveMinDuration = minDurationMs ?? MINIMUM_VISIBLE_DURATION_MS;
+    const earliestRevealAt = Math.max(0, effectiveMinDuration - EXIT_DURATION_MS);
 
     if (elapsed < earliestRevealAt) {
       schedule(revealFinishedPlan, earliestRevealAt - elapsed);
@@ -118,7 +120,7 @@ export function useAnimationTimeline(
     }
 
     revealFinishedPlan();
-  }, [isPlanReady, phase, schedule]);
+  }, [isPlanReady, phase, schedule, minDurationMs]);
 
   return { phase, scanIndex, isComplete: phase === "COMPLETE" };
 }

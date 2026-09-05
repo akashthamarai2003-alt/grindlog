@@ -782,6 +782,7 @@ export default function PlanSetupPage() {
         <AIPlanAnimation
           isReady={Boolean(planData || generationError)}
           hasError={Boolean(generationError)}
+          minDurationMs={2000}
           onAnimationComplete={() => setLoading(false)}
         />
       )}
