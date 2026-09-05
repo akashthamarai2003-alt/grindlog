@@ -48,7 +48,7 @@ export function FitnessDashboard({
       {/* Background ambient glow matching the dark neon aesthetic */}
       <div className="absolute top-0 left-0 right-0 h-64 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-50 z-0" />
 
-      <main className="flex-1 flex flex-col w-full max-w-md mx-auto pt-6 pb-28 px-5 z-10 relative gap-6">
+      <main className="flex-1 flex flex-col w-full max-w-md mx-auto pt-6 pb-36 sm:pb-40 px-5 z-10 relative gap-6">
         <div className="mb-6 relative z-10">
           <DashboardHeader
             name={profile.name || user.user_metadata?.full_name || "Athlete"}
@@ -118,7 +118,7 @@ export function FitnessDashboard({
         <DailyActivityCard lifestyle={lifestyle} activity={dailyActivity} activityDate={targetDateStr} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} />
 
         {/* 8. Today's Goals Card */}
-        <TodaysGoalsCard lifestyle={lifestyle} activity={dailyActivity} nutrition={nutrition} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} />
+        <TodaysGoalsCard lifestyle={lifestyle} activity={dailyActivity} nutrition={nutrition} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} targetDateStr={targetDateStr} />
 
       </main>
 
