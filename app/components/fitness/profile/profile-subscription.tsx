@@ -65,7 +65,7 @@ export function ProfileSubscription({ planConfig, status, aiLimitInfo }: Profile
         <div className="w-full h-2 rounded-full overflow-hidden bg-black/10">
           <div 
             className={`h-full rounded-full transition-all ${isPro ? 'bg-white' : 'bg-emerald-500'} ${aiLimitInfo.remaining === 0 ? '!bg-red-500' : ''}`}
-            style={{ width: `${Math.min(100, Math.max(0, (aiLimitInfo.used / aiLimitInfo.limit) * 100))}%` }}
+            style={{ width: `${Math.min(100, Math.max(0, (aiLimitInfo.used / (aiLimitInfo.limit || 1)) * 100))}%` }}
           />
         </div>
       </div>

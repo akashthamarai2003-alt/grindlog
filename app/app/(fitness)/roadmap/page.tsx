@@ -12,7 +12,7 @@ export default function RoadmapPage() {
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<any>(null);
   const [activePlan, setActivePlan] = useState<any>(null);
-  const [planTier, setPlanTier] = useState<"starter" | "pro" | null>(null);
+  const [planTier, setPlanTier] = useState<"starter" | "core" | "pro" | null>(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(true);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function RoadmapPage() {
 
         setProfile(fitnessProfile);
         setActivePlan(savedPlan);
-        if (subscription.plan !== 'starter' && subscription.plan !== 'pro') {
+        if (subscription.plan !== 'starter' && subscription.plan !== 'core' && subscription.plan !== 'pro') {
           router.replace('/payment?returnTo=/roadmap');
           return;
         }

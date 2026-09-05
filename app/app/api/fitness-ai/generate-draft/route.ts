@@ -272,10 +272,10 @@ export async function POST(req: Request) {
           // Setup is a synchronous request. Medium is the quality/latency
           // compromise; deterministic safety/profile validators remain the
           // safety barrier.
-          maxTokens: subscriptionPlan.id === "starter" ? 7000 : 10000,
-          minimumOutputTokens: subscriptionPlan.id === "starter" ? 7000 : 10000,
+          maxTokens: subscriptionPlan.id === "pro" ? 10000 : 7000,
+          minimumOutputTokens: subscriptionPlan.id === "pro" ? 10000 : 7000,
           reasoningEffort: "medium",
-          promptCacheKey: subscriptionPlan.id === "starter" ? "fitness-plan-core-v1" : "fitness-plan-pro-v3",
+          promptCacheKey: subscriptionPlan.id === "pro" ? "fitness-plan-pro-v3" : "fitness-plan-core-v1",
           temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
           jsonSchema: {
             name: "fitness_plan",

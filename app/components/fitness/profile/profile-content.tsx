@@ -45,7 +45,7 @@ interface ProfileContentProps {
   fitnessProfile: any;
   mainProfile: any;
   activePlan: any;
-  subscriptionPlan: { id: "starter" | "pro" } | null;
+  subscriptionPlan: { id: "starter" | "core" | "pro" } | null;
   aiLimitInfo: {
     allowed: boolean;
     limit: number;
@@ -138,7 +138,7 @@ export function ProfileContent({
   // moved to fitness_os_subscriptions.
   const activeSubscriptionLevel = subscriptionPlan?.id === "pro"
     ? "pro"
-    : subscriptionPlan?.id === "starter"
+    : (subscriptionPlan?.id === "starter" || subscriptionPlan?.id === "core")
     ? "core"
     : null;
   const isPremium = Boolean(activeSubscriptionLevel || fitnessProfile?.fitness_is_premium);
@@ -417,7 +417,7 @@ export function ProfileContent({
                   className={`h-full rounded-full transition-all duration-500 ${
                     aiLimitInfo.remaining === 0 ? "bg-red-500" : "bg-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)]"
                   }`}
-                  style={{ width: `${Math.min(100, Math.max(0, (aiLimitInfo.used / aiLimitInfo.limit) * 100))}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, (aiLimitInfo.used / (aiLimitInfo.limit || 1)) * 100))}%` }}
                 />
               </div>
             </div>

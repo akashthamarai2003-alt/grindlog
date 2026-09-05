@@ -5,9 +5,9 @@ const PRO_PRICE_IN_PAISE = process.env.FITNESS_PRO_PRICE
   ? parseInt(process.env.FITNESS_PRO_PRICE, 10) 
   : 99900; // ₹999/month default
 
-export const STARTER_PLAN: FitnessPlanConfig = {
-  id: "starter",
-  name: "Starter",
+export const CORE_PLAN: FitnessPlanConfig = {
+  id: "core",
+  name: "Core",
   description: "Perfect way to get started with Fitness AI OS.",
   priceInPaise: 1000, // ₹10
   currency: "INR",
@@ -16,7 +16,13 @@ export const STARTER_PLAN: FitnessPlanConfig = {
     "workout_system",
     "ai_plan_generation"
   ],
-  aiDailyLimit: 5, // Limited AI usage
+  aiDailyLimit: 3, // Core user daily use: 3
+};
+
+export const STARTER_PLAN: FitnessPlanConfig = {
+  ...CORE_PLAN,
+  id: "starter",
+  name: "Core",
 };
 
 export const PRO_PLAN: FitnessPlanConfig = {
@@ -35,10 +41,11 @@ export const PRO_PLAN: FitnessPlanConfig = {
     "ai_plan_adjustments",
     "advanced_progress_analysis"
   ],
-  aiDailyLimit: 50, // Higher AI limits
+  aiDailyLimit: 20, // Pro user daily use: 20
 };
 
 export const FITNESS_PLANS: Record<string, FitnessPlanConfig> = {
   starter: STARTER_PLAN,
+  core: CORE_PLAN,
   pro: PRO_PLAN,
 };

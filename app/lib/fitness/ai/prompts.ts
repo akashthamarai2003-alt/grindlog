@@ -509,7 +509,7 @@ export function buildFitnessPlanPrompt(
 }
 
 /** Keep premium meal and grocery generation out of Core model requests. */
-export function buildFitnessPlanSystemPrompt(planTier: "starter" | "pro"): string {
+export function buildFitnessPlanSystemPrompt(planTier: "starter" | "core" | "pro"): string {
   if (planTier === "pro") return FITNESS_PLAN_SYSTEM_PROMPT;
 
   return `${FITNESS_PLAN_SYSTEM_PROMPT}
