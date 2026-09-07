@@ -155,93 +155,6 @@ const compressImage = (file: File): Promise<string> => {
   });
 };
 
-const OptionCard = ({ 
-  selected, 
-  onClick, 
-  title, 
-  desc,
-  icon: Icon
-}: { 
-  selected: boolean, 
-  onClick: () => void, 
-  title: string, 
-  desc?: string,
-  icon?: any
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`w-full flex items-center p-4 rounded-2xl border-2 text-left transition-all active:scale-[0.98] ${
-      selected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
-    }`}
-  >
-    {Icon && (
-      <div className={`p-3 rounded-xl mr-4 ${selected ? "bg-[#ADFF00]/20 text-[#ADFF00]" : "bg-[#1A2619] text-gray-400"}`}>
-        <Icon size={24} />
-      </div>
-    )}
-    <div className="flex-1">
-      <h3 className={`font-semibold text-lg ${selected ? "text-[#ADFF00]" : "text-gray-200"}`}>{title}</h3>
-      {desc && <p className={`text-sm mt-1 ${selected ? "text-[#ADFF00]/70" : "text-gray-500"}`}>{desc}</p>}
-    </div>
-    {selected && (
-      <div className="text-[#ADFF00] ml-4 transition-transform scale-100">
-        <Check size={24} />
-      </div>
-    )}
-  </button>
-);
-
-const StepHeader = ({ title, subtitle }: { title: string, subtitle?: string }) => {
-  const words = title.split(" ");
-  const firstWord = words[0];
-  const rest = words.slice(1).join(" ");
-  return (
-    <div className="mb-8 mt-2">
-      <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[38px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-wrap gap-x-2">
-        <span className="text-[#ADFF00]">{firstWord}</span>
-        {rest && <span className="text-white">{rest}</span>}
-      </h2>
-      {subtitle && <p className="text-gray-400 mt-2 font-medium">{subtitle}</p>}
-    </div>
-  );
-};
-
-const BottomBar = ({ 
-  canProceed, 
-  onProceed, 
-  label = "Continue" 
-}: { 
-  canProceed: boolean, 
-  onProceed: () => void, 
-  label?: string 
-}) => (
-  <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto p-4 bg-[#0A1108]/95 backdrop-blur-md border-t border-[#1A2619] pb-safe z-20">
-    <button
-      disabled={!canProceed}
-      onClick={onProceed}
-      className={`w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center gap-2 ${
-        canProceed 
-          ? "bg-[#ADFF00] text-black hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_25px_rgba(173,255,0,0.3)]" 
-          : "bg-[#1A2619] text-gray-500 cursor-not-allowed"
-      }`}
-    >
-      {label}
-      {canProceed && <ArrowRight className="w-5 h-5" />}
-    </button>
-  </div>
-);
-
-const FieldError = ({ error }: { error?: string }) => {
-  if (!error) return null;
-  return (
-    <p className="text-xs text-red-400 font-semibold mt-1.5 flex items-center gap-1">
-      <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-      <span>{error}</span>
-    </p>
-  );
-};
-
 export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: Partial<OnboardingData>, sessionId?: string }) {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
@@ -291,6 +204,94 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
       x: direction < 0 ? 20 : -20,
       opacity: 0,
     })
+  };
+
+  const OptionCard = ({ 
+    selected, 
+    onClick, 
+    title, 
+    desc,
+    icon: Icon
+  }: { 
+    selected: boolean, 
+    onClick: () => void, 
+    title: string, 
+    desc?: string,
+    icon?: any
+  }) => (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`w-full flex items-center p-4 rounded-2xl border-2 text-left transition-all ${
+        selected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
+      }`}
+    >
+      {Icon && (
+        <div className={`p-3 rounded-xl mr-4 ${selected ? "bg-[#ADFF00]/20 text-[#ADFF00]" : "bg-[#1A2619] text-gray-400"}`}>
+          <Icon size={24} />
+        </div>
+      )}
+      <div className="flex-1">
+        <h3 className={`font-semibold text-lg ${selected ? "text-[#ADFF00]" : "text-gray-200"}`}>{title}</h3>
+        {desc && <p className={`text-sm mt-1 ${selected ? "text-[#ADFF00]/70" : "text-gray-500"}`}>{desc}</p>}
+      </div>
+      {selected && (
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[#ADFF00] ml-4">
+          <Check size={24} />
+        </motion.div>
+      )}
+    </motion.button>
+  );
+
+  const StepHeader = ({ title, subtitle }: { title: string, subtitle?: string }) => {
+    const words = title.split(" ");
+    const firstWord = words[0];
+    const rest = words.slice(1).join(" ");
+    return (
+      <div className="mb-8 mt-2">
+        <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[38px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-wrap gap-x-2">
+          <span className="text-[#ADFF00]">{firstWord}</span>
+          {rest && <span className="text-white">{rest}</span>}
+        </h2>
+        {subtitle && <p className="text-gray-400 mt-2 font-medium">{subtitle}</p>}
+      </div>
+    );
+  };
+
+  const BottomBar = ({ 
+    canProceed, 
+    onProceed, 
+    label = "Continue" 
+  }: { 
+    canProceed: boolean, 
+    onProceed: () => void, 
+    label?: string 
+  }) => (
+    <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto p-4 bg-[#0A1108]/90 backdrop-blur-xl border-t border-[#1A2619] pb-safe z-20">
+      <button
+        disabled={!canProceed}
+        onClick={onProceed}
+        className={`w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center gap-2 ${
+          canProceed 
+            ? "bg-[#ADFF00] text-black hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_25px_rgba(173,255,0,0.3)]" 
+            : "bg-[#1A2619] text-gray-500 cursor-not-allowed"
+        }`}
+      >
+        {label}
+        {canProceed && <ArrowRight className="w-5 h-5" />}
+      </button>
+    </div>
+  );
+
+  const FieldError = ({ error }: { error?: string }) => {
+    if (!error) return null;
+    return (
+      <p className="text-xs text-red-400 font-semibold mt-1.5 flex items-center gap-1">
+        <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+        <span>{error}</span>
+      </p>
+    );
   };
 
   // Step 2 validation helper
@@ -452,8 +453,6 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 fill 
                 className="object-cover object-center" 
                 priority
-                sizes="(max-width: 480px) 100vw, 480px"
-                quality={80}
               />
             </div>
             
@@ -548,8 +547,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 fill 
                 className="object-cover object-top opacity-100 -translate-y-[70px] scale-[1.05]" 
                 priority
-                sizes="(max-width: 480px) 100vw, 480px"
-                quality={80}
+                unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/80 to-transparent" />
@@ -685,15 +683,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 <motion.div key="gender-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowGenderSheet(false)} className="fixed inset-0 bg-black/60 z-[60]" />
               )}
               {showGenderSheet && (
-                <motion.div 
-                  key="gender-sheet" 
-                  initial={{ y: "100%" }} 
-                  animate={{ y: 0 }} 
-                  exit={{ y: "100%" }} 
-                  transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }} 
-                  style={{ willChange: "transform" }}
-                  className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)]"
-                >
+                <motion.div key="gender-sheet" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)]">
                   <h3 className="text-white font-[800] text-[20px] mb-6">Select Gender</h3>
                   <div className="space-y-3">
                     {["Male", "Female", "Other", "Prefer not to say"].map(g => (
@@ -713,15 +703,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 <motion.div key="lang-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowLanguageSheet(false)} className="fixed inset-0 bg-black/60 z-[60]" />
               )}
               {showLanguageSheet && (
-                <motion.div 
-                  key="lang-sheet" 
-                  initial={{ y: "100%" }} 
-                  animate={{ y: 0 }} 
-                  exit={{ y: "100%" }} 
-                  transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }} 
-                  style={{ willChange: "transform" }}
-                  className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)] max-h-[70vh] overflow-y-auto"
-                >
+                <motion.div key="lang-sheet" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)] max-h-[70vh] overflow-y-auto">
                   <h3 className="text-white font-[800] text-[20px] mb-6">Preferred Language</h3>
                   <div className="space-y-3">
                     {["English", "Tamil", "Hindi", "Telugu", "Malayalam", "Kannada", "Spanish", "French", "German"].map(l => (
@@ -749,8 +731,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 fill 
                 className="object-cover object-top opacity-100 -translate-y-[80px] scale-[1.1]" 
                 priority
-                sizes="(max-width: 480px) 100vw, 480px"
-                quality={80}
+                unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
@@ -937,8 +918,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   fill 
                   className="object-cover object-top opacity-100 scale-[1.05]" 
                   priority
-                  sizes="(max-width: 480px) 100vw, 480px"
-                  quality={80}
+                  unoptimized
                 />
                 {/* Simple gradient from solid black at bottom to transparent at top */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
@@ -987,6 +967,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   return (
                     <motion.button
                       key={opt.id}
+                      whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                       onClick={() => handleUpdate({ goal: opt.id as any })}
                       className={`w-full flex items-center p-3 rounded-2xl border-[1.5px] text-left transition-all ${
@@ -994,7 +975,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                       }`}
                     >
                       <div className={`relative w-[60px] h-[60px] rounded-full overflow-hidden mr-4 border-2 ${isSelected ? "border-[#ADFF00]" : "border-[#1A2619]"}`}>
-                        <Image src={opt.img} alt={opt.id} fill className="object-cover" sizes="60px" quality={80} />
+                        <Image src={opt.img} alt={opt.id} fill className="object-cover" unoptimized />
                         {!isSelected && <div className="absolute inset-0 bg-black/40" />}
                       </div>
                       
@@ -1088,8 +1069,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 fill 
                 className="object-cover object-top opacity-100 -translate-y-[110px] scale-[1.05]" 
                 priority
-                sizes="(max-width: 480px) 100vw, 480px"
-                quality={80}
+                unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
@@ -1170,8 +1150,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 fill 
                 className="object-cover object-top opacity-100 -translate-y-[110px] scale-[1.05]" 
                 priority
-                sizes="(max-width: 480px) 100vw, 480px"
-                quality={80}
+                unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
@@ -1229,6 +1208,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   return (
                     <motion.button
                       key={opt.id}
+                      whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                       onClick={() => {
                         handleUpdate({ 
@@ -1335,8 +1315,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 fill 
                 className="object-cover object-top opacity-100 scale-[1.05] -translate-y-[100px]" 
                 priority
-                sizes="(max-width: 480px) 100vw, 480px"
-                quality={80}
+                unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
@@ -1469,8 +1448,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 fill 
                 className="object-cover object-center opacity-100" 
                 priority
-                sizes="(max-width: 480px) 100vw, 480px"
-                quality={80}
+                unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
@@ -1515,6 +1493,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   ].map(opt => (
                     <motion.button
                       key={opt.id}
+                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleUpdate({ food_type: opt.id as any })}
                       className={`p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all border-2 ${
@@ -1589,8 +1568,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 fill 
                 className="object-cover object-center opacity-100" 
                 priority
-                sizes="(max-width: 480px) 100vw, 480px"
-                quality={80}
+                unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
@@ -1737,8 +1715,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 fill 
                 className="object-cover object-center opacity-100" 
                 priority
-                sizes="(max-width: 480px) 100vw, 480px"
-                quality={80}
+                unoptimized
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
@@ -2503,6 +2480,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                       return (
                         <motion.button
                           key={opt.id}
+                          whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
                           onClick={() => handleUpdate({ target_physique: opt.id as any, body_scan_inspiration: undefined, goal_physique_image: undefined })}
                           className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
@@ -2515,7 +2493,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                             <div className={`relative w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 ${
                               isSelected ? "border-[#ADFF00]" : "border-[#1A2619]"
                             }`}>
-                              <Image src={opt.image} alt={opt.id} fill className="object-cover" sizes="48px" quality={80} />
+                              <Image src={opt.image} alt={opt.id} fill className="object-cover" unoptimized />
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
@@ -2651,7 +2629,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
         {/* Main Content Area */}
         <div className="flex-1 relative">
-          <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+          <AnimatePresence mode="wait" initial={true} custom={direction}>
             <motion.div
               key={step}
               custom={direction}
@@ -2659,8 +2637,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
-              style={{ willChange: "transform, opacity", WebkitOverflowScrolling: "touch" }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 overflow-y-auto overflow-x-hidden scrollbar-hide"
             >
               {renderStep()}
@@ -2740,7 +2717,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
     <div className="flex flex-col min-h-[100dvh] justify-center px-6 relative overflow-hidden bg-[#0A1108]">
       {/* Background glow */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-        <div className="w-[300px] h-[300px] rounded-full bg-[radial-gradient(circle_at_center,rgba(173,255,0,0.35)_0%,transparent_70%)] animate-pulse" />
+        <div className="w-[300px] h-[300px] bg-[#ADFF00] rounded-full blur-[100px] animate-pulse" />
       </div>
 
       <motion.div
