@@ -155,6 +155,93 @@ const compressImage = (file: File): Promise<string> => {
   });
 };
 
+const OptionCard = ({ 
+  selected, 
+  onClick, 
+  title, 
+  desc,
+  icon: Icon
+}: { 
+  selected: boolean, 
+  onClick: () => void, 
+  title: string, 
+  desc?: string,
+  icon?: any
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`w-full flex items-center p-4 rounded-2xl border-2 text-left transition-all active:scale-[0.98] ${
+      selected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
+    }`}
+  >
+    {Icon && (
+      <div className={`p-3 rounded-xl mr-4 ${selected ? "bg-[#ADFF00]/20 text-[#ADFF00]" : "bg-[#1A2619] text-gray-400"}`}>
+        <Icon size={24} />
+      </div>
+    )}
+    <div className="flex-1">
+      <h3 className={`font-semibold text-lg ${selected ? "text-[#ADFF00]" : "text-gray-200"}`}>{title}</h3>
+      {desc && <p className={`text-sm mt-1 ${selected ? "text-[#ADFF00]/70" : "text-gray-500"}`}>{desc}</p>}
+    </div>
+    {selected && (
+      <div className="text-[#ADFF00] ml-4 transition-transform scale-100">
+        <Check size={24} />
+      </div>
+    )}
+  </button>
+);
+
+const StepHeader = ({ title, subtitle }: { title: string, subtitle?: string }) => {
+  const words = title.split(" ");
+  const firstWord = words[0];
+  const rest = words.slice(1).join(" ");
+  return (
+    <div className="mb-8 mt-2">
+      <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[38px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-wrap gap-x-2">
+        <span className="text-[#ADFF00]">{firstWord}</span>
+        {rest && <span className="text-white">{rest}</span>}
+      </h2>
+      {subtitle && <p className="text-gray-400 mt-2 font-medium">{subtitle}</p>}
+    </div>
+  );
+};
+
+const BottomBar = ({ 
+  canProceed, 
+  onProceed, 
+  label = "Continue" 
+}: { 
+  canProceed: boolean, 
+  onProceed: () => void, 
+  label?: string 
+}) => (
+  <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto p-4 bg-[#0A1108]/95 backdrop-blur-md border-t border-[#1A2619] pb-safe z-20">
+    <button
+      disabled={!canProceed}
+      onClick={onProceed}
+      className={`w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center gap-2 ${
+        canProceed 
+          ? "bg-[#ADFF00] text-black hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_25px_rgba(173,255,0,0.3)]" 
+          : "bg-[#1A2619] text-gray-500 cursor-not-allowed"
+      }`}
+    >
+      {label}
+      {canProceed && <ArrowRight className="w-5 h-5" />}
+    </button>
+  </div>
+);
+
+const FieldError = ({ error }: { error?: string }) => {
+  if (!error) return null;
+  return (
+    <p className="text-xs text-red-400 font-semibold mt-1.5 flex items-center gap-1">
+      <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+      <span>{error}</span>
+    </p>
+  );
+};
+
 export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: Partial<OnboardingData>, sessionId?: string }) {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
@@ -193,7 +280,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
   const variants = {
     enter: (direction: number) => ({
-      x: step === 1 ? 0 : (direction > 0 ? 20 : -20),
+      x: step === 1 ? 0 : (direction > 0 ? 12 : -12),
       opacity: step === 1 ? 1 : 0,
     }),
     center: {
@@ -201,97 +288,9 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
       opacity: 1,
     },
     exit: (direction: number) => ({
-      x: direction < 0 ? 20 : -20,
+      x: direction < 0 ? 12 : -12,
       opacity: 0,
     })
-  };
-
-  const OptionCard = ({ 
-    selected, 
-    onClick, 
-    title, 
-    desc,
-    icon: Icon
-  }: { 
-    selected: boolean, 
-    onClick: () => void, 
-    title: string, 
-    desc?: string,
-    icon?: any
-  }) => (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`w-full flex items-center p-4 rounded-2xl border-2 text-left transition-all ${
-        selected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
-      }`}
-    >
-      {Icon && (
-        <div className={`p-3 rounded-xl mr-4 ${selected ? "bg-[#ADFF00]/20 text-[#ADFF00]" : "bg-[#1A2619] text-gray-400"}`}>
-          <Icon size={24} />
-        </div>
-      )}
-      <div className="flex-1">
-        <h3 className={`font-semibold text-lg ${selected ? "text-[#ADFF00]" : "text-gray-200"}`}>{title}</h3>
-        {desc && <p className={`text-sm mt-1 ${selected ? "text-[#ADFF00]/70" : "text-gray-500"}`}>{desc}</p>}
-      </div>
-      {selected && (
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[#ADFF00] ml-4">
-          <Check size={24} />
-        </motion.div>
-      )}
-    </motion.button>
-  );
-
-  const StepHeader = ({ title, subtitle }: { title: string, subtitle?: string }) => {
-    const words = title.split(" ");
-    const firstWord = words[0];
-    const rest = words.slice(1).join(" ");
-    return (
-      <div className="mb-8 mt-2">
-        <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[38px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-wrap gap-x-2">
-          <span className="text-[#ADFF00]">{firstWord}</span>
-          {rest && <span className="text-white">{rest}</span>}
-        </h2>
-        {subtitle && <p className="text-gray-400 mt-2 font-medium">{subtitle}</p>}
-      </div>
-    );
-  };
-
-  const BottomBar = ({ 
-    canProceed, 
-    onProceed, 
-    label = "Continue" 
-  }: { 
-    canProceed: boolean, 
-    onProceed: () => void, 
-    label?: string 
-  }) => (
-    <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto p-4 bg-[#0A1108]/90 backdrop-blur-xl border-t border-[#1A2619] pb-safe z-20">
-      <button
-        disabled={!canProceed}
-        onClick={onProceed}
-        className={`w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center gap-2 ${
-          canProceed 
-            ? "bg-[#ADFF00] text-black hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_25px_rgba(173,255,0,0.3)]" 
-            : "bg-[#1A2619] text-gray-500 cursor-not-allowed"
-        }`}
-      >
-        {label}
-        {canProceed && <ArrowRight className="w-5 h-5" />}
-      </button>
-    </div>
-  );
-
-  const FieldError = ({ error }: { error?: string }) => {
-    if (!error) return null;
-    return (
-      <p className="text-xs text-red-400 font-semibold mt-1.5 flex items-center gap-1">
-        <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-        <span>{error}</span>
-      </p>
-    );
   };
 
   // Step 2 validation helper
@@ -537,27 +536,28 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         );
       case 2:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
+          <div className="relative flex flex-col min-h-[100dvh] bg-[#050905]">
             
-            {/* Background Image - Sticky to stay fixed while scrolling */}
-            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+            {/* Background Image - Absolute decoupled background */}
+            <div className="absolute inset-0 w-full h-full z-0 pointer-events-none overflow-hidden">
               <Image 
                 src="/images/profile-bg-2.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-top opacity-100 -translate-y-[70px] scale-[1.05]" 
                 priority
-                unoptimized
+                sizes="(max-width: 480px) 100vw, 480px"
+                quality={80}
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/80 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-transparent to-transparent opacity-80" />
             </div>
 
-            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh]">
               
               {/* Top Navigation */}
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
+              <div className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
                 <button 
                   onClick={handleBack}
                   className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"
@@ -574,19 +574,19 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     />
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
             {/* Header */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.05 }} className="mb-8 mt-4">
+            <div className="mb-8 mt-4">
               <h2 style={{ fontFamily: "Oswald, sans-serif" }} className="text-[42px] leading-none font-bold italic uppercase tracking-tight flex gap-2">
                 <span className="text-[#ADFF00]">PERSONAL</span>
                 <span className="text-white">PROFILE</span>
               </h2>
               <p className="text-[16px] font-[500] text-[#91A0B5] mt-2">Tell us a bit about yourself.</p>
-            </motion.div>
+            </div>
 
             {/* Form */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }} className="flex flex-col gap-[24px]">
+            <div className="flex flex-col gap-[24px]">
               
               {/* Name */}
               <div>
@@ -603,31 +603,36 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 <FieldError error={step2Errors.name} />
               </div>
 
-              {/* Age & Gender Grid */}
-              <div className="grid grid-cols-2 gap-[14px]">
-                <div>
-                  <label className="block text-[14px] font-[700] text-white mb-2 transition-colors focus-within:text-[#A8FF00]">Age</label>
-                  <input 
-                    type="number" 
-                    min={16} max={120}
-                    value={data.age || ""} 
-                    onChange={e => handleUpdate({ age: parseInt(e.target.value) || undefined })}
-                    className={`w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-white text-[16px] transition-all duration-200 outline-none placeholder:text-[#53657A] font-[500] ${
-                      step2Errors.age ? 'border border-red-500/80 focus:border-red-500' : 'border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)]'
-                    }`} 
-                    placeholder="25"
-                  />
-                  <FieldError error={step2Errors.age} />
-                </div>
-                <div>
-                  <label className="block text-[14px] font-[700] text-white mb-2">Gender</label>
-                  <button 
-                      onClick={() => setShowGenderSheet(true)}
-                      className="w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] font-[500]"
-                    >
-                      <span className={data.gender ? "text-white" : "text-[#53657A]"}>{data.gender || "Select"}</span>
-                    </button>
-                </div>
+              {/* Age */}
+              <div>
+                <label className="block text-[14px] font-[700] text-white mb-2 transition-colors focus-within:text-[#A8FF00]">Age</label>
+                <input 
+                  type="number" 
+                  value={data.age ?? ""} 
+                  onChange={e => handleUpdate({ age: e.target.value === "" ? undefined : parseInt(e.target.value) })}
+                  className={`w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-white text-[16px] transition-all duration-200 outline-none placeholder:text-[#53657A] font-[500] ${
+                    step2Errors.age ? 'border border-red-500/80 focus:border-red-500' : 'border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)]'
+                  }`} 
+                  placeholder="Age (e.g. 24)"
+                />
+                <FieldError error={step2Errors.age} />
+              </div>
+
+              {/* Gender */}
+              <div>
+                <label className="block text-[14px] font-[700] text-white mb-2">Gender</label>
+                <button 
+                  type="button"
+                  onClick={() => setShowGenderSheet(true)}
+                  className={`w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left flex justify-between items-center transition-all duration-200 active:scale-[0.99] ${
+                    !data.gender ? 'border border-[rgba(168,255,0,0.13)]' : 'border border-[#A8FF00]'
+                  }`}
+                >
+                  <span className={`text-[16px] font-[500] ${data.gender ? "text-white" : "text-[#53657A]"}`}>
+                    {data.gender || "Select Gender"}
+                  </span>
+                  <ChevronDown className="w-5 h-5 text-[#53657A]" />
+                </button>
               </div>
 
               {/* Country */}
@@ -640,28 +645,34 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   className={`w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-white text-[16px] transition-all duration-200 outline-none placeholder:text-[#53657A] font-[500] ${
                     step2Errors.country ? 'border border-red-500/80 focus:border-red-500' : 'border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] focus:shadow-[0_0_12px_rgba(168,255,0,0.1)]'
                   }`} 
-                  placeholder="e.g. United States"
+                  placeholder="e.g. India"
                 />
                 <FieldError error={step2Errors.country} />
               </div>
 
-              {/* Preferred Language */}
+              {/* Language */}
               <div>
                 <label className="block text-[14px] font-[700] text-white mb-2">Preferred Language</label>
                 <button 
-                    onClick={() => setShowLanguageSheet(true)}
-                    className="w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left text-[16px] transition-all duration-200 outline-none border border-[rgba(168,255,0,0.13)] focus:border-[#A8FF00] font-[500]"
-                  >
-                    <span className={data.preferred_language ? "text-white" : "text-[#53657A]"}>{data.preferred_language || "e.g. English"}</span>
-                  </button>
+                  type="button"
+                  onClick={() => setShowLanguageSheet(true)}
+                  className={`w-full h-[58px] px-4 rounded-[14px] bg-[#0A130B] text-left flex justify-between items-center transition-all duration-200 active:scale-[0.99] ${
+                    !data.preferred_language ? 'border border-[rgba(168,255,0,0.13)]' : 'border border-[#A8FF00]'
+                  }`}
+                >
+                  <span className={`text-[16px] font-[500] ${data.preferred_language ? "text-white" : "text-[#53657A]"}`}>
+                    {data.preferred_language || "Select Language"}
+                  </span>
+                  <ChevronDown className="w-5 h-5 text-[#53657A]" />
+                </button>
                 <FieldError error={step2Errors.preferred_language} />
               </div>
 
-            </motion.div>
+            </div> {/* End of form */}
             </div> {/* End of inner content wrapper */}
 
             {/* Continue Button (Fixed bottom) */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.15 }} className="fixed bottom-0 left-0 right-0 z-30 max-w-[480px] mx-auto pb-[max(env(safe-area-inset-bottom),24px)] pt-8 px-4 bg-gradient-to-t from-[#050905] via-[#050905]/90 to-transparent pointer-events-none">
+            <div className="fixed bottom-0 left-0 right-0 z-30 max-w-[480px] mx-auto pb-[max(env(safe-area-inset-bottom),24px)] pt-8 px-4 bg-gradient-to-t from-[#050905] via-[#050905]/95 to-transparent pointer-events-none">
                <div className="pointer-events-auto flex justify-center">
                  <button 
                    disabled={!canAdvanceFromStep(2)}
@@ -675,19 +686,39 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                    Continue
                  </button>
                </div>
-            </motion.div>
+            </div>
 
             {/* Gender Sheet */}
             <AnimatePresence>
               {showGenderSheet && (
-                <motion.div key="gender-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowGenderSheet(false)} className="fixed inset-0 bg-black/60 z-[60]" />
+                <motion.div 
+                  key="gender-bg" 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }} 
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setShowGenderSheet(false)} 
+                  className="fixed inset-0 bg-black/60 z-[60] touch-none" 
+                />
               )}
               {showGenderSheet && (
-                <motion.div key="gender-sheet" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)]">
+                <motion.div 
+                  key="gender-sheet" 
+                  initial={{ y: "100%" }} 
+                  animate={{ y: 0 }} 
+                  exit={{ y: "100%" }} 
+                  transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }} 
+                  style={{ willChange: "transform", transform: "translateZ(0)" }}
+                  className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)] overscroll-contain"
+                >
                   <h3 className="text-white font-[800] text-[20px] mb-6">Select Gender</h3>
                   <div className="space-y-3">
                     {["Male", "Female", "Other", "Prefer not to say"].map(g => (
-                      <button key={g} onClick={() => { handleUpdate({ gender: g as any }); setShowGenderSheet(false); }} className={`w-full p-4 rounded-[14px] text-left font-[500] flex justify-between items-center transition-colors ${data.gender === g ? "bg-[rgba(168,255,0,0.1)] border border-[#A8FF00] text-[#A8FF00]" : "bg-[#050905] border border-transparent text-white"}`}>
+                      <button 
+                        key={g} 
+                        onClick={() => { handleUpdate({ gender: g as any }); setShowGenderSheet(false); }} 
+                        className={`w-full p-4 rounded-[14px] text-left font-[500] flex justify-between items-center transition-colors active:scale-[0.99] ${data.gender === g ? "bg-[rgba(168,255,0,0.1)] border border-[#A8FF00] text-[#A8FF00]" : "bg-[#050905] border border-transparent text-white"}`}
+                      >
                         <span>{g}</span>
                         {data.gender === g && <Check className="w-5 h-5 text-[#A8FF00]" />}
                       </button>
@@ -700,14 +731,34 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             {/* Language Sheet */}
             <AnimatePresence>
               {showLanguageSheet && (
-                <motion.div key="lang-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowLanguageSheet(false)} className="fixed inset-0 bg-black/60 z-[60]" />
+                <motion.div 
+                  key="lang-bg" 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }} 
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setShowLanguageSheet(false)} 
+                  className="fixed inset-0 bg-black/60 z-[60] touch-none" 
+                />
               )}
               {showLanguageSheet && (
-                <motion.div key="lang-sheet" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)] max-h-[70vh] overflow-y-auto">
+                <motion.div 
+                  key="lang-sheet" 
+                  initial={{ y: "100%" }} 
+                  animate={{ y: 0 }} 
+                  exit={{ y: "100%" }} 
+                  transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }} 
+                  style={{ willChange: "transform", transform: "translateZ(0)" }}
+                  className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-[#0A130B] border-t border-[rgba(168,255,0,0.13)] rounded-t-[24px] z-[70] p-6 pb-[max(env(safe-area-inset-bottom),24px)] max-h-[70vh] overflow-y-auto overscroll-contain"
+                >
                   <h3 className="text-white font-[800] text-[20px] mb-6">Preferred Language</h3>
                   <div className="space-y-3">
                     {["English", "Tamil", "Hindi", "Telugu", "Malayalam", "Kannada", "Spanish", "French", "German"].map(l => (
-                      <button key={l} onClick={() => { handleUpdate({ preferred_language: l }); setShowLanguageSheet(false); }} className={`w-full p-4 rounded-[14px] text-left font-[500] flex justify-between items-center transition-colors ${data.preferred_language === l ? "bg-[rgba(168,255,0,0.1)] border border-[#A8FF00] text-[#A8FF00]" : "bg-[#050905] border border-transparent text-white"}`}>
+                      <button 
+                        key={l} 
+                        onClick={() => { handleUpdate({ preferred_language: l }); setShowLanguageSheet(false); }} 
+                        className={`w-full p-4 rounded-[14px] text-left font-[500] flex justify-between items-center transition-colors active:scale-[0.99] ${data.preferred_language === l ? "bg-[rgba(168,255,0,0.1)] border border-[#A8FF00] text-[#A8FF00]" : "bg-[#050905] border border-transparent text-white"}`}
+                      >
                         <span>{l}</span>
                         {data.preferred_language === l && <Check className="w-5 h-5 text-[#A8FF00]" />}
                       </button>
@@ -721,27 +772,28 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         );
                   case 3:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
+          <div className="relative flex flex-col min-h-[100dvh] bg-[#050905]">
             
-            {/* Background Image - Sticky to stay fixed while scrolling */}
-            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+            {/* Background Image - Absolute decoupled background */}
+            <div className="absolute inset-0 w-full h-full z-0 pointer-events-none overflow-hidden">
               <Image 
                 src="/images/body-details-bg.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-top opacity-100 -translate-y-[80px] scale-[1.1]" 
                 priority
-                unoptimized
+                sizes="(max-width: 480px) 100vw, 480px"
+                quality={80}
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905]/30 to-transparent opacity-60" />
             </div>
 
-            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh]">
               
               {/* Top Navigation */}
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
+              <div className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
                 <button 
                   onClick={handleBack}
                   className="p-2 rounded-full bg-[#121E12] border border-[#1E2E1D] hover:bg-[#1A2619] active:scale-95 transition-all text-gray-300"
@@ -758,64 +810,37 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     />
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
-              <div className="pt-2 pb-36">
-                
-                {/* Styled Header */}
-                <div className="mb-8 mt-4">
-                  <h2 style={{ fontFamily: "Oswald, sans-serif" }} className="text-[42px] leading-none font-bold italic uppercase tracking-tight flex gap-2">
-                    <span className="text-[#ADFF00]">BODY</span>
-                    <span className="text-white">DETAILS</span>
-                  </h2>
-                  <p className="text-gray-400 mt-2 text-sm font-medium">Let's understand your starting point.</p>
-                </div>
-                
-                <div className="mb-6 bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl p-4 rounded-2xl space-y-2.5">
-                  <div className="flex items-center gap-2">
-                    <Check size={16} className="text-[#ADFF00] shrink-0" />
-                    <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">Why Honest Details Matter</h4>
-                  </div>
-                  <p className="text-xs text-gray-200 leading-relaxed font-medium">
-                    Please enter your exact measurements honestly. We calculate an estimated body-fat range using an established formula based on your metrics.
-                  </p>
-                  <div className="pt-2 border-t border-white/10 text-[11px] text-gray-300 leading-relaxed flex items-start gap-1.5">
-                    <span className="mt-[1px]">📸</span>
-                    <span><b>Photos & Goal Physique:</b> Photos can be used for visual progress comparison and AI Goal Physique photo analysis.</span>
-                  </div>
-                </div>
-
+              <div className="mt-6">
+                <StepHeader title="Body Measurements" subtitle="Help the AI analyze your body composition accurately." />
                 <div className="space-y-6">
+                  
+                  {/* Height & Weight */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="flex items-center gap-2 text-sm font-bold text-white mb-2">
-                        <Ruler size={16} className="text-[#ADFF00]" />
-                        Height (cm)
-                      </label>
+                      <label className="block text-sm font-bold text-white mb-2">Height (cm)</label>
                       <input 
                         type="number" 
                         value={data.height || ""} 
                         onChange={e => handleUpdate({ height: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
-                          step3Errors.height ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.height ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
                         }`}
-                        placeholder="173"
+                        placeholder="175"
                       />
                       <FieldError error={step3Errors.height} />
                     </div>
                     <div>
-                      <label className="flex items-center gap-2 text-sm font-bold text-white mb-2">
-                        <Scale size={16} className="text-[#ADFF00]" />
-                        Weight (kg)
-                      </label>
+                      <label className="block text-sm font-bold text-white mb-2">Weight (kg)</label>
                       <input 
                         type="number" 
                         value={data.weight || ""} 
                         onChange={e => handleUpdate({ weight: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
-                          step3Errors.weight ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.weight ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
                         }`}
-                        placeholder="73"
+                        placeholder="70"
                       />
                       <FieldError error={step3Errors.weight} />
                     </div>
@@ -833,8 +858,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.waist_cm || ""} 
                         onChange={e => handleUpdate({ waist_cm: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
-                          step3Errors.waist_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.waist_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
                         }`}
                         placeholder="80"
                       />
@@ -851,8 +876,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.chest_cm || ""} 
                         onChange={e => handleUpdate({ chest_cm: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
-                          step3Errors.chest_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.chest_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
                         }`}
                         placeholder="95"
                       />
@@ -872,8 +897,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.arm_cm || ""} 
                         onChange={e => handleUpdate({ arm_cm: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
-                          step3Errors.arm_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.arm_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
                         }`}
                         placeholder="35"
                       />
@@ -890,8 +915,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         type="number" 
                         value={data.thigh_cm || ""} 
                         onChange={e => handleUpdate({ thigh_cm: parseFloat(e.target.value) || undefined })}
-                        className={`w-full p-4 rounded-xl border bg-white/5 backdrop-blur-md text-white transition-colors outline-none placeholder:text-gray-600 ${
-                          step3Errors.thigh_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#ADFF00]/30 focus:border-[#ADFF00]'
+                        className={`w-full p-4 rounded-xl border bg-[#0D150D] text-white transition-colors outline-none placeholder:text-gray-600 ${
+                          step3Errors.thigh_cm ? 'border-red-500/80 focus:border-red-500' : 'border-[#1A2619] focus:border-[#ADFF00]'
                         }`}
                         placeholder="55"
                       />
@@ -909,16 +934,17 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         );
         case 4:
           return (
-            <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
-              {/* Background Image - Sticky to stay fixed while scrolling */}
-              <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+            <div className="relative min-h-[100dvh] bg-[#050905]">
+              {/* Background Image - Absolute decoupled from scroll */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
                 <Image 
                   src="/images/goals-bg.png" 
                   alt="Background" 
                   fill 
                   className="object-cover object-top opacity-100 scale-[1.05]" 
                   priority
-                  unoptimized
+                  sizes="(max-width: 480px) 100vw, 480px"
+                  quality={80}
                 />
                 {/* Simple gradient from solid black at bottom to transparent at top */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
@@ -926,7 +952,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               </div>
 
               {/* Scrollable Content overlay */}
-              <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+              <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh]">
                 
                 {/* Top Navigation */}
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
@@ -965,17 +991,16 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 ].map((opt, i) => {
                   const isSelected = data.goal === opt.id;
                   return (
-                    <motion.button
+                    <button
+                      type="button"
                       key={opt.id}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
                       onClick={() => handleUpdate({ goal: opt.id as any })}
-                      className={`w-full flex items-center p-3 rounded-2xl border-[1.5px] text-left transition-all ${
+                      className={`w-full flex items-center p-3 rounded-2xl border-[1.5px] text-left transition-all active:scale-[0.98] ${
                         isSelected ? "border-[#ADFF00] shadow-[0_0_20px_rgba(173,255,0,0.15)] bg-gradient-to-r from-[#ADFF00]/10 to-transparent" : "border-[#1A2619] bg-[#0A1108] hover:border-[#233522]"
                       }`}
                     >
                       <div className={`relative w-[60px] h-[60px] rounded-full overflow-hidden mr-4 border-2 ${isSelected ? "border-[#ADFF00]" : "border-[#1A2619]"}`}>
-                        <Image src={opt.img} alt={opt.id} fill className="object-cover" unoptimized />
+                        <Image src={opt.img} alt={opt.id} fill className="object-cover" sizes="60px" quality={80} />
                         {!isSelected && <div className="absolute inset-0 bg-black/40" />}
                       </div>
                       
@@ -991,7 +1016,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                           {isSelected && <div className="w-[10px] h-[10px] rounded-full bg-[#ADFF00]" />}
                         </div>
                       </div>
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
@@ -1059,24 +1084,25 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         );
       case 5:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
+          <div className="relative min-h-[100dvh] bg-[#050905]">
             
-            {/* Background Image - Sticky to stay fixed while scrolling */}
-            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+            {/* Background Image - Absolute decoupled from scroll */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
               <Image 
                 src="/images/wan2.7-image_b_make_thi_man_to_x_me.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-top opacity-100 -translate-y-[110px] scale-[1.05]" 
                 priority
-                unoptimized
+                sizes="(max-width: 480px) 100vw, 480px"
+                quality={80}
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/80 to-transparent w-[85%]" />
             </div>
 
-            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh]">
               
               {/* Top Navigation */}
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
@@ -1122,9 +1148,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                       {[3,4,5,6,7].map(d => (
                         <button 
                           key={d}
+                          type="button"
                           onClick={() => handleUpdate({ training_days_per_week: d })}
-                          className={`flex-1 py-3 rounded-xl flex flex-col items-center justify-center font-bold transition-all border ${
-                            data.training_days_per_week === d ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                          className={`flex-1 py-3 rounded-xl flex flex-col items-center justify-center font-bold transition-all border active:scale-[0.98] ${
+                            data.training_days_per_week === d ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                           }`}
                         >
                           <span className="text-xl">{d}</span>
@@ -1141,23 +1168,24 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         );
       case 6:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
-            {/* Background Image - Sticky to stay fixed while scrolling */}
-            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+          <div className="relative min-h-[100dvh] bg-[#050905]">
+            {/* Background Image - Absolute decoupled from scroll */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
               <Image 
                 src="/images/a_make_this_man_to_thi.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-top opacity-100 -translate-y-[110px] scale-[1.05]" 
                 priority
-                unoptimized
+                sizes="(max-width: 480px) 100vw, 480px"
+                quality={80}
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/80 to-transparent w-[85%]" />
             </div>
 
-            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh]">
               {/* Top Navigation */}
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
                 <button 
@@ -1206,10 +1234,9 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 ].map(opt => {
                   const isSelected = data.training_location === opt.id;
                   return (
-                    <motion.button
+                    <button
                       key={opt.id}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
+                      type="button"
                       onClick={() => {
                         handleUpdate({ 
                           training_location: opt.id as any, 
@@ -1220,7 +1247,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                           if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
                         }, 150);
                       }}
-                      className={`w-full p-3 rounded-2xl border-2 text-left transition-all ${isSelected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"}`}
+                      className={`w-full p-3 rounded-2xl border-2 text-left transition-all active:scale-[0.98] ${isSelected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"}`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -1233,12 +1260,12 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                           </div>
                         </div>
                         {isSelected && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[#ADFF00] ml-2 shrink-0">
+                          <div className="text-[#ADFF00] ml-2 shrink-0">
                             <Check size={22} strokeWidth={3} />
-                          </motion.div>
+                          </div>
                         )}
                       </div>
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
@@ -1250,7 +1277,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
                     animate={{ opacity: 1, height: "auto", marginTop: 24 }}
                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    className="overflow-hidden bg-black/40 border border-white/10 backdrop-blur-sm p-4 rounded-2xl space-y-3"
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden bg-[#0A1108] border border-[#1A2619] p-4 rounded-2xl space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
@@ -1269,15 +1297,16 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         return (
                           <button
                             key={opt.id}
+                            type="button"
                             onClick={() => {
                               handleUpdate({
                                 equipment: toggleEquipmentSelection(data.equipment || [], opt.id),
                               });
                             }}
-                            className={`flex min-h-[74px] items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-bold transition-all ${
+                            className={`flex min-h-[74px] items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-bold transition-all active:scale-[0.98] ${
                               isSelected
                                 ? "border-[#ADFF00] bg-[#ADFF00]/10 text-[#ADFF00]"
-                                : "border-white/10 bg-black/30 text-gray-400 backdrop-blur-sm hover:border-white/20 hover:text-gray-200"
+                                : "border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-[#233522] hover:text-gray-200"
                             }`}
                           >
                             <EquipmentIcon size={18} className="shrink-0" />
@@ -1306,23 +1335,24 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
       case 7:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
-            {/* Background Image - Sticky to stay fixed while scrolling */}
-            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+          <div className="relative min-h-[100dvh] bg-[#050905]">
+            {/* Background Image - Absolute decoupled from scroll */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
               <Image 
                 src="/images/training-schedule-bg.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-top opacity-100 scale-[1.05] -translate-y-[100px]" 
                 priority
-                unoptimized
+                sizes="(max-width: 480px) 100vw, 480px"
+                quality={80}
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-transparent to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/80 to-transparent w-[85%]" />
             </div>
 
-            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh]">
               {/* Top Navigation */}
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
                 <button 
@@ -1363,7 +1393,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                         key={option.id}
                         type="button"
                         onClick={() => handleUpdate({ plan_start_preference: option.id as "today" | "monday" })}
-                        className={`min-h-[108px] rounded-2xl border-2 p-3 text-left transition-all ${selected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20"}`}
+                        className={`min-h-[108px] rounded-2xl border-2 p-3 text-left transition-all active:scale-[0.98] ${selected ? "border-[#ADFF00] bg-[#ADFF00]/10" : "border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522]"}`}
                       >
                         <div className={`mb-2 flex h-9 w-9 items-center justify-center rounded-xl ${selected ? "bg-[#ADFF00]/20 text-[#ADFF00]" : "bg-[#1A2619] text-gray-400"}`}>
                           <StartIcon size={19} />
@@ -1382,9 +1412,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   {[10, 20, 30, 45, 60, 90].map(m => (
                     <button 
                       key={m}
+                      type="button"
                       onClick={() => handleUpdate({ workout_duration_minutes: m })}
-                      className={`py-3 rounded-xl flex flex-col items-center justify-center transition-all border ${
-                        data.workout_duration_minutes === m ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                      className={`py-3 rounded-xl flex flex-col items-center justify-center transition-all border active:scale-[0.98] ${
+                        data.workout_duration_minutes === m ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                       }`}
                     >
                       <span className="font-bold text-xl">{m}</span>
@@ -1399,18 +1430,20 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   {["Morning", "Afternoon", "Evening", "Night"].map(opt => (
                     <button 
                       key={opt}
+                      type="button"
                       onClick={() => handleUpdate({ preferred_training_time: opt })}
-                      className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.preferred_training_time === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                      className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border active:scale-[0.98] ${
+                        data.preferred_training_time === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                       }`}
                     >
                       <span className="text-sm">{opt}</span>
                     </button>
                   ))}
                   <button 
+                      type="button"
                       onClick={() => handleUpdate({ preferred_training_time: "Anytime" })}
-                      className={`col-span-2 py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.preferred_training_time === "Anytime" ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                      className={`col-span-2 py-3 rounded-xl flex items-center justify-center font-bold transition-all border active:scale-[0.98] ${
+                        data.preferred_training_time === "Anytime" ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                       }`}
                     >
                       <span className="text-sm">Anytime</span>
@@ -1439,23 +1472,24 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     );
       case 8:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
-            {/* Background Image - Sticky to stay fixed while scrolling */}
-            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+          <div className="relative min-h-[100dvh] bg-[#050905]">
+            {/* Background Image - Absolute decoupled from scroll */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
               <Image 
                 src="/images/food.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-center opacity-100" 
                 priority
-                unoptimized
+                sizes="(max-width: 480px) 100vw, 480px"
+                quality={80}
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/60 to-transparent w-[70%]" />
             </div>
 
-            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh]">
               {/* Top Navigation */}
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
                 <button 
@@ -1491,12 +1525,11 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     { id: "Non-Vegetarian", emoji: "🍗" },
                     { id: "Vegan", emoji: "🌱" }
                   ].map(opt => (
-                    <motion.button
+                    <button
+                      type="button"
                       key={opt.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleUpdate({ food_type: opt.id as any })}
-                      className={`p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all border-2 ${
+                      className={`p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all border-2 active:scale-[0.98] ${
                         data.food_type === opt.id 
                           ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' 
                           : 'border-[#1A2619] bg-[#0D150D] text-gray-400 hover:border-gray-500'
@@ -1504,7 +1537,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     >
                       <span className="text-3xl mb-2">{opt.emoji}</span>
                       <span className="font-semibold text-sm">{opt.id}</span>
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1515,9 +1548,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   {["2 meals", "3 meals", "4 meals", "5+ meals"].map(opt => (
                     <button 
                       key={opt}
+                      type="button"
                       onClick={() => handleUpdate({ meals_per_day: opt as any })}
-                      className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.meals_per_day === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                      className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border active:scale-[0.98] ${
+                        data.meals_per_day === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                       }`}
                     >
                       <span className="text-xs">{opt}</span>
@@ -1539,9 +1573,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   ].map(opt => (
                     <button 
                       key={opt.id}
+                      type="button"
                       onClick={() => handleUpdate({ food_environment: opt.id as any })}
-                      className={`p-3 rounded-xl flex items-center gap-3 font-bold transition-all border text-left ${
-                        data.food_environment === opt.id ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                      className={`p-3 rounded-xl flex items-center gap-3 font-bold transition-all border text-left active:scale-[0.98] ${
+                        data.food_environment === opt.id ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                       }`}
                     >
                       <span className="text-xl">{opt.emoji}</span>
@@ -1559,23 +1594,24 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
       case 9:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
-            {/* Background Image - Sticky to stay fixed while scrolling */}
-            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+          <div className="relative min-h-[100dvh] bg-[#050905]">
+            {/* Background Image - Absolute decoupled from scroll */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
               <Image 
                 src="/images/food-budget-bg.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-center opacity-100" 
                 priority
-                unoptimized
+                sizes="(max-width: 480px) 100vw, 480px"
+                quality={80}
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/60 to-transparent w-[70%]" />
             </div>
 
-            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh]">
               {/* Top Navigation */}
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
                 <button 
@@ -1602,9 +1638,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   {["₹0–1,000", "₹1,000–2,000", "₹2,000–5,000", "₹5,000+"].map(opt => (
                     <button 
                       key={opt}
+                      type="button"
                       onClick={() => handleUpdate({ nutrition_budget: opt as any })}
-                      className={`py-4 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.nutrition_budget === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                      className={`py-4 rounded-xl flex items-center justify-center font-bold transition-all border active:scale-[0.98] ${
+                        data.nutrition_budget === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                       }`}
                     >
                       <span className="text-sm">{opt}</span>
@@ -1621,13 +1658,14 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     return (
                       <button
                         key={opt}
+                        type="button"
                         onClick={() => {
                           let newFoods = [...(data.available_foods || [])];
                           if (isSelected) newFoods = newFoods.filter(e => e !== opt);
                           else newFoods.push(opt);
                           handleUpdate({ available_foods: newFoods });
                         }}
-                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border active:scale-[0.98] ${
                           isSelected 
                             ? "bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]" 
                             : "bg-[#121E12] border-[#1A2619] text-gray-400 hover:border-[#ADFF00]/50 hover:text-gray-200"
@@ -1642,6 +1680,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
               <div className="pt-2 border-t border-[#1A2619]">
                 <button 
+                  type="button"
                   onClick={() => setShowRestrictions(!showRestrictions)}
                   className="w-full flex items-center justify-between py-2 text-left"
                 >
@@ -1660,6 +1699,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                       initial={{ opacity: 0, height: 0, marginTop: 0 }}
                       animate={{ opacity: 1, height: "auto", marginTop: 16 }}
                       exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      transition={{ duration: 0.2 }}
                       className="overflow-hidden space-y-4"
                     >
                       <div>
@@ -1706,23 +1746,24 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
       case 10:
         return (
-          <div className="flex flex-col min-h-[100dvh] bg-[#050905]">
-            {/* Background Image - Sticky to stay fixed while scrolling */}
-            <div className="sticky top-0 h-[100dvh] w-full z-0 pointer-events-none overflow-hidden">
+          <div className="relative min-h-[100dvh] bg-[#050905]">
+            {/* Background Image - Absolute decoupled from scroll */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
               <Image 
                 src="/images/lifestyle-bg.png" 
                 alt="Background" 
                 fill 
                 className="object-cover object-center opacity-100" 
                 priority
-                unoptimized
+                sizes="(max-width: 480px) 100vw, 480px"
+                quality={80}
               />
               {/* Simple gradient from solid black at bottom to transparent at top */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050905] via-[#050905]/40 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#050905] via-[#050905]/60 to-transparent w-[70%]" />
             </div>
 
-            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh] -mt-[100dvh]">
+            <div className="relative z-10 w-full flex flex-col px-6 pb-32 min-h-[100dvh]">
               {/* Top Navigation */}
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mt-[env(safe-area-inset-top)] h-16 flex items-center relative z-10 -mx-2">
                 <button 
@@ -1754,9 +1795,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   ].map(opt => (
                     <button 
                       key={opt}
+                      type="button"
                       onClick={() => handleUpdate({ activity_level: opt as any })}
-                      className={`p-3 rounded-xl flex flex-col items-center text-center justify-center font-bold transition-all border ${
-                        data.activity_level === opt ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                      className={`p-3 rounded-xl flex flex-col items-center text-center justify-center font-bold transition-all border active:scale-[0.98] ${
+                        data.activity_level === opt ? 'bg-[#ADFF00] border-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                       }`}
                     >
                       <span className="text-sm">{opt}</span>
@@ -1771,9 +1813,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   {["<3k", "3–5k", "5–10k", "10k+"].map(opt => (
                     <button 
                       key={opt}
+                      type="button"
                       onClick={() => handleUpdate({ daily_steps: opt as any })}
-                      className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.daily_steps === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                      className={`py-3 rounded-xl flex items-center justify-center font-bold transition-all border active:scale-[0.98] ${
+                        data.daily_steps === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                       }`}
                     >
                       <span className="text-xs">{opt}</span>
@@ -1788,9 +1831,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                   {["<5h", "5–6h", "6–7h", "7–8h", "8h+"].map(opt => (
                     <button 
                       key={opt}
+                      type="button"
                       onClick={() => handleUpdate({ sleep_duration: opt as any })}
-                      className={`flex-1 min-w-[60px] py-3 rounded-xl flex items-center justify-center font-bold transition-all border ${
-                        data.sleep_duration === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-white/10 bg-black/40 text-gray-300 backdrop-blur-sm hover:border-white/20 hover:bg-black/50 hover:text-white'
+                      className={`flex-1 min-w-[60px] py-3 rounded-xl flex items-center justify-center font-bold transition-all border active:scale-[0.98] ${
+                        data.sleep_duration === opt ? 'bg-[#ADFF00]/10 border-[#ADFF00] text-[#ADFF00]' : 'border-[#1A2619] bg-[#0D150D] text-gray-300 hover:border-[#233522] hover:text-white'
                       }`}
                     >
                       <span className="text-sm">{opt}</span>
@@ -1801,6 +1845,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
               <div className="pt-2 border-t border-[#1A2619]">
                 <button 
+                  type="button"
                   onClick={() => setShowSchedule(!showSchedule)}
                   className="w-full flex items-center justify-between py-2 text-left"
                 >
@@ -1819,6 +1864,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                       initial={{ opacity: 0, height: 0, marginTop: 0 }}
                       animate={{ opacity: 1, height: "auto", marginTop: 16 }}
                       exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
                       <div className="grid grid-cols-2 gap-4">
@@ -2376,7 +2422,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                             className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
                           />
                         </div>
-                        <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/20 shadow-xl transition-all hover:bg-white/10">
+                        <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-[#0D150D]/90 rounded-xl border border-[#1A2619] shadow-xl transition-all hover:bg-[#1A2619]">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_10px_rgba(173,255,0,0.4)]">
                               <User className="w-3.5 h-3.5" />
@@ -2443,7 +2489,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                             className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
                           />
                         </div>
-                        <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/20 shadow-xl transition-all hover:bg-white/10">
+                        <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-[#0D150D]/90 rounded-xl border border-[#1A2619] shadow-xl transition-all hover:bg-[#1A2619]">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_10px_rgba(173,255,0,0.4)]">
                               <Sparkles className="w-3.5 h-3.5" />
@@ -2478,12 +2524,11 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     ].map(opt => {
                       const isSelected = data.target_physique === opt.id;
                       return (
-                        <motion.button
+                        <button
                           key={opt.id}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
+                          type="button"
                           onClick={() => handleUpdate({ target_physique: opt.id as any, body_scan_inspiration: undefined, goal_physique_image: undefined })}
-                          className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                          className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between active:scale-[0.98] ${
                             isSelected 
                               ? "border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_20px_rgba(173,255,0,0.15)]" 
                               : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
@@ -2493,7 +2538,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                             <div className={`relative w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 ${
                               isSelected ? "border-[#ADFF00]" : "border-[#1A2619]"
                             }`}>
-                              <Image src={opt.image} alt={opt.id} fill className="object-cover" unoptimized />
+                              <Image src={opt.image} alt={opt.id} fill className="object-cover" sizes="48px" quality={80} />
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
@@ -2513,7 +2558,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                           }`}>
                             {isSelected && <Check size={14} strokeWidth={3} />}
                           </div>
-                        </motion.button>
+                        </button>
                       );
                     })}
                   </div>
@@ -2637,7 +2682,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+              style={{ willChange: "opacity, transform", WebkitOverflowScrolling: "touch" }}
               className="absolute inset-0 overflow-y-auto overflow-x-hidden scrollbar-hide"
             >
               {renderStep()}
@@ -2715,9 +2761,9 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
 
   return (
     <div className="flex flex-col min-h-[100dvh] justify-center px-6 relative overflow-hidden bg-[#0A1108]">
-      {/* Background glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-        <div className="w-[300px] h-[300px] bg-[#ADFF00] rounded-full blur-[100px] animate-pulse" />
+      {/* Background glow - GPU radial gradient without blur rasterization */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
+        <div className="w-[360px] h-[360px] rounded-full bg-[radial-gradient(circle_at_center,rgba(173,255,0,0.3)_0%,transparent_70%)] animate-pulse" />
       </div>
 
       <motion.div
