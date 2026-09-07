@@ -51,6 +51,26 @@ export async function POST(req: Request) {
             .eq("user_id", notes.userId);
             
           try {
+            await adminClient
+              .from("fitness_os_subscriptions")
+              .upsert(
+                {
+                  user_id: notes.userId,
+                  plan: notes.level === "pro" ? "pro" : "starter",
+                  status: "active",
+                  provider: "razorpay",
+                  provider_order_id: payment.order_id,
+                  provider_payment_id: payment.id,
+                  current_period_start: new Date().toISOString(),
+                  current_period_end: calculateExpiryDate(notes.tier || "lifetime"),
+                },
+                { onConflict: "user_id" },
+              );
+          } catch (subErr) {
+            console.warn("Webhook fitness_os_subscriptions upsert warning:", subErr);
+          }
+
+          try {
             await adminClient.from("subscriptions").insert({
               user_id: notes.userId,
               plan: `fitness_${notes.tier || "lifetime"}_${notes.level || "pro"}`,
