@@ -64,17 +64,19 @@ ${JSON.stringify(workoutContext, null, 2)}
 Compatible food library (use these names and nutrition facts where possible):
 ${JSON.stringify(foodCatalog || [], null, 2)}
 
-Return only the nutrition object. Keep the deterministic daily calorie and protein targets exactly as supplied. Generate the user's requested number of meals and a practical 30-day grocery list. Respect diet, allergies, disliked foods, available foods, food environment, budget, and saved routine.
-- Non-Vegetarian: Eggs, chicken, fish, and meat are fully allowed and encouraged.
-- Eggetarian: Eggs and dairy are allowed, but do NOT suggest meat or fish.
-- Vegetarian: Do NOT suggest any meat, fish, or eggs (use paneer, curd, soy chunks, lentils).
-- Vegan: Do NOT suggest any dairy, eggs, whey protein, or meat (use tofu, soy, legumes).
-- For PG, Hostel, Home, or Office/Canteen, label breakfast, lunch, and dinner as provided meals and price only the add-ons.
+Return only the nutrition object. Keep the deterministic daily calorie and protein targets exactly as supplied. Generate the user's requested number of meals and a practical 30-day grocery list.
+- Prioritise the user's preferred available_foods, but proactively bridge the protein target using compatible staples (Protein powder, Tofu, Soya chunks, Soy milk, Paneer, Eggs, Chicken).
+- Non-Vegetarian: Eggs, chicken breast, fish, and dairy are fully encouraged.
+- Eggetarian: Eggs, egg whites, and dairy are encouraged. No meat or fish.
+- Vegetarian: Paneer, curd, whey protein, soya chunks, lentils. No meat, fish, or eggs.
+- Vegan: 100% plant-based only. Use plant protein powder, tofu, soya chunks, soy milk, peanut butter, nuts, legumes. NEVER include dairy, eggs, whey, or meat.
+- For PG, Hostel, Home, or Office/Canteen: Pair EVERY core meal (Breakfast, Lunch, Dinner) with a concrete, budget-funded, high-protein add-on item so the user actually hits their daily protein target. Give no-cook or kettle-friendly hostel instructions.
+- Never write defeatist disclaimers stating that the protein target cannot be reached. Solve the protein equation using the user's monthly budget.
 - For Lose Fat or Cut, mention limiting added sugar, sugary drinks, deep-fried foods, and frequent fast food; never demand zero sugar or zero oil.
 - Use realistic INR prices and concise instructions.`;
 
   const aiResponse = await generateOpenAIResponseJSON<unknown>({
-    systemPrompt: `You are Grindlog's cautious nutrition coach. Generate only a safe, practical nutrition object for an existing workout plan. Never change workouts. Follow the saved profile exactly. If non-vegetarian, eggs and chicken/meat are fully encouraged. For vegetarian, no meat or eggs. For vegan users, every meal and grocery item must be plant-based. Never include foods that conflict with allergies or restrictions. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise.`,
+    systemPrompt: `You are Grindlog's elite nutrition coach. Generate a safe, practical, high-protein nutrition object that hits the user's protein target using realistic grocery add-ons and core meals. Strictly respect vegan/vegetarian/eggetarian boundaries and allergies. Pair PG/Hostel meals with budget-funded protein add-ons. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise.`,
     userPrompt,
     model: FITNESS_PLAN_MODEL,
     maxTokens: 5500,

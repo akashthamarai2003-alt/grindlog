@@ -680,18 +680,38 @@ export default function PlanSetupPage() {
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#ADFF00]">{sourceLabel}</p>
                       <h3 className="mt-1 text-lg font-black text-white">{mealName}</h3>
                     </div>
-                    <span className="shrink-0 rounded-lg bg-black/35 px-2 py-1 text-[11px] font-semibold text-gray-400">
-                      {String(meal?.time_of_day || "Any time")}
-                    </span>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <span className="rounded-lg bg-black/35 px-2 py-1 text-[11px] font-semibold text-gray-400">
+                        {String(meal?.time_of_day || "Any time")}
+                      </span>
+                      {typeof meal?.protein_grams === "number" && meal.protein_grams > 0 && (
+                        <span className="rounded-full bg-[#ADFF00]/15 border border-[#ADFF00]/30 px-2.5 py-0.5 text-[10px] font-extrabold text-[#ADFF00]">
+                          ~{meal.protein_grams}g protein
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="mt-4 space-y-2 pl-2">
-                    {mealItems.length > 0 ? mealItems.map((item: string, itemIdx: number) => (
-                      <div key={`${item}-${itemIdx}`} className="flex items-start gap-2">
-                        <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#ADFF00]" />
-                        <span className="text-sm font-medium leading-relaxed text-gray-200">{normaliseProvidedMealItem(item, foodEnvironment)}</span>
-                      </div>
-                    )) : (
+                  <div className="mt-4 space-y-2.5 pl-2">
+                    {mealItems.length > 0 ? mealItems.map((item: string, itemIdx: number) => {
+                      const normalised = normaliseProvidedMealItem(item, foodEnvironment);
+                      const isBaseMeal = /core meal \(free\)|provided meal/i.test(normalised);
+                      return (
+                        <div key={`${item}-${itemIdx}`} className="flex items-start gap-2.5">
+                          <div className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${isBaseMeal ? 'bg-gray-500' : 'bg-[#ADFF00]'}`} />
+                          <div className="flex-1 flex flex-wrap items-center gap-1.5">
+                            <span className={`text-sm leading-relaxed ${isBaseMeal ? 'font-medium text-gray-400' : 'font-bold text-white'}`}>
+                              {normalised}
+                            </span>
+                            {!isBaseMeal && groceryUsesProvidedCoreMeals && (
+                              <span className="inline-block rounded bg-[#ADFF00]/10 border border-[#ADFF00]/25 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#ADFF00] tracking-wider">
+                                Add-on
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }) : (
                       <p className="text-sm text-gray-500">No meal items were generated.</p>
                     )}
                   </div>

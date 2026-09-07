@@ -168,6 +168,39 @@ export function filterFoodCatalogForProfile<T extends {
     return true;
   });
 
-  return filtered.slice(0, maxItems);
+  const isPgOrHostel = ["pg", "hostel", "office/canteen"].includes(
+    String(profile?.food_environment || "").trim().toLowerCase(),
+  );
+
+  // Score each food to guarantee high-protein staples and PG-friendly items are prioritized
+  const scored = filtered.map((food) => {
+    let score = 0;
+    const protein = Number((food as any).protein) || 0;
+    const calories = Number((food as any).calories) || 1;
+    const name = String(food.name || "").toLowerCase();
+
+    // High protein density
+    score += (protein / calories) * 50;
+
+    // High absolute protein content
+    if (protein >= 20) score += 40;
+    else if (protein >= 12) score += 25;
+    else if (protein >= 6) score += 12;
+
+    // Anchor supplements and primary protein staples
+    if (/protein|tofu|soya|paneer|chicken|egg|fish|tuna|peanut butter|curd|chana|lentil|dal|oat|tempeh|seeds/i.test(name)) {
+      score += 35;
+    }
+
+    // Boost PG-friendly items when user is in a PG or hostel
+    if (isPgOrHostel && (food as any).is_pg_friendly) {
+      score += 25;
+    }
+
+    return { food, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, maxItems).map((s) => s.food);
 }
 
