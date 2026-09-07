@@ -2,7 +2,7 @@
 
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath, unstable_noStore } from "next/cache";
-import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
+import { DEFAULT_PRICING, PlanPricingConfig, PlanPriceItem } from "@/lib/constants/pricing";
 
 export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'grindlog'): Promise<PlanPricingConfig> {
   unstable_noStore();
@@ -20,17 +20,28 @@ export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'gri
       return DEFAULT_PRICING;
     }
 
+    // Helper to calculate fallback if one of originalPrice or price is missing
+    const resolveTier = (item: any, defaultItem: PlanPriceItem): PlanPriceItem => {
+      let price = item?.price;
+      let originalPrice = item?.originalPrice;
+
+      if (price == null && originalPrice != null) {
+        price = Math.max(1, Math.round(originalPrice * 0.5));
+      } else if (originalPrice == null && price != null) {
+        originalPrice = Math.round(price * 2);
+      }
+
+      return {
+        price: price ?? defaultItem.price,
+        originalPrice: originalPrice ?? defaultItem.originalPrice,
+      };
+    };
+
     // Merge with defaults to ensure all keys exist safely
     return {
       monthly: {
-        core: {
-          price: data.prices.monthly?.core?.price ?? DEFAULT_PRICING.monthly.core.price,
-          originalPrice: data.prices.monthly?.core?.originalPrice ?? DEFAULT_PRICING.monthly.core.originalPrice,
-        },
-        pro: {
-          price: data.prices.monthly?.pro?.price ?? DEFAULT_PRICING.monthly.pro.price,
-          originalPrice: data.prices.monthly?.pro?.originalPrice ?? DEFAULT_PRICING.monthly.pro.originalPrice,
-        },
+        core: resolveTier(data.prices.monthly?.core, DEFAULT_PRICING.monthly.core),
+        pro: resolveTier(data.prices.monthly?.pro, DEFAULT_PRICING.monthly.pro),
       },
       six_months: {
         core: {
