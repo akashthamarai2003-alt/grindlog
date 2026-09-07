@@ -162,6 +162,12 @@ export function ProfileContent({
 
   // Edit Modal Form State
   const [formData, setFormData] = useState({
+    name: (typeof fitnessProfile?.name === "string" && fitnessProfile.name.trim()) || 
+          (typeof fitnessProfile?.onboarding_data?.name === "string" && fitnessProfile.onboarding_data.name.trim()) || 
+          (typeof mainProfile?.display_name === "string" && mainProfile.display_name.trim()) || 
+          (typeof (user as any)?.user_metadata?.full_name === "string" && (user as any).user_metadata.full_name.trim()) || 
+          (typeof (user as any)?.user_metadata?.name === "string" && (user as any).user_metadata.name.trim()) || 
+          "",
     weight: initialFitnessProfile?.weight || "",
     target_weight: initialFitnessProfile?.target_weight || "",
     height: initialFitnessProfile?.height || "",
@@ -174,7 +180,15 @@ export function ProfileContent({
     thigh_cm: initialFitnessProfile?.thigh_cm || ""
   });
 
-  const name = fitnessProfile?.name || mainProfile?.display_name || mainProfile?.name || user.email?.split("@")[0] || "Athlete";
+  const name = 
+    (typeof fitnessProfile?.name === "string" && fitnessProfile.name.trim()) ||
+    (typeof fitnessProfile?.onboarding_data?.name === "string" && fitnessProfile.onboarding_data.name.trim()) ||
+    (typeof mainProfile?.display_name === "string" && mainProfile.display_name.trim()) ||
+    (typeof mainProfile?.name === "string" && mainProfile.name.trim()) ||
+    (typeof (user as any)?.user_metadata?.full_name === "string" && (user as any).user_metadata.full_name.trim()) ||
+    (typeof (user as any)?.user_metadata?.name === "string" && (user as any).user_metadata.name.trim()) ||
+    user.email?.split("@")[0] || 
+    "Athlete";
   const email = user.email || "";
   const joinedDate = user.created_at 
     ? new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
@@ -224,6 +238,7 @@ export function ProfileContent({
     setIsSaving(true);
 
     const payload = {
+      name: formData.name ? formData.name.trim() : null,
       weight: formData.weight ? parseFloat(String(formData.weight)) : null,
       target_weight: formData.target_weight ? parseFloat(String(formData.target_weight)) : null,
       height: formData.height ? parseFloat(String(formData.height)) : null,
@@ -297,7 +312,24 @@ export function ProfileContent({
               </div>
             </div>
 
-            <h1 className="text-2xl font-black tracking-tight text-white">{name}</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-black tracking-tight text-white">{name}</h1>
+              <button 
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    name: name !== "Athlete" ? name : ""
+                  }));
+                  setShowEditModal(true);
+                }}
+                className="p-1.5 rounded-full text-gray-400 hover:text-[#ADFF00] hover:bg-[#1A2619] transition-all cursor-pointer"
+                title="Edit Name & Details"
+                aria-label="Edit Name & Details"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+            </div>
             <p className="text-xs text-gray-400 font-medium mt-0.5">{email}</p>
 
             {/* Badges */}
@@ -631,6 +663,18 @@ export function ProfileContent({
               {/* Form */}
               <form onSubmit={handleSavePhysicals} className="space-y-4">
                 
+                {/* Full Name */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Full Name</label>
+                  <input 
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full p-3 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white focus:border-[#ADFF00] outline-none text-sm font-bold"
+                    placeholder="Enter your name"
+                  />
+                </div>
+
                 {/* Weight & Target Weight */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>

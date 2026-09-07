@@ -43,6 +43,35 @@ export default async function FitnessProfilePage() {
     checkFitnessAILimit(supabase, user.id),
   ]);
 
+  // Resolve user's real name giving first priority to onboarding provided name
+  const onboardingName = 
+    (typeof fitnessProfile?.name === "string" && fitnessProfile.name.trim()) ||
+    (typeof (fitnessProfile?.onboarding_data as any)?.name === "string" && (fitnessProfile.onboarding_data as any).name.trim()) ||
+    (typeof mainProfile?.display_name === "string" && mainProfile.display_name.trim()) ||
+    (typeof mainProfile?.name === "string" && mainProfile.name.trim()) ||
+    (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()) ||
+    (typeof user.user_metadata?.name === "string" && user.user_metadata.name.trim()) ||
+    null;
+
+  if (onboardingName) {
+    if (fitnessProfile && (!fitnessProfile.name || !fitnessProfile.name.trim())) {
+      fitnessProfile.name = onboardingName;
+      supabase
+        .from("fitness_os_profiles")
+        .update({ name: onboardingName })
+        .eq("user_id", user.id)
+        .then(() => {});
+    }
+    if (mainProfile && (!mainProfile.display_name || !mainProfile.display_name.trim())) {
+      mainProfile.display_name = onboardingName;
+      supabase
+        .from("profiles")
+        .update({ display_name: onboardingName })
+        .eq("id", user.id)
+        .then(() => {});
+    }
+  }
+
   return (
     <ProfileContent
       user={user}

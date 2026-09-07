@@ -342,6 +342,9 @@ export async function POST(req: Request) {
         user_id: user.id,
 
         // Basic Info
+        name: data.name ? data.name.trim() : null,
+        country: data.country || null,
+        preferred_language: data.preferred_language || null,
         goal: data.goal,
         fitness_level: data.fitness_level,
         age: data.age,
@@ -349,6 +352,10 @@ export async function POST(req: Request) {
         weight: data.weight,
         target_weight: data.target_weight,
         gender: data.gender,
+        waist_cm: data.waist_cm || null,
+        chest_cm: data.chest_cm || null,
+        arm_cm: data.arm_cm || null,
+        thigh_cm: data.thigh_cm || null,
 
         // Training
         training_location: data.training_location,
@@ -413,6 +420,22 @@ export async function POST(req: Request) {
         { success: false, error: "Failed to save profile." },
         { status: 500 },
       );
+    }
+
+    if (data.name && data.name.trim()) {
+      const cleanName = data.name.trim();
+      await supabase
+        .from("profiles")
+        .update({ display_name: cleanName })
+        .eq("id", user.id);
+
+      try {
+        await supabase.auth.updateUser({
+          data: { name: cleanName, full_name: cleanName }
+        });
+      } catch (authErr) {
+        console.warn("Could not update auth user metadata name:", authErr);
+      }
     }
 
     // Save visual observations to scans table so generate-draft can use it
