@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2, Sparkles, Calendar } from "lucide-react";
+import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
@@ -10,6 +10,7 @@ import { getFoodImage, getFoodSvgAvatar } from "@/lib/utils/food-images";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
 import { SwapMealModal } from "./swap-meal-modal";
+import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -37,6 +38,14 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMealType, setModalMealType] = useState("lunch");
   const [modalPreselectedFoods, setModalPreselectedFoods] = useState<any[]>([]);
+
+  const [proModalOpen, setProModalOpen] = useState(false);
+  const [proModalFeature, setProModalFeature] = useState("This feature");
+
+  const triggerProModal = (feature: string) => {
+    setProModalFeature(feature);
+    setProModalOpen(true);
+  };
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [showTargetsModal, setShowTargetsModal] = useState(false);
@@ -213,12 +222,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
   const openTargetsModal = () => {
     if (!isPro) {
-      toast.info("Custom macro target adjustments are a Pro feature. Upgrade to unlock!", {
-        action: {
-          label: "Upgrade",
-          onClick: () => { window.location.href = "/payment?returnTo=/nutrition&intent=upgrade_pro"; }
-        }
-      });
+      triggerProModal("Custom Macro Targets");
       return;
     }
     if (data?.targets) {
@@ -400,6 +404,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   }, []);
 
   const handleDeleteFood = async (id: string, foodName?: string) => {
+    if (!isPro) {
+      triggerProModal("Food Logging");
+      return;
+    }
     if (!data) return;
 
     const previousData = data;
@@ -465,6 +473,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const handleAddWater = (amount: number) => {
+    if (!isPro) {
+      triggerProModal("Water & Hydration Tracking");
+      return;
+    }
     if (!data) return;
     
     const targetWater = Number(data.targets?.water_ml) || 2500;
@@ -510,6 +522,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const handleRemoveWater = (amount: number = 250) => {
+    if (!isPro) {
+      triggerProModal("Water & Hydration Tracking");
+      return;
+    }
     if (!data) return;
     const targetWater = Number(data.targets?.water_ml) || 2500;
     const currentWater = Math.min(targetWater, Number(data.consumed?.water_ml) || 0);
@@ -608,12 +624,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
   const openLogModal = (mealType: string, preselected?: any[]) => {
     if (!isPro) {
-      toast.info("Food logging is a Pro feature. Upgrade to unlock!", {
-        action: {
-          label: "Upgrade to Pro",
-          onClick: () => { window.location.href = "/payment?returnTo=/nutrition&intent=upgrade_pro"; }
-        }
-      });
+      triggerProModal("Food Logging");
       return;
     }
     setModalMealType(mealType);
@@ -623,12 +634,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
   const handleOpenSwapModal = (mealType: string) => {
     if (!isPro) {
-      toast.info("Meal swapping is a Pro feature. Upgrade to unlock!", {
-        action: {
-          label: "Upgrade to Pro",
-          onClick: () => { window.location.href = "/payment?returnTo=/nutrition&intent=upgrade_pro"; }
-        }
-      });
+      triggerProModal("Meal Swapping");
       return;
     }
     setSwapMealType(mealType);
@@ -787,9 +793,13 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               <button 
                 type="button"
                 onClick={openTargetsModal} 
-                className="text-[10px] font-bold text-black bg-[#ADFF00] hover:bg-[#ADFF00]/90 px-2.5 py-1 rounded-full flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-[0_0_10px_rgba(173,255,0,0.2)]"
+                className={`text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                  isPro 
+                    ? "text-black bg-[#ADFF00] hover:bg-[#ADFF00]/90 shadow-[0_0_10px_rgba(173,255,0,0.2)]" 
+                    : "text-white/80 bg-white/10 hover:bg-white/15 border border-white/10"
+                }`}
               >
-                <Edit3 size={11} /> Targets
+                {isPro ? <Edit3 size={11} /> : <Lock size={11} className="text-amber-400" />} Targets {!isPro && <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>}
               </button>
             </div>
           </div>
@@ -1123,29 +1133,41 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           onClick={() => handleOpenSwapModal(meal.meal_type)} 
                           className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ADFF00]/40 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center gap-1.5 cursor-pointer"
                         >
-                          <RefreshCw size={14} /> 
+                          {isPro ? <RefreshCw size={14} /> : <Lock size={13} className="text-amber-400" />} 
                           Swap
                         </button>
                         <button 
+                          type="button"
                           onClick={() => openLogModal(meal.meal_type, meal.meal_plan_items)} 
-                          className="flex-1 py-2.5 bg-[#ADFF00] hover:bg-[#baff22] text-black rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(173,255,0,0.15)] cursor-pointer"
+                          className={`flex-1 py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2 cursor-pointer ${
+                            isPro 
+                              ? "bg-[#ADFF00] hover:bg-[#baff22] text-black shadow-[0_0_15px_rgba(173,255,0,0.15)]"
+                              : "bg-white/10 hover:bg-white/15 border border-white/10 text-white/90"
+                          }`}
                         >
-                          Log Meal
+                          {!isPro && <Lock size={13} className="text-amber-400" />}
+                          Log Meal {!isPro && <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>}
                         </button>
                         <button 
+                          type="button"
                           onClick={() => openLogModal(meal.meal_type)} 
                           className="py-2.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center cursor-pointer"
-                          title="Add extra food to this meal"
+                          title={isPro ? "Add extra food to this meal" : "Pro Feature: Add extra food"}
                         >
-                          <Plus size={14} />
+                          {isPro ? <Plus size={14} /> : <Lock size={13} className="text-amber-400" />}
                         </button>
                       </>
                     ) : (
                       <button 
+                        type="button"
                         onClick={() => openLogModal(meal.meal_type)} 
-                        className="w-full py-2.5 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/30 rounded-xl text-[11px] font-black tracking-widest uppercase text-[#ADFF00] transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                        className={`w-full py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-1.5 cursor-pointer ${
+                          isPro
+                            ? "bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/30 text-[#ADFF00]"
+                            : "bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
+                        }`}
                       >
-                        <Plus size={14} /> Add Food
+                        {isPro ? <Plus size={14} /> : <Lock size={13} className="text-amber-400" />} Add Food {!isPro && <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>}
                       </button>
                     )}
                   </div>
@@ -1199,6 +1221,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
         {/* Animated Water Intake Bottle Card */}
         <WaterBottleCard
+          isPro={isPro}
           consumedMl={Math.min(Number(targets.water_ml) || 2500, Number(consumed.water_ml) || 0)}
           targetMl={Number(targets.water_ml) || 2500}
           onAddWater={handleAddWater}
@@ -1332,6 +1355,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         )}
       </AnimatePresence>
       
+      <ProUpgradeModal
+        isOpen={proModalOpen}
+        onClose={() => setProModalOpen(false)}
+        featureName={proModalFeature}
+      />
     </>
   );
 }

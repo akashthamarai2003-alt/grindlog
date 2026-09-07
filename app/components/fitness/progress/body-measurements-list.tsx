@@ -1,10 +1,20 @@
 "use client";
 
 import { BodyMeasurement } from "@/types/fitness/analytics";
-import { ChevronRight, Ruler } from "lucide-react";
+import { ChevronRight, Ruler, Lock } from "lucide-react";
 import Link from "next/link";
 
-export function BodyMeasurementsList({ measurements, isBulking = false }: { measurements: BodyMeasurement[], isBulking?: boolean }) {
+export function BodyMeasurementsList({ 
+  measurements, 
+  isBulking = false,
+  isPro = true,
+  onProClick
+}: { 
+  measurements: BodyMeasurement[]; 
+  isBulking?: boolean;
+  isPro?: boolean;
+  onProClick?: (feature: string) => void;
+}) {
   if (measurements.length === 0) {
     return (
       <div className="w-full flex flex-col gap-3">
@@ -13,9 +23,19 @@ export function BodyMeasurementsList({ measurements, isBulking = false }: { meas
         </h2>
         <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
           <p className="text-sm font-bold text-white/60 mb-2">No measurements yet</p>
-          <Link href="/progress/log-measurements" className="flex items-center gap-2 px-4 py-2 bg-white/5 text-white/80 rounded-xl font-black text-xs uppercase tracking-widest border border-white/10 hover:bg-white/10 transition-colors">
-            <Ruler className="w-3 h-3" /> Log Measurements
-          </Link>
+          {isPro ? (
+            <Link href="/progress/log-measurements" className="flex items-center gap-2 px-4 py-2 bg-white/5 text-white/80 rounded-xl font-black text-xs uppercase tracking-widest border border-white/10 hover:bg-white/10 transition-colors">
+              <Ruler className="w-3 h-3" /> Log Measurements
+            </Link>
+          ) : (
+            <button 
+              type="button" 
+              onClick={() => onProClick?.("Body Measurements")}
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-xl font-black text-xs uppercase tracking-widest border border-white/15 hover:bg-white/15 transition-colors cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" /> Log Measurements <span className="text-[9px] text-amber-400 uppercase font-black ml-1">PRO</span>
+            </button>
+          )}
         </div>
       </div>
     );
@@ -27,9 +47,19 @@ export function BodyMeasurementsList({ measurements, isBulking = false }: { meas
         <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
           Body Measurements
         </h2>
-        <Link href="/progress/log-measurements" className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest hover:text-white transition-colors">
-          Add +
-        </Link>
+        {isPro ? (
+          <Link href="/progress/log-measurements" className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest hover:text-white transition-colors">
+            Add +
+          </Link>
+        ) : (
+          <button 
+            type="button"
+            onClick={() => onProClick?.("Body Measurements")}
+            className="text-[10px] font-black text-white/70 hover:text-white uppercase tracking-widest flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            <Lock className="w-3 h-3 text-amber-400" /> Add + <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>
+          </button>
+        )}
       </div>
 
       <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl overflow-hidden flex flex-col">

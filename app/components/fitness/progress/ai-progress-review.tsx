@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { AIProgressReview } from "@/types/fitness/analytics";
-import { Bot, CheckCircle2, AlertCircle, Target, Sparkles, Loader2, Dumbbell, Apple, Moon, Clock } from "lucide-react";
+import { Bot, CheckCircle2, AlertCircle, Target, Sparkles, Loader2, Dumbbell, Apple, Moon, Clock, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 function isDateToday(dateStr?: string | null): boolean {
@@ -26,10 +26,14 @@ export function AIProgressReviewCard({
   initialReview,
   period = "30D",
   onRefresh,
+  isPro = true,
+  onProClick,
 }: {
   initialReview: AIProgressReview | null;
   period?: string;
   onRefresh?: () => Promise<void> | void;
+  isPro?: boolean;
+  onProClick?: (feature: string) => void;
 }) {
   const router = useRouter();
   const [review, setReview] = useState<AIProgressReview | null>(initialReview);
@@ -48,6 +52,11 @@ export function AIProgressReviewCard({
   const hasReachedDailyLimit = quotaRemaining <= 0;
 
   const generateReview = async (forceRefresh = false) => {
+    if (!isPro) {
+      onProClick?.("AI Progress Reviews");
+      return;
+    }
+
     // Client-side guard: 3 uses per day
     if (hasReachedDailyLimit && forceRefresh) {
       toast.info("Daily quota reached (3/3 reviews used). Resets tomorrow.");
@@ -163,10 +172,15 @@ export function AIProgressReviewCard({
           <button
             type="button"
             onClick={() => generateReview(false)}
-            className="flex items-center gap-2 px-6 py-3 bg-[#ADFF00] hover:bg-[#baff22] text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[#ADFF00]/15 active:scale-95 transition-all cursor-pointer"
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl shadow-lg active:scale-95 transition-all cursor-pointer font-black text-xs uppercase tracking-wider ${
+              isPro 
+                ? "bg-[#ADFF00] hover:bg-[#baff22] text-black shadow-[#ADFF00]/15" 
+                : "bg-white/10 hover:bg-white/15 text-white border border-white/15"
+            }`}
           >
-            <Sparkles className="w-4 h-4" />
+            {isPro ? <Sparkles className="w-4 h-4" /> : <Lock className="w-4 h-4 text-amber-400" />}
             <span>Generate Today&apos;s Review (3/Day)</span>
+            {!isPro && <span className="text-[9px] text-amber-400 font-black ml-1">PRO</span>}
           </button>
         </div>
       </div>
@@ -219,17 +233,25 @@ export function AIProgressReviewCard({
             type="button"
             onClick={() => generateReview(true)}
             disabled={isGenerating}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/30 text-[#ADFF00] transition-all text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer active:scale-95 shadow-sm"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer active:scale-95 shadow-sm ${
+              isPro 
+                ? "bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/30 text-[#ADFF00]" 
+                : "bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
+            }`}
           >
             {isGenerating ? (
               <Loader2 className="w-3 h-3 animate-spin text-[#ADFF00]" />
-            ) : (
+            ) : isPro ? (
               <Sparkles className="w-3 h-3 text-[#ADFF00]" />
+            ) : (
+              <Lock className="w-3 h-3 text-amber-400" />
             )}
             <span>
               {isGenerating
                 ? "Analyzing..."
-                : `Refresh Review (${quotaRemaining}/3 Left)`}
+                : isPro 
+                  ? `Refresh Review (${quotaRemaining}/3 Left)`
+                  : "Refresh Review (PRO)"}
             </span>
           </button>
         )}

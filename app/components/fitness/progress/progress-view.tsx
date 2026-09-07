@@ -15,6 +15,8 @@ import { AIProgressReviewCard } from "./ai-progress-review";
 import { AchievementsShowcase } from "./achievements-showcase";
 import { WorkoutHeatmap } from "./workout-heatmap";
 import { MuscleMap } from "../workout/muscle-map";
+import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
+import { Lock } from "lucide-react";
 import Link from "next/link";
 
 export function ProgressView({ initialData, isPro = true }: { initialData: AggregatedProgressPayload; isPro?: boolean }) {
@@ -25,6 +27,14 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
   const [scheduledDates, setScheduledDates] = useState<string[]>([]);
   const [recentExercises, setRecentExercises] = useState<string[]>([]);
   const [joinedDate, setJoinedDate] = useState<string | undefined>(undefined);
+
+  const [proModalOpen, setProModalOpen] = useState(false);
+  const [proModalFeature, setProModalFeature] = useState("This feature");
+
+  const triggerProModal = (feature: string) => {
+    setProModalFeature(feature);
+    setProModalOpen(true);
+  };
 
   // In-memory cache for instant 0ms switching between periods
   const cacheRef = useRef<Record<string, AggregatedProgressPayload>>({
@@ -192,9 +202,19 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
                 <p className="text-sm font-medium text-white/90">
                   You've been highly consistent with your workouts and diet! Your body is actively transforming. It's time to capture your new physique.
                 </p>
-                <Link href="/progress/add-scan" className="mt-2 w-full py-3 bg-[#ADFF00] text-black font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center hover:bg-[#baff22] transition-colors">
-                  Take Progress Photo 📸
-                </Link>
+                {isPro ? (
+                  <Link href="/progress/add-scan" className="mt-2 w-full py-3 bg-[#ADFF00] text-black font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center hover:bg-[#baff22] transition-colors">
+                    Take Progress Photo 📸
+                  </Link>
+                ) : (
+                  <button 
+                    type="button"
+                    onClick={() => triggerProModal("Progress Photo Scans")}
+                    className="mt-2 w-full py-3 bg-[#ADFF00] text-black font-black uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2 hover:bg-[#baff22] transition-colors cursor-pointer"
+                  >
+                    <Lock size={14} /> Take Progress Photo 📸 <span className="text-[9px] bg-black text-amber-400 px-1.5 py-0.5 rounded font-black ml-1">PRO</span>
+                  </button>
+                )}
               </div>
             )}
             
@@ -217,12 +237,19 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
             
             <div id="transformation-details" className="flex flex-col gap-8 scroll-mt-6">
               <SmoothSection minHeight="320px">
-                <WeightChart data={data.weightHistory} targetWeight={data.transformation.targetWeight} />
+                <WeightChart 
+                  data={data.weightHistory} 
+                  targetWeight={data.transformation.targetWeight} 
+                  isPro={isPro}
+                  onProClick={triggerProModal}
+                />
               </SmoothSection>
               <SmoothSection minHeight="200px">
                 <BodyMeasurementsList 
                   measurements={data.measurements} 
                   isBulking={(data.transformation.targetWeight || 0) > (data.transformation.startingWeight || 0)} 
+                  isPro={isPro}
+                  onProClick={triggerProModal}
                 />
               </SmoothSection>
               <SmoothSection minHeight="340px">
@@ -230,6 +257,8 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
                   first={data.scans.first} 
                   latest={data.scans.latest} 
                   initialGoalUrl={data.scans.goalUrl} 
+                  isPro={isPro}
+                  onProClick={triggerProModal}
                 />
               </SmoothSection>
             </div>
@@ -240,16 +269,34 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
               <NutritionAnalyticsCard metrics={data.nutrition} />
             </SmoothSection>
             <SmoothSection minHeight="260px">
-              <ActivityRecoveryAnalyticsCard activity={data.activity} recovery={data.recovery} onRefresh={refreshData} />
+              <ActivityRecoveryAnalyticsCard 
+                activity={data.activity} 
+                recovery={data.recovery} 
+                onRefresh={refreshData} 
+                isPro={isPro}
+                onProClick={triggerProModal}
+              />
             </SmoothSection>
             <SmoothSection minHeight="280px">
-              <AIProgressReviewCard initialReview={data.aiReview} period={data.period} onRefresh={refreshData} />
+              <AIProgressReviewCard 
+                initialReview={data.aiReview} 
+                period={data.period} 
+                onRefresh={refreshData} 
+                isPro={isPro}
+                onProClick={triggerProModal}
+              />
             </SmoothSection>
             <SmoothSection minHeight="200px">
               <AchievementsShowcase achievements={data.achievements} />
             </SmoothSection>
           </div>
       </div>
+
+      <ProUpgradeModal
+        isOpen={proModalOpen}
+        onClose={() => setProModalOpen(false)}
+        featureName={proModalFeature}
+      />
     </div>
   );
 }

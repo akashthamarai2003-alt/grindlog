@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { BodyPhotoScan } from "@/types/fitness/analytics";
-import { Camera, Calendar, SlidersHorizontal, Sparkles, ArrowRight, Target, Upload, X, Loader2, RefreshCw, Maximize2 } from "lucide-react";
+import { Camera, Calendar, SlidersHorizontal, Sparkles, ArrowRight, Target, Upload, X, Loader2, RefreshCw, Maximize2, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -51,11 +51,15 @@ function SafeImage({ src, alt, className, style }: { src: string; alt?: string; 
 export function BodyProgressPhotos({ 
   first, 
   latest, 
-  initialGoalUrl 
+  initialGoalUrl,
+  isPro = true,
+  onProClick
 }: { 
   first: BodyPhotoScan | null; 
   latest: BodyPhotoScan | null; 
   initialGoalUrl?: string | null;
+  isPro?: boolean;
+  onProClick?: (feature: string) => void;
 }) {
   const router = useRouter();
   const [view, setView] = useState<'front' | 'left' | 'right' | 'back'>('front');
@@ -196,6 +200,11 @@ export function BodyProgressPhotos({
   }
 
   const handleAddClick = (e: React.MouseEvent) => {
+    if (!isPro) {
+      e.preventDefault();
+      onProClick?.("Progress Photo Scans");
+      return;
+    }
     if (daysSinceScan < 14) {
       e.preventDefault();
       setShowWarningModal(true);
@@ -203,6 +212,10 @@ export function BodyProgressPhotos({
   };
 
   const handleGoalCompareToggle = () => {
+    if (!isPro) {
+      onProClick?.("Goal Physique Comparison");
+      return;
+    }
     if (!goalUrl) {
       setShowGoalModal(true);
     } else {
@@ -308,12 +321,22 @@ export function BodyProgressPhotos({
           <p className="text-xs font-medium text-white/40 mb-4 max-w-xs">
             Complete your baseline body scan to start visual progress tracking and compare your transformation over time.
           </p>
-          <Link 
-            href="/progress/add-scan" 
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#ADFF00] text-black rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#baff22] transition-colors shadow-lg shadow-[#ADFF00]/10"
-          >
-            <Camera className="w-3.5 h-3.5" /> Add Scan
-          </Link>
+          {isPro ? (
+            <Link 
+              href="/progress/add-scan" 
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#ADFF00] text-black rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#baff22] transition-colors shadow-lg shadow-[#ADFF00]/10"
+            >
+              <Camera className="w-3.5 h-3.5" /> Add Scan
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onProClick?.("Progress Photo Scans")}
+              className="flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white rounded-xl font-black text-xs uppercase tracking-widest border border-white/15 hover:bg-white/15 transition-colors cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" /> Add Scan <span className="text-[9px] text-amber-400 uppercase font-black ml-1">PRO</span>
+            </button>
+          )}
         </div>
       </div>
     );
@@ -360,26 +383,41 @@ export function BodyProgressPhotos({
           <button
             type="button"
             onClick={handleGoalCompareToggle}
-            className={`flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all border ${
+            className={`flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all border cursor-pointer ${
               activeMode === 'goal'
                 ? 'bg-[#ADFF00] text-black border-[#ADFF00] shadow-md shadow-[#ADFF00]/20 font-extrabold'
-                : 'bg-[#ADFF00]/10 text-[#ADFF00] border-[#ADFF00]/20 hover:bg-[#ADFF00]/20'
+                : isPro 
+                  ? 'bg-[#ADFF00]/10 text-[#ADFF00] border-[#ADFF00]/20 hover:bg-[#ADFF00]/20'
+                  : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10'
             }`}
             title="Compare Front Photo with Goal Picture"
           >
-            <Target className="w-3.5 h-3.5" />
+            {isPro ? <Target className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 text-amber-400" />}
             <span>Compare Goal</span>
+            {!isPro && <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>}
           </button>
 
           {/* Add Scan Button */}
-          <Link 
-            href="/progress/add-scan" 
-            onClick={handleAddClick}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-[10px] uppercase tracking-wider border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors shadow-sm"
-          >
-            <Camera className="w-3.5 h-3.5" />
-            <span>Add Scan</span>
-          </Link>
+          {isPro ? (
+            <Link 
+              href="/progress/add-scan" 
+              onClick={handleAddClick}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-[10px] uppercase tracking-wider border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors shadow-sm"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>Add Scan</span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onProClick?.("Progress Photo Scans")}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 bg-white/5 text-white/70 rounded-xl font-black text-[10px] uppercase tracking-wider border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Add Scan</span>
+              <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -397,10 +435,16 @@ export function BodyProgressPhotos({
               </span>
               <button
                 type="button"
-                onClick={() => setShowGoalModal(true)}
-                className="text-[9px] font-bold text-[#ADFF00] hover:underline uppercase tracking-wider flex items-center gap-1"
+                onClick={() => {
+                  if (!isPro) {
+                    onProClick?.("Goal Physique Comparison");
+                    return;
+                  }
+                  setShowGoalModal(true);
+                }}
+                className="text-[9px] font-bold text-[#ADFF00] hover:underline uppercase tracking-wider flex items-center gap-1 cursor-pointer"
               >
-                <RefreshCw className="w-2.5 h-2.5" /> Change Goal
+                {isPro ? <RefreshCw className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5 text-amber-400" />} Change Goal
               </button>
             </div>
 
@@ -963,6 +1007,10 @@ export function BodyProgressPhotos({
               <button
                 onClick={() => {
                   setShowWarningModal(false);
+                  if (!isPro) {
+                    onProClick?.("Progress Photo Scans");
+                    return;
+                  }
                   router.push("/progress/add-scan");
                 }}
                 className="w-full py-3 bg-[#ADFF00] text-black font-black uppercase tracking-widest text-xs rounded-xl hover:bg-[#baff22] transition-colors flex items-center justify-center gap-1.5 shadow-lg shadow-[#ADFF00]/10"

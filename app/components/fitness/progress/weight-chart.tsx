@@ -3,10 +3,20 @@
 import { useState, useMemo } from "react";
 import { WeightPoint } from "@/types/fitness/analytics";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Plus, Target, CalendarDays, TrendingDown, TrendingUp } from "lucide-react";
+import { Plus, Target, CalendarDays, TrendingDown, TrendingUp, Lock } from "lucide-react";
 import Link from "next/link";
 
-export function WeightChart({ data, targetWeight }: { data: WeightPoint[], targetWeight: number | null }) {
+export function WeightChart({ 
+  data, 
+  targetWeight, 
+  isPro = true, 
+  onProClick 
+}: { 
+  data: WeightPoint[]; 
+  targetWeight: number | null; 
+  isPro?: boolean; 
+  onProClick?: (feature: string) => void; 
+}) {
   const [viewMode, setViewMode] = useState<"daily" | "weekly">("daily");
   const [scaleMode, setScaleMode] = useState<"focus" | "target">("focus");
 
@@ -84,9 +94,19 @@ export function WeightChart({ data, targetWeight }: { data: WeightPoint[], targe
         </h2>
         <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center text-center h-48">
           <p className="text-sm font-bold text-white/60 mb-2">No weight history yet</p>
-          <Link href="/progress/log-weight" className="flex items-center gap-2 px-4 py-2 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-xs uppercase tracking-widest border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors">
-            <Plus className="w-3 h-3" /> Log Weight
-          </Link>
+          {isPro ? (
+            <Link href="/progress/log-weight" className="flex items-center gap-2 px-4 py-2 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-xs uppercase tracking-widest border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors">
+              <Plus className="w-3 h-3" /> Log Weight
+            </Link>
+          ) : (
+            <button 
+              type="button" 
+              onClick={() => onProClick?.("Weight Logging")} 
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-xl font-black text-xs uppercase tracking-widest border border-white/15 hover:bg-white/15 transition-colors cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" /> Log Weight <span className="text-[9px] text-amber-400 uppercase font-black ml-1">PRO</span>
+            </button>
+          )}
         </div>
       </div>
     );
@@ -99,9 +119,19 @@ export function WeightChart({ data, targetWeight }: { data: WeightPoint[], targe
         <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
           Weight History
         </h2>
-        <Link href="/progress/log-weight" className="flex items-center gap-1 text-[#ADFF00] font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors">
-          <Plus className="w-3 h-3" /> Log
-        </Link>
+        {isPro ? (
+          <Link href="/progress/log-weight" className="flex items-center gap-1 text-[#ADFF00] font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors">
+            <Plus className="w-3 h-3" /> Log
+          </Link>
+        ) : (
+          <button 
+            type="button" 
+            onClick={() => onProClick?.("Weight Logging")} 
+            className="flex items-center gap-1 text-white/70 font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors cursor-pointer"
+          >
+            <Lock className="w-3 h-3 text-amber-400" /> Log <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>
+          </button>
+        )}
       </div>
 
       <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-4 pt-5 flex flex-col gap-4 shadow-xl">

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Plus, Minus, Edit3, Bell } from "lucide-react";
+import { Plus, Minus, Edit3, Bell, Lock } from "lucide-react";
 
 interface WaterBottleCardProps {
   consumedMl: number;
@@ -11,6 +11,7 @@ interface WaterBottleCardProps {
   onRemoveWater: (amount: number) => Promise<void> | void;
   onEditGoal: () => void;
   isLoading?: boolean;
+  isPro?: boolean;
 }
 
 export function WaterBottleCard({
@@ -20,6 +21,7 @@ export function WaterBottleCard({
   onRemoveWater,
   onEditGoal,
   isLoading = false,
+  isPro = true,
 }: WaterBottleCardProps) {
   const [stepAmount, setStepAmount] = useState<number>(250);
 
@@ -210,9 +212,16 @@ export function WaterBottleCard({
         {/* RIGHT COLUMN: Water Intake Stats & Stepper Logger */}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           {/* Header Title */}
-          <h3 className="text-sm font-bold text-white tracking-wide">
-            Water Intake
-          </h3>
+          <div className="flex items-center">
+            <h3 className="text-sm font-bold text-white tracking-wide">
+              Water Intake
+            </h3>
+            {!isPro && (
+              <span className="bg-[#00D2FF]/15 text-[#00D2FF] text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider ml-2 border border-[#00D2FF]/20">
+                PRO PREVIEW
+              </span>
+            )}
+          </div>
 
           {/* Value Display: 1500 / 2.5 L */}
           <div className="flex items-baseline gap-1.5 mt-1">
@@ -233,10 +242,14 @@ export function WaterBottleCard({
               title="Edit daily water target"
             >
               <span>Goal - {targetInLiters}L</span>
-              <Edit3
-                size={12}
-                className="opacity-70 group-hover:opacity-100 transition-opacity"
-              />
+              {isPro ? (
+                <Edit3
+                  size={12}
+                  className="opacity-70 group-hover:opacity-100 transition-opacity"
+                />
+              ) : (
+                <Lock size={11} className="text-[#00D2FF]" />
+              )}
               {isGoalReached && (
                 <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#00D2FF]/20 text-[#00D2FF] border border-[#00D2FF]/30">
                   Goal Reached!
@@ -259,7 +272,7 @@ export function WaterBottleCard({
             {/* Minus Button */}
             <button
               type="button"
-              disabled={safeConsumed <= 0}
+              disabled={isPro && safeConsumed <= 0}
               onClick={() => onRemoveWater(stepAmount)}
               className="w-10 h-10 rounded-xl bg-black/40 hover:bg-black/70 active:scale-95 disabled:opacity-30 disabled:pointer-events-none text-white flex items-center justify-center transition-all cursor-pointer"
               title={`Remove ${stepAmount}ml`}
@@ -270,7 +283,7 @@ export function WaterBottleCard({
             {/* Serving Size Selector Toggle */}
             <button
               type="button"
-              onClick={() => setStepAmount((prev) => (prev === 250 ? 500 : 250))}
+              onClick={() => isPro && setStepAmount((prev) => (prev === 250 ? 500 : 250))}
               className="px-2 py-1 rounded-lg hover:bg-white/5 text-xs font-black text-white/90 tracking-wide transition-colors cursor-pointer"
               title="Tap to toggle between 250ml and 500ml"
             >
@@ -278,19 +291,30 @@ export function WaterBottleCard({
             </button>
 
             {/* Plus Button with Neon Cyan Highlight */}
-            <button
-              type="button"
-              disabled={isGoalReached}
-              onClick={() => onAddWater(stepAmount)}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${
-                isGoalReached
-                  ? "bg-white/10 text-white/30 cursor-not-allowed shadow-none"
-                  : "bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 text-black cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
-              }`}
-              title={isGoalReached ? `Daily goal of ${targetInLiters}L reached!` : `Add ${stepAmount}ml`}
-            >
-              <Plus size={16} strokeWidth={3.5} />
-            </button>
+            {isPro ? (
+              <button
+                type="button"
+                disabled={isGoalReached}
+                onClick={() => onAddWater(stepAmount)}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${
+                  isGoalReached
+                    ? "bg-white/10 text-white/30 cursor-not-allowed shadow-none"
+                    : "bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 text-black cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
+                }`}
+                title={isGoalReached ? `Daily goal of ${targetInLiters}L reached!` : `Add ${stepAmount}ml`}
+              >
+                <Plus size={16} strokeWidth={3.5} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onAddWater(stepAmount)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-black bg-white/10 text-[#00D2FF] hover:bg-white/20 active:scale-95 cursor-pointer shadow-none"
+                title="Unlock water tracking with Pro"
+              >
+                <Lock size={14} />
+              </button>
+            )}
           </div>
 
           {/* Subtitle: 0.9L logged today */}

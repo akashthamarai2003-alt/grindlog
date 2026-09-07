@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ActivityAnalytics, RecoveryAnalytics } from "@/types/fitness/analytics";
-import { Footprints, Moon, Plus, Sparkles, X, Check, Loader2, Calendar, Zap } from "lucide-react";
+import { Footprints, Moon, Plus, Sparkles, X, Check, Loader2, Calendar, Zap, Lock } from "lucide-react";
 import { BarChart, Bar, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { toast } from "sonner";
 
@@ -12,10 +12,14 @@ export function ActivityRecoveryAnalyticsCard({
   activity,
   recovery,
   onRefresh,
+  isPro = true,
+  onProClick,
 }: {
   activity: ActivityAnalytics;
   recovery: RecoveryAnalytics;
   onRefresh?: () => Promise<void> | void;
+  isPro?: boolean;
+  onProClick?: (feature: string) => void;
 }) {
   const router = useRouter();
   const [localActivity, setLocalActivity] = useState<ActivityAnalytics>(activity);
@@ -68,6 +72,10 @@ export function ActivityRecoveryAnalyticsCard({
   }, [isModalOpen]);
 
   const openLogModal = (tab: "steps" | "sleep" = "steps") => {
+    if (!isPro) {
+      onProClick?.("Activity & Sleep Logging");
+      return;
+    }
     setActiveTab(tab);
     setLogDate(todayStr);
     setStepsInput(localActivity.todaySteps && localActivity.todaySteps > 0 ? String(localActivity.todaySteps) : "");
@@ -212,10 +220,15 @@ export function ActivityRecoveryAnalyticsCard({
         <button
           type="button"
           onClick={() => openLogModal("steps")}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ADFF00]/10 border border-[#ADFF00]/30 text-[#ADFF00] hover:bg-[#ADFF00]/20 transition-colors text-[10px] font-black uppercase tracking-wider active:scale-95 cursor-pointer"
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors text-[10px] font-black uppercase tracking-wider active:scale-95 cursor-pointer ${
+            isPro 
+              ? "bg-[#ADFF00]/10 border border-[#ADFF00]/30 text-[#ADFF00] hover:bg-[#ADFF00]/20" 
+              : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+          }`}
         >
-          <Plus className="w-3.5 h-3.5" />
+          {isPro ? <Plus className="w-3.5 h-3.5" /> : <Lock className="w-3 h-3 text-amber-400" />}
           <span>Log Today</span>
+          {!isPro && <span className="text-[9px] text-amber-400 font-black ml-0.5">PRO</span>}
         </button>
       </div>
 
