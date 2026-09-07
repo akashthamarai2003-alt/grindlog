@@ -186,9 +186,38 @@ function removeExplicitlySafeFoodPhrases(text: string): string {
 function hasForbiddenFood(text: string, profile: ProfileLike): string | null {
   const diet = cleanText(profile.food_type || profile.diet_preference).toLowerCase();
   const foodText = removeExplicitlySafeFoodPhrases(text);
+
+  const isNonVegetarian =
+    diet.includes("non-vegetarian") ||
+    diet.includes("non vegetarian") ||
+    diet.includes("non-veg") ||
+    diet.includes("non veg") ||
+    diet.includes("nonveg") ||
+    diet.includes("nonvegetarian") ||
+    diet.includes("non") ||
+    diet.includes("meat") ||
+    diet.includes("chicken") ||
+    diet.includes("fish");
+
+  // Non-vegetarian profiles are fully permitted to consume eggs, poultry, meat, fish, and dairy.
+  if (isNonVegetarian) {
+    return null;
+  }
+
   const isVegan = diet.includes("vegan");
-  const isVegetarian = diet.includes("vegetarian") && !isVegan;
-  const isEggetarian = diet.includes("eggetarian");
+  const isEggetarian =
+    !isVegan &&
+    (diet.includes("eggetarian") ||
+      diet.includes("eggitarian") ||
+      diet.includes("egg"));
+  const isVegetarian =
+    !isVegan &&
+    !isEggetarian &&
+    (diet.includes("vegetarian") ||
+      diet.includes("veg") ||
+      diet === "vegetarian" ||
+      diet === "veg");
+
   const firstMatch = (patterns: Array<[string, RegExp]>): string | null => {
     for (const [label, pattern] of patterns) {
       if (pattern.test(foodText)) return label;
@@ -452,20 +481,22 @@ export function validatePlanAgainstProfile(
       }
     }
 
-    const forbiddenFood = hasForbiddenFood(recommendedNutritionText(plan), profile);
-    if (forbiddenFood) {
-      issues.push(`The plan contains ${forbiddenFood}.`);
-    }
+    if (!options.allowCoreNutrition) {
+      const forbiddenFood = hasForbiddenFood(recommendedNutritionText(plan), profile);
+      if (forbiddenFood) {
+        issues.push(`The plan contains ${forbiddenFood}.`);
+      }
 
-    const restrictedFood = hasRestrictionConflict(recommendedNutritionText(plan), profile);
-    if (restrictedFood) {
-      issues.push(`The plan includes a food the user restricted: ${restrictedFood}.`);
-    }
+      const restrictedFood = hasRestrictionConflict(recommendedNutritionText(plan), profile);
+      if (restrictedFood) {
+        issues.push(`The plan includes a food the user restricted: ${restrictedFood}.`);
+      }
 
-    if (enforceProfileRules) {
-      const unselectedFood = hasUnselectedAvailableFood(plan, profile);
-      if (unselectedFood) {
-        issues.push(`${unselectedFood} was not selected in the user's available foods.`);
+      if (enforceProfileRules) {
+        const unselectedFood = hasUnselectedAvailableFood(plan, profile);
+        if (unselectedFood) {
+          issues.push(`${unselectedFood} was not selected in the user's available foods.`);
+        }
       }
     }
 

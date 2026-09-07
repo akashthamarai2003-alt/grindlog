@@ -645,7 +645,7 @@ export class NutritionService {
     const plansMap = new Map<string, any>();
     const rawDiet = (profile?.diet_preference || profile?.food_type || 'balanced').toLowerCase();
     const isVegan = rawDiet.includes('vegan');
-    const isNonVeg = !isVegan && (rawDiet.includes('non-veg') || rawDiet.includes('nonveg') || rawDiet.includes('non veg') || rawDiet.includes('meat') || rawDiet.includes('chicken'));
+    const isNonVeg = !isVegan && (rawDiet.includes('non') || rawDiet.includes('meat') || rawDiet.includes('chicken') || rawDiet.includes('fish'));
     const isEggetarian = !isVegan && !isNonVeg && (rawDiet.includes('egg') || rawDiet.includes('eggetarian'));
     const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
 
@@ -885,7 +885,7 @@ export class NutritionService {
   ) {
     const rawDiet = (profile?.diet_preference || profile?.food_type || 'balanced').toLowerCase();
     const isVegan = rawDiet.includes('vegan');
-    const isNonVeg = !isVegan && (rawDiet.includes('non-veg') || rawDiet.includes('nonveg') || rawDiet.includes('non veg') || rawDiet.includes('meat') || rawDiet.includes('chicken'));
+    const isNonVeg = !isVegan && (rawDiet.includes('non') || rawDiet.includes('meat') || rawDiet.includes('chicken') || rawDiet.includes('fish'));
     const isEggetarian = !isVegan && !isNonVeg && (rawDiet.includes('egg') || rawDiet.includes('eggetarian'));
     const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
 

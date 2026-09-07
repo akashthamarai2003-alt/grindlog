@@ -52,9 +52,9 @@ function isDietCompatible(food: any, diet: string): boolean {
   const foodDiet = normalize(food.diet_type);
   const foodText = normalize(`${food.name} ${food.category} ${foodDiet}`);
   const isVegan = diet.includes("vegan");
-  const isNonVegetarian = diet.includes("non veg") || diet.includes("nonvegetarian");
-  const isVegetarian = !isNonVegetarian && (diet === "veg" || diet.includes("vegetarian"));
-  const isEggetarian = diet.includes("eggetarian") || diet.includes("eggitarian");
+  const isNonVegetarian = !isVegan && (diet.includes("non") || diet.includes("meat") || diet.includes("chicken") || diet.includes("fish"));
+  const isEggetarian = !isVegan && !isNonVegetarian && (diet.includes("eggetarian") || diet.includes("eggitarian") || diet.includes("egg"));
+  const isVegetarian = !isVegan && !isNonVegetarian && !isEggetarian && (diet.includes("vegetarian") || diet === "veg" || diet.includes("veg"));
 
   if (isVegan) {
     return foodDiet.includes("vegan") && !/(dairy|egg|meat|chicken|fish|non veg)/.test(foodText);
