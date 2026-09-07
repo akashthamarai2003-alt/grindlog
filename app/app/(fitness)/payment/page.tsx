@@ -80,8 +80,23 @@ export default function FitnessPaymentPage() {
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [isDiscountExpired, setIsDiscountExpired] = useState(false);
 
+  // Current membership checks
+  const isCurrentCore = Boolean(
+    currentPremiumInfo?.premium_level === "core" && 
+    (currentPremiumInfo as any)?.is_premium
+  );
+
   // Initialize Lucky Wheel and load active discount session
   useEffect(() => {
+    if (!premiumStatusLoaded) return;
+    
+    // Core subscribers never see the wheel; their Pro upgrade is permanently locked at ₹99!
+    if (isCurrentCore) {
+      setShowSpinModal(false);
+      setLevel("pro");
+      return;
+    }
+
     const savedToken = sessionStorage.getItem("fitness_spin_discount_token");
     const savedExpiresAt = sessionStorage.getItem("fitness_spin_discount_expires_at");
     const hasSeenSpin = sessionStorage.getItem("fitness_spin_completed_or_dismissed");
@@ -98,17 +113,17 @@ export default function FitnessPaymentPage() {
         sessionStorage.removeItem("fitness_spin_discount_token");
       }
     } else if (!hasSeenSpin) {
-      // Auto-trigger spinner modal after 1.2s
+      // Auto-trigger spinner modal after 1.2s for returning free users
       const timer = setTimeout(() => {
         setShowSpinModal(true);
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [premiumStatusLoaded, isCurrentCore]);
 
   // 1-second countdown ticker for active discount
   useEffect(() => {
-    if (!discountExpiresAt || isDiscountExpired) return;
+    if (!discountExpiresAt || isDiscountExpired || isCurrentCore) return;
 
     const interval = setInterval(() => {
       const now = Date.now();
@@ -126,7 +141,7 @@ export default function FitnessPaymentPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [discountExpiresAt, isDiscountExpired]);
+  }, [discountExpiresAt, isDiscountExpired, isCurrentCore]);
 
   const handleClaimDiscount = (data: {
     token: string;
@@ -148,7 +163,7 @@ export default function FitnessPaymentPage() {
     sessionStorage.setItem("fitness_spin_completed_or_dismissed", "true");
   };
 
-  const isDiscountActive = Boolean(discountToken) && !isDiscountExpired && remainingSeconds > 0;
+  const isDiscountActive = isCurrentCore || (Boolean(discountToken) && !isDiscountExpired && remainingSeconds > 0);
 
   const formatTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -367,7 +382,19 @@ export default function FitnessPaymentPage() {
       </div>
 
       {/* Urgency / Active Discount Sticky Banner */}
-      {isDiscountActive ? (
+      {isCurrentCore ? (
+        <div className="sticky top-[72px] z-40 bg-gradient-to-r from-[#0E1A0F] via-[#162B17] to-[#0E1A0F] border-b border-[#ADFF00]/40 py-2.5 px-4 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+          <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-black text-white truncate">
+              <span className="text-base shrink-0">⭐</span>
+              <span className="truncate uppercase tracking-wide text-[#ADFF00]">Core Member Privilege: Pro Locked at ₹99/mo</span>
+            </div>
+            <div className="bg-[#ADFF00] text-black font-black text-[10px] uppercase px-2.5 py-1 rounded-full shrink-0 shadow-[0_0_10px_rgba(173,255,0,0.3)]">
+              Save ₹100/mo
+            </div>
+          </div>
+        </div>
+      ) : isDiscountActive ? (
         <div className="sticky top-[72px] z-40 bg-gradient-to-r from-[#0E1A0F] via-[#162B17] to-[#0E1A0F] border-b border-[#ADFF00]/40 py-2.5 px-4 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
           <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-black text-white truncate">
@@ -447,34 +474,49 @@ export default function FitnessPaymentPage() {
         <div className="space-y-3 mb-6">
           {/* Core Plan */}
           <button
-            onClick={() => setLevel("core")}
+            onClick={() => {
+              if (!isCurrentCore) setLevel("core");
+            }}
+            disabled={isCurrentCore}
             className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
-              level === "core" 
-                ? "border-[#ADFF00] bg-[#ADFF00]/5" 
-                : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
+              isCurrentCore
+                ? "border-gray-700/50 bg-[#121E12]/50 opacity-80 cursor-default"
+                : level === "core" 
+                  ? "border-[#ADFF00] bg-[#ADFF00]/5 cursor-pointer" 
+                  : "border-[#1A2619] bg-[#121E12] hover:border-gray-700 cursor-pointer"
             }`}
           >
             <div className="flex items-center gap-4">
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${level === "core" ? "border-[#ADFF00]" : "border-gray-600"}`}>
-                {level === "core" && <div className="w-3 h-3 rounded-full bg-[#ADFF00]" />}
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isCurrentCore ? "border-gray-500 bg-gray-500/20" : level === "core" ? "border-[#ADFF00]" : "border-gray-600"}`}>
+                {isCurrentCore ? (
+                  <Check size={14} className="text-gray-300" />
+                ) : level === "core" ? (
+                  <div className="w-3 h-3 rounded-full bg-[#ADFF00]" />
+                ) : null}
               </div>
               
               <div className="flex-1">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">⚡</span>
-                    <h3 className={`font-bold ${level === "core" ? "text-white" : "text-gray-300"}`}>Core</h3>
+                    <h3 className={`font-bold ${level === "core" && !isCurrentCore ? "text-white" : "text-gray-300"}`}>Core</h3>
                   </div>
-                  {isDiscountActive && (
+                  {isCurrentCore ? (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-white/10 text-gray-300 border border-white/20 px-2 py-0.5 rounded-full">
+                      Current Plan
+                    </span>
+                  ) : isDiscountActive ? (
                     <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
                       50% OFF • ALL MONTHS
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
-                    {isDiscountActive ? (
+                    {isCurrentCore ? (
+                      <span className="text-xs text-gray-400 font-medium">Active Subscription</span>
+                    ) : isDiscountActive ? (
                       <>
                         <span className="text-sm text-gray-500 line-through font-semibold">₹59</span>
                         <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>₹29</span>
@@ -499,10 +541,10 @@ export default function FitnessPaymentPage() {
               level === "pro" 
                 ? "border-[#ADFF00] bg-[#ADFF00]/5" 
                 : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
-            }`}
+            } cursor-pointer`}
           >
             <div className="absolute top-0 right-0 bg-[#ADFF00] text-black text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-wider uppercase">
-              ⭐ Recommended
+              {isCurrentCore ? "⭐ Upgrade Here" : "⭐ Recommended"}
             </div>
             
             <div className="flex items-center gap-4">
@@ -520,13 +562,13 @@ export default function FitnessPaymentPage() {
                 
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
-                    {isDiscountActive ? (
+                    {isCurrentCore || isDiscountActive ? (
                       <>
                         <span className="text-sm text-gray-500 line-through font-semibold">₹199</span>
                         <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>₹99</span>
                         <span className="text-xs text-gray-500 font-medium">/month</span>
                         <span className="ml-auto text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
-                          50% OFF • ALL MONTHS
+                          {isCurrentCore ? "LOCKED UPGRADE RATE" : "50% OFF • ALL MONTHS"}
                         </span>
                       </>
                     ) : (
@@ -543,14 +585,21 @@ export default function FitnessPaymentPage() {
         </div>
 
         {/* Lifetime Price Lock Guarantee Pill */}
-        {isDiscountActive && (
+        {isCurrentCore ? (
+          <div className="bg-[#121E12] border border-[#1F331F] rounded-2xl p-3.5 flex items-center gap-3 text-left mb-6 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
+            <ShieldCheck className="text-[#ADFF00] shrink-0" size={24} />
+            <div className="text-xs text-gray-300 leading-snug">
+              <span className="font-bold text-white">Core Member Upgrade:</span> Pay only <span className="text-[#ADFF00] font-bold">₹99 today</span> to unlock all Pro features for 30 full days. Your ₹99/mo rate is permanently locked for all future renewals.
+            </div>
+          </div>
+        ) : isDiscountActive ? (
           <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-3.5 flex items-center gap-3 text-left mb-6">
             <ShieldCheck className="text-[#ADFF00] shrink-0" size={22} />
             <div className="text-xs text-gray-300 leading-snug">
               <span className="font-bold text-white">Lifetime Price Lock Active:</span> You will pay <span className="text-[#ADFF00] font-bold">{level === "pro" ? "₹99" : "₹29"}/mo</span> every month on all renewals as long as your plan remains active.
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Floating CTA */}
@@ -568,6 +617,10 @@ export default function FitnessPaymentPage() {
             ) : isCurrentPlan ? (
               <span className="flex items-center gap-2">
                 <Check size={20} /> Current Active Plan
+              </span>
+            ) : isCurrentCore ? (
+              <span className="flex items-center gap-2">
+                Upgrade to Fitness OS Pro (₹99) <ChevronLeft className="w-5 h-5 rotate-180" />
               </span>
             ) : (
               <span className="flex items-center gap-2">

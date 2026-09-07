@@ -161,10 +161,46 @@ export async function createRazorpayOrder(
 
   let finalPrice = 0;
   let isSpinDiscountApplied = false;
+  let isCoreUpgrade = false;
 
   if (source === "fitness_os") {
-    // Check if the user is using the verified 5-minute spin discount
-    if (discountToken) {
+    // 1. Check if user is an active Core subscriber upgrading to Pro
+    // In Flow A ("Lifetime Price Lock"), existing Core subscribers are permanently locked in at ₹99/mo for Pro
+    if (level === "pro") {
+      const adminClient = createAdminClient();
+      const { data: fitnessSub } = await adminClient
+        .from("fitness_os_subscriptions")
+        .select("plan, status, current_period_end")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const isSubActiveCore = fitnessSub?.status === "active" &&
+        fitnessSub.plan !== "pro" &&
+        (!fitnessSub.current_period_end || new Date(fitnessSub.current_period_end) > new Date());
+
+      const { data: profile } = await adminClient
+        .from("fitness_os_profiles")
+        .select("fitness_is_premium, fitness_premium_level, fitness_premium_expires_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const isProfileActiveCore = Boolean(
+        profile?.fitness_is_premium &&
+        profile.fitness_premium_level === "core" &&
+        (!profile.fitness_premium_expires_at || new Date(profile.fitness_premium_expires_at) > new Date())
+      );
+
+      if (isSubActiveCore || isProfileActiveCore) {
+        isCoreUpgrade = true;
+      }
+    }
+
+    if (isCoreUpgrade) {
+      // Automatic locked upgrade pricing: Pro ₹99 / month
+      finalPrice = 99;
+      isSpinDiscountApplied = true;
+    } else if (discountToken) {
+      // Check if the user is using the verified 5-minute spin discount
       const verification = verifySpinDiscountToken(discountToken, user.id);
       if (!verification.valid || !verification.payload) {
         return { 
@@ -229,8 +265,8 @@ export async function createRazorpayOrder(
         tier,
         level,
         couponId: couponId || "",
-        discount: isSpinDiscountApplied ? "SPIN50_LIFETIME_LOCK" : "none",
-        isLifetimeLock: isSpinDiscountApplied ? "true" : "false",
+        discount: isCoreUpgrade ? "CORE_LOCKED_UPGRADE_PRO" : (isSpinDiscountApplied ? "SPIN50_LIFETIME_LOCK" : "none"),
+        isLifetimeLock: (isCoreUpgrade || isSpinDiscountApplied) ? "true" : "false",
         source: source === "fitness_os" ? "fitness_ai_os" : "grindlog",
       },
     };
