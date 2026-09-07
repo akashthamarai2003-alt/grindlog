@@ -87,13 +87,6 @@ export default function FitnessPaymentPage() {
     (currentPremiumInfo as any)?.is_premium
   );
 
-  // Dynamic offer and regular prices from live admin configuration
-  const corePrice = pricingConfig?.monthly?.core?.price ?? 59;
-  const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? null;
-  const proPrice = pricingConfig?.monthly?.pro?.price ?? 199;
-  const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? null;
-  const currentPrice = level === "pro" ? proPrice : corePrice;
-
   // Initialize Lucky Wheel and load active discount session
   useEffect(() => {
     if (!premiumStatusLoaded) return;
@@ -172,6 +165,15 @@ export default function FitnessPaymentPage() {
   };
 
   const isDiscountActive = isCurrentCore || (Boolean(discountToken) && !isDiscountExpired && remainingSeconds > 0);
+
+  // Dynamic offer and regular prices from live admin configuration
+  const corePrice = pricingConfig?.monthly?.core?.price ?? 29;
+  const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? 59;
+  const proPrice = pricingConfig?.monthly?.pro?.price ?? 99;
+  const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 199;
+  const currentPrice = level === "pro" 
+    ? ((isCurrentCore || isDiscountActive) ? proPrice : (proOriginalPrice || proPrice))
+    : (isDiscountActive ? corePrice : (coreOriginalPrice || corePrice));
 
   const formatTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -576,9 +578,9 @@ export default function FitnessPaymentPage() {
                     <span className="text-[10px] font-black uppercase tracking-wider bg-white/10 text-gray-300 border border-white/20 px-2 py-0.5 rounded-full">
                       Current Plan
                     </span>
-                  ) : (coreOriginalPrice && coreOriginalPrice > corePrice) || isDiscountActive ? (
+                  ) : isDiscountActive ? (
                     <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
-                      OFFER UNLOCKED
+                      50% OFF • ALL MONTHS
                     </span>
                   ) : null}
                 </div>
@@ -587,12 +589,17 @@ export default function FitnessPaymentPage() {
                   <div className="flex items-baseline gap-2">
                     {isCurrentCore ? (
                       <span className="text-xs text-gray-400 font-medium">Active Subscription</span>
-                    ) : (
+                    ) : isDiscountActive ? (
                       <>
                         {coreOriginalPrice && coreOriginalPrice > corePrice && (
                           <span className="text-sm text-gray-500 line-through font-semibold">₹{coreOriginalPrice}</span>
                         )}
                         <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>₹{corePrice}</span>
+                        <span className="text-xs text-gray-500 font-medium">/month</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>₹{coreOriginalPrice || corePrice}</span>
                         <span className="text-xs text-gray-500 font-medium">/month</span>
                       </>
                     )}
@@ -630,15 +637,22 @@ export default function FitnessPaymentPage() {
                 
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
-                    {proOriginalPrice && proOriginalPrice > proPrice && (
-                      <span className="text-sm text-gray-500 line-through font-semibold">₹{proOriginalPrice}</span>
-                    )}
-                    <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>₹{proPrice}</span>
-                    <span className="text-xs text-gray-500 font-medium">/month</span>
-                    {(isCurrentCore || (proOriginalPrice && proOriginalPrice > proPrice) || isDiscountActive) && (
-                      <span className="ml-auto text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
-                        {isCurrentCore ? "LOCKED UPGRADE RATE" : "OFFER UNLOCKED"}
-                      </span>
+                    {isCurrentCore || isDiscountActive ? (
+                      <>
+                        {proOriginalPrice && proOriginalPrice > proPrice && (
+                          <span className="text-sm text-gray-500 line-through font-semibold">₹{proOriginalPrice}</span>
+                        )}
+                        <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>₹{proPrice}</span>
+                        <span className="text-xs text-gray-500 font-medium">/month</span>
+                        <span className="ml-auto text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
+                          {isCurrentCore ? "LOCKED UPGRADE RATE" : "50% OFF • ALL MONTHS"}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>₹{proOriginalPrice || proPrice}</span>
+                        <span className="text-xs text-gray-500 font-medium">/month</span>
+                      </>
                     )}
                   </div>
                 </div>

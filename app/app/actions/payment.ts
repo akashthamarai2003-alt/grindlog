@@ -202,11 +202,13 @@ export async function createRazorpayOrder(
     }
 
     const livePricing = await getPlanPricesAction("fitness");
-    const adminCorePrice = livePricing?.monthly?.core?.price ?? 59;
-    const adminProPrice = livePricing?.monthly?.pro?.price ?? 199;
+    const adminCorePrice = livePricing?.monthly?.core?.price ?? 29;
+    const adminCoreOriginal = livePricing?.monthly?.core?.originalPrice ?? 59;
+    const adminProPrice = livePricing?.monthly?.pro?.price ?? 99;
+    const adminProOriginal = livePricing?.monthly?.pro?.originalPrice ?? 199;
 
     if (isCoreUpgrade) {
-      // Automatic locked upgrade pricing: Pro price configured in Admin
+      // Automatic locked upgrade pricing: Pro offer price configured in Admin
       finalPrice = adminProPrice;
       isSpinDiscountApplied = true;
     } else if (discountToken) {
@@ -224,8 +226,8 @@ export async function createRazorpayOrder(
         : (verification.payload.prices?.core ?? adminCorePrice);
       isSpinDiscountApplied = true;
     } else {
-      // Standard / Live Offer pricing set in /admin/pricing
-      finalPrice = level === "pro" ? adminProPrice : adminCorePrice;
+      // Standard pricing when no spin discount is active
+      finalPrice = level === "pro" ? adminProOriginal : adminCoreOriginal;
     }
   } else {
     const appType = "grindlog";
