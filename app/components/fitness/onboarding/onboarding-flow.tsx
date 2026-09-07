@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
-import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, CircleDashed, Shirt, BicepsFlexed, Building2, House, Trees, RefreshCw, Cable, Weight, Armchair, CircleDot, Bike, Footprints, PersonStanding, StretchHorizontal, MoveHorizontal, Landmark, CircleGauge, Grip, Waves, Mountain, Accessibility, Box, Play, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, CircleDashed, Shirt, BicepsFlexed, Building2, House, Trees, RefreshCw, Cable, Weight, Armchair, CircleDot, Bike, Footprints, PersonStanding, StretchHorizontal, MoveHorizontal, Landmark, CircleGauge, Grip, Waves, Mountain, Accessibility, Box, Play, CameraOff, type LucideIcon } from "lucide-react";
 import { BodySilhouette } from "./body-silhouette";
 import { toast } from "sonner";
 import frontImg from "../../../assets/images/placeholder-front.png";
@@ -413,6 +413,31 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     if (!canAdvanceFromStep(step)) return;
     setDirection(1);
     setStep((currentStep) => Math.min(currentStep + 1, totalSteps));
+  };
+
+  const handleSkipPhotos = () => {
+    // If user hasn't selected a target physique preset yet, choose a smart default based on their primary goal
+    const defaultTargetPhysique = (() => {
+      if (data.target_physique) return data.target_physique;
+      const goal = data.goal || "";
+      if (goal.includes("Muscle") || goal.includes("Gain")) return "Muscular";
+      if (goal.includes("Strength")) return "Strong & Functional";
+      if (goal.includes("Fitness") || goal.includes("Maintain")) return "Sporty";
+      return "Lean Athletic";
+    })();
+
+    handleUpdate({
+      body_scan_front: undefined,
+      body_scan_left: undefined,
+      body_scan_right: undefined,
+      body_scan_back: undefined,
+      body_scan_inspiration: undefined,
+      goal_physique_image: undefined,
+      target_physique: defaultTargetPhysique as any,
+    });
+
+    setDirection(1);
+    setStep(15);
   };
 
   const renderStep = () => {
@@ -2280,11 +2305,33 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             <div className="space-y-8">
               {/* 1. CURRENT BODY SCAN PHOTOS */}
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-0.5 rounded-full border border-[#ADFF00]/20 uppercase tracking-wider">Step 1</span>
-                  <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">Current Body Scan Photos</h3>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-0.5 rounded-full border border-[#ADFF00]/20 uppercase tracking-wider">Step 1</span>
+                    <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">Current Body Scan Photos</h3>
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-400 bg-[#1A2619] px-2 py-0.5 rounded-full border border-gray-800 uppercase tracking-wider">Optional</span>
                 </div>
-                <p className="text-xs text-gray-400 mb-4">Upload photos for AI body fat, posture, and muscle distribution analysis.</p>
+                <p className="text-xs text-gray-400 mb-3">Upload photos for AI body fat, posture, and muscle distribution analysis.</p>
+
+                {/* Friendly Skip Notice */}
+                <div className="mb-4 bg-[#121E12] border border-[#1E2E1D] p-3 rounded-xl flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center shrink-0">
+                      <CameraOff className="w-3.5 h-3.5 text-[#ADFF00]" />
+                    </div>
+                    <div className="text-[11px] text-gray-300">
+                      <span className="font-bold text-white">Don't want to upload pictures?</span> You can skip anytime — our AI will analyze your profile using your body measurements.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSkipPhotos}
+                    className="text-xs font-black text-[#ADFF00] hover:text-white bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 px-3 py-1.5 rounded-lg border border-[#ADFF00]/30 transition-all shrink-0 uppercase tracking-wider cursor-pointer"
+                  >
+                    Skip Photos →
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   {[
@@ -2474,18 +2521,18 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
               </div>
 
               {/* Photo Privacy Note */}
-              <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-4 text-center space-y-2">
+              <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-4 text-center space-y-2.5">
                 <div className="flex items-center justify-center gap-2 text-xs font-semibold text-gray-300">
                   <Info size={14} className="text-[#ADFF00]" />
                   <span>Your photos are encrypted & private</span>
                 </div>
-                <p className="text-[11px] text-gray-500 leading-relaxed">
-                  Used solely by Groq Vision AI to analyze body composition, posture, and timeframe projections.
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Photos are 100% optional. If you don't want to upload your picture, you can skip and we will analyze your profile using your biometric measurements.
                 </p>
                 <button 
-                  onClick={handleNext}
-                  disabled={!canAdvanceFromStep(14)}
-                  className="text-xs font-bold text-[#ADFF00] hover:underline block mx-auto pt-1 disabled:cursor-not-allowed disabled:opacity-50"
+                  type="button"
+                  onClick={handleSkipPhotos}
+                  className="text-xs font-bold text-[#ADFF00] hover:text-white hover:underline block mx-auto pt-1 cursor-pointer transition-colors"
                 >
                   Skip photos and analyze profile →
                 </button>
