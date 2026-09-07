@@ -18,7 +18,11 @@ interface LuckyWheelModalProps {
 }
 
 // 8 slices: 45 degrees each
-// Index 7 is our 50% OFF JACKPOT slice (angle: 315 to 360 deg)
+// Index 7 is our 50% OFF JACKPOT slice (midAngle: 247.5 deg)
+// Initial resting rotation is set to 202.5 deg so Slice 7 sits at the bottom (6 o'clock)
+// and an ordinary slice (30% OFF) sits under the top pointer.
+const INITIAL_ROTATION = 202.5;
+
 const SLICES = [
   { label: "10% OFF", color: "#0F1A10", textColor: "#6B7280", isWinner: false },
   { label: "20% OFF", color: "#142415", textColor: "#9CA3AF", isWinner: false },
@@ -32,20 +36,19 @@ const SLICES = [
 
 export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheelModalProps) {
   const [phase, setPhase] = useState<"ready" | "spinning" | "won">("ready");
-  const [rotation, setRotation] = useState(0);
+  const [rotation, setRotation] = useState(INITIAL_ROTATION);
   const [isClaiming, setIsClaiming] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-spin 1.2s after modal appears
+  // Reset to ready state with non-50% resting position when modal opens
   useEffect(() => {
-    if (!isOpen) return;
-
-    const autoSpinTimeout = setTimeout(() => {
-      startSpin();
-    }, 1200);
-
-    return () => clearTimeout(autoSpinTimeout);
+    if (isOpen) {
+      if (phase !== "won") {
+        setPhase("ready");
+        setRotation(INITIAL_ROTATION);
+      }
+    }
   }, [isOpen]);
 
   // Handle countdown when in 'won' phase
@@ -102,16 +105,17 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheel
     if (phase !== "ready") return;
     setPhase("spinning");
 
-    // Slice 7 is centered at 337.5 deg. Rotating clockwise by 22.5 deg brings center to 0 deg (top pointer).
-    // 5 full spins: 5 * 360 + 22.5 = 1822.5 deg.
-    const targetDeg = 1800 + 22.5;
+    // Starting from INITIAL_ROTATION (202.5 deg where 50% is at bottom 6 o'clock)
+    // 6.5 full revolutions: 202.5 + 2340 = 2542.5 deg.
+    // 2542.5 % 360 = 22.5 deg, aligning Slice 7 (midAngle: 247.5 deg) dead-center with top pointer!
+    const targetDeg = INITIAL_ROTATION + 2340;
     setRotation(targetDeg);
 
-    // Spin animation duration is 3.6s
+    // Spin animation duration is 4.5s with realistic deceleration
     setTimeout(() => {
       setPhase("won");
       fireConfetti();
-    }, 3800);
+    }, 4600);
   };
 
   const handleClaim = async () => {
@@ -170,17 +174,25 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheel
               <Sparkles size={12} /> Exclusive Athlete Reward
             </div>
 
-            <h2 className="text-2xl font-black tracking-tight mb-1">
-              Spinning Your Special Offer
+            <h2 className="text-2xl font-black tracking-tight mb-1 text-white">
+              {phase === "ready" ? "Spin the Lucky Wheel" : "Spinning Your Discount..."}
             </h2>
-            <p className="text-gray-400 text-xs max-w-xs mb-6">
-              Hold tight! We are unlocking a special promotional discount for you right now...
+            <p className="text-gray-400 text-xs max-w-xs mb-4">
+              {phase === "ready" 
+                ? "Tap the button below to test your luck and unlock up to 50% OFF your subscription!"
+                : "Hold tight! Selecting the highest available athlete discount for you..."}
             </p>
 
             {/* WHEEL CONTAINER */}
-            <div className="relative w-64 h-64 my-2 flex items-center justify-center">
+            <div className="relative w-64 h-64 my-1 flex items-center justify-center">
               {/* TOP POINTER / TICKER NEEDLE */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">
+              <motion.div 
+                animate={phase === "spinning" ? { 
+                  rotate: [0, -12, 10, -8, 8, -4, 4, 0],
+                  transition: { repeat: Infinity, duration: 0.22, ease: "linear" }
+                } : { rotate: 0 }}
+                className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] origin-top pointer-events-none"
+              >
                 <svg width="28" height="32" viewBox="0 0 28 32" fill="none">
                   <path
                     d="M14 32L3.6077 10L24.3923 10L14 32Z"
@@ -190,14 +202,14 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheel
                   />
                   <circle cx="14" cy="8" r="6" fill="#FFFFFF" />
                 </svg>
-              </div>
+              </motion.div>
 
               {/* ROTATING SVG WHEEL */}
               <motion.div
                 animate={{ rotate: rotation }}
                 transition={{
-                  duration: 3.6,
-                  ease: [0.15, 0.9, 0.25, 1], // Deceleration physics
+                  duration: 4.5,
+                  ease: [0.12, 0.8, 0.2, 1], // Realistic deceleration physics
                 }}
                 className="w-full h-full rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] border-4 border-[#1F331F] relative overflow-hidden"
               >
@@ -244,25 +256,69 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheel
                     );
                   })}
 
-                  {/* CENTER CAP */}
-                  <circle cx="100" cy="100" r="22" fill="#0A1108" stroke="#ADFF00" strokeWidth="3" />
-                  <circle cx="100" cy="100" r="14" fill="#142415" />
-                  <text
-                    x="100"
-                    y="104"
-                    fill="#ADFF00"
-                    fontSize="12"
-                    fontWeight="900"
-                    textAnchor="middle"
+                  {/* CENTER INTERACTIVE CAP / TAP TO SPIN BUTTON */}
+                  <g 
+                    onClick={phase === "ready" ? startSpin : undefined}
+                    className={phase === "ready" ? "cursor-pointer group hover:opacity-90 transition-opacity" : ""}
                   >
-                    ⚡
-                  </text>
+                    <circle cx="100" cy="100" r="28" fill="#0D160E" stroke="#ADFF00" strokeWidth="2.5" />
+                    <circle cx="100" cy="100" r="21" fill={phase === "ready" ? "#1A2E1C" : "#142415"} />
+                    <text
+                      x="100"
+                      y={phase === "ready" ? "96" : "98"}
+                      fill="#ADFF00"
+                      fontSize="7.5"
+                      fontWeight="900"
+                      letterSpacing="0.8"
+                      textAnchor="middle"
+                    >
+                      {phase === "ready" ? "TAP TO" : "LUCKY"}
+                    </text>
+                    <text
+                      x="100"
+                      y={phase === "ready" ? "108" : "110"}
+                      fill="#FFFFFF"
+                      fontSize="10"
+                      fontWeight="900"
+                      letterSpacing="0.5"
+                      textAnchor="middle"
+                    >
+                      {phase === "ready" ? "SPIN" : "WHEEL"}
+                    </text>
+                  </g>
                 </svg>
               </motion.div>
             </div>
 
-            <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-[#ADFF00] animate-pulse">
-              <Zap size={14} /> Selecting highest available discount...
+            {/* MANUAL SPIN TRIGGER BUTTON */}
+            <div className="w-full mt-5 space-y-2">
+              <button
+                type="button"
+                onClick={startSpin}
+                disabled={phase === "spinning"}
+                className={`w-full py-4 rounded-full font-black text-base flex items-center justify-center gap-2 transition-all uppercase tracking-wider ${
+                  phase === "spinning"
+                    ? "bg-[#142415] text-[#ADFF00] border border-[#ADFF00]/40 cursor-wait shadow-none"
+                    : "bg-[#ADFF00] text-black hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_30px_rgba(173,255,0,0.35)] cursor-pointer"
+                }`}
+              >
+                {phase === "spinning" ? (
+                  <>
+                    <Zap className="w-5 h-5 animate-spin" />
+                    <span>SPINNING THE WHEEL...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🎰 SPIN TO WIN DISCOUNT</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+              <p className="text-[11px] text-gray-400">
+                {phase === "spinning" 
+                  ? "⚡ Decelerating onto top athlete discount..."
+                  : "1 free spin available for your session • Guaranteed discount!"}
+              </p>
             </div>
           </div>
         ) : (

@@ -18,7 +18,8 @@ import {
   Dumbbell,
   Timer,
   Sparkles,
-  Lock
+  Lock,
+  ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSafeRedirect } from "@/lib/utils/redirect";
@@ -470,6 +471,41 @@ export default function FitnessPaymentPage() {
           </div>
         </div>
 
+        {/* Prominent On-Page Lucky Wheel Banner (Visible before claiming discount) */}
+        {!isDiscountActive && !isCurrentCore && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-5 rounded-3xl bg-gradient-to-br from-[#122413] via-[#0E1A0F] to-[#142615] border-2 border-[#ADFF00]/40 shadow-[0_0_30px_rgba(173,255,0,0.15)] relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-36 h-36 bg-[#ADFF00]/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-2xl bg-[#ADFF00] text-black flex items-center justify-center font-black text-xl shadow-[0_0_15px_rgba(173,255,0,0.4)] shrink-0">
+                🎡
+              </div>
+              <div>
+                <div className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest flex items-center gap-1.5">
+                  <Sparkles size={11} /> Exclusive Athlete Reward
+                </div>
+                <h3 className="text-lg font-black text-white leading-tight">
+                  Spin & Win Up to 50% OFF!
+                </h3>
+              </div>
+            </div>
+            <p className="text-xs text-gray-300 mb-4 leading-relaxed">
+              Don't pay full price! Every athlete gets 1 free spin to unlock a permanent Lifetime Price Lock discount.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowSpinModal(true)}
+              className="w-full py-3.5 px-4 bg-[#ADFF00] text-black rounded-2xl font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_20px_rgba(173,255,0,0.25)] transition-all cursor-pointer"
+            >
+              <span>Spin The Lucky Wheel 🎰</span>
+              <ArrowRight size={16} />
+            </button>
+          </motion.div>
+        )}
+
         {/* Plan Selector */}
         <div className="space-y-3 mb-6">
           {/* Core Plan */}
@@ -601,6 +637,19 @@ export default function FitnessPaymentPage() {
           </div>
         ) : null}
       </div>
+
+      {/* Floating Spin & Win Quick Trigger Badge (Visible if user scrolls and hasn't claimed discount) */}
+      {!isDiscountActive && !isCurrentCore && !showSpinModal && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          onClick={() => setShowSpinModal(true)}
+          className="fixed bottom-28 right-4 z-40 bg-[#0E1A0F]/95 backdrop-blur-md border-2 border-[#ADFF00] text-white py-2 px-3.5 rounded-full shadow-[0_0_25px_rgba(173,255,0,0.35)] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+        >
+          <span className="text-base animate-bounce">🎡</span>
+          <span className="text-xs font-black text-[#ADFF00] group-hover:underline">Spin & Win 50% OFF</span>
+        </motion.button>
+      )}
 
       {/* Floating CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50">
