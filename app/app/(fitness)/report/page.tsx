@@ -519,8 +519,14 @@ export default async function AIStartingReportPage() {
         </div>
 
         {/* Continue Button */}
-        <div className="pt-4">
+        <div className="pt-4 flex flex-col items-center gap-2.5">
           <GeneratePlanButton />
+          <Link
+            href="/"
+            className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer"
+          >
+            Continue with Free →
+          </Link>
         </div>
       </div>
     </div>

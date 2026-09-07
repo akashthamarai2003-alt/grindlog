@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import Script from "next/script";
 import {
   ChevronLeft,
@@ -431,6 +432,15 @@ export default function FitnessPaymentPage() {
               </span>
             )}
           </button>
+
+          <div className="mt-3 text-center">
+            <Link
+              href="/"
+              className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer"
+            >
+              Continue with Free →
+            </Link>
+          </div>
         </div>
       </div>
     </div>
