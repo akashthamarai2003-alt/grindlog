@@ -196,22 +196,32 @@ export default function FitnessPaymentPage() {
     }
   }, [isSuccess, returnTo]);
 
-  // Robust polling that survives modal dismissal
+  // Robust polling that survives modal dismissal or external redirect
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     let attempts = 0;
 
     const pollPremiumStatus = () => {
       attempts++;
-      if (!isPolling || attempts > 30) return; // Stop polling after ~2 minutes
+      if (attempts > 20) {
+        setIsPolling(false);
+        setIsProcessing(false);
+        sessionStorage.removeItem("payment_in_progress");
+        return;
+      }
       
       checkUserPremiumStatusAction(selectedPlan, level, "fitness_os").then((isPremium) => {
         if (isPremium) {
           setIsSuccess(true);
           setIsPolling(false);
-        } else {
+          setIsProcessing(false);
+          sessionStorage.removeItem("payment_in_progress");
+        } else if (isPolling) {
           timeoutId = setTimeout(pollPremiumStatus, 4000);
         }
+      }).catch(() => {
+        setIsPolling(false);
+        setIsProcessing(false);
       });
     };
 
@@ -246,7 +256,6 @@ export default function FitnessPaymentPage() {
     try {
       setIsProcessing(true);
       sessionStorage.setItem("payment_in_progress", "true");
-      setIsPolling(true);
 
       const orderResponse = await createRazorpayOrder(
         selectedPlan, 
@@ -278,10 +287,16 @@ export default function FitnessPaymentPage() {
         );
         if (verifyRes.success) {
           setIsSuccess(true);
+          setIsProcessing(false);
+          sessionStorage.removeItem("payment_in_progress");
         } else {
           throw new Error("Failed to activate free tier");
         }
         return;
+      }
+
+      if (typeof window === "undefined" || !(window as any).Razorpay) {
+        throw new Error("Payment gateway is initializing. Please tap again in a moment.");
       }
 
       const options = {
@@ -293,6 +308,7 @@ export default function FitnessPaymentPage() {
         order_id: orderResponse.orderId,
         handler: async function (response: any) {
           try {
+            setIsProcessing(true);
             const verifyRes = await verifyRazorpayPayment(
                 response.razorpay_order_id,
                 response.razorpay_payment_id,
@@ -307,6 +323,8 @@ export default function FitnessPaymentPage() {
             if (verifyRes.success) {
               setIsSuccess(true);
               setIsPolling(false);
+              setIsProcessing(false);
+              sessionStorage.removeItem("payment_in_progress");
             } else {
               throw new Error("Payment verification failed");
             }
@@ -324,14 +342,17 @@ export default function FitnessPaymentPage() {
         },
         modal: {
           ondismiss: function () {
+            // User cancelled or exited Razorpay checkout
             setIsProcessing(false);
-            setTimeout(() => {
-              checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((isPremium) => {
-                if (isPremium) {
-                  setIsSuccess(true);
-                }
-              });
-            }, 3000);
+            setIsPolling(false);
+            sessionStorage.removeItem("payment_in_progress");
+
+            // Quick check in case webhook or external UPI completed in background
+            checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((isPremium) => {
+              if (isPremium) {
+                setIsSuccess(true);
+              }
+            }).catch(() => {});
           },
         },
       };
@@ -341,6 +362,8 @@ export default function FitnessPaymentPage() {
       rzp.on('payment.failed', function (response: any) {
         console.error("Payment failed event:", response.error);
         setIsProcessing(false);
+        setIsPolling(false);
+        sessionStorage.removeItem("payment_in_progress");
       });
       
       rzp.open();
@@ -349,13 +372,14 @@ export default function FitnessPaymentPage() {
       alert(error.message || "Failed to initiate payment");
       setIsProcessing(false);
       setIsPolling(false);
+      sessionStorage.removeItem("payment_in_progress");
     }
   };
 
   const isCurrentPlan = currentPremiumInfo?.premium_tier === selectedPlan && currentPremiumInfo?.premium_level === level;
 
   return (
-    <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col relative overflow-hidden pb-[100px]">
+    <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col relative overflow-hidden pb-[180px]">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
       {/* Lucky Wheel Modal */}
@@ -638,22 +662,24 @@ export default function FitnessPaymentPage() {
         ) : null}
       </div>
 
-      {/* Floating Spin & Win Quick Trigger Badge (Visible if user scrolls and hasn't claimed discount) */}
-      {!isDiscountActive && !isCurrentCore && !showSpinModal && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          onClick={() => setShowSpinModal(true)}
-          className="fixed bottom-28 right-4 z-40 bg-[#0E1A0F]/95 backdrop-blur-md border-2 border-[#ADFF00] text-white py-2 px-3.5 rounded-full shadow-[0_0_25px_rgba(173,255,0,0.35)] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
-        >
-          <span className="text-base animate-bounce">🎡</span>
-          <span className="text-xs font-black text-[#ADFF00] group-hover:underline">Spin & Win 50% OFF</span>
-        </motion.button>
-      )}
+      {/* Floating CTA with Nested Spin & Win Badge (Zero Overlap) */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[max(env(safe-area-inset-bottom),16px)] bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pt-8 z-50 pointer-events-none">
+        <div className="max-w-lg mx-auto pointer-events-auto flex flex-col">
+          {/* Spin & Win Quick Trigger Badge (Cleanly positioned above the button, zero overlap) */}
+          {!isDiscountActive && !isCurrentCore && !showSpinModal && (
+            <div className="flex justify-end mb-2.5">
+              <motion.button
+                initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                onClick={() => setShowSpinModal(true)}
+                className="bg-[#0E1A0F] border-2 border-[#ADFF00] text-white py-1.5 px-3.5 rounded-full shadow-[0_0_20px_rgba(173,255,0,0.35)] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+              >
+                <span className="text-sm animate-bounce">🎡</span>
+                <span className="text-xs font-black text-[#ADFF00] group-hover:underline">Spin & Win 50% OFF</span>
+              </motion.button>
+            </div>
+          )}
 
-      {/* Floating CTA */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108] to-transparent pt-12 z-50">
-        <div className="max-w-lg mx-auto">
           <button
             onClick={handlePayment}
             disabled={isProcessing || isCurrentPlan || isPolling}
