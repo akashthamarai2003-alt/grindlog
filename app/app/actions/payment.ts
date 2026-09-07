@@ -7,12 +7,112 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import { calculateExpiryDate } from "@/lib/utils";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
-
-const razorpay = new Razorpay({
+const razorpay = new Razorpay({
   key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
   key_secret: process.env.RAZORPAY_KEY_SECRET || "",
 });
 
+
+export interface SpinDiscountPayload {
+  userId: string;
+  code: string;
+  discountPercent: number;
+  prices: {
+    core: number;
+    pro: number;
+  };
+  regularPrices: {
+    core: number;
+    pro: number;
+  };
+  isLifetimeLock: boolean;
+  expiresAt: number;
+}
+
+function getSpinSecret(): string {
+  return process.env.RAZORPAY_KEY_SECRET || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "fitness_os_spin_secret_hmac";
+}
+
+function signSpinDiscountPayload(payload: SpinDiscountPayload): string {
+  const secret = getSpinSecret();
+  const dataStr = JSON.stringify(payload);
+  const b64Data = Buffer.from(dataStr, "utf8").toString("base64url");
+  const sig = crypto.createHmac("sha256", secret).update(b64Data).digest("hex");
+  return `${b64Data}.${sig}`;
+}
+
+function verifySpinDiscountToken(
+  token: string, 
+  expectedUserId: string
+): { valid: boolean; payload?: SpinDiscountPayload; error?: string } {
+  try {
+    if (!token || typeof token !== "string") {
+      return { valid: false, error: "Missing discount token" };
+    }
+    const [b64Data, sig] = token.split(".");
+    if (!b64Data || !sig) {
+      return { valid: false, error: "Malformed discount token" };
+    }
+
+    const secret = getSpinSecret();
+    const expectedSig = crypto.createHmac("sha256", secret).update(b64Data).digest("hex");
+    if (sig !== expectedSig) {
+      return { valid: false, error: "Invalid discount signature" };
+    }
+
+    const payload = JSON.parse(Buffer.from(b64Data, "base64url").toString("utf8")) as SpinDiscountPayload;
+    if (payload.userId !== expectedUserId) {
+      return { valid: false, error: "Discount token user mismatch" };
+    }
+
+    if (Date.now() > payload.expiresAt) {
+      return { valid: false, error: "5-minute discount offer has expired", payload };
+    }
+
+    return { valid: true, payload };
+  } catch (err: any) {
+    return { valid: false, error: err?.message || "Token verification failed" };
+  }
+}
+
+export async function claimSpinDiscountAction() {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Enforce 5-minute countdown from server clock
+  const expiresAt = Date.now() + 5 * 60 * 1000;
+  const payload: SpinDiscountPayload = {
+    userId: user.id,
+    code: "SPIN50_LIFETIME_LOCK",
+    discountPercent: 50,
+    prices: {
+      core: 29,
+      pro: 99,
+    },
+    regularPrices: {
+      core: 59,
+      pro: 199,
+    },
+    isLifetimeLock: true,
+    expiresAt,
+  };
+
+  const token = signSpinDiscountPayload(payload);
+
+  return {
+    success: true,
+    token,
+    expiresAt,
+    discountPercent: 50,
+    prices: payload.prices,
+    regularPrices: payload.regularPrices,
+    isLifetimeLock: true,
+  };
+}
 
 export async function validateCouponAction(code: string) {
   if (!code) return { success: false, error: "Please enter a code" };
@@ -49,7 +149,8 @@ export async function createRazorpayOrder(
   tier: "monthly" | "six_months" | "lifetime", 
   level: "core" | "pro", 
   couponId?: string,
-  source?: string
+  source?: string,
+  discountToken?: string
 ) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -59,17 +160,37 @@ export async function createRazorpayOrder(
   }
 
   let finalPrice = 0;
+  let isSpinDiscountApplied = false;
 
-  const appType = source === "fitness_os" ? "fitness" : "grindlog";
-  const livePricing = await getPlanPricesAction(appType);
-  finalPrice = livePricing[tier]?.[level]?.price || 0;
-
-  if (finalPrice <= 0) {
-    return { success: false, error: "Invalid plan" };
+  if (source === "fitness_os") {
+    // Check if the user is using the verified 5-minute spin discount
+    if (discountToken) {
+      const verification = verifySpinDiscountToken(discountToken, user.id);
+      if (!verification.valid || !verification.payload) {
+        return { 
+          success: false, 
+          error: "Your 5-minute discount offer has expired. Standard prices have been restored." 
+        };
+      }
+      // Discount verified successfully: Pro ₹99, Core ₹29
+      finalPrice = level === "pro" ? verification.payload.prices.pro : verification.payload.prices.core;
+      isSpinDiscountApplied = true;
+    } else {
+      // Standard anchor pricing: Pro ₹199, Core ₹59
+      finalPrice = level === "pro" ? 199 : 59;
+    }
+  } else {
+    const appType = "grindlog";
+    const livePricing = await getPlanPricesAction(appType);
+    finalPrice = livePricing[tier]?.[level]?.price || 0;
   }
 
-  // Calculate discount
-  if (couponId) {
+  if (finalPrice <= 0) {
+    return { success: false, error: "Invalid plan price" };
+  }
+
+  // Calculate coupon discount if applicable
+  if (couponId && !isSpinDiscountApplied) {
     const adminClient = createAdminClient();
     const { data: coupon } = await adminClient
       .from("coupons")
@@ -108,6 +229,8 @@ export async function createRazorpayOrder(
         tier,
         level,
         couponId: couponId || "",
+        discount: isSpinDiscountApplied ? "SPIN50_LIFETIME_LOCK" : "none",
+        isLifetimeLock: isSpinDiscountApplied ? "true" : "false",
         source: source === "fitness_os" ? "fitness_ai_os" : "grindlog",
       },
     };

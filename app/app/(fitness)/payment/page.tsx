@@ -15,13 +15,17 @@ import {
   Activity,
   Brain,
   ShieldCheck,
-  Dumbbell
+  Dumbbell,
+  Timer,
+  Sparkles,
+  Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSafeRedirect } from "@/lib/utils/redirect";
 import { createRazorpayOrder, verifyRazorpayPayment, checkUserPremiumStatusAction, getUserPremiumDetailsAction } from "@/app/actions/payment";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
+import { LuckyWheelModal } from "@/components/fitness/subscription/lucky-wheel-modal";
 
 const features = [
   { icon: Target, label: "Personalized 7-day plan", core: true, pro: true },
@@ -68,6 +72,89 @@ export default function FitnessPaymentPage() {
   const [premiumStatusLoaded, setPremiumStatusLoaded] = useState(false);
   const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
   const isUpgradeIntent = searchParams.get("intent") === "upgrade_pro";
+
+  // Lucky Wheel & 50% discount state
+  const [showSpinModal, setShowSpinModal] = useState(false);
+  const [discountToken, setDiscountToken] = useState<string | null>(null);
+  const [discountExpiresAt, setDiscountExpiresAt] = useState<number | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [isDiscountExpired, setIsDiscountExpired] = useState(false);
+
+  // Initialize Lucky Wheel and load active discount session
+  useEffect(() => {
+    const savedToken = sessionStorage.getItem("fitness_spin_discount_token");
+    const savedExpiresAt = sessionStorage.getItem("fitness_spin_discount_expires_at");
+    const hasSeenSpin = sessionStorage.getItem("fitness_spin_completed_or_dismissed");
+
+    if (savedToken && savedExpiresAt) {
+      const expiresAtNum = parseInt(savedExpiresAt, 10);
+      const now = Date.now();
+      if (now < expiresAtNum) {
+        setDiscountToken(savedToken);
+        setDiscountExpiresAt(expiresAtNum);
+        setRemainingSeconds(Math.max(0, Math.floor((expiresAtNum - now) / 1000)));
+      } else {
+        setIsDiscountExpired(true);
+        sessionStorage.removeItem("fitness_spin_discount_token");
+      }
+    } else if (!hasSeenSpin) {
+      // Auto-trigger spinner modal after 1.2s
+      const timer = setTimeout(() => {
+        setShowSpinModal(true);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // 1-second countdown ticker for active discount
+  useEffect(() => {
+    if (!discountExpiresAt || isDiscountExpired) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = Math.floor((discountExpiresAt - now) / 1000);
+
+      if (diff <= 0) {
+        setRemainingSeconds(0);
+        setIsDiscountExpired(true);
+        setDiscountToken(null);
+        sessionStorage.removeItem("fitness_spin_discount_token");
+        clearInterval(interval);
+      } else {
+        setRemainingSeconds(diff);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [discountExpiresAt, isDiscountExpired]);
+
+  const handleClaimDiscount = (data: {
+    token: string;
+    expiresAt: number;
+    prices: { core: number; pro: number };
+    regularPrices: { core: number; pro: number };
+  }) => {
+    setDiscountToken(data.token);
+    setDiscountExpiresAt(data.expiresAt);
+    setRemainingSeconds(Math.max(0, Math.floor((data.expiresAt - Date.now()) / 1000)));
+    setIsDiscountExpired(false);
+    sessionStorage.setItem("fitness_spin_discount_token", data.token);
+    sessionStorage.setItem("fitness_spin_discount_expires_at", data.expiresAt.toString());
+    sessionStorage.setItem("fitness_spin_completed_or_dismissed", "true");
+  };
+
+  const handleCloseSpinModal = () => {
+    setShowSpinModal(false);
+    sessionStorage.setItem("fitness_spin_completed_or_dismissed", "true");
+  };
+
+  const isDiscountActive = Boolean(discountToken) && !isDiscountExpired && remainingSeconds > 0;
+
+  const formatTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   // Fetch current premium status
   useEffect(() => {
@@ -145,9 +232,20 @@ export default function FitnessPaymentPage() {
       sessionStorage.setItem("payment_in_progress", "true");
       setIsPolling(true);
 
-      const orderResponse = await createRazorpayOrder(selectedPlan, level, undefined, "fitness_os");
+      const orderResponse = await createRazorpayOrder(
+        selectedPlan, 
+        level, 
+        undefined, 
+        "fitness_os",
+        discountToken || undefined
+      );
 
       if (!orderResponse.success) {
+        if (orderResponse.error?.includes("expired")) {
+          setIsDiscountExpired(true);
+          setDiscountToken(null);
+          sessionStorage.removeItem("fitness_spin_discount_token");
+        }
         throw new Error(orderResponse.error || "Failed to create order");
       }
 
@@ -244,6 +342,13 @@ export default function FitnessPaymentPage() {
     <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col relative overflow-hidden pb-[100px]">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
+      {/* Lucky Wheel Modal */}
+      <LuckyWheelModal
+        isOpen={showSpinModal}
+        onClose={handleCloseSpinModal}
+        onClaimDiscount={handleClaimDiscount}
+      />
+
       {/* Background glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60" />
 
@@ -260,6 +365,28 @@ export default function FitnessPaymentPage() {
         </div>
         <div className="w-10 h-10" />
       </div>
+
+      {/* Urgency / Active Discount Sticky Banner */}
+      {isDiscountActive ? (
+        <div className="sticky top-[72px] z-40 bg-gradient-to-r from-[#0E1A0F] via-[#162B17] to-[#0E1A0F] border-b border-[#ADFF00]/40 py-2.5 px-4 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+          <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-black text-white truncate">
+              <span className="text-base shrink-0">🔥</span>
+              <span className="truncate uppercase tracking-wide text-[#ADFF00]">50% OFF Locked In For All Months</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-black/70 border border-[#ADFF00]/60 rounded-full px-2.5 py-1 text-[#ADFF00] font-mono font-black text-xs shrink-0 shadow-[0_0_10px_rgba(173,255,0,0.2)]">
+              <Timer size={13} className="animate-spin text-[#ADFF00]" />
+              <span>{formatTime(remainingSeconds)}</span>
+            </div>
+          </div>
+        </div>
+      ) : isDiscountExpired ? (
+        <div className="sticky top-[72px] z-40 bg-red-950/60 border-b border-red-500/30 py-2 px-4 backdrop-blur-md text-center">
+          <span className="text-xs font-semibold text-red-300">
+            ⚠️ 50% discount offer has expired. Standard prices restored.
+          </span>
+        </div>
+      ) : null}
 
       <div className="px-6 pt-6 pb-12 z-10 max-w-lg mx-auto w-full">
         {/* Hero Section */}
@@ -317,7 +444,7 @@ export default function FitnessPaymentPage() {
         </div>
 
         {/* Plan Selector */}
-        <div className="space-y-3 mb-10">
+        <div className="space-y-3 mb-6">
           {/* Core Plan */}
           <button
             onClick={() => setLevel("core")}
@@ -333,28 +460,32 @@ export default function FitnessPaymentPage() {
               </div>
               
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">⚡</span>
-                  <h3 className={`font-bold ${level === "core" ? "text-white" : "text-gray-300"}`}>Core</h3>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">⚡</span>
+                    <h3 className={`font-bold ${level === "core" ? "text-white" : "text-gray-300"}`}>Core</h3>
+                  </div>
+                  {isDiscountActive && (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
+                      50% OFF • ALL MONTHS
+                    </span>
+                  )}
                 </div>
                 
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
-                    {isLoadingPrices ? (
-                      <span className="animate-pulse bg-[#1A2619] text-transparent rounded px-2 text-sm">₹00</span>
-                    ) : (pricingConfig.monthly?.core?.originalPrice && pricingConfig.monthly.core.originalPrice > (pricingConfig.monthly?.core?.price || 29)) ? (
-                      <span className="text-sm text-gray-500 line-through font-semibold">
-                        ₹{pricingConfig.monthly.core.originalPrice}
-                      </span>
-                    ) : null}
-                    <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>
-                      {isLoadingPrices ? (
-                        <span className="animate-pulse bg-[#1A2619] text-transparent rounded px-2">₹00</span>
-                      ) : (
-                        `₹${pricingConfig.monthly?.core?.price || 29}`
-                      )}
-                    </span>
-                    <span className="text-xs text-gray-500 font-medium">/month</span>
+                    {isDiscountActive ? (
+                      <>
+                        <span className="text-sm text-gray-500 line-through font-semibold">₹59</span>
+                        <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>₹29</span>
+                        <span className="text-xs text-gray-500 font-medium">/month</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className={`text-2xl font-black ${level === "core" ? "text-[#ADFF00]" : "text-white"}`}>₹59</span>
+                        <span className="text-xs text-gray-500 font-medium">/month</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -380,34 +511,46 @@ export default function FitnessPaymentPage() {
               </div>
               
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">🔥</span>
-                  <h3 className={`font-bold ${level === "pro" ? "text-white" : "text-gray-300"}`}>Pro</h3>
+                <div className="flex items-center justify-between gap-2 mb-1 pr-24">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🔥</span>
+                    <h3 className={`font-bold ${level === "pro" ? "text-white" : "text-gray-300"}`}>Pro</h3>
+                  </div>
                 </div>
                 
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
-                    {isLoadingPrices ? (
-                      <span className="animate-pulse bg-[#1A2619] text-transparent rounded px-2 text-sm">₹00</span>
-                    ) : (pricingConfig.monthly?.pro?.originalPrice && pricingConfig.monthly.pro.originalPrice > (pricingConfig.monthly?.pro?.price || 99)) ? (
-                      <span className="text-sm text-gray-500 line-through font-semibold">
-                        ₹{pricingConfig.monthly.pro.originalPrice}
-                      </span>
-                    ) : null}
-                    <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>
-                      {isLoadingPrices ? (
-                        <span className="animate-pulse bg-[#1A2619] text-transparent rounded px-2">₹00</span>
-                      ) : (
-                        `₹${pricingConfig.monthly?.pro?.price || 99}`
-                      )}
-                    </span>
-                    <span className="text-xs text-gray-500 font-medium">/month</span>
+                    {isDiscountActive ? (
+                      <>
+                        <span className="text-sm text-gray-500 line-through font-semibold">₹199</span>
+                        <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>₹99</span>
+                        <span className="text-xs text-gray-500 font-medium">/month</span>
+                        <span className="ml-auto text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
+                          50% OFF • ALL MONTHS
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>₹199</span>
+                        <span className="text-xs text-gray-500 font-medium">/month</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           </button>
         </div>
+
+        {/* Lifetime Price Lock Guarantee Pill */}
+        {isDiscountActive && (
+          <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-3.5 flex items-center gap-3 text-left mb-6">
+            <ShieldCheck className="text-[#ADFF00] shrink-0" size={22} />
+            <div className="text-xs text-gray-300 leading-snug">
+              <span className="font-bold text-white">Lifetime Price Lock Active:</span> You will pay <span className="text-[#ADFF00] font-bold">{level === "pro" ? "₹99" : "₹29"}/mo</span> every month on all renewals as long as your plan remains active.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Floating CTA */}
@@ -416,7 +559,7 @@ export default function FitnessPaymentPage() {
           <button
             onClick={handlePayment}
             disabled={isProcessing || isCurrentPlan || isPolling}
-            className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] disabled:opacity-70 disabled:shadow-none transition-all"
+            className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] disabled:opacity-70 disabled:shadow-none transition-all cursor-pointer"
           >
             {isProcessing || isPolling ? (
               <span className="flex items-center gap-2 animate-pulse">
@@ -428,7 +571,7 @@ export default function FitnessPaymentPage() {
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                Get Fitness OS {level === "pro" ? "Pro" : "Core"} <ChevronLeft className="w-5 h-5 rotate-180" />
+                Get Fitness OS {level === "pro" ? "Pro" : "Core"} ({isDiscountActive ? (level === "pro" ? "₹99/mo" : "₹29/mo") : (level === "pro" ? "₹199/mo" : "₹59/mo")}) <ChevronLeft className="w-5 h-5 rotate-180" />
               </span>
             )}
           </button>
