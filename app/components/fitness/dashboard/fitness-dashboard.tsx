@@ -63,11 +63,11 @@ export function FitnessDashboard({
         {!hasPlan && (
           <div className="bg-[#121E12] border border-[#ADFF00]/50 p-4 rounded-2xl flex items-center justify-between shadow-[0_0_15px_rgba(173,255,0,0.1)]">
             <div>
-              <h3 className="font-bold text-[#ADFF00]">No Active Plan</h3>
-              <p className="text-xs text-gray-400 mt-1">Generate your AI strategy.</p>
+              <h3 className="font-bold text-[#ADFF00]">Plan Ready for Review</h3>
+              <p className="text-xs text-gray-400 mt-1">Review and activate your customized plan.</p>
             </div>
-            <Link href="/report" prefetch={true} className="px-4 py-2 bg-[#ADFF00] text-black font-bold rounded-xl text-sm whitespace-nowrap shadow-[0_0_10px_rgba(173,255,0,0.3)] hover:bg-[#c4ff33]">
-              Generate
+            <Link href="/plan-setup" prefetch={true} className="px-4 py-2 bg-[#ADFF00] text-black font-bold rounded-xl text-sm whitespace-nowrap shadow-[0_0_10px_rgba(173,255,0,0.3)] hover:bg-[#c4ff33]">
+              Review Plan
             </Link>
           </div>
         )}

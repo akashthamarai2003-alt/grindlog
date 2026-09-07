@@ -71,6 +71,7 @@ export const GeneratedNutritionSchema = z.object({
   grocery_list: safeArray(GeneratedGroceryItemSchema),
   guidance: z.coerce.string().describe("General healthy eating tips reflecting allergies and preferences").optional().default("")
 });
+export type GeneratedNutritionData = z.infer<typeof GeneratedNutritionSchema>;
 
 export const GeneratedLifestyleSchema = z.object({
   sleep_target_hours: safeNumber.nullable().optional(),
@@ -249,6 +250,8 @@ export const FITNESS_PLAN_JSON_SCHEMA: Record<string, unknown> = {
     },
   },
 };
+
+export const NUTRITION_JSON_SCHEMA: Record<string, unknown> = (FITNESS_PLAN_JSON_SCHEMA as any).properties.nutrition;
 
 export function buildFitnessPlanJsonSchema(
   exactWorkoutCount?: number,

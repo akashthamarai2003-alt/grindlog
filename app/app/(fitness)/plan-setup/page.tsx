@@ -183,11 +183,18 @@ export default function PlanSetupPage() {
   useEffect(() => {
     // Generate draft on mount
     let isMounted = true;
+    const isReturningFromUpgrade = typeof window !== "undefined" && (
+      window.location.search.includes("intent=upgrade_pro") ||
+      window.location.search.includes("success=true")
+    );
     
-    requestPlanDraft()
+    requestPlanDraft({ retry: isReturningFromUpgrade })
       .then((res) => {
         if (!isMounted) return;
         setPlanData(res.data);
+        if (isReturningFromUpgrade && res.data?._subscriptionPlan === "pro") {
+          toast.success("Upgraded to Pro! Your personalized nutrition and grocery plans are unlocked.");
+        }
       })
       .catch((err: unknown) => {
         if (!isMounted) return;
@@ -203,10 +210,13 @@ export default function PlanSetupPage() {
         setGenerationError(message);
         setGenerationErrorType(getPlanGenerationErrorType(err));
         toast.error(message);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
       });
       
     return () => { isMounted = false; };
-  }, []);
+  }, [router]);
 
   const handleModulate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -589,7 +599,7 @@ export default function PlanSetupPage() {
       ) : isCorePlan ? (
         <ProUpgradePanel
           section={activeTab === "grocery" ? "grocery" : "diet"}
-          onUpgrade={() => router.push("/payment?returnTo=/&intent=upgrade_pro")}
+          onUpgrade={() => router.push("/payment?returnTo=/plan-setup&intent=upgrade_pro")}
         />
       ) : activeTab === "diet" ? (
         <div className="mx-auto max-w-md px-6 pb-5 animate-in fade-in slide-in-from-bottom-4 duration-500">

@@ -103,6 +103,12 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     }
   }
 
+  if (!plan) {
+    // Subscribed users who have not yet locked in their plan belong on /plan-setup
+    // to review their personalized plan and activate it.
+    redirect("/plan-setup");
+  }
+
   let dayNumber = 1;
   if (plan?.created_at) {
     

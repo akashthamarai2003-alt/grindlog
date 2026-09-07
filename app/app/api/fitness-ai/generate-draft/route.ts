@@ -18,6 +18,7 @@ import {
 import { autoRepairPlanSafety, runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
+import { generateProNutritionLayer } from "@/lib/fitness/ai/nutrition-generator";
 import {
   clearGenerationAttempt,
   clearUserGenerationAttempts,
@@ -151,7 +152,7 @@ export async function POST(req: Request) {
     // a normal refresh generate a different paid plan after 30 minutes.
     let cachedDraftQuery = supabase
       .from("fitness_os_ai_sessions")
-      .select("prompt, response")
+      .select("id, prompt, response")
       .eq("user_id", user.id)
       .eq("session_type", "plan_generation")
       .order("created_at", { ascending: false })
@@ -186,6 +187,70 @@ export async function POST(req: Request) {
               _subscriptionPlan: subscriptionPlan.id,
             },
           });
+        }
+
+        // Core-to-Pro upgrade transition: User already generated workouts on Core,
+        // but now upgraded to Pro. Keep existing workouts intact and generate
+        // only the missing Pro nutrition layer (meals + grocery list).
+        if (
+          cachedPlan.success &&
+          safetyCheck?.safe &&
+          subscriptionPlan.id === "pro" &&
+          cachedPlan.data.workouts.length > 0 &&
+          (!cachedPlan.data.nutrition?.meals || cachedPlan.data.nutrition.meals.length === 0)
+        ) {
+          console.log("Core-to-Pro upgrade detected in draft: Preserving workouts and generating Pro nutrition layer...");
+          try {
+            const generatedNutrition = await generateProNutritionLayer({
+              profile,
+              existingWorkouts: cachedPlan.data.workouts,
+              foodCatalog,
+            });
+
+            const mergedPlan = {
+              ...cachedPlan.data,
+              nutrition: generatedNutrition,
+            };
+
+            const mergedSafety = runFitnessAISafetyCheck(mergedPlan, profile);
+            const mergedCheck = validatePlanAgainstProfile(mergedPlan, profile, {
+              enforceProfileRules: true,
+              enforceBudgetUtilisation: false,
+              allowCoreNutrition: false,
+            });
+
+            if (mergedSafety.safe && mergedCheck.valid) {
+              const enrichedPlan = applyFitnessPlanEntitlements(
+                enrichPlanWithFoodLibrary(mergedCheck.plan, foodCatalog || []),
+                "pro",
+              );
+
+              // Update the session cache with the merged Pro plan
+              if (cachedDraft.id) {
+                await supabase
+                  .from("fitness_os_ai_sessions")
+                  .update({
+                    response: JSON.stringify(enrichedPlan),
+                    model: FITNESS_PLAN_MODEL,
+                  })
+                  .eq("id", cachedDraft.id);
+              }
+
+              return NextResponse.json({
+                success: true,
+                cached: true,
+                upgraded: true,
+                data: {
+                  ...enrichedPlan,
+                  _profile: profile,
+                  _subscriptionPlan: "pro",
+                },
+              });
+            }
+          } catch (upgradeErr) {
+            console.error("Failed to generate Pro nutrition layer for existing workouts:", upgradeErr);
+            // Fall through to full generation if single-layer generation fails
+          }
         }
       } catch {
         // Ignore an old malformed cache entry and safely generate a new draft.
