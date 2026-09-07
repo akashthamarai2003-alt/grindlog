@@ -57,7 +57,7 @@ export function GeneratePlanButton() {
       {isPreparing && (
         <AIPlanAnimation
           isReady={true}
-          minDurationMs={12000}
+          minDurationMs={8000}
           exitMode="hold"
           onAnimationComplete={handleAnimationComplete}
         />

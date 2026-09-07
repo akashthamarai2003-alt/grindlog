@@ -23,7 +23,7 @@ export interface AnimationTimeline {
 // The loading scene is part of the product experience. A quick model response
 // must not skip it, but a slow response must never be hidden behind a fake
 // countdown either.
-const MINIMUM_VISIBLE_DURATION_MS = 12_000;
+const MINIMUM_VISIBLE_DURATION_MS = 8_000;
 const EXIT_DURATION_MS = 750;
 
 /**
@@ -35,7 +35,7 @@ export function useAnimationTimeline(
   pillCount: number,
   reducedMotion: boolean,
   isPlanReady: boolean,
-  minDurationMs: number = 12_000,
+  minDurationMs: number = 8_000,
 ): AnimationTimeline {
   const [phase, setPhase] = useState<AnimationPhase>("BOOT");
   const [scanIndex, setScanIndex] = useState(-1);

@@ -72,7 +72,7 @@ interface AIPlanAnimationProps {
 export default function AIPlanAnimation({
   isReady = false,
   hasError = false,
-  minDurationMs = 12_000,
+  minDurationMs = 8_000,
   exitMode = "slide",
   onAnimationComplete,
 }: AIPlanAnimationProps) {
