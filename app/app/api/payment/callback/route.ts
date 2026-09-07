@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
       const tier = (order.notes.tier as "monthly" | "six_months" | "lifetime") || "six_months";
       const level = (order.notes.level as "core" | "pro") || "pro";
       const couponId = order.notes.couponId as string;
+      const source = order.notes.source as string;
 
       // Increment coupon if used
       if (couponId) {
@@ -85,33 +86,83 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Update User Profile
-      await adminClient
-        .from("profiles")
-        .update({
-          is_premium: true,
-          premium_tier: tier,
-          premium_level: level,
-          premium_expires_at: calculateExpiryDate(tier),
-        })
-        .eq("id", userId);
+      if (source === "fitness_ai_os") {
+        // Fitness OS payment — update fitness-specific tables
+        await adminClient
+          .from("fitness_os_profiles")
+          .update({
+            fitness_is_premium: true,
+            fitness_premium_tier: tier,
+            fitness_premium_level: level,
+            fitness_premium_expires_at: calculateExpiryDate(tier)
+          })
+          .eq("user_id", userId);
 
-      // Record Subscription
-      try {
-        await adminClient.from("subscriptions").insert({
-          user_id: userId,
-          plan: `${tier}_${level}`,
-          status: "active",
-          razorpay_order_id: razorpayOrderId,
-          razorpay_payment_id: razorpayPaymentId,
-          expires_at: calculateExpiryDate(tier),
-          started_at: new Date().toISOString(),
-        });
-      } catch (err) {
-        console.warn("Callback subscription insert warning:", err);
+        try {
+          await adminClient
+            .from("fitness_os_subscriptions")
+            .upsert(
+              {
+                user_id: userId,
+                plan: level === "pro" ? "pro" : "starter",
+                status: "active",
+                provider: "razorpay",
+                provider_order_id: razorpayOrderId,
+                provider_payment_id: razorpayPaymentId,
+                current_period_start: new Date().toISOString(),
+                current_period_end: calculateExpiryDate(tier),
+              },
+              { onConflict: "user_id" },
+            );
+        } catch (subErr) {
+          console.warn("Callback fitness_os_subscriptions upsert warning:", subErr);
+        }
+
+        // Record in subscriptions table for audit
+        try {
+          await adminClient.from("subscriptions").insert({
+            user_id: userId,
+            plan: `fitness_${tier}_${level}`,
+            status: "active",
+            razorpay_order_id: razorpayOrderId,
+            razorpay_payment_id: razorpayPaymentId,
+            expires_at: calculateExpiryDate(tier),
+            started_at: new Date().toISOString(),
+          });
+        } catch (subErr) {
+          console.warn("Callback fitness subscription insert warning:", subErr);
+        }
+
+        return NextResponse.redirect(new URL("/payment?success=Premium+Activated", req.url), 303);
+      } else {
+        // GrindLog legacy payment — update profiles table
+        await adminClient
+          .from("profiles")
+          .update({
+            is_premium: true,
+            premium_tier: tier,
+            premium_level: level,
+            premium_expires_at: calculateExpiryDate(tier),
+          })
+          .eq("id", userId);
+
+        // Record Subscription
+        try {
+          await adminClient.from("subscriptions").insert({
+            user_id: userId,
+            plan: `${tier}_${level}`,
+            status: "active",
+            razorpay_order_id: razorpayOrderId,
+            razorpay_payment_id: razorpayPaymentId,
+            expires_at: calculateExpiryDate(tier),
+            started_at: new Date().toISOString(),
+          });
+        } catch (err) {
+          console.warn("Callback subscription insert warning:", err);
+        }
+
+        return NextResponse.redirect(new URL("/?success=Premium+Activated", req.url), 303);
       }
-
-      return NextResponse.redirect(new URL("/?success=Premium+Activated", req.url), 303);
     }
   } catch (error) {
     console.error("Payment callback error:", error);

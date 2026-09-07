@@ -43,6 +43,18 @@ export async function POST(req: NextRequest) {
       const orderId = payment.order_id;
       
       if (orderId) {
+        // Update the profile to grant premium access
+        await adminClient
+          .from("fitness_os_profiles")
+          .update({
+            fitness_is_premium: true,
+            fitness_premium_tier: payment.notes?.tier || "monthly",
+            fitness_premium_level: payment.notes?.level || "pro",
+            fitness_premium_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          })
+          .eq("user_id", payment.notes?.userId);
+
+        // Update the subscription record to active
         await adminClient
           .from("fitness_os_subscriptions")
           .update({

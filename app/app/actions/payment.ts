@@ -170,6 +170,7 @@ export async function createRazorpayOrder(
   let finalPrice = 0;
   let isSpinDiscountApplied = false;
   let isCoreUpgrade = false;
+  let verification: ReturnType<typeof verifySpinDiscountToken> | null = null;
 
   if (source === "fitness_os") {
     // 1. Check if user is an active Core subscriber upgrading to Pro
@@ -208,14 +209,13 @@ export async function createRazorpayOrder(
     const adminCoreOriginal = livePricing?.monthly?.core?.originalPrice ?? 59;
     const adminProPrice = livePricing?.monthly?.pro?.price ?? 99;
     const adminProOriginal = livePricing?.monthly?.pro?.originalPrice ?? 199;
-
     if (isCoreUpgrade) {
       // Automatic locked upgrade pricing: Pro offer price configured in Admin
       finalPrice = adminProPrice;
       isSpinDiscountApplied = true;
     } else if (discountToken) {
       // Check if the user is using the verified 5-minute spin discount
-      const verification = verifySpinDiscountToken(discountToken, user.id);
+      verification = verifySpinDiscountToken(discountToken, user.id);
       if (!verification.valid || !verification.payload) {
         return { 
           success: false, 
@@ -281,7 +281,7 @@ export async function createRazorpayOrder(
         tier,
         level,
         couponId: couponId || "",
-        discount: isCoreUpgrade ? "CORE_LOCKED_UPGRADE_PRO" : (isSpinDiscountApplied ? "SPIN50_LIFETIME_LOCK" : "none"),
+        discount: isCoreUpgrade ? "CORE_LOCKED_UPGRADE_PRO" : (isSpinDiscountApplied ? `SPIN${verification?.payload?.discountPercent ?? 50}_LIFETIME_LOCK` : "none"),
         isLifetimeLock: (isCoreUpgrade || isSpinDiscountApplied) ? "true" : "false",
         source: source === "fitness_os" ? "fitness_ai_os" : "grindlog",
       },
@@ -466,8 +466,6 @@ export async function verifyRazorpayPayment(
   revalidatePath("/", "layout");
   revalidatePath("/");
   revalidatePath("/payment");
-  revalidatePath("/payment");
-  revalidatePath("/");
   revalidatePath("/profile");
   revalidatePath("/admin/users");
   revalidatePath("/admin");
