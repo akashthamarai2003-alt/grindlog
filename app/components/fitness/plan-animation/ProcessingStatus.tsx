@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { CircleCheck } from "lucide-react";
 import type { AnimationPhase } from "./useAnimationTimeline";
 
 interface ProcessingStatusProps {
@@ -55,6 +56,22 @@ export function ProcessingStatus({
 
   return (
     <div className="absolute bottom-6 sm:bottom-10 inset-x-0 flex flex-col items-center justify-center text-center px-6 pointer-events-none z-20">
+      <AnimatePresence mode="wait">
+        {isFinalReveal && (
+          <motion.div
+            key="final-check-badge"
+            initial={{ opacity: 0, y: 12, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-3 flex items-center justify-center"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#ADFF00]/70 bg-[#ADFF00]/15 text-[#ADFF00] shadow-[0_0_25px_rgba(173,255,0,0.35)]">
+              <CircleCheck size={26} strokeWidth={2.5} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {showHeading && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
