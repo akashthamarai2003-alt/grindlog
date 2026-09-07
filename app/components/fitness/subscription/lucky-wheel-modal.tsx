@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Timer, Zap, Check, ArrowRight, X, ShieldCheck } from "lucide-react";
 import confetti from "canvas-confetti";
 import { claimSpinDiscountAction } from "@/app/actions/payment";
+import { PlanPricingConfig } from "@/lib/constants/pricing";
 
 interface LuckyWheelModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface LuckyWheelModalProps {
     prices: { core: number; pro: number };
     regularPrices: { core: number; pro: number };
   }) => void;
+  pricingConfig?: PlanPricingConfig;
 }
 
 // 8 slices: 45 degrees each
@@ -34,12 +36,19 @@ const SLICES = [
   { label: "🎉 50% OFF", color: "#ADFF00", textColor: "#000000", isWinner: true, badge: "JACKPOT" },
 ];
 
-export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheelModalProps) {
+export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfig }: LuckyWheelModalProps) {
   const [phase, setPhase] = useState<"ready" | "spinning" | "won">("ready");
   const [rotation, setRotation] = useState(INITIAL_ROTATION);
   const [isClaiming, setIsClaiming] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const corePrice = pricingConfig?.monthly?.core?.price ?? 29;
+  const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? 59;
+  const proPrice = pricingConfig?.monthly?.pro?.price ?? 99;
+  const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 199;
+  const coreSavings = coreOriginalPrice && coreOriginalPrice > corePrice ? coreOriginalPrice - corePrice : 0;
+  const proSavings = proOriginalPrice && proOriginalPrice > proPrice ? proOriginalPrice - proPrice : 0;
 
   // Reset to ready state with non-50% resting position when modal opens
   useEffect(() => {
@@ -355,13 +364,17 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheel
                   Core Plan
                 </div>
                 <div className="flex items-baseline gap-1.5 mb-1">
-                  <span className="text-xs text-gray-500 line-through">₹59</span>
-                  <span className="text-xl font-black text-white">₹29</span>
+                  {coreOriginalPrice && coreOriginalPrice > corePrice && (
+                    <span className="text-xs text-gray-500 line-through">₹{coreOriginalPrice}</span>
+                  )}
+                  <span className="text-xl font-black text-white">₹{corePrice}</span>
                   <span className="text-[10px] text-gray-400">/mo</span>
                 </div>
-                <div className="text-[10px] font-bold text-[#ADFF00]">
-                  Save ₹30 every month
-                </div>
+                {coreSavings > 0 && (
+                  <div className="text-[10px] font-bold text-[#ADFF00]">
+                    Save ₹{coreSavings} every month
+                  </div>
+                )}
               </div>
 
               {/* Pro Plan (Best Value) */}
@@ -373,13 +386,17 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheel
                   Pro Plan
                 </div>
                 <div className="flex items-baseline gap-1.5 mb-1">
-                  <span className="text-xs text-gray-500 line-through">₹199</span>
-                  <span className="text-xl font-black text-[#ADFF00]">₹99</span>
+                  {proOriginalPrice && proOriginalPrice > proPrice && (
+                    <span className="text-xs text-gray-500 line-through">₹{proOriginalPrice}</span>
+                  )}
+                  <span className="text-xl font-black text-[#ADFF00]">₹{proPrice}</span>
                   <span className="text-[10px] text-gray-400">/mo</span>
                 </div>
-                <div className="text-[10px] font-bold text-[#ADFF00]">
-                  Save ₹100 every month
-                </div>
+                {proSavings > 0 && (
+                  <div className="text-[10px] font-bold text-[#ADFF00]">
+                    Save ₹{proSavings} every month
+                  </div>
+                )}
               </div>
             </div>
 
@@ -387,7 +404,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheel
             <div className="w-full bg-[#121E12] border border-[#1F331F] rounded-xl px-3 py-2 flex items-center gap-2 text-left mb-4">
               <ShieldCheck className="text-[#ADFF00] shrink-0" size={18} />
               <div className="text-[11px] text-gray-300 leading-tight">
-                <span className="font-bold text-white">Lifetime Rate Guarantee:</span> This 50% discount applies to all renewal months.
+                <span className="font-bold text-white">Lifetime Rate Guarantee:</span> This discount applies to all renewal months.
               </div>
             </div>
 
@@ -410,11 +427,11 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheel
             >
               {isClaiming ? (
                 <span className="flex items-center gap-2">
-                  <Zap size={18} className="animate-spin" /> Securing Your 50% Lock...
+                  <Zap size={18} className="animate-spin" /> Securing Your Offer Lock...
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  CLAIM 50% OFF FOR ALL MONTHS ⚡
+                  CLAIM OFFER FOR ALL MONTHS ⚡
                 </span>
               )}
             </button>
@@ -424,7 +441,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount }: LuckyWheel
               onClick={onClose}
               className="mt-3 text-xs text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
             >
-              No thanks, I prefer paying standard price (₹199)
+              No thanks, I prefer paying standard price {proOriginalPrice ? `(₹${proOriginalPrice})` : ""}
             </button>
           </motion.div>
         )}

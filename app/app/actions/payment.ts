@@ -83,6 +83,12 @@ export async function claimSpinDiscountAction() {
     return { success: false, error: "Unauthorized" };
   }
 
+  const livePricing = await getPlanPricesAction("fitness");
+  const corePrice = livePricing?.monthly?.core?.price ?? 29;
+  const coreRegular = livePricing?.monthly?.core?.originalPrice ?? 59;
+  const proPrice = livePricing?.monthly?.pro?.price ?? 99;
+  const proRegular = livePricing?.monthly?.pro?.originalPrice ?? 199;
+
   // Enforce 5-minute countdown from server clock
   const expiresAt = Date.now() + 5 * 60 * 1000;
   const payload: SpinDiscountPayload = {
@@ -90,12 +96,12 @@ export async function claimSpinDiscountAction() {
     code: "SPIN50_LIFETIME_LOCK",
     discountPercent: 50,
     prices: {
-      core: 29,
-      pro: 99,
+      core: corePrice,
+      pro: proPrice,
     },
     regularPrices: {
-      core: 59,
-      pro: 199,
+      core: coreRegular,
+      pro: proRegular,
     },
     isLifetimeLock: true,
     expiresAt,
@@ -195,9 +201,13 @@ export async function createRazorpayOrder(
       }
     }
 
+    const livePricing = await getPlanPricesAction("fitness");
+    const adminCorePrice = livePricing?.monthly?.core?.price ?? 59;
+    const adminProPrice = livePricing?.monthly?.pro?.price ?? 199;
+
     if (isCoreUpgrade) {
-      // Automatic locked upgrade pricing: Pro ₹99 / month
-      finalPrice = 99;
+      // Automatic locked upgrade pricing: Pro price configured in Admin
+      finalPrice = adminProPrice;
       isSpinDiscountApplied = true;
     } else if (discountToken) {
       // Check if the user is using the verified 5-minute spin discount
@@ -208,12 +218,14 @@ export async function createRazorpayOrder(
           error: "Your 5-minute discount offer has expired. Standard prices have been restored." 
         };
       }
-      // Discount verified successfully: Pro ₹99, Core ₹29
-      finalPrice = level === "pro" ? verification.payload.prices.pro : verification.payload.prices.core;
+      // Discount verified successfully: use token price or fallback to admin offer price
+      finalPrice = level === "pro" 
+        ? (verification.payload.prices?.pro ?? adminProPrice) 
+        : (verification.payload.prices?.core ?? adminCorePrice);
       isSpinDiscountApplied = true;
     } else {
-      // Standard anchor pricing: Pro ₹199, Core ₹59
-      finalPrice = level === "pro" ? 199 : 59;
+      // Standard / Live Offer pricing set in /admin/pricing
+      finalPrice = level === "pro" ? adminProPrice : adminCorePrice;
     }
   } else {
     const appType = "grindlog";
