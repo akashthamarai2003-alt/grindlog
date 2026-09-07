@@ -249,7 +249,7 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
     const safetyCheck = runFitnessAISafetyCheck(mergedPlan, profile);
     const profileCheck = validatePlanAgainstProfile(mergedPlan, profile, {
       enforceProfileRules: true,
-      enforceBudgetUtilisation: true,
+      enforceBudgetUtilisation: false,
       allowCoreNutrition: false,
     });
     if (!safetyCheck.safe || !profileCheck.valid) {

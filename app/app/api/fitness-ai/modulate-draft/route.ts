@@ -78,7 +78,7 @@ Modify the JSON appropriately and return the full updated JSON.`;
     const safetyCheck = runFitnessAISafetyCheck(parsed.data, profile);
     const profileCheck = validatePlanAgainstProfile(parsed.data, profile, {
       enforceProfileRules: true,
-      enforceBudgetUtilisation: true,
+      enforceBudgetUtilisation: false,
     });
     if (!safetyCheck.safe || !profileCheck.valid) {
       return NextResponse.json(

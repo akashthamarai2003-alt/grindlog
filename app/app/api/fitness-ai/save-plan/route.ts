@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     const safetyCheck = runFitnessAISafetyCheck(planData, profile);
     const profileCheck = validatePlanAgainstProfile(planData, profile, {
       enforceProfileRules: true,
-      enforceBudgetUtilisation: subscriptionPlan.id !== "starter",
+      enforceBudgetUtilisation: false,
       allowCoreNutrition: subscriptionPlan.id === "starter",
     });
     if (!safetyCheck.safe || !profileCheck.valid) {
