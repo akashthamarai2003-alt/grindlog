@@ -30,6 +30,19 @@ const nextConfig: NextConfig = {
       "date-fns",
     ],
   },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value: "accelerometer=(self \"https://api.razorpay.com\" \"https://checkout.razorpay.com\"), payment=(self \"https://api.razorpay.com\" \"https://checkout.razorpay.com\")",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 const filteredRuntimeCaching = runtimeCaching.filter(
