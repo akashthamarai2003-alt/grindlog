@@ -939,18 +939,19 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
         {/* Meals Header */}
         <div className="mt-4 mb-4 flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[13px] font-black tracking-widest text-white uppercase">
               {(!selectedDate || selectedDate === todayDateStr) ? "Today's Meals" : `${weekDates.find(w => w.dateStr === selectedDate)?.dayName || 'Selected'}'s Meals`}
             </h2>
-            {data.day_of_week && (
-              <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                <Sparkles size={10} /> 7-Day Variety
-              </span>
-            )}
+            <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+              <Sparkles size={10} /> {data?.has_ai_plan ? "Active AI Plan" : "7-Day Variety"}
+            </span>
+            <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+              🍃 100% Natural Whole Foods
+            </span>
           </div>
-          {data.food_type && (
-            <span className="text-[10px] font-bold text-white/50 capitalize bg-white/5 px-2.5 py-0.5 rounded-md border border-white/5">
+          {data?.food_type && (
+            <span className="text-[10px] font-bold text-white/50 capitalize bg-white/5 px-2.5 py-0.5 rounded-md border border-white/5 shrink-0">
               {data.food_type}
             </span>
           )}
@@ -1042,10 +1043,22 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/20">
                             {getMealTiming(meal.meal_type)}
                           </span>
+                          {meal.is_ai_generated && (
+                            <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 px-1.5 py-0.5 rounded-md border border-[#ADFF00]/20 uppercase tracking-wider flex items-center gap-0.5">
+                              <Bot size={10} /> AI Plan
+                            </span>
+                          )}
                         </div>
-                        <p className="text-xs text-white/50 font-medium mt-0.5">
-                          {completed ? 'Logged' : (meal.meal_plan_items?.length > 0 ? 'Planned' : 'Not planned yet')}
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-white/50 font-medium">
+                            {completed ? 'Logged' : (meal.meal_plan_items?.length > 0 ? 'Planned' : 'Not planned yet')}
+                          </p>
+                          {meal.name && meal.name.toLowerCase() !== formatMealType(meal.meal_type).toLowerCase() && (
+                            <span className="text-xs text-white/70 font-semibold truncate max-w-[180px]">
+                              • {meal.name}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
@@ -1109,6 +1122,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                         </li>
                       )}
                     </ul>
+                    {meal.prep_instructions && !completed && (
+                      <div className="pt-2 mt-2 border-t border-white/5 text-[11px] text-white/50 leading-relaxed italic">
+                        💡 {meal.prep_instructions}
+                      </div>
+                    )}
                   </div>
                   {!completed && plannedFoods.length > 0 && (
                     <div className="grid grid-cols-4 gap-2 bg-black/30 rounded-xl p-3 border border-white/5 mb-4">

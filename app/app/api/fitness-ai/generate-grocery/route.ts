@@ -58,9 +58,10 @@ CRITICAL RULES:
 5. The quantities should reflect approximately 30 days of consumption.
 6. The estimated_price MUST ALWAYS be greater than 0 for every single item. NEVER output 0 for eggs, meat, or staple foods.
 7. ABSOLUTE PROHIBITION OF COOKED DISHES: NEVER include cooked curries, sabzis, gravies, chaats, or restaurant dishes (e.g. no "Chana Masala", "Chole", "Kala Chana Curry", "Chana Chaat"). Groceries must be real packaged products bought from a store (Blinkit/Instamart/Amazon).
-8. VALID RETAIL UNITS ONLY: "kg", "grams", "liters", "packs", "tubs", "jars", "cartons", "packets", "pieces". NEVER use "bowls", "plates", "servings", or "handfuls".
-9. NEVER use "dozen" or "dozens" as a unit. You MUST use "pieces". Example: 30 pieces.
-10. NEVER duplicate variations of the same base food (e.g. max 1 chana/chickpea item).`;
+8. 100% NATURAL WHOLE FOODS MANDATE: NEVER recommend Whey Protein, Plant Protein Powder, or any artificial supplements. Every grocery item must be an unadulterated whole food (e.g. Tofu, Soya Chunks, Soy Milk, Paneer, Curd, Eggs, Chicken, Oats, Peanut Butter, Nuts, Seeds).
+9. VALID RETAIL UNITS ONLY: "kg", "grams", "liters", "packs", "jars", "cartons", "packets", "pieces". NEVER use "bowls", "plates", "servings", or "handfuls".
+10. NEVER use "dozen" or "dozens" as a unit. You MUST use "pieces". Example: 30 pieces.
+11. NEVER duplicate variations of the same base food (e.g. max 1 chana/chickpea item).`;
 
     const userPrompt = `Here is my existing nutrition plan and profile:
 Profile:

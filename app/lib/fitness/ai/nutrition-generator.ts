@@ -65,22 +65,23 @@ Compatible food library (use these names and nutrition facts where possible):
 ${JSON.stringify(foodCatalog || [], null, 2)}
 
 Return only the nutrition object. Keep the deterministic daily calorie and protein targets exactly as supplied. Generate the user's requested number of meals and a practical 30-day grocery list.
-- Prioritise the user's preferred available_foods, but proactively bridge the protein target using compatible staples (Protein powder, Tofu, Soya chunks, Soy milk, Paneer, Eggs, Chicken).
+- 100% NATURAL WHOLE FOODS MANDATE: Prescribe 100% natural, whole foods ONLY! Absolutely NO whey protein, plant protein powder, casein, or artificial supplements. All protein must come from whole, natural food sources. In guidance, explicitly state that this plan is 100% whole food based.
+- Prioritise the user's preferred available_foods, but proactively bridge the protein target using compatible natural staples (Tofu, Soya chunks, Soy milk, Peanut butter, Paneer, Curd, Eggs, Chicken).
 - Non-Vegetarian: Eggs, chicken breast, fish, and dairy are fully encouraged.
 - Eggetarian: Eggs, egg whites, and dairy are encouraged. No meat or fish.
-- Vegetarian: Paneer, curd, whey protein, soya chunks, lentils. No meat, fish, or eggs.
-- Vegan: 100% plant-based only. Use plant protein powder, tofu, soya chunks, soy milk, peanut butter, nuts, legumes. NEVER include dairy, eggs, whey, or meat.
-- For PG, Hostel, Home, or Office/Canteen: Pair EVERY core meal (Breakfast, Lunch, Dinner) with a concrete, budget-funded, high-protein add-on item so the user actually hits their daily protein target. Give no-cook or kettle-friendly hostel instructions.
+- Vegetarian: Paneer, curd, low-fat paneer, Greek yogurt, soya chunks, lentils. No meat, fish, or eggs.
+- Vegan: 100% plant-based only. Use tofu, soya chunks, soy milk, natural peanut butter, nuts, seeds, legumes. NEVER include dairy, eggs, whey, or meat.
+- For PG, Hostel, Home, or Office/Canteen: Pair EVERY core meal (Breakfast, Lunch, Dinner) with a concrete, budget-funded, natural high-protein add-on item so the user actually hits their daily protein target. Give no-cook or kettle-friendly hostel instructions.
 - REAL-WORLD 30-DAY GROCERY ADD-ONS:
   * NEVER include cooked curries, sabzis, gravies, chaats, or restaurant preparations in grocery_list (e.g. no "Chana Masala", "Chole", "Kala Chana Curry", "Chana Chaat"). Groceries must be raw, shelf-stable, packaged products bought from a store (Blinkit/Amazon/Kirana).
-  * Valid retail packaging units ONLY: "kg", "grams", "liters", "packs", "tubs", "jars", "cartons", "packets", or "pieces". NEVER use "bowls", "plates", "servings", or "handfuls".
+  * Valid retail packaging units ONLY: "kg", "grams", "liters", "packs", "jars", "cartons", "packets", or "pieces". NEVER use "bowls", "plates", "servings", or "handfuls".
   * NEVER duplicate variations of the same base food (e.g. max 1 chana/chickpea item).
-  * For budgets ₹2,000–5,000+, include high-value shelf-stable protein anchors: Protein powder tub (1kg), Peanut butter jar (1kg), Soy/dairy milk cartons, Rolled oats, and Soya chunks to reach 80–95% of monthly budget reference INR.
+  * For budgets ₹2,000–5,000+, include high-value natural shelf-stable protein anchors: Tofu / Paneer / Eggs / Chicken, Natural peanut butter jar (1kg), Soy/dairy milk cartons, Rolled oats, Soya chunks, Roasted chana, and Nuts/Seeds to reach 80–95% of monthly budget reference INR.
 - For Lose Fat or Cut, mention limiting added sugar, sugary drinks, deep-fried foods, and frequent fast food; never demand zero sugar or zero oil.
 - Use realistic INR prices and concise instructions.`;
 
   const aiResponse = await generateOpenAIResponseJSON<unknown>({
-    systemPrompt: `You are Grindlog's elite nutrition coach. Generate a safe, practical, high-protein nutrition object that hits the user's protein target using realistic grocery add-ons and core meals. Strictly respect vegan/vegetarian/eggetarian boundaries and allergies. Pair PG/Hostel meals with budget-funded protein add-ons. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise.`,
+    systemPrompt: `You are Grindlog's elite nutrition coach. Generate a safe, practical, 100% natural whole-food nutrition object that hits the user's protein target using realistic natural grocery add-ons and core meals with ZERO artificial protein powders or supplements. Strictly respect vegan/vegetarian/eggetarian boundaries and allergies. Pair PG/Hostel meals with budget-funded natural protein add-ons. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise.`,
     userPrompt,
     model: FITNESS_PLAN_MODEL,
     maxTokens: 5500,

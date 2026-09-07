@@ -57,6 +57,68 @@ function findFoodReference(name: string, catalog: NutritionFoodReference[]): Nut
     });
 }
 
+function sanitizeAIItemName(name: string, isVegan?: boolean, isVegetarian?: boolean): string {
+  const cleaned = String(name || '').trim();
+  if (/\b(?:whey|casein|pea\s*protein|plant\s*protein|protein\s*powder|protein\s*shake|mass\s*gainer)\b/i.test(cleaned)) {
+    if (isVegan) return "Tofu (Firm)";
+    if (isVegetarian) return "Low Fat Paneer";
+    return "Boiled Eggs (2 pieces)";
+  }
+  return cleaned;
+}
+
+function findAiMealForSlot(
+  mType: string,
+  slotIdx: number,
+  allSlots: string[],
+  meals: any[]
+): any | null {
+  if (!Array.isArray(meals) || meals.length === 0) return null;
+
+  const normalize = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, ' ');
+
+  // 1. Keyword match on meal_name or time_of_day
+  let match = meals.find((m: any) => {
+    const text = `${normalize(m.meal_name)} ${normalize(m.time_of_day)}`;
+    if (mType === 'breakfast') {
+      return text.includes('breakfast') || text.includes('morning');
+    }
+    if (mType === 'lunch') {
+      return text.includes('lunch') || text.includes('midday') || text.includes('noon');
+    }
+    if (mType === 'dinner') {
+      return text.includes('dinner') || text.includes('night') || text.includes('supper');
+    }
+    if (mType === 'snack') {
+      return text.includes('snack') || text.includes('tea') || text.includes('evening') || text.includes('refuel');
+    }
+    if (mType === 'pre_workout') {
+      return text.includes('pre workout') || text.includes('preworkout') || text.includes('snack') || text.includes('energy');
+    }
+    if (mType === 'post_workout') {
+      return text.includes('post workout') || text.includes('postworkout') || text.includes('recovery');
+    }
+    return text.includes(mType.replace('_', ' '));
+  });
+
+  if (match) return match;
+
+  // 2. Check for "Meal 1", "Meal 2", etc. matching slot index (1-based)
+  const slotNum = slotIdx + 1;
+  match = meals.find((m: any) => {
+    const text = normalize(m.meal_name);
+    return text.includes(`meal ${slotNum}`) || text.includes(`meal${slotNum}`);
+  });
+  if (match) return match;
+
+  // 3. Positional fallback if index within bounds
+  if (meals[slotIdx]) {
+    return meals[slotIdx];
+  }
+
+  return null;
+}
+
 export interface LogFoodInput {
   food_id?: string;
   meal_type: string;
@@ -1298,19 +1360,18 @@ export class NutritionService {
     const dayOfWeek = isNaN(targetDate.getTime()) ? new Date().getDay() : targetDate.getUTCDay();
     const rotatingPlans = NutritionService.getRotatingMealPlanForDay(dayOfWeek, fitProfile, targets, foodCatalog);
 
+    const rawDietStr = String(fitProfile?.food_type || fitProfile?.diet_preference || '').toLowerCase();
+    const isProfileVegan = rawDietStr.includes('vegan');
+    const isProfileVegetarian = !isProfileVegan && (rawDietStr.includes('vegetarian') || rawDietStr.includes('veg'));
+
     // Always output Breakfast, Lunch, Snack, Dinner cards
-    let formattedMeals = ALL_MEAL_TYPES.map(mType => {
+    let formattedMeals = ALL_MEAL_TYPES.map((mType, slotIdx) => {
+      // 1. Manually saved/logged meal plan items for today take top priority
       const existing = plansByMealType.get(mType);
       if (existing) return existing;
 
-      const rotating = rotatingPlans.get(mType);
-      if (rotating) return rotating;
-
-      // Fallback to AI generated meals from fitness_os_workout_plans
-      const aiMeal = aiMeals.find((m: any) => {
-        const name = (m.meal_name || '').toLowerCase();
-        return name.includes(mType) || name.includes(mType.replace('_', '-')) || name.includes(mType.replace('_', ' ')) || (mType === 'snack' && name.includes('snack'));
-      });
+      // 2. Priority: Active AI generated plan from user onboarding / workout plan
+      const aiMeal = findAiMealForSlot(mType, slotIdx, ALL_MEAL_TYPES, aiMeals);
 
       if (aiMeal) {
         const proportion = mType === 'lunch' || mType === 'dinner' ? 0.35 : 0.15;
@@ -1329,9 +1390,15 @@ export class NutritionService {
         // library for per-item nutrition whenever a match is available.
         const parsedItems = (Array.isArray(aiMeal.items) ? aiMeal.items : [])
           .flatMap((item: unknown) => parseAIItemText(item));
-        const itemParts: Array<{ name: string; servingSize: string; multiplier: number }> = parsedItems.length > 0
+        const rawParts: Array<{ name: string; servingSize: string; multiplier: number }> = parsedItems.length > 0
           ? parsedItems
           : [{ name: aiMeal.meal_name || `${mType} meal`, servingSize: '', multiplier: 1 }];
+
+        const itemParts = rawParts.map(part => ({
+          ...part,
+          name: sanitizeAIItemName(part.name, isProfileVegan, isProfileVegetarian)
+        }));
+
         const fallbackCalories = Math.round((Number(aiMeal.total_calories) > 0 ? Number(aiMeal.total_calories) : estCals) / itemParts.length);
         const fallbackProtein = Math.round((Number(aiMeal.protein_grams) > 0 ? Number(aiMeal.protein_grams) : estPro) / itemParts.length);
         const fallbackCost = Math.round(estCost / itemParts.length);
@@ -1367,14 +1434,21 @@ export class NutritionService {
         return {
           id: `ai-${mType}`,
           meal_type: mType,
-          name: mType.charAt(0).toUpperCase() + mType.slice(1),
-          calories: mealTotals.calories,
-          protein: mealTotals.protein,
+          name: aiMeal.meal_name || (mType.charAt(0).toUpperCase() + mType.slice(1)),
+          calories: mealTotals.calories || Number(aiMeal.total_calories) || estCals,
+          protein: mealTotals.protein || Number(aiMeal.protein_grams) || estPro,
           carbs: mealTotals.carbs,
           fat: mealTotals.fat,
+          prep_instructions: aiMeal.prep_instructions || undefined,
+          is_ai_generated: true,
+          is_natural_whole_food: true,
           meal_plan_items: mealPlanItems
         };
       }
+
+      // 3. Fallback to 7-day rotating menu if no AI meal exists for this slot
+      const rotating = rotatingPlans.get(mType);
+      if (rotating) return { ...rotating, is_natural_whole_food: true };
 
       return {
         id: `empty-${mType}`,
@@ -1382,6 +1456,7 @@ export class NutritionService {
         name: mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan",
         calories: 0,
         protein: 0,
+        is_natural_whole_food: true,
         meal_plan_items: []
       };
     });
@@ -1431,7 +1506,10 @@ export class NutritionService {
         monthly_spent: monthSpent
       },
       progress,
-      nutrition_score: score
+      nutrition_score: score,
+      has_ai_plan: Boolean(aiMeals && aiMeals.length > 0),
+      is_natural_whole_food: true,
+      food_type: fitProfile?.food_type || fitProfile?.diet_preference || undefined
     };
   }
 }

@@ -483,10 +483,15 @@ export function normalisePlanProfileDetails(
   const isEggetarian = !isNonVegetarian && !isVegan && (rawDiet.includes("eggetarian") || rawDiet.includes("eggitarian") || rawDiet.includes("egg"));
   const isVegetarian = !isNonVegetarian && !isVegan && !isEggetarian && (rawDiet.includes("vegetarian") || rawDiet.includes("veg"));
 
-  // Auto-sanitize meal items according to dietary constraints
+  // Auto-sanitize meal items according to dietary constraints and 100% natural whole foods
   const sanitizeFoodItem = (text: string): string => {
-    if (isNonVegetarian) return text;
     let result = text;
+    // Replace any artificial protein powder / whey / supplement with 100% natural whole food
+    result = result
+      .replace(/\b(?:whey|plant|casein|pea)\s*protein\s*(?:powder|isolate|concentrate)?\b[^\n,;]*/gi, isVegan ? "Tofu (100g)" : isVegetarian ? "Paneer (100g)" : "Boiled Eggs (2 pieces)")
+      .replace(/\b(?:mass\s*gainer|protein\s*shake|protein\s*powder)\b[^\n,;]*/gi, isVegan ? "Soy Milk (250ml)" : "Curd (150g)");
+
+    if (isNonVegetarian) return result;
     if (isVegan) {
       result = result
         .replace(/\b(?:boiled\s+)?eggs?\b/gi, "Tofu (100g)")
@@ -608,14 +613,34 @@ export function normalisePlanProfileDetails(
       unit = "kg";
       quantity = 3;
       price = Math.min(price > 0 ? price : 900, 900);
+    } else if (/whey|plant\s*protein|casein|protein\s*powder|mass\s*gainer/i.test(name)) {
+      if (isProfileVegan) {
+        name = "Tofu (Firm)";
+        category = "Protein";
+        unit = "packs";
+        quantity = 4;
+        price = 360;
+        reason = "100% natural, unprocessed plant protein staple rich in all 9 essential amino acids.";
+      } else if (isProfileVeg || !isNonVegetarian) {
+        name = "Low Fat Paneer";
+        category = "Protein";
+        unit = "packs";
+        quantity = 4;
+        price = 400;
+        reason = "100% natural high-protein dairy staple packed with calcium and amino acids.";
+      } else {
+        name = "Chicken Breast (Raw)";
+        category = "Protein";
+        unit = "kg";
+        quantity = 3;
+        price = 900;
+        reason = "100% natural, lean whole food protein.";
+      }
     }
 
     // Replace invalid units like bowls, plates, servings, handfuls with retail units
     if (/bowl|plate|serving|handful/i.test(unit)) {
-      if (/protein/i.test(name)) {
-        unit = "tubs";
-        quantity = 1;
-      } else if (/peanut\s*butter/i.test(name)) {
+      if (/peanut\s*butter/i.test(name)) {
         unit = "jars";
         quantity = 1;
       } else if (/milk/i.test(name)) {
@@ -664,8 +689,6 @@ export function normalisePlanProfileDetails(
       ? "peanut"
       : /soya?\s*chunk/.test(key)
       ? "soya_chunk"
-      : /protein/.test(key)
-      ? "protein_powder"
       : /milk/.test(key)
       ? "milk"
       : /oat/.test(key)
@@ -677,36 +700,59 @@ export function normalisePlanProfileDetails(
     deduplicatedList.push(item);
   }
 
-  // 3. For higher budgets (₹2,500+), proactively bridge missing essential protein anchors
+  // 3. For higher budgets (₹2,500+), proactively bridge missing essential 100% natural protein anchors
   const currentTotalCost = deduplicatedList.reduce((sum, item) => sum + (Number(item.estimated_price) || 0), 0);
   if (budgetRef >= 2500 && currentTotalCost < budgetRef * 0.75) {
-    const hasProteinPowder = deduplicatedList.some((i) => /protein/i.test(i.name));
+    const hasNaturalProteinAnchor = deduplicatedList.some((i) => /tofu|paneer|chicken|egg/i.test(i.name));
     const hasPeanutButter = deduplicatedList.some((i) => /peanut\s*butter/i.test(i.name));
     const hasMilk = deduplicatedList.some((i) => /milk/i.test(i.name));
     const hasOats = deduplicatedList.some((i) => /oat/i.test(i.name));
+    const hasNuts = deduplicatedList.some((i) => /almond|seed|walnut/i.test(i.name));
 
-    if (!hasProteinPowder) {
+    if (!hasNaturalProteinAnchor) {
       if (isProfileVegan) {
         deduplicatedList.unshift({
-          name: "Plant Protein (Pea & Brown Rice)",
-          monthly_quantity: 1,
-          unit: "tubs",
-          estimated_price: 2200,
+          name: "Tofu (Firm)",
+          monthly_quantity: 4,
+          unit: "packs",
+          estimated_price: 360,
           category: "Protein",
           is_optional: false,
-          reason: "Premium plant protein supplement to hit 25g+ protein daily with zero cooking.",
+          reason: "100% natural plant protein staple with 13g protein per 100g; slice raw with lemon and pepper.",
         });
       } else if (isProfileVeg || !isNonVegetarian) {
         deduplicatedList.unshift({
-          name: "Whey Protein Concentrate",
-          monthly_quantity: 1,
-          unit: "tubs",
-          estimated_price: 2200,
+          name: "Low Fat Paneer",
+          monthly_quantity: 4,
+          unit: "packs",
+          estimated_price: 400,
           category: "Protein",
           is_optional: false,
-          reason: "High-yield protein powder to comfortably achieve daily protein targets.",
+          reason: "100% natural dairy protein staple with 25g protein per 100g.",
+        });
+      } else {
+        deduplicatedList.unshift({
+          name: "Chicken Breast (Raw)",
+          monthly_quantity: 3,
+          unit: "kg",
+          estimated_price: 900,
+          category: "Protein",
+          is_optional: false,
+          reason: "100% natural lean whole poultry protein.",
         });
       }
+    }
+
+    if (!hasNuts && deduplicatedList.reduce((sum, item) => sum + (Number(item.estimated_price) || 0), 0) < budgetRef * 0.80) {
+      deduplicatedList.push({
+        name: "Raw Almonds",
+        monthly_quantity: 1,
+        unit: "packs",
+        estimated_price: 500,
+        category: "Nuts & Snacks",
+        is_optional: false,
+        reason: "100% natural heart-healthy snack rich in vitamin E, magnesium, and plant protein.",
+      });
     }
 
     if (!hasPeanutButter && deduplicatedList.reduce((sum, item) => sum + (Number(item.estimated_price) || 0), 0) < budgetRef * 0.85) {
@@ -717,7 +763,7 @@ export function normalisePlanProfileDetails(
         estimated_price: 450,
         category: "Nuts & Snacks",
         is_optional: false,
-        reason: "Zero-cook shelf-stable calorie and protein booster for room storage.",
+        reason: "100% natural ground peanuts with zero added oil, sugar, or preservatives.",
       });
     }
 
@@ -729,7 +775,7 @@ export function normalisePlanProfileDetails(
         estimated_price: 720,
         category: "Dairy",
         is_optional: false,
-        reason: "Ready-to-drink plant milk with 8.5g protein per glass; mix with protein powder or oats.",
+        reason: "100% natural plant milk with 8.5g protein per glass; mix with oats or enjoy fresh.",
       });
     }
 
@@ -741,7 +787,7 @@ export function normalisePlanProfileDetails(
         estimated_price: 200,
         category: "Staple",
         is_optional: false,
-        reason: "Instant complex carbohydrate source; soak overnight in milk or hot water.",
+        reason: "100% natural whole grain oats for sustained energy and dietary fiber.",
       });
     }
   }
