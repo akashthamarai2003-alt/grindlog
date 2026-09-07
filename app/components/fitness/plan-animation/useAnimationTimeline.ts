@@ -116,19 +116,19 @@ export function useAnimationTimeline(
 
       schedule(() => {
         setPhase("AI_ALONE");
-      }, collapseDelay + 1700);
+      }, collapseDelay + 1600);
 
       schedule(() => {
         setPhase("FINAL_REVEAL");
-      }, collapseDelay + 1700 + 1600);
+      }, collapseDelay + 1600 + 1800);
 
       schedule(() => {
         setPhase("COMPLETE");
-      }, collapseDelay + 1700 + 1600 + 1200);
+      }, collapseDelay + 1600 + 1800 + 1600);
     };
 
-    // Full sequence takes 4500ms (1700ms collapse + 1600ms atomic rings + 1200ms final reveal badge)
-    const targetCollapseAt = Math.max(0, effectiveMinDuration - 4500);
+    // Full sequence takes 5000ms (1600ms collapse + 1800ms atomic rings + 1600ms final reveal badge)
+    const targetCollapseAt = Math.max(0, effectiveMinDuration - 5000);
 
     if (elapsed < targetCollapseAt) {
       runFullEnding(targetCollapseAt - elapsed);
