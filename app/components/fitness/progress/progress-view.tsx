@@ -17,7 +17,7 @@ import { WorkoutHeatmap } from "./workout-heatmap";
 import { MuscleMap } from "../workout/muscle-map";
 import Link from "next/link";
 
-export function ProgressView({ initialData }: { initialData: AggregatedProgressPayload }) {
+export function ProgressView({ initialData, isPro = true }: { initialData: AggregatedProgressPayload; isPro?: boolean }) {
   const [data, setData] = useState<AggregatedProgressPayload>(initialData);
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialData.period);
   const [isFetching, setIsFetching] = useState(false);
@@ -159,6 +159,27 @@ export function ProgressView({ initialData }: { initialData: AggregatedProgressP
           isFetching={isFetching}
           joinedDate={joinedDate}
         />
+
+        {!isPro && (
+          <div className="mt-4 mb-2 p-4 rounded-2xl bg-gradient-to-r from-[#ADFF00]/15 via-[#ADFF00]/5 to-transparent border border-[#ADFF00]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="bg-[#ADFF00] text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Pro Feature Preview
+                </span>
+              </div>
+              <p className="text-xs text-white/80 font-medium leading-relaxed">
+                Core tracks your workout completion and weight trends. Upgrade to Pro for AI progress reviews, body fat scanning, and advanced metabolic analytics.
+              </p>
+            </div>
+            <Link
+              href="/payment?returnTo=/progress&intent=upgrade_pro"
+              className="shrink-0 px-3.5 py-2 bg-[#ADFF00] hover:bg-[#c4ff33] text-black text-xs font-black rounded-xl uppercase tracking-wider transition-colors shadow-sm"
+            >
+              Unlock Pro ⚡
+            </Link>
+          </div>
+        )}
         
         <div key={period} className={`flex flex-col gap-8 pb-8 transition-opacity duration-200 ${isFetching ? 'opacity-85' : 'opacity-100'}`}>
             {data.scans.shouldPromptForScan && (

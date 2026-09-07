@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { ProgressAnalyticsService } from "@/lib/services/analytics/progress-service";
 import { AnalyticsPeriod } from "@/types/fitness/analytics";
-import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
+import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
 export async function GET(req: Request) {
   try {
@@ -13,8 +13,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!(await canUseFitnessFeature(user.id, "advanced_progress_analysis"))) {
-      return NextResponse.json({ error: "Progress tracking is available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
+    const plan = await getFitnessPlan(user.id);
+    if (!plan) {
+      return NextResponse.json({ error: "Active plan required.", errorType: "PLAN_REQUIRED" }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);

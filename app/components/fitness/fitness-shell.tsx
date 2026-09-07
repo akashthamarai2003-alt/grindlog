@@ -29,7 +29,7 @@ export function FitnessShell({ children, isPro = false }: { children: React.Reac
         </main>
         {isMainPage && (
           <>
-            {isPro && <FitnessChatbot />}
+            <FitnessChatbot isPro={isPro} />
             <BottomNav isPro={isPro} />
           </>
         )}

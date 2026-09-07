@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, Send, Bot, User, Loader2 } from "lucide-react";
+import { MessageSquare, X, Send, Bot, User, Loader2, Sparkles, ArrowRight } from "lucide-react";
 
 import ReactMarkdown from "react-markdown";
 
@@ -11,12 +11,14 @@ interface Message {
   content: string;
 }
 
-export function FitnessChatbot() {
+export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hey! I'm your elite AI Fitness Coach. What's on your mind? You can ask me about your workouts, nutrition, or overall progress.",
+      content: isPro
+        ? "Hey! I'm your elite AI Fitness Coach. What's on your mind? You can ask me about your workouts, nutrition, or overall progress."
+        : "Hey! I'm Luna, your 24/7 AI Fitness Coach. I can analyze your workout volume, answer form questions, calculate macro tweaks on the fly, and keep you accountable every day.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -26,6 +28,7 @@ export function FitnessChatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchLimitInfo = async () => {
+    if (!isPro) return;
     try {
       const res = await fetch(`/api/fitness-ai/chat?t=${Date.now()}`, {
         cache: "no-store",
@@ -152,7 +155,7 @@ export function FitnessChatbot() {
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
             className="fixed bottom-28 right-0 z-40 flex items-center gap-1.5 pl-3 pr-2.5 py-2.5 bg-[#111A10]/95 backdrop-blur-md border-y border-l border-[#ADFF00]/40 rounded-l-full text-[#ADFF00] shadow-[0_0_20px_rgba(173,255,0,0.25)] hover:translate-x-[-2px] active:scale-95 transition-all cursor-pointer group"
-            title="Open AI Fitness Coach"
+            title={isPro ? "Open AI Fitness Coach" : "AI Coach (Pro Preview)"}
           >
             <div className="relative flex items-center justify-center">
               <Bot className="w-5 h-5 text-[#ADFF00] group-hover:scale-110 transition-transform" />
@@ -164,6 +167,11 @@ export function FitnessChatbot() {
             <span className="text-[10px] font-black uppercase tracking-wider text-white/90 group-hover:text-[#ADFF00] transition-colors pr-0.5 select-none hidden min-[360px]:inline">
               AI Coach
             </span>
+            {!isPro && (
+              <span className="bg-[#ADFF00] text-black text-[7px] font-black px-1 rounded-full uppercase tracking-tight shadow-sm ml-0.5">
+                PRO
+              </span>
+            )}
           </motion.button>
         )}
       </AnimatePresence>
@@ -196,13 +204,19 @@ export function FitnessChatbot() {
                     <h3 className="text-white font-bold text-sm">AI Progress Coach</h3>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-[#ADFF00] text-[10px] font-black tracking-widest uppercase">Online</p>
-                      {limitInfo && typeof limitInfo.remaining === "number" && (
-                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                          limitInfo.remaining === 0
-                            ? "bg-red-500/10 text-red-400 border-red-500/30"
-                            : "bg-[#ADFF00]/10 text-[#ADFF00] border-[#ADFF00]/25 shadow-[0_0_10px_rgba(173,255,0,0.15)]"
-                        }`}>
-                          ⚡ {limitInfo.remaining} / {limitInfo.limit} left today
+                      {isPro ? (
+                        limitInfo && typeof limitInfo.remaining === "number" && (
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                            limitInfo.remaining === 0
+                              ? "bg-red-500/10 text-red-400 border-red-500/30"
+                              : "bg-[#ADFF00]/10 text-[#ADFF00] border-[#ADFF00]/25 shadow-[0_0_10px_rgba(173,255,0,0.15)]"
+                          }`}>
+                            ⚡ {limitInfo.remaining} / {limitInfo.limit} left today
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded-full border bg-[#ADFF00]/10 text-[#ADFF00] border-[#ADFF00]/25">
+                          PRO PREVIEW
                         </span>
                       )}
                     </div>
@@ -233,6 +247,43 @@ export function FitnessChatbot() {
                     </div>
                   </div>
                 ))}
+
+                {!isPro && (
+                  <div className="bg-gradient-to-b from-[#121E12] to-[#0A1108] border border-[#ADFF00]/30 rounded-2xl p-5 shadow-[0_0_25px_rgba(173,255,0,0.1)] flex flex-col gap-4 my-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-[#ADFF00]/15 flex items-center justify-center text-[#ADFF00]">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-white font-black text-sm uppercase tracking-wide">Unlock 24/7 AI Coach</h4>
+                        <p className="text-[#ADFF00] text-[10px] font-bold tracking-wider uppercase">Pro Membership Feature</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-xs text-white/80 font-medium">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#ADFF00] font-bold">✓</span>
+                        <span>Instant form tips, exercise cues, and swap ideas</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#ADFF00] font-bold">✓</span>
+                        <span>Custom meal tweaks and macro calculations</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#ADFF00] font-bold">✓</span>
+                        <span>Recovery analysis and plateau diagnosis</span>
+                      </div>
+                    </div>
+
+                    <a
+                      href="/payment?returnTo=/&intent=upgrade_pro"
+                      className="w-full py-3 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(173,255,0,0.3)] transition-all"
+                    >
+                      Upgrade to Pro to Chat ⚡
+                    </a>
+                  </div>
+                )}
+
                 {isLoading && (
                   <div className="flex items-start gap-3 max-w-[85%]">
                     <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center shrink-0">
@@ -248,8 +299,9 @@ export function FitnessChatbot() {
               </div>
 
               {/* Input Area */}
-              <form onSubmit={sendMessage} className="p-4 sm:p-5 border-t border-white/5 bg-[#0A1108] shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5">
-                <div className="relative">
+              {isPro ? (
+                <form onSubmit={sendMessage} className="p-4 sm:p-5 border-t border-white/5 bg-[#0A1108] shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5">
+                  <div className="relative">
                     <input
                       type="text"
                       value={input}
@@ -258,15 +310,30 @@ export function FitnessChatbot() {
                       placeholder={limitInfo?.remaining === 0 ? "Daily AI generation limit reached for today" : "Ask about your progress..."}
                       className="w-full bg-[#111A10] border border-white/10 rounded-full py-4 pl-5 pr-14 text-[16px] font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#ADFF00]/50 transition-colors disabled:opacity-50"
                     />
-                  <button 
-                    type="submit"
-                    disabled={!input.trim() || isLoading || limitInfo?.remaining === 0}
-                    className="absolute right-2 top-2 bottom-2 w-10 bg-[#ADFF00] rounded-full flex items-center justify-center text-black disabled:opacity-50 disabled:bg-white/10 disabled:text-white/40 transition-all"
+                    <button 
+                      type="submit"
+                      disabled={!input.trim() || isLoading || limitInfo?.remaining === 0}
+                      className="absolute right-2 top-2 bottom-2 w-10 bg-[#ADFF00] rounded-full flex items-center justify-center text-black disabled:opacity-50 disabled:bg-white/10 disabled:text-white/40 transition-all"
+                    >
+                      <Send className="w-4 h-4 ml-0.5" />
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="p-4 sm:p-5 border-t border-white/5 bg-[#0A1108] shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5">
+                  <a
+                    href="/payment?returnTo=/&intent=upgrade_pro"
+                    className="w-full py-3.5 px-5 bg-[#111A10] border border-[#ADFF00]/30 hover:border-[#ADFF00] rounded-full text-xs font-bold text-white/70 flex items-center justify-between transition-all group"
                   >
-                    <Send className="w-4 h-4 ml-0.5" />
-                  </button>
+                    <span className="text-white/50 group-hover:text-white transition-colors truncate pr-2">
+                      Upgrade to Pro to chat with AI Coach...
+                    </span>
+                    <span className="shrink-0 px-3 py-1 bg-[#ADFF00] text-black text-[10px] font-black uppercase rounded-full tracking-wider group-hover:bg-[#c4ff33] flex items-center gap-1">
+                      Upgrade <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </a>
                 </div>
-              </form>
+              )}
             </motion.div>
           </div>
         )}

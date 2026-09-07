@@ -453,13 +453,13 @@ export function TodaysNutritionCard({
 
         {/* Link Button */}
         <Link
-          href={premiumLevel === "pro" ? "/nutrition" : "/payment?returnTo=/&intent=upgrade_pro"}
+          href="/nutrition"
           prefetch={true}
           className="w-full"
         >
           <button className="w-full py-3 px-4 bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.1] border border-white/10 active:scale-[0.99] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 group/btn">
             <span className="text-xs font-black text-white uppercase tracking-wider">
-              {premiumLevel === "pro" ? "View Full Diet & Log" : "Upgrade for Full Diet"}
+              {premiumLevel === "pro" ? "View Full Diet & Log" : "View Meals & Nutrition"}
             </span>
             <ArrowRight className="w-4 h-4 text-[#ADFF00] group-hover/btn:translate-x-0.5 transition-transform" />
           </button>

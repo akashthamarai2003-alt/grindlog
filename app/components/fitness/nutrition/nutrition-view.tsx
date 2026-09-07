@@ -13,7 +13,7 @@ import { SwapMealModal } from "./swap-meal-modal";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function NutritionView({ initialData }: { initialData?: any } = {}) {
+export function NutritionView({ initialData, isPro = true }: { initialData?: any; isPro?: boolean } = {}) {
   const [data, setData] = useState<any>(initialData || null);
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<any>(null);
@@ -212,6 +212,15 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
   };
 
   const openTargetsModal = () => {
+    if (!isPro) {
+      toast.info("Custom macro target adjustments are a Pro feature. Upgrade to unlock!", {
+        action: {
+          label: "Upgrade",
+          onClick: () => { window.location.href = "/payment?returnTo=/nutrition&intent=upgrade_pro"; }
+        }
+      });
+      return;
+    }
     if (data?.targets) {
       setTargetForm({
         calories: Number(data.targets.calories) || 2000,
@@ -598,9 +607,32 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
   };
 
   const openLogModal = (mealType: string, preselected?: any[]) => {
+    if (!isPro) {
+      toast.info("Food logging is a Pro feature. Upgrade to unlock!", {
+        action: {
+          label: "Upgrade to Pro",
+          onClick: () => { window.location.href = "/payment?returnTo=/nutrition&intent=upgrade_pro"; }
+        }
+      });
+      return;
+    }
     setModalMealType(mealType);
     setModalPreselectedFoods(preselected || []);
     setModalOpen(true);
+  };
+
+  const handleOpenSwapModal = (mealType: string) => {
+    if (!isPro) {
+      toast.info("Meal swapping is a Pro feature. Upgrade to unlock!", {
+        action: {
+          label: "Upgrade to Pro",
+          onClick: () => { window.location.href = "/payment?returnTo=/nutrition&intent=upgrade_pro"; }
+        }
+      });
+      return;
+    }
+    setSwapMealType(mealType);
+    setSwapModalOpen(true);
   };
 
   const getMealTiming = (type: string) => {
@@ -716,6 +748,27 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
   return (
     <>
       <div className="space-y-4">
+        {!isPro && (
+          <div className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-[#ADFF00]/15 via-[#ADFF00]/5 to-transparent border border-[#ADFF00]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="bg-[#ADFF00] text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Pro Feature Preview
+                </span>
+              </div>
+              <p className="text-xs text-white/80 font-medium leading-relaxed">
+                Core includes your daily macro targets. Upgrade to Pro for personalized 7-day recipes, meal swaps, and smart food logging.
+              </p>
+            </div>
+            <a
+              href="/payment?returnTo=/nutrition&intent=upgrade_pro"
+              className="shrink-0 px-3.5 py-2 bg-[#ADFF00] hover:bg-[#c4ff33] text-black text-xs font-black rounded-xl uppercase tracking-wider transition-colors shadow-sm"
+            >
+              Unlock Pro ⚡
+            </a>
+          </div>
+        )}
+
         {/* Master Nutrition Card: Zero-Overlap, Dynamic Scaling */}
         <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-5 relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#ADFF00]/5 blur-[40px] rounded-full pointer-events-none" />
@@ -894,16 +947,36 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
         </div>
         
         {!hasPlannedMeals && !hasLoggedFoods ? (
-          <div className="bg-[#111A10] border border-white/5 rounded-[24px] p-8 text-center opacity-70">
-             <p className="text-white/50 text-sm mb-4">Your baseline AI strategy is active, but you haven't generated today's specific meal plan.</p>
-             <button 
-               disabled={isGenerating}
-               onClick={handleGeneratePlan}
-               className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
-             >
-               {isGenerating ? <Loader2 className="animate-spin" size={14} /> : null}
-               {isGenerating ? "Generate AI Meal Plan" : "Generate AI Meal Plan"}
-             </button>
+          <div className="bg-[#111A10] border border-[#ADFF00]/20 rounded-[24px] p-6 sm:p-8 text-center relative overflow-hidden">
+            <div className="w-12 h-12 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center mx-auto mb-3 text-[#ADFF00]">
+              <Sparkles size={24} />
+            </div>
+            <h3 className="text-base font-black text-white uppercase tracking-wider mb-2">
+              {isPro ? "Generate Today's Meals" : "Unlock 7-Day AI Meal Plan"}
+            </h3>
+            <p className="text-white/60 text-xs sm:text-sm max-w-xs mx-auto mb-5 leading-relaxed">
+              {isPro 
+                ? "Your baseline AI strategy is active, but you haven't generated today's specific meal plan."
+                : `Personalized recipes and grocery lists calibrated to your target of ${targetCals} kcal and ${targetPro}g protein.`
+              }
+            </p>
+            {isPro ? (
+              <button 
+                disabled={isGenerating}
+                onClick={handleGeneratePlan}
+                className="px-5 py-3 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black font-black uppercase tracking-wider rounded-xl text-xs disabled:opacity-50 flex items-center justify-center gap-2 mx-auto transition-all shadow-[0_0_15px_rgba(173,255,0,0.3)] cursor-pointer"
+              >
+                {isGenerating ? <Loader2 className="animate-spin" size={14} /> : null}
+                {isGenerating ? "Generating Meal Plan..." : "Generate AI Meal Plan"}
+              </button>
+            ) : (
+              <a
+                href="/payment?returnTo=/nutrition&intent=upgrade_pro"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-[0_0_20px_rgba(173,255,0,0.3)] cursor-pointer"
+              >
+                Upgrade to Pro to Generate Plan ⚡
+              </a>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -1047,10 +1120,7 @@ export function NutritionView({ initialData }: { initialData?: any } = {}) {
                       <>
                         <button 
                           type="button"
-                          onClick={() => {
-                            setSwapMealType(meal.meal_type);
-                            setSwapModalOpen(true);
-                          }} 
+                          onClick={() => handleOpenSwapModal(meal.meal_type)} 
                           className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ADFF00]/40 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center gap-1.5 cursor-pointer"
                         >
                           <RefreshCw size={14} /> 

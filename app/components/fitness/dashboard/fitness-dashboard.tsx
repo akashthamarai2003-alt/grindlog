@@ -82,7 +82,7 @@ export function FitnessDashboard({
         <TodaysWorkoutCard workout={todayWorkout} targetDateStr={targetDateStr} />
 
         {/* Exercise Library Entry */}
-        {premiumLevel === "pro" && <ExerciseLibraryCard />}
+        <ExerciseLibraryCard />
 
         {/* 6. Today's Nutrition Card */}
         <TodaysNutritionCard nutrition={nutrition} premiumLevel={premiumLevel} targetDateStr={targetDateStr} />

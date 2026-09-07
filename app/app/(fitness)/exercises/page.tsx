@@ -25,10 +25,8 @@ export default async function ExercisesPage() {
     .range(0, 99);
 
   return (
-    <FitnessGuard requirePro featureName="the full exercise library">
-      <FitnessShell>
-        <ExerciseBrowser initialExercises={exercises || []} />
-      </FitnessShell>
+    <FitnessGuard requirePro={false} featureName="the full exercise library">
+      <ExerciseBrowser initialExercises={exercises || []} />
     </FitnessGuard>
   );
 }

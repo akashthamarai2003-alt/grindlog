@@ -10,16 +10,14 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
   const navItems = [
     { icon: Home, label: "Home", href: "/" },
     { icon: Dumbbell, label: "Workout", href: "/workout" },
-    ...(isPro ? [
-      { icon: Utensils, label: "Meals", href: "/nutrition" },
-      { icon: TrendingUp, label: "Progress", href: "/progress" },
-    ] : []),
+    { icon: Utensils, label: "Meals", href: "/nutrition", proOnly: true },
+    { icon: TrendingUp, label: "Progress", href: "/progress", proOnly: true },
     { icon: User, label: "Profile", href: "/profile" }
   ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/90 to-transparent">
-      <div className="max-w-sm mx-auto bg-[#121E12] border border-[#1A2619] rounded-full px-6 py-3 flex items-center justify-between shadow-2xl backdrop-blur-xl">
+      <div className="max-w-sm mx-auto bg-[#121E12] border border-[#1A2619] rounded-full px-5 py-3 flex items-center justify-between shadow-2xl backdrop-blur-xl">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -41,6 +39,11 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
                   : 'text-gray-400 group-hover:text-white'
               }`}>
                 <Icon size={isActive ? 18 : 20} strokeWidth={isActive ? 2.5 : 2} />
+                {item.proOnly && !isPro && (
+                  <span className="absolute -top-1 -right-1 bg-[#ADFF00] text-black text-[7px] font-black px-1 rounded-full uppercase tracking-tight shadow-sm">
+                    PRO
+                  </span>
+                )}
               </div>
               
               <span className={`text-[9px] font-bold uppercase tracking-wider transition-colors ${

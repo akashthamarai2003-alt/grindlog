@@ -35,9 +35,8 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
   }
 
   return (
-    <FitnessGuard requirePro featureName="the full exercise library">
-      <FitnessShell>
-        <div className="w-full flex flex-col h-full bg-[#0A1108] overflow-y-auto pb-32">
+    <FitnessGuard requirePro={false} featureName="the full exercise library">
+      <div className="w-full flex flex-col h-full bg-[#0A1108] overflow-y-auto pb-32">
           <div className="px-5 pt-8">
             <WorkoutHeader title="Exercise Details" backUrl="/exercises" />
             
@@ -131,7 +130,6 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
             </div>
           </div>
         </div>
-      </FitnessShell>
     </FitnessGuard>
   );
 }

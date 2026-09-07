@@ -3,6 +3,7 @@ import { Utensils } from "lucide-react";
 import { NutritionView } from "@/components/fitness/nutrition/nutrition-view";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { getCachedUser } from "@/lib/services/supabase/server";
+import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
 export default async function NutritionIndexPage() {
   const today = new Date().toLocaleDateString("en-US", { 
@@ -10,6 +11,9 @@ export default async function NutritionIndexPage() {
   });
 
   const { data: { user } } = await getCachedUser();
+  const plan = user ? await getFitnessPlan(user.id) : null;
+  const isPro = plan?.id === "pro";
+
   const initialData = user
     ? await NutritionService.getTodaySummaryAndDetails(user.id).catch((err) => {
         console.warn("Failed to prefetch today nutrition on server:", err?.message || err);
@@ -18,7 +22,7 @@ export default async function NutritionIndexPage() {
     : null;
 
   return (
-    <FitnessGuard requirePro featureName="nutrition and food logging">
+    <FitnessGuard featureName="nutrition and food logging">
       <div className="min-h-screen bg-[#0A1108] text-white">
         <div className="w-full max-w-md mx-auto px-3.5 sm:px-5 pt-6 sm:pt-8 pb-32">
           
@@ -34,12 +38,14 @@ export default async function NutritionIndexPage() {
               </p>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ADFF00]/10 rounded-full border border-[#ADFF00]/20">
                 <Utensils className="w-3.5 h-3.5 text-[#ADFF00]" />
-                <span className="text-xs font-black text-[#ADFF00] tracking-widest uppercase">7-Day Plan</span>
+                <span className="text-xs font-black text-[#ADFF00] tracking-widest uppercase">
+                  {isPro ? "7-Day Plan" : "Pro Preview"}
+                </span>
               </div>
             </div>
           </div>
 
-          <NutritionView initialData={initialData} />
+          <NutritionView initialData={initialData} isPro={isPro} />
 
         </div>
       </div>
