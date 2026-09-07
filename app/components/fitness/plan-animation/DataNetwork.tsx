@@ -29,8 +29,6 @@ function getPillState(phase: AnimationPhase, pillIdx: number, scanIdx: number): 
       return scanIdx === pillIdx ? "processing" : "visible";
     case "DATA_COLLAPSE":
       return "collapsing";
-    case "FINAL_REVEAL":
-      return "visible";
     default:
       return "hidden";
   }
@@ -41,8 +39,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
     phase === "DATA_ENTER" ||
     phase === "NETWORK_FULL" ||
     phase === "ANALYZING" ||
-    phase === "DATA_COLLAPSE" ||
-    phase === "FINAL_REVEAL";
+    phase === "DATA_COLLAPSE";
 
   const pillRefs = useRef<(HTMLDivElement | null)[]>([]);
   const lineRefs = useRef<(SVGPathElement | null)[]>([]);
@@ -216,7 +213,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         style={{
           position: "absolute",
           left: "50%",
-          top: "40%",
+          top: "38%",
           transform: "translate(-50%, -50%)",
           width: 0,
           height: 0,
@@ -346,7 +343,7 @@ export default function DataNetwork({ pills, phase, scanIndex }: DataNetworkProp
         style={{
           position: "absolute",
           left: "50%",
-          top: "40%",
+          top: "38%",
           width: 0,
           height: 0,
           zIndex: 7, 

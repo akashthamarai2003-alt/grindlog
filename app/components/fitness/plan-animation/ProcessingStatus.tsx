@@ -41,10 +41,9 @@ export function ProcessingStatus({
       case "AI_ALONE":
         return "VALIDATING YOUR PLAN...";
       case "FINAL_REVEAL":
-        return "YOUR PERSONALIZED PLAN IS READY";
       case "TRANSITION":
       case "COMPLETE":
-        return "PLAN READY";
+        return "YOUR PERSONALIZED PLAN IS READY";
       default:
         return "PROCESSING...";
     }
@@ -52,7 +51,7 @@ export function ProcessingStatus({
 
   const showHeading = phase !== "BOOT";
   const statusText = getStatusText();
-  const isFinalReveal = phase === "FINAL_REVEAL";
+  const isFinalReveal = phase === "FINAL_REVEAL" || phase === "TRANSITION" || phase === "COMPLETE";
 
   return (
     <div className="absolute bottom-6 sm:bottom-10 inset-x-0 flex flex-col items-center justify-center text-center px-6 pointer-events-none z-20">
@@ -73,27 +72,31 @@ export function ProcessingStatus({
         )}
       </AnimatePresence>
       {showHeading && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center"
-        >
-          <h2
-            className="text-xl sm:text-2xl font-black text-white mb-1.5 tracking-tight"
-            style={{ textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={isFinalReveal ? "plan-ready" : "building-plan"}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.35 }}
+            className="flex flex-col items-center"
           >
-            {isFinalReveal ? "Your plan is ready" : "Building your perfect plan..."}
-          </h2>
-          <p
-            className="text-xs sm:text-sm text-gray-400 mb-3 max-w-xs sm:max-w-md"
-            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
-          >
-            {isFinalReveal
-              ? "Luna has finished your personalised plan."
-              : "AI is analyzing your body scan and fitness profile..."}
-          </p>
-        </motion.div>
+            <h2
+              className="text-xl sm:text-2xl font-black text-white mb-1.5 tracking-tight"
+              style={{ textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}
+            >
+              {isFinalReveal ? "Your plan is ready" : "Building your perfect plan..."}
+            </h2>
+            <p
+              className="text-xs sm:text-sm text-gray-400 mb-3 max-w-xs sm:max-w-md"
+              style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}
+            >
+              {isFinalReveal
+                ? "Luna has finished your personalised plan."
+                : "AI is analyzing your body scan and fitness profile..."}
+            </p>
+          </motion.div>
+        </AnimatePresence>
       )}
 
       <div className="h-6 flex items-center justify-center">

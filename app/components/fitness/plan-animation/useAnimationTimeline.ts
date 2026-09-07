@@ -124,11 +124,11 @@ export function useAnimationTimeline(
 
       schedule(() => {
         setPhase("COMPLETE");
-      }, collapseDelay + 1600 + 1800 + 1600);
+      }, collapseDelay + 1600 + 1800 + 1800);
     };
 
-    // Full sequence takes 5000ms (1600ms collapse + 1800ms atomic rings + 1600ms final reveal badge)
-    const targetCollapseAt = Math.max(0, effectiveMinDuration - 5000);
+    // Full sequence takes 5200ms (1600ms collapse + 1800ms atomic rings + 1800ms final reveal badge)
+    const targetCollapseAt = Math.max(0, effectiveMinDuration - 5200);
 
     if (elapsed < targetCollapseAt) {
       runFullEnding(targetCollapseAt - elapsed);
