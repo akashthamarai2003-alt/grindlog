@@ -2677,16 +2677,13 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
 
     const t1 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 1));
-    }, 1500);
+    }, 1200);
     const t2 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 2));
-    }, 3000);
+    }, 2400);
     const t3 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 3));
-    }, 4500);
-    const t4 = setTimeout(() => {
-      if (isMounted) setPhase(prev => Math.max(prev, 4));
-    }, 6000);
+    }, 3600);
 
     // Use sessionId for deduping if provided, otherwise fallback to always fetching
     // Strict Mode / re-mounts with the same sessionId will reuse the promise.
@@ -2709,17 +2706,18 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
         if (res.success) {
           setIsDone(true);
           router.prefetch("/report");
-          // Smoothly advance phases to completion so user doesn't wait unnecessarily
+          // Ensure earlier phases are checked then immediately trigger Phase 4
           setPhase(prev => Math.max(prev, 3));
           fastForwardTimer = setTimeout(() => {
             if (isMounted) {
               setPhase(4);
             }
-          }, 350);
+          }, 200);
         } else {
           lastSubmissionSessionId = null;
           lastSubmissionPromise = null;
           setError(res.error || "Analysis failed");
+          setPhase(4);
         }
       }
     })
@@ -2728,12 +2726,13 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
         lastSubmissionSessionId = null;
         lastSubmissionPromise = null;
         setError(err.message);
+        setPhase(4);
       }
     });
 
     return () => { 
       isMounted = false;
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
       if (fastForwardTimer) clearTimeout(fastForwardTimer);
     };
   }, [data, router, sessionId]);

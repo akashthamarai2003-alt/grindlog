@@ -72,6 +72,11 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     redirect("/plan-setup");
   }
 
+  // Users who finished onboarding but haven't generated/unlocked an active plan belong on /report
+  if (!plan) {
+    redirect("/report");
+  }
+
   // Free users: STRICTLY zero AI API requests and zero plan creation in database!
   // Instead, supply static in-memory preview split and nutrition targets.
   const effectivePlan = plan || (isFreeUser ? SAMPLE_FREE_PLAN : null);

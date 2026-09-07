@@ -17,15 +17,16 @@ export default async function OnboardingPage({
 
   if (!user) redirect("/auth/signin?redirect=/onboarding");
 
+
   const { data: profile } = await supabase
     .from("fitness_os_profiles")
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // Only redirect to dashboard if onboarding is completed AND user is NOT explicitly trying to edit/retake it
+  // Only redirect to report if onboarding is completed AND user is NOT explicitly trying to edit/retake it
   if (profile?.onboarding_completed && !isEditing) {
-    redirect("/");
+    redirect("/report");
   }
 
   return <OnboardingFlow initialData={profile || {}} sessionId={crypto.randomUUID()} />;

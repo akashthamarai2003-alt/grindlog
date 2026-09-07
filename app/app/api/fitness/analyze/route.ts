@@ -133,7 +133,69 @@ export async function POST(req: Request) {
     let visualObservations = "No photos provided.";
     let visionAnalysisSucceeded = false;
 
-    if (images.length > 0) {
+    // Calculate baseline math metrics (BMI, Body Fat %, BMR)
+    let bmi = null;
+    if (data.height && data.weight) {
+      const heightInMeters = data.height / 100;
+      bmi = parseFloat((data.weight / (heightInMeters * heightInMeters)).toFixed(1));
+    }
+
+    let estimated_body_fat = null;
+    if (data.height && data.waist_cm) {
+      if (data.gender === "Female") {
+        const logVal = Math.log10(data.waist_cm + (data.waist_cm + 15) - 35);
+        const logHeight = Math.log10(data.height);
+        estimated_body_fat = Math.max(
+          10,
+          Math.min(
+            50,
+            parseFloat(
+              (495 / (1.29579 - 0.35004 * logVal + 0.221 * logHeight) - 450).toFixed(1),
+            ),
+          ),
+        );
+      } else {
+        const neck = 38;
+        const diff = Math.max(10, data.waist_cm - neck);
+        const logDiff = Math.log10(diff);
+        const logHeight = Math.log10(data.height);
+        estimated_body_fat = Math.max(
+          5,
+          Math.min(
+            50,
+            parseFloat(
+              (495 / (1.0324 - 0.19077 * logDiff + 0.15456 * logHeight) - 450).toFixed(1),
+            ),
+          ),
+        );
+      }
+    }
+
+    const retryAfterSeconds = await getGenerationRetryAfterSeconds(
+      supabase,
+      user.id,
+      "starting_report_attempt",
+    );
+    if (retryAfterSeconds > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `A report is already being generated. Please wait ${retryAfterSeconds} seconds and try again.`,
+          retryAfterSeconds,
+        },
+        { status: 429 },
+      );
+    }
+    await recordGenerationAttempt(
+      supabase,
+      user.id,
+      "starting_report_attempt",
+      FITNESS_REPORT_MODEL,
+    );
+
+    // 1. Task: Gemini Vision (if images uploaded)
+    const visionPromise = (async () => {
+      if (images.length === 0) return;
       console.log(`Sending ${images.length} images to Google Gemini Vision...`);
       try {
         const { GoogleGenAI } = await import("@google/genai");
@@ -142,7 +204,9 @@ export async function POST(req: Request) {
 
         const gemini = new GoogleGenAI({ apiKey });
         const models = [
-          process.env.GEMINI_VISION_MODEL?.trim() || "gemini-3.6-flash",
+          process.env.GEMINI_VISION_MODEL?.trim() || "gemini-2.5-flash",
+          "gemini-2.0-flash",
+          "gemini-1.5-flash",
           "gemini-2.5-pro",
         ].filter((model, index, list) => list.indexOf(model) === index);
         let response: Awaited<ReturnType<typeof gemini.models.generateContent>> | null = null;
@@ -191,104 +255,44 @@ export async function POST(req: Request) {
       } catch (err) {
         console.error("Gemini Vision API Error:", err);
       }
-    }
+    })();
 
-    // Calculate baseline math metrics (BMI, Body Fat %, BMR)
-    let bmi = null;
-    if (data.height && data.weight) {
-      const heightInMeters = data.height / 100;
-      bmi = parseFloat((data.weight / (heightInMeters * heightInMeters)).toFixed(1));
-    }
-
-    let estimated_body_fat = null;
-    if (data.height && data.waist_cm) {
-      if (data.gender === "Female") {
-        const logVal = Math.log10(data.waist_cm + (data.waist_cm + 15) - 35);
-        const logHeight = Math.log10(data.height);
-        estimated_body_fat = Math.max(
-          10,
-          Math.min(
-            50,
-            parseFloat(
-              (495 / (1.29579 - 0.35004 * logVal + 0.221 * logHeight) - 450).toFixed(1),
-            ),
-          ),
-        );
-      } else {
-        const neck = 38;
-        const diff = Math.max(10, data.waist_cm - neck);
-        const logDiff = Math.log10(diff);
-        const logHeight = Math.log10(data.height);
-        estimated_body_fat = Math.max(
-          5,
-          Math.min(
-            50,
-            parseFloat(
-              (495 / (1.0324 - 0.19077 * logDiff + 0.15456 * logHeight) - 450).toFixed(1),
-            ),
-          ),
-        );
-      }
-    }
-
-    // The personalised report is generated once from this exact onboarding data.
-    // Groq remains isolated to the in-app chatbot.
-    console.log("Generating personalised starting report...");
+    // 2. Task: Personalized Starting Report (OpenAI)
     let aiStrategy: Record<string, unknown> = {};
     let reportGenerationFailed = false;
-    try {
-      const retryAfterSeconds = await getGenerationRetryAfterSeconds(
-        supabase,
-        user.id,
-        "starting_report_attempt",
-      );
-      if (retryAfterSeconds > 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `A report is already being generated. Please wait ${retryAfterSeconds} seconds and try again.`,
-            retryAfterSeconds,
-          },
-          { status: 429 },
-        );
-      }
-      await recordGenerationAttempt(
-        supabase,
-        user.id,
-        "starting_report_attempt",
-        FITNESS_REPORT_MODEL,
-      );
 
-      aiStrategy = await generateStartingReport({
-        onboarding: data,
-        bmi,
-        estimatedBodyFat: estimated_body_fat,
-        visualObservations,
-      });
-
-      // Gemini is the source of truth for photo observations. Preserve its
-      // validated result in the report strategy so the report cannot hide a
-      // successful scan merely because the second report model summarised it
-      // incorrectly.
-      const structuredBodyScan = parseBodyScanAnalysis(visualObservations);
-      if (structuredBodyScan) {
-        aiStrategy.body_scan_insights = {
-          has_body_scan: true,
-          overall_summary: structuredBodyScan.overall_summary,
-          observed_strengths: structuredBodyScan.observed_strengths,
-          priority_improvements: structuredBodyScan.priority_improvements,
-          posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
+    const reportPromise = (async () => {
+      try {
+        console.log("Generating personalised starting report...");
+        aiStrategy = await generateStartingReport({
+          onboarding: data,
+          bmi,
+          estimatedBodyFat: estimated_body_fat,
+          visualObservations: images.length > 0 ? "Photos provided." : "No photos provided.",
+        });
+        console.log("AI Strategy Generated:", aiStrategy);
+      } catch (err) {
+        console.error("OpenAI starting report error:", err);
+        reportGenerationFailed = true;
+        aiStrategy = {
+          generation_status: "failed",
+          generation_error: "Your personalised report could not be generated yet.",
         };
       }
-      console.log("AI Strategy Generated:", aiStrategy);
-    } catch (err) {
-      console.error("OpenAI starting report error:", err);
-      // Preserve the completed onboarding so the user can retry from the
-      // report screen, but never present this failed state as a ready report.
-      reportGenerationFailed = true;
-      aiStrategy = {
-        generation_status: "failed",
-        generation_error: "Your personalised report could not be generated yet.",
+    })();
+
+    // Run both AI tasks in parallel to minimize latency
+    await Promise.all([visionPromise, reportPromise]);
+
+    // Gemini is the source of truth for photo observations. Merge into strategy.
+    const structuredBodyScan = parseBodyScanAnalysis(visualObservations);
+    if (structuredBodyScan) {
+      aiStrategy.body_scan_insights = {
+        has_body_scan: true,
+        overall_summary: structuredBodyScan.overall_summary,
+        observed_strengths: structuredBodyScan.observed_strengths,
+        priority_improvements: structuredBodyScan.priority_improvements,
+        posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
       };
     }
 

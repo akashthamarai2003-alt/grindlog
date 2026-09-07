@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
 
     // 5. Call Gemini Vision Server-Side
     const models = [
-      process.env.GEMINI_VISION_MODEL?.trim() || "gemini-3.6-flash",
+      process.env.GEMINI_VISION_MODEL?.trim() || "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
       "gemini-2.5-pro",
     ].filter((model, index, list) => list.indexOf(model) === index);
     let response: Awaited<ReturnType<typeof geminiClient.models.generateContent>> | null = null;
