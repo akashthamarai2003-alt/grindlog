@@ -15,12 +15,46 @@ export default function PricingClientForm({
 }) {
   const [appFilter, setAppFilter] = useState<"grindlog" | "fitness">("fitness");
   const [pricing, setPricing] = useState<PlanPricingConfig>(fitnessPricing);
+  const [spinDiscount, setSpinDiscount] = useState<number>(fitnessPricing.spinDiscountPercentage ?? 50);
   const [isSaving, setIsSaving] = useState(false);
 
   // Sync pricing state when filter changes
   const handleFilterChange = (filter: "grindlog" | "fitness") => {
     setAppFilter(filter);
-    setPricing(filter === "grindlog" ? grindlogPricing : fitnessPricing);
+    const target = filter === "grindlog" ? grindlogPricing : fitnessPricing;
+    setPricing(target);
+    setSpinDiscount(target.spinDiscountPercentage ?? 50);
+  };
+
+  const handleDiscountPercentChange = (newPercent: number) => {
+    const clamped = Math.max(5, Math.min(95, newPercent));
+    setSpinDiscount(clamped);
+
+    // Automatically recalculate offer prices from original prices
+    setPricing((prev) => {
+      const coreOrig = prev.monthly.core.originalPrice ?? prev.monthly.core.price ?? 59;
+      const proOrig = prev.monthly.pro.originalPrice ?? prev.monthly.pro.price ?? 199;
+      const coreOffer = Math.max(1, Math.round(coreOrig * (1 - clamped / 100)));
+      const proOffer = Math.max(1, Math.round(proOrig * (1 - clamped / 100)));
+
+      return {
+        ...prev,
+        spinDiscountPercentage: clamped,
+        monthly: {
+          ...prev.monthly,
+          core: {
+            ...prev.monthly.core,
+            originalPrice: coreOrig,
+            price: coreOffer,
+          },
+          pro: {
+            ...prev.monthly.pro,
+            originalPrice: proOrig,
+            price: proOffer,
+          },
+        },
+      };
+    });
   };
 
   const handlePriceChange = (
@@ -30,16 +64,25 @@ export default function PricingClientForm({
     value: string
   ) => {
     const num = value === "" ? null : parseFloat(value);
-    setPricing((prev) => ({
-      ...prev,
-      [tier]: {
-        ...prev[tier],
-        [level]: {
-          ...prev[tier][level],
-          [field]: num,
+    setPricing((prev) => {
+      const updated = {
+        ...prev,
+        [tier]: {
+          ...prev[tier],
+          [level]: {
+            ...prev[tier][level],
+            [field]: num,
+          },
         },
-      },
-    }));
+      };
+
+      // When setting originalPrice for monthly Fitness OS, automatically compute offer price
+      if (appFilter === "fitness" && tier === "monthly" && field === "originalPrice" && num != null) {
+        updated.monthly[level].price = Math.max(1, Math.round(num * (1 - spinDiscount / 100)));
+      }
+
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,9 +90,14 @@ export default function PricingClientForm({
     setIsSaving(true);
 
     try {
-      const res = await updatePlanPricesAction(pricing, appFilter);
+      const payload: PlanPricingConfig = {
+        ...pricing,
+        spinDiscountPercentage: spinDiscount,
+      };
+
+      const res = await updatePlanPricesAction(payload, appFilter);
       if (res.success) {
-        toast.success("Plan offer prices saved successfully!");
+        toast.success("Plan pricing & Spin Wheel discount saved successfully!");
       } else {
         toast.error(res.error || "Failed to save plan prices");
       }
@@ -104,6 +152,103 @@ export default function PricingClientForm({
         </button>
         </div>
       </div>
+
+      {/* Spin Wheel Discount Controller (Fitness OS) */}
+      {appFilter === "fitness" && (
+        <div className="bg-gradient-to-br from-[#0F1D11] via-[#142616] to-[#0D180E] border-2 border-green-500/40 rounded-2xl p-6 shadow-md text-white space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-green-500/20 border border-green-500/40 flex items-center justify-center text-2xl shadow-inner shrink-0">
+                🎡
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  Lucky Spin Wheel Discount Percentage
+                  <span className="text-[10px] bg-green-500/20 text-green-300 border border-green-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">
+                    Gamified Offer
+                  </span>
+                </h3>
+                <p className="text-xs text-gray-300">
+                  Controls the jackpot discount percentage that athletes win when spinning the wheel on <span className="font-bold text-green-400 underline">/payment</span>.
+                </p>
+              </div>
+            </div>
+
+            {/* Discount Input & Preset Chips */}
+            <div className="flex flex-wrap items-center gap-2">
+              {[30, 40, 50, 60, 70].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => handleDiscountPercentChange(preset)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                    spinDiscount === preset
+                      ? "bg-green-500 text-black shadow-lg shadow-green-500/30 scale-105"
+                      : "bg-white/10 hover:bg-white/20 text-white border border-white/10"
+                  }`}
+                >
+                  {preset}%
+                </button>
+              ))}
+
+              <div className="relative w-24">
+                <input
+                  type="number"
+                  min="5"
+                  max="95"
+                  value={spinDiscount}
+                  onChange={(e) => handleDiscountPercentChange(Number(e.target.value) || 0)}
+                  className="w-full pl-3 pr-7 py-1.5 text-xs font-black bg-black/50 border border-green-500/50 rounded-xl text-green-300 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400/20 text-right"
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-green-400">
+                  %
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Discount Calculation Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/10">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                  Core Tier ({spinDiscount}% OFF)
+                </span>
+                <span className="text-xs text-gray-300">
+                  Base: ₹{pricing.monthly.core.originalPrice || pricing.monthly.core.price || 59}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-sm font-black text-green-400 block">
+                  ₹{pricing.monthly.core.price ?? Math.max(1, Math.round((pricing.monthly.core.originalPrice || 59) * (1 - spinDiscount / 100)))} /mo
+                </span>
+                <span className="text-[10px] text-gray-400">
+                  Save ₹{(pricing.monthly.core.originalPrice || 59) - (pricing.monthly.core.price ?? Math.max(1, Math.round((pricing.monthly.core.originalPrice || 59) * (1 - spinDiscount / 100))))}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                  Pro Tier ({spinDiscount}% OFF)
+                </span>
+                <span className="text-xs text-gray-300">
+                  Base: ₹{pricing.monthly.pro.originalPrice || pricing.monthly.pro.price || 199}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-sm font-black text-green-400 block">
+                  ₹{pricing.monthly.pro.price ?? Math.max(1, Math.round((pricing.monthly.pro.originalPrice || 199) * (1 - spinDiscount / 100)))} /mo
+                </span>
+                <span className="text-[10px] text-gray-400">
+                  Save ₹{(pricing.monthly.pro.originalPrice || 199) - (pricing.monthly.pro.price ?? Math.max(1, Math.round((pricing.monthly.pro.originalPrice || 199) * (1 - spinDiscount / 100))))}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Plan Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

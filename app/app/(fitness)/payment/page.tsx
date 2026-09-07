@@ -166,11 +166,13 @@ export default function FitnessPaymentPage() {
 
   const isDiscountActive = isCurrentCore || (Boolean(discountToken) && !isDiscountExpired && remainingSeconds > 0);
 
+  const discountPercent = pricingConfig?.spinDiscountPercentage ?? 50;
+
   // Dynamic offer and regular prices from live admin configuration
-  const corePrice = pricingConfig?.monthly?.core?.price ?? 29;
   const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? 59;
-  const proPrice = pricingConfig?.monthly?.pro?.price ?? 99;
   const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 199;
+  const corePrice = pricingConfig?.monthly?.core?.price ?? Math.max(1, Math.round(coreOriginalPrice * (1 - discountPercent / 100)));
+  const proPrice = pricingConfig?.monthly?.pro?.price ?? Math.max(1, Math.round(proOriginalPrice * (1 - discountPercent / 100)));
   const currentPrice = level === "pro" 
     ? ((isCurrentCore || isDiscountActive) ? proPrice : (proOriginalPrice || proPrice))
     : (isDiscountActive ? corePrice : (coreOriginalPrice || corePrice));
@@ -437,7 +439,7 @@ export default function FitnessPaymentPage() {
           <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-black text-white truncate">
               <span className="text-base shrink-0">🔥</span>
-              <span className="truncate uppercase tracking-wide text-[#ADFF00]">Special Offer Locked In For All Months</span>
+              <span className="truncate uppercase tracking-wide text-[#ADFF00]">{discountPercent}% OFF Locked In For All Months</span>
             </div>
             <div className="flex items-center gap-1.5 bg-black/70 border border-[#ADFF00]/60 rounded-full px-2.5 py-1 text-[#ADFF00] font-mono font-black text-xs shrink-0 shadow-[0_0_10px_rgba(173,255,0,0.2)]">
               <Timer size={13} className="animate-spin text-[#ADFF00]" />
@@ -448,7 +450,7 @@ export default function FitnessPaymentPage() {
       ) : isDiscountExpired ? (
         <div className="sticky top-[72px] z-40 bg-red-950/60 border-b border-red-500/30 py-2 px-4 backdrop-blur-md text-center">
           <span className="text-xs font-semibold text-red-300">
-            ⚠️ 50% discount offer has expired. Standard prices restored.
+            ⚠️ {discountPercent}% discount offer has expired. Standard prices restored.
           </span>
         </div>
       ) : null}
@@ -525,7 +527,7 @@ export default function FitnessPaymentPage() {
                   <Sparkles size={11} /> Exclusive Athlete Reward
                 </div>
                 <h3 className="text-lg font-black text-white leading-tight">
-                  Spin & Win Up to 50% OFF!
+                  Spin & Win Up to {discountPercent}% OFF!
                 </h3>
               </div>
             </div>
@@ -580,7 +582,7 @@ export default function FitnessPaymentPage() {
                     </span>
                   ) : isDiscountActive ? (
                     <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
-                      50% OFF • ALL MONTHS
+                      {discountPercent}% OFF • ALL MONTHS
                     </span>
                   ) : null}
                 </div>
@@ -645,7 +647,7 @@ export default function FitnessPaymentPage() {
                         <span className={`text-2xl font-black ${level === "pro" ? "text-[#ADFF00]" : "text-white"}`}>₹{proPrice}</span>
                         <span className="text-xs text-gray-500 font-medium">/month</span>
                         <span className="ml-auto text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
-                          {isCurrentCore ? "LOCKED UPGRADE RATE" : "50% OFF • ALL MONTHS"}
+                          {isCurrentCore ? "LOCKED UPGRADE RATE" : `${discountPercent}% OFF • ALL MONTHS`}
                         </span>
                       </>
                     ) : (
@@ -692,7 +694,7 @@ export default function FitnessPaymentPage() {
                 className="bg-[#0E1A0F] border-2 border-[#ADFF00] text-white py-1.5 px-3.5 rounded-full shadow-[0_0_20px_rgba(173,255,0,0.35)] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
               >
                 <span className="text-sm animate-bounce">🎡</span>
-                <span className="text-xs font-black text-[#ADFF00] group-hover:underline">Spin & Win 50% OFF</span>
+                <span className="text-xs font-black text-[#ADFF00] group-hover:underline">Spin & Win {discountPercent}% OFF</span>
               </motion.button>
             </div>
           )}

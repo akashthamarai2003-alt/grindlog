@@ -84,17 +84,19 @@ export async function claimSpinDiscountAction() {
   }
 
   const livePricing = await getPlanPricesAction("fitness");
-  const corePrice = livePricing?.monthly?.core?.price ?? 29;
+  const discountPercent = livePricing?.spinDiscountPercentage ?? 50;
+
   const coreRegular = livePricing?.monthly?.core?.originalPrice ?? 59;
-  const proPrice = livePricing?.monthly?.pro?.price ?? 99;
   const proRegular = livePricing?.monthly?.pro?.originalPrice ?? 199;
+  const corePrice = livePricing?.monthly?.core?.price ?? Math.max(1, Math.round(coreRegular * (1 - discountPercent / 100)));
+  const proPrice = livePricing?.monthly?.pro?.price ?? Math.max(1, Math.round(proRegular * (1 - discountPercent / 100)));
 
   // Enforce 5-minute countdown from server clock
   const expiresAt = Date.now() + 5 * 60 * 1000;
   const payload: SpinDiscountPayload = {
     userId: user.id,
-    code: "SPIN50_LIFETIME_LOCK",
-    discountPercent: 50,
+    code: `SPIN_${discountPercent}_LIFETIME_LOCK`,
+    discountPercent,
     prices: {
       core: corePrice,
       pro: proPrice,
@@ -113,7 +115,7 @@ export async function claimSpinDiscountAction() {
     success: true,
     token,
     expiresAt,
-    discountPercent: 50,
+    discountPercent,
     prices: payload.prices,
     regularPrices: payload.regularPrices,
     isLifetimeLock: true,

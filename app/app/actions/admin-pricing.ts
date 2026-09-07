@@ -20,15 +20,20 @@ export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'gri
       return DEFAULT_PRICING;
     }
 
+    const spinDiscountPercentage = typeof data.prices.spinDiscountPercentage === "number" 
+      ? data.prices.spinDiscountPercentage 
+      : 50;
+
     // Helper to calculate fallback if one of originalPrice or price is missing
     const resolveTier = (item: any, defaultItem: PlanPriceItem): PlanPriceItem => {
       let price = item?.price;
       let originalPrice = item?.originalPrice;
 
       if (price == null && originalPrice != null) {
-        price = Math.max(1, Math.round(originalPrice * 0.5));
+        price = Math.max(1, Math.round(originalPrice * (1 - spinDiscountPercentage / 100)));
       } else if (originalPrice == null && price != null) {
-        originalPrice = Math.round(price * 2);
+        const factor = Math.max(0.1, 1 - spinDiscountPercentage / 100);
+        originalPrice = Math.round(price / factor);
       }
 
       return {
@@ -63,6 +68,7 @@ export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'gri
           originalPrice: data.prices.lifetime?.pro?.originalPrice ?? DEFAULT_PRICING.lifetime.pro.originalPrice,
         },
       },
+      spinDiscountPercentage,
     };
   } catch (err) {
     console.error("getPlanPricesAction error:", err);

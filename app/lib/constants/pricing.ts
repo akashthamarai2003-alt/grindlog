@@ -16,12 +16,13 @@ export interface PlanPricingConfig {
     core: PlanPriceItem;
     pro: PlanPriceItem;
   };
+  spinDiscountPercentage?: number;
 }
 
 export const DEFAULT_PRICING: PlanPricingConfig = {
   monthly: {
-    core: { price: 49, originalPrice: 99 },
-    pro: { price: 69, originalPrice: 149 },
+    core: { price: 29, originalPrice: 59 },
+    pro: { price: 99, originalPrice: 199 },
   },
   six_months: {
     core: { price: 199, originalPrice: 294 },
@@ -31,4 +32,5 @@ export const DEFAULT_PRICING: PlanPricingConfig = {
     core: { price: 599, originalPrice: 999 },
     pro: { price: 799, originalPrice: 1499 },
   },
+  spinDiscountPercentage: 50,
 };

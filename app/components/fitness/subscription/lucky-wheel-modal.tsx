@@ -25,17 +25,6 @@ interface LuckyWheelModalProps {
 // and an ordinary slice (30% OFF) sits under the top pointer.
 const INITIAL_ROTATION = 202.5;
 
-const SLICES = [
-  { label: "10% OFF", color: "#0F1A10", textColor: "#6B7280", isWinner: false },
-  { label: "20% OFF", color: "#142415", textColor: "#9CA3AF", isWinner: false },
-  { label: "15% OFF", color: "#0F1A10", textColor: "#6B7280", isWinner: false },
-  { label: "30% OFF", color: "#142415", textColor: "#9CA3AF", isWinner: false },
-  { label: "25% OFF", color: "#0F1A10", textColor: "#6B7280", isWinner: false },
-  { label: "35% OFF", color: "#142415", textColor: "#9CA3AF", isWinner: false },
-  { label: "5% OFF", color: "#0F1A10", textColor: "#6B7280", isWinner: false },
-  { label: "🎉 50% OFF", color: "#ADFF00", textColor: "#000000", isWinner: true, badge: "JACKPOT" },
-];
-
 export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfig }: LuckyWheelModalProps) {
   const [phase, setPhase] = useState<"ready" | "spinning" | "won">("ready");
   const [rotation, setRotation] = useState(INITIAL_ROTATION);
@@ -43,12 +32,25 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const corePrice = pricingConfig?.monthly?.core?.price ?? 29;
+  const discountPercent = pricingConfig?.spinDiscountPercentage ?? 50;
+
   const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? 59;
-  const proPrice = pricingConfig?.monthly?.pro?.price ?? 99;
   const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 199;
+  const corePrice = pricingConfig?.monthly?.core?.price ?? Math.max(1, Math.round(coreOriginalPrice * (1 - discountPercent / 100)));
+  const proPrice = pricingConfig?.monthly?.pro?.price ?? Math.max(1, Math.round(proOriginalPrice * (1 - discountPercent / 100)));
   const coreSavings = coreOriginalPrice && coreOriginalPrice > corePrice ? coreOriginalPrice - corePrice : 0;
   const proSavings = proOriginalPrice && proOriginalPrice > proPrice ? proOriginalPrice - proPrice : 0;
+
+  const SLICES = [
+    { label: "10% OFF", color: "#0F1A10", textColor: "#6B7280", isWinner: false },
+    { label: "20% OFF", color: "#142415", textColor: "#9CA3AF", isWinner: false },
+    { label: "15% OFF", color: "#0F1A10", textColor: "#6B7280", isWinner: false },
+    { label: "25% OFF", color: "#142415", textColor: "#9CA3AF", isWinner: false },
+    { label: "30% OFF", color: "#0F1A10", textColor: "#6B7280", isWinner: false },
+    { label: "35% OFF", color: "#142415", textColor: "#9CA3AF", isWinner: false },
+    { label: "5% OFF", color: "#0F1A10", textColor: "#6B7280", isWinner: false },
+    { label: `🎉 ${discountPercent}% OFF`, color: "#ADFF00", textColor: "#000000", isWinner: true, badge: "JACKPOT" },
+  ];
 
   // Reset to ready state with non-50% resting position when modal opens
   useEffect(() => {
@@ -188,7 +190,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
             </h2>
             <p className="text-gray-400 text-xs max-w-xs mb-4">
               {phase === "ready" 
-                ? "Tap the button below to test your luck and unlock up to 50% OFF your subscription!"
+                ? `Tap the button below to test your luck and unlock up to ${discountPercent}% OFF your subscription!`
                 : "Hold tight! Selecting the highest available athlete discount for you..."}
             </p>
 
@@ -326,7 +328,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
               <p className="text-[11px] text-gray-400">
                 {phase === "spinning" 
                   ? "⚡ Decelerating onto top athlete discount..."
-                  : "1 free spin available for your session • Guaranteed discount!"}
+                  : `1 free spin available for your session • Guaranteed ${discountPercent}% discount!`}
               </p>
             </div>
           </div>
@@ -343,14 +345,14 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
             </div>
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/30 text-[#ADFF00] text-xs font-black uppercase tracking-wider mb-2">
-              ⭐ Jackpot Won: 50% OFF
+              ⭐ Jackpot Won: {discountPercent}% OFF
             </div>
 
             <h2 className="text-2xl font-black tracking-tight mb-1 text-white">
               Congratulations!
             </h2>
             <p className="text-sm font-bold text-[#ADFF00] mb-1">
-              🔥 50% OFF LOCKED IN FOR ALL MONTHS
+              🔥 {discountPercent}% OFF LOCKED IN FOR ALL MONTHS
             </p>
             <p className="text-gray-400 text-xs max-w-xs mb-4">
               Your price is permanently locked. You will never pay standard price as long as your plan stays active!
@@ -431,7 +433,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  CLAIM OFFER FOR ALL MONTHS ⚡
+                  CLAIM {discountPercent}% OFF FOR ALL MONTHS ⚡
                 </span>
               )}
             </button>
