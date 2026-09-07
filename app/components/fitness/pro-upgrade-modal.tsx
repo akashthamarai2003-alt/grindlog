@@ -9,15 +9,18 @@ interface ProUpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
   featureName?: string;
+  planRequired?: "pro" | "any";
 }
 
 export function ProUpgradeModal({
   isOpen,
   onClose,
   featureName = "This feature",
+  planRequired = "pro",
 }: ProUpgradeModalProps) {
   const pathname = usePathname();
   const returnTo = pathname || "/";
+  const isAnyTier = planRequired === "any";
 
   return (
     <AnimatePresence>
@@ -60,7 +63,7 @@ export function ProUpgradeModal({
             {/* Badge & Title */}
             <div className="flex items-center gap-2 mb-1.5">
               <span className="bg-[#ADFF00] text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Pro Feature
+                {isAnyTier ? "Membership Required" : "Pro Feature"}
               </span>
             </div>
 
@@ -69,51 +72,75 @@ export function ProUpgradeModal({
             </h3>
 
             <p className="text-xs text-white/70 leading-relaxed mb-5">
-              Core members can preview these pages, but interactive tracking, logging, and AI coach tools require GrindLog Pro.
+              {isAnyTier
+                ? "You are exploring GrindLog in preview mode. Choose a plan to unlock live tracking, workout sessions, and full access."
+                : "Core members can preview these pages, but interactive tracking, logging, and AI coach tools require GrindLog Pro."}
             </p>
 
-            {/* Pro Benefits List */}
+            {/* Benefits List */}
             <div className="space-y-2 mb-6 bg-black/40 border border-white/5 rounded-2xl p-3.5 text-xs text-white/85">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full bg-[#ADFF00]/20 flex items-center justify-center text-[#ADFF00] shrink-0">
                   <Check className="w-2.5 h-2.5" />
                 </div>
-                <span>Personalized 7-day meals & smart swaps</span>
+                <span>Personalized 7-day workout split & exercise guidance</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full bg-[#ADFF00]/20 flex items-center justify-center text-[#ADFF00] shrink-0">
                   <Check className="w-2.5 h-2.5" />
                 </div>
-                <span>Full food, macro, and water logging</span>
+                <span>Full food, macro, and water logging (Pro)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full bg-[#ADFF00]/20 flex items-center justify-center text-[#ADFF00] shrink-0">
                   <Check className="w-2.5 h-2.5" />
                 </div>
-                <span>Photo body scans & measurement history</span>
+                <span>Photo body scans & measurement history (Pro)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full bg-[#ADFF00]/20 flex items-center justify-center text-[#ADFF00] shrink-0">
                   <Check className="w-2.5 h-2.5" />
                 </div>
-                <span>24/7 Unlimited AI Coaching with Luna</span>
+                <span>24/7 Unlimited AI Coaching with Luna (Pro)</span>
               </div>
             </div>
 
             {/* CTA Buttons */}
             <div className="flex flex-col gap-2.5">
-              <Link
-                href={`/payment?returnTo=${encodeURIComponent(returnTo)}&intent=upgrade_pro`}
-                onClick={onClose}
-                className="w-full py-3.5 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all"
-              >
-                <span>Upgrade to Pro</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {isAnyTier ? (
+                <>
+                  <Link
+                    href={`/payment?plan=pro&returnTo=${encodeURIComponent(returnTo)}&intent=upgrade_pro`}
+                    onClick={onClose}
+                    className="w-full py-3 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all"
+                  >
+                    <span>Get Pro (₹99/mo) — All Features</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+
+                  <Link
+                    href={`/payment?plan=core&returnTo=${encodeURIComponent(returnTo)}&intent=upgrade_core`}
+                    onClick={onClose}
+                    className="w-full py-2.5 bg-[#1A2619] hover:bg-[#233522] border border-[#ADFF00]/30 text-white font-bold uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                  >
+                    <span>Get Core (₹29/mo) — Workouts Only</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#ADFF00]" />
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  href={`/payment?returnTo=${encodeURIComponent(returnTo)}&intent=upgrade_pro`}
+                  onClick={onClose}
+                  className="w-full py-3.5 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all"
+                >
+                  <span>Upgrade to Pro</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
 
               <button
                 onClick={onClose}
-                className="w-full py-2.5 text-xs font-bold text-white/40 hover:text-white transition-colors cursor-pointer"
+                className="w-full py-2 text-xs font-bold text-white/40 hover:text-white transition-colors cursor-pointer"
               >
                 Keep Browsing Preview
               </button>

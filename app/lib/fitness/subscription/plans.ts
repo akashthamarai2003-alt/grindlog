@@ -44,7 +44,18 @@ export const PRO_PLAN: FitnessPlanConfig = {
   aiDailyLimit: 20, // Pro user daily use: 20
 };
 
+export const FREE_PLAN: FitnessPlanConfig = {
+  id: "free",
+  name: "Free Preview",
+  description: "View-only preview mode. Upgrade to unlock tracking and live workouts.",
+  priceInPaise: 0,
+  currency: "INR",
+  features: [], // Strictly no active features allowed
+  aiDailyLimit: 0, // No API requests allowed
+};
+
 export const FITNESS_PLANS: Record<string, FitnessPlanConfig> = {
+  free: FREE_PLAN,
   starter: STARTER_PLAN,
   core: CORE_PLAN,
   pro: PRO_PLAN,

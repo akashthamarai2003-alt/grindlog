@@ -12,6 +12,7 @@ import Link from "next/link";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import { CalendarClock } from "lucide-react";
 import { AiWorkoutCoachService } from "@/lib/services/ai/ai-workout-coach-service";
+import { SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
 
 export default async function WorkoutIndexPage() {
   const supabase = await createServerSupabase();
@@ -42,6 +43,12 @@ export default async function WorkoutIndexPage() {
     timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' 
   });
   const dateStr = formatter.format(new Date());
+
+  const isFree = subscriptionPlan?.id === "free";
+  const effectiveWorkout = isFree ? (SAMPLE_FREE_WORKOUT as any) : workout;
+  const effectiveWeekDays = isFree ? (SAMPLE_FREE_WEEK_DAYS as any) : weekDays;
+  const effectivePlanDays = isFree ? (SAMPLE_FREE_WEEK_DAYS as any) : planDays;
+
   const nextWorkoutLabel = nextWorkout?.workout_date
     ? new Intl.DateTimeFormat("en-US", {
         timeZone: tz,
@@ -65,13 +72,13 @@ export default async function WorkoutIndexPage() {
             title="Your Workouts" 
             dateStr={dateStr}
             isMainPage={true}
-            planBadge={planDays && planDays.length > 0 ? `${planDays.length}-Day Split` : activePlan ? "Active Plan" : undefined}
+            planBadge={isFree ? "Preview Split" : planDays && planDays.length > 0 ? `${planDays.length}-Day Split` : activePlan ? "Active Plan" : undefined}
           />
           
           <div className="mt-2">
-            <WeeklyWorkoutView weekDays={weekDays} planDays={planDays} />
+            <WeeklyWorkoutView weekDays={effectiveWeekDays} planDays={effectivePlanDays} />
 
-            {!workout && !nextWorkout ? (
+            {!effectiveWorkout && !nextWorkout ? (
               <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6 mb-6">
                 <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
                 <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 text-center py-12">
@@ -82,7 +89,7 @@ export default async function WorkoutIndexPage() {
                   {!activePlan && <Link href="/report" className="rounded-xl bg-[#ADFF00] px-6 py-3 font-black uppercase tracking-wider text-black">View Plan Setup</Link>}
                 </div>
               </div>
-            ) : !workout && nextWorkout ? (
+            ) : !effectiveWorkout && nextWorkout ? (
               <div className="mt-6 mb-6">
                 <div className="mb-3 flex items-center gap-2 px-2 text-[#ADFF00]">
                   <CalendarClock className="h-4 w-4" />
@@ -101,24 +108,25 @@ export default async function WorkoutIndexPage() {
               </div>
             ) : (
               <>
-                {workout.status === "in_progress" ? (
+                {effectiveWorkout.status === "in_progress" && !isFree ? (
                   <ActiveWorkoutResumeCard 
-                    workoutId={workout.id} 
-                    completedExercises={workout.completedExercises} 
-                    totalExercises={workout.exerciseCount} 
+                    workoutId={effectiveWorkout.id} 
+                    completedExercises={effectiveWorkout.completedExercises} 
+                    totalExercises={effectiveWorkout.exerciseCount} 
                   />
                 ) : (
                   <WorkoutSummaryCard 
-                    workout={workout} 
-                    exerciseCount={workout.exerciseCount} 
+                    workout={effectiveWorkout} 
+                    exerciseCount={effectiveWorkout.exerciseCount || (effectiveWorkout.fitness_os_exercises?.length || 0)} 
+                    isFree={isFree}
                   />
                 )}
                 
                 {subscriptionPlan?.id === "pro" && (
-                  <AiCoachNote workoutId={workout.id} initialNote={initialCoachNote} />
+                  <AiCoachNote workoutId={effectiveWorkout.id} initialNote={initialCoachNote} />
                 )}
                 
-                <TodaysExercisesList workoutId={workout.id} exercises={workout.fitness_os_exercises || []} readonly={true} />
+                <TodaysExercisesList workoutId={effectiveWorkout.id} exercises={effectiveWorkout.fitness_os_exercises || []} readonly={true} />
               </>
             )}
           </div>

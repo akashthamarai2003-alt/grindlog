@@ -1,15 +1,22 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Dumbbell, Clock, Activity, Play, CalendarX } from "lucide-react";
+import { Dumbbell, Clock, Activity, Play, CalendarX, Lock } from "lucide-react";
 import Link from "next/link";
 
 interface TodaysWorkoutCardProps {
   workout?: any; // To receive today's workout plan
   targetDateStr?: string;
+  isFree?: boolean;
+  onFreeClick?: () => void;
 }
 
-export function TodaysWorkoutCard({ workout, targetDateStr }: TodaysWorkoutCardProps) {
+export function TodaysWorkoutCard({
+  workout,
+  targetDateStr,
+  isFree = false,
+  onFreeClick,
+}: TodaysWorkoutCardProps) {
   const todayStr = new Date().toISOString().split('T')[0];
   const cardDateStr = workout?.workout_date || targetDateStr || todayStr;
   const isFuture = cardDateStr > todayStr;
@@ -100,14 +107,28 @@ export function TodaysWorkoutCard({ workout, targetDateStr }: TodaysWorkoutCardP
                 animate={{ width: `${(completedCount / Math.max(1, numExercises)) * 100}%` }}
                 transition={{ duration: 1.5, ease: "easeOut", delay: 0.6 }}
                 className="h-full bg-gradient-to-r from-[#ADFF00]/50 to-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)] rounded-full relative"
-              >
-              </motion.div>
+              />
             </div>
           </div>
         )}
 
         {/* Start Button */}
-        {isCompleted ? (
+        {isFree ? (
+          <div className="w-full mt-2">
+            <button
+              onClick={onFreeClick}
+              className="w-full py-4 px-4 bg-[#1A2619] border border-[#ADFF00]/40 hover:bg-[#ADFF00]/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 cursor-pointer group/btn"
+            >
+              <Lock className="w-5 h-5 text-[#ADFF00]" />
+              <span className="text-base font-black text-[#ADFF00] uppercase tracking-wide">
+                Start Workout
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00] text-black px-2 py-0.5 rounded-full ml-1">
+                Unlock
+              </span>
+            </button>
+          </div>
+        ) : isCompleted ? (
           <Link href={`/workout/${workout.id}/summary`} prefetch={true} className="w-full mt-2">
             <button className="w-full py-4 px-4 bg-[#1A2619] border border-[#ADFF00]/30 hover:bg-[#ADFF00]/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2">
               <Dumbbell className="w-5 h-5 text-[#ADFF00]" />

@@ -45,7 +45,7 @@ interface ProfileContentProps {
   fitnessProfile: any;
   mainProfile: any;
   activePlan: any;
-  subscriptionPlan: { id: "starter" | "core" | "pro" } | null;
+  subscriptionPlan: { id: "starter" | "core" | "pro" | "free" } | null;
   aiLimitInfo: {
     allowed: boolean;
     limit: number;

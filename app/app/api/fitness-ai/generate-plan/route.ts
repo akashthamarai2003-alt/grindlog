@@ -73,7 +73,7 @@ export async function POST(req: Request) {
       );
     }
     const subscriptionPlan = await getFitnessPlan(user.id);
-    if (!subscriptionPlan) {
+    if (!subscriptionPlan || subscriptionPlan.id === "free") {
       return NextResponse.json(
         { success: false, error: "Please complete payment before generating your Fitness plan.", errorType: "PAYMENT_REQUIRED" },
         { status: 402 },

@@ -21,7 +21,7 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
       duration_minutes: 48,
     };
     return (
-      <FitnessGuard>
+      <FitnessGuard requirePaid={true} featureName="Workout Summary">
         <div className="min-h-screen bg-[#0A1108] text-white flex flex-col justify-center">
           <WorkoutComplete 
             workout={mockWorkout as any}
@@ -158,7 +158,7 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
     "Athlete";
 
   return (
-    <FitnessGuard>
+    <FitnessGuard requirePaid={true} featureName="Workout Summary">
       <div className="min-h-screen bg-[#0A1108] text-white flex flex-col justify-center">
         <WorkoutComplete 
           workout={workout as any}

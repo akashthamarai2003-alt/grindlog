@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
+import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -64,58 +65,27 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     redirect("/onboarding");
   }
 
-  if (!subscriptionPlan) {
-    if (plan) {
-      redirect("/payment?returnTo=/");
-    } else {
-      // Resume the same review draft until onboarding changes. Do not send a
-      // user back to report merely because the draft is older than 30 minutes.
-      let cachedDraftQuery = supabase
-        .from("fitness_os_ai_sessions")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("session_type", "plan_generation")
-        .order("created_at", { ascending: false })
-        .limit(1);
-      if (typeof profile.updated_at === "string" && profile.updated_at) {
-        cachedDraftQuery = cachedDraftQuery.gte("created_at", profile.updated_at);
-      }
-      const { data: cachedDraft } = await cachedDraftQuery.maybeSingle();
+  const isFreeUser = !subscriptionPlan || subscriptionPlan.id === "free";
 
-      const attemptCutoff = new Date(Date.now() - 3 * 60_000).toISOString();
-      const { data: activeAttempt } = await supabase
-        .from("fitness_os_ai_sessions")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("session_type", "plan_generation_attempt")
-        .gte("created_at", attemptCutoff)
-        .limit(1)
-        .maybeSingle();
-
-      if (cachedDraft || activeAttempt) {
-        redirect("/plan-setup");
-      }
-
-      // Keep reopening/back navigation on the completed onboarding report.
-      // Plan generation starts only when the user explicitly clicks
-      // "Generate My Plan", avoiding duplicate paid AI requests.
-      redirect("/report");
-    }
-  }
-
-  if (!plan) {
-    // Subscribed users who have not yet locked in their plan belong on /plan-setup
-    // to review their personalized plan and activate it.
+  // For paid users who haven't reviewed/locked in their plan yet, direct them to /plan-setup
+  if (!isFreeUser && !plan) {
     redirect("/plan-setup");
   }
 
+  // Free users: STRICTLY zero AI API requests and zero plan creation in database!
+  // Instead, supply static in-memory preview split and nutrition targets.
+  const effectivePlan = plan || (isFreeUser ? SAMPLE_FREE_PLAN : null);
+  const effectiveTodayWorkout = workout || (isFreeUser ? SAMPLE_FREE_WORKOUT : null);
+  const effectiveWeekWorkouts = (weekWorkouts && weekWorkouts.length > 0)
+    ? weekWorkouts
+    : (isFreeUser ? SAMPLE_FREE_WEEK_DAYS : []);
+
   let dayNumber = 1;
-  if (plan?.created_at) {
-    
-    dayNumber = Math.max(1, differenceInCalendarDays(new Date(), new Date(plan.created_at)) + 1);
+  if (effectivePlan?.created_at) {
+    dayNumber = Math.max(1, differenceInCalendarDays(new Date(), new Date(effectivePlan.created_at)) + 1);
   }
 
-  const dailyActivity = subscriptionPlan.id === "pro"
+  const dailyActivity = subscriptionPlan?.id === "pro"
     ? {
         steps: Number(activityLog?.steps) || null,
         sleep_hours: Number(sleepLog?.duration_hours) || null,
@@ -123,21 +93,27 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
           ? waterLogs.reduce((total: number, entry: any) => total + (Number(entry?.amount_ml) || 0), 0) / 1000
           : null,
       }
+    : isFreeUser
+    ? {
+        steps: 4200,
+        sleep_hours: 7.5,
+        water_liters: 1.8,
+      }
     : undefined;
 
   return (
     <FitnessDashboard
       user={user}
       profile={profile || {}}
-      activePlan={plan}
-      todayWorkout={workout}
-      weekWorkouts={weekWorkouts || []}
-      hasPlan={!!plan}
-      nutrition={plan?.plan_data?.nutrition}
-      lifestyle={plan?.plan_data?.lifestyle}
+      activePlan={effectivePlan}
+      todayWorkout={effectiveTodayWorkout}
+      weekWorkouts={effectiveWeekWorkouts}
+      hasPlan={!!effectivePlan}
+      nutrition={effectivePlan?.plan_data?.nutrition}
+      lifestyle={effectivePlan?.plan_data?.lifestyle}
       dailyActivity={dailyActivity}
       dayNumber={dayNumber}
-      premiumLevel={subscriptionPlan.id === "pro" ? "pro" : "core"}
+      premiumLevel={isFreeUser ? "free" : subscriptionPlan?.id === "pro" ? "pro" : "core"}
       targetDateStr={targetDateStr}
     />
   );

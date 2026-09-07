@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { WorkoutService } from "@/lib/services/fitness/workout-service";
+import { requireFitnessSubscription } from "@/lib/fitness/subscription/access";
 
 export async function PATCH(
   req: NextRequest,
@@ -13,6 +14,13 @@ export async function PATCH(
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await requireFitnessSubscription(user.id))) {
+      return NextResponse.json(
+        { error: "Active paid plan required", errorType: "PAYMENT_REQUIRED" },
+        { status: 402 }
+      );
     }
 
     const result = await WorkoutService.completeSession(user.id, sessionId);

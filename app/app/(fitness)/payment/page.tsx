@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import Script from "next/script";
 import {
   ChevronLeft,
@@ -56,7 +57,8 @@ export default function FitnessPaymentPage() {
   
   // In Fitness OS, the duration is always monthly, but we let them choose the tier
   const selectedPlan = "monthly";
-  const [level, setLevel] = useState<"core" | "pro">("pro");
+  const requestedPlan = searchParams.get("plan") || (searchParams.get("intent") === "upgrade_core" ? "core" : null);
+  const [level, setLevel] = useState<"core" | "pro">(requestedPlan === "core" ? "core" : "pro");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -430,6 +432,15 @@ export default function FitnessPaymentPage() {
               </span>
             )}
           </button>
+
+          <div className="mt-2.5 text-center">
+            <Link
+              href="/"
+              className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer"
+            >
+              Explore GrindLog for Free (View-Only Preview) →
+            </Link>
+          </div>
         </div>
       </div>
     </div>

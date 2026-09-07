@@ -1,4 +1,4 @@
-export type FitnessPlanId = "starter" | "core" | "pro";
+export type FitnessPlanId = "starter" | "core" | "pro" | "free";
 
 export type FitnessSubscriptionStatus = "created" | "active" | "paused" | "cancelled" | "expired";
 

@@ -59,8 +59,13 @@ export const getFitnessPlan = cache(async (userId: string): Promise<FitnessPlanC
     }
   }
 
-  return null;
+  return FITNESS_PLANS.free;
 });
+
+export async function isFitnessFree(userId: string): Promise<boolean> {
+  const plan = await getFitnessPlan(userId);
+  return !plan || plan.id === "free";
+}
 
 export async function isFitnessStarter(userId: string): Promise<boolean> {
   const plan = await getFitnessPlan(userId);
@@ -73,11 +78,11 @@ export async function isFitnessPro(userId: string): Promise<boolean> {
 }
 
 /**
- * Helper to ensure user has ANY active subscription.
+ * Helper to ensure user has ANY active paid subscription (Core or Pro).
  */
 export async function requireFitnessSubscription(userId: string): Promise<boolean> {
   const plan = await getFitnessPlan(userId);
-  return !!plan;
+  return !!plan && plan.id !== "free";
 }
 
 /**
@@ -92,7 +97,7 @@ export async function requireFitnessPro(userId: string): Promise<boolean> {
  */
 export async function canUseFitnessFeature(userId: string, feature: FitnessFeature): Promise<boolean> {
   const plan = await getFitnessPlan(userId);
-  if (!plan) return false;
+  if (!plan || plan.id === "free") return false;
   return plan.features.includes(feature);
 }
 

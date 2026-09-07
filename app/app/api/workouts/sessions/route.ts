@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { WorkoutService } from "@/lib/services/fitness/workout-service";
+import { requireFitnessSubscription } from "@/lib/fitness/subscription/access";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,6 +10,13 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await requireFitnessSubscription(user.id))) {
+      return NextResponse.json(
+        { error: "Active paid plan required to start workout sessions", errorType: "PAYMENT_REQUIRED" },
+        { status: 402 }
+      );
     }
 
     const { workoutId, allowEarlyStart = false } = await req.json();

@@ -1,12 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Flame, Clock, Zap, Circle, CheckCircle2, X, CalendarClock, Loader2 } from "lucide-react";
+import { ArrowRight, Flame, Clock, Zap, Circle, CheckCircle2, X, CalendarClock, Loader2, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { reopenWorkoutAction } from "@/app/actions/fitness";
+import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
 
 interface WorkoutSummaryCardProps {
   workout: any;
@@ -15,6 +16,8 @@ interface WorkoutSummaryCardProps {
   eyebrow?: string;
   scheduledLabel?: string;
   isUpcoming?: boolean;
+  isFree?: boolean;
+  onFreeClick?: () => void;
 }
 
 export function WorkoutSummaryCard({
@@ -23,11 +26,14 @@ export function WorkoutSummaryCard({
   hideStartButton = false,
   eyebrow,
   scheduledLabel,
-  isUpcoming = false
+  isUpcoming = false,
+  isFree = false,
+  onFreeClick,
 }: WorkoutSummaryCardProps) {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
   const [showEarlyStartConfirm, setShowEarlyStartConfirm] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const isCompleted = workout?.status === "completed";
   const exercises = workout?.fitness_os_exercises || [];
@@ -246,7 +252,21 @@ export function WorkoutSummaryCard({
 
           {/* Action Button */}
           {!hideStartButton && (
-            isTrulyCompleted && completedCount === exerciseCount ? (
+            isFree ? (
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => (onFreeClick ? onFreeClick() : setShowUpgradeModal(true))}
+                  className="w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] cursor-pointer bg-[#1A2619] border border-[#ADFF00]/40 text-[#ADFF00] hover:bg-[#ADFF00]/10"
+                >
+                  <Lock className="w-5 h-5 text-[#ADFF00]" />
+                  <span>START WORKOUT</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00] text-black px-2 py-0.5 rounded-full ml-1">
+                    Unlock
+                  </span>
+                </button>
+              </div>
+            ) : isTrulyCompleted && completedCount === exerciseCount ? (
               <Link
                 href={`/workout/${workout.id}/summary`}
                 className="w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] cursor-pointer bg-white/10 text-white hover:bg-white/20"
@@ -351,6 +371,13 @@ export function WorkoutSummaryCard({
           </div>
         </div>
       )}
+
+      <ProUpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Live Workout Sessions"
+        planRequired="any"
+      />
     </>
   );
 }

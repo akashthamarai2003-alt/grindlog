@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+import { requireFitnessSubscription } from "@/lib/fitness/subscription/access";
 
 export async function GET() {
   try {
@@ -35,6 +36,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated.' } },
         { status: 401 }
+      );
+    }
+
+    if (!(await requireFitnessSubscription(user.id))) {
+      return NextResponse.json(
+        { success: false, error: { code: 'SUBSCRIPTION_REQUIRED', message: 'Setting targets requires an active paid plan.' } },
+        { status: 403 }
       );
     }
 

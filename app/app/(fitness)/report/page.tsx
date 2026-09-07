@@ -519,8 +519,14 @@ export default async function AIStartingReportPage() {
         </div>
 
         {/* Continue Button */}
-        <div className="pt-4">
+        <div className="pt-4 flex flex-col items-center gap-3">
           <GeneratePlanButton />
+          <Link
+            href="/"
+            className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer"
+          >
+            Explore GrindLog in Free Preview Mode →
+          </Link>
         </div>
       </div>
     </div>

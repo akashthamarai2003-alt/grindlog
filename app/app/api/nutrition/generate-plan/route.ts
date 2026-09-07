@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { AINutritionService } from "@/lib/services/nutrition/ai-nutrition-service";
+import { isFitnessPro } from "@/lib/fitness/subscription/access";
 
 export async function POST() {
   try {
@@ -11,6 +12,13 @@ export async function POST() {
       return NextResponse.json(
         { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated.' } },
         { status: 401 }
+      );
+    }
+
+    if (!(await isFitnessPro(user.id))) {
+      return NextResponse.json(
+        { success: false, error: { code: 'PRO_REQUIRED', message: 'Meal plan generation is available on the Pro plan.' } },
+        { status: 403 }
       );
     }
 
