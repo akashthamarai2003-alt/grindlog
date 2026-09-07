@@ -17,7 +17,7 @@ import {
 } from "@/lib/fitness/ai/prompts";
 import { autoRepairPlanSafety, runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
-import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
+import { enrichPlanWithFoodLibrary, filterFoodCatalogForProfile } from "@/lib/fitness/validation/fitness-food-library";
 import { generateProNutritionLayer } from "@/lib/fitness/ai/nutrition-generator";
 import {
   clearGenerationAttempt,
@@ -79,6 +79,7 @@ export async function POST(req: Request) {
       { data: activePlan },
       { data: profile, error: profileError },
       { data: scan },
+      limitCheck,
     ] = await Promise.all([
       getFitnessPlan(user.id),
       supabase
@@ -97,6 +98,7 @@ export async function POST(req: Request) {
         .select("gemini_analysis")
         .eq("user_id", user.id)
         .maybeSingle(),
+      checkFitnessAILimit(supabase, user.id),
     ]);
 
     // ── Early-exit checks (same order as before) ────────────
@@ -116,6 +118,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: "Profile not found" },
         { status: 404 },
+      );
+    }
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Fitness AI limit reached for today. Please try again tomorrow.",
+        },
+        { status: 429 },
       );
     }
 
@@ -148,7 +159,9 @@ export async function POST(req: Request) {
         : Promise.resolve({ data: [] as any[] }),
       cachedDraftQuery.maybeSingle(),
     ]);
-    const foodCatalog: any[] = foodCatalogResult.data || [];
+    const rawFoodCatalog: any[] = foodCatalogResult.data || [];
+    // Filter strictly to user's onboarding diet & allergies, capping items to keep prompt lean & fast
+    const foodCatalog = filterFoodCatalogForProfile(rawFoodCatalog, profile);
 
     const userPrompt = buildFitnessPlanPrompt(
       profile,
@@ -320,19 +333,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // 5. Rate limit completed daily plan generations only. A provider failure
-    // should not consume the user's plan allowance.
-    const limitCheck = await checkFitnessAILimit(supabase, user.id);
-    if (!limitCheck.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Fitness AI limit reached for today. Please try again tomorrow.",
-        },
-        { status: 429 },
-      );
-    }
-
     // 6. Record before calling OpenAI and guarantee cleanup in finally block
     let attemptId: string | null = null;
     let planData: GeneratedPlanData | null = null;
@@ -351,17 +351,15 @@ export async function POST(req: Request) {
       for (let attempt = 1; attempt <= MAX_AUTOMATIC_GENERATION_ATTEMPTS; attempt++) {
         try {
           console.log(`Fitness AI Generation Attempt ${attempt}...`);
+          const isPro = subscriptionPlan.id === "pro";
           const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${subscriptionPlan.id === "pro" ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
+            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${isPro ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
             userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
             model: FITNESS_PLAN_MODEL,
-            // Setup is a synchronous request. Medium is the quality/latency
-            // compromise; deterministic safety/profile validators remain the
-            // safety barrier.
-            maxTokens: subscriptionPlan.id === "pro" ? 10000 : 7000,
-            minimumOutputTokens: subscriptionPlan.id === "pro" ? 10000 : 7000,
-            reasoningEffort: "medium",
-            promptCacheKey: subscriptionPlan.id === "pro" ? "fitness-plan-pro-v3" : "fitness-plan-core-v1",
+            maxTokens: isPro ? 10000 : 4500,
+            minimumOutputTokens: isPro ? 10000 : 4500,
+            reasoningEffort: isPro ? "medium" : "low",
+            promptCacheKey: isPro ? "fitness-plan-pro-v3" : "fitness-plan-core-v2",
             temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
             jsonSchema: {
               name: "fitness_plan",

@@ -17,7 +17,7 @@ import {
 } from "@/lib/fitness/ai/prompts";
 import { autoRepairPlanSafety, runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
-import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
+import { enrichPlanWithFoodLibrary, filterFoodCatalogForProfile } from "@/lib/fitness/validation/fitness-food-library";
 import {
   clearGenerationAttempt,
   clearUserGenerationAttempts,
@@ -64,39 +64,49 @@ export async function POST(req: Request) {
       await clearUserGenerationAttempts(supabase, user.id, "plan_generation_attempt");
     }
 
-    // Never spend AI tokens for an unpaid plan request, including direct API
-    // calls that bypass the payment page.
-    if (!(await requireFitnessSubscription(user.id))) {
-      return NextResponse.json(
-        { success: false, error: "Please complete payment before generating your Fitness plan.", errorType: "PAYMENT_REQUIRED" },
-        { status: 402 },
-      );
-    }
-    const subscriptionPlan = await getFitnessPlan(user.id);
+    // ──────────────────────────────────────────────────────────
+    // PARALLEL BATCH 1: Run all independent Supabase queries at once.
+    // ──────────────────────────────────────────────────────────
+    const [
+      subscriptionPlan,
+      { data: existingPlan },
+      limitCheck,
+      { data: profile, error: profileError },
+      { data: scan },
+    ] = await Promise.all([
+      getFitnessPlan(user.id),
+      supabase
+        .from("fitness_os_workout_plans")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle(),
+      checkFitnessAILimit(supabase, user.id),
+      supabase
+        .from("fitness_os_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single(),
+      supabase
+        .from("fitness_os_scans")
+        .select("gemini_analysis")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+
+    // ── Early-exit checks ──────────────────────────────────────
     if (!subscriptionPlan || subscriptionPlan.id === "free") {
       return NextResponse.json(
         { success: false, error: "Please complete payment before generating your Fitness plan.", errorType: "PAYMENT_REQUIRED" },
         { status: 402 },
       );
     }
-
-    // 2. Prevent duplicate active plans
-    const { data: existingPlan } = await supabase
-      .from("fitness_os_workout_plans")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
-
     if (existingPlan) {
       return NextResponse.json(
         { success: false, error: "An active plan already exists. Return to dashboard." },
         { status: 400 },
       );
     }
-
-    // 3. Rate Limit
-    const limitCheck = await checkFitnessAILimit(supabase, user.id);
     if (!limitCheck.allowed) {
       return NextResponse.json(
         {
@@ -106,14 +116,6 @@ export async function POST(req: Request) {
         { status: 429 },
       );
     }
-
-    // 4. Fetch Profile
-    const { data: profile, error: profileError } = await supabase
-      .from("fitness_os_profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
     if (profileError || !profile) {
       return NextResponse.json(
         { success: false, error: "Profile not found" },
@@ -121,16 +123,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4.5 Fetch latest Gemini Body Scan (if any)
-    const { data: scan } = await supabase
-      .from("fitness_os_scans")
-      .select("gemini_analysis")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    // 5. Call AI Server-Side
+    // ── Food catalog (Pro only) ────────────────────────────────
     const todayStr = new Date().toISOString().split("T")[0];
-    let foodCatalog: any[] = [];
+    let rawFoodCatalog: any[] = [];
     if (subscriptionPlan.id === "pro") {
       const { data } = await supabase
         .from("foods")
@@ -138,8 +133,11 @@ export async function POST(req: Request) {
         .eq("is_active", true)
         .eq("plan_eligible", true)
         .limit(250);
-      foodCatalog = data || [];
+      rawFoodCatalog = data || [];
     }
+    // Filter strictly to user's onboarding diet & allergies, capping items to keep prompt lean & fast
+    const foodCatalog = filterFoodCatalogForProfile(rawFoodCatalog, profile);
+
     const userPrompt = buildFitnessPlanPrompt(
       profile,
       todayStr,
@@ -199,14 +197,15 @@ export async function POST(req: Request) {
       for (let attempt = 1; attempt <= MAX_AUTOMATIC_GENERATION_ATTEMPTS; attempt++) {
         try {
           console.log(`Fitness AI Generation Attempt ${attempt}...`);
+          const isPro = subscriptionPlan.id === "pro";
           const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${subscriptionPlan.id === "pro" ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
+            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${isPro ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
             userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
             model: FITNESS_PLAN_MODEL,
-            maxTokens: subscriptionPlan.id === "starter" ? 7000 : 10000,
-            minimumOutputTokens: subscriptionPlan.id === "starter" ? 7000 : 10000,
-            reasoningEffort: "medium",
-            promptCacheKey: subscriptionPlan.id === "starter" ? "fitness-plan-core-v1" : "fitness-plan-pro-v3",
+            maxTokens: isPro ? 10000 : 4500,
+            minimumOutputTokens: isPro ? 10000 : 4500,
+            reasoningEffort: isPro ? "medium" : "low",
+            promptCacheKey: isPro ? "fitness-plan-pro-v3" : "fitness-plan-core-v2",
             temperature: 0.2,
             jsonSchema: {
               name: "fitness_plan",

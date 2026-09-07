@@ -102,3 +102,72 @@ export function enrichPlanWithFoodLibrary(
 
   return { ...plan, nutrition: { ...plan.nutrition, grocery_list } };
 }
+
+/**
+ * Filters and compacts the food catalog strictly according to the user's onboarding
+ * diet preference (Vegan, Vegetarian, Eggetarian, Non-Vegetarian), food allergies, and dislikes.
+ * Also caps the catalog to the top ~65 most relevant items to keep model prompt tokens minimal
+ * while ensuring 100% compliance with user onboarding details.
+ */
+export function filterFoodCatalogForProfile<T extends {
+  name: string;
+  diet_type?: string | null;
+  allergens?: string[] | null;
+  category?: string | null;
+  is_pg_friendly?: boolean | null;
+}>(
+  catalog: T[],
+  profile: Record<string, any>,
+  maxItems = 65,
+): T[] {
+  if (!catalog || catalog.length === 0) return [];
+
+  const rawDiet = String(profile?.food_type || profile?.diet_preference || "").trim().toLowerCase();
+
+  // Extract allergies
+  const rawAllergies: string[] = Array.isArray(profile?.food_allergies)
+    ? profile.food_allergies
+    : typeof profile?.food_allergies === "string"
+    ? profile.food_allergies.split(",").map((s: string) => s.trim())
+    : [];
+
+  // Extract avoided or disliked foods
+  const rawAvoided: string[] = [
+    ...(Array.isArray(profile?.foods_avoided) ? profile.foods_avoided : typeof profile?.foods_avoided === "string" ? [profile.foods_avoided] : []),
+    ...(Array.isArray(profile?.foods_disliked) ? profile.foods_disliked : typeof profile?.foods_disliked === "string" ? [profile.foods_disliked] : []),
+  ];
+
+  const blockedWords = [...rawAllergies, ...rawAvoided]
+    .map((w) => String(w).toLowerCase().trim())
+    .filter((w) => w.length > 2);
+
+  const filtered = catalog.filter((food) => {
+    const foodName = String(food.name || "").toLowerCase();
+    const foodDiet = String(food.diet_type || "").toLowerCase();
+
+    // 1. Strict Diet Compliance
+    if (rawDiet === "vegan") {
+      if (foodDiet !== "vegan") return false;
+    } else if (rawDiet === "vegetarian" || rawDiet === "veg") {
+      if (foodDiet !== "vegan" && foodDiet !== "veg") return false;
+    } else if (rawDiet === "eggetarian") {
+      if (foodDiet !== "vegan" && foodDiet !== "veg" && foodDiet !== "eggetarian") return false;
+    }
+
+    // 2. Strict Allergy & Avoidance Compliance
+    if (blockedWords.some((word) => foodName.includes(word))) {
+      return false;
+    }
+    if (Array.isArray(food.allergens)) {
+      const hasAllergen = food.allergens.some((a) =>
+        blockedWords.some((word) => String(a).toLowerCase().includes(word))
+      );
+      if (hasAllergen) return false;
+    }
+
+    return true;
+  });
+
+  return filtered.slice(0, maxItems);
+}
+

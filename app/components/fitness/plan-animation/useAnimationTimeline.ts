@@ -76,16 +76,16 @@ export function useAnimationTimeline(
       return clearScheduledWork;
     }
 
-    schedule(() => setPhase("AI_APPEAR"), 250);
-    schedule(() => setPhase("DATA_ENTER"), 550);
-    schedule(() => setPhase("NETWORK_FULL"), 2100);
+    schedule(() => setPhase("AI_APPEAR"), 180);
+    schedule(() => setPhase("DATA_ENTER"), 420);
+    schedule(() => setPhase("NETWORK_FULL"), 1300);
     schedule(() => {
       setPhase("ANALYZING");
       setScanIndex(0);
       scanInterval.current = setInterval(() => {
         setScanIndex((current) => (current + 1) % pillCountRef.current);
-      }, 1050);
-    }, 3800);
+      }, 900);
+    }, 2200);
 
     return clearScheduledWork;
   }, [clearScheduledWork, reducedMotion, schedule]);
