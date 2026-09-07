@@ -71,7 +71,11 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
 - Vegetarian: Paneer, curd, whey protein, soya chunks, lentils. No meat, fish, or eggs.
 - Vegan: 100% plant-based only. Use plant protein powder, tofu, soya chunks, soy milk, peanut butter, nuts, legumes. NEVER include dairy, eggs, whey, or meat.
 - For PG, Hostel, Home, or Office/Canteen: Pair EVERY core meal (Breakfast, Lunch, Dinner) with a concrete, budget-funded, high-protein add-on item so the user actually hits their daily protein target. Give no-cook or kettle-friendly hostel instructions.
-- Never write defeatist disclaimers stating that the protein target cannot be reached. Solve the protein equation using the user's monthly budget.
+- REAL-WORLD 30-DAY GROCERY ADD-ONS:
+  * NEVER include cooked curries, sabzis, gravies, chaats, or restaurant preparations in grocery_list (e.g. no "Chana Masala", "Chole", "Kala Chana Curry", "Chana Chaat"). Groceries must be raw, shelf-stable, packaged products bought from a store (Blinkit/Amazon/Kirana).
+  * Valid retail packaging units ONLY: "kg", "grams", "liters", "packs", "tubs", "jars", "cartons", "packets", or "pieces". NEVER use "bowls", "plates", "servings", or "handfuls".
+  * NEVER duplicate variations of the same base food (e.g. max 1 chana/chickpea item).
+  * For budgets ₹2,000–5,000+, include high-value shelf-stable protein anchors: Protein powder tub (1kg), Peanut butter jar (1kg), Soy/dairy milk cartons, Rolled oats, and Soya chunks to reach 80–95% of monthly budget reference INR.
 - For Lose Fat or Cut, mention limiting added sugar, sugary drinks, deep-fried foods, and frequent fast food; never demand zero sugar or zero oil.
 - Use realistic INR prices and concise instructions.`;
 

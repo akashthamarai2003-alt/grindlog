@@ -22,12 +22,28 @@ function foodNameAliases(value: unknown): string[] {
   const name = normaliseFoodName(value);
   const aliases = [name];
 
-  if (/soy|soya/.test(name) && /chunk/.test(name)) aliases.push("soy chunks cooked");
-  if (/chickpea|chana/.test(name)) aliases.push("chickpeas chana masala");
+  // Distinguish raw/dry soya chunks from cooked curry
+  if (/soy|soya/.test(name) && /chunk/.test(name)) {
+    if (!/raw|dry/i.test(name)) aliases.push("soya chunks curry cooked");
+  }
+  // Distinguish roasted chana snack from cooked chana curries
+  if (/roasted\s+chana/i.test(name)) {
+    aliases.push("roasted chana dry chickpeas");
+  } else if (/kala\s+chana/i.test(name)) {
+    aliases.push("kala chana curry");
+  } else if (/chole|chana\s+masala/i.test(name)) {
+    aliases.push("chole chana masala");
+  } else if (/chana\s+chaat/i.test(name)) {
+    aliases.push("chana chaat");
+  } else if (/chickpea|chana/.test(name)) {
+    aliases.push("chickpeas chana masala");
+  }
+
   if (/kidney bean|rajma/.test(name)) aliases.push("rajma kidney beans");
-  if (/peanut/.test(name)) aliases.push("roasted peanuts");
-  if (/oat/.test(name)) aliases.push("oats cooked");
-  if (/mixed vegetable/.test(name)) aliases.push("mixed vegetables");
+  if (/peanut\s+butter/.test(name)) aliases.push("natural peanut butter");
+  else if (/peanut/.test(name)) aliases.push("roasted peanuts");
+  if (/oat/.test(name)) aliases.push("oats with milk", "masala oats");
+  if (/mixed vegetable/.test(name)) aliases.push("mixed vegetable sabzi");
   if (name === "banana" || name === "apple") aliases.push(name);
 
   return [...new Set(aliases)];
@@ -37,17 +53,33 @@ function findLibraryFood(
   itemName: unknown,
   foodLibrary: FitnessFoodLibraryItem[],
 ): FitnessFoodLibraryItem | null {
+  const itemNameNormalised = normaliseFoodName(itemName);
+  if (!itemNameNormalised) return null;
+
+  // 1. Direct exact normalized name match FIRST
+  const directExact = foodLibrary.find(
+    (food) => normaliseFoodName(food.name) === itemNameNormalised,
+  );
+  if (directExact) return directExact;
+
+  // 2. Exact match ignoring parenthetical qualifiers e.g. "Natural Peanut Butter (1 kg jar)" -> "Natural Peanut Butter"
+  const baseItemName = itemNameNormalised.replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+  if (baseItemName && baseItemName !== itemNameNormalised) {
+    const baseMatch = foodLibrary.find(
+      (food) => normaliseFoodName(food.name) === baseItemName,
+    );
+    if (baseMatch) return baseMatch;
+  }
+
+  // 3. Carefully guarded alias match
   const itemNames = foodNameAliases(itemName);
-  const exact = foodLibrary.find((food) => {
+  const aliasMatch = foodLibrary.find((food) => {
     const foodNames = foodNameAliases(food.name);
     return itemNames.some((item) => foodNames.includes(item));
   });
-  if (exact) return exact;
+  if (aliasMatch) return aliasMatch;
 
-  // Permit a safe subset match for names such as "Banana (medium)" while
-  // avoiding fuzzy matches between unrelated foods.
-  const itemNameNormalised = normaliseFoodName(itemName);
-  if (!itemNameNormalised) return null;
+  // 4. Safe subset match
   return foodLibrary.find((food) => {
     const foodName = normaliseFoodName(food.name);
     return foodName && (foodName.includes(itemNameNormalised) || itemNameNormalised.includes(foodName));

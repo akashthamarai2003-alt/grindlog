@@ -80,21 +80,61 @@ function dailyQuantityLabel(item: GroceryItem): string | null {
   const unit = String(item.unit || '').trim().toLowerCase();
   const name = String(item.name || 'item').trim().toLowerCase();
 
-  if (unit === 'pieces' || unit === 'piece') return `${formatQuantity(quantity / 30)} ${name} / day`;
-  if (unit === 'liters' || unit === 'liter' || unit === 'l') return `${formatQuantity((quantity * 1000) / 30)} ml / day`;
-  if (unit === 'kg' || unit === 'kilograms' || unit === 'kilogram') return `${formatQuantity((quantity * 1000) / 30)} g / day`;
-  if (unit === 'grams' || unit === 'gram' || unit === 'g') return `${formatQuantity(quantity / 30)} g / day`;
-  return `${formatQuantity(quantity / 30)} ${unit || 'serving'} / day`;
+  if (unit === 'pieces' || unit === 'piece') {
+    const daily = quantity / 30;
+    return `${formatQuantity(daily)} ${daily === 1 ? 'piece' : 'pieces'} / day`;
+  }
+  if (unit === 'liters' || unit === 'liter' || unit === 'l') {
+    return `${formatQuantity((quantity * 1000) / 30)} ml / day`;
+  }
+  if (unit === 'kg' || unit === 'kilograms' || unit === 'kilogram') {
+    return `${formatQuantity((quantity * 1000) / 30)} g / day`;
+  }
+  if (unit === 'grams' || unit === 'gram' || unit === 'g') {
+    return `${formatQuantity(quantity / 30)} g / day`;
+  }
+  if (unit === 'tubs' || unit === 'tub') {
+    return `~1 scoop (33g) / day`;
+  }
+  if (unit === 'jars' || unit === 'jar') {
+    return `~2 tbsp (32g) / day`;
+  }
+  if (unit === 'cartons' || unit === 'carton') {
+    return `${formatQuantity((quantity * 1000) / 30)} ml / day`;
+  }
+  if (unit === 'packs' || unit === 'pack' || unit === 'packets' || unit === 'packet') {
+    return `${formatQuantity((quantity * 500) / 30)} g / day`;
+  }
+
+  const daily = quantity / 30;
+  let cleanUnit = unit || 'serving';
+  if (daily === 1 && cleanUnit.endsWith('s') && !cleanUnit.endsWith('ss')) {
+    cleanUnit = cleanUnit.slice(0, -1);
+  }
+  return `${formatQuantity(daily)} ${cleanUnit} / day`;
 }
 
 function monthlyQuantityLabel(item: GroceryItem): string {
   const quantity = Number(item.monthly_quantity);
   const shownQuantity = Number.isFinite(quantity) && quantity > 0 ? formatQuantity(quantity) : '--';
   const unit = String(item.unit || 'units').trim().toLowerCase();
-  const name = String(item.name || 'item').trim().toLowerCase();
-  return unit === 'pieces' || unit === 'piece'
-    ? `${shownQuantity} ${name} / month`
-    : `${shownQuantity} ${unit} / month`;
+
+  if (unit === 'kg' || unit === 'kilograms' || unit === 'kilogram') return `${shownQuantity} kg / month`;
+  if (unit === 'liters' || unit === 'liter' || unit === 'l') return `${shownQuantity} L / month`;
+  if (unit === 'grams' || unit === 'gram' || unit === 'g') return `${shownQuantity} g / month`;
+  if (unit === 'pieces' || unit === 'piece') return `${shownQuantity} ${quantity === 1 ? 'piece' : 'pieces'} / month`;
+  if (unit === 'tubs' || unit === 'tub') return `${shownQuantity} ${quantity === 1 ? 'tub (1 kg)' : 'tubs'} / month`;
+  if (unit === 'jars' || unit === 'jar') return `${shownQuantity} ${quantity === 1 ? 'jar (1 kg)' : 'jars'} / month`;
+  if (unit === 'cartons' || unit === 'carton') return `${shownQuantity} ${quantity === 1 ? 'carton (1L)' : 'cartons (1L)'} / month`;
+  if (unit === 'packs' || unit === 'pack' || unit === 'packets' || unit === 'packet') {
+    return `${shownQuantity} ${quantity === 1 ? 'pack' : 'packs'} / month`;
+  }
+
+  let cleanUnit = unit || 'units';
+  if (quantity === 1 && cleanUnit.endsWith('s') && !cleanUnit.endsWith('ss')) {
+    cleanUnit = cleanUnit.slice(0, -1);
+  }
+  return `${shownQuantity} ${cleanUnit} / month`;
 }
 
 export default function GroceryTab({
@@ -317,7 +357,14 @@ export default function GroceryTab({
                             const unitPrice = quantity > 0 ? price / quantity : 0;
                             handleUpdateItem(index, { monthly_quantity: nextQuantity, estimated_price: Math.round(unitPrice * nextQuantity) });
                           }} className="p-1 text-gray-400 transition-colors hover:text-white"><Minus size={14} /></button>
-                          <span className="min-w-[5.4rem] px-2 text-center text-[11px] font-extrabold text-gray-200">{formatQuantity(quantity)} {String(item.unit || 'units').toUpperCase()}</span>
+                          <span className="min-w-[5.4rem] px-2 text-center text-[11px] font-extrabold text-gray-200">
+                            {formatQuantity(quantity)} {
+                              (quantity === 1 && String(item.unit || '').endsWith('s') && !String(item.unit || '').endsWith('ss')
+                                ? String(item.unit).slice(0, -1)
+                                : String(item.unit || 'units')
+                              ).toUpperCase()
+                            }
+                          </span>
                           <button type="button" aria-label={`Increase ${item.name || 'item'} quantity`} onClick={() => {
                             const nextQuantity = quantity + 1;
                             const unitPrice = quantity > 0 ? price / quantity : 0;

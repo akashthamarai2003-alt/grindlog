@@ -547,13 +547,207 @@ export function normalisePlanProfileDetails(
     }
   }
 
-  // Auto-scale grocery budget if slightly over budget
+  // Normalize, deduplicate, and convert cooked dishes to real-world packaged groceries
+  const rawDietStr = String(profile?.food_type || profile?.diet_preference || "").toLowerCase();
+  const isProfileVegan = !isNonVegetarian && rawDietStr.includes("vegan");
+  const isProfileVeg = !isNonVegetarian && !isProfileVegan && (rawDietStr.includes("vegetarian") || rawDietStr.includes("veg"));
+  const budgetRef = parseBudgetPlanningReference(profile.nutrition_budget) || 0;
   const budgetMaximum = parseBudgetMaximum(profile.nutrition_budget);
-  let groceryList = (normalisedPlan.nutrition.grocery_list || []).map((item) => ({
-    ...item,
-    name: sanitizeFoodItem(item.name),
-  }));
 
+  // 1. Sanitize cooked curries/dishes and invalid units
+  const sanitizedList = (normalisedPlan.nutrition.grocery_list || []).map((item) => {
+    let name = sanitizeFoodItem(String(item.name || "").trim());
+    let unit = String(item.unit || "").trim().toLowerCase();
+    let quantity = Number(item.monthly_quantity) || 1;
+    let price = Number(item.estimated_price) || 0;
+    let category = item.category || "Protein";
+    let reason = item.reason || "";
+
+    // Convert cooked curries and prepared dishes into real store-bought packaged groceries
+    if (/chickpeas?\s*\(?chana\s*masala\)?|chole\s*\/?\s*chana\s*masala|kala\s*chana\s*curry/i.test(name)) {
+      name = "Roasted Chana (Dry Chickpeas)";
+      category = "Snack";
+      unit = "packs";
+      quantity = 2;
+      price = Math.min(price > 0 ? price : 360, 360);
+      reason = "Crunchy, ready-to-eat dry snack packed with protein and complex carbs.";
+    } else if (/chana\s*chaat/i.test(name)) {
+      name = "Roasted Chana (Dry Chickpeas)";
+      category = "Snack";
+      unit = "packs";
+      quantity = 2;
+      price = Math.min(price > 0 ? price : 360, 360);
+    } else if (/dal\s*(tadka|fry)|yellow\s*moong\s*dal/i.test(name)) {
+      name = "Yellow Moong Dal (Raw / 1 kg)";
+      category = "Staple";
+      unit = "kg";
+      quantity = 1;
+      price = Math.min(price > 0 ? price : 180, 180);
+    } else if (/rajma\s*curry|kidney\s*beans\s*curry/i.test(name)) {
+      name = "Raw Rajma (Kidney Beans / 1 kg)";
+      category = "Staple";
+      unit = "kg";
+      quantity = 1;
+      price = Math.min(price > 0 ? price : 200, 200);
+    } else if (/soya\s*chunks\s*curry/i.test(name)) {
+      name = "Soya Chunks (Raw / Dry)";
+      category = "Protein";
+      unit = "packs";
+      quantity = 2;
+      price = Math.min(price > 0 ? price : 150, 150);
+      reason = "Shelf-stable protein powerhouse (52% protein); soak in kettle hot water.";
+    } else if (/palak\s*paneer|matar\s*paneer|paneer\s*butter\s*masala/i.test(name)) {
+      name = isProfileVegan ? "Tofu (Firm)" : "Fresh Paneer (Raw)";
+      category = "Protein";
+      unit = "packs";
+      quantity = 4;
+      price = Math.min(price > 0 ? price : 450, 450);
+    } else if (/chicken\s*curry|chicken\s*keema|butter\s*chicken/i.test(name)) {
+      name = "Chicken Breast (Raw)";
+      category = "Protein";
+      unit = "kg";
+      quantity = 3;
+      price = Math.min(price > 0 ? price : 900, 900);
+    }
+
+    // Replace invalid units like bowls, plates, servings, handfuls with retail units
+    if (/bowl|plate|serving|handful/i.test(unit)) {
+      if (/protein/i.test(name)) {
+        unit = "tubs";
+        quantity = 1;
+      } else if (/peanut\s*butter/i.test(name)) {
+        unit = "jars";
+        quantity = 1;
+      } else if (/milk/i.test(name)) {
+        unit = "cartons";
+        quantity = Math.max(2, Math.min(10, Math.round(quantity / 4) || 6));
+      } else if (/soya\s*chunk/i.test(name)) {
+        unit = "packs";
+        quantity = Math.max(1, Math.min(4, Math.round(quantity / 15) || 2));
+      } else if (/oat|chana|dal|rice|quinoa/i.test(name)) {
+        unit = "kg";
+        quantity = Math.max(1, Math.min(4, Math.round(quantity / 15) || 1));
+      } else {
+        unit = "packs";
+        quantity = Math.max(1, Math.min(4, Math.round(quantity / 15) || 1));
+      }
+    }
+
+    return {
+      ...item,
+      name,
+      unit,
+      monthly_quantity: quantity,
+      estimated_price: price,
+      category,
+      reason,
+    };
+  });
+
+  // 2. Deduplicate repeating base ingredients (never spam 4-5 chana items)
+  const seenFoodKeys = new Set<string>();
+  const deduplicatedList: typeof sanitizedList = [];
+  let chanaCount = 0;
+
+  for (const item of sanitizedList) {
+    const key = String(item.name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ");
+    const isChana = /chana|chickpea/.test(key);
+    if (isChana) {
+      chanaCount++;
+      if (chanaCount > 1) continue; // Keep only 1 chana item
+    }
+    const baseRoot = isChana
+      ? "chickpea"
+      : /peanut\s*butter/.test(key)
+      ? "peanut_butter"
+      : /peanut/.test(key)
+      ? "peanut"
+      : /soya?\s*chunk/.test(key)
+      ? "soya_chunk"
+      : /protein/.test(key)
+      ? "protein_powder"
+      : /milk/.test(key)
+      ? "milk"
+      : /oat/.test(key)
+      ? "oats"
+      : key;
+
+    if (seenFoodKeys.has(baseRoot)) continue;
+    seenFoodKeys.add(baseRoot);
+    deduplicatedList.push(item);
+  }
+
+  // 3. For higher budgets (₹2,500+), proactively bridge missing essential protein anchors
+  const currentTotalCost = deduplicatedList.reduce((sum, item) => sum + (Number(item.estimated_price) || 0), 0);
+  if (budgetRef >= 2500 && currentTotalCost < budgetRef * 0.75) {
+    const hasProteinPowder = deduplicatedList.some((i) => /protein/i.test(i.name));
+    const hasPeanutButter = deduplicatedList.some((i) => /peanut\s*butter/i.test(i.name));
+    const hasMilk = deduplicatedList.some((i) => /milk/i.test(i.name));
+    const hasOats = deduplicatedList.some((i) => /oat/i.test(i.name));
+
+    if (!hasProteinPowder) {
+      if (isProfileVegan) {
+        deduplicatedList.unshift({
+          name: "Plant Protein (Pea & Brown Rice)",
+          monthly_quantity: 1,
+          unit: "tubs",
+          estimated_price: 2200,
+          category: "Protein",
+          is_optional: false,
+          reason: "Premium plant protein supplement to hit 25g+ protein daily with zero cooking.",
+        });
+      } else if (isProfileVeg || !isNonVegetarian) {
+        deduplicatedList.unshift({
+          name: "Whey Protein Concentrate",
+          monthly_quantity: 1,
+          unit: "tubs",
+          estimated_price: 2200,
+          category: "Protein",
+          is_optional: false,
+          reason: "High-yield protein powder to comfortably achieve daily protein targets.",
+        });
+      }
+    }
+
+    if (!hasPeanutButter && deduplicatedList.reduce((sum, item) => sum + (Number(item.estimated_price) || 0), 0) < budgetRef * 0.85) {
+      deduplicatedList.push({
+        name: "Natural Peanut Butter",
+        monthly_quantity: 1,
+        unit: "jars",
+        estimated_price: 450,
+        category: "Nuts & Snacks",
+        is_optional: false,
+        reason: "Zero-cook shelf-stable calorie and protein booster for room storage.",
+      });
+    }
+
+    if (isProfileVegan && !hasMilk && deduplicatedList.reduce((sum, item) => sum + (Number(item.estimated_price) || 0), 0) < budgetRef * 0.85) {
+      deduplicatedList.push({
+        name: "Soy Milk (Unsweetened)",
+        monthly_quantity: 6,
+        unit: "cartons",
+        estimated_price: 720,
+        category: "Dairy",
+        is_optional: false,
+        reason: "Ready-to-drink plant milk with 8.5g protein per glass; mix with protein powder or oats.",
+      });
+    }
+
+    if (!hasOats && deduplicatedList.reduce((sum, item) => sum + (Number(item.estimated_price) || 0), 0) < budgetRef * 0.85) {
+      deduplicatedList.push({
+        name: "Rolled Oats",
+        monthly_quantity: 1,
+        unit: "kg",
+        estimated_price: 200,
+        category: "Staple",
+        is_optional: false,
+        reason: "Instant complex carbohydrate source; soak overnight in milk or hot water.",
+      });
+    }
+  }
+
+  // 4. Auto-scale grocery budget if slightly over budget
+  let groceryList = deduplicatedList;
   if (budgetMaximum && budgetMaximum > 0 && groceryList.length > 0) {
     const totalCost = groceryList.reduce((sum, item) => sum + (Number(item.estimated_price) || 0), 0);
     if (totalCost > budgetMaximum) {
