@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
@@ -186,9 +187,14 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     setData(prev => ({ ...prev, ...updates }));
   };
 
+  useEffect(() => {
+    if (step >= 15) {
+      router.prefetch("/report");
+    }
+  }, [step, router]);
+
   const handleComplete = () => {
-    router.push("/report");
-    router.refresh();
+    router.replace("/report");
   };
 
   const variants = {
@@ -2654,18 +2660,33 @@ let lastSubmissionSessionId: string | null = null;
 let lastSubmissionPromise: Promise<any> | null = null;
 
 const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => void, data: any, sessionId?: string }) => {
+  const router = useRouter();
   const [phase, setPhase] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 2000);
-    const t2 = setTimeout(() => setPhase(2), 3500);
-    const t3 = setTimeout(() => setPhase(3), 5500);
-    const t4 = setTimeout(() => setPhase(4), 7500);
+    // Eagerly prefetch the /report route as soon as AIAnalysisScreen mounts
+    router.prefetch("/report");
+  }, [router]);
 
+  useEffect(() => {
     let isMounted = true;
+    let fastForwardTimer: NodeJS.Timeout | null = null;
+
+    const t1 = setTimeout(() => {
+      if (isMounted) setPhase(prev => Math.max(prev, 1));
+    }, 1500);
+    const t2 = setTimeout(() => {
+      if (isMounted) setPhase(prev => Math.max(prev, 2));
+    }, 3000);
+    const t3 = setTimeout(() => {
+      if (isMounted) setPhase(prev => Math.max(prev, 3));
+    }, 4500);
+    const t4 = setTimeout(() => {
+      if (isMounted) setPhase(prev => Math.max(prev, 4));
+    }, 6000);
 
     // Use sessionId for deduping if provided, otherwise fallback to always fetching
     // Strict Mode / re-mounts with the same sessionId will reuse the promise.
@@ -2687,6 +2708,14 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
       if (isMounted) {
         if (res.success) {
           setIsDone(true);
+          router.prefetch("/report");
+          // Smoothly advance phases to completion so user doesn't wait unnecessarily
+          setPhase(prev => Math.max(prev, 3));
+          fastForwardTimer = setTimeout(() => {
+            if (isMounted) {
+              setPhase(4);
+            }
+          }, 350);
         } else {
           lastSubmissionSessionId = null;
           lastSubmissionPromise = null;
@@ -2705,8 +2734,9 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
     return () => { 
       isMounted = false;
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
+      if (fastForwardTimer) clearTimeout(fastForwardTimer);
     };
-  }, [data]);
+  }, [data, router, sessionId]);
 
   const handleCompleteClick = () => {
     setIsNavigating(true);
@@ -2774,27 +2804,44 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
-                <button 
-                  onClick={handleCompleteClick} 
-                  disabled={(!isDone && !error) || isNavigating}
-                  className={`w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center ${error ? 'bg-red-500/20 text-red-500 border border-red-500' : 'bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33]'} disabled:opacity-70 disabled:cursor-not-allowed`}
-                >
-                  {error ? (
-                    "Open Report to Try Again"
-                  ) : !isDone ? (
+                {error ? (
+                  <button 
+                    onClick={handleCompleteClick} 
+                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-red-500/20 text-red-500 border border-red-500 cursor-pointer"
+                  >
+                    Open Report to Try Again
+                  </button>
+                ) : !isDone ? (
+                  <button 
+                    disabled
+                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] opacity-80 cursor-not-allowed"
+                  >
                     <div className="flex items-center gap-2">
                       <Loader2 className="animate-spin w-5 h-5" />
                       <span>Finalizing Strategy...</span>
                     </div>
-                  ) : isNavigating ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="animate-spin w-5 h-5" />
-                      <span>Loading Plan...</span>
-                    </div>
-                  ) : (
-                    "View Transformation Plan"
-                  )}
-                </button>
+                  </button>
+                ) : (
+                  <Link
+                    href="/report"
+                    replace
+                    prefetch={true}
+                    onClick={() => {
+                      setIsNavigating(true);
+                      onComplete();
+                    }}
+                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33] active:scale-[0.99] cursor-pointer"
+                  >
+                    {isNavigating ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="animate-spin w-5 h-5" />
+                        <span>Opening Report...</span>
+                      </div>
+                    ) : (
+                      "View Transformation Plan"
+                    )}
+                  </Link>
+                )}
                 {error && (
                   <p className="mt-3 text-center text-sm leading-relaxed text-red-300">
                     {error}
