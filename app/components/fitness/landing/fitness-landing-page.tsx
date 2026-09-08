@@ -840,14 +840,14 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
                     <div className="flex items-center justify-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setCompareSliderPos(85)}
+                        onClick={() => setCompareSliderPos(90)}
                         className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
                           compareSliderPos > 70
                             ? "bg-white/20 text-white border-white/40 shadow-sm"
                             : "bg-black/40 text-white/50 border-white/10 hover:text-white"
                         }`}
                       >
-                        Show Before (Day 1)
+                        Show Before
                       </button>
                       <button
                         type="button"
@@ -862,15 +862,33 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
                       </button>
                       <button
                         type="button"
-                        onClick={() => setCompareSliderPos(15)}
+                        onClick={() => setCompareSliderPos(10)}
                         className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
                           compareSliderPos < 30
                             ? "bg-[#ADFF00] text-black border-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.35)]"
                             : "bg-black/40 text-white/50 border-white/10 hover:text-white"
                         }`}
                       >
-                        Show After (Day 60)
+                        Show After
                       </button>
+                    </div>
+
+                    {/* Dedicated Info Row: Zero overlapping text on the photo! */}
+                    <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#0E170E] border border-[#1C2C1B] text-xs max-w-[340px] sm:max-w-[380px] mx-auto">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-white/40 shrink-0" />
+                        <div>
+                          <span className="font-bold text-white/60 block text-[10px] uppercase tracking-wider">Day 1 Baseline</span>
+                          <span className="font-black text-white text-xs">55.0 kg · 22.4% BF</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <span className="font-bold text-[#ADFF00] text-[10px] uppercase tracking-wider">Day 60 Goal</span>
+                          <span className="w-2 h-2 rounded-full bg-[#ADFF00] shadow-[0_0_8px_#ADFF00] shrink-0" />
+                        </div>
+                        <span className="font-black text-[#ADFF00] text-xs">50.0 kg · 15.8% BF</span>
+                      </div>
                     </div>
 
                     {/* Interactive Split Slider Container */}
@@ -885,7 +903,7 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
                           handleSliderInteraction(e.clientX);
                         }
                       }}
-                      className="relative w-full max-w-md sm:max-w-lg mx-auto aspect-[3/4] sm:aspect-[4/5] min-h-[380px] sm:min-h-[460px] rounded-2xl overflow-hidden border border-[#233822] bg-[#070D07] select-none shadow-[0_12px_40px_rgba(0,0,0,0.85)] cursor-ew-resize touch-none"
+                      className="relative w-full max-w-[340px] sm:max-w-[380px] aspect-[9/14] mx-auto rounded-2xl overflow-hidden border border-[#233822] bg-[#070D07] select-none shadow-[0_16px_40px_rgba(0,0,0,0.9)] cursor-ew-resize touch-none"
                     >
                       {/* 1. Underlying Layer: AFTER Transformation */}
                       <div className="absolute inset-0">
@@ -893,27 +911,15 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
                           src="/images/transformation-after.png"
                           alt="Transformed shape - Day 60"
                           fill
-                          sizes="(max-width: 768px) 100vw, 520px"
-                          className="object-cover object-top sm:object-center select-none pointer-events-none"
+                          sizes="(max-width: 768px) 100vw, 380px"
+                          className="object-cover object-top select-none pointer-events-none"
                           priority
                         />
-                        {/* Top & Bottom Vignettes for High Contrast Text */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/60 pointer-events-none" />
 
-                        {/* Top-Right After Badge */}
-                        <div className="absolute top-3.5 right-3.5 z-10 pointer-events-none">
-                          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.6)] flex items-center gap-1.5">
-                            <Trophy className="w-3.5 h-3.5" /> Day 60 · Shredded
-                          </span>
-                        </div>
-
-                        {/* Bottom-Right After Stats Card */}
-                        <div className="absolute bottom-3.5 right-3.5 z-10 text-right bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#ADFF00]/40 shadow-lg pointer-events-none">
-                          <span className="text-[10px] font-black text-[#ADFF00] block uppercase tracking-wider">
-                            Target Achieved
-                          </span>
-                          <span className="text-xs sm:text-sm font-black text-white">
-                            50.0 kg · 15.8% BF
+                        {/* Top-Right After Mini Badge (Never overlaps) */}
+                        <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.6)] flex items-center gap-1">
+                            <Trophy className="w-3 h-3" /> After
                           </span>
                         </div>
                       </div>
@@ -927,36 +933,25 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
                           src="/images/transformation-before.png"
                           alt="Baseline shape - Day 1"
                           fill
-                          sizes="(max-width: 768px) 100vw, 520px"
-                          className="object-cover object-top sm:object-center select-none"
+                          sizes="(max-width: 768px) 100vw, 380px"
+                          className="object-cover object-top select-none"
                           priority
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/60" />
 
-                        {/* Top-Left Before Badge */}
-                        <div className="absolute top-3.5 left-3.5 z-10">
-                          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-black/85 text-white/90 border border-white/20 backdrop-blur-md flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-white/60" /> Day 1 · Baseline
-                          </span>
-                        </div>
-
-                        {/* Bottom-Left Before Stats Card */}
-                        <div className="absolute bottom-3.5 left-3.5 z-10 text-left bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/15 shadow-lg">
-                          <span className="text-[10px] font-bold text-white/50 block uppercase tracking-wider">
-                            Starting Baseline
-                          </span>
-                          <span className="text-xs sm:text-sm font-black text-white/90">
-                            55.0 kg · 22.4% BF
+                        {/* Top-Left Before Mini Badge (Never overlaps) */}
+                        <div className="absolute top-2.5 left-2.5 z-10">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-black/75 text-white/90 border border-white/20 backdrop-blur-md flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-white/60" /> Before
                           </span>
                         </div>
                       </div>
 
                       {/* 3. Interactive Split Divider Line & Glowing Handle */}
                       <div
-                        className="absolute top-0 bottom-0 w-[3px] bg-[#ADFF00] z-20 pointer-events-none shadow-[0_0_15px_rgba(173,255,0,0.9)]"
+                        className="absolute top-0 bottom-0 w-[2px] bg-[#ADFF00] z-20 pointer-events-none shadow-[0_0_12px_rgba(173,255,0,0.9)]"
                         style={{ left: `${compareSliderPos}%` }}
                       >
-                        <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-[#ADFF00] text-black flex items-center justify-center shadow-[0_0_25px_rgba(173,255,0,0.9)] font-black text-xs border-2 border-black">
+                        <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#ADFF00] text-black flex items-center justify-center shadow-[0_0_20px_rgba(173,255,0,0.9)] font-black text-xs border-2 border-black">
                           ↔
                         </div>
                       </div>
@@ -971,12 +966,12 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
                         className="sr-only"
                         aria-label="Drag before and after split slider"
                       />
-
-                      {/* Center Hint */}
-                      <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white/80 uppercase tracking-widest pointer-events-none z-20 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg">
-                        ← Drag to Compare →
-                      </div>
                     </div>
+
+                    {/* Instruction Hint (Cleanly placed below the image, zero collision) */}
+                    <p className="text-[11px] font-bold text-white/40 uppercase tracking-widest text-center">
+                      ← Drag green slider to compare →
+                    </p>
                   </div>
                 ) : (
                   /* Side-by-Side Mode */
@@ -988,32 +983,23 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
                           <span className="text-xs font-bold text-white/60 bg-white/5 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
                             <Clock className="w-3.5 h-3.5 text-white/40" /> Day 1 Baseline
                           </span>
-                          <span className="text-xs font-bold text-white/40">Aug 9 Check-in</span>
+                          <span className="text-xs font-bold text-white/50">55.0 kg · 22.4% BF</span>
                         </div>
 
-                        <div className="relative aspect-[3/4] sm:aspect-[4/5] min-h-[300px] w-full rounded-xl overflow-hidden border border-white/10 my-2 bg-black/40">
+                        <div className="relative aspect-[9/14] w-full rounded-xl overflow-hidden border border-white/10 my-2 bg-black/40">
                           <Image
                             src="/images/transformation-before.png"
                             alt="Baseline Check-in Photo"
                             fill
                             sizes="(max-width: 768px) 100vw, 400px"
-                            className="object-cover object-top sm:object-center select-none pointer-events-none"
+                            className="object-cover object-top select-none pointer-events-none"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
-                          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs">
-                            <span className="font-bold text-white/80 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10">
-                              Starting Shape
-                            </span>
-                            <span className="font-black text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10">
-                              55.0 kg · 22.4% BF
-                            </span>
-                          </div>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-white/50 pt-2 border-t border-white/5">
-                        <span>Baseline Posture & Body Fat</span>
-                        <span className="font-bold text-white/70">Front Angle</span>
+                        <span>Starting Posture & Baseline Fat</span>
+                        <span className="font-bold text-white/70">Aug 9 Check-in</span>
                       </div>
                     </div>
 
@@ -1024,32 +1010,23 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
                           <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-1 rounded-full uppercase tracking-wider border border-[#ADFF00]/20 flex items-center gap-1.5">
                             <Trophy className="w-3.5 h-3.5 text-[#ADFF00]" /> Day 60 Transformed
                           </span>
-                          <span className="text-xs font-black text-[#ADFF00]">-5.0 kg Target Hit</span>
+                          <span className="text-xs font-black text-[#ADFF00]">50.0 kg · 15.8% BF</span>
                         </div>
 
-                        <div className="relative aspect-[3/4] sm:aspect-[4/5] min-h-[300px] w-full rounded-xl overflow-hidden border border-[#ADFF00]/30 my-2 bg-black/40 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
+                        <div className="relative aspect-[9/14] w-full rounded-xl overflow-hidden border border-[#ADFF00]/30 my-2 bg-black/40 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
                           <Image
                             src="/images/transformation-after.png"
                             alt="Transformed Goal Photo"
                             fill
                             sizes="(max-width: 768px) 100vw, 400px"
-                            className="object-cover object-top sm:object-center select-none pointer-events-none"
+                            className="object-cover object-top select-none pointer-events-none"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
-                          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs">
-                            <span className="font-black text-[#ADFF00] bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-[#ADFF00]/30 flex items-center gap-1">
-                              <Trophy className="w-3 h-3" /> Target Achieved
-                            </span>
-                            <span className="font-black text-[#ADFF00] bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-[#ADFF00]/30">
-                              50.0 kg · 15.8% BF
-                            </span>
-                          </div>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-[#ADFF00] font-bold pt-2 border-t border-[#ADFF00]/10">
-                        <span>Visible 6-Pack & Muscle Definition</span>
-                        <span>Front Angle</span>
+                        <span>Visible 6-Pack & Muscle Tone</span>
+                        <span>-5.0 kg Target Hit</span>
                       </div>
                     </div>
                   </div>
