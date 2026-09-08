@@ -28,12 +28,87 @@ interface UserWithDetails {
   fitness_premium_expires_at?: string;
 }
 
+// Unified helper to extract subscription attributes regardless of profile source
+function getUserSubscriptionInfo(user: UserWithDetails) {
+  const isPremium = Boolean(
+    user.fitness_is_premium || 
+    user.is_premium || 
+    (user.actualPaidAmount && user.actualPaidAmount > 0)
+  );
+  
+  const tier = (user.fitness_premium_tier || user.premium_tier || (isPremium ? "monthly" : "")).toLowerCase();
+  const level = (user.fitness_premium_level || user.premium_level || (isPremium ? "pro" : "")).toLowerCase();
+  const expiresAt = user.fitness_premium_expires_at || user.premium_expires_at;
+
+  return { isPremium, tier, level, expiresAt };
+}
+
+function getPlanName(tier?: string, level?: string) {
+  let baseName = 'Monthly';
+  if (tier === 'six_months' || tier === '6_months') baseName = '6 Months';
+  else if (tier === 'lifetime') baseName = 'Lifetime';
+  else if (tier === 'monthly') baseName = 'Monthly';
+  
+  const levelName = level ? (level.charAt(0).toUpperCase() + level.slice(1)) : 'Pro';
+  return `${baseName} - ${levelName}`;
+}
+
+// Calculate remaining duration accurately (days left)
+function getDurationInfo(isPremium?: boolean, tier?: string, expiresAtStr?: string | null) {
+  if (!isPremium) {
+    return { status: 'none' as const, text: '-', daysRemaining: 0, totalDays: 0 };
+  }
+  if (tier === 'lifetime') {
+    return { status: 'lifetime' as const, text: 'Lifetime Access', daysRemaining: 0, totalDays: 0 };
+  }
+  if (!expiresAtStr) {
+    return { status: 'none' as const, text: '-', daysRemaining: 0, totalDays: 0 };
+  }
+
+  const expiresAt = new Date(expiresAtStr);
+  if (isNaN(expiresAt.getTime())) {
+    return { status: 'none' as const, text: '-', daysRemaining: 0, totalDays: 0 };
+  }
+
+  const now = new Date();
+  const diffMs = expiresAt.getTime() - now.getTime();
+  const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (daysRemaining <= 0) {
+    return { status: 'expired' as const, text: 'Expired', daysRemaining: 0, totalDays: 0 };
+  }
+
+  const totalDays = (tier === 'six_months' || tier === '6_months') ? 180 : 30;
+  const safeDaysRemaining = Math.min(daysRemaining, totalDays);
+
+  return {
+    status: 'active' as const,
+    text: `${safeDaysRemaining} of ${totalDays} Days Left`,
+    daysRemaining: safeDaysRemaining,
+    totalDays
+  };
+}
+
+// Deterministic date formatting immune to client/SSR locale mismatch
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "-";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "-";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return "-";
+  }
+}
+
 export default function UsersTableClient({ users }: { users: UserWithDetails[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "core" | "pro">("all");
   const [tierFilter, setTierFilter] = useState<"all" | "monthly" | "six_months" | "lifetime">("all");
-  const [appFilter, setAppFilter] = useState<"all" | "grindlog" | "fitness">("fitness");
 
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [selectedMailUsers, setSelectedMailUsers] = useState<UserWithDetails[] | null>(null);
@@ -43,90 +118,48 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
     return users.filter((user) => {
       // 1. Search filter
       if (searchQuery.trim() !== "") {
-        const query = searchQuery.toLowerCase();
+        const query = searchQuery.toLowerCase().trim();
         const matchName = user.display_name?.toLowerCase().includes(query);
         const matchEmail = user.email?.toLowerCase().includes(query);
         if (!matchName && !matchEmail) return false;
       }
 
-      // Filter by App — a user can be on BOTH apps (same email), so filter by whether they have that profile
-      if (appFilter === "fitness" && !user.has_fitness_profile) return false;
-      if (appFilter === "grindlog" && user.has_fitness_profile && !user.is_premium && !user.fitness_is_premium) {
-        // Show user if they have any activity in grindlog (xp > 0) or just aren't fitness-only
-        // Actually: just show all users if grindlog selected — they all have grindlog profiles
-        // The profiles table IS the grindlog table, so all users here are grindlog users
-      }
+      const sub = getUserSubscriptionInfo(user);
 
-      // 2. Status filter — check correct app's premium
-      const effectiveIsPremium = appFilter === "fitness" ? user.fitness_is_premium : user.is_premium;
-      if (statusFilter === "paid" && !effectiveIsPremium) return false;
-      if (statusFilter === "unpaid" && effectiveIsPremium) return false;
+      // 2. Status filter
+      if (statusFilter === "paid" && !sub.isPremium) return false;
+      if (statusFilter === "unpaid" && sub.isPremium) return false;
 
-      // 3. Level filter — check correct app's level
-      const effectiveLevel = appFilter === "fitness" ? user.fitness_premium_level : user.premium_level;
-      const effectiveTier = appFilter === "fitness" ? user.fitness_premium_tier : user.premium_tier;
-      if (levelFilter === "pro" && (!effectiveIsPremium || effectiveLevel !== "pro")) return false;
-      if (levelFilter === "core" && (!effectiveIsPremium || effectiveLevel !== "core")) return false;
+      // 3. Level filter
+      if (levelFilter === "pro" && (!sub.isPremium || sub.level !== "pro")) return false;
+      if (levelFilter === "core" && (!sub.isPremium || sub.level !== "core")) return false;
 
       // 4. Tier filter
-      if (tierFilter === "monthly" && (!effectiveIsPremium || effectiveTier !== "monthly")) return false;
-      if (tierFilter === "six_months" && (!effectiveIsPremium || effectiveTier !== "six_months")) return false;
-      if (tierFilter === "lifetime" && (!effectiveIsPremium || effectiveTier !== "lifetime")) return false;
+      if (tierFilter === "monthly" && (!sub.isPremium || sub.tier !== "monthly")) return false;
+      if (tierFilter === "six_months" && (!sub.isPremium || (sub.tier !== "six_months" && sub.tier !== "6_months"))) return false;
+      if (tierFilter === "lifetime" && (!sub.isPremium || sub.tier !== "lifetime")) return false;
 
       return true;
     });
-  }, [users, searchQuery, statusFilter, levelFilter, tierFilter, appFilter]);
+  }, [users, searchQuery, statusFilter, levelFilter, tierFilter]);
 
   const filteredRevenue = useMemo(() => {
     return filteredUsers.reduce((acc, user) => acc + (user.actualPaidAmount || 0), 0);
   }, [filteredUsers]);
 
-  const hasActiveFilters = searchQuery.trim() !== "" || statusFilter !== "all" || levelFilter !== "all" || tierFilter !== "all";
+  // Compute active filters
+  const activeFilterCount = (searchQuery.trim() !== "" ? 1 : 0) +
+    (statusFilter !== "all" ? 1 : 0) +
+    (levelFilter !== "all" ? 1 : 0) +
+    (tierFilter !== "all" ? 1 : 0);
+
+  const hasActiveFilters = activeFilterCount > 0;
 
   const resetFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
     setLevelFilter("all");
     setTierFilter("all");
-  };
-
-  const getPlanName = (tier?: string, level?: string) => {
-    let baseName = 'Pro';
-    if (tier === 'monthly') baseName = 'Monthly';
-    if (tier === 'six_months') baseName = '6 Months';
-    if (tier === 'lifetime') baseName = 'Lifetime';
-    
-    const levelName = level ? (level.charAt(0).toUpperCase() + level.slice(1)) : 'Pro';
-    return `${baseName} - ${levelName}`;
-  };
-
-  const getDurationString = (isPremium?: boolean, premiumTier?: string, premiumExpiresAt?: string) => {
-    if (!isPremium) return "-";
-    if (premiumTier === 'lifetime') return "Lifetime";
-    if (!premiumExpiresAt) return "-";
-
-    const expiresAt = new Date(premiumExpiresAt);
-    const now = new Date();
-    
-    // Invert the month addition to find the exact start date
-    const startDate = new Date(expiresAt);
-    if (premiumTier === "monthly") {
-      startDate.setMonth(startDate.getMonth() - 1);
-    } else if (premiumTier === "six_months") {
-      startDate.setMonth(startDate.getMonth() - 6);
-    }
-    
-    let totalDays = 30;
-    if (premiumTier === 'six_months') totalDays = 180;
-    
-    // Calculate actual days passed since they paid
-    const daysElapsed = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
-    
-    if (now > expiresAt) return "Expired";
-    
-    const safeDaysElapsed = Math.max(0, Math.min(daysElapsed, totalDays));
-    
-    return `${safeDaysElapsed}/${totalDays} Days`;
   };
 
   return (
@@ -142,19 +175,25 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             </span>
             {hasActiveFilters && (
               <span className="text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                Filtered
+                {activeFilterCount} Active Filter{activeFilterCount > 1 ? "s" : ""}
               </span>
             )}
           </div>
-          {hasActiveFilters && (
-            <button
-              onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-all shadow-sm active:scale-95"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset Filters
-            </button>
-          )}
+
+          {/* Reset Filters Button: Always visible, active styling when filters applied */}
+          <button
+            onClick={resetFilters}
+            disabled={!hasActiveFilters}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-sm ${
+              hasActiveFilters
+                ? "text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 active:scale-95 cursor-pointer"
+                : "text-gray-400 bg-gray-50 border border-gray-200 opacity-60 cursor-not-allowed"
+            }`}
+            title={hasActiveFilters ? "Reset all filters to default" : "No active filters to reset"}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset Filters</span>
+          </button>
         </div>
 
         {/* Filter Inputs Grid (4 columns evenly distributed) */}
@@ -167,7 +206,11 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name or email..."
-              className="w-full pl-9 pr-8 py-2 text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-900 placeholder:text-gray-400"
+              className={`w-full pl-9 pr-8 py-2 text-xs font-medium rounded-lg outline-none transition-all placeholder:text-gray-400 ${
+                searchQuery.trim() !== ""
+                  ? "bg-blue-50/40 border-2 border-blue-500 text-blue-900 font-semibold"
+                  : "bg-gray-50 border border-gray-200 text-gray-900 focus:border-blue-500 focus:bg-white"
+              }`}
             />
             {searchQuery && (
               <button
@@ -179,12 +222,18 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                 ✕
               </button>
             )}
-          </div>          {/* Status Filter Dropdown */}
+          </div>
+
+          {/* Status Filter Dropdown */}
           <div className="flex flex-col gap-1">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="w-full px-3 py-2 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800"
+              className={`w-full px-3 py-2 text-xs font-semibold rounded-lg outline-none transition-all cursor-pointer ${
+                statusFilter !== "all"
+                  ? "bg-blue-50/40 border-2 border-blue-500 text-blue-900"
+                  : "bg-gray-50 border border-gray-200 text-gray-800 focus:border-blue-500 focus:bg-white"
+              }`}
             >
               <option value="all">Status: All (Paid & Unpaid)</option>
               <option value="paid">Status: Paid Members</option>
@@ -197,7 +246,11 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             <select
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value as any)}
-              className="w-full px-3 py-2 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800"
+              className={`w-full px-3 py-2 text-xs font-semibold rounded-lg outline-none transition-all cursor-pointer ${
+                levelFilter !== "all"
+                  ? "bg-blue-50/40 border-2 border-blue-500 text-blue-900"
+                  : "bg-gray-50 border border-gray-200 text-gray-800 focus:border-blue-500 focus:bg-white"
+              }`}
             >
               <option value="all">Level: All Levels (Pro & Core)</option>
               <option value="pro">Level: Pro Tier</option>
@@ -210,7 +263,11 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             <select
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value as any)}
-              className="w-full px-3 py-2 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800"
+              className={`w-full px-3 py-2 text-xs font-semibold rounded-lg outline-none transition-all cursor-pointer ${
+                tierFilter !== "all"
+                  ? "bg-blue-50/40 border-2 border-blue-500 text-blue-900"
+                  : "bg-gray-50 border border-gray-200 text-gray-800 focus:border-blue-500 focus:bg-white"
+              }`}
             >
               <option value="all">Duration: All Tiers</option>
               <option value="monthly">Duration: Monthly</option>
@@ -230,7 +287,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
           <div className="flex items-center gap-2 justify-end">
             <button
               onClick={() => setSelectedUserIds(new Set())}
-              className="px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+              className="px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
             >
               Clear
             </button>
@@ -239,7 +296,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                 const usersToMail = users.filter(u => selectedUserIds.has(u.id));
                 setSelectedMailUsers(usersToMail);
               }}
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm active:scale-95 flex-1 sm:flex-none"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm active:scale-95 flex-1 sm:flex-none cursor-pointer"
             >
               <Mail className="w-3.5 h-3.5" />
               <span>Send Bulk Mail</span>
@@ -252,7 +309,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 w-10 text-center">
                   <input 
@@ -270,14 +327,9 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                     }}
                   />
                 </th>
-                <th className="px-6 py-4 rounded-tl-xl w-[250px]">User</th>
-                {appFilter !== "fitness" && (
-                  <th className="px-6 py-4">Stats</th>
-                )}
+                <th className="px-6 py-4 w-[250px]">User</th>
                 <th className="px-6 py-4">Plan</th>
-                {appFilter === "fitness" && (
-                  <th className="px-6 py-4">Onboarding</th>
-                )}
+                <th className="px-6 py-4">Onboarding</th>
                 <th className="px-6 py-4">Duration</th>
                 <th className="px-6 py-3">Payment ID</th>
                 <th className="px-6 py-3">Paid Amount</th>
@@ -287,21 +339,12 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                const isFitness = appFilter === "fitness";
-                
-                // Show premium info for the relevant app
-                const isPremium = isFitness ? user.fitness_is_premium : user.is_premium;
-                const premiumTier = isFitness ? user.fitness_premium_tier : user.premium_tier;
-                const premiumLevel = isFitness ? user.fitness_premium_level : user.premium_level;
-                const premiumExpiresAt = isFitness ? user.fitness_premium_expires_at : user.premium_expires_at;
-                
-                const planName = premiumTier ? getPlanName(premiumTier, premiumLevel) : 'Pro';
-                const paymentId = user.paymentId;
-                const paidAmount = user.actualPaidAmount;
-                const durationString = getDurationString(isPremium, premiumTier, premiumExpiresAt);
+                const sub = getUserSubscriptionInfo(user);
+                const planName = sub.tier ? getPlanName(sub.tier, sub.level) : 'Monthly - Pro';
+                const durationInfo = getDurationInfo(sub.isPremium, sub.tier, sub.expiresAt);
 
                 return (
-                  <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
+                  <tr key={user.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-center">
                       <input 
                         type="checkbox"
@@ -326,126 +369,91 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                         </div>
                       </div>
                     </td>
-                    {appFilter !== "fitness" && (
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col text-xs space-y-1">
-                          <span>XP: {user.xp || 0}</span>
-                          <span>Level: {user.level || 1}</span>
+                    <td className="px-6 py-4">
+                      {sub.isPremium ? (
+                        <div className="flex flex-col gap-1">
+                          <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                            {planName}
+                          </span>
+                          <span className="text-[11px] text-green-600 font-semibold">Active</span>
                         </div>
-                      </td>
-                    )}
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1.5">
-                        {/* When viewing All Apps, show badges for EACH app the user has paid for */}
-                        {appFilter === "all" ? (
-                          <>
-                            {user.is_premium && (
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">GL</span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                                  {getPlanName(user.premium_tier, user.premium_level)}
-                                </span>
-                              </div>
-                            )}
-                            {user.fitness_is_premium && (
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">FIT</span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
-                                  {getPlanName(user.fitness_premium_tier, user.fitness_premium_level)}
-                                </span>
-                              </div>
-                            )}
-                            {!user.is_premium && !user.fitness_is_premium && (
-                              <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-                                Unpaid
-                              </span>
-                            )}
-                          </>
-                        ) : isPremium ? (
-                          <div className="flex flex-col gap-1.5">
-                            <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                              {planName}
-                            </span>
-                            {/* AI Message Top Ups — Grindlog only */}
-                            {appFilter !== "fitness" && user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
-                               <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-                                 + AI Messages (₹10)
-                               </span>
-                            ))}
-                            <span className="text-xs text-gray-400 capitalize mt-0.5">Active</span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-1.5">
-                            <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-                              Unpaid
-                            </span>
-                            {appFilter !== "fitness" && user.subscriptions?.filter((s: any) => s.plan === 'ai_messages_10').map((sub: any, i: number) => (
-                               <span key={sub.id || i} className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-                                 + AI Messages (₹10)
-                               </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      ) : (
+                        <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                          Unpaid
+                        </span>
+                      )}
                     </td>
-                    {appFilter === "fitness" && (
-                      <td className="px-6 py-4">
-                        {user.fitness_onboarding_completed ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700">
-                            ✓ Completed
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">
-                            Pending
-                          </span>
-                        )}
-                      </td>
-                    )}
                     <td className="px-6 py-4">
-                      <div className="text-xs font-semibold text-gray-700">
-                        {durationString}
-                      </div>
+                      {user.fitness_onboarding_completed ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-100 text-green-700">
+                          ✓ Completed
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700">
+                          Pending
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4" suppressHydrationWarning>
+                      {durationInfo.status === 'lifetime' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          Lifetime Access
+                        </span>
+                      ) : durationInfo.status === 'expired' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                          Expired
+                        </span>
+                      ) : durationInfo.status === 'active' ? (
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-gray-900">
+                            {durationInfo.text}
+                          </span>
+                          <span className="text-[10px] text-gray-400">
+                            {durationInfo.daysRemaining} days remaining
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-xs text-gray-500 font-mono flex flex-col gap-1">
-                        {(paymentId || "-").split(", ").map((pid: string, i: number) => (
+                        {(user.paymentId || "-").split(", ").map((pid: string, i: number) => (
                           <span key={i}>{pid}</span>
                         ))}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-xs font-bold text-green-600">
-                        {paidAmount > 0 ? `₹${paidAmount}` : "-"}
+                        {user.actualPaidAmount > 0 ? `₹${user.actualPaidAmount}` : "-"}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-xs">
-                      {new Date(user.created_at).toLocaleDateString()}
+                    <td className="px-6 py-4 text-xs text-gray-600" suppressHydrationWarning>
+                      {formatDate(user.created_at)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex flex-col items-end gap-1.5">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setSelectedHistoryUser(user)}
-                            title="View Payment History"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 text-xs font-semibold border border-green-200 transition-all active:scale-95 shrink-0"
-                          >
-                            <Receipt className="h-3.5 w-3.5" />
-                            <span>History</span>
-                          </button>
-                          <button
-                            onClick={() => setSelectedMailUsers([user])}
-                            title="Send Email to User"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-xs font-semibold border border-blue-200 transition-all active:scale-95 shrink-0"
-                          >
-                            <Mail className="h-3.5 w-3.5" />
-                            <span>Mail</span>
-                          </button>
-                          <DeleteUserButton
-                            userId={user.id}
-                            userName={user.display_name}
-                            userEmail={user.email}
-                          />
-                        </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setSelectedHistoryUser(user)}
+                          title="View Payment History"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 text-xs font-semibold border border-green-200 transition-all active:scale-95 shrink-0 cursor-pointer"
+                        >
+                          <Receipt className="h-3.5 w-3.5" />
+                          <span>History</span>
+                        </button>
+                        <button
+                          onClick={() => setSelectedMailUsers([user])}
+                          title="Send Email to User"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-xs font-semibold border border-blue-200 transition-all active:scale-95 shrink-0 cursor-pointer"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          <span>Mail</span>
+                        </button>
+                        <DeleteUserButton
+                          userId={user.id}
+                          userName={user.display_name}
+                          userEmail={user.email}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -454,23 +462,30 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             </tbody>
             <tfoot className="bg-gray-50 font-bold text-gray-900 border-t border-gray-200">
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-right uppercase text-xs">Filtered Revenue:</td>
-                <td className="px-6 py-4 text-green-600">₹{filteredRevenue.toLocaleString()}</td>
+                <td colSpan={6} className="px-6 py-4 text-right uppercase text-xs text-gray-600">
+                  Filtered Revenue:
+                </td>
+                <td className="px-6 py-4 text-green-600 font-bold text-sm">
+                  ₹{filteredRevenue.toLocaleString()}
+                </td>
                 <td colSpan={2}></td>
               </tr>
             </tfoot>
           </table>
           
           {filteredUsers.length === 0 && (
-            <div className="p-12 text-center text-gray-500 space-y-2">
+            <div className="p-12 text-center text-gray-500 space-y-3">
               <p className="text-base font-semibold text-gray-700">No matching users found</p>
-              <p className="text-xs text-gray-400">Try adjusting or resetting your filter criteria.</p>
+              <p className="text-xs text-gray-400">
+                No users match the currently selected filter criteria.
+              </p>
               {hasActiveFilters && (
                 <button
                   onClick={resetFilters}
-                  className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                  className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
-                  Clear all filters
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Clear All Filters</span>
                 </button>
               )}
             </div>
