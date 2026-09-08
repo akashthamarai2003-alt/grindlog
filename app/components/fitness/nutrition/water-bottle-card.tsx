@@ -12,6 +12,7 @@ interface WaterBottleCardProps {
   onEditGoal: () => void;
   isLoading?: boolean;
   isPro?: boolean;
+  disabled?: boolean;
 }
 
 export function WaterBottleCard({
@@ -22,6 +23,7 @@ export function WaterBottleCard({
   onEditGoal,
   isLoading = false,
   isPro = true,
+  disabled = false,
 }: WaterBottleCardProps) {
   const [stepAmount, setStepAmount] = useState<number>(250);
 
@@ -268,11 +270,13 @@ export function WaterBottleCard({
           </div>
 
           {/* Pill Stepper Logger: [ - ]  250 ml  [ + ] */}
-          <div className="w-full max-w-[200px] bg-[#1E261D] border border-white/10 rounded-2xl p-1.5 flex items-center justify-between shadow-inner">
+          <div className={`w-full max-w-[200px] bg-[#1E261D] border border-white/10 rounded-2xl p-1.5 flex items-center justify-between shadow-inner ${
+            disabled ? 'opacity-50 pointer-events-none' : ''
+          }`}>
             {/* Minus Button */}
             <button
               type="button"
-              disabled={isPro && safeConsumed <= 0}
+              disabled={disabled || (isPro && safeConsumed <= 0)}
               onClick={() => onRemoveWater(stepAmount)}
               className="w-10 h-10 rounded-xl bg-black/40 hover:bg-black/70 active:scale-95 disabled:opacity-30 disabled:pointer-events-none text-white flex items-center justify-center transition-all cursor-pointer"
               title={`Remove ${stepAmount}ml`}
@@ -294,10 +298,10 @@ export function WaterBottleCard({
             {isPro ? (
               <button
                 type="button"
-                disabled={isGoalReached}
+                disabled={disabled || isGoalReached}
                 onClick={() => onAddWater(stepAmount)}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${
-                  isGoalReached
+                  disabled || isGoalReached
                     ? "bg-white/10 text-white/30 cursor-not-allowed shadow-none"
                     : "bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 text-black cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
                 }`}
@@ -319,7 +323,7 @@ export function WaterBottleCard({
 
           {/* Subtitle: 0.9L logged today */}
           <p className="text-[11px] font-medium text-white/40 mt-2 tracking-wide">
-            {consumedInLiters}L logged today
+            {disabled ? "Water tracking unlocks on this date" : `${consumedInLiters}L logged today`}
           </p>
         </div>
       </div>

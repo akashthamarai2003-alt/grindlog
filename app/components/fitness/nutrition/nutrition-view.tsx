@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Droplet, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Droplet, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock, Clock } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
@@ -32,6 +32,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   // Date navigation & swap modal states
   const [selectedDate, setSelectedDate] = useState<string>(initialData?.date || todayDateStr);
   const selectedDateRef = useRef<string>(initialData?.date || todayDateStr);
+
+  const isFuture = Boolean(selectedDate && selectedDate > todayDateStr);
+  const isToday = !selectedDate || selectedDate === todayDateStr;
+  const isPast = Boolean(selectedDate && selectedDate < todayDateStr);
   const dateCacheRef = useRef<Record<string, any>>({});
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [swapMealType, setSwapMealType] = useState<string>("breakfast");
@@ -478,6 +482,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const handleAddWater = (amount: number) => {
+    if (isFuture) {
+      toast.info("Cannot log water for a future date.");
+      return;
+    }
     if (!isPro) {
       triggerProModal("Water & Hydration Tracking");
       return;
@@ -527,6 +535,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const handleRemoveWater = (amount: number = 250) => {
+    if (isFuture) {
+      toast.info("Cannot log water for a future date.");
+      return;
+    }
     if (!isPro) {
       triggerProModal("Water & Hydration Tracking");
       return;
@@ -628,6 +640,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const openLogModal = (mealType: string, preselected?: any[]) => {
+    if (isFuture) {
+      toast.info("Cannot log meals for a future date.");
+      return;
+    }
     if (!isPro) {
       triggerProModal("Food Logging");
       return;
@@ -1022,11 +1038,13 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               <Sparkles size={24} />
             </div>
             <h3 className="text-base font-black text-white uppercase tracking-wider mb-2">
-              {isPro ? "Generate Today's Meals" : "Unlock 7-Day AI Meal Plan"}
+              {isPro ? (isFuture ? "Generate Meal Plan" : "Generate Today's Meals") : "Unlock 7-Day AI Meal Plan"}
             </h3>
             <p className="text-white/60 text-xs sm:text-sm max-w-xs mx-auto mb-5 leading-relaxed">
               {isPro 
-                ? "Your baseline AI strategy is active, but you haven't generated today's specific meal plan."
+                ? (isFuture 
+                    ? "Your baseline strategy is active, but you haven't generated this day's specific meal plan."
+                    : "Your baseline strategy is active, but you haven't generated today's specific meal plan.")
                 : `Personalized recipes and grocery lists calibrated to your target of ${targetCals} kcal and ${targetPro}g protein.`
               }
             </p>
@@ -1172,7 +1190,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                         ))
                       ) : (
                         <li className="text-center py-2 text-white/40 text-xs">
-                          No foods planned yet. Tap <span className="text-[#ADFF00] font-bold">Log Meal</span> to add foods!
+                          {isFuture
+                            ? "No foods scheduled for this meal."
+                            : <>No foods planned yet. Tap <span className="text-[#ADFF00] font-bold">Log Meal</span> to add foods!</>
+                          }
                         </li>
                       )}
                     </ul>
@@ -1198,7 +1219,26 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     </div>
                   )}
                   <div className="flex gap-2">
-                    {!completed ? (
+                    {isFuture ? (
+                      <>
+                        <button 
+                          type="button"
+                          onClick={() => handleOpenSwapModal(meal.meal_type)} 
+                          className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ADFF00]/40 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                          title="Swap this planned meal for another recipe"
+                        >
+                          {isPro ? <RefreshCw size={14} /> : <Lock size={13} className="text-amber-400" />} 
+                          Swap
+                        </button>
+                        <div 
+                          className="flex-1 py-2.5 px-4 bg-[#121E12] border border-white/5 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/40 flex justify-center items-center gap-2 cursor-not-allowed select-none opacity-70"
+                          title="Scheduled meal for this upcoming date"
+                        >
+                          <Clock size={14} className="text-white/40" />
+                          <span>Scheduled</span>
+                        </div>
+                      </>
+                    ) : !completed ? (
                       <>
                         <button 
                           type="button"
@@ -1277,7 +1317,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 <span className="text-3xl font-black text-white">₹{Math.round(budget.spent || 0)}</span>
                 <span className="text-sm font-bold text-white/40 pb-1">/ ₹{budget.daily_limit || 200}</span>
               </div>
-              <p className="text-[10px] font-bold text-white/40 mt-1">Today</p>
+              <p className="text-[10px] font-bold text-white/40 mt-1">
+                {isToday ? "Today" : isFuture ? "Scheduled" : "Spent"}
+              </p>
             </div>
             <div className="mt-4">
               <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
@@ -1294,6 +1336,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         {/* Animated Water Intake Bottle Card */}
         <WaterBottleCard
           isPro={isPro}
+          disabled={isFuture}
           consumedMl={Math.min(Number(targets.water_ml) || 2500, Number(consumed.water_ml) || 0)}
           targetMl={Number(targets.water_ml) || 2500}
           onAddWater={handleAddWater}
@@ -1314,6 +1357,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           meals={meals}
           loggedFoods={loggedFoods}
           nutritionScore={nutrition_score}
+          title={isToday ? "Today's Summary" : isFuture ? "Scheduled Summary" : "Day Summary"}
         />
 
       </div>

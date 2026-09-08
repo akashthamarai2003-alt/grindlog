@@ -48,6 +48,7 @@ interface TodaySummaryCardProps {
   meals?: any[];
   loggedFoods?: any[];
   nutritionScore?: number;
+  title?: string;
 }
 
 export function TodaySummaryCard({
@@ -56,6 +57,7 @@ export function TodaySummaryCard({
   meals = [],
   loggedFoods = [],
   nutritionScore = 0,
+  title,
 }: TodaySummaryCardProps) {
   // Toggle between Core 4 metrics (Calories, Protein, Water, Meals) and Full 6 metrics (+ Carbs, Fat)
   const [viewMode, setViewMode] = useState<"core" | "detailed">("detailed");
@@ -224,7 +226,7 @@ export function TodaySummaryCard({
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse" />
           <h2 className="text-[13px] font-black tracking-widest text-white uppercase">
-            Today&apos;s Summary
+            {title || "Today's Summary"}
           </h2>
         </div>
 
