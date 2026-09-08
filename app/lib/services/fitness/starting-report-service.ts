@@ -12,6 +12,7 @@ const StartingReportSchema = z.object({
     observed_strengths: z.array(z.string().min(2)).max(3),
     priority_improvements: z.array(z.string().min(2)).max(3),
     posture_or_movement_note: z.string().min(2),
+    goal_gap: z.string().nullable().optional(),
   }),
   first_two_weeks: z.object({
     training_start: z.string().min(2),
@@ -75,6 +76,7 @@ export const STARTING_REPORT_JSON_SCHEMA: Record<string, unknown> = {
         "observed_strengths",
         "priority_improvements",
         "posture_or_movement_note",
+        "goal_gap",
       ],
       properties: {
         has_body_scan: { type: "boolean" },
@@ -82,6 +84,7 @@ export const STARTING_REPORT_JSON_SCHEMA: Record<string, unknown> = {
         observed_strengths: { type: "array", items: { type: "string" }, maxItems: 3 },
         priority_improvements: { type: "array", items: { type: "string" }, maxItems: 3 },
         posture_or_movement_note: { type: "string" },
+        goal_gap: { type: ["string", "null"] },
       },
     },
     first_two_weeks: {
@@ -235,7 +238,7 @@ export async function generateStartingReport({
   YOU MUST STRICTLY FOLLOW THIS TONE RULE FOR EVERY TEXT FIELD. Make it sound like a direct, encouraging message from a personal trainer.
   
   Return one valid JSON object with exactly these top-level fields:
-  - body_scan_insights: { has_body_scan, overall_summary, observed_strengths, priority_improvements, posture_or_movement_note }. Only describe photo observations when BODY SCAN AVAILABLE is true. Never diagnose health conditions or give an exact body-fat percentage from photos. If false, explicitly state that no usable body scan is available and use empty observation arrays.
+  - body_scan_insights: { has_body_scan, overall_summary, observed_strengths, priority_improvements, posture_or_movement_note, goal_gap }. Only describe photo observations when BODY SCAN AVAILABLE is true. Never diagnose health conditions or give an exact body-fat percentage from photos. If false, explicitly state that no usable body scan is available, use empty observation arrays, and set goal_gap to null.
   - first_two_weeks: { training_start, nutrition_start, recovery_start }. Give a realistic beginner-safe start that respects stated injuries, fitness level, available time, location, equipment, diet, and budget. Do not prescribe a six-day hard programme to a beginner unless their supplied profile supports it.
   - training_strategy: short personalised strategy.
   - nutrition_strategy: short personalised strategy that strictly respects diet_type, allergies, avoided foods, food environment, and budget. For Lose Fat and Cut goals, mention limiting added sugar, sugary drinks, deep-fried foods, and frequent fast food, while using measured oil and keeping occasional treats within the calorie target. Never recommend zero sugar or zero oil. For Cut, mention adequate protein and resistance training for muscle retention.

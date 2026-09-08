@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { Brain, Info } from "lucide-react";
 import Link from "next/link";
 import { RegenerateReportButton } from "@/components/fitness/report/regenerate-report-button";
@@ -30,7 +31,7 @@ export default async function AIStartingReportPage() {
     redirect("/");
   }
 
-  const [{ data: profile }, { data: scan }] = await Promise.all([
+  let [{ data: profile }, { data: scan }] = await Promise.all([
     supabase
       .from("fitness_os_profiles")
       .select("*")
@@ -42,6 +43,30 @@ export default async function AIStartingReportPage() {
       .eq("user_id", user.id)
       .maybeSingle(),
   ]);
+
+  // Fallback to admin client if user client did not find completed profile
+  // (guards against any cookie/session replication latency after onboarding completion)
+  if (!profile || !profile.onboarding_completed) {
+    const admin = createAdminClient();
+    const [{ data: adminProfile }, { data: adminScan }] = await Promise.all([
+      admin
+        .from("fitness_os_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      admin
+        .from("fitness_os_scans")
+        .select("gemini_analysis")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+    if (adminProfile) {
+      profile = adminProfile;
+    }
+    if (adminScan) {
+      scan = adminScan || scan;
+    }
+  }
 
   if (!profile || !profile.onboarding_completed) {
     redirect("/onboarding");
@@ -119,6 +144,13 @@ export default async function AIStartingReportPage() {
   const bodyScanPriorities = bodyScanInsights && Array.isArray(bodyScanInsights.priority_improvements)
     ? bodyScanInsights.priority_improvements.filter((item: unknown): item is string => typeof item === "string" && Boolean(item.trim()))
     : [];
+  const goalGap =
+    bodyScanInsights &&
+    "goal_gap" in bodyScanInsights &&
+    typeof (bodyScanInsights as Record<string, unknown>).goal_gap === "string" &&
+    Boolean((bodyScanInsights as Record<string, unknown>).goal_gap)
+      ? String((bodyScanInsights as Record<string, unknown>).goal_gap).trim()
+      : null;
   const personalNumbers = [
     ["Protein starting target", displayValue(profile.initial_protein_target, " g/day")],
     ["Maintenance estimate", displayValue(profile.baseline_calories, " kcal/day")],
@@ -245,15 +277,24 @@ export default async function AIStartingReportPage() {
                 </div>
               )}
               {bodyScanInsights?.posture_or_movement_note && (
-                <p className="text-xs leading-relaxed text-gray-400">
-                  {String(bodyScanInsights.posture_or_movement_note)}
-                </p>
+                <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                  <p className="mb-1 text-xs font-bold tracking-wider text-gray-400 uppercase">
+                    Posture & alignment observation
+                  </p>
+                  <p className="text-sm leading-relaxed text-gray-300">
+                    {String(bodyScanInsights.posture_or_movement_note)}
+                  </p>
+                </div>
               )}
-              {directBodyScan?.goal_gap && (
-                <p className="rounded-xl border border-[#ADFF00]/15 bg-[#ADFF00]/5 px-3 py-2 text-xs leading-relaxed text-gray-300">
-                  <span className="font-bold text-[#ADFF00]">Goal direction: </span>
-                  {directBodyScan.goal_gap}
-                </p>
+              {goalGap && (
+                <div className="rounded-2xl border border-[#ADFF00]/15 bg-[#ADFF00]/5 p-4">
+                  <p className="mb-1 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
+                    Goal direction & gap
+                  </p>
+                  <p className="text-sm leading-relaxed text-gray-300">
+                    {goalGap}
+                  </p>
+                </div>
               )}
             </>
           ) : (

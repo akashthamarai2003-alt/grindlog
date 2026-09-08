@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { generateStartingReport } from "@/lib/services/fitness/starting-report-service";
 import { FITNESS_REPORT_MODEL } from "@/lib/services/openai/client";
 import {
@@ -12,6 +13,7 @@ import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
 export async function POST() {
   try {
     const supabase = await createServerSupabase();
+    const admin = createAdminClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -23,11 +25,23 @@ export async function POST() {
       );
     }
 
-    const { data: profile, error: profileError } = await supabase
+    let { data: profile, error: profileError } = await supabase
       .from("fitness_os_profiles")
-      .select("onboarding_data, bmi")
+      .select("onboarding_data, bmi, ai_strategy")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    if (!profile) {
+      const adminProfile = await admin
+        .from("fitness_os_profiles")
+        .select("onboarding_data, bmi, ai_strategy")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (adminProfile.data) {
+        profile = adminProfile.data;
+        profileError = null;
+      }
+    }
 
     if (profileError || !profile) {
       return NextResponse.json(
@@ -63,11 +77,55 @@ export async function POST() {
       );
     }
 
-    const { data: scan } = await supabase
+    let { data: scan } = await supabase
       .from("fitness_os_scans")
       .select("gemini_analysis")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    if (!scan) {
+      const adminScan = await admin
+        .from("fitness_os_scans")
+        .select("gemini_analysis")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (adminScan.data) {
+        scan = adminScan.data;
+      }
+    }
+
+    const structuredBodyScan =
+      parseBodyScanAnalysis(scan?.gemini_analysis) ||
+      (profile.ai_strategy &&
+      typeof profile.ai_strategy === "object" &&
+      "body_scan_insights" in (profile.ai_strategy as Record<string, unknown>)
+        ? parseBodyScanAnalysis(
+            (profile.ai_strategy as Record<string, unknown>).body_scan_insights,
+          )
+        : null);
+
+    let visualObservations = "No photos provided.";
+    if (structuredBodyScan) {
+      visualObservations = [
+        `Overall observations: ${structuredBodyScan.overall_summary}`,
+        structuredBodyScan.observed_strengths?.length
+          ? `Observed strengths: ${structuredBodyScan.observed_strengths.join(", ")}`
+          : null,
+        structuredBodyScan.priority_improvements?.length
+          ? `Priority improvements: ${structuredBodyScan.priority_improvements.join(", ")}`
+          : null,
+        structuredBodyScan.posture_or_movement_note
+          ? `Posture & movement: ${structuredBodyScan.posture_or_movement_note}`
+          : null,
+        structuredBodyScan.goal_gap
+          ? `Goal gap: ${structuredBodyScan.goal_gap}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    } else if (typeof scan?.gemini_analysis === "string") {
+      visualObservations = scan.gemini_analysis;
+    }
 
     // One explicit action creates one request. The persisted attempt record prevents
     // failed responses, reloads, or multiple tabs from causing a retry storm.
@@ -81,13 +139,9 @@ export async function POST() {
       onboarding: parsedOnboarding.data,
       bmi: typeof profile.bmi === "number" ? profile.bmi : null,
       estimatedBodyFat: null,
-      visualObservations:
-        typeof scan?.gemini_analysis === "string"
-          ? scan.gemini_analysis
-          : "No photos provided.",
+      visualObservations,
     });
 
-    const structuredBodyScan = parseBodyScanAnalysis(scan?.gemini_analysis);
     if (structuredBodyScan) {
       aiStrategy.body_scan_insights = {
         has_body_scan: true,
@@ -95,13 +149,22 @@ export async function POST() {
         observed_strengths: structuredBodyScan.observed_strengths,
         priority_improvements: structuredBodyScan.priority_improvements,
         posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
+        goal_gap: structuredBodyScan.goal_gap || null,
       };
     }
 
-    const { error: updateError } = await supabase
+    let { error: updateError } = await supabase
       .from("fitness_os_profiles")
       .update({ ai_strategy: aiStrategy, updated_at: new Date().toISOString() })
       .eq("user_id", user.id);
+
+    if (updateError) {
+      const adminUpdate = await admin
+        .from("fitness_os_profiles")
+        .update({ ai_strategy: aiStrategy, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+      updateError = adminUpdate.error;
+    }
 
     if (updateError) {
       console.error("Failed to save regenerated starting report:", updateError);

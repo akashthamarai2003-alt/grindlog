@@ -66,11 +66,11 @@ export async function POST(req: NextRequest) {
 
     // 5. Call Gemini Vision Server-Side
     const models = [
-      process.env.GEMINI_VISION_MODEL?.trim() || "gemini-2.5-flash",
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-2.5-pro",
-    ].filter((model, index, list) => list.indexOf(model) === index);
+      process.env.GEMINI_VISION_MODEL?.trim(),
+      "gemini-3.6-flash",
+      "gemini-3.8-flash",
+      "gemini-flash-latest",
+    ].filter((model, index, list): model is string => Boolean(model && list.indexOf(model) === index));
     let response: Awaited<ReturnType<typeof geminiClient.models.generateContent>> | null = null;
     let lastModelError: unknown;
     for (const model of models) {
@@ -89,16 +89,13 @@ export async function POST(req: NextRequest) {
             responseMimeType: "application/json",
           },
         });
-        break;
+        if (response?.text) break;
       } catch (modelError) {
         lastModelError = modelError;
-        if (!String(modelError).includes("404") || model === models[models.length - 1]) {
-          throw modelError;
-        }
-        console.warn(`Gemini model ${model} was not found; trying fallback model.`);
+        console.warn(`Gemini scanner model ${model} failed; trying fallback...`, modelError);
       }
     }
-    if (!response) throw lastModelError || new Error("Gemini returned no response.");
+    if (!response?.text) throw lastModelError || new Error("Gemini returned no response.");
 
     const analysis = parseBodyScanAnalysis(response.text);
     if (!analysis) {

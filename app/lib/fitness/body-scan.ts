@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-const BodyScanText = z.string().trim().min(1).max(900);
+const SafeTextWithDefault = (fallback: string) =>
+  z.preprocess(
+    (val) => (typeof val === "string" && val.trim() ? val.trim().slice(0, 1500) : fallback),
+    z.string().min(1),
+  );
 
 /**
  * This is the durable, photo-only contract saved after a Gemini body scan.
@@ -8,17 +12,64 @@ const BodyScanText = z.string().trim().min(1).max(900);
  * they are made later from the complete onboarding profile.
  */
 export const BodyScanAnalysisSchema = z.object({
-  overall_summary: BodyScanText,
-  observed_strengths: z.array(BodyScanText).max(3),
-  priority_improvements: z.array(BodyScanText).max(3),
-  posture_or_movement_note: BodyScanText,
-  goal_gap: BodyScanText.nullable().optional(),
+  overall_summary: SafeTextWithDefault("Visual assessment completed."),
+  observed_strengths: z.preprocess(
+    (val) =>
+      Array.isArray(val)
+        ? val
+            .map((v) => (typeof v === "string" ? v.trim() : String(v || "")).slice(0, 500))
+            .filter(Boolean)
+            .slice(0, 3)
+        : [],
+    z.array(z.string()),
+  ),
+  priority_improvements: z.preprocess(
+    (val) =>
+      Array.isArray(val)
+        ? val
+            .map((v) => (typeof v === "string" ? v.trim() : String(v || "")).slice(0, 500))
+            .filter(Boolean)
+            .slice(0, 3)
+        : [],
+    z.array(z.string()),
+  ),
+  posture_or_movement_note: SafeTextWithDefault(
+    "No clear posture concern can be confirmed from these photos.",
+  ),
+  goal_gap: z.preprocess(
+    (val) => (typeof val === "string" && val.trim() ? val.trim().slice(0, 1000) : null),
+    z.string().nullable().optional(),
+  ),
 });
 
 export type BodyScanAnalysis = z.infer<typeof BodyScanAnalysisSchema>;
 
 function parseJson(value: string): unknown {
   const trimmed = value.trim();
+
+  // Try direct parse first
+  try {
+    return JSON.parse(trimmed);
+  } catch {}
+
+  // Try extracting from markdown code fence ```json ... ```
+  const matchFence = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (matchFence && matchFence[1]) {
+    try {
+      return JSON.parse(matchFence[1].trim());
+    } catch {}
+  }
+
+  // Try finding outermost JSON object { ... }
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    const candidate = trimmed.substring(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(candidate);
+    } catch {}
+  }
+
   const withoutFence = trimmed
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/, "");

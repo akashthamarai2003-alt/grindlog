@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
@@ -187,14 +186,8 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     setData(prev => ({ ...prev, ...updates }));
   };
 
-  useEffect(() => {
-    if (step >= 15) {
-      router.prefetch("/report");
-    }
-  }, [step, router]);
-
   const handleComplete = () => {
-    router.replace("/report");
+    window.location.replace("/report");
   };
 
   const variants = {
@@ -2667,11 +2660,6 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
   const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
-    // Eagerly prefetch the /report route as soon as AIAnalysisScreen mounts
-    router.prefetch("/report");
-  }, [router]);
-
-  useEffect(() => {
     let isMounted = true;
     let fastForwardTimer: NodeJS.Timeout | null = null;
 
@@ -2705,7 +2693,6 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
       if (isMounted) {
         if (res.success) {
           setIsDone(true);
-          router.prefetch("/report");
           // Ensure earlier phases are checked then immediately trigger Phase 4
           setPhase(prev => Math.max(prev, 3));
           fastForwardTimer = setTimeout(() => {
@@ -2738,6 +2725,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
   }, [data, router, sessionId]);
 
   const handleCompleteClick = () => {
+    if (isNavigating) return;
     setIsNavigating(true);
     onComplete();
   };
@@ -2821,15 +2809,11 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
                     </div>
                   </button>
                 ) : (
-                  <Link
-                    href="/report"
-                    replace
-                    prefetch={true}
-                    onClick={() => {
-                      setIsNavigating(true);
-                      onComplete();
-                    }}
-                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33] active:scale-[0.99] cursor-pointer"
+                  <button
+                    type="button"
+                    onClick={handleCompleteClick}
+                    disabled={isNavigating}
+                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33] active:scale-[0.99] cursor-pointer disabled:opacity-80"
                   >
                     {isNavigating ? (
                       <div className="flex items-center gap-2">
@@ -2837,9 +2821,9 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
                         <span>Opening Report...</span>
                       </div>
                     ) : (
-                      "View Transformation Plan"
+                      "View My Transformation Plan"
                     )}
-                  </Link>
+                  </button>
                 )}
                 {error && (
                   <p className="mt-3 text-center text-sm leading-relaxed text-red-300">

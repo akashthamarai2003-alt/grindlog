@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { getOnboardingCompletionIssues, OnboardingSchema } from "@/types/fitness/onboarding";
 import {
   generateStartingReport,
@@ -194,8 +195,7 @@ export async function POST(req: Request) {
     );
 
     // 1. Task: Gemini Vision (if images uploaded)
-    const visionPromise = (async () => {
-      if (images.length === 0) return;
+    if (images.length > 0) {
       console.log(`Sending ${images.length} images to Google Gemini Vision...`);
       try {
         const { GoogleGenAI } = await import("@google/genai");
@@ -204,11 +204,12 @@ export async function POST(req: Request) {
 
         const gemini = new GoogleGenAI({ apiKey });
         const models = [
-          process.env.GEMINI_VISION_MODEL?.trim() || "gemini-2.5-flash",
-          "gemini-2.0-flash",
-          "gemini-1.5-flash",
-          "gemini-2.5-pro",
-        ].filter((model, index, list) => list.indexOf(model) === index);
+          process.env.GEMINI_VISION_MODEL?.trim(),
+          "gemini-3.6-flash",
+          "gemini-3.8-flash",
+          "gemini-flash-latest",
+        ].filter((model, index, list): model is string => Boolean(model && list.indexOf(model) === index));
+
         let response: Awaited<ReturnType<typeof gemini.models.generateContent>> | null = null;
         let lastModelError: unknown;
         for (const model of models) {
@@ -234,16 +235,13 @@ export async function POST(req: Request) {
                 responseMimeType: "application/json",
               },
             });
-            break;
+            if (response?.text) break;
           } catch (modelError) {
             lastModelError = modelError;
-            if (!String(modelError).includes("404") || model === models[models.length - 1]) {
-              throw modelError;
-            }
-            console.warn(`Gemini model ${model} was not found; trying fallback model.`);
+            console.warn(`Gemini model ${model} failed; trying fallback...`, modelError);
           }
         }
-        if (!response) throw lastModelError || new Error("Gemini returned no response.");
+        if (!response?.text) throw lastModelError || new Error("Gemini returned no response.");
 
         const bodyScan = parseBodyScanAnalysis(response.text);
         if (!bodyScan) {
@@ -255,34 +253,29 @@ export async function POST(req: Request) {
       } catch (err) {
         console.error("Gemini Vision API Error:", err);
       }
-    })();
+    }
 
-    // 2. Task: Personalized Starting Report (OpenAI)
+    // 2. Task: Personalized Starting Report (OpenAI) with visual observations
     let aiStrategy: Record<string, unknown> = {};
     let reportGenerationFailed = false;
 
-    const reportPromise = (async () => {
-      try {
-        console.log("Generating personalised starting report...");
-        aiStrategy = await generateStartingReport({
-          onboarding: data,
-          bmi,
-          estimatedBodyFat: estimated_body_fat,
-          visualObservations: images.length > 0 ? "Photos provided." : "No photos provided.",
-        });
-        console.log("AI Strategy Generated:", aiStrategy);
-      } catch (err) {
-        console.error("OpenAI starting report error:", err);
-        reportGenerationFailed = true;
-        aiStrategy = {
-          generation_status: "failed",
-          generation_error: "Your personalised report could not be generated yet.",
-        };
-      }
-    })();
-
-    // Run both AI tasks in parallel to minimize latency
-    await Promise.all([visionPromise, reportPromise]);
+    try {
+      console.log("Generating personalised starting report with vision observations...");
+      aiStrategy = await generateStartingReport({
+        onboarding: data,
+        bmi,
+        estimatedBodyFat: estimated_body_fat,
+        visualObservations,
+      });
+      console.log("AI Strategy Generated:", aiStrategy);
+    } catch (err) {
+      console.error("OpenAI starting report error:", err);
+      reportGenerationFailed = true;
+      aiStrategy = {
+        generation_status: "failed",
+        generation_error: "Your personalised report could not be generated yet.",
+      };
+    }
 
     // Gemini is the source of truth for photo observations. Merge into strategy.
     const structuredBodyScan = parseBodyScanAnalysis(visualObservations);
@@ -293,6 +286,7 @@ export async function POST(req: Request) {
         observed_strengths: structuredBodyScan.observed_strengths,
         priority_improvements: structuredBodyScan.priority_improvements,
         posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
+        goal_gap: structuredBodyScan.goal_gap || null,
       };
     }
 
@@ -341,82 +335,94 @@ export async function POST(req: Request) {
     const safeData = stripImagePayload(data as Record<string, unknown>);
 
     // Save to database
-    const { error: upsertError } = await supabase.from("fitness_os_profiles").upsert(
-      {
-        user_id: user.id,
+    const profilePayload = {
+      user_id: user.id,
 
-        // Basic Info
-        name: data.name ? data.name.trim() : null,
-        country: data.country || null,
-        preferred_language: data.preferred_language || null,
-        goal: data.goal,
-        fitness_level: data.fitness_level,
-        age: data.age,
-        height: data.height,
-        weight: data.weight,
-        target_weight: data.target_weight,
-        gender: data.gender,
-        waist_cm: data.waist_cm || null,
-        chest_cm: data.chest_cm || null,
-        arm_cm: data.arm_cm || null,
-        thigh_cm: data.thigh_cm || null,
+      // Basic Info
+      name: data.name ? data.name.trim() : null,
+      country: data.country || null,
+      preferred_language: data.preferred_language || null,
+      goal: data.goal,
+      fitness_level: data.fitness_level,
+      age: data.age,
+      height: data.height,
+      weight: data.weight,
+      target_weight: data.target_weight,
+      gender: data.gender,
+      waist_cm: data.waist_cm || null,
+      chest_cm: data.chest_cm || null,
+      arm_cm: data.arm_cm || null,
+      thigh_cm: data.thigh_cm || null,
 
-        // Training
-        training_location: data.training_location,
-        equipment: data.equipment,
-        training_days_per_week: data.training_days_per_week,
-        workout_duration_minutes: data.workout_duration_minutes,
-        preferred_training_days: data.preferred_training_days,
-        preferred_training_time: data.preferred_training_time || data.workout_time,
+      // Training
+      training_location: data.training_location,
+      equipment: data.equipment,
+      training_days_per_week: data.training_days_per_week,
+      workout_duration_minutes: data.workout_duration_minutes,
+      preferred_training_days: data.preferred_training_days,
+      preferred_training_time: data.preferred_training_time || data.workout_time,
 
-        // Nutrition & Lifestyle
-        diet_preference: data.food_type,
-        food_type: data.food_type,
-        food_environment: data.food_environment,
-        meals_per_day: data.meals_per_day,
-        available_foods: data.available_foods,
-        food_allergies: data.food_allergies,
-        foods_disliked: data.foods_disliked,
-        foods_avoided: data.foods_avoided,
-        nutrition_budget: data.nutrition_budget,
-        activity_level: data.activity_level,
-        daily_steps: data.daily_steps,
-        sleep_duration: data.sleep_duration,
-        wake_time: data.wake_time,
-        workout_time: data.workout_time,
-        work_time: data.work_time,
-        sleep_time: data.sleep_time,
-        lifestyle_description: data.lifestyle_description,
+      // Nutrition & Lifestyle
+      diet_preference: data.food_type,
+      food_type: data.food_type,
+      food_environment: data.food_environment,
+      meals_per_day: data.meals_per_day,
+      available_foods: data.available_foods,
+      food_allergies: data.food_allergies,
+      foods_disliked: data.foods_disliked,
+      foods_avoided: data.foods_avoided,
+      nutrition_budget: data.nutrition_budget,
+      activity_level: data.activity_level,
+      daily_steps: data.daily_steps,
+      sleep_duration: data.sleep_duration,
+      wake_time: data.wake_time,
+      workout_time: data.workout_time,
+      work_time: data.work_time,
+      sleep_time: data.sleep_time,
+      lifestyle_description: data.lifestyle_description,
 
-        // Physical Concerns & Injuries
-        physical_problems: data.physical_problems,
-        current_pain_severity: data.current_pain_severity,
-        current_pain_triggers: data.current_pain_triggers,
-        previous_injuries: data.previous_injuries,
-        previous_injury_areas: data.previous_injury_areas,
-        previous_injury_timeline: data.previous_injury_timeline,
-        exercise_limitations: data.exercise_limitations,
-        medical_guidance: data.medical_guidance,
-        additional_health_notes: data.additional_health_notes,
-        safety_acknowledged: data.safety_acknowledged,
+      // Physical Concerns & Injuries
+      physical_problems: data.physical_problems,
+      current_pain_severity: data.current_pain_severity,
+      current_pain_triggers: data.current_pain_triggers,
+      previous_injuries: data.previous_injuries,
+      previous_injury_areas: data.previous_injury_areas,
+      previous_injury_timeline: data.previous_injury_timeline,
+      exercise_limitations: data.exercise_limitations,
+      medical_guidance: data.medical_guidance,
+      additional_health_notes: data.additional_health_notes,
+      safety_acknowledged: data.safety_acknowledged,
 
-        // Body Scans & Physique
-        target_physique:
-          data.target_physique ||
-          (data.goal_physique_image ? "Custom Photo" : "Not specified"),
+      // Body Scans & Physique
+      target_physique:
+        data.target_physique ||
+        (data.goal_physique_image ? "Custom Photo" : "Not specified"),
 
-        // Computed Data
-        bmi,
-        baseline_calories,
-        initial_protein_target,
-        weight_trend_baseline,
-        ai_strategy: aiStrategy,
-        onboarding_data: safeData,
-        onboarding_completed: true,
-        updated_at: new Date().toISOString(),
-      },
+      // Computed Data
+      bmi,
+      baseline_calories,
+      initial_protein_target,
+      weight_trend_baseline,
+      ai_strategy: aiStrategy,
+      onboarding_data: safeData,
+      onboarding_completed: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    const admin = createAdminClient();
+    let { error: upsertError } = await supabase.from("fitness_os_profiles").upsert(
+      profilePayload,
       { onConflict: "user_id" },
     );
+
+    if (upsertError) {
+      console.warn("Retrying profile upsert with admin client:", upsertError);
+      const adminResult = await admin.from("fitness_os_profiles").upsert(
+        profilePayload,
+        { onConflict: "user_id" },
+      );
+      upsertError = adminResult.error;
+    }
 
     if (upsertError) {
       console.error("Failed to save fitness profile:", upsertError);
@@ -428,10 +434,17 @@ export async function POST(req: Request) {
 
     if (data.name && data.name.trim()) {
       const cleanName = data.name.trim();
-      await supabase
+      const { error: nameErr } = await supabase
         .from("profiles")
         .update({ display_name: cleanName })
         .eq("id", user.id);
+
+      if (nameErr) {
+        await admin
+          .from("profiles")
+          .update({ display_name: cleanName })
+          .eq("id", user.id);
+      }
 
       try {
         await supabase.auth.updateUser({
@@ -444,14 +457,21 @@ export async function POST(req: Request) {
 
     // Save visual observations to scans table so generate-draft can use it
     if (images.length > 0 && visionAnalysisSucceeded) {
-      await supabase.from("fitness_os_scans").upsert(
-        {
-          user_id: user.id,
-          gemini_analysis: visualObservations,
-          updated_at: new Date().toISOString(),
-        },
+      const scanPayload = {
+        user_id: user.id,
+        gemini_analysis: visualObservations,
+        updated_at: new Date().toISOString(),
+      };
+      const { error: scanError } = await supabase.from("fitness_os_scans").upsert(
+        scanPayload,
         { onConflict: "user_id" },
       );
+      if (scanError) {
+        await admin.from("fitness_os_scans").upsert(
+          scanPayload,
+          { onConflict: "user_id" },
+        );
+      }
     }
 
     if (reportGenerationFailed) {

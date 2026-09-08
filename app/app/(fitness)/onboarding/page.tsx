@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { redirect } from "next/navigation";
 import { OnboardingFlow } from "@/components/fitness/onboarding/onboarding-flow";
 
@@ -17,12 +18,23 @@ export default async function OnboardingPage({
 
   if (!user) redirect("/auth/signin?redirect=/onboarding");
 
-
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from("fitness_os_profiles")
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  if (!profile?.onboarding_completed) {
+    const admin = createAdminClient();
+    const { data: adminProfile } = await admin
+      .from("fitness_os_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (adminProfile?.onboarding_completed) {
+      profile = adminProfile;
+    }
+  }
 
   // Only redirect to report if onboarding is completed AND user is NOT explicitly trying to edit/retake it
   if (profile?.onboarding_completed && !isEditing) {
