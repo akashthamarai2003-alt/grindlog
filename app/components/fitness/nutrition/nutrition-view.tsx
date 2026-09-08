@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Droplet, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
@@ -25,6 +25,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     if (initialDateStr) return initialDateStr;
     return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   }, [initialDateStr]);
+
+  // Week navigation offset (0 = current week, +1 = next week, -1 = previous week)
+  const [weekOffset, setWeekOffset] = useState(0);
 
   // Date navigation & swap modal states
   const [selectedDate, setSelectedDate] = useState<string>(initialData?.date || todayDateStr);
@@ -66,7 +69,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     const currentDay = baseDate.getDay();
     const distanceToMonday = (currentDay + 6) % 7;
     const monday = new Date(baseDate);
-    monday.setDate(baseDate.getDate() - distanceToMonday);
+    monday.setDate(baseDate.getDate() - distanceToMonday + (weekOffset * 7));
 
     const dates = [];
     const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -82,7 +85,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       });
     }
     return dates;
-  }, [initialDateStr, todayDateStr]);
+  }, [initialDateStr, todayDateStr, weekOffset]);
 
   const getActiveMealType = () => {
     const hour = new Date().getHours();
@@ -912,8 +915,59 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           </div>
         </div>
 
-        {/* 7-Day Interactive Strip */}
-        <div suppressHydrationWarning className="bg-[#111A10] border border-white/5 rounded-2xl p-2 mt-6 mb-2">
+        {/* 7-Day Interactive Strip with Week Navigator */}
+        <div suppressHydrationWarning className="bg-[#111A10] border border-white/5 rounded-2xl p-2.5 mt-6 mb-2">
+          {/* Week Selector Bar */}
+          <div className="flex items-center justify-between px-1.5 pb-2 mb-2 border-b border-white/5">
+            <button
+              type="button"
+              onClick={() => {
+                setWeekOffset(prev => prev - 1);
+              }}
+              className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold active:scale-95 select-none"
+              title="Previous Week"
+            >
+              <ChevronLeft size={14} />
+              <span className="text-[10px] uppercase tracking-wider">Prev</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span suppressHydrationWarning className="text-xs font-black text-white uppercase tracking-wider">
+                {weekDates.length === 7 && (
+                  `${new Date(weekDates[0].dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(weekDates[6].dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                )}
+              </span>
+              {weekOffset !== 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWeekOffset(0);
+                    handleSelectDate(todayDateStr);
+                  }}
+                  className="text-[9px] font-black bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full uppercase tracking-wider cursor-pointer hover:bg-[#ADFF00]/25 transition-all active:scale-95"
+                >
+                  Today
+                </button>
+              ) : (
+                <span className="text-[9px] font-black bg-white/10 text-white/70 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  This Week
+                </span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setWeekOffset(prev => prev + 1);
+              }}
+              className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold active:scale-95 select-none"
+              title="Next Week"
+            >
+              <span className="text-[10px] uppercase tracking-wider">Next</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
           <div suppressHydrationWarning className="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar">
             {weekDates.map((d) => {
               const isSelected = (selectedDate || todayDateStr) === d.dateStr;

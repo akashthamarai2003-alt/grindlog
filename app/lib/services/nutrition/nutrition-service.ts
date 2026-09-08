@@ -702,7 +702,8 @@ export class NutritionService {
     dayOfWeek: number, // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     profile: any,
     targets: any,
-    foodCatalog: NutritionFoodReference[]
+    foodCatalog: NutritionFoodReference[],
+    weekCycle: number = 0 // 0 = Week A, 1 = Week B (Bi-weekly variety rotation)
   ): Map<string, any> {
     const plansMap = new Map<string, any>();
     const rawDiet = (profile?.diet_preference || profile?.food_type || 'balanced').toLowerCase();
@@ -983,11 +984,155 @@ export class NutritionService {
       6: 'Light Dal Tadka with Warm Phulkas',
     };
 
-    plansMap.set('breakfast', buildMealResult('breakfast', breakfastTitles[dayOfWeek] || `${dayName} Breakfast`, breakfastDefs[dayOfWeek] || breakfastDefs[1], true));
-    plansMap.set('lunch', buildMealResult('lunch', lunchTitles[dayOfWeek] || `${dayName} Lunch`, lunchDefs[dayOfWeek] || lunchDefs[1], true));
+    // ─── WEEK B (Next Week) ROTATING TEMPLATES ───
+    const breakfastDefsWeekB: Record<number, Array<{ name: string; quantity: number; servingSize?: string }>> = {
+      0: isVegan
+        ? [{ name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Chapati', quantity: 2, servingSize: '2 medium' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : isVegetarian
+        ? [{ name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Whole Milk', quantity: 1, servingSize: '1 glass (250ml)' }, { name: 'Chapati', quantity: 2, servingSize: '2 medium' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : [{ name: 'Boiled Egg', quantity: 3, servingSize: '3 large' }, { name: 'Whole Milk', quantity: 1, servingSize: '1 glass (250ml)' }, { name: 'Whole Wheat Bread', quantity: 2, servingSize: '2 slices' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }],
+      1: isVegan
+        ? [{ name: 'Besan Cheela', quantity: 1.5, servingSize: '2 cheelas (140g)' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : isVegetarian
+        ? [{ name: 'Besan Cheela', quantity: 1.5, servingSize: '2 cheelas (140g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : [{ name: 'Besan Cheela', quantity: 1.5, servingSize: '2 cheelas (140g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }],
+      2: isVegan
+        ? [{ name: 'Moong Dal Cheela', quantity: 1.5, servingSize: '2 cheelas (140g)' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
+        : isVegetarian
+        ? [{ name: 'Moong Dal Cheela', quantity: 1.5, servingSize: '2 cheelas (140g)' }, { name: 'Curd (Plain)', quantity: 0.5, servingSize: '75g' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
+        : [{ name: 'Moong Dal Cheela', quantity: 1.5, servingSize: '2 cheelas (140g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }],
+      3: isVegan
+        ? [{ name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Chapati', quantity: 2, servingSize: '2 medium' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
+        : isVegetarian
+        ? [{ name: 'Paneer Bhurji', quantity: 1, servingSize: '100g' }, { name: 'Chapati', quantity: 2, servingSize: '2 medium' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
+        : [{ name: 'Egg Bhurji (Indian Scramble)', quantity: 1, servingSize: '2 eggs' }, { name: 'Chapati', quantity: 2, servingSize: '2 medium' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }],
+      4: isVegan
+        ? [{ name: 'Poha', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Moong Sprouts Salad', quantity: 1, servingSize: '100g' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : isVegetarian
+        ? [{ name: 'Poha', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Moong Sprouts Salad', quantity: 1, servingSize: '100g' }, { name: 'Curd (Plain)', quantity: 0.5, servingSize: '75g' }]
+        : [{ name: 'Poha', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Moong Sprouts Salad', quantity: 0.5, servingSize: '50g' }],
+      5: isVegan
+        ? [{ name: 'Oats (Cooked)', quantity: 2, servingSize: '2 bowls' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : isVegetarian
+        ? [{ name: 'Oats (Cooked)', quantity: 2, servingSize: '2 bowls' }, { name: 'Whole Milk', quantity: 1, servingSize: '1 glass (250ml)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }]
+        : [{ name: 'Oats (Cooked)', quantity: 2, servingSize: '2 bowls' }, { name: 'Whole Milk', quantity: 1, servingSize: '1 glass (250ml)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }],
+      6: isVegan
+        ? [{ name: 'Idli', quantity: 2, servingSize: '3 pieces' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : isVegetarian
+        ? [{ name: 'Idli', quantity: 2, servingSize: '3 pieces' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : [{ name: 'Idli', quantity: 2, servingSize: '3 pieces' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }],
+    };
+
+    const lunchDefsWeekB: Record<number, Array<{ name: string; quantity: number; servingSize?: string }>> = {
+      0: isVegan
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isVegetarian
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
+        : isEggetarian
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
+        : [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Fish Curry', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }],
+      1: isVegan
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isVegetarian
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soya Chunks Curry', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
+        : isEggetarian
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
+        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+      2: isVegan
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isVegetarian
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Chole / Chana Masala', quantity: 1, servingSize: '1 bowl (180g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isEggetarian
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Chole / Chana Masala', quantity: 1, servingSize: '1 bowl (180g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
+        : [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Chicken Curry (Home Style)', quantity: 1, servingSize: '1 bowl (180g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }],
+      3: isVegan
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isVegetarian
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isEggetarian
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Egg Curry (2 Eggs)', quantity: 1, servingSize: '1 bowl (200g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Egg Curry (2 Eggs)', quantity: 1, servingSize: '1 bowl (200g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+      4: isVegan
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isVegetarian
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isEggetarian
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+      5: isVegan
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isVegetarian
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isEggetarian
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
+        : [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Fish Curry', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }],
+      6: isVegan
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isVegetarian
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : isEggetarian
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
+        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+    };
+
+    const dinnerDefsWeekB: Record<number, Array<{ name: string; quantity: number; servingSize?: string }>> = {
+      0: [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }],
+      1: isVegan
+        ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+      2: isVegan
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Bhurji', quantity: 0.7, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }],
+      3: [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }],
+      4: [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }],
+      5: [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+      6: [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+    };
+
+    const breakfastTitlesWeekB: Record<number, string> = {
+      0: isVegetarian ? 'Paneer Tikka with Warm Phulkas' : (isVegan ? 'Tofu & Phulkas' : 'Farm Boiled Eggs & Whole Wheat Toast'),
+      1: 'Besan Cheela with Fresh Curd & Chutney',
+      2: 'Moong Dal Cheela with Cucumber Salad',
+      3: isNonVeg || isEggetarian ? 'Desi Egg Bhurji with Warm Phulkas' : 'Paneer Bhurji with Warm Phulkas',
+      4: 'Homestyle Veggie Poha with Moong Sprouts',
+      5: 'Creamy Rolled Oats with Milk & Apple',
+      6: 'Steamed Idlis with Dal Sambar',
+    };
+
+    const lunchTitlesWeekB: Record<number, string> = {
+      0: isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Special Paneer Tikka with Jeera Rice',
+      1: isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'High-Protein Soya Matar Curry with Phulkas',
+      2: 'Punjabi Chana Masala with Jeera Rice & Dahi',
+      3: isNonVeg ? 'Dhaba Egg Curry with Hot Phulkas' : 'Yellow Dal Tadka with Phulkas & Paneer',
+      4: isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Comfort Rajma Chawal with Kachumber',
+      5: 'Yellow Dal Tadka with Steamed Rice & Paneer',
+      6: 'Punjabi Chana Masala with Phulkas & Salad',
+    };
+
+    const dinnerTitlesWeekB: Record<number, string> = {
+      0: 'Light Dal Tadka with Warm Phulkas',
+      1: 'Moong Dal Khichdi with Cooling Dahi',
+      2: 'Paneer Bhurji with Warm Phulkas & Salad',
+      3: 'Palak Paneer with Hot Phulkas',
+      4: 'Mixed Dal Khichdi with Cucumber Salad',
+      5: 'Light Dal Tadka with Steamed Rice & Curd',
+      6: 'Moong Dal Khichdi with Cooling Dahi',
+    };
+
+    const isWeekB = weekCycle === 1;
+    const finalBreakfastDefs = isWeekB ? (breakfastDefsWeekB[dayOfWeek] || breakfastDefs[dayOfWeek]) : (breakfastDefs[dayOfWeek] || breakfastDefs[1]);
+    const finalLunchDefs = isWeekB ? (lunchDefsWeekB[dayOfWeek] || lunchDefs[dayOfWeek]) : (lunchDefs[dayOfWeek] || lunchDefs[1]);
+    const finalDinnerDefs = isWeekB ? (dinnerDefsWeekB[dayOfWeek] || dinnerDefs[dayOfWeek]) : (dinnerDefs[dayOfWeek] || dinnerDefs[1]);
+
+    const finalBreakfastTitle = isWeekB ? (breakfastTitlesWeekB[dayOfWeek] || `${dayName} Breakfast`) : (breakfastTitles[dayOfWeek] || `${dayName} Breakfast`);
+    const finalLunchTitle = isWeekB ? (lunchTitlesWeekB[dayOfWeek] || `${dayName} Lunch`) : (lunchTitles[dayOfWeek] || `${dayName} Lunch`);
+    const finalDinnerTitle = isWeekB ? (dinnerTitlesWeekB[dayOfWeek] || `${dayName} Dinner`) : (dinnerTitles[dayOfWeek] || `${dayName} Dinner`);
+
+    plansMap.set('breakfast', buildMealResult('breakfast', finalBreakfastTitle, finalBreakfastDefs, true));
+    plansMap.set('lunch', buildMealResult('lunch', finalLunchTitle, finalLunchDefs, true));
     plansMap.set('pre_workout', buildMealResult('pre_workout', 'Pre-Workout Energy Fuel (< 3g Fat)', snackDefs[dayOfWeek] || snackDefs[1], false));
     plansMap.set('snack', buildMealResult('snack', `${dayName} Natural Snack`, snackDefs[dayOfWeek] || snackDefs[1], false));
-    plansMap.set('dinner', buildMealResult('dinner', dinnerTitles[dayOfWeek] || `${dayName} Dinner`, dinnerDefs[dayOfWeek] || dinnerDefs[1], true));
+    plansMap.set('dinner', buildMealResult('dinner', finalDinnerTitle, finalDinnerDefs, true));
 
     return plansMap;
   }
@@ -1435,7 +1580,10 @@ export class NutritionService {
     // 7-day rotating menu calculation strictly adhering to user onboarding profile
     const targetDate = new Date(`${localDate}T12:00:00.000Z`);
     const dayOfWeek = isNaN(targetDate.getTime()) ? new Date().getDay() : targetDate.getUTCDay();
-    const rotatingPlans = NutritionService.getRotatingMealPlanForDay(dayOfWeek, fitProfile, targets, foodCatalog);
+    // 2-week cycle calculation (Week A = 0, Week B = 1) ensuring next week has a brand new fresh rotation
+    const epochWeeks = Math.floor((targetDate.getTime() || Date.now()) / (7 * 24 * 60 * 60 * 1000));
+    const weekCycle = Math.abs(epochWeeks) % 2;
+    const rotatingPlans = NutritionService.getRotatingMealPlanForDay(dayOfWeek, fitProfile, targets, foodCatalog, weekCycle);
 
     const rawDietStr = String(fitProfile?.food_type || fitProfile?.diet_preference || '').toLowerCase();
     const isProfileVegan = rawDietStr.includes('vegan');
