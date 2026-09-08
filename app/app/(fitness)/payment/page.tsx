@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -43,6 +43,94 @@ const features = [
   { icon: Activity, label: "Advanced progress analysis", core: false, pro: true },
 ];
 
+// Memoized Features Comparison Table (Avoids unnecessary DOM repaints during mobile scroll)
+const FeaturesComparisonTable = memo(function FeaturesComparisonTable() {
+  return (
+    <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-6 mb-10 overflow-hidden transform-gpu">
+      <div className="grid grid-cols-12 mb-6 border-b border-[#1A2619] pb-4 items-center">
+        <h3 className="col-span-6 font-bold text-gray-200 text-sm">Feature</h3>
+        <div className="col-span-3 text-center text-xs font-semibold text-gray-400">Core</div>
+        <div className="col-span-3 text-center font-black text-[#ADFF00] tracking-wider uppercase text-xs">Pro</div>
+      </div>
+      
+      <div className="space-y-5">
+        {features.map((feature, i) => (
+          <div key={i} className="grid grid-cols-12 items-center">
+            <div className="col-span-6 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#1A2619] flex items-center justify-center text-gray-400 shrink-0">
+                <feature.icon size={14} />
+              </div>
+              <span className="text-xs font-medium text-gray-300 leading-tight pr-2">{feature.label}</span>
+            </div>
+            
+            <div className="col-span-3 flex justify-center">
+              {typeof feature.core === "boolean" ? (
+                feature.core ? <Check size={16} className="text-gray-400" /> : <span className="text-gray-600 text-lg leading-none">&times;</span>
+              ) : (
+                <span className="text-[10px] font-semibold text-gray-400">{feature.core}</span>
+              )}
+            </div>
+
+            <div className="col-span-3 flex justify-center">
+              {typeof feature.pro === "boolean" ? (
+                feature.pro ? <Check size={16} className="text-[#ADFF00]" strokeWidth={3} /> : <span className="text-gray-600 text-lg leading-none">&times;</span>
+              ) : (
+                <span className="text-[10px] font-bold text-[#ADFF00]">{feature.pro}</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+// Self-contained countdown banner (Prevents entire page from re-rendering every single second)
+const DiscountStickyBanner = memo(function DiscountStickyBanner({
+  discountPercent,
+  expiresAt,
+  onExpire,
+}: {
+  discountPercent: number;
+  expiresAt: number;
+  onExpire: () => void;
+}) {
+  const [remaining, setRemaining] = useState(() => Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)));
+
+  useEffect(() => {
+    const updateTime = () => {
+      const diff = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+      setRemaining(diff);
+      if (diff <= 0) {
+        onExpire();
+      }
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt, onExpire]);
+
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const formatted = `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+
+  return (
+    <div className="sticky top-[72px] z-40 bg-gradient-to-r from-[#0E1A0F] via-[#162B17] to-[#0E1A0F] border-b border-[#ADFF00]/40 py-2.5 px-4 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)] transform-gpu">
+      <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-xs font-black text-white truncate">
+          <span className="text-base shrink-0">🔥</span>
+          <span className="truncate uppercase tracking-wide text-[#ADFF00]">{discountPercent}% OFF Locked In For All Months</span>
+        </div>
+        <div className="flex items-center gap-1.5 bg-black/70 border border-[#ADFF00]/60 rounded-full px-2.5 py-1 text-[#ADFF00] font-mono font-black text-xs shrink-0 shadow-[0_0_10px_rgba(173,255,0,0.2)]">
+          <Timer size={13} className="text-[#ADFF00]" />
+          <span>{formatted}</span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 const basePlans = [
   {
     id: "monthly",
@@ -78,7 +166,6 @@ export default function FitnessPaymentPage() {
   const [showSpinModal, setShowSpinModal] = useState(false);
   const [discountToken, setDiscountToken] = useState<string | null>(null);
   const [discountExpiresAt, setDiscountExpiresAt] = useState<number | null>(null);
-  const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [isDiscountExpired, setIsDiscountExpired] = useState(false);
 
   // Current membership checks
@@ -86,6 +173,12 @@ export default function FitnessPaymentPage() {
     currentPremiumInfo?.premium_level === "core" && 
     (currentPremiumInfo as any)?.is_premium
   );
+
+  const handleDiscountExpire = useCallback(() => {
+    setIsDiscountExpired(true);
+    setDiscountToken(null);
+    sessionStorage.removeItem("fitness_spin_discount_token");
+  }, []);
 
   // Initialize Lucky Wheel and load active discount session
   useEffect(() => {
@@ -108,10 +201,8 @@ export default function FitnessPaymentPage() {
       if (now < expiresAtNum) {
         setDiscountToken(savedToken);
         setDiscountExpiresAt(expiresAtNum);
-        setRemainingSeconds(Math.max(0, Math.floor((expiresAtNum - now) / 1000)));
       } else {
-        setIsDiscountExpired(true);
-        sessionStorage.removeItem("fitness_spin_discount_token");
+        handleDiscountExpire();
       }
     } else if (!hasSeenSpin) {
       // Auto-trigger spinner modal after 1.2s for returning free users
@@ -120,31 +211,9 @@ export default function FitnessPaymentPage() {
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, [premiumStatusLoaded, isCurrentCore]);
+  }, [premiumStatusLoaded, isCurrentCore, handleDiscountExpire]);
 
-  // 1-second countdown ticker for active discount
-  useEffect(() => {
-    if (!discountExpiresAt || isDiscountExpired || isCurrentCore) return;
-
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const diff = Math.floor((discountExpiresAt - now) / 1000);
-
-      if (diff <= 0) {
-        setRemainingSeconds(0);
-        setIsDiscountExpired(true);
-        setDiscountToken(null);
-        sessionStorage.removeItem("fitness_spin_discount_token");
-        clearInterval(interval);
-      } else {
-        setRemainingSeconds(diff);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [discountExpiresAt, isDiscountExpired, isCurrentCore]);
-
-  const handleClaimDiscount = (data: {
+  const handleClaimDiscount = useCallback((data: {
     token: string;
     expiresAt: number;
     prices: { core: number; pro: number };
@@ -152,19 +221,18 @@ export default function FitnessPaymentPage() {
   }) => {
     setDiscountToken(data.token);
     setDiscountExpiresAt(data.expiresAt);
-    setRemainingSeconds(Math.max(0, Math.floor((data.expiresAt - Date.now()) / 1000)));
     setIsDiscountExpired(false);
     sessionStorage.setItem("fitness_spin_discount_token", data.token);
     sessionStorage.setItem("fitness_spin_discount_expires_at", data.expiresAt.toString());
     sessionStorage.setItem("fitness_spin_completed_or_dismissed", "true");
-  };
+  }, []);
 
-  const handleCloseSpinModal = () => {
+  const handleCloseSpinModal = useCallback(() => {
     setShowSpinModal(false);
     sessionStorage.setItem("fitness_spin_completed_or_dismissed", "true");
-  };
+  }, []);
 
-  const isDiscountActive = isCurrentCore || (Boolean(discountToken) && !isDiscountExpired && remainingSeconds > 0);
+  const isDiscountActive = isCurrentCore || (Boolean(discountToken) && !isDiscountExpired && (discountExpiresAt ? Date.now() < discountExpiresAt : false));
 
   const discountPercent = pricingConfig?.spinDiscountPercentage ?? 50;
 
@@ -176,12 +244,6 @@ export default function FitnessPaymentPage() {
   const currentPrice = level === "pro" 
     ? ((isCurrentCore || isDiscountActive) ? proPrice : (proOriginalPrice || proPrice))
     : (isDiscountActive ? corePrice : (coreOriginalPrice || corePrice));
-
-  const formatTime = (totalSeconds: number) => {
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
 
   // Fetch current premium status
   useEffect(() => {
@@ -406,10 +468,10 @@ export default function FitnessPaymentPage() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60" />
 
       {/* Header */}
-      <div className="sticky top-0 z-50 px-4 py-4 flex items-center justify-between bg-[#0A1108]/80 backdrop-blur-lg">
+      <div className="sticky top-0 z-50 px-4 py-4 flex items-center justify-between bg-[#0A1108]/90 backdrop-blur-md transform-gpu">
         <button
           onClick={() => router.push(returnTo)}
-          className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center hover:bg-[#1A2619] transition-colors"
+          className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center hover:bg-[#1A2619] transition-colors touch-manipulation cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5 text-gray-300" />
         </button>
@@ -421,7 +483,7 @@ export default function FitnessPaymentPage() {
 
       {/* Urgency / Active Discount Sticky Banner */}
       {isCurrentCore ? (
-        <div className="sticky top-[72px] z-40 bg-gradient-to-r from-[#0E1A0F] via-[#162B17] to-[#0E1A0F] border-b border-[#ADFF00]/40 py-2.5 px-4 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+        <div className="sticky top-[72px] z-40 bg-gradient-to-r from-[#0E1A0F] via-[#162B17] to-[#0E1A0F] border-b border-[#ADFF00]/40 py-2.5 px-4 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)] transform-gpu">
           <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-black text-white truncate">
               <span className="text-base shrink-0">⭐</span>
@@ -434,21 +496,14 @@ export default function FitnessPaymentPage() {
             )}
           </div>
         </div>
-      ) : isDiscountActive ? (
-        <div className="sticky top-[72px] z-40 bg-gradient-to-r from-[#0E1A0F] via-[#162B17] to-[#0E1A0F] border-b border-[#ADFF00]/40 py-2.5 px-4 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-          <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-black text-white truncate">
-              <span className="text-base shrink-0">🔥</span>
-              <span className="truncate uppercase tracking-wide text-[#ADFF00]">{discountPercent}% OFF Locked In For All Months</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-black/70 border border-[#ADFF00]/60 rounded-full px-2.5 py-1 text-[#ADFF00] font-mono font-black text-xs shrink-0 shadow-[0_0_10px_rgba(173,255,0,0.2)]">
-              <Timer size={13} className="animate-spin text-[#ADFF00]" />
-              <span>{formatTime(remainingSeconds)}</span>
-            </div>
-          </div>
-        </div>
+      ) : isDiscountActive && discountExpiresAt ? (
+        <DiscountStickyBanner
+          discountPercent={discountPercent}
+          expiresAt={discountExpiresAt}
+          onExpire={handleDiscountExpire}
+        />
       ) : isDiscountExpired ? (
-        <div className="sticky top-[72px] z-40 bg-red-950/60 border-b border-red-500/30 py-2 px-4 backdrop-blur-md text-center">
+        <div className="sticky top-[72px] z-40 bg-red-950/60 border-b border-red-500/30 py-2 px-4 backdrop-blur-md text-center transform-gpu">
           <span className="text-xs font-semibold text-red-300">
             ⚠️ {discountPercent}% discount offer has expired. Standard prices restored.
           </span>
@@ -462,7 +517,7 @@ export default function FitnessPaymentPage() {
             initial={{ scale: 0, rotate: -45 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", bounce: 0.5, duration: 0.8 }}
-            className="w-16 h-16 bg-[#ADFF00] rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-[0_0_30px_rgba(173,255,0,0.3)]"
+            className="w-16 h-16 bg-[#ADFF00] rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-[0_0_30px_rgba(173,255,0,0.3)] transform-gpu"
           >
             <Dumbbell className="text-black" size={32} />
           </motion.div>
@@ -472,52 +527,17 @@ export default function FitnessPaymentPage() {
           </p>
         </div>
 
-        {/* Features Comparison */}
-        <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-6 mb-10 overflow-hidden">
-          <div className="grid grid-cols-12 mb-6 border-b border-[#1A2619] pb-4 items-center">
-            <h3 className="col-span-6 font-bold text-gray-200 text-sm">Feature</h3>
-            <div className="col-span-3 text-center text-xs font-semibold text-gray-400">Core</div>
-            <div className="col-span-3 text-center font-black text-[#ADFF00] tracking-wider uppercase text-xs">Pro</div>
-          </div>
-          
-          <div className="space-y-5">
-            {features.map((feature, i) => (
-              <div key={i} className="grid grid-cols-12 items-center">
-                <div className="col-span-6 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#1A2619] flex items-center justify-center text-gray-400 shrink-0">
-                    <feature.icon size={14} />
-                  </div>
-                  <span className="text-xs font-medium text-gray-300 leading-tight pr-2">{feature.label}</span>
-                </div>
-                
-                <div className="col-span-3 flex justify-center">
-                  {typeof feature.core === "boolean" ? (
-                    feature.core ? <Check size={16} className="text-gray-400" /> : <span className="text-gray-600 text-lg leading-none">&times;</span>
-                  ) : (
-                    <span className="text-[10px] font-semibold text-gray-400">{feature.core}</span>
-                  )}
-                </div>
-                
-                <div className="col-span-3 flex justify-center">
-                  {typeof feature.pro === "boolean" ? (
-                    feature.pro ? <Check size={16} className="text-[#ADFF00]" strokeWidth={3} /> : <span className="text-gray-600 text-lg leading-none">&times;</span>
-                  ) : (
-                    <span className="text-[10px] font-bold text-[#ADFF00]">{feature.pro}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Features Comparison (Memoized Component) */}
+        <FeaturesComparisonTable />
 
         {/* Prominent On-Page Lucky Wheel Banner (Visible before claiming discount) */}
         {!isDiscountActive && !isCurrentCore && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-5 rounded-3xl bg-gradient-to-br from-[#122413] via-[#0E1A0F] to-[#142615] border-2 border-[#ADFF00]/40 shadow-[0_0_30px_rgba(173,255,0,0.15)] relative overflow-hidden"
+            className="mb-8 p-5 rounded-3xl bg-gradient-to-br from-[#122413] via-[#0E1A0F] to-[#142615] border-2 border-[#ADFF00]/40 shadow-[0_0_25px_rgba(173,255,0,0.15)] relative overflow-hidden transform-gpu"
           >
-            <div className="absolute top-0 right-0 w-36 h-36 bg-[#ADFF00]/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-36 h-36 bg-[radial-gradient(circle,rgba(173,255,0,0.15)_0%,transparent_70%)] pointer-events-none" />
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-2xl bg-[#ADFF00] text-black flex items-center justify-center font-black text-xl shadow-[0_0_15px_rgba(173,255,0,0.4)] shrink-0">
                 🎡
@@ -537,7 +557,7 @@ export default function FitnessPaymentPage() {
             <button
               type="button"
               onClick={() => setShowSpinModal(true)}
-              className="w-full py-3.5 px-4 bg-[#ADFF00] text-black rounded-2xl font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_20px_rgba(173,255,0,0.25)] transition-all cursor-pointer"
+              className="w-full py-3.5 px-4 bg-[#ADFF00] text-black rounded-2xl font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_20px_rgba(173,255,0,0.25)] transition-all cursor-pointer touch-manipulation"
             >
               <span>Spin The Lucky Wheel 🎰</span>
               <ArrowRight size={16} />
@@ -553,7 +573,7 @@ export default function FitnessPaymentPage() {
               if (!isCurrentCore) setLevel("core");
             }}
             disabled={isCurrentCore}
-            className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
+            className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden touch-manipulation ${
               isCurrentCore
                 ? "border-gray-700/50 bg-[#121E12]/50 opacity-80 cursor-default"
                 : level === "core" 
@@ -614,7 +634,7 @@ export default function FitnessPaymentPage() {
           {/* Pro Plan */}
           <button
             onClick={() => setLevel("pro")}
-            className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
+            className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden touch-manipulation ${
               level === "pro" 
                 ? "border-[#ADFF00] bg-[#ADFF00]/5" 
                 : "border-[#1A2619] bg-[#121E12] hover:border-gray-700"
@@ -682,7 +702,7 @@ export default function FitnessPaymentPage() {
       </div>
 
       {/* Floating CTA with Nested Spin & Win Badge (Zero Overlap) */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[max(env(safe-area-inset-bottom),16px)] bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pt-8 z-50 pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[max(env(safe-area-inset-bottom),16px)] bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pt-8 z-50 pointer-events-none transform-gpu">
         <div className="max-w-lg mx-auto pointer-events-auto flex flex-col">
           {/* Spin & Win Quick Trigger Badge (Cleanly positioned above the button, zero overlap) */}
           {!isDiscountActive && !isCurrentCore && !showSpinModal && (
@@ -691,7 +711,7 @@ export default function FitnessPaymentPage() {
                 initial={{ opacity: 0, y: 8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 onClick={() => setShowSpinModal(true)}
-                className="bg-[#0E1A0F] border-2 border-[#ADFF00] text-white py-1.5 px-3.5 rounded-full shadow-[0_0_20px_rgba(173,255,0,0.35)] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+                className="bg-[#0E1A0F] border-2 border-[#ADFF00] text-white py-1.5 px-3.5 rounded-full shadow-[0_0_20px_rgba(173,255,0,0.35)] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all cursor-pointer group touch-manipulation"
               >
                 <span className="text-sm animate-bounce">🎡</span>
                 <span className="text-xs font-black text-[#ADFF00] group-hover:underline">Spin & Win {discountPercent}% OFF</span>
@@ -702,7 +722,7 @@ export default function FitnessPaymentPage() {
           <button
             onClick={handlePayment}
             disabled={isProcessing || isCurrentPlan || isPolling}
-            className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] disabled:opacity-70 disabled:shadow-none transition-all cursor-pointer"
+            className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] disabled:opacity-70 disabled:shadow-none transition-all cursor-pointer touch-manipulation"
           >
             {isProcessing || isPolling ? (
               <span className="flex items-center gap-2 animate-pulse">
@@ -727,14 +747,14 @@ export default function FitnessPaymentPage() {
             {isCurrentCore ? (
               <Link
                 href="/"
-                className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer"
+                className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer touch-manipulation"
               >
                 Keep Core Plan (Back to Dashboard) →
               </Link>
             ) : (
               <Link
                 href="/"
-                className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer"
+                className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer touch-manipulation"
               >
                 Continue with Free →
               </Link>

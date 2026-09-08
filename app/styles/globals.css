@@ -363,6 +363,30 @@ body {
   }
 }
 
+@keyframes wheel-ticker {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-12deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-6deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-wheel-ticker {
+  animation: wheel-ticker 0.22s linear infinite;
+  transform-origin: 50% 0%;
+  will-change: transform;
+}
+
 /* --- Utility Classes --- */
 .animate-fade-up {
   animation: fade-up 0.6s var(--ease-spring) both;

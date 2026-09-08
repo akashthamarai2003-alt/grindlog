@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Timer, Zap, Check, ArrowRight, X, ShieldCheck } from "lucide-react";
 import confetti from "canvas-confetti";
+import { cn } from "@/lib/utils";
 import { claimSpinDiscountAction } from "@/app/actions/payment";
 import { PlanPricingConfig } from "@/lib/constants/pricing";
 
@@ -83,30 +84,34 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
 
   const fireConfetti = () => {
     try {
-      const duration = 2500;
-      const end = Date.now() + duration;
+      // GPU-friendly celebratory burst optimized for mobile screens (avoids 100+ requestAnimationFrame loops)
+      confetti({
+        particleCount: 40,
+        angle: 60,
+        spread: 60,
+        origin: { x: 0.15, y: 0.6 },
+        colors: ["#ADFF00", "#FFFFFF", "#10B981", "#EAB308"],
+        disableForReducedMotion: true,
+      });
+      confetti({
+        particleCount: 40,
+        angle: 120,
+        spread: 60,
+        origin: { x: 0.85, y: 0.6 },
+        colors: ["#ADFF00", "#FFFFFF", "#10B981", "#EAB308"],
+        disableForReducedMotion: true,
+      });
 
-      const frame = () => {
+      // Second burst for delayed celebration depth
+      setTimeout(() => {
         confetti({
-          particleCount: 7,
-          angle: 60,
-          spread: 60,
-          origin: { x: 0, y: 0.6 },
-          colors: ["#ADFF00", "#FFFFFF", "#10B981", "#EAB308"],
+          particleCount: 30,
+          spread: 90,
+          origin: { x: 0.5, y: 0.5 },
+          colors: ["#ADFF00", "#FFFFFF", "#10B981"],
+          disableForReducedMotion: true,
         });
-        confetti({
-          particleCount: 7,
-          angle: 120,
-          spread: 60,
-          origin: { x: 1, y: 0.6 },
-          colors: ["#ADFF00", "#FFFFFF", "#10B981", "#EAB308"],
-        });
-
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        }
-      };
-      frame();
+      }, 300);
     } catch (e) {
       console.error("Confetti trigger error:", e);
     }
@@ -160,20 +165,20 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm transform-gpu">
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-md bg-[#0D160E] border border-[#1F331F] rounded-3xl p-6 text-white shadow-[0_0_60px_rgba(173,255,0,0.15)] overflow-hidden"
+        className="relative w-full max-w-md bg-[#0D160E] border border-[#1F331F] rounded-3xl p-6 text-white shadow-[0_0_35px_rgba(173,255,0,0.12)] overflow-hidden transform-gpu"
       >
-        {/* Ambient Top Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-[#ADFF00]/15 blur-3xl pointer-events-none" />
+        {/* Ambient Top Glow (Shader-free GPU-efficient radial gradient) */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-36 bg-[radial-gradient(ellipse_at_top,rgba(173,255,0,0.18)_0%,transparent_70%)] pointer-events-none" />
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#142415] border border-[#223A23] flex items-center justify-center text-gray-400 hover:text-white transition-colors z-20"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#142415] border border-[#223A23] flex items-center justify-center text-gray-400 hover:text-white transition-colors z-20 touch-manipulation cursor-pointer"
         >
           <X size={16} />
         </button>
@@ -194,37 +199,46 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
                 : "Hold tight! Selecting the highest available athlete discount for you..."}
             </p>
 
-            {/* WHEEL CONTAINER */}
-            <div className="relative w-64 h-64 my-1 flex items-center justify-center">
-              {/* TOP POINTER / TICKER NEEDLE */}
-              <motion.div 
-                animate={phase === "spinning" ? { 
-                  rotate: [0, -12, 10, -8, 8, -4, 4, 0],
-                  transition: { repeat: Infinity, duration: 0.22, ease: "linear" }
-                } : { rotate: 0 }}
-                className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] origin-top pointer-events-none"
-              >
-                <svg width="28" height="32" viewBox="0 0 28 32" fill="none">
-                  <path
-                    d="M14 32L3.6077 10L24.3923 10L14 32Z"
-                    fill="#ADFF00"
-                    stroke="#0A1108"
-                    strokeWidth="2"
-                  />
-                  <circle cx="14" cy="8" r="6" fill="#FFFFFF" />
-                </svg>
-              </motion.div>
+            {/* WHEEL CONTAINER WITH STATIC BORDER & GLOW (Avoids repainting shadows during 60fps spin) */}
+            <div className="relative w-64 h-64 my-1 flex items-center justify-center rounded-full shadow-[0_0_25px_rgba(0,0,0,0.8)] border-4 border-[#1F331F] bg-[#0A1108] p-0.5 select-none transform-gpu">
+              {/* TOP POINTER / TICKER NEEDLE (Hardware-accelerated CSS Keyframe Animation) */}
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none origin-top">
+                <div
+                  className={cn(
+                    "origin-top transition-transform",
+                    phase === "spinning" && "animate-wheel-ticker"
+                  )}
+                  style={{
+                    filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.6))",
+                  }}
+                >
+                  <svg width="28" height="32" viewBox="0 0 28 32" fill="none">
+                    <path
+                      d="M14 32L3.6077 10L24.3923 10L14 32Z"
+                      fill="#ADFF00"
+                      stroke="#0A1108"
+                      strokeWidth="2"
+                    />
+                    <circle cx="14" cy="8" r="6" fill="#FFFFFF" />
+                  </svg>
+                </div>
+              </div>
 
-              {/* ROTATING SVG WHEEL */}
+              {/* ROTATING SVG WHEEL (Dedicated GPU Compositing Layer) */}
               <motion.div
                 animate={{ rotate: rotation }}
                 transition={{
                   duration: 4.5,
                   ease: [0.12, 0.8, 0.2, 1], // Realistic deceleration physics
                 }}
-                className="w-full h-full rounded-full shadow-[0_0_30px_rgba(0,0,0,0.8)] border-4 border-[#1F331F] relative overflow-hidden"
+                style={{
+                  willChange: "transform",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
+                }}
+                className="w-full h-full rounded-full relative overflow-hidden transform-gpu"
               >
-                <svg viewBox="0 0 200 200" className="w-full h-full">
+                <svg viewBox="0 0 200 200" className="w-full h-full" shapeRendering="geometricPrecision" textRendering="geometricPrecision">
                   {SLICES.map((slice, i) => {
                     const angle = 45;
                     const startAngle = i * angle - 90;
@@ -270,7 +284,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
                   {/* CENTER INTERACTIVE CAP / TAP TO SPIN BUTTON */}
                   <g 
                     onClick={phase === "ready" ? startSpin : undefined}
-                    className={phase === "ready" ? "cursor-pointer group hover:opacity-90 transition-opacity" : ""}
+                    className={phase === "ready" ? "cursor-pointer group hover:opacity-90 transition-opacity touch-manipulation" : ""}
                   >
                     <circle cx="100" cy="100" r="28" fill="#0D160E" stroke="#ADFF00" strokeWidth="2.5" />
                     <circle cx="100" cy="100" r="21" fill={phase === "ready" ? "#1A2E1C" : "#142415"} />
@@ -307,10 +321,10 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
                 type="button"
                 onClick={startSpin}
                 disabled={phase === "spinning"}
-                className={`w-full py-4 rounded-full font-black text-base flex items-center justify-center gap-2 transition-all uppercase tracking-wider ${
+                className={`w-full py-4 rounded-full font-black text-base flex items-center justify-center gap-2 transition-all uppercase tracking-wider touch-manipulation ${
                   phase === "spinning"
                     ? "bg-[#142415] text-[#ADFF00] border border-[#ADFF00]/40 cursor-wait shadow-none"
-                    : "bg-[#ADFF00] text-black hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_30px_rgba(173,255,0,0.35)] cursor-pointer"
+                    : "bg-[#ADFF00] text-black hover:bg-[#c6ff47] active:scale-[0.98] shadow-[0_0_25px_rgba(173,255,0,0.3)] cursor-pointer"
                 }`}
               >
                 {phase === "spinning" ? (
@@ -337,10 +351,10 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center text-center py-1"
+            className="flex flex-col items-center text-center py-1 transform-gpu"
           >
             {/* Victory Badge */}
-            <div className="w-16 h-16 rounded-2xl bg-[#ADFF00] text-black flex items-center justify-center mb-3 shadow-[0_0_30px_rgba(173,255,0,0.4)]">
+            <div className="w-16 h-16 rounded-2xl bg-[#ADFF00] text-black flex items-center justify-center mb-3 shadow-[0_0_25px_rgba(173,255,0,0.35)]">
               <span className="text-3xl">🎉</span>
             </div>
 
@@ -413,7 +427,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
             {/* 5-MINUTE COUNTDOWN TIMER */}
             <div className="w-full bg-[#080D08] border border-[#ADFF00]/20 rounded-2xl p-3 mb-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Timer className="text-[#ADFF00] animate-spin" size={16} />
+                <Timer className="text-[#ADFF00]" size={16} />
                 <span className="text-xs font-semibold text-gray-300">Offer Expires In:</span>
               </div>
               <div className="font-mono text-lg font-black text-[#ADFF00] tracking-wider">
@@ -425,7 +439,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
             <button
               onClick={handleClaim}
               disabled={isClaiming || timeLeft <= 0}
-              className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-black text-base flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(173,255,0,0.3)] hover:bg-[#9BE600] disabled:opacity-50 disabled:shadow-none transition-all cursor-pointer"
+              className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-black text-base flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.3)] hover:bg-[#9BE600] disabled:opacity-50 disabled:shadow-none transition-all cursor-pointer touch-manipulation"
             >
               {isClaiming ? (
                 <span className="flex items-center gap-2">
@@ -441,7 +455,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
             {/* Skip Option */}
             <button
               onClick={onClose}
-              className="mt-3 text-xs text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
+              className="mt-3 text-xs text-gray-500 hover:text-gray-300 transition-colors cursor-pointer touch-manipulation"
             >
               No thanks, I prefer paying standard price {proOriginalPrice ? `(₹${proOriginalPrice})` : ""}
             </button>
