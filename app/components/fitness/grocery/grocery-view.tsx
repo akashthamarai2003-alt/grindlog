@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useTransition } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { 
   ArrowLeft, 
   ShoppingCart, 
@@ -62,8 +62,8 @@ export function GroceryView({
   const [selectedCategory, setSelectedCategory] = useState<GroceryCategoryFilter>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [hidePurchased, setHidePurchased] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const [isCopied, setIsCopied] = useState(false);
+  const syncTimeoutMap = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Sync state from localStorage on initial load
   useEffect(() => {
@@ -84,7 +84,13 @@ export function GroceryView({
     }
   }, [userId, planId]);
 
-  // Persist checked states in localStorage
+  // Clean up pending timeouts on unmount
+  useEffect(() => {
+    return () => {
+      syncTimeoutMap.current.forEach((t) => clearTimeout(t));
+      syncTimeoutMap.current.clear();
+    };
+  }, []);
   const persistCheckedState = (updatedItems: GroceryItemData[]) => {
     try {
       const storageKey = `grindlog_grocery_checked_${userId}_${planId}`;
@@ -98,26 +104,30 @@ export function GroceryView({
     }
   };
 
-  // Toggle single item
+  // Toggle single item - 0ms instantaneous UI response with debounced background sync
   const handleToggle = (id: string) => {
-    setItems((prev) => {
-      const next = prev.map((it) =>
-        it.id === id ? { ...it, purchased: !it.purchased } : it
-      );
-      persistCheckedState(next);
+    const item = items.find((it) => it.id === id);
+    if (!item) return;
+    const newPurchased = !item.purchased;
 
-      // Async sync to database
-      const toggled = next.find((it) => it.id === id);
-      if (toggled) {
-        startTransition(async () => {
-          await toggleGroceryItemPurchasedAction(id, toggled.purchased).catch((err) => {
-            console.warn("Failed to sync grocery item check to DB:", err);
-          });
-        });
-      }
+    const next = items.map((it) =>
+      it.id === id ? { ...it, purchased: newPurchased } : it
+    );
+    setItems(next);
+    persistCheckedState(next);
 
-      return next;
-    });
+    // Debounce background sync per item to prevent network flooding and eliminate UI lag
+    const existingTimeout = syncTimeoutMap.current.get(id);
+    if (existingTimeout) clearTimeout(existingTimeout);
+
+    const timeout = setTimeout(() => {
+      toggleGroceryItemPurchasedAction(id, newPurchased).catch((err) => {
+        console.warn("Background sync grocery item check to DB:", err);
+      });
+      syncTimeoutMap.current.delete(id);
+    }, 400);
+
+    syncTimeoutMap.current.set(id, timeout);
   };
 
   // Reset all checked items
@@ -127,18 +137,18 @@ export function GroceryView({
       return;
     }
 
-    setItems((prev) => {
-      const next = prev.map((it) => ({ ...it, purchased: false }));
-      persistCheckedState(next);
-      return next;
-    });
+    const next = items.map((it) => ({ ...it, purchased: false }));
+    setItems(next);
+    persistCheckedState(next);
 
-    startTransition(async () => {
-      await resetGroceryItemsAction(planId).catch((err) => {
-        console.warn("Failed to reset grocery items in DB:", err);
-      });
-      toast.success("Checklist reset for your next shopping run!");
+    // Clear any pending single-item syncs
+    syncTimeoutMap.current.forEach((t) => clearTimeout(t));
+    syncTimeoutMap.current.clear();
+
+    resetGroceryItemsAction(planId).catch((err) => {
+      console.warn("Failed to reset grocery items in DB:", err);
     });
+    toast.success("Checklist reset for your next shopping run!");
   };
 
   // Filtered items
