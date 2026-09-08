@@ -2658,14 +2658,78 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Seamless looping background video
+  // 1. Guaranteed 60fps Hyperspace Canvas Warp (instant visual from frame 0)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const parent = canvas.parentElement;
+    const w = (canvas.width = (parent?.clientWidth || 480) * dpr);
+    const h = (canvas.height = (parent?.clientHeight || 800) * dpr);
+    const cx = w / 2;
+    const cy = h / 2;
+
+    const numStars = 85;
+    const stars = Array.from({ length: numStars }, () => ({
+      x: (Math.random() - 0.5) * w * 1.6,
+      y: (Math.random() - 0.5) * h * 1.6,
+      z: Math.random() * w,
+      prevZ: 0,
+    }));
+
+    const render = () => {
+      ctx.fillStyle = "rgba(10, 17, 8, 0.28)";
+      ctx.fillRect(0, 0, w, h);
+
+      for (let i = 0; i < numStars; i++) {
+        const s = stars[i];
+        s.prevZ = s.z;
+        s.z -= 16 * dpr;
+        if (s.z <= 0) {
+          s.x = (Math.random() - 0.5) * w * 1.6;
+          s.y = (Math.random() - 0.5) * h * 1.6;
+          s.z = w;
+          s.prevZ = w;
+        }
+
+        const k = 220 / s.z;
+        const px = s.x * k + cx;
+        const py = s.y * k + cy;
+
+        const prevK = 220 / s.prevZ;
+        const prevPx = s.x * prevK + cx;
+        const prevPy = s.y * prevK + cy;
+
+        const alpha = Math.min(1, (1 - s.z / w) * 1.3);
+        ctx.strokeStyle = `rgba(173, 255, 0, ${alpha})`;
+        ctx.lineWidth = Math.max(1, (1 - s.z / w) * 3 * dpr);
+        ctx.beginPath();
+        ctx.moveTo(prevPx, prevPy);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+      }
+
+      animId = requestAnimationFrame(render);
+    };
+
+    animId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  // 2. Seamless looping background video with mobile autoplay
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Critical for iOS Safari and Android Chrome autoplay policy
+    // Critical attributes for iOS Safari, Chrome, and Android WebView
     video.muted = true;
     video.defaultMuted = true;
     video.playsInline = true;
@@ -2675,20 +2739,21 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
     const playVideo = () => {
       const promise = video.play();
       if (promise !== undefined) {
-        promise.catch((err) => {
-          // Autoplay blocked by mobile browser until user interaction
-          console.warn("Video autoplay deferred:", err);
-        });
+        promise
+          .then(() => setVideoReady(true))
+          .catch((err) => {
+            console.warn("Video autoplay deferred:", err);
+          });
       }
     };
 
-    // Immediate playback attempt
+    video.load();
     playVideo();
 
-    // Event listeners to start playback when video buffer is ready
     video.addEventListener("loadedmetadata", playVideo);
     video.addEventListener("canplay", playVideo);
     video.addEventListener("loadeddata", playVideo);
+    video.addEventListener("playing", () => setVideoReady(true));
 
     // Prevent hitching/black frames when looping
     const handleTimeUpdate = () => {
@@ -2703,10 +2768,10 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
       playVideo();
     };
 
-    // Fallback: Ensure video starts immediately upon user touch/click/visibility
     const unlockMedia = () => {
       playVideo();
     };
+
     window.addEventListener("touchstart", unlockMedia, { passive: true, once: true });
     window.addEventListener("click", unlockMedia, { once: true });
     document.addEventListener("visibilitychange", () => {
@@ -2720,6 +2785,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
       video.removeEventListener("loadedmetadata", playVideo);
       video.removeEventListener("canplay", playVideo);
       video.removeEventListener("loadeddata", playVideo);
+      video.removeEventListener("playing", () => setVideoReady(true));
       video.removeEventListener("timeupdate", handleTimeUpdate);
       video.removeEventListener("ended", handleEnded);
       window.removeEventListener("touchstart", unlockMedia);
@@ -2801,30 +2867,38 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
   const progressPercent = phase === 0 ? 25 : phase === 1 ? 55 : phase === 2 ? 80 : 100;
 
   return (
-    <div className="flex flex-col min-h-[100dvh] justify-center px-4 sm:px-6 relative overflow-hidden bg-black">
-      {/* 1. Seamless Looping Video Background */}
+    <div className="flex flex-col min-h-[100dvh] justify-center px-4 sm:px-6 relative overflow-hidden bg-[#0A1108]">
+      {/* 1. Seamless Looping Video + Warp Canvas Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Instant 60fps Hyperspace Canvas */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full object-cover z-0"
+        />
+
+        {/* High-definition 3D Looping Video Layer */}
         <video
           ref={videoRef}
-          src="/images/video_4f85c2e9175d.mp4"
           autoPlay
           loop
           muted
           playsInline
           preload="auto"
-          className="absolute inset-0 w-full h-full object-cover object-center scale-105"
+          onLoadedData={() => setVideoReady(true)}
+          onPlaying={() => setVideoReady(true)}
+          className={`absolute inset-0 w-full h-full object-cover object-center scale-105 z-[1] transition-opacity duration-700 ${videoReady ? 'opacity-100' : 'opacity-80'}`}
         >
-          <source src="/images/video_4f85c2e9175d.mp4" type="video/mp4" />
+          <source src="/videos/onboarding-warp.mp4?v=3" type="video/mp4" />
+          <source src="/images/onboarding-warp.mp4?v=3" type="video/mp4" />
+          <source src="/images/video_4f85c2e9175d.mp4?v=3" type="video/mp4" />
         </video>
 
-        {/* Cinematic contrast overlay - perfectly tuned so the green warp rays shine through vibrantly */}
-        <div className="absolute inset-0 bg-black/35 z-[1]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/75 z-[1]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(10,17,8,0.65)_100%)] z-[1]" />
+        {/* Soft edge gradient to gently frame top/bottom without darkening the green warp rays */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/35 pointer-events-none z-[2]" />
         
         {/* Subtle cyber grid scanline overlay */}
         <div 
-          className="absolute inset-0 opacity-[0.06] z-[1]"
+          className="absolute inset-0 opacity-[0.05] pointer-events-none z-[2]"
           style={{
             backgroundImage: "linear-gradient(rgba(173,255,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(173,255,0,0.3) 1px, transparent 1px)",
             backgroundSize: "28px 28px"
