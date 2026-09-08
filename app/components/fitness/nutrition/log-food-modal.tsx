@@ -684,6 +684,8 @@ export function LogFoodModal({
                 >
                   <option value="breakfast" className="bg-[#111A10]">Breakfast</option>
                   <option value="lunch" className="bg-[#111A10]">Lunch</option>
+                  <option value="pre_workout" className="bg-[#111A10]">Pre-Workout</option>
+                  <option value="post_workout" className="bg-[#111A10]">Post-Workout</option>
                   <option value="snack" className="bg-[#111A10]">Snack</option>
                   <option value="dinner" className="bg-[#111A10]">Dinner</option>
                 </select>

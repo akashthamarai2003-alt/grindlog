@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock } from "lucide-react";
+import { ChevronRight, Droplet, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
@@ -734,6 +734,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     switch (type.toLowerCase()) {
       case 'breakfast': return <Coffee size={20} />;
       case 'lunch': return <Salad size={20} />;
+      case 'pre_workout': return <Zap size={20} />;
+      case 'post_workout': return <Dumbbell size={20} />;
       case 'snack': return <Apple size={20} />;
       case 'dinner': return <Beef size={20} />;
       default: return <Apple size={20} />;

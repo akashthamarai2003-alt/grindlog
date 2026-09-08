@@ -33,7 +33,7 @@ export default async function NutritionIndexPage() {
             </h1>
             
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-bold text-white/60">
+              <p suppressHydrationWarning className="text-sm font-bold text-white/60">
                 {today}
               </p>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ADFF00]/10 rounded-full border border-[#ADFF00]/20">

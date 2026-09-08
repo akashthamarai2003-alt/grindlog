@@ -39,16 +39,44 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate meal_type strictly
-    const validMealTypes = ['breakfast', 'lunch', 'snack', 'dinner'];
-    if (!validMealTypes.includes(meal_type)) {
-      return NextResponse.json(
-        { success: false, error: { code: 'INVALID_INPUT', message: 'Invalid meal_type.' } },
-        { status: 400 }
-      );
+    // Normalize and validate meal_type
+    const normalizedMealType = String(meal_type || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[-\s]+/g, "_");
+
+    const validMealTypes = [
+      "breakfast",
+      "lunch",
+      "dinner",
+      "snack",
+      "pre_workout",
+      "post_workout",
+      "morning_snack",
+      "evening_snack",
+      "late_snack",
+    ];
+
+    let finalMealType = normalizedMealType;
+    if (!validMealTypes.includes(finalMealType)) {
+      if (finalMealType.includes("pre")) finalMealType = "pre_workout";
+      else if (finalMealType.includes("post")) finalMealType = "post_workout";
+      else if (finalMealType.includes("break")) finalMealType = "breakfast";
+      else if (finalMealType.includes("lunch")) finalMealType = "lunch";
+      else if (finalMealType.includes("din")) finalMealType = "dinner";
+      else if (/^[a-z0-9_]+$/.test(finalMealType) && finalMealType.length > 0) {
+        // Accept valid custom meal type
+      } else {
+        finalMealType = "snack";
+      }
     }
 
-    const log = await NutritionService.logFood(user.id, { food_id, meal_type, quantity, custom_food });
+    const log = await NutritionService.logFood(user.id, { 
+      food_id, 
+      meal_type: finalMealType, 
+      quantity, 
+      custom_food 
+    });
 
     return NextResponse.json({ success: true, data: log });
   } catch (error: any) {
