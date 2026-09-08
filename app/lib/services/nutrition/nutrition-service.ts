@@ -864,23 +864,21 @@ export class NutritionService {
         : [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
     };
 
-    // 3. SNACK / PRE-WORKOUT TEMPLATES BY DAY
+    // 3. SNACK / PRE-WORKOUT TEMPLATES BY DAY (Clean fast carbs + light protein, low fat < 3g)
     const snackDefs: Record<number, Array<{ name: string; quantity: number; servingSize?: string }>> = {
-      0: [{ name: 'Banana', quantity: 1, servingSize: '1 medium' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }],
-      1: [{ name: 'Apple', quantity: 1, servingSize: '1 medium' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }],
+      0: [{ name: 'Banana', quantity: 1, servingSize: '1 medium (118g)' }, { name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }],
+      1: [{ name: 'Apple', quantity: 1, servingSize: '1 medium (180g)' }, { name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }],
       2: isVegan
-        ? [{ name: 'Banana', quantity: 1, servingSize: '1 medium' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }]
-        : [{ name: 'Banana', quantity: 1, servingSize: '1 medium' }, { name: 'Whole Milk', quantity: 1, servingSize: '1 glass (250ml)' }],
-      3: isVegan
-        ? [{ name: 'Apple', quantity: 1, servingSize: '1 medium' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }]
-        : [{ name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }],
-      4: [{ name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }],
+        ? [{ name: 'Banana', quantity: 1, servingSize: '1 medium (118g)' }, { name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }]
+        : [{ name: 'Banana', quantity: 1, servingSize: '1 medium (118g)' }, { name: 'Curd / Dahi (Plain)', quantity: 0.5, servingSize: '75g' }],
+      3: [{ name: 'Apple', quantity: 1, servingSize: '1 medium (180g)' }, { name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }],
+      4: [{ name: 'Banana', quantity: 1, servingSize: '1 medium (118g)' }, { name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }],
       5: isVegan
-        ? [{ name: 'Apple', quantity: 1, servingSize: '1 medium' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }]
+        ? [{ name: 'Apple', quantity: 1, servingSize: '1 medium (180g)' }, { name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }]
         : isVegetarian
-        ? [{ name: 'Whole Milk', quantity: 1, servingSize: '1 glass (250ml)' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }]
-        : [{ name: 'Boiled Egg', quantity: 1, servingSize: '1 large' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }],
-      6: [{ name: 'Banana', quantity: 1, servingSize: '1 medium' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }],
+        ? [{ name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }, { name: 'Curd / Dahi (Plain)', quantity: 0.5, servingSize: '75g' }]
+        : [{ name: 'Boiled Egg White', quantity: 2, servingSize: '2 whites' }, { name: 'Banana', quantity: 1, servingSize: '1 medium (118g)' }],
+      6: [{ name: 'Banana', quantity: 1, servingSize: '1 medium (118g)' }, { name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }],
     };
 
     // 4. DINNER TEMPLATES BY DAY
@@ -906,9 +904,36 @@ export class NutritionService {
         : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }],
     };
 
+    const mealsPerDay = profile?.meals_per_day || '4 meals';
+    const slotProportions: Record<string, number> = {
+      breakfast: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.20 : (mealsPerDay === '2 meals' ? 0.0 : 0.25)),
+      lunch: mealsPerDay === '3 meals' ? 0.40 : (mealsPerDay === '5+ meals' ? 0.30 : (mealsPerDay === '2 meals' ? 0.55 : 0.35)),
+      pre_workout: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
+      snack: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
+      post_workout: 0.13,
+      dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.25 : (mealsPerDay === '2 meals' ? 0.45 : 0.25)),
+    };
+
     const buildMealResult = (mealType: string, title: string, defs: Array<{ name: string; quantity: number; servingSize?: string }>, isCore: boolean) => {
       const items = buildItems(defs, isCore);
-      const totals = items.reduce((acc, it) => ({
+      const rawCals = items.reduce((acc, it) => acc + it.foods.calories, 0);
+      const slotPct = slotProportions[mealType] ?? 0.25;
+      const targetCals = Math.round(Number(targets?.calories || 2000) * slotPct);
+      const scale = rawCals > 0 ? (targetCals / rawCals) : 1;
+
+      const scaledItems = items.map((it) => ({
+        ...it,
+        foods: {
+          ...it.foods,
+          calories: Math.round(it.foods.calories * scale),
+          protein: Number((it.foods.protein * scale).toFixed(1)),
+          carbs: Number((it.foods.carbs * scale).toFixed(1)),
+          fat: Number((it.foods.fat * scale).toFixed(1)),
+          estimated_cost: Math.round(it.foods.estimated_cost * scale),
+        }
+      }));
+
+      const totals = scaledItems.reduce((acc, it) => ({
         calories: acc.calories + it.foods.calories,
         protein: Number((acc.protein + it.foods.protein).toFixed(1)),
         carbs: Number((acc.carbs + it.foods.carbs).toFixed(1)),
@@ -919,11 +944,11 @@ export class NutritionService {
         id: `rotating-${mealType}-${dayOfWeek}`,
         meal_type: mealType,
         name: title,
-        calories: totals.calories,
+        calories: totals.calories || targetCals,
         protein: totals.protein,
         carbs: totals.carbs,
         fat: totals.fat,
-        meal_plan_items: items
+        meal_plan_items: scaledItems
       };
     };
 
@@ -1100,32 +1125,53 @@ export class NutritionService {
       // Snack / Pre-workout
       rawOptions = [
         {
-          title: 'Energy Banana & Peanuts',
-          desc: 'Immediate potassium and sustained healthy fats.',
-          items: [{ name: 'Banana', quantity: 1, servingSize: '1 medium' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }]
+          title: 'Energy Banana & Roasted Chana',
+          desc: 'Immediate potassium and sustained amino acids with low fat.',
+          items: [{ name: 'Banana', quantity: 1, servingSize: '1 medium (118g)' }, { name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }]
         },
         {
-          title: 'Power Fruit & Dairy',
-          desc: 'Fresh apple with refreshing curd or milk.',
-          items: isVegan
-            ? [{ name: 'Apple', quantity: 1, servingSize: '1 medium' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }]
-            : [{ name: 'Apple', quantity: 1, servingSize: '1 medium' }, { name: 'Whole Milk', quantity: 1, servingSize: '1 glass (250ml)' }]
+          title: 'Crisp Apple & Roasted Chana',
+          desc: 'Fresh hydrating energy with light clean crunch.',
+          items: [{ name: 'Apple', quantity: 1, servingSize: '1 medium (180g)' }, { name: 'Roasted Chana (Dry Chickpeas)', quantity: 0.8, servingSize: '25g' }]
         },
         {
           title: 'Protein Quick-Charge',
-          desc: 'Fast protein to prime your muscles.',
+          desc: 'Fast light protein to prime your muscles before training.',
           items: isVegan
-            ? [{ name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
+            ? [{ name: 'Soy Chunks (Cooked)', quantity: 0.8, servingSize: '1 bowl (80g)' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
             : isVegetarian
-            ? [{ name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
-            : [{ name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
+            ? [{ name: 'Curd / Dahi (Plain)', quantity: 0.5, servingSize: '75g' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
+            : [{ name: 'Boiled Egg White', quantity: 2, servingSize: '2 whites' }, { name: 'Banana', quantity: 1, servingSize: '1 medium' }]
         }
       ];
     }
 
+    const mealsPerDay = profile?.meals_per_day || '4 meals';
+    const slotProportions: Record<string, number> = {
+      breakfast: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.20 : (mealsPerDay === '2 meals' ? 0.0 : 0.25)),
+      lunch: mealsPerDay === '3 meals' ? 0.40 : (mealsPerDay === '5+ meals' ? 0.30 : (mealsPerDay === '2 meals' ? 0.55 : 0.35)),
+      pre_workout: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
+      snack: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
+      post_workout: 0.13,
+      dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.25 : (mealsPerDay === '2 meals' ? 0.45 : 0.25)),
+    };
+    const slotPct = slotProportions[mt] ?? 0.25;
+    const targetCals = Math.round(Number(targets?.calories || 2000) * slotPct);
+
     return rawOptions.map((opt, optIndex) => {
       const items = buildItems(opt.items);
-      const totals = items.reduce((acc, it) => ({
+      const rawCals = items.reduce((acc, it) => acc + it.calories, 0);
+      const scale = rawCals > 0 ? (targetCals / rawCals) : 1;
+      const scaledItems = items.map(it => ({
+        ...it,
+        calories: Math.round(it.calories * scale),
+        protein: Number((it.protein * scale).toFixed(1)),
+        carbs: Number((it.carbs * scale).toFixed(1)),
+        fat: Number((it.fat * scale).toFixed(1)),
+        estimated_cost: Math.round(it.estimated_cost * scale)
+      }));
+
+      const totals = scaledItems.reduce((acc, it) => ({
         calories: acc.calories + it.calories,
         protein: Number((acc.protein + it.protein).toFixed(1)),
         carbs: Number((acc.carbs + it.carbs).toFixed(1)),
@@ -1137,12 +1183,12 @@ export class NutritionService {
         id: `swap-opt-${optIndex}`,
         name: opt.title,
         description: opt.desc,
-        calories: totals.calories,
+        calories: totals.calories || targetCals,
         protein: totals.protein,
         carbs: totals.carbs,
         fat: totals.fat,
         estimated_cost: totals.cost,
-        items
+        items: scaledItems
       };
     });
   }
@@ -1374,69 +1420,113 @@ export class NutritionService {
       const aiMeal = findAiMealForSlot(mType, slotIdx, ALL_MEAL_TYPES, aiMeals);
 
       if (aiMeal) {
-        const proportion = mType === 'lunch' || mType === 'dinner' ? 0.35 : 0.15;
-        const estCals = Math.round(targets.calories * proportion);
-        const estPro = Math.round(targets.protein * proportion);
+        const slotProportions: Record<string, number> = {
+          breakfast: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.20 : (mealsPerDay === '2 meals' ? 0.0 : 0.25)),
+          lunch: mealsPerDay === '3 meals' ? 0.40 : (mealsPerDay === '5+ meals' ? 0.30 : (mealsPerDay === '2 meals' ? 0.55 : 0.35)),
+          pre_workout: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
+          snack: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
+          post_workout: 0.13,
+          dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.25 : (mealsPerDay === '2 meals' ? 0.45 : 0.25)),
+        };
+        const proportion = slotProportions[mType] ?? 0.25;
+        const slotTargetCalories = Math.round(targets.calories * proportion);
+        const slotTargetProtein = Number((targets.protein * proportion).toFixed(1));
         
-        // Real-world estimate: ~₹0.20 per calorie for average Indian meals
-        let estCost = Math.round(estCals * 0.20);
+        // Real-world estimate: ~₹0.15–0.20 per calorie for average Indian whole foods
+        let estCost = Math.round(slotTargetCalories * 0.18);
         const envStr = fitProfile?.food_environment?.toLowerCase() || '';
         if ((envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen') && (mType === 'breakfast' || mType === 'lunch' || mType === 'dinner')) {
           estCost = 0; // Core meals are provided
         }
 
         // AI sometimes returns several foods as one string joined with "+".
-        // Normalize those foods into separate rows and use the verified food
-        // library for per-item nutrition whenever a match is available.
         const parsedItems = (Array.isArray(aiMeal.items) ? aiMeal.items : [])
           .flatMap((item: unknown) => parseAIItemText(item));
         const rawParts: Array<{ name: string; servingSize: string; multiplier: number }> = parsedItems.length > 0
           ? parsedItems
           : [{ name: aiMeal.meal_name || `${mType} meal`, servingSize: '', multiplier: 1 }];
 
-        const itemParts = rawParts.map(part => ({
-          ...part,
-          name: sanitizeAIItemName(part.name, isProfileVegan, isProfileVegetarian)
-        }));
+        const itemParts = rawParts.map(part => {
+          let cleanedName = sanitizeAIItemName(part.name, isProfileVegan, isProfileVegetarian);
+          // Pre-workout low-fat rule: clean carbs & light protein, avoid heavy fats/peanut butter
+          if (mType === 'pre_workout' || mType === 'snack') {
+            if (/\b(?:peanut\s*butter|peanuts|butter|ghee|oil|fried)\b/i.test(cleanedName)) {
+              cleanedName = "Roasted Chana (Dry Chickpeas)";
+            }
+          }
+          return {
+            ...part,
+            name: cleanedName
+          };
+        });
 
-        const fallbackCalories = Math.round((Number(aiMeal.total_calories) > 0 ? Number(aiMeal.total_calories) : estCals) / itemParts.length);
-        const fallbackProtein = Math.round((Number(aiMeal.protein_grams) > 0 ? Number(aiMeal.protein_grams) : estPro) / itemParts.length);
+        const fallbackCalories = Math.round(slotTargetCalories / itemParts.length);
+        const fallbackProtein = Math.round(slotTargetProtein / itemParts.length);
         const fallbackCost = Math.round(estCost / itemParts.length);
-        const mealPlanItems = itemParts.map((part: { name: string; servingSize: string; multiplier: number }, index: number) => {
+
+        // 1. Resolve each item and calculate its unscaled values
+        const unscaledItems = itemParts.map((part) => {
           const reference = findFoodReference(part.name, foodCatalog);
-          const multiplier = part.multiplier;
-          const servingSize = part.servingSize || reference?.serving_size || '1 serving';
+          const multiplier = part.multiplier || 1;
+          const cals = Math.round(Number(reference?.calories || fallbackCalories) * (reference ? multiplier : 1));
+          const pro = Number((Number(reference?.protein || fallbackProtein) * (reference ? multiplier : 1)).toFixed(1));
+          const carbs = Number((Number(reference?.carbs || 0) * (reference ? multiplier : 1)).toFixed(1));
+          const fat = Number((Number(reference?.fat || 0) * (reference ? multiplier : 1)).toFixed(1));
+          const cost = Math.round(Number(reference?.estimated_cost || fallbackCost) * (reference ? multiplier : 1));
+          return { part, reference, multiplier, cals, pro, carbs, fat, cost };
+        });
+
+        const unscaledTotalCalories = unscaledItems.reduce((sum, it) => sum + it.cals, 0);
+        // Proportional scale factor so the meal strictly hits slotTargetCalories
+        const scaleFactor = unscaledTotalCalories > 0 ? (slotTargetCalories / unscaledTotalCalories) : 1;
+
+        // 2. Scale each item proportionally
+        const isCoreProvided = envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen';
+        const mealPlanItems = unscaledItems.map((it, index) => {
+          const scaledCalories = Math.round(it.cals * scaleFactor);
+          const scaledProtein = Number((it.pro * scaleFactor).toFixed(1));
+          const scaledCarbs = Number((it.carbs * scaleFactor).toFixed(1));
+          const scaledFat = Number((it.fat * scaleFactor).toFixed(1));
+          const isProvidedCore = (isCoreProvided && (mType === 'breakfast' || mType === 'lunch' || mType === 'dinner'));
+          const scaledCost = isProvidedCore ? 0 : Math.round(it.cost * scaleFactor);
+
+          let servingDisplay = it.part.servingSize || it.reference?.serving_size || '1 serving';
+          if (Math.abs(scaleFactor - 1) > 0.15 && it.reference?.serving_size) {
+            const scaledMult = Number((it.multiplier * scaleFactor).toFixed(1));
+            if (scaledMult > 0) {
+              servingDisplay = `${scaledMult > 1 ? scaledMult + '× ' : (scaledMult < 1 ? scaledMult + ' ' : '')}${it.reference.serving_size}`;
+            }
+          }
 
           return {
             id: `ai-item-${mType}-${index}`,
-            // The parsed quantity is represented in the serving label so the
-            // UI reads "2 bowls" while all nutrition values remain accurate.
             quantity: 1,
             foods: {
-              name: reference?.name || part.name,
-              category: reference?.category || mType,
-              serving_size: servingSize,
-              calories: Math.round(Number(reference?.calories || fallbackCalories) * (reference ? multiplier : 1)),
-              protein: Number((Number(reference?.protein || fallbackProtein) * (reference ? multiplier : 1)).toFixed(1)),
-              carbs: Number((Number(reference?.carbs || 0) * (reference ? multiplier : 1)).toFixed(1)),
-              fat: Number((Number(reference?.fat || 0) * (reference ? multiplier : 1)).toFixed(1)),
-              estimated_cost: Math.round(Number(reference?.estimated_cost || fallbackCost) * (reference ? multiplier : 1)),
+              name: it.reference?.name || it.part.name,
+              category: it.reference?.category || mType,
+              serving_size: servingDisplay,
+              calories: scaledCalories,
+              protein: scaledProtein,
+              carbs: scaledCarbs,
+              fat: scaledFat,
+              estimated_cost: scaledCost,
             }
           };
         });
+
         const mealTotals = mealPlanItems.reduce((totals: { calories: number; protein: number; carbs: number; fat: number }, item: any) => ({
           calories: totals.calories + Number(item.foods.calories || 0),
-          protein: totals.protein + Number(item.foods.protein || 0),
-          carbs: totals.carbs + Number(item.foods.carbs || 0),
-          fat: totals.fat + Number(item.foods.fat || 0),
+          protein: Number((totals.protein + Number(item.foods.protein || 0)).toFixed(1)),
+          carbs: Number((totals.carbs + Number(item.foods.carbs || 0)).toFixed(1)),
+          fat: Number((totals.fat + Number(item.foods.fat || 0)).toFixed(1)),
         }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
         return {
           id: `ai-${mType}`,
           meal_type: mType,
           name: aiMeal.meal_name || (mType.charAt(0).toUpperCase() + mType.slice(1)),
-          calories: mealTotals.calories || Number(aiMeal.total_calories) || estCals,
-          protein: mealTotals.protein || Number(aiMeal.protein_grams) || estPro,
+          calories: mealTotals.calories || slotTargetCalories,
+          protein: mealTotals.protein || slotTargetProtein,
           carbs: mealTotals.carbs,
           fat: mealTotals.fat,
           prep_instructions: aiMeal.prep_instructions || undefined,

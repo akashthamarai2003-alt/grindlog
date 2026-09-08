@@ -106,31 +106,31 @@ export const MEAL_STRUCTURES: Record<string, MealStructure> = {
   },
   "3 meals": {
     slots: [
-      { name: "Breakfast", type: "breakfast", caloriePercent: 0.25 },
+      { name: "Breakfast", type: "breakfast", caloriePercent: 0.30 },
       { name: "Lunch", type: "lunch", caloriePercent: 0.40 },
-      { name: "Dinner", type: "dinner", caloriePercent: 0.35 },
+      { name: "Dinner", type: "dinner", caloriePercent: 0.30 },
     ],
   },
   "4 meals": {
     slots: [
-      { name: "Breakfast", type: "breakfast", caloriePercent: 0.20 },
+      { name: "Breakfast", type: "breakfast", caloriePercent: 0.25 },
       { name: "Lunch", type: "lunch", caloriePercent: 0.35 },
-      { name: "Snack", type: "snack", caloriePercent: 0.15 },
-      { name: "Dinner", type: "dinner", caloriePercent: 0.30 },
+      { name: "Pre-Workout", type: "pre_workout", caloriePercent: 0.15 },
+      { name: "Dinner", type: "dinner", caloriePercent: 0.25 },
     ],
   },
   "5+ meals": {
     slots: [
-      { name: "Breakfast", type: "breakfast", caloriePercent: 0.18 },
+      { name: "Breakfast", type: "breakfast", caloriePercent: 0.20 },
       { name: "Pre-Workout", type: "pre_workout", caloriePercent: 0.12 },
       { name: "Lunch", type: "lunch", caloriePercent: 0.30 },
-      { name: "Post-Workout", type: "post_workout", caloriePercent: 0.12 },
-      { name: "Dinner", type: "dinner", caloriePercent: 0.28 },
+      { name: "Post-Workout", type: "post_workout", caloriePercent: 0.13 },
+      { name: "Dinner", type: "dinner", caloriePercent: 0.25 },
     ],
   },
 };
 
-export const DEFAULT_MEAL_STRUCTURE = MEAL_STRUCTURES["3 meals"];
+export const DEFAULT_MEAL_STRUCTURE = MEAL_STRUCTURES["4 meals"];
 
 // ─────────────────────────────────────────────────────────
 // Core Meal Types (provided by PG/Hostel/Home/Canteen)
@@ -560,3 +560,349 @@ export const BANNED_FOOD_PATTERNS = [
 export function isBannedFood(name: string): boolean {
   return BANNED_FOOD_PATTERNS.some((p) => p.test(name));
 }
+
+// ─────────────────────────────────────────────────────────
+// Authentic Indian Meal Recipes & Templates
+// ─────────────────────────────────────────────────────────
+
+export interface RecipeItemDef {
+  name: string;
+  defaultServing: number;
+  servingLabel: string;
+  isStaple?: boolean;
+  isProtein?: boolean;
+}
+
+export interface AuthenticMealRecipe {
+  id: string;
+  name: string;
+  type: MealType;
+  dietTypes: string[]; // 'veg', 'vegan', 'eggetarian', 'non-veg'
+  items: RecipeItemDef[];
+  prepInstructions: string;
+}
+
+export const AUTHENTIC_INDIAN_RECIPES: AuthenticMealRecipe[] = [
+  // ─── BREAKFAST ──────────────────────────────────────────
+  {
+    id: "bf_besan_cheela",
+    name: "Besan Cheela with Fresh Curd",
+    type: "breakfast",
+    dietTypes: ["veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Besan Cheela", defaultServing: 1, servingLabel: "2 cheelas (140g)", isProtein: true },
+      { name: "Curd / Dahi (Plain)", defaultServing: 0.67, servingLabel: "100g" },
+    ],
+    prepInstructions: "Mix besan with chopped onions, green chilies, and ajwain. Pan-cook on medium flame with minimal oil until golden crisp. Serve with fresh chilled curd.",
+  },
+  {
+    id: "bf_moong_cheela",
+    name: "Moong Dal Cheela with Mint & Cucumber",
+    type: "breakfast",
+    dietTypes: ["vegan", "veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Moong Dal Cheela", defaultServing: 1, servingLabel: "2 cheelas (140g)", isProtein: true },
+      { name: "Fresh Cucumber", defaultServing: 1, servingLabel: "1 whole (150g)" },
+    ],
+    prepInstructions: "Grind soaked yellow moong dal into smooth batter with ginger and cumin. Cook crispy cheelas on a non-stick tawa. Pair with sliced crunchy cucumber seasoned with chaat masala.",
+  },
+  {
+    id: "bf_paneer_bhurji_roti",
+    name: "Paneer Bhurji with Warm Phulkas",
+    type: "breakfast",
+    dietTypes: ["veg", "non-veg"],
+    items: [
+      { name: "Paneer Bhurji", defaultServing: 0.7, servingLabel: "100g", isProtein: true },
+      { name: "Chapati / Phulka", defaultServing: 1.5, servingLabel: "1.5 medium", isStaple: true },
+    ],
+    prepInstructions: "Sauté onions, tomatoes, and green chilies with turmeric and pav bhaji masala. Toss in freshly crumbled paneer and fresh coriander. Enjoy wrapped in warm phulkas.",
+  },
+  {
+    id: "bf_egg_bhurji_roti",
+    name: "Desi Egg Bhurji with Phulkas",
+    type: "breakfast",
+    dietTypes: ["eggetarian", "non-veg"],
+    items: [
+      { name: "Egg Bhurji (Indian Scramble)", defaultServing: 1, servingLabel: "2 eggs (120g)", isProtein: true },
+      { name: "Chapati / Phulka", defaultServing: 1.5, servingLabel: "1.5 medium", isStaple: true },
+    ],
+    prepInstructions: "Scramble eggs in a hot pan with tempered cumin, diced onions, tomatoes, and garam masala. Serve steaming hot with soft whole-wheat phulkas.",
+  },
+  {
+    id: "bf_boiled_eggs_toast",
+    name: "Farm Boiled Eggs with Whole Wheat Toast",
+    type: "breakfast",
+    dietTypes: ["eggetarian", "non-veg"],
+    items: [
+      { name: "Boiled Egg (Whole)", defaultServing: 2, servingLabel: "2 large", isProtein: true },
+      { name: "Whole Wheat Bread", defaultServing: 1, servingLabel: "2 slices", isStaple: true },
+    ],
+    prepInstructions: "Boil eggs for 8-9 minutes for firm yolks. Slice in half, sprinkle freshly cracked black pepper and rock salt. Pair with toasted whole wheat bread slices.",
+  },
+  {
+    id: "bf_poha_sprouts",
+    name: "Homestyle Veggie Poha with Moong Sprouts",
+    type: "breakfast",
+    dietTypes: ["vegan", "veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Poha", defaultServing: 1, servingLabel: "1 bowl (150g)", isStaple: true },
+      { name: "Moong Sprouts Salad", defaultServing: 0.7, servingLabel: "100g", isProtein: true },
+    ],
+    prepInstructions: "Rinse flattened rice. Temper mustard seeds, curry leaves, and green chilies, toss with turmeric and steamed veggies. Serve topped with fresh moong sprouts and a squeeze of fresh lemon.",
+  },
+  {
+    id: "bf_oats_milk_banana",
+    name: "Warm Rolled Oats with Milk & Banana",
+    type: "breakfast",
+    dietTypes: ["veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Oats with Milk", defaultServing: 1, servingLabel: "1 bowl (250g)", isStaple: true },
+      { name: "Banana", defaultServing: 0.8, servingLabel: "1 medium" },
+    ],
+    prepInstructions: "Simmer rolled oats in low-fat milk with a pinch of cinnamon until creamy. Slice fresh banana on top for natural sweetness.",
+  },
+  {
+    id: "bf_idli_sambar",
+    name: "Steamed Idlis with Dal Sambar & Curd",
+    type: "breakfast",
+    dietTypes: ["veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Idli", defaultServing: 1.5, servingLabel: "3 pieces", isStaple: true },
+      { name: "Sambar", defaultServing: 1, servingLabel: "1 bowl (150g)" },
+      { name: "Curd / Dahi (Plain)", defaultServing: 0.5, servingLabel: "75g", isProtein: true },
+    ],
+    prepInstructions: "Steam fluffy fermented rice-lentil idlis. Serve submerged in hot piping vegetable dal sambar accompanied by a side of fresh dahi.",
+  },
+
+  // ─── LUNCH ──────────────────────────────────────────────
+  {
+    id: "ln_rajma_chawal",
+    name: "Comfort Rajma Chawal & Kachumber",
+    type: "lunch",
+    dietTypes: ["vegan", "veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Rajma (Kidney Beans Curry)", defaultServing: 1, servingLabel: "1 bowl (180g)", isProtein: true },
+      { name: "White Rice (Steamed)", defaultServing: 1, servingLabel: "1 bowl (150g)", isStaple: true },
+      { name: "Green Salad with Lemon", defaultServing: 0.5, servingLabel: "1/2 bowl (75g)" },
+    ],
+    prepInstructions: "Pressure-cook red kidney beans until tender; simmer in an aromatic onion, ginger, garlic, and tomato curry. Ladle generously over fluffy steamed rice with fresh cucumber kachumber.",
+  },
+  {
+    id: "ln_dal_phulka_paneer",
+    name: "Yellow Dal Tadka, Phulkas & Paneer",
+    type: "lunch",
+    dietTypes: ["veg", "non-veg"],
+    items: [
+      { name: "Dal Tadka", defaultServing: 1, servingLabel: "1 bowl (150g)", isStaple: true },
+      { name: "Chapati / Phulka", defaultServing: 2, servingLabel: "2 medium", isStaple: true },
+      { name: "Fresh Paneer (Raw)", defaultServing: 0.5, servingLabel: "50g", isProtein: true },
+      { name: "Green Salad with Lemon", defaultServing: 0.5, servingLabel: "1/2 bowl (75g)" },
+    ],
+    prepInstructions: "Cook yellow toor/moong dal and temper with cumin, garlic, and hing. Pair with hot puffed phulkas, fresh paneer cubes seasoned with chaat masala, and a crisp lemon salad.",
+  },
+  {
+    id: "ln_chole_jeera_rice",
+    name: "Punjabi Chana Masala with Jeera Rice & Dahi",
+    type: "lunch",
+    dietTypes: ["veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Chole / Chana Masala", defaultServing: 1, servingLabel: "1 bowl (180g)", isProtein: true },
+      { name: "Jeera Rice", defaultServing: 1, servingLabel: "1 bowl (150g)", isStaple: true },
+      { name: "Curd / Dahi (Plain)", defaultServing: 0.5, servingLabel: "75g" },
+    ],
+    prepInstructions: "Slow-cooked chickpeas in spiced gravy infused with amchur and garam masala. Serve alongside fragrant cumin jeera rice and a cooling bowl of dahi.",
+  },
+  {
+    id: "ln_soya_matar_roti",
+    name: "High-Protein Soya Matar Curry with Phulkas",
+    type: "lunch",
+    dietTypes: ["vegan", "veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Soya Chunks Curry (Cooked)", defaultServing: 1, servingLabel: "1 bowl (150g)", isProtein: true },
+      { name: "Chapati / Phulka", defaultServing: 2, servingLabel: "2 medium", isStaple: true },
+      { name: "Green Salad with Lemon", defaultServing: 0.5, servingLabel: "1/2 bowl (75g)" },
+    ],
+    prepInstructions: "Boil and squeeze soya chunks; cook with green peas in a rich onion-tomato gravy. Pair with soft whole wheat rotis and freshly sliced salad.",
+  },
+  {
+    id: "ln_chicken_curry_rice",
+    name: "Homestyle Chicken Curry with Steamed Rice",
+    type: "lunch",
+    dietTypes: ["non-veg"],
+    items: [
+      { name: "Chicken Curry (Home Style)", defaultServing: 1, servingLabel: "1 bowl (180g)", isProtein: true },
+      { name: "White Rice (Steamed)", defaultServing: 1, servingLabel: "1 bowl (150g)", isStaple: true },
+      { name: "Green Salad with Lemon", defaultServing: 0.5, servingLabel: "1/2 bowl (75g)" },
+    ],
+    prepInstructions: "Tender lean chicken cooked homestyle with whole spices, onion, garlic, and fresh tomatoes. Serve over hot steamed white rice with crunchy salad.",
+  },
+  {
+    id: "ln_fish_curry_rice",
+    name: "Rohu Fish Curry with Steamed Rice",
+    type: "lunch",
+    dietTypes: ["non-veg"],
+    items: [
+      { name: "Fish Curry (Rohu / Indian Carp)", defaultServing: 1, servingLabel: "1 bowl (150g)", isProtein: true },
+      { name: "White Rice (Steamed)", defaultServing: 1, servingLabel: "1 bowl (150g)", isStaple: true },
+      { name: "Green Salad with Lemon", defaultServing: 0.5, servingLabel: "1/2 bowl (75g)" },
+    ],
+    prepInstructions: "Fresh fish fillets simmered in a light mustard or tomato-tamarind gravy. Serve with warm steamed rice and fresh cucumber slices.",
+  },
+  {
+    id: "ln_egg_curry_phulka",
+    name: "Dhaba Egg Curry with Hot Phulkas",
+    type: "lunch",
+    dietTypes: ["eggetarian", "non-veg"],
+    items: [
+      { name: "Egg Curry (2 Eggs)", defaultServing: 1, servingLabel: "1 bowl (200g)", isProtein: true },
+      { name: "Chapati / Phulka", defaultServing: 2, servingLabel: "2 medium", isStaple: true },
+      { name: "Green Salad with Lemon", defaultServing: 0.5, servingLabel: "1/2 bowl (75g)" },
+    ],
+    prepInstructions: "Hard-boiled eggs lightly pan-fried in turmeric, then simmered in a flavorful onion-tomato gravy. Enjoy with hot phulkas.",
+  },
+
+  // ─── PRE-WORKOUT (Fast Carbs + Light Protein, Low Fat < 3g) ─────
+  {
+    id: "pre_banana_chana",
+    name: "Energy Banana & Roasted Chana",
+    type: "pre_workout",
+    dietTypes: ["vegan", "veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Banana", defaultServing: 1, servingLabel: "1 medium (118g)", isStaple: true },
+      { name: "Roasted Chana (Dry Chickpeas)", defaultServing: 0.8, servingLabel: "25g", isProtein: true },
+    ],
+    prepInstructions: "Eat 30-45 minutes before training. Quick natural glycogen from ripe banana paired with sustained amino acids from roasted chana. Ultra-clean, low-fat fuel that won't sit heavy in your stomach.",
+  },
+  {
+    id: "pre_apple_chana",
+    name: "Crisp Apple with Roasted Chana",
+    type: "pre_workout",
+    dietTypes: ["vegan", "veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Apple", defaultServing: 1, servingLabel: "1 medium (180g)", isStaple: true },
+      { name: "Roasted Chana (Dry Chickpeas)", defaultServing: 0.8, servingLabel: "25g", isProtein: true },
+    ],
+    prepInstructions: "Eat 30-45 minutes before training. Crisp hydrating apple provides immediate workout energy while dry roasted chana delivers sustained focus without any sluggishness.",
+  },
+  {
+    id: "pre_toast_egg_white",
+    name: "Whole Wheat Toast & Boiled Egg White",
+    type: "pre_workout",
+    dietTypes: ["eggetarian", "non-veg"],
+    items: [
+      { name: "Whole Wheat Bread", defaultServing: 0.5, servingLabel: "1 slice (30g)", isStaple: true },
+      { name: "Boiled Egg White", defaultServing: 2, servingLabel: "2 whites (66g)", isProtein: true },
+      { name: "Banana", defaultServing: 0.5, servingLabel: "1/2 medium" },
+    ],
+    prepInstructions: "Light pre-workout meal 45 minutes prior to lifting. Pure lean protein with zero digestive strain and easy carbohydrates for high muscular power.",
+  },
+
+  // ─── POST-WORKOUT (Rapid Recovery Support) ───────────────
+  {
+    id: "post_egg_white_banana",
+    name: "Egg Whites & Ripe Banana Recovery",
+    type: "post_workout",
+    dietTypes: ["eggetarian", "non-veg"],
+    items: [
+      { name: "Boiled Egg White", defaultServing: 3, servingLabel: "3 whites (100g)", isProtein: true },
+      { name: "Banana", defaultServing: 1, servingLabel: "1 medium (118g)", isStaple: true },
+    ],
+    prepInstructions: "Consume within 30-45 minutes after workout to rapidly replenish glycogen stores and initiate muscle protein synthesis.",
+  },
+  {
+    id: "post_paneer_fruit",
+    name: "Low-Fat Paneer & Banana Recovery",
+    type: "post_workout",
+    dietTypes: ["veg", "non-veg"],
+    items: [
+      { name: "Low Fat Paneer", defaultServing: 0.5, servingLabel: "50g", isProtein: true },
+      { name: "Banana", defaultServing: 0.8, servingLabel: "1 medium" },
+    ],
+    prepInstructions: "Light snack to support immediate post-workout muscle repair.",
+  },
+  {
+    id: "post_tofu_apple",
+    name: "Firm Tofu & Crisp Apple",
+    type: "post_workout",
+    dietTypes: ["vegan"],
+    items: [
+      { name: "Tofu (Firm)", defaultServing: 0.8, servingLabel: "80g", isProtein: true },
+      { name: "Apple", defaultServing: 0.8, servingLabel: "1 medium" },
+    ],
+    prepInstructions: "Plant-based recovery snack providing clean amino acids and simple carbohydrates.",
+  },
+
+  // ─── DINNER ─────────────────────────────────────────────
+  {
+    id: "dn_dal_phulka_sabzi",
+    name: "Light Dal Tadka, Phulkas & Mixed Veg",
+    type: "dinner",
+    dietTypes: ["vegan", "veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Dal Tadka", defaultServing: 1, servingLabel: "1 bowl (150g)", isProtein: true },
+      { name: "Chapati / Phulka", defaultServing: 2, servingLabel: "2 medium", isStaple: true },
+      { name: "Mixed Vegetable Sabzi", defaultServing: 0.7, servingLabel: "100g" },
+    ],
+    prepInstructions: "Warm homestyle yellow dal seasoned with cumin and coriander. Pair with hot puffed chapatis and seasonal mixed vegetables for easy night digestion.",
+  },
+  {
+    id: "dn_khichdi_curd",
+    name: "Moong Dal Khichdi with Cooling Dahi",
+    type: "dinner",
+    dietTypes: ["veg", "eggetarian", "non-veg"],
+    items: [
+      { name: "Moong Dal Khichdi", defaultServing: 1, servingLabel: "1 bowl (200g)", isStaple: true },
+      { name: "Curd / Dahi (Plain)", defaultServing: 0.7, servingLabel: "100g", isProtein: true },
+      { name: "Fresh Cucumber", defaultServing: 1, servingLabel: "1 whole (150g)" },
+    ],
+    prepInstructions: "Comforting, restorative moong dal and rice khichdi prepared with mild spices. Serve with chilled fresh curd and sliced cucumbers.",
+  },
+  {
+    id: "dn_paneer_tikka_roti",
+    name: "Tawa Paneer Tikka with Phulkas & Salad",
+    type: "dinner",
+    dietTypes: ["veg", "non-veg"],
+    items: [
+      { name: "Grilled Paneer / Paneer Tikka", defaultServing: 0.7, servingLabel: "70g", isProtein: true },
+      { name: "Chapati / Phulka", defaultServing: 1.5, servingLabel: "1.5 medium", isStaple: true },
+      { name: "Green Salad with Lemon", defaultServing: 0.5, servingLabel: "1/2 bowl (75g)" },
+    ],
+    prepInstructions: "Marinate paneer cubes in curd, ginger-garlic paste, and tandoori spices. Pan-sear on a dry tawa until lightly charred. Serve with warm phulkas.",
+  },
+  {
+    id: "dn_chicken_breast_roti",
+    name: "Pan-Grilled Chicken Breast with Phulkas",
+    type: "dinner",
+    dietTypes: ["non-veg"],
+    items: [
+      { name: "Chicken Breast (Grilled / Cooked)", defaultServing: 1, servingLabel: "100g", isProtein: true },
+      { name: "Chapati / Phulka", defaultServing: 1.5, servingLabel: "1.5 medium", isStaple: true },
+      { name: "Green Salad with Lemon", defaultServing: 0.5, servingLabel: "1/2 bowl (75g)" },
+    ],
+    prepInstructions: "Rub chicken breast with lime juice, cumin, garlic, and paprika. Pan-sear for 5-6 mins per side until juicy. Serve with phulkas and fresh salad greens.",
+  },
+  {
+    id: "dn_egg_omelette_roti",
+    name: "Fluffy Egg Omelette with Phulkas & Salad",
+    type: "dinner",
+    dietTypes: ["eggetarian", "non-veg"],
+    items: [
+      { name: "Egg Omelette", defaultServing: 1, servingLabel: "2 eggs (110g)", isProtein: true },
+      { name: "Chapati / Phulka", defaultServing: 1.5, servingLabel: "1.5 medium", isStaple: true },
+      { name: "Green Salad with Lemon", defaultServing: 0.5, servingLabel: "1/2 bowl (75g)" },
+    ],
+    prepInstructions: "Whisk eggs with onions, tomatoes, coriander, and black pepper. Cook in a non-stick skillet. Pair with warm phulkas and crunchy cucumber salad.",
+  },
+  {
+    id: "dn_tofu_stirfry_roti",
+    name: "Spiced Tofu & Mixed Sabzi with Phulkas",
+    type: "dinner",
+    dietTypes: ["vegan"],
+    items: [
+      { name: "Tofu (Firm)", defaultServing: 1, servingLabel: "100g", isProtein: true },
+      { name: "Chapati / Phulka", defaultServing: 2, servingLabel: "2 medium", isStaple: true },
+      { name: "Mixed Vegetable Sabzi", defaultServing: 0.7, servingLabel: "100g" },
+    ],
+    prepInstructions: "Cubed firm tofu stir-fried with turmeric, garam masala, and mixed vegetables. Serve hot with whole wheat phulkas.",
+  },
+];
