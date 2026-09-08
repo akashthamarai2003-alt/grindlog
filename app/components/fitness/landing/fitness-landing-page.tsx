@@ -268,20 +268,6 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
       <div className="absolute top-[850px] right-0 w-[600px] h-[600px] bg-emerald-500/10 blur-[180px] pointer-events-none rounded-full" />
       <div className="absolute top-[2200px] left-0 w-[500px] h-[500px] bg-[#ADFF00]/5 blur-[160px] pointer-events-none rounded-full" />
 
-      {/* Top Announcement Bar */}
-      <div className="bg-gradient-to-r from-[#122311] via-[#1A3319] to-[#122311] border-b border-[#254223] py-2 px-4 text-center text-xs font-bold text-white/90">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
-          <span className="inline-flex items-center gap-1 bg-[#ADFF00] text-black text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-            NEW
-          </span>
-          <span>Smart Grocery List with 1-Tap Blinkit & WhatsApp Export is live!</span>
-          <a href="#showcase" className="text-[#ADFF00] hover:underline flex items-center gap-0.5">
-            <span>Explore live</span>
-            <ArrowRight className="w-3 h-3" />
-          </a>
-        </div>
-      </div>
-
       {/* Navigation Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070C07]/85 border-b border-[#1A2619]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
