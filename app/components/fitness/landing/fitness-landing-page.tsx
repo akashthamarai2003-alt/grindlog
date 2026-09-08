@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -35,7 +36,10 @@ import {
   Eye,
   Sliders,
   CheckCheck,
-  Smartphone
+  Smartphone,
+  Sparkle,
+  Sparkles as SparklesIcon,
+  HelpCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,6 +50,15 @@ export function FitnessLandingPage() {
   const [compareMode, setCompareMode] = useState<"slider" | "side-by-side">("slider");
   const [compareAngle, setCompareAngle] = useState<"front" | "side" | "back">("front");
   const [compareSliderPos, setCompareSliderPos] = useState(50);
+  const sliderContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleSliderInteraction = (clientX: number) => {
+    if (!sliderContainerRef.current) return;
+    const rect = sliderContainerRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const percent = Math.max(5, Math.min(95, (x / rect.width) * 100));
+    setCompareSliderPos(Math.round(percent));
+  };
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [copiedBlinkit, setCopiedBlinkit] = useState(false);
 
@@ -822,90 +835,222 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
 
                 {/* Visual Canvas: Split Slider or Side-by-Side */}
                 {compareMode === "slider" ? (
-                  <div className="relative h-72 sm:h-80 w-full rounded-2xl overflow-hidden border border-[#233822] bg-[#070D07] select-none">
-                    {/* Background: Current / After Photo Silhouette */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#122312] via-[#0D180D] to-[#070D07]">
-                      <div className="text-center p-6 max-w-xs">
-                        <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1 rounded-full uppercase tracking-wider">
-                          Day 60 · Transformed
-                        </span>
-                        <h4 className="text-xl font-black text-white mt-3">Target Definition Reached</h4>
-                        <p className="text-xs text-white/60 mt-1">Visible 6-Pack Abs · Defined Shoulders · Trimmed Waist</p>
-                        <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-[#ADFF00]">
-                          <Trophy className="w-4 h-4" />
-                          <span>50.0 kg · 15.8% Body Fat</span>
+                  <div className="space-y-3">
+                    {/* Quick Preset Buttons */}
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCompareSliderPos(85)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                          compareSliderPos > 70
+                            ? "bg-white/20 text-white border-white/40 shadow-sm"
+                            : "bg-black/40 text-white/50 border-white/10 hover:text-white"
+                        }`}
+                      >
+                        Show Before (Day 1)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCompareSliderPos(50)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                          compareSliderPos >= 40 && compareSliderPos <= 60
+                            ? "bg-[#ADFF00] text-black border-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.35)]"
+                            : "bg-black/40 text-white/50 border-white/10 hover:text-white"
+                        }`}
+                      >
+                        50 / 50 Split
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCompareSliderPos(15)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                          compareSliderPos < 30
+                            ? "bg-[#ADFF00] text-black border-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.35)]"
+                            : "bg-black/40 text-white/50 border-white/10 hover:text-white"
+                        }`}
+                      >
+                        Show After (Day 60)
+                      </button>
+                    </div>
+
+                    {/* Interactive Split Slider Container */}
+                    <div
+                      ref={sliderContainerRef}
+                      onPointerDown={(e) => {
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                        handleSliderInteraction(e.clientX);
+                      }}
+                      onPointerMove={(e) => {
+                        if (e.buttons > 0) {
+                          handleSliderInteraction(e.clientX);
+                        }
+                      }}
+                      className="relative w-full max-w-md sm:max-w-lg mx-auto aspect-[3/4] sm:aspect-[4/5] min-h-[380px] sm:min-h-[460px] rounded-2xl overflow-hidden border border-[#233822] bg-[#070D07] select-none shadow-[0_12px_40px_rgba(0,0,0,0.85)] cursor-ew-resize touch-none"
+                    >
+                      {/* 1. Underlying Layer: AFTER Transformation */}
+                      <div className="absolute inset-0">
+                        <Image
+                          src="/images/transformation-after.png"
+                          alt="Transformed shape - Day 60"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 520px"
+                          className="object-cover object-top sm:object-center select-none pointer-events-none"
+                          priority
+                        />
+                        {/* Top & Bottom Vignettes for High Contrast Text */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/60 pointer-events-none" />
+
+                        {/* Top-Right After Badge */}
+                        <div className="absolute top-3.5 right-3.5 z-10 pointer-events-none">
+                          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.6)] flex items-center gap-1.5">
+                            <Trophy className="w-3.5 h-3.5" /> Day 60 · Shredded
+                          </span>
+                        </div>
+
+                        {/* Bottom-Right After Stats Card */}
+                        <div className="absolute bottom-3.5 right-3.5 z-10 text-right bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#ADFF00]/40 shadow-lg pointer-events-none">
+                          <span className="text-[10px] font-black text-[#ADFF00] block uppercase tracking-wider">
+                            Target Achieved
+                          </span>
+                          <span className="text-xs sm:text-sm font-black text-white">
+                            50.0 kg · 15.8% BF
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Foreground: Baseline / Before Photo Silhouette with clip-path */}
-                    <div
-                      className="absolute inset-0 bg-gradient-to-br from-[#1A1E1A] via-[#121612] to-[#0A0D0A] flex items-center justify-center overflow-hidden border-r-2 border-[#ADFF00]"
-                      style={{ width: `${compareSliderPos}%` }}
-                    >
-                      <div className="text-center p-6 max-w-xs whitespace-normal">
-                        <span className="text-xs font-black text-white/60 bg-white/10 border border-white/20 px-3 py-1 rounded-full uppercase tracking-wider">
-                          Day 1 · Baseline
-                        </span>
-                        <h4 className="text-xl font-black text-white mt-3">Starting Shape</h4>
-                        <p className="text-xs text-white/50 mt-1">Initial Check-in · Baseline Posture & Body Fat</p>
-                        <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-white/60">
-                          <Clock className="w-4 h-4" />
-                          <span>55.0 kg · 22.4% Body Fat</span>
+                      {/* 2. Foreground Layer: BEFORE Baseline (Clipped via clip-path) */}
+                      <div
+                        className="absolute inset-0 overflow-hidden pointer-events-none"
+                        style={{ clipPath: `inset(0 ${100 - compareSliderPos}% 0 0)` }}
+                      >
+                        <Image
+                          src="/images/transformation-before.png"
+                          alt="Baseline shape - Day 1"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 520px"
+                          className="object-cover object-top sm:object-center select-none"
+                          priority
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/60" />
+
+                        {/* Top-Left Before Badge */}
+                        <div className="absolute top-3.5 left-3.5 z-10">
+                          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-black/85 text-white/90 border border-white/20 backdrop-blur-md flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-white/60" /> Day 1 · Baseline
+                          </span>
+                        </div>
+
+                        {/* Bottom-Left Before Stats Card */}
+                        <div className="absolute bottom-3.5 left-3.5 z-10 text-left bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/15 shadow-lg">
+                          <span className="text-[10px] font-bold text-white/50 block uppercase tracking-wider">
+                            Starting Baseline
+                          </span>
+                          <span className="text-xs sm:text-sm font-black text-white/90">
+                            55.0 kg · 22.4% BF
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Interactive Draggable Slider Handle */}
-                    <div
-                      className="absolute top-0 bottom-0 w-1 bg-[#ADFF00] cursor-ew-resize z-20 flex items-center justify-center"
-                      style={{ left: `${compareSliderPos}%` }}
-                    >
-                      <div className="w-9 h-9 rounded-full bg-[#ADFF00] text-black flex items-center justify-center shadow-[0_0_20px_rgba(173,255,0,0.6)] font-black text-xs">
-                        ↔
+                      {/* 3. Interactive Split Divider Line & Glowing Handle */}
+                      <div
+                        className="absolute top-0 bottom-0 w-[3px] bg-[#ADFF00] z-20 pointer-events-none shadow-[0_0_15px_rgba(173,255,0,0.9)]"
+                        style={{ left: `${compareSliderPos}%` }}
+                      >
+                        <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-[#ADFF00] text-black flex items-center justify-center shadow-[0_0_25px_rgba(173,255,0,0.9)] font-black text-xs border-2 border-black">
+                          ↔
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Range slider input over entire container */}
-                    <input
-                      type="range"
-                      min="10"
-                      max="90"
-                      value={compareSliderPos}
-                      onChange={(e) => setCompareSliderPos(Number(e.target.value))}
-                      className="absolute inset-0 opacity-0 cursor-ew-resize w-full h-full z-30"
-                      aria-label="Drag before and after split slider"
-                    />
+                      {/* Hidden Accessible Range Slider */}
+                      <input
+                        type="range"
+                        min="5"
+                        max="95"
+                        value={compareSliderPos}
+                        onChange={(e) => setCompareSliderPos(Number(e.target.value))}
+                        className="sr-only"
+                        aria-label="Drag before and after split slider"
+                      />
 
-                    <div className="absolute bottom-3 left-4 text-[10px] font-bold text-white/50 uppercase tracking-widest pointer-events-none z-10">
-                      ← Slide left or right to compare →
+                      {/* Center Hint */}
+                      <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white/80 uppercase tracking-widest pointer-events-none z-20 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg">
+                        ← Drag to Compare →
+                      </div>
                     </div>
                   </div>
                 ) : (
                   /* Side-by-Side Mode */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-6 rounded-2xl bg-[#121A12] border border-[#1E2E1D] text-center">
-                      <span className="text-xs font-bold text-white/50 bg-white/5 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        Day 1 Baseline (Aug 9)
-                      </span>
-                      <div className="h-44 flex flex-col items-center justify-center my-3 bg-black/30 rounded-xl border border-white/5 p-4">
-                        <Camera className="w-8 h-8 text-white/20 mb-2" />
-                        <span className="text-sm font-bold text-white">Baseline Check-in Photo</span>
-                        <span className="text-xs text-white/40 mt-1">55.0 kg · 22.4% Body Fat</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                    {/* Left Card: Before */}
+                    <div className="p-4 rounded-2xl bg-[#121A12] border border-[#1E2E1D] flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-white/60 bg-white/5 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-white/40" /> Day 1 Baseline
+                          </span>
+                          <span className="text-xs font-bold text-white/40">Aug 9 Check-in</span>
+                        </div>
+
+                        <div className="relative aspect-[3/4] sm:aspect-[4/5] min-h-[300px] w-full rounded-xl overflow-hidden border border-white/10 my-2 bg-black/40">
+                          <Image
+                            src="/images/transformation-before.png"
+                            alt="Baseline Check-in Photo"
+                            fill
+                            sizes="(max-width: 768px) 100vw, 400px"
+                            className="object-cover object-top sm:object-center select-none pointer-events-none"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+                          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs">
+                            <span className="font-bold text-white/80 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10">
+                              Starting Shape
+                            </span>
+                            <span className="font-black text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10">
+                              55.0 kg · 22.4% BF
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-xs text-white/40">Front & Profile Angle</span>
+
+                      <div className="flex items-center justify-between text-xs text-white/50 pt-2 border-t border-white/5">
+                        <span>Baseline Posture & Body Fat</span>
+                        <span className="font-bold text-white/70">Front Angle</span>
+                      </div>
                     </div>
 
-                    <div className="p-6 rounded-2xl bg-[#142314] border border-[#ADFF00]/40 text-center shadow-[0_0_30px_rgba(173,255,0,0.1)]">
-                      <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-1 rounded-full uppercase tracking-wider border border-[#ADFF00]/20">
-                        Current Day (Transformed)
-                      </span>
-                      <div className="h-44 flex flex-col items-center justify-center my-3 bg-black/40 rounded-xl border border-[#ADFF00]/20 p-4">
-                        <Trophy className="w-8 h-8 text-[#ADFF00] mb-2" />
-                        <span className="text-sm font-bold text-white">Target Definition Reached</span>
-                        <span className="text-xs text-emerald-400 font-bold mt-1">50.0 kg (-5.0 kg) · 15.8% Body Fat</span>
+                    {/* Right Card: After */}
+                    <div className="p-4 rounded-2xl bg-[#142314] border border-[#ADFF00]/40 shadow-[0_0_30px_rgba(173,255,0,0.15)] flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-1 rounded-full uppercase tracking-wider border border-[#ADFF00]/20 flex items-center gap-1.5">
+                            <Trophy className="w-3.5 h-3.5 text-[#ADFF00]" /> Day 60 Transformed
+                          </span>
+                          <span className="text-xs font-black text-[#ADFF00]">-5.0 kg Target Hit</span>
+                        </div>
+
+                        <div className="relative aspect-[3/4] sm:aspect-[4/5] min-h-[300px] w-full rounded-xl overflow-hidden border border-[#ADFF00]/30 my-2 bg-black/40 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
+                          <Image
+                            src="/images/transformation-after.png"
+                            alt="Transformed Goal Photo"
+                            fill
+                            sizes="(max-width: 768px) 100vw, 400px"
+                            className="object-cover object-top sm:object-center select-none pointer-events-none"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+                          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs">
+                            <span className="font-black text-[#ADFF00] bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-[#ADFF00]/30 flex items-center gap-1">
+                              <Trophy className="w-3 h-3" /> Target Achieved
+                            </span>
+                            <span className="font-black text-[#ADFF00] bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-[#ADFF00]/30">
+                              50.0 kg · 15.8% BF
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-xs text-[#ADFF00] font-bold">Goal Physique Matched</span>
+
+                      <div className="flex items-center justify-between text-xs text-[#ADFF00] font-bold pt-2 border-t border-[#ADFF00]/10">
+                        <span>Visible 6-Pack & Muscle Definition</span>
+                        <span>Front Angle</span>
+                      </div>
                     </div>
                   </div>
                 )}
