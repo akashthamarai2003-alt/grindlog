@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Droplet, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Bot, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Droplet, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
@@ -1102,11 +1102,6 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/20">
                             {getMealTiming(meal.meal_type)}
                           </span>
-                          {meal.is_ai_generated && (
-                            <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 px-1.5 py-0.5 rounded-md border border-[#ADFF00]/20 uppercase tracking-wider flex items-center gap-0.5">
-                              <Bot size={10} /> AI Plan
-                            </span>
-                          )}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-white/50 font-medium">
