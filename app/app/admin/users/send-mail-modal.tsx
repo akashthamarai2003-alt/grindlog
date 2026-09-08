@@ -20,8 +20,8 @@ export default function SendMailModal({ users, onClose }: SendMailModalProps) {
   const recipientEmail = isBulk ? `${users.length} Users Selected` : (singleUser?.email || "");
   const recipientName = isBulk ? "{{name}}" : (singleUser?.display_name || singleUser?.email?.split("@")[0] || "User");
 
-  const [subject, setSubject] = useState(`Update regarding your GrindLog account`);
-  const [message, setMessage] = useState(`Hi ${recipientName},\n\nWe are reaching out to you regarding your GrindLog account.\n\nBest regards,\nGrindLog Support Team`);
+  const [subject, setSubject] = useState(`Update regarding your Fitness OS account`);
+  const [message, setMessage] = useState(`Hi ${recipientName},\n\nWe are reaching out to you regarding your Fitness OS account.\n\nBest regards,\nFitness OS Support Team`);
   const [isSending, setIsSending] = useState(false);
 
   const handleSendEmail = async () => {
@@ -114,8 +114,8 @@ export default function SendMailModal({ users, onClose }: SendMailModalProps) {
             <button
               type="button"
               onClick={() => {
-                setSubject("Update regarding your GrindLog account");
-                setMessage(`Hi ${recipientName},\n\nWe wanted to touch base regarding your GrindLog account status.\n\nBest regards,\nGrindLog Support`);
+                setSubject("Update regarding your Fitness OS account");
+                setMessage(`Hi ${recipientName},\n\nWe wanted to touch base regarding your Fitness OS account status.\n\nBest regards,\nFitness OS Support`);
               }}
               className="text-[11px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-full whitespace-nowrap transition-colors"
             >
@@ -124,8 +124,8 @@ export default function SendMailModal({ users, onClose }: SendMailModalProps) {
             <button
               type="button"
               onClick={() => {
-                setSubject("GrindLog Subscription & Membership Inquiry");
-                setMessage(`Hi ${recipientName},\n\nThank you for choosing GrindLog! We noticed a query regarding your membership subscription.\n\nBest regards,\nGrindLog Team`);
+                setSubject("Fitness OS Subscription & Membership Inquiry");
+                setMessage(`Hi ${recipientName},\n\nThank you for choosing Fitness OS! We noticed a query regarding your membership subscription.\n\nBest regards,\nFitness OS Team`);
               }}
               className="text-[11px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-full whitespace-nowrap transition-colors"
             >
@@ -134,8 +134,8 @@ export default function SendMailModal({ users, onClose }: SendMailModalProps) {
             <button
               type="button"
               onClick={() => {
-                setSubject("Special Offer for GrindLog Pro");
-                setMessage(`Hi ${recipientName},\n\nUnlock full access to AI Coach, Unlimited Habits, and Advanced Analytics with GrindLog Pro!\n\nBest regards,\nGrindLog Team`);
+                setSubject("Special Offer for Fitness OS Pro");
+                setMessage(`Hi ${recipientName},\n\nUnlock full access to AI Coach, Customized Workout Plans, and Advanced Nutrition with Fitness OS Pro!\n\nBest regards,\nFitness OS Team`);
               }}
               className="text-[11px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-full whitespace-nowrap transition-colors"
             >
