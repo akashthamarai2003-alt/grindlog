@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Filter, RotateCcw, Crown, Shield, Calendar, DollarSign, Mail, Receipt } from "lucide-react";
+import { Search, Filter, RotateCcw, Mail, Receipt } from "lucide-react";
 import DeleteUserButton from "./delete-user-button";
 import SendMailModal from "./send-mail-modal";
 import PaymentHistoryModal from "./payment-history-modal";
@@ -44,16 +44,11 @@ function getUserSubscriptionInfo(user: UserWithDetails) {
 }
 
 function getPlanName(tier?: string, level?: string) {
-  let baseName = 'Monthly';
-  if (tier === 'six_months' || tier === '6_months') baseName = '6 Months';
-  else if (tier === 'lifetime') baseName = 'Lifetime';
-  else if (tier === 'monthly') baseName = 'Monthly';
-  
-  const levelName = level ? (level.charAt(0).toUpperCase() + level.slice(1)) : 'Pro';
-  return `${baseName} - ${levelName}`;
+  const levelName = level === 'core' ? 'Core' : 'Pro';
+  return `Monthly - ${levelName}`;
 }
 
-// Calculate remaining duration accurately (days left)
+// Calculate remaining duration accurately (days left in 30-day monthly cycle)
 function getDurationInfo(isPremium?: boolean, tier?: string, expiresAtStr?: string | null) {
   if (!isPremium) {
     return { status: 'none' as const, text: '-', daysRemaining: 0, totalDays: 0 };
@@ -78,7 +73,7 @@ function getDurationInfo(isPremium?: boolean, tier?: string, expiresAtStr?: stri
     return { status: 'expired' as const, text: 'Expired', daysRemaining: 0, totalDays: 0 };
   }
 
-  const totalDays = (tier === 'six_months' || tier === '6_months') ? 180 : 30;
+  const totalDays = 30; // Fitness OS plans are all monthly (30-day cycles)
   const safeDaysRemaining = Math.min(daysRemaining, totalDays);
 
   return {
@@ -108,7 +103,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid">("all");
   const [levelFilter, setLevelFilter] = useState<"all" | "core" | "pro">("all");
-  const [tierFilter, setTierFilter] = useState<"all" | "monthly" | "six_months" | "lifetime">("all");
+  const [validityFilter, setValidityFilter] = useState<"all" | "active" | "expiring_soon" | "expired">("all");
 
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [selectedMailUsers, setSelectedMailUsers] = useState<UserWithDetails[] | null>(null);
@@ -125,23 +120,24 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
       }
 
       const sub = getUserSubscriptionInfo(user);
+      const durationInfo = getDurationInfo(sub.isPremium, sub.tier, sub.expiresAt);
 
       // 2. Status filter
       if (statusFilter === "paid" && !sub.isPremium) return false;
       if (statusFilter === "unpaid" && sub.isPremium) return false;
 
-      // 3. Level filter
+      // 3. Plan Level filter
       if (levelFilter === "pro" && (!sub.isPremium || sub.level !== "pro")) return false;
       if (levelFilter === "core" && (!sub.isPremium || sub.level !== "core")) return false;
 
-      // 4. Tier filter
-      if (tierFilter === "monthly" && (!sub.isPremium || sub.tier !== "monthly")) return false;
-      if (tierFilter === "six_months" && (!sub.isPremium || (sub.tier !== "six_months" && sub.tier !== "6_months"))) return false;
-      if (tierFilter === "lifetime" && (!sub.isPremium || sub.tier !== "lifetime")) return false;
+      // 4. Validity filter
+      if (validityFilter === "active" && durationInfo.status !== "active" && durationInfo.status !== "lifetime") return false;
+      if (validityFilter === "expiring_soon" && (durationInfo.status !== "active" || durationInfo.daysRemaining > 7)) return false;
+      if (validityFilter === "expired" && durationInfo.status !== "expired") return false;
 
       return true;
     });
-  }, [users, searchQuery, statusFilter, levelFilter, tierFilter]);
+  }, [users, searchQuery, statusFilter, levelFilter, validityFilter]);
 
   const filteredRevenue = useMemo(() => {
     return filteredUsers.reduce((acc, user) => acc + (user.actualPaidAmount || 0), 0);
@@ -151,7 +147,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
   const activeFilterCount = (searchQuery.trim() !== "" ? 1 : 0) +
     (statusFilter !== "all" ? 1 : 0) +
     (levelFilter !== "all" ? 1 : 0) +
-    (tierFilter !== "all" ? 1 : 0);
+    (validityFilter !== "all" ? 1 : 0);
 
   const hasActiveFilters = activeFilterCount > 0;
 
@@ -159,7 +155,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
     setSearchQuery("");
     setStatusFilter("all");
     setLevelFilter("all");
-    setTierFilter("all");
+    setValidityFilter("all");
   };
 
   return (
@@ -258,21 +254,21 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             </select>
           </div>
 
-          {/* Plan Duration / Tier Dropdown */}
+          {/* Subscription Validity Filter Dropdown (Replaces legacy 6-month/lifetime duration) */}
           <div className="flex flex-col gap-1">
             <select
-              value={tierFilter}
-              onChange={(e) => setTierFilter(e.target.value as any)}
+              value={validityFilter}
+              onChange={(e) => setValidityFilter(e.target.value as any)}
               className={`w-full px-3 py-2 text-xs font-semibold rounded-lg outline-none transition-all cursor-pointer ${
-                tierFilter !== "all"
+                validityFilter !== "all"
                   ? "bg-blue-50/40 border-2 border-blue-500 text-blue-900"
                   : "bg-gray-50 border border-gray-200 text-gray-800 focus:border-blue-500 focus:bg-white"
               }`}
             >
-              <option value="all">Duration: All Tiers</option>
-              <option value="monthly">Duration: Monthly</option>
-              <option value="six_months">Duration: 6 Months</option>
-              <option value="lifetime">Duration: Lifetime</option>
+              <option value="all">Validity: All Members</option>
+              <option value="active">Validity: Active Subscriptions</option>
+              <option value="expiring_soon">Validity: Expiring Soon (≤ 7 Days)</option>
+              <option value="expired">Validity: Expired Subscriptions</option>
             </select>
           </div>
         </div>
@@ -340,7 +336,7 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
             <tbody>
               {filteredUsers.map((user) => {
                 const sub = getUserSubscriptionInfo(user);
-                const planName = sub.tier ? getPlanName(sub.tier, sub.level) : 'Monthly - Pro';
+                const planName = getPlanName(sub.tier, sub.level);
                 const durationInfo = getDurationInfo(sub.isPremium, sub.tier, sub.expiresAt);
 
                 return (
