@@ -2665,34 +2665,65 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
     const video = videoRef.current;
     if (!video) return;
 
-    const startPlay = () => {
-      video.play().catch(() => {});
+    // Critical for iOS Safari and Android Chrome autoplay policy
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+
+    const playVideo = () => {
+      const promise = video.play();
+      if (promise !== undefined) {
+        promise.catch((err) => {
+          // Autoplay blocked by mobile browser until user interaction
+          console.warn("Video autoplay deferred:", err);
+        });
+      }
     };
-    startPlay();
+
+    // Immediate playback attempt
+    playVideo();
+
+    // Event listeners to start playback when video buffer is ready
+    video.addEventListener("loadedmetadata", playVideo);
+    video.addEventListener("canplay", playVideo);
+    video.addEventListener("loadeddata", playVideo);
 
     // Prevent hitching/black frames when looping
     const handleTimeUpdate = () => {
       if (video.duration && video.currentTime >= video.duration - 0.08) {
         video.currentTime = 0;
-        video.play().catch(() => {});
+        playVideo();
       }
     };
 
     const handleEnded = () => {
       video.currentTime = 0;
-      video.play().catch(() => {});
+      playVideo();
     };
 
-    window.addEventListener("touchstart", startPlay, { once: true });
-    window.addEventListener("click", startPlay, { once: true });
+    // Fallback: Ensure video starts immediately upon user touch/click/visibility
+    const unlockMedia = () => {
+      playVideo();
+    };
+    window.addEventListener("touchstart", unlockMedia, { passive: true, once: true });
+    window.addEventListener("click", unlockMedia, { once: true });
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) playVideo();
+    });
+
     video.addEventListener("timeupdate", handleTimeUpdate);
     video.addEventListener("ended", handleEnded);
 
     return () => {
-      window.removeEventListener("touchstart", startPlay);
-      window.removeEventListener("click", startPlay);
+      video.removeEventListener("loadedmetadata", playVideo);
+      video.removeEventListener("canplay", playVideo);
+      video.removeEventListener("loadeddata", playVideo);
       video.removeEventListener("timeupdate", handleTimeUpdate);
       video.removeEventListener("ended", handleEnded);
+      window.removeEventListener("touchstart", unlockMedia);
+      window.removeEventListener("click", unlockMedia);
     };
   }, []);
 
@@ -2770,28 +2801,29 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
   const progressPercent = phase === 0 ? 25 : phase === 1 ? 55 : phase === 2 ? 80 : 100;
 
   return (
-    <div className="flex flex-col min-h-[100dvh] justify-center px-4 sm:px-6 relative overflow-hidden bg-[#0A1108]">
+    <div className="flex flex-col min-h-[100dvh] justify-center px-4 sm:px-6 relative overflow-hidden bg-black">
       {/* 1. Seamless Looping Video Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <video
           ref={videoRef}
-          src="/images/video_4f85c2e9175d.mp4"
           autoPlay
           loop
           muted
           playsInline
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover object-center scale-105"
-        />
+        >
+          <source src="/images/video_4f85c2e9175d.mp4" type="video/mp4" />
+        </video>
 
-        {/* Multi-layered cinematic overlays for contrast & legibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0A1108]/90 via-[#0A1108]/75 to-[#0A1108]/95" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,#0A1108_88%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(173,255,0,0.16)_0%,transparent_65%)]" />
+        {/* Cinematic contrast overlay - perfectly tuned so the green warp rays shine through vibrantly */}
+        <div className="absolute inset-0 bg-black/35 z-[1]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/75 z-[1]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(10,17,8,0.65)_100%)] z-[1]" />
         
         {/* Subtle cyber grid scanline overlay */}
         <div 
-          className="absolute inset-0 opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.06] z-[1]"
           style={{
             backgroundImage: "linear-gradient(rgba(173,255,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(173,255,0,0.3) 1px, transparent 1px)",
             backgroundSize: "28px 28px"
@@ -2896,8 +2928,8 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
           />
         </div>
 
-        {/* Glassmorphism Analysis Content Card */}
-        <div className="relative rounded-3xl border border-[#ADFF00]/25 bg-[#0D150D]/80 backdrop-blur-xl p-5 shadow-[0_0_45px_rgba(0,0,0,0.85)] space-y-6 text-left">
+        {/* Glassmorphism Analysis Content Card (Translucent HUD letting warp streaks shine through) */}
+        <div className="relative rounded-3xl border border-[#ADFF00]/30 bg-[#0A130B]/65 backdrop-blur-md p-5 shadow-[0_0_40px_rgba(0,0,0,0.7)] space-y-6 text-left">
           {/* Subtle top neon glow accent line */}
           <div className="absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#ADFF00]/70 to-transparent" />
 
