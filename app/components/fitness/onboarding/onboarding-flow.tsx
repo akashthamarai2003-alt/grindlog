@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -2602,7 +2602,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     <div className="min-h-[100dvh] w-full bg-[#0A1108] selection:bg-[#ADFF00] selection:text-black">
       <div className="max-w-[480px] mx-auto min-h-[100dvh] flex flex-col relative overflow-hidden bg-[#0A1108] shadow-2xl shadow-black/50 border-x border-[#121E12]">
         {/* Top Nav (Progress & Back) */}
-        <div className={step === 1 || step === 2 || step === 3 || step === 4 || step === 5 || step === 6 || step === 7 || step === 8 || step === 9 || step === 10 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
+        <div className={step <= 10 || step === 16 ? "hidden" : "h-16 flex items-center px-4 relative z-10"}>
           {step > 1 && step < 16 && (
             <button 
               onClick={handleBack}
@@ -2658,6 +2658,43 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Seamless looping background video
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const startPlay = () => {
+      video.play().catch(() => {});
+    };
+    startPlay();
+
+    // Prevent hitching/black frames when looping
+    const handleTimeUpdate = () => {
+      if (video.duration && video.currentTime >= video.duration - 0.08) {
+        video.currentTime = 0;
+        video.play().catch(() => {});
+      }
+    };
+
+    const handleEnded = () => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    };
+
+    window.addEventListener("touchstart", startPlay, { once: true });
+    window.addEventListener("click", startPlay, { once: true });
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("ended", handleEnded);
+
+    return () => {
+      window.removeEventListener("touchstart", startPlay);
+      window.removeEventListener("click", startPlay);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("ended", handleEnded);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -2665,13 +2702,13 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
 
     const t1 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 1));
-    }, 1200);
+    }, 1400);
     const t2 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 2));
-    }, 2400);
+    }, 2800);
     const t3 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 3));
-    }, 3600);
+    }, 4200);
 
     // Use sessionId for deduping if provided, otherwise fallback to always fetching
     // Strict Mode / re-mounts with the same sessionId will reuse the promise.
@@ -2699,7 +2736,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
             if (isMounted) {
               setPhase(4);
             }
-          }, 200);
+          }, 300);
         } else {
           lastSubmissionSessionId = null;
           lastSubmissionPromise = null;
@@ -2730,39 +2767,140 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
     onComplete();
   };
 
+  const progressPercent = phase === 0 ? 25 : phase === 1 ? 55 : phase === 2 ? 80 : 100;
+
   return (
-    <div className="flex flex-col min-h-[100dvh] justify-center px-6 relative overflow-hidden bg-[#0A1108]">
-      {/* Background glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-        <div className="w-[300px] h-[300px] bg-[#ADFF00] rounded-full blur-[100px] animate-pulse" />
+    <div className="flex flex-col min-h-[100dvh] justify-center px-4 sm:px-6 relative overflow-hidden bg-[#0A1108]">
+      {/* 1. Seamless Looping Video Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <video
+          ref={videoRef}
+          src="/images/video_4f85c2e9175d.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className="absolute inset-0 w-full h-full object-cover object-center scale-105"
+        />
+
+        {/* Multi-layered cinematic overlays for contrast & legibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0A1108]/90 via-[#0A1108]/75 to-[#0A1108]/95" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,#0A1108_88%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(173,255,0,0.16)_0%,transparent_65%)]" />
+        
+        {/* Subtle cyber grid scanline overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: "linear-gradient(rgba(173,255,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(173,255,0,0.3) 1px, transparent 1px)",
+            backgroundSize: "28px 28px"
+          }}
+        />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-sm mx-auto py-8 text-center"
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-sm mx-auto py-6 sm:py-8 text-center"
       >
-        <div className="flex justify-center mb-10 h-16">
+        {/* Top Scanner & Checkmark Animation */}
+        <div className="flex justify-center mb-6 h-20 relative items-center">
           {phase < 4 ? (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-              className="w-16 h-16 border-4 border-[#1A2619] border-t-[#ADFF00] rounded-full"
-            />
+            <div className="relative flex items-center justify-center w-20 h-20">
+              {/* Outer pulsing glow */}
+              <motion.div
+                animate={{ scale: [1, 1.45, 1], opacity: [0.25, 0.65, 0.25] }}
+                transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+                className="absolute inset-0 rounded-full bg-[#ADFF00] blur-xl"
+              />
+
+              {/* Outer dashed rotating ring */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                className="absolute inset-0 rounded-full border-2 border-dashed border-[#ADFF00]/50"
+              />
+
+              {/* Inner counter-rotating neon ring */}
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                className="absolute inset-2 rounded-full border-2 border-transparent border-t-[#ADFF00] border-b-[#ADFF00]/40"
+              />
+
+              {/* Center pulsing core with sparkles */}
+              <motion.div
+                animate={{ scale: [0.88, 1.1, 0.88] }}
+                transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+                className="relative w-10 h-10 rounded-full bg-[#121E12] border border-[#ADFF00]/70 flex items-center justify-center shadow-[0_0_20px_rgba(173,255,0,0.6)]"
+              >
+                <Sparkles className="w-5 h-5 text-[#ADFF00] animate-pulse" />
+              </motion.div>
+            </div>
           ) : (
-            <motion.div
-              initial={{ scale: 0.65, opacity: 0 }}
-              animate={{ scale: [0.65, 1.1, 1], opacity: 1 }}
-              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="w-16 h-16 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_30px_rgba(173,255,0,0.5)]"
-            >
-              <Check size={32} strokeWidth={3} />
-            </motion.div>
+            <div className="relative flex items-center justify-center w-20 h-20">
+              {/* Expanding success shockwaves */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0.9 }}
+                animate={{ scale: [0.8, 2.2], opacity: [0.9, 0] }}
+                transition={{ repeat: Infinity, duration: 1.6, ease: "easeOut" }}
+                className="absolute inset-0 rounded-full border-2 border-[#ADFF00]"
+              />
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0.7 }}
+                animate={{ scale: [0.8, 1.8], opacity: [0.7, 0] }}
+                transition={{ repeat: Infinity, duration: 1.6, delay: 0.4, ease: "easeOut" }}
+                className="absolute inset-0 rounded-full bg-[#ADFF00]/25"
+              />
+
+              {/* Glowing success badge */}
+              <motion.div
+                initial={{ scale: 0, rotate: -25 }}
+                animate={{ scale: [0, 1.2, 1], rotate: 0 }}
+                transition={{ type: "spring", stiffness: 350, damping: 20 }}
+                className="w-16 h-16 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_35px_rgba(173,255,0,0.85)] z-10"
+              >
+                <Check size={34} strokeWidth={3.5} />
+              </motion.div>
+            </div>
           )}
         </div>
 
-        <div className="space-y-7 min-h-[280px] w-full max-w-[310px] mx-auto text-left">
+        {/* Phase Pill Badge */}
+        <motion.div
+          key={`pill-${phase}`}
+          initial={{ opacity: 0, y: -6, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[#ADFF00]/30 bg-[#0D150D]/80 backdrop-blur-md mb-4 shadow-[0_0_15px_rgba(173,255,0,0.15)]"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse" />
+          <span className="text-[11px] font-extrabold tracking-widest uppercase text-[#ADFF00]">
+            {phase === 0 && "Step 1 of 3 • Analyzing Profile"}
+            {phase === 1 && "Step 2 of 3 • Visual Assessment"}
+            {phase === 2 && "Step 3 of 3 • Engineering Strategy"}
+            {phase >= 3 && !isDone && "Finalizing Strategy..."}
+            {phase >= 3 && isDone && "Transformation Ready"}
+          </span>
+        </motion.div>
+
+        {/* Slim Neon Progress Bar */}
+        <div className="w-full max-w-[280px] mx-auto mb-6 h-1.5 bg-[#1A2619] rounded-full overflow-hidden border border-[#ADFF00]/20 relative">
+          <motion.div
+            className="h-full bg-gradient-to-r from-[#ADFF00]/70 via-[#ADFF00] to-[#ADFF00] shadow-[0_0_10px_#ADFF00]"
+            initial={{ width: "20%" }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+        </div>
+
+        {/* Glassmorphism Analysis Content Card */}
+        <div className="relative rounded-3xl border border-[#ADFF00]/25 bg-[#0D150D]/80 backdrop-blur-xl p-5 shadow-[0_0_45px_rgba(0,0,0,0.85)] space-y-6 text-left">
+          {/* Subtle top neon glow accent line */}
+          <div className="absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#ADFF00]/70 to-transparent" />
+
           <AnalysisBlock 
             title="Understanding your profile..." 
             items={["Body information", "Fitness goal", "Training experience", "Lifestyle", "Nutrition preferences"]}
@@ -2783,47 +2921,60 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
           />
         </div>
 
-        <div className="mt-8 h-16">
+        {/* Bottom Actions with Shimmering Glow */}
+        <div className="mt-6 sm:mt-8 h-16">
           <AnimatePresence>
             {phase >= 4 && (
               <motion.div
-                initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                initial={{ opacity: 0, y: 14, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
               >
                 {error ? (
                   <button 
                     onClick={handleCompleteClick} 
-                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-red-500/20 text-red-500 border border-red-500 cursor-pointer"
+                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-red-500/20 text-red-500 border border-red-500 hover:bg-red-500/30 cursor-pointer"
                   >
                     Open Report to Try Again
                   </button>
                 ) : !isDone ? (
                   <button 
                     disabled
-                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] opacity-80 cursor-not-allowed"
+                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] opacity-85 cursor-not-allowed"
                   >
                     <div className="flex items-center gap-2">
-                      <Loader2 className="animate-spin w-5 h-5" />
+                      <Loader2 className="animate-spin w-5 h-5 text-black" />
                       <span>Finalizing Strategy...</span>
                     </div>
                   </button>
                 ) : (
-                  <button
+                  <motion.button
                     type="button"
                     onClick={handleCompleteClick}
                     disabled={isNavigating}
-                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] hover:bg-[#c4ff33] active:scale-[0.99] cursor-pointer disabled:opacity-80"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="relative w-full py-4 rounded-full font-black text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_35px_rgba(173,255,0,0.5)] hover:shadow-[0_0_55px_rgba(173,255,0,0.85)] hover:bg-[#c4ff33] active:scale-[0.99] cursor-pointer disabled:opacity-80 overflow-hidden group"
                   >
+                    {/* Animated Light Sweep Effect */}
+                    <motion.div
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut", repeatDelay: 1 }}
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 pointer-events-none"
+                    />
+
                     {isNavigating ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="animate-spin w-5 h-5" />
                         <span>Opening Report...</span>
                       </div>
                     ) : (
-                      "View My Transformation Plan"
+                      <span className="relative z-10 flex items-center gap-2">
+                        <span>View My Transformation Plan</span>
+                        <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                      </span>
                     )}
-                  </button>
+                  </motion.button>
                 )}
                 {error && (
                   <p className="mt-3 text-center text-sm leading-relaxed text-red-300">
@@ -2850,26 +3001,48 @@ const AnalysisBlock = ({ title, items, isActive, isComplete }: { title: string, 
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       className="w-full space-y-3 text-left"
     >
-      <h3 className={`font-black text-sm transition-colors duration-500 ${isComplete ? 'text-gray-400' : 'text-white'}`}>{title}</h3>
-      <div className="space-y-2 flex flex-col items-stretch">
+      <div className="flex items-center gap-2">
+        <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${isComplete ? 'bg-gray-500' : 'bg-[#ADFF00] animate-ping'}`} />
+        <h3 className={`font-black text-sm tracking-wide transition-colors duration-500 ${isComplete ? 'text-gray-400' : 'text-white'}`}>
+          {title}
+        </h3>
+      </div>
+
+      <div className="space-y-2.5 flex flex-col items-stretch pl-1">
         {items.map((item, i) => (
           <motion.div 
             key={item} 
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.1 + i * 0.11, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.08 + i * 0.09, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             className="w-full flex items-center gap-3"
           >
             <motion.div
-              animate={{ scale: isComplete ? [0.8, 1.12, 1] : 1 }}
+              animate={{ 
+                scale: isComplete ? [0.75, 1.2, 1] : 1,
+              }}
               transition={{ delay: i * 0.08, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className={`w-5 h-5 rounded-full flex flex-shrink-0 items-center justify-center border-2 transition-colors duration-500 ${
-              isComplete ? 'border-[#ADFF00] bg-[#ADFF00]/10 text-[#ADFF00]' : 'border-gray-600 bg-transparent text-transparent'
-            }`}
+              className={`w-5 h-5 rounded-full flex flex-shrink-0 items-center justify-center border-2 transition-all duration-500 ${
+                isComplete 
+                  ? 'border-[#ADFF00] bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.5)]' 
+                  : 'border-[#ADFF00]/40 bg-[#121E12]/50 text-[#ADFF00]'
+              }`}
             >
-              <Check size={12} strokeWidth={3} className={isComplete ? "opacity-100" : "opacity-0"} />
+              {isComplete ? (
+                <Check size={12} strokeWidth={3.5} />
+              ) : (
+                <motion.div
+                  animate={{ scale: [1, 1.4, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.15 }}
+                  className="w-1.5 h-1.5 rounded-full bg-[#ADFF00]"
+                />
+              )}
             </motion.div>
-            <span className={`text-sm font-semibold transition-colors duration-500 ${isComplete ? 'text-gray-300' : 'text-gray-500'}`}>{item}</span>
+            <span className={`text-sm transition-colors duration-500 ${
+              isComplete ? 'text-gray-200 font-medium' : 'text-gray-400 font-normal'
+            }`}>
+              {item}
+            </span>
           </motion.div>
         ))}
       </div>
