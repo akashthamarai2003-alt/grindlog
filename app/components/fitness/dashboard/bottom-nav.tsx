@@ -19,7 +19,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
     <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/90 to-transparent">
       <div className="max-w-sm mx-auto bg-[#121E12] border border-[#1A2619] rounded-full px-5 py-3 flex items-center justify-between shadow-2xl backdrop-blur-xl">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href === "/nutrition" && pathname === "/grocery");
           const Icon = item.icon;
 
           return (

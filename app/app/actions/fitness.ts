@@ -845,3 +845,53 @@ export async function toggleRemindersEnabledAction(enabled: boolean) {
   return { success: true };
 }
 
+export async function toggleGroceryItemPurchasedAction(itemId: string, purchased: boolean) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const { error } = await supabase
+    .from("fitness_grocery_items")
+    .update({
+      purchased,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", itemId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error toggling grocery item:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+export async function resetGroceryItemsAction(planId: string) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const { error } = await supabase
+    .from("fitness_grocery_items")
+    .update({
+      purchased: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("plan_id", planId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error resetting grocery items:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+

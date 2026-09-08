@@ -1,5 +1,6 @@
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
-import { Utensils } from "lucide-react";
+import Link from "next/link";
+import { Utensils, ShoppingCart } from "lucide-react";
 import { NutritionView } from "@/components/fitness/nutrition/nutrition-view";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { getCachedUser } from "@/lib/services/supabase/server";
@@ -35,15 +36,25 @@ export default async function NutritionIndexPage() {
               Your Meals
             </h1>
             
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <p suppressHydrationWarning className="text-sm font-bold text-white/60">
                 {today}
               </p>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ADFF00]/10 rounded-full border border-[#ADFF00]/20">
-                <Utensils className="w-3.5 h-3.5 text-[#ADFF00]" />
-                <span className="text-xs font-black text-[#ADFF00] tracking-widest uppercase">
-                  {isPro ? "7-Day Plan" : "Pro Preview"}
-                </span>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/grocery"
+                  prefetch={true}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-[#ADFF00]/15 active:scale-95 border border-white/10 hover:border-[#ADFF00]/30 rounded-full transition-all text-xs font-bold text-white/90 hover:text-[#ADFF00]"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5 text-[#ADFF00]" />
+                  <span>Grocery List</span>
+                </Link>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ADFF00]/10 rounded-full border border-[#ADFF00]/20">
+                  <Utensils className="w-3.5 h-3.5 text-[#ADFF00]" />
+                  <span className="text-xs font-black text-[#ADFF00] tracking-widest uppercase">
+                    {isPro ? "7-Day Plan" : "Pro Preview"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
