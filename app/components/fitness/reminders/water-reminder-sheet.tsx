@@ -110,7 +110,7 @@ export function WaterReminderSheet({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/75 z-[100] backdrop-blur-sm"
+            className="fixed inset-0 bg-black/75 z-[100]"
           />
 
           {/* Bottom Sheet Modal */}
@@ -118,8 +118,8 @@ export function WaterReminderSheet({
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 26, stiffness: 220 }}
-            className="fixed bottom-0 left-0 right-0 z-[101] bg-[#121915] border-t border-white/10 rounded-t-[32px] max-w-md mx-auto p-6 text-white shadow-2xl overflow-hidden"
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed bottom-0 left-0 right-0 z-[101] bg-[#121915] border-t border-white/10 rounded-t-[32px] max-w-md mx-auto p-6 text-white shadow-2xl overflow-hidden transform-gpu will-change-transform"
           >
             {/* Header */}
             <div className="flex items-start justify-between">

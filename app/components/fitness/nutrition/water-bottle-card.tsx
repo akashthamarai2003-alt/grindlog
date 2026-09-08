@@ -261,6 +261,7 @@ export function WaterBottleCard({
 
             <Link
               href="/reminders"
+              prefetch={true}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-white/50 hover:text-[#00D2FF] transition-colors"
               title="Configure water reminder schedule"
             >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { 
   ArrowLeft, 
   Trash2, 
@@ -160,25 +160,41 @@ export function RemindersClient({
     return "Every 2 hrs · set start & end";
   }, [waterSchedule, activeWaterCount]);
 
-  const persistReminders = async (updatedReminders: ReminderItem[], nextEnabled?: boolean) => {
-    setIsSaving(true);
-    const targetEnabled = nextEnabled !== undefined ? nextEnabled : enabled;
-    const res = await updateRemindersAction(targetEnabled, updatedReminders);
-    setIsSaving(false);
-    return res;
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Background auto-save without blocking or freezing the mobile UI
+  const scheduleAutoSave = (updatedReminders: ReminderItem[], targetEnabled: boolean) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await updateRemindersAction(targetEnabled, updatedReminders);
+      } catch (err) {
+        console.error("Background sync reminders failed:", err);
+      }
+    }, 600);
   };
 
-  const handleToggleMaster = async () => {
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleToggleMaster = () => {
     const next = !enabled;
     setEnabled(next);
+    scheduleAutoSave(reminders, next);
+    toast.success(next ? "Reminders enabled! 🔔" : "Reminders muted 🔕");
     if (next && devicePermission === "default") {
       handleEnableNotifications();
     }
-    await persistReminders(reminders, next);
-    toast.success(next ? "Reminders enabled! 🔔" : "Reminders muted 🔕");
   };
 
-  const handleSaveWaterSchedule = async ({
+  const handleSaveWaterSchedule = ({
     startTime,
     endTime,
     interval,
@@ -208,30 +224,22 @@ export function RemindersClient({
       localStorage.setItem("grindlog_water_schedule", JSON.stringify(config));
     } catch {}
 
-    const res = await persistReminders(updated);
-    if (res.success) {
-      toast.success(`Water schedule updated! ${times.length} hydration check-ins set.`);
-    } else {
-      toast.error(res.error || "Failed to update reminders.");
-    }
+    scheduleAutoSave(updated, enabled);
+    toast.success(`Water schedule updated! ${times.length} hydration check-ins set.`);
   };
 
-  const handleClearWaterSchedule = async () => {
+  const handleClearWaterSchedule = () => {
     setReminders(customReminders);
     setWaterSchedule(null);
     try {
       localStorage.removeItem("grindlog_water_schedule");
     } catch {}
 
-    const res = await persistReminders(customReminders);
-    if (res.success) {
-      toast.success("Water reminder schedule turned off.");
-    } else {
-      toast.error(res.error || "Failed to update reminders.");
-    }
+    scheduleAutoSave(customReminders, enabled);
+    toast.success("Water reminder schedule turned off.");
   };
 
-  const handleAddReminder = async () => {
+  const handleAddReminder = () => {
     const newId = `custom_${Date.now()}`;
     const newReminder: ReminderItem = {
       id: newId,
@@ -243,33 +251,33 @@ export function RemindersClient({
     const updated = [...reminders, newReminder];
     setReminders(updated);
     setEditingId(newId);
-    await persistReminders(updated);
+    scheduleAutoSave(updated, enabled);
     toast.success("Added new reminder!");
   };
 
-  const handleRemoveReminder = async (id: string) => {
+  const handleRemoveReminder = (id: string) => {
     const updated = reminders.filter((r) => r.id !== id);
     setReminders(updated);
-    await persistReminders(updated);
+    scheduleAutoSave(updated, enabled);
     toast.success("Reminder removed.");
   };
 
-  const handleTimeChange = async (id: string, newTime: string) => {
+  const handleTimeChange = (id: string, newTime: string) => {
     const updated = reminders.map((r) => (r.id === id ? { ...r, time: newTime } : r));
     setReminders(updated);
-    await persistReminders(updated);
+    scheduleAutoSave(updated, enabled);
   };
 
-  const handleTypeSelect = async (newType: string) => {
+  const handleTypeSelect = (newType: string) => {
     if (editingId) {
       const updated = reminders.map((r) => (r.id === editingId ? { ...r, type: newType } : r));
       setReminders(updated);
-      await persistReminders(updated);
+      scheduleAutoSave(updated, enabled);
       toast.success(`Reminder set to ${newType}!`);
     }
   };
 
-  const handleToggleDay = async (id: string, dayIndex: number) => {
+  const handleToggleDay = (id: string, dayIndex: number) => {
     const updated = reminders.map((r) => {
       if (r.id !== id) return r;
       const currentDays = r.days ?? [0, 1, 2, 3, 4, 5, 6];
@@ -279,15 +287,18 @@ export function RemindersClient({
       return { ...r, days: newDays };
     });
     setReminders(updated);
-    await persistReminders(updated);
+    scheduleAutoSave(updated, enabled);
   };
 
   const handleUpdate = async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
     setIsSaving(true);
     const res = await updateRemindersAction(enabled, reminders);
     setIsSaving(false);
     if (res.success) {
-      toast.success("All reminder settings saved!");
+      toast.success("All reminder settings saved! ✅");
     } else {
       toast.error(res.error || "Failed to update reminders.");
     }
@@ -296,7 +307,7 @@ export function RemindersClient({
   return (
     <div className="min-h-screen bg-[#0A1108] text-white selection:bg-[#ADFF00] selection:text-black">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-30 bg-[#0A1108]/90 backdrop-blur-md border-b border-white/5 px-4 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-[#0A1108]/95 border-b border-white/5 px-4 py-3.5 flex items-center justify-between">
         <button 
           onClick={() => router.back()} 
           className="flex items-center gap-2 text-white font-black text-lg hover:opacity-80 transition-opacity"
@@ -318,7 +329,7 @@ export function RemindersClient({
       <main className="px-4 sm:px-5 py-5 max-w-md mx-auto space-y-6 pb-24">
         {/* Permission Banner if device notifications not granted */}
         {devicePermission !== "granted" && (
-          <div className="bg-[#182313] border border-[#ADFF00]/30 rounded-2xl p-4 flex items-start gap-3.5 shadow-[0_0_20px_rgba(173,255,0,0.06)]">
+          <div className="bg-[#182313] border border-[#ADFF00]/30 rounded-2xl p-4 flex items-start gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-[#ADFF00]/15 border border-[#ADFF00]/30 flex items-center justify-center shrink-0 text-[#ADFF00]">
               {devicePermission === "denied" ? <BellOff className="w-5 h-5 text-red-400" /> : <BellRing className="w-5 h-5 text-[#ADFF00]" />}
             </div>
@@ -378,7 +389,7 @@ export function RemindersClient({
         </div>
 
         {/* SECTION 1: Automated Water Reminder Schedule Card */}
-        <div className="bg-[#081F24] border border-[#00D2FF]/30 hover:border-[#00D2FF]/50 rounded-2xl p-4 sm:p-5 transition-all shadow-[0_0_24px_rgba(0,210,255,0.08)]">
+        <div className="bg-[#081F24] border border-[#00D2FF]/30 hover:border-[#00D2FF]/50 rounded-2xl p-4 sm:p-5 transition-all">
           <div className="flex items-start justify-between gap-2.5">
             <div 
               onClick={() => setIsWaterModalOpen(true)}

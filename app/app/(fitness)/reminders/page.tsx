@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import { createClient, getCachedUser } from "@/lib/services/supabase/server";
-import { FitnessGuard } from "@/components/fitness/fitness-guard";
+import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
+import { redirect } from "next/navigation";
 import { RemindersClient } from "./reminders-client";
 
 export const metadata: Metadata = {
@@ -9,23 +9,27 @@ export const metadata: Metadata = {
 };
 
 export default async function RemindersPage() {
-  const supabase = await createClient();
   const { data: { user } } = await getCachedUser();
 
-  if (!user) return null;
+  if (!user) {
+    redirect("/auth/signin?redirect=/reminders");
+  }
 
+  const supabase = await createServerSupabase();
   const { data: profile } = await supabase
     .from("fitness_os_profiles")
-    .select("reminders_enabled, custom_reminders")
+    .select("onboarding_completed, reminders_enabled, custom_reminders")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
+
+  if (!profile?.onboarding_completed) {
+    redirect("/onboarding");
+  }
 
   const isEnabled = profile?.reminders_enabled ?? true;
   const customReminders = profile?.custom_reminders || [];
 
   return (
-    <FitnessGuard requirePro={false}>
-      <RemindersClient initialEnabled={isEnabled} initialReminders={customReminders} />
-    </FitnessGuard>
+    <RemindersClient initialEnabled={isEnabled} initialReminders={customReminders} />
   );
 }

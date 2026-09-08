@@ -32,7 +32,7 @@ export function ReminderTypeSheet({ isOpen, onClose, onSelect }: ReminderTypeShe
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 z-[100] backdrop-blur-sm"
+            className="fixed inset-0 bg-black/70 z-[100]"
           />
 
           {/* Bottom Sheet */}
@@ -40,8 +40,8 @@ export function ReminderTypeSheet({ isOpen, onClose, onSelect }: ReminderTypeShe
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 z-[100] bg-[#111A10] rounded-t-3xl border-t border-white/5 pb-24 overflow-hidden"
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed bottom-0 left-0 right-0 z-[100] bg-[#111A10] rounded-t-3xl border-t border-white/5 pb-24 overflow-hidden transform-gpu will-change-transform"
           >
             <div className="flex items-center justify-between p-5 border-b border-white/5">
               <button 
