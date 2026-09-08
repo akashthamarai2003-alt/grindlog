@@ -947,16 +947,47 @@ export class NutritionService {
         calories: totals.calories || targetCals,
         protein: totals.protein,
         carbs: totals.carbs,
-        fat: totals.fat,
+        prep_instructions: `Cook at home or enjoy planned whole foods. Scaled to your exact ${Math.round(slotPct * 100)}% daily target.`,
+        is_natural_whole_food: true,
         meal_plan_items: scaledItems
       };
     };
 
-    plansMap.set('breakfast', buildMealResult('breakfast', `${dayName} Breakfast`, breakfastDefs[dayOfWeek] || breakfastDefs[1], true));
-    plansMap.set('lunch', buildMealResult('lunch', `${dayName} Lunch`, lunchDefs[dayOfWeek] || lunchDefs[1], true));
-    plansMap.set('pre_workout', buildMealResult('pre_workout', `${dayName} Fuel`, snackDefs[dayOfWeek] || snackDefs[1], false));
-    plansMap.set('snack', buildMealResult('snack', `${dayName} Snack`, snackDefs[dayOfWeek] || snackDefs[1], false));
-    plansMap.set('dinner', buildMealResult('dinner', `${dayName} Dinner`, dinnerDefs[dayOfWeek] || dinnerDefs[1], true));
+    const breakfastTitles: Record<number, string> = {
+      0: isVegetarian ? 'Paneer Tikka with Warm Phulkas' : (isVegan ? 'Tofu & Phulkas' : 'Farm Boiled Eggs & Whole Wheat Toast'),
+      1: 'Creamy Rolled Oats with Milk & Banana',
+      2: 'Homestyle Veggie Poha with Peanuts',
+      3: 'Steamed Idlis with Dal Sambar',
+      4: 'Roasted Veggie Upma with Peanuts',
+      5: 'Crispy Dosa with Dal Sambar',
+      6: 'Ven Pongal with Dal Sambar',
+    };
+
+    const lunchTitles: Record<number, string> = {
+      0: isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Comfort Rajma Chawal & Curd',
+      1: isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Yellow Dal Tadka with Steamed Rice & Paneer',
+      2: 'Punjabi Chana Masala with Phulkas & Curd',
+      3: isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Comfort Rajma Chawal with Paneer & Salad',
+      4: isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Yellow Dal Tadka with Steamed Rice & Paneer',
+      5: isNonVeg ? 'Homestyle Chicken Curry with Phulkas' : 'High-Protein Chana Masala with Phulkas',
+      6: 'Yellow Dal Tadka with Steamed Rice & Salad',
+    };
+
+    const dinnerTitles: Record<number, string> = {
+      0: 'Light Dal Tadka with Warm Phulkas',
+      1: 'Homestyle Dal Tadka with Phulkas & Salad',
+      2: 'Steamed Rice with Dal Sambar & Curd',
+      3: 'Homestyle Dal Tadka with Phulkas & Aloo Sabzi',
+      4: 'Phulkas with Dal Sambar & Curd',
+      5: 'Comfort Rajma with Steamed Rice',
+      6: 'Light Dal Tadka with Warm Phulkas',
+    };
+
+    plansMap.set('breakfast', buildMealResult('breakfast', breakfastTitles[dayOfWeek] || `${dayName} Breakfast`, breakfastDefs[dayOfWeek] || breakfastDefs[1], true));
+    plansMap.set('lunch', buildMealResult('lunch', lunchTitles[dayOfWeek] || `${dayName} Lunch`, lunchDefs[dayOfWeek] || lunchDefs[1], true));
+    plansMap.set('pre_workout', buildMealResult('pre_workout', 'Pre-Workout Energy Fuel (< 3g Fat)', snackDefs[dayOfWeek] || snackDefs[1], false));
+    plansMap.set('snack', buildMealResult('snack', `${dayName} Natural Snack`, snackDefs[dayOfWeek] || snackDefs[1], false));
+    plansMap.set('dinner', buildMealResult('dinner', dinnerTitles[dayOfWeek] || `${dayName} Dinner`, dinnerDefs[dayOfWeek] || dinnerDefs[1], true));
 
     return plansMap;
   }
@@ -1412,11 +1443,21 @@ export class NutritionService {
 
     // Always output Breakfast, Lunch, Snack, Dinner cards
     let formattedMeals = ALL_MEAL_TYPES.map((mType, slotIdx) => {
-      // 1. Manually saved/logged meal plan items for today take top priority
+      // 1. Manually saved/logged meal plan items for this specific date take top priority
       const existing = plansByMealType.get(mType);
       if (existing) return existing;
 
-      // 2. Priority: Active AI generated plan from user onboarding / workout plan
+      // 2. Priority: True 7-Day Rotating Menu (Distinct authentic Indian whole foods for every day of the week)
+      const rotating = rotatingPlans.get(mType);
+      if (rotating) {
+        return {
+          ...rotating,
+          is_natural_whole_food: true,
+          has_7day_variety: true,
+        };
+      }
+
+      // 3. Fallback: AI generated template if slot not present in rotating plans
       const aiMeal = findAiMealForSlot(mType, slotIdx, ALL_MEAL_TYPES, aiMeals);
 
       if (aiMeal) {
@@ -1535,10 +1576,6 @@ export class NutritionService {
           meal_plan_items: mealPlanItems
         };
       }
-
-      // 3. Fallback to 7-day rotating menu if no AI meal exists for this slot
-      const rotating = rotatingPlans.get(mType);
-      if (rotating) return { ...rotating, is_natural_whole_food: true };
 
       return {
         id: `empty-${mType}`,

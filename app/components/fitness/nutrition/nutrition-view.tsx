@@ -949,7 +949,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               {(!selectedDate || selectedDate === todayDateStr) ? "Today's Meals" : `${weekDates.find(w => w.dateStr === selectedDate)?.dayName || 'Selected'}'s Meals`}
             </h2>
             <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-              <Sparkles size={10} /> {data?.has_ai_plan ? "Active AI Plan" : "7-Day Variety"}
+              <Sparkles size={10} /> 7-Day Variety Plan
             </span>
             <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
               🍃 100% Natural Whole Foods
