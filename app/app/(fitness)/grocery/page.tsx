@@ -35,7 +35,7 @@ export default async function GroceryPage() {
   // 2. Fetch fitness profile for budget & diet preferences
   const { data: profile } = await supabase
     .from("fitness_os_profiles")
-    .select("nutrition_budget, diet_type, food_type, food_environment, is_onboarded")
+    .select("nutrition_budget, diet_preference, food_type, food_environment, onboarding_completed")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -236,7 +236,7 @@ export default async function GroceryPage() {
         budget={budgetSummary}
         planName={activePlan.name}
         planGoal={activePlan.goal}
-        dietType={profile?.diet_type || profile?.food_type || undefined}
+        dietType={profile?.diet_preference || profile?.food_type || undefined}
         userId={user.id}
         planId={activePlan.id}
       />
