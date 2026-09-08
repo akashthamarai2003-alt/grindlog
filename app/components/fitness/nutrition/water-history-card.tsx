@@ -60,12 +60,15 @@ export function WaterHistoryCard({
     }).format(new Date());
   }, []);
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
-    let isMounted = true;
+    setIsMounted(true);
+    let active = true;
     nutritionApi
       .getWaterHistory()
       .then((data) => {
-        if (isMounted && data) {
+        if (active && data) {
           setHistoryData(data);
         }
       })
@@ -74,7 +77,7 @@ export function WaterHistoryCard({
       });
 
     return () => {
-      isMounted = false;
+      active = false;
     };
   }, []);
 
@@ -319,6 +322,22 @@ export function WaterHistoryCard({
   };
 
   const activeStats = timeframe === "week" ? weekDays.stats : monthStats;
+
+  if (!isMounted) {
+    return (
+      <div className="bg-[#111A10] border border-white/5 rounded-[28px] p-5 sm:p-6 mt-4 min-h-[220px] flex flex-col justify-between">
+        <div className="flex items-center gap-2">
+          <Droplet size={18} className="text-[#00D2FF]" />
+          <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
+            History
+          </h3>
+        </div>
+        <div className="h-32 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-[#00D2FF]/30 border-t-[#00D2FF] rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#111A10] border border-white/5 rounded-[28px] p-5 sm:p-6 mt-4 relative overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.3)]">

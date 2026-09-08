@@ -20,9 +20,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const [error, setError] = useState<any>(null);
   const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
 
+  const initialDateStr = initialData?.date;
   const todayDateStr = useMemo(() => {
+    if (initialDateStr) return initialDateStr;
     return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-  }, []);
+  }, [initialDateStr]);
 
   // Date navigation & swap modal states
   const [selectedDate, setSelectedDate] = useState<string>(initialData?.date || todayDateStr);
@@ -60,7 +62,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   });
 
   const weekDates = useMemo(() => {
-    const baseDate = new Date();
+    const baseDate = initialDateStr ? new Date(initialDateStr + 'T12:00:00') : new Date();
     const currentDay = baseDate.getDay();
     const distanceToMonday = (currentDay + 6) % 7;
     const monday = new Date(baseDate);
@@ -80,7 +82,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       });
     }
     return dates;
-  }, [todayDateStr]);
+  }, [initialDateStr, todayDateStr]);
 
   const getActiveMealType = () => {
     const hour = new Date().getHours();
@@ -911,14 +913,15 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         </div>
 
         {/* 7-Day Interactive Strip */}
-        <div className="bg-[#111A10] border border-white/5 rounded-2xl p-2 mt-6 mb-2">
-          <div className="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar">
+        <div suppressHydrationWarning className="bg-[#111A10] border border-white/5 rounded-2xl p-2 mt-6 mb-2">
+          <div suppressHydrationWarning className="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar">
             {weekDates.map((d) => {
               const isSelected = (selectedDate || todayDateStr) === d.dateStr;
               return (
                 <button
                   key={d.dateStr}
                   type="button"
+                  suppressHydrationWarning
                   onClick={() => handleSelectDate(d.dateStr)}
                   className={`flex-1 min-w-[42px] py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all duration-150 active:scale-95 cursor-pointer select-none ${
                     isSelected
@@ -928,8 +931,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                       : 'text-white/50 hover:text-white hover:bg-white/5 font-medium'
                   }`}
                 >
-                  <span className="text-[9px] uppercase tracking-wider">{d.dayName}</span>
-                  <span className="text-xs font-bold mt-0.5">{d.dayNumber}</span>
+                  <span suppressHydrationWarning className="text-[9px] uppercase tracking-wider">{d.dayName}</span>
+                  <span suppressHydrationWarning className="text-xs font-bold mt-0.5">{d.dayNumber}</span>
                   {d.isToday && !isSelected && (
                     <span className="w-1.5 h-1.5 bg-[#ADFF00] rounded-full mt-0.5" />
                   )}
@@ -942,7 +945,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         {/* Meals Header */}
         <div className="mt-4 mb-4 flex items-center justify-between px-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[13px] font-black tracking-widest text-white uppercase">
+            <h2 suppressHydrationWarning className="text-[13px] font-black tracking-widest text-white uppercase">
               {(!selectedDate || selectedDate === todayDateStr) ? "Today's Meals" : `${weekDates.find(w => w.dateStr === selectedDate)?.dayName || 'Selected'}'s Meals`}
             </h2>
             <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">

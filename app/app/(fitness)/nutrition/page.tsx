@@ -4,12 +4,7 @@ import { NutritionView } from "@/components/fitness/nutrition/nutrition-view";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { getCachedUser } from "@/lib/services/supabase/server";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
-
 export default async function NutritionIndexPage() {
-  const today = new Date().toLocaleDateString("en-US", { 
-    weekday: 'short', month: 'short', day: 'numeric' 
-  });
-
   const { data: { user } } = await getCachedUser();
   const plan = user ? await getFitnessPlan(user.id) : null;
   const isPro = plan?.id === "pro";
@@ -20,6 +15,14 @@ export default async function NutritionIndexPage() {
         return null;
       })
     : null;
+
+  const today = initialData?.date
+    ? new Date(initialData.date + "T12:00:00").toLocaleDateString("en-US", { 
+        weekday: 'short', month: 'short', day: 'numeric' 
+      })
+    : new Date().toLocaleDateString("en-US", { 
+        weekday: 'short', month: 'short', day: 'numeric' 
+      });
 
   return (
     <FitnessGuard featureName="nutrition and food logging">

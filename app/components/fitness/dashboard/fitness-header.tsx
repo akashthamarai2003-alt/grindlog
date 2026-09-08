@@ -27,7 +27,7 @@ export function FitnessHeader({ user }: FitnessHeaderProps) {
       className="flex items-start justify-between w-full"
     >
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+        <h1 suppressHydrationWarning className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
           {getGreeting()}, {firstName}
         </h1>
         <p className="text-sm font-medium text-gray-500">

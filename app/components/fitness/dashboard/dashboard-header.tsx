@@ -16,18 +16,22 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
 
   useEffect(() => {
     async function fetchUnreadCount() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const { count } = await supabase
-        .from('in_app_notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('read', false);
-      
-      if (count !== null) {
-        setUnreadCount(count);
+        const { count, error } = await supabase
+          .from('in_app_notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('read', false);
+        
+        if (!error && count !== null) {
+          setUnreadCount(count);
+        }
+      } catch {
+        // Silently ignore if table doesn't exist
       }
     }
     fetchUnreadCount();
@@ -59,7 +63,7 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
         </Link>
         
         <div className="flex flex-col min-w-0">
-          <p className="text-xs font-semibold text-white/50 flex items-center gap-1.5">
+          <p suppressHydrationWarning className="text-xs font-semibold text-white/50 flex items-center gap-1.5">
             {greeting} <span className="inline-block animate-wave">👋</span>
           </p>
           <h1 className="text-2xl font-black text-white tracking-tight leading-tight truncate mt-0.5">
