@@ -40,9 +40,12 @@ import {
 import { toast } from "sonner";
 
 export function FitnessLandingPage() {
-  const [activeTab, setActiveTab] = useState<"workout" | "nutrition" | "grocery" | "scanner" | "coach">("workout");
+  const [activeTab, setActiveTab] = useState<"workout" | "nutrition" | "grocery" | "scanner" | "comparison" | "coach">("workout");
   const [groceryMode, setGroceryMode] = useState<"weekly" | "monthly">("weekly");
   const [checkedGrocery, setCheckedGrocery] = useState<Record<string, boolean>>({ "item-1": true, "item-3": true });
+  const [compareMode, setCompareMode] = useState<"slider" | "side-by-side">("slider");
+  const [compareAngle, setCompareAngle] = useState<"front" | "side" | "back">("front");
+  const [compareSliderPos, setCompareSliderPos] = useState(50);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [copiedBlinkit, setCopiedBlinkit] = useState(false);
 
@@ -112,6 +115,15 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
       accent: "#38BDF8"
     },
     {
+      icon: Camera,
+      title: "Before & After Photo Compare",
+      badge: "Split Slider",
+      desc: "Side-by-side timeline and interactive split comparison slider to track Day 1 vs Current Day changes across Front, Side, and Back angles with milestone metrics.",
+      highlight: "Split Slider & Goal Overlay",
+      color: "from-cyan-500/15 to-emerald-500/5",
+      accent: "#38BDF8"
+    },
+    {
       icon: Sliders,
       title: "1-Tap Macro-Matched Swaps",
       badge: "Zero Deficit",
@@ -156,6 +168,12 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
       grindlog: true,
       westernApps: false,
       trainer: "Hit or Miss"
+    },
+    {
+      feature: "Before & After Photo Comparison & Split Slider",
+      grindlog: true,
+      westernApps: "Paid Add-on",
+      trainer: "Manual photos"
     },
     {
       feature: "Smart Grocery List + 1-Tap Blinkit / WhatsApp Export",
@@ -218,6 +236,10 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
     {
       q: "Can I use GrindLog if I work out at home without gym equipment?",
       a: "Absolutely. During onboarding, choose from Commercial Gym, Dumbbells Only, Resistance Bands, or No Equipment / Bodyweight. The AI coach generates a progressive split tailored to your exact equipment and adjusts difficulty as you get stronger."
+    },
+    {
+      q: "How does the Before & After Photo Comparison work?",
+      a: "GrindLog lets you take or upload check-in photos across front, left, right, and back angles. You can inspect your transformation in two modes: a side-by-side timeline or an interactive Split Comparison Slider that you drag horizontally to reveal your exact physique changes (fat loss, waist reduction, muscle hypertrophy) over time. You can also upload your dream goal physique to compare your current shape against your target roadmap."
     },
     {
       q: "Are my body scan photos private and secure?",
@@ -396,7 +418,8 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
             { id: "workout", label: "Workout Logger", icon: Dumbbell },
             { id: "nutrition", label: "Indian Meals", icon: Utensils },
             { id: "grocery", label: "Smart Grocery", icon: ShoppingCart },
-            { id: "scanner", label: "Body Scanner", icon: Camera },
+            { id: "comparison", label: "Photo Compare", icon: Camera },
+            { id: "scanner", label: "Body Scanner", icon: Sparkles },
             { id: "coach", label: "24/7 AI Coach", icon: Bot },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -713,7 +736,198 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
               </motion.div>
             )}
 
-            {/* 4. AI BODY VISION SCANNER PREVIEW */}
+            {/* 4. PHOTO COMPARISON PREVIEW */}
+            {activeTab === "comparison" && (
+              <motion.div
+                key="comparison"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-2">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#ADFF00]">
+                      Visual Progress Analytics
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-black text-white">
+                      Side-by-Side Before & After Photo Comparison
+                    </h3>
+                  </div>
+
+                  {/* Mode & Angle Controls */}
+                  <div className="flex items-center gap-2">
+                    <div className="bg-black/40 border border-[#1A2619] p-1 rounded-xl flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setCompareMode("slider")}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                          compareMode === "slider" ? "bg-[#ADFF00] text-black" : "text-white/60 hover:text-white"
+                        }`}
+                      >
+                        Split Slider
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCompareMode("side-by-side")}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                          compareMode === "side-by-side" ? "bg-[#ADFF00] text-black" : "text-white/60 hover:text-white"
+                        }`}
+                      >
+                        Side-by-Side
+                      </button>
+                    </div>
+
+                    <div className="hidden sm:flex bg-black/40 border border-[#1A2619] p-1 rounded-xl items-center gap-1">
+                      {(["front", "side", "back"] as const).map((ang) => (
+                        <button
+                          key={ang}
+                          type="button"
+                          onClick={() => setCompareAngle(ang)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase transition-all ${
+                            compareAngle === ang ? "bg-white/20 text-white" : "text-white/40 hover:text-white"
+                          }`}
+                        >
+                          {ang}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transformation Metrics Strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                  <div className="p-3 bg-[#121E12] rounded-xl border border-[#1A2619]">
+                    <span className="text-[10px] text-white/40 uppercase block">Weight Change</span>
+                    <span className="text-base font-black text-emerald-400">-5.0 kg</span>
+                    <span className="text-[10px] text-white/50 block">55 kg → 50 kg Target</span>
+                  </div>
+                  <div className="p-3 bg-[#121E12] rounded-xl border border-[#1A2619]">
+                    <span className="text-[10px] text-white/40 uppercase block">Body Fat</span>
+                    <span className="text-base font-black text-[#ADFF00]">22.4% → 15.8%</span>
+                    <span className="text-[10px] text-white/50 block">Lean Definition</span>
+                  </div>
+                  <div className="p-3 bg-[#121E12] rounded-xl border border-[#1A2619]">
+                    <span className="text-[10px] text-white/40 uppercase block">Waistline</span>
+                    <span className="text-base font-black text-emerald-400">-6.0 cm</span>
+                    <span className="text-[10px] text-white/50 block">99 cm → 93 cm</span>
+                  </div>
+                  <div className="p-3 bg-[#121E12] rounded-xl border border-[#1A2619]">
+                    <span className="text-[10px] text-white/40 uppercase block">Consistency</span>
+                    <span className="text-base font-black text-amber-400">🔥 24 Days</span>
+                    <span className="text-[10px] text-white/50 block">Active Streak</span>
+                  </div>
+                </div>
+
+                {/* Visual Canvas: Split Slider or Side-by-Side */}
+                {compareMode === "slider" ? (
+                  <div className="relative h-72 sm:h-80 w-full rounded-2xl overflow-hidden border border-[#233822] bg-[#070D07] select-none">
+                    {/* Background: Current / After Photo Silhouette */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#122312] via-[#0D180D] to-[#070D07]">
+                      <div className="text-center p-6 max-w-xs">
+                        <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1 rounded-full uppercase tracking-wider">
+                          Day 60 · Transformed
+                        </span>
+                        <h4 className="text-xl font-black text-white mt-3">Target Definition Reached</h4>
+                        <p className="text-xs text-white/60 mt-1">Visible 6-Pack Abs · Defined Shoulders · Trimmed Waist</p>
+                        <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-[#ADFF00]">
+                          <Trophy className="w-4 h-4" />
+                          <span>50.0 kg · 15.8% Body Fat</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Foreground: Baseline / Before Photo Silhouette with clip-path */}
+                    <div
+                      className="absolute inset-0 bg-gradient-to-br from-[#1A1E1A] via-[#121612] to-[#0A0D0A] flex items-center justify-center overflow-hidden border-r-2 border-[#ADFF00]"
+                      style={{ width: `${compareSliderPos}%` }}
+                    >
+                      <div className="text-center p-6 max-w-xs whitespace-normal">
+                        <span className="text-xs font-black text-white/60 bg-white/10 border border-white/20 px-3 py-1 rounded-full uppercase tracking-wider">
+                          Day 1 · Baseline
+                        </span>
+                        <h4 className="text-xl font-black text-white mt-3">Starting Shape</h4>
+                        <p className="text-xs text-white/50 mt-1">Initial Check-in · Baseline Posture & Body Fat</p>
+                        <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-white/60">
+                          <Clock className="w-4 h-4" />
+                          <span>55.0 kg · 22.4% Body Fat</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Interactive Draggable Slider Handle */}
+                    <div
+                      className="absolute top-0 bottom-0 w-1 bg-[#ADFF00] cursor-ew-resize z-20 flex items-center justify-center"
+                      style={{ left: `${compareSliderPos}%` }}
+                    >
+                      <div className="w-9 h-9 rounded-full bg-[#ADFF00] text-black flex items-center justify-center shadow-[0_0_20px_rgba(173,255,0,0.6)] font-black text-xs">
+                        ↔
+                      </div>
+                    </div>
+
+                    {/* Range slider input over entire container */}
+                    <input
+                      type="range"
+                      min="10"
+                      max="90"
+                      value={compareSliderPos}
+                      onChange={(e) => setCompareSliderPos(Number(e.target.value))}
+                      className="absolute inset-0 opacity-0 cursor-ew-resize w-full h-full z-30"
+                      aria-label="Drag before and after split slider"
+                    />
+
+                    <div className="absolute bottom-3 left-4 text-[10px] font-bold text-white/50 uppercase tracking-widest pointer-events-none z-10">
+                      ← Slide left or right to compare →
+                    </div>
+                  </div>
+                ) : (
+                  /* Side-by-Side Mode */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-6 rounded-2xl bg-[#121A12] border border-[#1E2E1D] text-center">
+                      <span className="text-xs font-bold text-white/50 bg-white/5 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        Day 1 Baseline (Aug 9)
+                      </span>
+                      <div className="h-44 flex flex-col items-center justify-center my-3 bg-black/30 rounded-xl border border-white/5 p-4">
+                        <Camera className="w-8 h-8 text-white/20 mb-2" />
+                        <span className="text-sm font-bold text-white">Baseline Check-in Photo</span>
+                        <span className="text-xs text-white/40 mt-1">55.0 kg · 22.4% Body Fat</span>
+                      </div>
+                      <span className="text-xs text-white/40">Front & Profile Angle</span>
+                    </div>
+
+                    <div className="p-6 rounded-2xl bg-[#142314] border border-[#ADFF00]/40 text-center shadow-[0_0_30px_rgba(173,255,0,0.1)]">
+                      <span className="text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-1 rounded-full uppercase tracking-wider border border-[#ADFF00]/20">
+                        Current Day (Transformed)
+                      </span>
+                      <div className="h-44 flex flex-col items-center justify-center my-3 bg-black/40 rounded-xl border border-[#ADFF00]/20 p-4">
+                        <Trophy className="w-8 h-8 text-[#ADFF00] mb-2" />
+                        <span className="text-sm font-bold text-white">Target Definition Reached</span>
+                        <span className="text-xs text-emerald-400 font-bold mt-1">50.0 kg (-5.0 kg) · 15.8% Body Fat</span>
+                      </div>
+                      <span className="text-xs text-[#ADFF00] font-bold">Goal Physique Matched</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Progress CTAs */}
+                <div className="p-4 rounded-xl bg-[#121F12] border border-[#213520] flex items-center justify-between text-xs text-gray-300 flex-wrap gap-2">
+                  <span className="flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-[#ADFF00]" />
+                    <span>Upload progress photos monthly to unlock visual AI comparison & measurement tracking</span>
+                  </span>
+                  <Link
+                    href="/progress"
+                    className="text-[#ADFF00] hover:underline font-bold flex items-center gap-1"
+                  >
+                    <span>View Progress Dashboard</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+
+            {/* 5. AI BODY VISION SCANNER PREVIEW */}
             {activeTab === "scanner" && (
               <motion.div
                 key="scanner"
