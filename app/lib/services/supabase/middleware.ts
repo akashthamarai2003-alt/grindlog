@@ -31,6 +31,16 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Immediately allow static public media assets (images, videos, fonts, etc.)
+  if (
+    pathname.startsWith("/images/") ||
+    pathname.startsWith("/videos/") ||
+    pathname.startsWith("/assets/") ||
+    /\.(?:mp4|webm|ogg|wav|mp3|m4v|mov|svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|ttf|eot)$/i.test(pathname)
+  ) {
+    return response;
+  }
+
   // Intercept any OAuth errors (e.g. bad_oauth_state) landing on / or /auth/callback
   const errorParam = request.nextUrl.searchParams.get("error") || request.nextUrl.searchParams.get("error_code");
   if (errorParam && (pathname === "/" || pathname.startsWith("/auth/callback"))) {

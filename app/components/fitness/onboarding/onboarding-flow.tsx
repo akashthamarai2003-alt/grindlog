@@ -2806,6 +2806,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <video
           ref={videoRef}
+          src="/images/video_4f85c2e9175d.mp4"
           autoPlay
           loop
           muted

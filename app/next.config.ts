@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
 };
 
 const filteredRuntimeCaching = runtimeCaching.filter(
-  (entry) => entry.options?.cacheName !== "cross-origin"
+  (entry) => entry.options?.cacheName !== "cross-origin" && entry.options?.cacheName !== "static-video-assets"
 );
 
 const config = withPWA({
