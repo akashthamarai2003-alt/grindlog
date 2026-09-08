@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { generateDeterministicNutritionPlan, convertToAIPlanFormat } from "@/lib/fitness/nutrition/nutrition-engine";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import {
   FITNESS_PLAN_MODEL,
@@ -352,14 +353,28 @@ export async function POST(req: Request) {
         try {
           console.log(`Fitness AI Generation Attempt ${attempt}...`);
           const isPro = subscriptionPlan.id === "pro";
+
+          // Step A: Generate deterministic nutrition plan (0 AI tokens)
+          let deterministicNutrition = null;
+          if (isPro) {
+            try {
+              const nutritionPlan = await generateDeterministicNutritionPlan(profile);
+              deterministicNutrition = convertToAIPlanFormat(nutritionPlan);
+              console.log(`Deterministic nutrition generated: ${deterministicNutrition.daily_calories}cal, ${deterministicNutrition.protein_grams}g protein, ${deterministicNutrition.meals.length} meals, ${deterministicNutrition.grocery_list.length} grocery items`);
+            } catch (nutritionErr) {
+              console.warn("Deterministic nutrition generation failed, AI will handle nutrition:", nutritionErr);
+            }
+          }
+
+          // Step B: AI generates workouts (and nutrition ONLY if deterministic failed)
           const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${isPro ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
+            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}${deterministicNutrition ? '\n\nIMPORTANT: Nutrition, meals, and grocery list have been pre-generated deterministically. Focus ONLY on generating the workout plan, safety_acknowledgment, plan summary, and lifestyle targets. Set nutrition fields to the provided deterministic values.' : `\n\n${isPro ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`}`,
             userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
             model: FITNESS_PLAN_MODEL,
-            maxTokens: isPro ? 10000 : 4500,
-            minimumOutputTokens: isPro ? 10000 : 4500,
-            reasoningEffort: isPro ? "medium" : "low",
-            promptCacheKey: isPro ? "fitness-plan-pro-v3" : "fitness-plan-core-v2",
+            maxTokens: deterministicNutrition ? (isPro ? 5500 : 3500) : (isPro ? 10000 : 4500),
+            minimumOutputTokens: deterministicNutrition ? (isPro ? 5500 : 3500) : (isPro ? 10000 : 4500),
+            reasoningEffort: deterministicNutrition ? "low" : (isPro ? "medium" : "low"),
+            promptCacheKey: deterministicNutrition ? "fitness-plan-workout-only-v1" : (isPro ? "fitness-plan-pro-v3" : "fitness-plan-core-v2"),
             temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
             jsonSchema: {
               name: "fitness_plan",
@@ -421,8 +436,27 @@ export async function POST(req: Request) {
             continue;
           }
 
+          // Merge deterministic nutrition into the AI-generated plan
+          let mergedPlan = profileCheck.plan;
+          if (deterministicNutrition && mergedPlan.nutrition) {
+            mergedPlan = {
+              ...mergedPlan,
+              nutrition: {
+                ...mergedPlan.nutrition,
+                daily_calories: deterministicNutrition.daily_calories ?? mergedPlan.nutrition.daily_calories,
+                protein_grams: deterministicNutrition.protein_grams ?? mergedPlan.nutrition.protein_grams,
+                carbs_grams: deterministicNutrition.carbs_grams ?? mergedPlan.nutrition.carbs_grams,
+                fat_grams: deterministicNutrition.fat_grams ?? mergedPlan.nutrition.fat_grams,
+                meals_per_day: deterministicNutrition.meals_per_day ?? mergedPlan.nutrition.meals_per_day,
+                meals: deterministicNutrition.meals.length > 0 ? deterministicNutrition.meals : mergedPlan.nutrition.meals,
+                grocery_list: deterministicNutrition.grocery_list.length > 0 ? deterministicNutrition.grocery_list : mergedPlan.nutrition.grocery_list,
+                guidance: deterministicNutrition.guidance || mergedPlan.nutrition.guidance,
+              },
+            };
+          }
+
           planData = applyFitnessPlanEntitlements(
-            enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []),
+            enrichPlanWithFoodLibrary(mergedPlan, foodCatalog || []),
             subscriptionPlan.id,
           );
           break; // Success! Break out of the loop.

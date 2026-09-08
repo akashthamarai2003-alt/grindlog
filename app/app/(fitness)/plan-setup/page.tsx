@@ -130,6 +130,17 @@ function planAnchorDate(workouts: any[]): Date {
   return today;
 }
 
+function mealTimeIcon(mealName: string): string {
+  const name = mealName.toLowerCase();
+  if (name.includes('breakfast')) return '☀️';
+  if (name.includes('lunch')) return '🍛';
+  if (name.includes('pre-workout') || name.includes('pre workout')) return '🏋️';
+  if (name.includes('post-workout') || name.includes('post workout')) return '💪';
+  if (name.includes('dinner')) return '🌙';
+  if (name.includes('snack')) return '🍎';
+  return '🍽️';
+}
+
 function ProUpgradePanel({
   section,
   onUpgrade,
@@ -689,15 +700,17 @@ export default function PlanSetupPage() {
                   <div className="flex items-start justify-between gap-3 pl-2">
                     <div>
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#ADFF00]">{sourceLabel}</p>
-                      <h3 className="mt-1 text-lg font-black text-white">{mealName}</h3>
+                      <h3 className="mt-1 text-lg font-black text-white flex items-center gap-2">
+                        <span>{mealTimeIcon(mealName)}</span> {mealName}
+                      </h3>
                     </div>
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                       <span className="rounded-lg bg-black/35 px-2 py-1 text-[11px] font-semibold text-gray-400">
                         {String(meal?.time_of_day || "Any time")}
                       </span>
-                      {typeof meal?.protein_grams === "number" && meal.protein_grams > 0 && (
-                        <span className="rounded-full bg-[#ADFF00]/15 border border-[#ADFF00]/30 px-2.5 py-0.5 text-[10px] font-extrabold text-[#ADFF00]">
-                          ~{meal.protein_grams}g protein
+                      {typeof meal?.total_calories === "number" && meal.total_calories > 0 && (
+                        <span className="rounded-full bg-orange-500/15 border border-orange-500/30 px-2.5 py-0.5 text-[10px] font-extrabold text-orange-400">
+                          {meal.total_calories} cal
                         </span>
                       )}
                     </div>
@@ -727,6 +740,20 @@ export default function PlanSetupPage() {
                     )}
                   </div>
 
+                  {/* NEW: Macro breakdown row */}
+                  <div className="mt-4 flex items-center gap-3 border-t border-white/5 pl-2 pt-3">
+                    {typeof meal?.protein_grams === "number" && meal.protein_grams > 0 && (
+                      <span className="rounded-full bg-[#ADFF00]/15 border border-[#ADFF00]/30 px-2.5 py-0.5 text-[10px] font-extrabold text-[#ADFF00]">
+                        {meal.protein_grams}g protein
+                      </span>
+                    )}
+                    {typeof meal?.total_calories === "number" && meal.total_calories > 0 && (
+                      <span className="rounded-full bg-white/5 border border-white/10 px-2.5 py-0.5 text-[10px] font-bold text-gray-400">
+                        {meal.total_calories} cal
+                      </span>
+                    )}
+                  </div>
+
                   {meal?.prep_instructions && (
                     <div className="mt-4 border-t border-white/5 bg-black/10 px-2 pt-3">
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#ADFF00]">Luna&apos;s instruction</p>
@@ -737,6 +764,27 @@ export default function PlanSetupPage() {
               );
             })}
           </div>
+
+          {/* Daily Cost Summary */}
+          {meals.length > 0 && (
+            <div className="mt-4 flex items-center justify-between rounded-2xl border border-[#1A2619] bg-[#121E12] px-4 py-3">
+              <div className="flex items-center gap-3">
+                <Flame size={20} className="text-orange-500" />
+                <div>
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Daily total</span>
+                  <span className="text-lg font-black text-white">
+                    {meals.reduce((sum: number, m: any) => sum + (Number(m?.total_calories) || 0), 0)} cal
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-500">Total protein</span>
+                <span className="text-lg font-black text-[#ADFF00]">
+                  {meals.reduce((sum: number, m: any) => sum + (Number(m?.protein_grams) || 0), 0)}g
+                </span>
+              </div>
+            </div>
+          )}
 
           {groceryUsesProvidedCoreMeals ? (
             <section className="mt-6 rounded-3xl border border-[#ADFF00]/20 bg-[#121E12] p-5">
