@@ -33,7 +33,8 @@ import {
   Bell,
   BellOff,
   Loader2,
-  ShoppingCart
+  ShoppingCart,
+  Headphones,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -628,6 +629,24 @@ export function ProfileContent({
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+            </Link>
+
+            {/* Help & Support */}
+            <Link 
+              href="/support"
+              prefetch={true}
+              className="p-4 flex items-center justify-between hover:bg-white/5 active:bg-white/10 active:scale-[0.99] transition-all group duration-75"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-amber-400">
+                  <Headphones className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Help & Support</p>
+                  <p className="text-xs text-gray-400">Contact coach support, report issues, or ask queries</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-amber-400 transition-colors" />
             </Link>
 
             {/* Sign Out Button */}

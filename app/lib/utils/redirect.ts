@@ -48,6 +48,7 @@ export function getSafeRedirect(redirect: string | null): string {
     "/reminders",
     "/exercises",
     "/pro",
+    "/support",
   ];
 
   const isAllowed = parsed.pathname === "/" || allowedBasePaths.some(

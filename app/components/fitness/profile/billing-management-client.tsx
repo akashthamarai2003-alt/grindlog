@@ -428,11 +428,10 @@ export function BillingManagementClient({
               <span className="text-[11px]">256-Bit SSL Encrypted by Razorpay</span>
             </div>
             <Link
-              href="mailto:support@grindlog.in"
-              className="text-[11px] text-[#ADFF00] hover:underline flex items-center gap-1"
+              href="/support"
+              className="text-[11px] text-[#ADFF00] hover:underline flex items-center gap-1 font-bold"
             >
-              <span>Need Help?</span>
-              <ExternalLink className="w-3 h-3" />
+              <span>Contact Support Desk →</span>
             </Link>
           </div>
         </div>

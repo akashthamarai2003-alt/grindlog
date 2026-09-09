@@ -2,9 +2,14 @@
 
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
+import { revalidatePath } from "next/cache";
 
 export async function submitSupportMessage(subject: string, message: string) {
   try {
+    if (!subject?.trim() || !message?.trim()) {
+      return { success: false, error: "Please enter both a subject and a message." };
+    }
+
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -12,7 +17,20 @@ export async function submitSupportMessage(subject: string, message: string) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
+    // Resolve user's display name from Fitness OS profile or main profile
+    const [fitnessProfileRes, profileRes] = await Promise.all([
+      supabase.from("fitness_os_profiles").select("name").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("display_name, name").eq("id", user.id).maybeSingle(),
+    ]);
+
+    const resolvedName =
+      fitnessProfileRes.data?.name ||
+      profileRes.data?.display_name ||
+      profileRes.data?.name ||
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email?.split("@")[0] ||
+      "Athlete";
 
     const adminClient = createAdminClient();
 
@@ -20,13 +38,16 @@ export async function submitSupportMessage(subject: string, message: string) {
     const { error } = await adminClient.from("support_messages").insert({
       user_id: user.id,
       user_email: user.email,
-      user_name: profile?.display_name || 'Unknown',
-      subject,
-      message,
-      status: 'new'
+      user_name: resolvedName,
+      subject: subject.trim(),
+      message: message.trim(),
+      status: "new",
     });
 
     if (error) throw error;
+
+    revalidatePath("/admin/support");
+    revalidatePath("/support");
 
     return { success: true };
   } catch (err: any) {
