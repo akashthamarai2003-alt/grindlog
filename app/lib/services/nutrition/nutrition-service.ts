@@ -1623,7 +1623,7 @@ export class NutritionService {
         .eq('date', localDate),
       supabase
         .from('food_logs')
-        .select('estimated_cost, meal_type')
+        .select('estimated_cost, meal_type, foods(name)')
         .eq('user_id', userId)
         .gte('logged_at', monthStartISO)
         .lte('logged_at', end),
@@ -1680,7 +1680,14 @@ export class NutritionService {
         let cost = Number(f.estimated_cost || 0);
         const env = fitProfile?.food_environment?.toLowerCase() || '';
         const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home' || env === 'office/canteen';
-        if (isCoreProvided && f.meal_type && f.meal_type !== 'snack' && f.meal_type !== 'daily') {
+        const foodNameLower = String(f.foods?.name || '').toLowerCase();
+        const isItemCore = isCoreProvided && (
+          foodNameLower.includes('core meal') || 
+          foodNameLower.includes('base meal') || 
+          foodNameLower.includes('provided core') ||
+          foodNameLower.includes('standard base')
+        );
+        if (isItemCore) {
           cost = 0; // core meals are free from PG/Home
         }
         consumed.spent += cost;
@@ -1701,9 +1708,16 @@ export class NutritionService {
 
     let monthSpent = 0;
     if (monthFoods) {
-      monthFoods.forEach(f => {
+      monthFoods.forEach((f: any) => {
         let cost = Number(f.estimated_cost || 0);
-        if (isCoreProvided && f.meal_type && f.meal_type !== 'snack' && f.meal_type !== 'daily') {
+        const foodNameLower = String(f.foods?.name || '').toLowerCase();
+        const isItemCore = isCoreProvided && (
+          foodNameLower.includes('core meal') || 
+          foodNameLower.includes('base meal') || 
+          foodNameLower.includes('provided core') ||
+          foodNameLower.includes('standard base')
+        );
+        if (isItemCore) {
           cost = 0; // core meals are free from PG/Home
         }
         monthSpent += cost;
