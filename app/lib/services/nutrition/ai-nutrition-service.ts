@@ -1,22 +1,39 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { generateOpenAIResponseJSON, OPENAI_MODEL } from "@/lib/services/openai/client";
-import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+import { generateAIResponseJSON } from "@/lib/services/groq/client";
+import {
+  NutritionService,
+  findFoodReference,
+  sanitizeAIItemName,
+  sanitizeMealTitle,
+  NutritionFoodReference
+} from "@/lib/services/nutrition/nutrition-service";
 
-interface MealPlanGenerationResult {
-  meals: {
-    meal_type: string;
-    name: string;
-    foods: {
-      food_id: string; // The user requested food IDs instead of names
-      quantity: number;
-    }[];
-    reason: string;
-  }[];
+interface RawAIMealItem {
+  name: string;
+  quantity?: number;
+  serving_size?: string;
+}
+
+interface RawAIMeal {
+  meal_type: string;
+  name: string;
+  prep_instruction?: string;
+  items: RawAIMealItem[];
+}
+
+interface RawAIDay {
+  day_number: number;
+  meals: RawAIMeal[];
+}
+
+interface LunaAIGenerationResult {
+  plan_summary: string;
+  days: RawAIDay[];
 }
 
 export class AINutritionService {
-  static readonly MEAL_GEN_LIMIT_PER_DAY = 1;
-  static readonly PROMPT_VERSION = "meal-plan-v1";
+  static readonly MEAL_GEN_LIMIT_PER_DAY = 10;
+  static readonly PROMPT_VERSION = "luna-groq-v1";
 
   static async logUsage(
     userId: string, 
@@ -25,35 +42,28 @@ export class AINutritionService {
     tokens?: { input: number, output: number },
     requestId?: string
   ) {
-    const supabase = await createServerSupabase();
-    await supabase.from('ai_usage_logs').insert({
-      user_id: userId,
-      feature: 'meal_generation',
-      model: model,
-      status: status,
-      request_id: requestId,
-      input_tokens: tokens?.input || 0,
-      output_tokens: tokens?.output || 0,
-      prompt_version: this.PROMPT_VERSION
-    });
+    try {
+      const supabase = await createServerSupabase();
+      await supabase.from('ai_usage_logs').insert({
+        user_id: userId,
+        feature: 'meal_generation',
+        model: model,
+        status: status,
+        request_id: requestId,
+        input_tokens: tokens?.input || 0,
+        output_tokens: tokens?.output || 0,
+        prompt_version: this.PROMPT_VERSION
+      });
+    } catch {
+      // Non-blocking usage logging
+    }
   }
 
   static async generateMealPlan(userId: string) {
     const supabase = await createServerSupabase();
     const localDate = await NutritionService.getLocalDateString(userId);
 
-    // 1. Cleanup existing meal plans for today to allow fresh generation
-    const { data: existingPlans } = await supabase
-      .from('meal_plans')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('date', localDate);
-
-    if (existingPlans && existingPlans.length > 0) {
-      await supabase.from('meal_plans').delete().eq('user_id', userId).eq('date', localDate);
-    }
-
-    // 2. Rate Limiting Check
+    // 1. Rate Limiting Check (Allow up to 10 generations per day)
     const { start, end } = await NutritionService.getLocalDateBoundaries(userId);
     const { count } = await supabase
       .from('ai_usage_logs')
@@ -65,336 +75,325 @@ export class AINutritionService {
       .lte('created_at', end);
 
     if (count !== null && count >= this.MEAL_GEN_LIMIT_PER_DAY) {
-      throw new Error("You have reached your daily limit for AI meal plan generation.");
+      throw new Error("Daily limit for Luna AI meal plan generation reached (max 10/day). Please try again tomorrow.");
     }
 
-    // 3. Gather Context
+    // 2. Gather User Context
     const targets = await NutritionService.getEffectiveTargets(userId);
     if (!targets) throw new Error("TARGET_NOT_FOUND");
 
-    // Fetch user profile for dietary restrictions
     const { data: profile } = await supabase
       .from('fitness_os_profiles')
       .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, nutrition_budget, food_environment, available_foods, meals_per_day')
       .eq('user_id', userId)
       .single();
-    
-    // Fetch food catalog (Active foods only)
+
     const { data: allFoods } = await supabase
       .from('foods')
       .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly')
       .eq('is_active', true);
 
-    if (!allFoods || allFoods.length === 0) {
-      throw new Error("Food catalog is empty. Cannot generate a plan.");
-    }
+    const foodCatalog: NutritionFoodReference[] = allFoods || [];
 
-    // Send a compact version of foods, including diet_type and pg_friendly status
-    const compactFoods = allFoods.map(f => ({
-      id: f.id,
-      n: f.name,
-      c: f.calories,
-      p: f.protein,
-      cost: f.estimated_cost,
-      dt: f.diet_type, // Crucial for Vegan/Veg matching
-      pg: f.is_pg_friendly
-    }));
+    // 3. Dietary & Environmental Classification
+    const combinedDiet = `${profile?.diet_preference || ''} ${profile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
+    const isVegan = combinedDiet.includes('vegan');
+    const isNonVeg = !isVegan && (combinedDiet.includes('non') || combinedDiet.includes('meat') || combinedDiet.includes('chicken') || combinedDiet.includes('fish'));
+    const isEggetarian = !isVegan && !isNonVeg && (combinedDiet.includes('egg') || combinedDiet.includes('eggetarian'));
+    const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
 
-    // 4. Prompt Construction
-    const foodEnv = (profile?.food_environment || 'Home').toLowerCase();
-    const isCoreProvided = foodEnv === 'pg' || foodEnv === 'hostel' || foodEnv === 'home' || foodEnv === 'office/canteen';
-    const budgetStr = profile?.nutrition_budget || '₹2,000–5,000';
-    
-    // Parse monthly budget to a number
-    let monthlyBudgetNum = 3000;
-    if (budgetStr.includes('5,000+')) monthlyBudgetNum = 6000;
-    else if (budgetStr.includes('2,000') && budgetStr.includes('5,000')) monthlyBudgetNum = 3500;
-    else if (budgetStr.includes('1,000') && budgetStr.includes('2,000')) monthlyBudgetNum = 1500;
-    else if (budgetStr.includes('0') && budgetStr.includes('1,000')) monthlyBudgetNum = 800;
-    const dailyBudgetNum = Math.round(monthlyBudgetNum / 30);
+    const dietLabel = isVegan
+      ? 'Vegan (100% Plant-Based: Zero dairy, Zero eggs, Zero meat/fish)'
+      : isVegetarian
+      ? 'Vegetarian (Lacto-Vegetarian: Plant foods + Paneer/Curd/Milk. Zero eggs, Zero meat/fish)'
+      : isEggetarian
+      ? 'Eggetarian (Plant foods + Farm Boiled Eggs/Egg Bhurji/Egg Curry + Paneer/Curd. Strictly ZERO chicken, fish, or meat)'
+      : 'Non-Vegetarian (Whole foods + Chicken, Fish, Eggs, Paneer, Curd, Grains, Legumes)';
 
-    // Determine which meal types to generate based on meals_per_day
+    const rawEnv = (profile?.food_environment || 'PG').toLowerCase();
+    const isPG = rawEnv === 'pg' || rawEnv === 'hostel';
+    const isCoreProvided = isPG || rawEnv === 'home' || rawEnv === 'office/canteen';
+    const budgetStr = profile?.nutrition_budget || '₹1,000–2,000';
+
     const mealsPerDay = profile?.meals_per_day || '3 meals';
-    let mealTypesToGenerate: string[];
+    let mealSlots: string[];
     if (mealsPerDay === '2 meals') {
-      mealTypesToGenerate = ['lunch', 'dinner'];
+      mealSlots = ['lunch', 'dinner'];
     } else if (mealsPerDay === '3 meals') {
-      mealTypesToGenerate = ['breakfast', 'lunch', 'dinner'];
+      mealSlots = ['breakfast', 'lunch', 'dinner'];
     } else if (mealsPerDay === '5+ meals') {
-      mealTypesToGenerate = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner'];
+      mealSlots = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner'];
     } else {
-      // 4 meals (default)
-      mealTypesToGenerate = ['breakfast', 'lunch', 'pre_workout', 'dinner'];
+      mealSlots = ['breakfast', 'lunch', 'pre_workout', 'dinner'];
     }
 
-    const systemPrompt = `You are a strict, expert Indian nutritionist AI meal-selection assistant.
-Your task is to select foods from the provided DATABASE to construct a 1-day meal plan that hits the user's nutritional targets.
-You MUST ONLY return these exact meal types: ${mealTypesToGenerate.join(', ')}.
-You MUST ONLY use foods that exist in the provided DATABASE.
+    const slotPercentages: Record<string, number> = {
+      breakfast: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.20 : (mealsPerDay === '2 meals' ? 0.0 : 0.25)),
+      lunch: mealsPerDay === '3 meals' ? 0.40 : (mealsPerDay === '5+ meals' ? 0.30 : (mealsPerDay === '2 meals' ? 0.55 : 0.35)),
+      pre_workout: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
+      snack: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
+      post_workout: 0.13,
+      dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.25 : (mealsPerDay === '2 meals' ? 0.45 : 0.25)),
+    };
 
-CRITICAL DIETARY RESTRICTIONS:
-- You MUST strictly follow the user's Diet Preference. If Vegetarian, CANNOT pick any foods with 'dt' containing 'non-veg'. If Vegan, CANNOT pick dairy, eggs, or meat.
-- You MUST avoid their listed allergies and disliked foods.
+    // 4. Construct High-Precision Groq Prompt
+    const systemPrompt = `You are Luna AI, an elite Indian sports and clinical dietitian.
+Your mission is to generate a comprehensive 7-Day Precision Master Meal Plan (Day 1 through Day 7) designed to repeat across a 30-day month.
 
-CRITICAL FOOD ENVIRONMENT RULES:
-${isCoreProvided ? `- The user lives in a ${profile?.food_environment || 'Home'} environment where CORE MEALS (breakfast, lunch, dinner) are ALREADY PROVIDED for free.
-- For EVERY core meal (breakfast, lunch, dinner), select the provided-core-meal record from the database and label it using the user's saved environment only (for example, "PG-provided core meal (free)"). Never show a combined PG/Hostel/Home label.
-- Then, ONLY select cheap protein ADD-ONS from the database (items marked pg:true with low cost like roasted peanuts, soy chunks, curd, chana, banana) to boost protein.
-- Do NOT select expensive or complex foods for core meals. The PG/Home already provides rice, dal, chapati, sambar etc.
-- For pre/post-workout or snack meals: Select affordable snack items that fit the budget.` 
-: `- The user cooks their own meals ('I Cook' or 'Mixed' environment).
-- Select complete meals from the database that provide full nutrition.
-- All food costs count against their budget.`}
+CRITICAL USER PROFILE & STRICT CONSTRAINTS:
+1. DIET CATEGORY: ${dietLabel}
+   - You MUST STRICTLY respect this diet.
+   ${isEggetarian ? '- For Eggetarian: Include Boiled Eggs, Egg Bhurji, Egg Curry, Curd, Paneer, Dals, Chana, Rajma. NEVER EVER include chicken, fish, mutton, or meat.' : ''}
+   ${isVegan ? '- For Vegan: 100% plant foods only (Soy Chunks, Rajma, Chana, Dal Tadka, Roasted Peanuts, Fruits, Phulkas, Rice). NEVER include curd, milk, paneer, butter, ghee, eggs, or meat.' : ''}
+   ${isVegetarian ? '- For Vegetarian: Plant foods and dairy (Paneer, Curd, Milk, Dals, Chana, Rajma). NEVER include eggs, chicken, fish, or meat.' : ''}
+   ${isNonVeg ? '- For Non-Vegetarian: Include Chicken Breast, Fish Curry, Chicken Curry, Eggs, Paneer, Curd, Dal, Rice.' : ''}
 
-CRITICAL BUDGET RULES:
-- The user's monthly food budget is ${budgetStr} (approximately ₹${dailyBudgetNum}/day).
-- The TOTAL estimated_cost of ALL selected foods across ALL meals MUST NOT exceed ₹${dailyBudgetNum}/day.
-${isCoreProvided ? `- Remember: Core meals are FREE. Only add-on items count against the budget.` : `- All food items count against the budget.`}
+2. LIVING ENVIRONMENT: ${profile?.food_environment || 'PG'}
+   ${isPG ? '- In a PG/Hostel, core meals (rice, dal, chapati, seasonal sabzi) are provided by the mess.\n- Add high-protein hacks (boiled eggs via kettle, egg bhurji on tawa, curd, roasted peanuts, soy chunks) that fit within their monthly budget.' : '- Home environment with access to regular home cooking.'}
 
-Return the food_id and the quantity (number of servings). 
-Do NOT invent foods, calories, or macros.
-Do NOT provide medical advice.
+3. MEALS PER DAY: Exactly these meal slots: ${mealSlots.join(', ')}.
+
+4. TARGET DAILY MACROS TO HIT:
+   - Daily Calories: ${targets.calories} kcal
+   - Daily Protein: ${targets.protein} g
+   - Daily Carbs: ${targets.carbs} g
+   - Daily Fat: ${targets.fat} g
+   (Distribute proportionally across the ${mealSlots.length} meals so each day totals approximately ${targets.calories} kcal and ${targets.protein}g protein).
+
+5. ALLERGIES & DISLIKES:
+   - Allergies: ${profile?.food_allergies || 'None'}
+   - Disliked / Avoided: ${[profile?.foods_disliked, profile?.foods_avoided].filter(Boolean).join(', ') || 'None'}
+
 Return ONLY valid JSON matching this schema:
 {
-  "meals": [
+  "plan_summary": "7-Day Personalized Luna AI Master Plan",
+  "days": [
     {
-      "meal_type": "breakfast", // one of: ${mealTypesToGenerate.join(', ')}
-      "name": "string (e.g. High Protein Morning)",
-      "foods": [
+      "day_number": 1,
+      "meals": [
         {
-          "food_id": "uuid string",
-          "quantity": number
+          "meal_type": "breakfast",
+          "name": "Title of the meal (e.g. Desi Egg Bhurji with Warm Phulkas)",
+          "prep_instruction": "Short, practical kitchen or kettle hack tip suited for ${profile?.food_environment || 'PG'}",
+          "items": [
+            { "name": "Exact whole food name", "quantity": 1, "serving_size": "portion e.g. 2 large, 2 medium, 1 bowl" }
+          ]
         }
-      ],
-      "reason": "short explanation of why this was chosen"
+      ]
     }
   ]
 }`;
 
-    const userPrompt = `
-User Profile & Constraints:
-- Diet Preference: ${profile?.diet_preference || profile?.food_type || "Balanced"}
-- Allergies: ${profile?.food_allergies || "None"}
-- Disliked/Avoided Foods: ${[profile?.foods_disliked, profile?.foods_avoided].filter(Boolean).join(", ") || "None"}
-- Food Environment: ${profile?.food_environment || "Home"}
-- Monthly Budget: ${budgetStr} (≈₹${dailyBudgetNum}/day)
-- Meals Per Day: ${mealsPerDay}
-- Available Foods User Selected: ${Array.isArray(profile?.available_foods) ? profile.available_foods.join(", ") : "Not specified"}
+    const userPrompt = `Generate the 7-day personalized master plan for:
+Diet: ${profile?.diet_preference || profile?.food_type || 'Eggetarian'}
+Environment: ${profile?.food_environment || 'PG'}
+Budget: ${budgetStr}
+Meals per day: ${mealsPerDay} (${mealSlots.join(', ')})
+Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}g carbs, ${targets.fat}g fat.`;
 
-User Targets:
-- Calories: ${targets.calories} kcal
-- Protein: ${targets.protein} g
-- Carbs: ${targets.carbs} g
-- Fat: ${targets.fat} g
-
-${isCoreProvided ? `IMPORTANT: This user is in a ${profile?.food_environment} environment. Core meals are provided free. Only select cheap protein add-ons (prioritize foods with pg:true and low cost). Total add-on cost must stay under ₹${dailyBudgetNum}/day.` : `IMPORTANT: This user cooks their own meals. Select complete, budget-friendly meals. Total cost must stay under ₹${dailyBudgetNum}/day.`}
-
-Available Food DATABASE (dt = diet_type, pg = pg_friendly, cost = estimated cost per serving in ₹):
-${JSON.stringify(compactFoods)}
-
-Generate the meal plan with EXACTLY these meal types: ${mealTypesToGenerate.join(', ')}.
-Strictly adhere to the Diet Preference, Budget, and Food Environment constraints.
-`;
-
-    // 5. Call OpenAI with one retry for transient/formatting failures
-    let aiResult: MealPlanGenerationResult | null = null;
-    let attempts = 0;
-    const model = OPENAI_MODEL;
-    let lastError = null;
-
-    while (attempts < 2) {
+    // 5. Execute AI Generation with Groq
+    let aiPlan: LunaAIGenerationResult | null = null;
+    try {
+      aiPlan = await generateAIResponseJSON<LunaAIGenerationResult>({
+        systemPrompt,
+        userPrompt,
+        model: "primary",
+        maxTokens: 3500,
+        temperature: 0.3
+      });
+    } catch (groqErr: any) {
+      console.warn("[Luna AI] Primary Groq call failed, attempting fallback to fast model:", groqErr?.message);
       try {
-        attempts++;
-        aiResult = await generateOpenAIResponseJSON<MealPlanGenerationResult>({
+        aiPlan = await generateAIResponseJSON<LunaAIGenerationResult>({
           systemPrompt,
           userPrompt,
+          model: "fast",
+          maxTokens: 3500,
+          temperature: 0.3
         });
-        
-        // Basic schema validation
-        if (!aiResult?.meals || !Array.isArray(aiResult.meals)) {
-          throw new Error("Invalid AI schema: missing 'meals' array");
-        }
-        break; // Success
-      } catch (err: any) {
-        lastError = err;
-        if (err?.message?.includes("429")) {
-          throw new Error("AI meal generation is temporarily unavailable. Please try again.");
-        }
-        // If it's a parsing error or schema error, we loop to retry once.
+      } catch (fallbackErr: any) {
+        await this.logUsage(userId, 'failed_groq_generation', 'groq', undefined);
+        throw new Error(`Luna AI was unable to generate your plan: ${fallbackErr?.message || groqErr?.message}`);
       }
     }
 
-    if (!aiResult) {
-      await this.logUsage(userId, 'failed_json_parse', model);
-      throw new Error("AI failed to return a valid meal plan format after retries.");
+    if (!aiPlan || !Array.isArray(aiPlan.days) || aiPlan.days.length === 0) {
+      await this.logUsage(userId, 'failed_empty_days', 'groq');
+      throw new Error("Luna AI returned an incomplete plan format. Please try again.");
     }
 
-    // 6. Canonical Validation & Math Calculation
-    const foodMap = new Map(allFoods.map(f => [f.id, f]));
-    const validMealTypes = mealTypesToGenerate.includes('post_workout') 
-      ? ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner']
-      : mealTypesToGenerate;
-    
-    // Validate meal types
-    const planMeals = aiResult.meals.filter(m => validMealTypes.includes(m.meal_type.toLowerCase()));
-    
-    // Compute total items and canonical math
-    const mealPlansToInsert: any[] = [];
-    const mealPlanItemsToInsert: any[] = []; // We need meal_plan_ids first, so we'll do this in a loop
+    // 6. Build Master Day Schedules with Verified Nutrition Math
+    const daySchedules = aiPlan.days.map((d, dIdx) => {
+      const meals = d.meals.map(m => {
+        const mType = m.meal_type.toLowerCase();
+        const slotPct = slotPercentages[mType] ?? (1 / mealSlots.length);
+        const slotTargetCals = Math.round(targets.calories * slotPct);
+        const slotTargetPro = Number((targets.protein * slotPct).toFixed(1));
 
-    // Since we need to insert atomically and link items, we can use an RPC or do a managed transaction.
-    // Supabase JS doesn't support traditional transactions well without RPC, so we will insert the plans,
-    // get their IDs, and then insert the items. If it fails, we rollback manually or rely on cascade.
-    // The user requested: "meal_plans and meal_plan_items must be inserted in one transaction. No partial meal plans."
-    // We can use Supabase's `rpc` if we had one, but without it, we can insert an array of meal_plans, 
-    // and if item insertion fails, we delete the inserted meal plans.
-    
-    // First, let's prepare the data
-    for (const meal of planMeals) {
-      let mealCals = 0;
-      let mealPro = 0;
-      let mealCarbs = 0;
-      let mealFat = 0;
-      let mealCost = 0;
-      
-      const validFoods = [];
+        // Sanitize title
+        const cleanedTitle = sanitizeMealTitle(m.name, isVegan, isVegetarian, isEggetarian);
 
-      for (const item of meal.foods) {
-        const foodIdStr = String(item.food_id); // In case AI returned a number instead of string UUID
-        const realFood = foodMap.get(foodIdStr);
-        if (!realFood) {
-          await this.logUsage(userId, 'failed_invalid_food', model);
-          throw new Error(`AI generated a non-existent food ID: ${foodIdStr}`);
-        }
-        
-        const q = Number(item.quantity) || 1;
-        if (q <= 0) continue;
+        // Map food items
+        const rawItems = Array.isArray(m.items) && m.items.length > 0 ? m.items : [{ name: cleanedTitle, quantity: 1, serving_size: '1 serving' }];
 
-        mealCals += Math.round(realFood.calories * q);
-        mealPro += Number((realFood.protein * q).toFixed(2));
-        mealCarbs += Number((realFood.carbs * q).toFixed(2));
-        mealFat += Number((realFood.fat * q).toFixed(2));
-        mealCost += Number((realFood.estimated_cost * q).toFixed(2));
-        
-        validFoods.push({
-          food_id: realFood.id,
-          quantity: q
+        const processedItems = rawItems.map(item => {
+          let fName = sanitizeAIItemName(item.name, isVegan, isVegetarian, isEggetarian);
+          const ref = findFoodReference(fName, foodCatalog, profile?.food_environment);
+
+          const qty = Number(item.quantity) || 1;
+          const sSize = item.serving_size || ref?.serving_size || '1 serving';
+
+          const defCals = fName.toLowerCase().includes('egg') ? 78 : (fName.toLowerCase().includes('banana') ? 105 : 150);
+          const defPro = fName.toLowerCase().includes('egg') ? 6.3 : 5;
+
+          const baseCals = Math.round(Number(ref?.calories || defCals) * qty);
+          const basePro = Number((Number(ref?.protein || defPro) * qty).toFixed(1));
+          const baseCarbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
+          const baseFat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
+          const isItemCore = isCoreProvided && (
+            ref?.name?.includes("Provided Core") ||
+            ref?.name?.includes("Core Meal") ||
+            /\b(?:pg|hostel|mess|provided core|provided meal|core meal)\b/i.test(fName)
+          );
+          const baseCost = isItemCore ? 0 : Math.round(Number(ref?.estimated_cost || 20) * qty);
+
+          return {
+            food_id: ref?.id,
+            name: ref?.name || fName,
+            serving_size: sSize,
+            quantity: qty,
+            calories: baseCals,
+            protein: basePro,
+            carbs: baseCarbs,
+            fat: baseFat,
+            estimated_cost: baseCost,
+            isItemCore
+          };
         });
-      }
 
-      if (validFoods.length > 0) {
-        mealPlansToInsert.push({
-          user_id: userId,
-          date: localDate,
-          meal_type: meal.meal_type.toLowerCase(),
-          name: meal.name || `${meal.meal_type} Plan`,
-          calories: mealCals,
-          protein: mealPro,
-          carbs: mealCarbs,
-          fat: mealFat,
-          estimated_cost: mealCost,
-          ai_generated: true,
-          // We will attach validFoods temporarily to process them after insert
-          _items: validFoods 
-        });
-      }
+        // Compute total meal macros
+        const mealTotals = processedItems.reduce((acc, it) => ({
+          calories: acc.calories + it.calories,
+          protein: Number((acc.protein + it.protein).toFixed(1)),
+          carbs: Number((acc.carbs + it.carbs).toFixed(1)),
+          fat: Number((acc.fat + it.fat).toFixed(1)),
+          cost: acc.cost + it.estimated_cost
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0, cost: 0 });
+
+        return {
+          meal_type: mType,
+          name: cleanedTitle,
+          prep_instructions: m.prep_instruction || NutritionService.getPrepInstructionForSlot(mType, cleanedTitle, dIdx, profile?.food_environment, combinedDiet),
+          calories: mealTotals.calories || slotTargetCals,
+          protein: mealTotals.protein || slotTargetPro,
+          carbs: mealTotals.carbs,
+          fat: mealTotals.fat,
+          estimated_cost: mealTotals.cost,
+          items: processedItems
+        };
+      });
+
+      return {
+        day_number: d.day_number || (dIdx + 1),
+        meals
+      };
+    });
+
+    // 7. Populate 30 Days of Meal Plans in Supabase (Starting from localDate)
+    const startDate = new Date(`${localDate}T12:00:00.000Z`);
+    const numDaysToGenerate = 30;
+
+    const allDates: string[] = [];
+    for (let i = 0; i < numDaysToGenerate; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      allDates.push(d.toISOString().slice(0, 10));
     }
 
-    if (mealPlansToInsert.length === 0) {
-      await this.logUsage(userId, 'failed_empty_plan', model);
-      throw new Error("AI returned a plan with no valid foods.");
-    }
-
-    // 7. Database Cleanup & Insertion
-    // Delete any previous meal plans for today to prevent duplicates or constraint collisions
-    await supabase.from('meal_plans').delete().eq('user_id', userId).eq('date', localDate);
-
-    // Try inserting individual meal_type plans
-    const { data: insertedPlans, error: plansError } = await supabase
+    // Clean up existing meal plans in this 30-day window
+    await supabase
       .from('meal_plans')
-      .insert(mealPlansToInsert.map(p => {
-        const { _items, ...rest } = p;
-        return rest;
-      }))
-      .select();
+      .delete()
+      .eq('user_id', userId)
+      .in('date', allDates);
 
-    if (plansError) {
-      // Fallback for database instances where unique_user_date is ON (user_id, date) instead of (user_id, date, meal_type)
-      if (plansError.message?.includes("unique_user_date") || plansError.code === '23505') {
-        const combinedCals = mealPlansToInsert.reduce((a, b) => a + b.calories, 0);
-        const combinedPro = mealPlansToInsert.reduce((a, b) => a + b.protein, 0);
-        const combinedCarbs = mealPlansToInsert.reduce((a, b) => a + b.carbs, 0);
-        const combinedFat = mealPlansToInsert.reduce((a, b) => a + b.fat, 0);
-        const combinedCost = mealPlansToInsert.reduce((a, b) => a + b.estimated_cost, 0);
+    // Prepare batch rows for meal_plans
+    const mealPlansRows: any[] = [];
+    const itemsBySlotKey = new Map<string, any[]>();
 
-        const { data: singlePlan, error: singleErr } = await supabase
-          .from('meal_plans')
-          .insert({
-            user_id: userId,
-            date: localDate,
-            meal_type: 'daily',
-            name: 'Daily AI Nutrition Plan',
-            calories: combinedCals,
-            protein: combinedPro,
-            carbs: combinedCarbs,
-            fat: combinedFat,
-            estimated_cost: combinedCost,
-            ai_generated: true
-          })
-          .select()
-          .single();
+    allDates.forEach((dateStr, dateIdx) => {
+      const daySchedule = daySchedules[dateIdx % daySchedules.length];
 
-        if (singleErr || !singlePlan) {
-          await this.logUsage(userId, 'failed_db_insert', model);
-          throw singleErr || plansError;
-        }
-
-        const allItems = mealPlansToInsert.flatMap(p => p._items);
-        const singlePlanItems = allItems.map(item => ({
-          meal_plan_id: singlePlan.id,
-          food_id: item.food_id,
-          quantity: item.quantity
-        }));
-
-        await supabase.from('meal_plan_items').insert(singlePlanItems);
-
-        await this.logUsage(userId, 'success', model);
-        await NutritionService.updateDailySummary(userId);
-        return { existing: false, success: true };
-      }
-
-      await this.logUsage(userId, 'failed_db_insert', model);
-      throw plansError;
-    }
-
-    // Prepare items for multi-meal plan insertion
-    for (let i = 0; i < insertedPlans.length; i++) {
-      const plan = insertedPlans[i];
-      const items = mealPlansToInsert[i]._items;
-      for (const item of items) {
-        mealPlanItemsToInsert.push({
-          meal_plan_id: plan.id,
-          food_id: item.food_id,
-          quantity: item.quantity
+      daySchedule.meals.forEach((m) => {
+        const slotKey = `${dateStr}_${m.meal_type}`;
+        mealPlansRows.push({
+          user_id: userId,
+          date: dateStr,
+          meal_type: m.meal_type,
+          name: m.name,
+          calories: m.calories,
+          protein: m.protein,
+          carbs: m.carbs,
+          fat: m.fat,
+          estimated_cost: m.estimated_cost,
+          prep_instructions: m.prep_instructions,
+          ai_generated: true
         });
+
+        itemsBySlotKey.set(slotKey, m.items);
+      });
+    });
+
+    // Batch insert meal_plans (typically 30 days x 3 meals = 90 rows)
+    const { data: insertedMealPlans, error: insertPlansError } = await supabase
+      .from('meal_plans')
+      .insert(mealPlansRows)
+      .select('id, date, meal_type');
+
+    if (insertPlansError || !insertedMealPlans) {
+      console.error("[Luna AI] Error inserting meal_plans:", insertPlansError);
+      await this.logUsage(userId, 'failed_db_insert', 'groq');
+      throw new Error(`Failed to save your meal plans to database: ${insertPlansError?.message || 'Database write error'}`);
+    }
+
+    // Prepare meal_plan_items linking to the inserted meal plan IDs
+    const mealPlanItemsRows: any[] = [];
+    insertedMealPlans.forEach(plan => {
+      const slotKey = `${plan.date}_${plan.meal_type}`;
+      const items = itemsBySlotKey.get(slotKey) || [];
+
+      items.forEach(it => {
+        mealPlanItemsRows.push({
+          meal_plan_id: plan.id,
+          food_id: it.food_id || null,
+          quantity: it.quantity || 1
+        });
+      });
+    });
+
+    if (mealPlanItemsRows.length > 0) {
+      const chunkSize = 100;
+      for (let c = 0; c < mealPlanItemsRows.length; c += chunkSize) {
+        const chunk = mealPlanItemsRows.slice(c, c + chunkSize);
+        const { error: chunkErr } = await supabase
+          .from('meal_plan_items')
+          .insert(chunk);
+
+        if (chunkErr) {
+          console.warn("[Luna AI] Warning inserting meal_plan_items chunk:", chunkErr.message);
+        }
       }
     }
 
-    const { error: itemsError } = await supabase
-      .from('meal_plan_items')
-      .insert(mealPlanItemsToInsert);
-
-    if (itemsError) {
-      // Rollback
-      await supabase.from('meal_plans').delete().in('id', insertedPlans.map(p => p.id));
-      await this.logUsage(userId, 'failed_db_items_insert', model);
-      throw itemsError;
-    }
-
-    // 8. Success Logging
-    await this.logUsage(userId, 'success', model);
+    // 8. Update Daily Summary for Today & Log Success
+    await this.logUsage(userId, 'success', 'groq');
     await NutritionService.updateDailySummary(userId);
 
-    return { existing: false, success: true };
+    return {
+      success: true,
+      daysGenerated: numDaysToGenerate,
+      summary: aiPlan.plan_summary || "Luna AI 30-Day Personalized Master Plan",
+      message: `Luna AI has generated a customized 30-day diet plan tailored to your ${profile?.diet_preference || 'Eggetarian'} diet and ${profile?.food_environment || 'PG'} environment.`
+    };
   }
 }

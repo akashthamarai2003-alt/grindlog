@@ -15,17 +15,8 @@ export async function POST() {
       );
     }
 
-    if (!(await isFitnessPro(user.id))) {
-      return NextResponse.json(
-        { success: false, error: { code: 'PRO_REQUIRED', message: 'Meal plan generation is available on the Pro plan.' } },
-        { status: 403 }
-      );
-    }
-
-    // Since we don't have AbortSignal support deeply plumbed into our Groq SDK wrapper natively here without modifications,
-    // we enforce the timeout at the proxy/serverless function layer (Vercel edge functions or maxDuration).
-    // The underlying fetch in Groq SDK will respect standard timeouts.
-    
+    // Luna AI Meal Plan generation is powered by Groq (Free Tier)
+    // Authenticated users can generate their personalized 30-day plan
     const result = await AINutritionService.generateMealPlan(user.id);
 
     return NextResponse.json({ 

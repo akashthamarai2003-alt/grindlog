@@ -14,7 +14,7 @@ export type NutritionFoodReference = {
   is_pg_friendly?: boolean | null;
 };
 
-function normalizeFoodName(value: unknown): string {
+export function normalizeFoodName(value: unknown): string {
   return String(value || "")
     .toLowerCase()
     .replace(/\([^)]*\)/g, " ")
@@ -77,7 +77,7 @@ function parseAIItemText(value: unknown): Array<{ name: string; servingSize: str
     });
 }
 
-function findFoodReference(name: string, catalog: NutritionFoodReference[], foodEnv?: string): NutritionFoodReference | undefined {
+export function findFoodReference(name: string, catalog: NutritionFoodReference[], foodEnv?: string): NutritionFoodReference | undefined {
   const normalizedName = normalizeFoodName(name);
   if (!normalizedName) return undefined;
 
@@ -130,7 +130,7 @@ function findFoodReference(name: string, catalog: NutritionFoodReference[], food
   return undefined;
 }
 
-function sanitizeAIItemName(name: string, isVegan?: boolean, isVegetarian?: boolean, isEggetarian?: boolean): string {
+export function sanitizeAIItemName(name: string, isVegan?: boolean, isVegetarian?: boolean, isEggetarian?: boolean): string {
   let cleaned = String(name || '').trim();
   if (!cleaned) return cleaned;
 
@@ -163,11 +163,11 @@ function sanitizeAIItemName(name: string, isVegan?: boolean, isVegetarian?: bool
     if (/\b(?:egg\s*bhurji|boiled\s*egg|egg\s*white|egg|eggs|omelette)\b/i.test(cleaned)) {
       return "Paneer Tikka";
     }
-    if (/\b(?:chicken|fish|mutton|meat|beef|pork|prawn|shrimp)\b/i.test(cleaned)) {
+    if (/\b(?:chicken|fish|mutton|meat|beef|pork|prawn|seafood)\b/i.test(cleaned)) {
       return "Paneer Tikka";
     }
   } else if (isEggetarian) {
-    if (/\b(?:chicken|fish|mutton|meat|beef|pork|prawn|shrimp)\b/i.test(cleaned)) {
+    if (/\b(?:chicken|fish|mutton|meat|beef|pork|prawn|seafood)\b/i.test(cleaned)) {
       return "Boiled Egg";
     }
   }
@@ -175,7 +175,7 @@ function sanitizeAIItemName(name: string, isVegan?: boolean, isVegetarian?: bool
   return cleaned;
 }
 
-function sanitizeMealTitle(title: string, isVegan?: boolean, isVegetarian?: boolean, isEggetarian?: boolean): string {
+export function sanitizeMealTitle(title: string, isVegan?: boolean, isVegetarian?: boolean, isEggetarian?: boolean): string {
   let cleaned = String(title || '').trim();
   if (!cleaned) return cleaned;
 
@@ -2268,11 +2268,15 @@ export class NutritionService {
           });
           return {
             ...existing,
+            is_ai_generated: Boolean(existing.ai_generated),
             name: sanitizeMealTitle(existing.name || '', isProfileVegan, isProfileVegetarian, isProfileEggetarian),
             meal_plan_items: sanitizedItems
           };
         }
-        return existing;
+        return {
+          ...existing,
+          is_ai_generated: Boolean(existing.ai_generated)
+        };
       }
 
       // 2. Priority: True 7-Day Rotating Menu (Strictly varies by dayOfWeek, ensuring fresh variety every single day)
@@ -2486,7 +2490,7 @@ export class NutritionService {
       },
       progress,
       nutrition_score: score,
-      has_ai_plan: Boolean(aiMeals && aiMeals.length > 0),
+      has_ai_plan: Boolean((aiMeals && aiMeals.length > 0) || formattedMeals.some((m: any) => m.ai_generated || m.is_ai_generated)),
       is_natural_whole_food: true,
       food_type: isProfileVegan
         ? 'Vegan'

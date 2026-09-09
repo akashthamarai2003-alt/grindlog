@@ -1025,23 +1025,41 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         </div>
 
         {/* Meals Header */}
-        <div className="mt-4 mb-4 flex items-center justify-between px-1">
+        <div className="mt-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 suppressHydrationWarning className="text-[13px] font-black tracking-widest text-white uppercase">
               {(!selectedDate || selectedDate === todayDateStr) ? "Today's Meals" : `${weekDates.find(w => w.dateStr === selectedDate)?.dayName || 'Selected'}'s Meals`}
             </h2>
-            <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-              <Sparkles size={10} /> 7-Day Variety Plan
-            </span>
+            {data?.has_ai_plan ? (
+              <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-[0_0_10px_rgba(173,255,0,0.15)]">
+                <Sparkles size={10} /> Luna AI 30-Day Plan
+              </span>
+            ) : (
+              <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                <Sparkles size={10} /> 7-Day Variety Plan
+              </span>
+            )}
             <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
               🍃 100% Natural Whole Foods
             </span>
           </div>
-          {data?.food_type && (
-            <span className="text-[10px] font-bold text-white/50 capitalize bg-white/5 px-2.5 py-0.5 rounded-md border border-white/5 shrink-0">
-              {data.food_type}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {data?.food_type && (
+              <span className="text-[10px] font-bold text-white/50 capitalize bg-white/5 px-2.5 py-1 rounded-md border border-white/5 shrink-0">
+                {data.food_type}
+              </span>
+            )}
+            <button
+              type="button"
+              disabled={isGenerating}
+              onClick={handleGeneratePlan}
+              className="text-[10px] font-black text-black bg-[#ADFF00] hover:bg-[#c4ff33] px-3 py-1.5 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(173,255,0,0.25)] disabled:opacity-50 cursor-pointer shrink-0"
+              title="Generate or refresh your 30-day personalized diet plan with Luna AI"
+            >
+              {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
+              {isGenerating ? "Luna is planning..." : (data?.has_ai_plan ? "Regenerate Plan" : "Generate with Luna AI")}
+            </button>
+          </div>
         </div>
         
         {!hasPlannedMeals && !hasLoggedFoods ? (

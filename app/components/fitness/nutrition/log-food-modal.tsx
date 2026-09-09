@@ -218,11 +218,25 @@ export function LogFoodModal({
         }
       });
 
-      const loggedData = await nutritionApi.logFoods(payloadItems);
+      // Prepare optimistic items so modal closes in 0ms and dashboard updates instantly
+      const optimisticItems = itemsToLog.map((item, idx) => ({
+        id: `opt-${Date.now()}-${idx}`,
+        meal_type: mealType,
+        name: item.name,
+        calories: Math.round(item.calories * item.quantity),
+        protein: Math.round(item.protein * item.quantity * 10) / 10,
+        carbs: Math.round(item.carbs * item.quantity * 10) / 10,
+        fat: Math.round(item.fat * item.quantity * 10) / 10,
+        estimated_cost: Math.round((item.estimated_cost || 0) * item.quantity),
+      }));
 
+      // 0ms Instant UI feedback
       toast.success(`Logged ${itemsToLog.length} foods for ${formatMealType(mealType)}!`);
-      onSuccess(loggedData);
+      onSuccess(optimisticItems);
       onClose();
+
+      // Background persist to database
+      await nutritionApi.logFoods(payloadItems);
     } catch (err: any) {
       console.error("Failed to log planned meal:", err);
       toast.error(err?.message || "Failed to log meal to server");

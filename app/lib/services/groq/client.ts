@@ -62,14 +62,14 @@ export async function generateAIResponse({
     throw new Error("GROQ_API_KEY is not configured in your environment.");
   }
 
-  const configuredModel = process.env.GROQ_MODEL?.trim();
-  const requestedGroqModel = configuredModel || GROQ_MODELS[model] || GROQ_MODELS.fast;
+  const configuredModel = process.env.GROQ_MODEL?.trim() || process.env.GROQ_CHAT_MODEL?.trim();
+  const requestedGroqModel = configuredModel || GROQ_MODELS[model] || GROQ_MODELS.primary;
 
   const modelsToTry = Array.from(new Set([
     requestedGroqModel,
-    "groq/compound-mini",
     "qwen/qwen3.8-27b",
-    "openai/gpt-oss-20b"
+    "groq/compound-mini",
+    "qwen/qwen3.6-27b"
   ]));
 
   for (let keyAttempt = 0; keyAttempt < groqKeys.length; keyAttempt++) {
