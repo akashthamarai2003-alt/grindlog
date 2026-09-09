@@ -2182,25 +2182,48 @@ export class NutritionService {
         const allItems = dailyPlan.meal_plan_items || [];
         
         const itemsByType: Record<string, any[]> = {};
+        const titleByType: Record<string, string> = {};
         ALL_MEAL_TYPES.forEach(mt => { itemsByType[mt] = []; });
 
         allItems.forEach((item: any, idx: number) => {
-          const cat = (item.foods?.category || '').toLowerCase();
-          const name = (item.foods?.name || '').toLowerCase();
+          const rawServing = String(item.serving_size || '');
+          let targetType = '';
+          let mealTitle = '';
+          let actualServing = rawServing;
 
-          if (itemsByType.breakfast && (cat.includes('breakfast') || name.includes('idli') || name.includes('dosa') || name.includes('poha') || name.includes('upma') || name.includes('oats') || name.includes('coffee') || name.includes('milk') || name.includes('egg'))) {
-            itemsByType.breakfast.push(item);
-          } else if ((itemsByType.pre_workout || itemsByType.post_workout || itemsByType.snack) && (cat.includes('fruit') || cat.includes('snack') || name.includes('banana') || name.includes('apple') || name.includes('peanut'))) {
-            const bucket = itemsByType.pre_workout || itemsByType.snack || itemsByType.post_workout;
-            if (bucket) bucket.push(item);
-          } else if (itemsByType.lunch && idx % 2 === 0) {
-            itemsByType.lunch.push(item);
-          } else if (itemsByType.dinner) {
-            itemsByType.dinner.push(item);
+          if (rawServing.includes('::')) {
+            const parts = rawServing.split('::');
+            targetType = parts[0]?.toLowerCase().trim();
+            mealTitle = parts[1]?.trim() || '';
+            actualServing = parts.slice(2).join('::') || parts[1] || '1 serving';
+          }
+
+          if (targetType && itemsByType[targetType]) {
+            if (mealTitle && !titleByType[targetType]) {
+              titleByType[targetType] = mealTitle;
+            }
+            itemsByType[targetType].push({
+              ...item,
+              serving_size: actualServing
+            });
           } else {
-            // Fallback: push to the first available meal type
-            const firstType = ALL_MEAL_TYPES[0];
-            if (itemsByType[firstType]) itemsByType[firstType].push(item);
+            // Fallback: heuristic categorization
+            const cat = (item.foods?.category || '').toLowerCase();
+            const name = (item.foods?.name || '').toLowerCase();
+
+            if (itemsByType.breakfast && (cat.includes('breakfast') || name.includes('idli') || name.includes('dosa') || name.includes('poha') || name.includes('upma') || name.includes('oats') || name.includes('coffee') || name.includes('milk') || name.includes('egg'))) {
+              itemsByType.breakfast.push(item);
+            } else if ((itemsByType.pre_workout || itemsByType.post_workout || itemsByType.snack) && (cat.includes('fruit') || cat.includes('snack') || name.includes('banana') || name.includes('apple') || name.includes('peanut'))) {
+              const bucket = itemsByType.pre_workout || itemsByType.snack || itemsByType.post_workout;
+              if (bucket) bucket.push(item);
+            } else if (itemsByType.lunch && idx % 2 === 0) {
+              itemsByType.lunch.push(item);
+            } else if (itemsByType.dinner) {
+              itemsByType.dinner.push(item);
+            } else {
+              const firstType = ALL_MEAL_TYPES[0];
+              if (itemsByType[firstType]) itemsByType[firstType].push(item);
+            }
           }
         });
 
@@ -2208,13 +2231,17 @@ export class NutritionService {
           const mItems = itemsByType[mType];
           const mCals = mItems.reduce((acc, it) => acc + Math.round((it.foods?.calories || 0) * it.quantity), 0);
           const mPro = mItems.reduce((acc, it) => acc + Number((it.foods?.protein || 0) * it.quantity), 0);
+          const mName = titleByType[mType] || (mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan");
           plansByMealType.set(mType, {
             id: `${dailyPlan.id}-${mType}`,
             meal_type: mType,
-            name: mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan",
+            name: sanitizeMealTitle(mName, isProfileVegan, isProfileVegetarian, isProfileEggetarian),
             calories: mCals,
             protein: mPro,
-            meal_plan_items: mItems
+            meal_plan_items: mItems,
+            is_ai_generated: Boolean(dailyPlan.ai_generated),
+            ai_generated: Boolean(dailyPlan.ai_generated),
+            prep_instructions: NutritionService.getPrepInstructionForSlot(mType, mName, dayOfWeek, fitProfile?.food_environment, rawDietStr)
           });
         });
       } else {

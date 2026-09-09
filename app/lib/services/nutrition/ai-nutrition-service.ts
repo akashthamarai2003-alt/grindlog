@@ -317,33 +317,53 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       .eq('user_id', userId)
       .in('date', allDates);
 
-    // Prepare batch rows for meal_plans
+    // Prepare batch rows for meal_plans (1 row per date to respect UNIQUE(user_id, date))
     const mealPlansRows: any[] = [];
-    const itemsBySlotKey = new Map<string, any[]>();
+    const itemsByDate = new Map<string, any[]>();
 
     allDates.forEach((dateStr, dateIdx) => {
       const daySchedule = daySchedules[dateIdx % daySchedules.length];
 
-      daySchedule.meals.forEach((m) => {
-        const slotKey = `${dateStr}_${m.meal_type}`;
-        mealPlansRows.push({
-          user_id: userId,
-          date: dateStr,
-          meal_type: m.meal_type,
-          name: m.name,
-          calories: m.calories,
-          protein: m.protein,
-          carbs: m.carbs,
-          fat: m.fat,
-          estimated_cost: m.estimated_cost,
-          ai_generated: true
-        });
+      let dayCals = 0;
+      let dayPro = 0;
+      let dayCarbs = 0;
+      let dayFat = 0;
+      let dayCost = 0;
+      const allDayItems: any[] = [];
 
-        itemsBySlotKey.set(slotKey, m.items);
+      daySchedule.meals.forEach((m) => {
+        dayCals += m.calories;
+        dayPro += m.protein;
+        dayCarbs += m.carbs;
+        dayFat += m.fat;
+        dayCost += m.estimated_cost;
+
+        m.items.forEach(it => {
+          allDayItems.push({
+            ...it,
+            meal_type: m.meal_type,
+            meal_name: m.name
+          });
+        });
       });
+
+      mealPlansRows.push({
+        user_id: userId,
+        date: dateStr,
+        meal_type: 'daily',
+        name: 'Daily Luna AI Nutrition Plan',
+        calories: dayCals,
+        protein: Number(dayPro.toFixed(1)),
+        carbs: Number(dayCarbs.toFixed(1)),
+        fat: Number(dayFat.toFixed(1)),
+        estimated_cost: dayCost,
+        ai_generated: true
+      });
+
+      itemsByDate.set(dateStr, allDayItems);
     });
 
-    // Batch insert meal_plans (typically 30 days x 3 meals = 90 rows)
+    // Batch insert meal_plans (exactly 1 row per date = 30 rows total, 0 unique constraint collisions)
     const { data: insertedMealPlans, error: insertPlansError } = await supabase
       .from('meal_plans')
       .insert(mealPlansRows)
@@ -359,8 +379,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
     const defaultFoodId = foodCatalog[0]?.id;
     const mealPlanItemsRows: any[] = [];
     insertedMealPlans.forEach(plan => {
-      const slotKey = `${plan.date}_${plan.meal_type}`;
-      const items = itemsBySlotKey.get(slotKey) || [];
+      const items = itemsByDate.get(plan.date) || [];
 
       items.forEach(it => {
         const resolvedFoodId = it.food_id || defaultFoodId;
@@ -368,7 +387,8 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           mealPlanItemsRows.push({
             meal_plan_id: plan.id,
             food_id: resolvedFoodId,
-            quantity: it.quantity || 1
+            quantity: it.quantity || 1,
+            serving_size: `${it.meal_type}::${it.meal_name}::${it.serving_size || '1 serving'}`
           });
         }
       });
