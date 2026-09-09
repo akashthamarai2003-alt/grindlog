@@ -93,9 +93,9 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
   const superpowers = [
     {
       icon: Utensils,
-      title: "100% Indian Nutrition Engine",
+      title: "Goal-Based Indian Diet Plans",
       badge: "Target-Scaled",
-      desc: "Culturally authentic recipes (Besan Cheela, Rajma Chawal, Dal Tadka, Paneer Bhurji) scaled with exact gram precision to your calorie & macro targets.",
+      desc: "Customized directly for your specific goal (Fat Loss, Muscle Building, or Recomp). Culturally authentic Indian recipes scaled with exact gram precision to your calorie & macro targets.",
       highlight: "Veg, Non-Veg, Egg & Vegan",
       color: "from-lime-500/15 to-emerald-500/5",
       accent: "#ADFF00"
@@ -111,9 +111,9 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
     },
     {
       icon: Dumbbell,
-      title: "Live PR & Workout Logger",
+      title: "Goal-Driven Workout Splits",
       badge: "Hypertrophy Science",
-      desc: "Set-by-set weight & rep tracking with automatic rest countdown timer, previous set memory, PR celebrations, and animated exercise guides.",
+      desc: "Workout routines built for your target goal and available equipment (Gym, Home, or Dumbbells). Set-by-set tracker with rest countdown timers, PR tracking, and guided exercise form.",
       highlight: "Gym, Home & Dumbbell Splits",
       color: "from-amber-500/15 to-lime-500/5",
       accent: "#FBBF24"
@@ -343,15 +343,37 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
           transition={{ delay: 0.2 }}
           className="mt-6 text-base sm:text-xl text-gray-300 max-w-3xl mx-auto font-normal leading-relaxed"
         >
-          Upload your physique photos for instant AI computer vision assessment, then get hyper-personalized Indian meal plans, budget-scaled grocery lists, and adaptive workout splits that evolve as you progress.
+          Tell us your goal to achieve — whether it&apos;s <span className="text-[#ADFF00] font-semibold">Fat Loss</span>, <span className="text-[#ADFF00] font-semibold">Muscle Building</span>, or <span className="text-[#ADFF00] font-semibold">Body Recomposition</span>. Upload your physique photos for instant AI assessment, then get custom workout routines and authentic Indian diet plans engineered specifically to achieve your target.
         </motion.p>
+
+        {/* Goal Badges */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto"
+        >
+          <span className="text-[11px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mr-1">
+            <Target className="w-3.5 h-3.5 text-[#ADFF00]" />
+            Custom Plans For Your Goal:
+          </span>
+          <span className="px-3 py-1 rounded-full bg-[#121E12] border border-[#233522] text-[#ADFF00] text-xs font-bold shadow-xs">
+            🔥 Fat Loss & Cutting
+          </span>
+          <span className="px-3 py-1 rounded-full bg-[#121E12] border border-[#233522] text-[#ADFF00] text-xs font-bold shadow-xs">
+            💪 Muscle Building
+          </span>
+          <span className="px-3 py-1 rounded-full bg-[#121E12] border border-[#233522] text-[#ADFF00] text-xs font-bold shadow-xs">
+            ⚡ Body Recomposition
+          </span>
+        </motion.div>
 
         {/* CTA Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Link
             href="/auth/signup?redirect=/onboarding"
@@ -407,7 +429,7 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
             See the GrindLog Engine in Action
           </h2>
           <p className="mt-4 text-sm sm:text-base text-gray-400">
-            Click between the 5 superpowers below to explore how GrindLog runs your daily workouts, nutrition, and shopping.
+            Every workout routine and Indian diet plan is custom-engineered around your specific goal to achieve — explore the interactive engine below.
           </p>
         </div>
 
