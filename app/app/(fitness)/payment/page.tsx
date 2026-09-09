@@ -184,10 +184,11 @@ export default function FitnessPaymentPage() {
   useEffect(() => {
     if (!premiumStatusLoaded) return;
     
-    // Core subscribers never see the wheel; their Pro upgrade is permanently locked at ₹99!
-    if (isCurrentCore) {
+    // Core subscribers and users on monthly renewal never see the wheel
+    const isRenewal = searchParams.get("intent") === "renew_monthly";
+    if (isCurrentCore || isRenewal) {
       setShowSpinModal(false);
-      setLevel("pro");
+      if (isCurrentCore) setLevel("pro");
       return;
     }
 

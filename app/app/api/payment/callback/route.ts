@@ -87,14 +87,29 @@ export async function POST(req: NextRequest) {
       }
 
       if (source === "fitness_ai_os") {
-        // Fitness OS payment — update fitness-specific tables
+        // Fitness OS payment — update fitness-specific tables with fair stacking
+        const { data: existingSub } = await adminClient
+          .from("fitness_os_subscriptions")
+          .select("current_period_end")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const { data: existingProfile } = await adminClient
+          .from("fitness_os_profiles")
+          .select("fitness_premium_expires_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const baseExpiry = existingSub?.current_period_end || existingProfile?.fitness_premium_expires_at;
+        const finalExpiresAt = calculateExpiryDate(tier, baseExpiry);
+
         await adminClient
           .from("fitness_os_profiles")
           .update({
             fitness_is_premium: true,
             fitness_premium_tier: tier,
             fitness_premium_level: level,
-            fitness_premium_expires_at: calculateExpiryDate(tier)
+            fitness_premium_expires_at: finalExpiresAt,
           })
           .eq("user_id", userId);
 
@@ -110,7 +125,7 @@ export async function POST(req: NextRequest) {
                 provider_order_id: razorpayOrderId,
                 provider_payment_id: razorpayPaymentId,
                 current_period_start: new Date().toISOString(),
-                current_period_end: calculateExpiryDate(tier),
+                current_period_end: finalExpiresAt,
               },
               { onConflict: "user_id" },
             );
@@ -126,7 +141,7 @@ export async function POST(req: NextRequest) {
             status: "active",
             razorpay_order_id: razorpayOrderId,
             razorpay_payment_id: razorpayPaymentId,
-            expires_at: calculateExpiryDate(tier),
+            expires_at: finalExpiresAt,
             started_at: new Date().toISOString(),
           });
         } catch (subErr) {
@@ -135,14 +150,22 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.redirect(new URL("/payment?success=Premium+Activated", req.url), 303);
       } else {
-        // GrindLog legacy payment — update profiles table
+        // GrindLog legacy payment — update profiles table with stacking
+        const { data: existingMainProfile } = await adminClient
+          .from("profiles")
+          .select("premium_expires_at")
+          .eq("id", userId)
+          .maybeSingle();
+
+        const finalExpiresAt = calculateExpiryDate(tier, existingMainProfile?.premium_expires_at);
+
         await adminClient
           .from("profiles")
           .update({
             is_premium: true,
             premium_tier: tier,
             premium_level: level,
-            premium_expires_at: calculateExpiryDate(tier),
+            premium_expires_at: finalExpiresAt,
           })
           .eq("id", userId);
 
@@ -154,7 +177,7 @@ export async function POST(req: NextRequest) {
             status: "active",
             razorpay_order_id: razorpayOrderId,
             razorpay_payment_id: razorpayPaymentId,
-            expires_at: calculateExpiryDate(tier),
+            expires_at: finalExpiresAt,
             started_at: new Date().toISOString(),
           });
         } catch (err) {

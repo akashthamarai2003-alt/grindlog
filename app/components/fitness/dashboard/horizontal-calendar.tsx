@@ -46,10 +46,14 @@ export function HorizontalCalendar({ weekWorkouts = [], targetDateStr }: Horizon
 
   const isViewingToday = activeDateStr === todayStr;
 
-  // Build workout lookup map by date
+  // Build workout lookup map by date (preserve completed status over scheduled)
   const workoutMap = new Map<string, { status: string; name?: string }>();
   (weekWorkouts || []).forEach(w => {
     if (w.workout_date) {
+      const existing = workoutMap.get(w.workout_date);
+      if (existing?.status === "completed" && w.status !== "completed") {
+        return;
+      }
       workoutMap.set(w.workout_date, { status: w.status, name: w.name });
     }
   });

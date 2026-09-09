@@ -39,7 +39,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
   const [
     { data: profile },
     { data: plan },
-    { data: workout },
+    { data: workoutsForDate },
     { data: weekWorkouts },
     { data: activityLog },
     { data: sleepLog },
@@ -47,15 +47,15 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     subscriptionState,
   ] = await Promise.all([
     supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-    supabase.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").maybeSingle(),
+    supabase.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("fitness_os_workouts").select(`
       *,
       fitness_os_exercises (
         id,
         fitness_os_sets (completed)
       )
-    `).eq("user_id", user.id).eq("workout_date", targetDateStr).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("fitness_os_workouts").select("id, workout_date, status, name").eq("user_id", user.id).gte("workout_date", weekStartStr).lte("workout_date", weekEndStr),
+    `).eq("user_id", user.id).eq("workout_date", targetDateStr).order("created_at", { ascending: false }),
+    supabase.from("fitness_os_workouts").select("id, workout_date, status, name").eq("user_id", user.id).gte("workout_date", weekStartStr).lte("workout_date", weekEndStr).order("created_at", { ascending: false }),
     supabase.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
     supabase.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
     (supabase as any).from("fitness_os_water_logs").select("amount_ml").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
@@ -64,6 +64,10 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
   if (!profile?.onboarding_completed) {
     redirect("/onboarding");
   }
+
+  const workout = Array.isArray(workoutsForDate)
+    ? (workoutsForDate.find((w: any) => w.status === "completed") || workoutsForDate[0] || null)
+    : workoutsForDate;
 
   const subscriptionPlan = subscriptionState?.plan;
   const isFreeUser = !subscriptionPlan || subscriptionPlan.id === "free";

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
+import { calculateExpiryDate } from "@/lib/utils";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -16,22 +18,49 @@ export async function POST(req: NextRequest) {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, isMock } = body;
 
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const adminClient = createAdminClient();
+
+    // Query existing subscription for stacking
+    const { data: existingSub } = await adminClient
+      .from("fitness_os_subscriptions")
+      .select("current_period_end, plan")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const { data: existingProfile } = await adminClient
+      .from("fitness_os_profiles")
+      .select("fitness_premium_expires_at, fitness_premium_level")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const baseExpiry = existingSub?.current_period_end || existingProfile?.fitness_premium_expires_at;
+    const finalExpiresAt = calculateExpiryDate("monthly", baseExpiry);
+    const planLevel = existingSub?.plan === "starter" ? "starter" : "pro";
 
     // Handle mock for development without keys
     if (isMock && (!process.env.RAZORPAY_KEY_ID || !keySecret)) {
       console.warn("Mocking successful payment verification.");
       
-      const { error: updateError } = await supabase
-        .from("fitness_os_subscriptions")
+      await adminClient
+        .from("fitness_os_profiles")
         .update({
+          fitness_is_premium: true,
+          fitness_premium_tier: "monthly",
+          fitness_premium_level: planLevel === "starter" ? "core" : "pro",
+          fitness_premium_expires_at: finalExpiresAt,
+        })
+        .eq("user_id", userId);
+
+      const { error: updateError } = await adminClient
+        .from("fitness_os_subscriptions")
+        .upsert({
+          user_id: userId,
+          plan: planLevel,
           status: "active",
           provider_payment_id: "mock_payment_id",
           current_period_start: new Date().toISOString(),
-          // Default mock period: 1 month
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        })
-        .eq("user_id", userId)
-        .eq("status", "created");
+          current_period_end: finalExpiresAt,
+        }, { onConflict: "user_id" });
 
       if (updateError) throw new Error("Failed to update subscription status");
 
@@ -55,17 +84,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Payment verification failed: Invalid signature" }, { status: 400 });
     }
 
-    // Update subscription
-    const { error: updateError } = await supabase
-      .from("fitness_os_subscriptions")
+    // Update profile
+    await adminClient
+      .from("fitness_os_profiles")
       .update({
+        fitness_is_premium: true,
+        fitness_premium_tier: "monthly",
+        fitness_premium_level: planLevel === "starter" ? "core" : "pro",
+        fitness_premium_expires_at: finalExpiresAt,
+      })
+      .eq("user_id", userId);
+
+    // Update subscription using adminClient to bypass RLS restrictions
+    const { error: updateError } = await adminClient
+      .from("fitness_os_subscriptions")
+      .upsert({
+        user_id: userId,
+        plan: planLevel,
         status: "active",
+        provider_order_id: razorpay_order_id,
         provider_payment_id: razorpay_payment_id,
         current_period_start: new Date().toISOString(),
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // Razorpay subscriptions webhook should ideally update this exactly, but setting default 30 days for simple order checkout.
-      })
-      .eq("user_id", userId)
-      .eq("provider_order_id", razorpay_order_id);
+        current_period_end: finalExpiresAt,
+      }, { onConflict: "user_id" });
 
     if (updateError) {
       console.error("Failed to activate subscription in DB:", updateError);

@@ -81,6 +81,8 @@ export async function POST(req: Request) {
         .select("id")
         .eq("user_id", user.id)
         .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle(),
       checkFitnessAILimit(supabase, user.id),
       supabase
@@ -102,44 +104,33 @@ export async function POST(req: Request) {
         { status: 402 },
       );
     }
-    if (existingPlan) {
-      if (reqBody && reqBody.isRecalibrate === true) {
-        // Archive existing plan to completed
-        await supabase
-          .from("fitness_os_workout_plans")
-          .update({ status: "completed" })
-          .eq("id", existingPlan.id);
-
-        // Update profile with recalibration check-in data
-        const updateData: Record<string, any> = {};
-        if (reqBody.newWeight && Number(reqBody.newWeight) > 0) {
-          updateData.weight = Number(reqBody.newWeight);
-        }
-        if (reqBody.newGoal && typeof reqBody.newGoal === "string") {
-          updateData.goal = reqBody.newGoal;
-        }
-        if (reqBody.painStatus === "healed") {
-          updateData.current_pain_severity = 0;
-          updateData.physical_problems = [];
-          updateData.exercise_limitations = [];
-        } else if (reqBody.painStatus === "better") {
-          updateData.current_pain_severity = Math.max(1, (Number(profile.current_pain_severity) || 4) - 2);
-        }
-        if (Object.keys(updateData).length > 0) {
-          await supabase
-            .from("fitness_os_profiles")
-            .update(updateData)
-            .eq("user_id", user.id);
-          Object.assign(profile, updateData);
-        }
-      } else {
-        return NextResponse.json(
-          { success: false, error: "An active plan already exists. Return to dashboard." },
-          { status: 400 },
-        );
-      }
+    if (existingPlan && (!reqBody || reqBody.isRecalibrate !== true)) {
+      return NextResponse.json(
+        { success: false, error: "An active plan already exists. Return to dashboard." },
+        { status: 400 },
+      );
     }
-    if (!limitCheck.allowed) {
+
+    // In-memory profile adjustment for recalibration prompt generation
+    const recalibrationUpdates: Record<string, any> = {};
+    if (reqBody && reqBody.isRecalibrate === true && profile) {
+      if (reqBody.newWeight && Number(reqBody.newWeight) > 0) {
+        recalibrationUpdates.weight = Number(reqBody.newWeight);
+      }
+      if (reqBody.newGoal && typeof reqBody.newGoal === "string") {
+        recalibrationUpdates.goal = reqBody.newGoal;
+      }
+      if (reqBody.painStatus === "healed") {
+        recalibrationUpdates.current_pain_severity = 0;
+        recalibrationUpdates.physical_problems = [];
+        recalibrationUpdates.exercise_limitations = [];
+      } else if (reqBody.painStatus === "better") {
+        recalibrationUpdates.current_pain_severity = Math.max(1, (Number(profile.current_pain_severity) || 4) - 2);
+      }
+      Object.assign(profile, recalibrationUpdates);
+    }
+
+    if (!limitCheck.allowed && !reqBody?.isRecalibrate) {
       return NextResponse.json(
         {
           success: false,
@@ -317,7 +308,23 @@ export async function POST(req: Request) {
       );
     }
 
-    // 8. Atomic Database Transaction via RPC
+    // 8. If recalibrating, archive previous active plan(s) to 'completed' and persist profile updates
+    if (reqBody && reqBody.isRecalibrate === true) {
+      await supabase
+        .from("fitness_os_workout_plans")
+        .update({ status: "completed" })
+        .eq("user_id", user.id)
+        .eq("status", "active");
+
+      if (Object.keys(recalibrationUpdates).length > 0) {
+        await supabase
+          .from("fitness_os_profiles")
+          .update(recalibrationUpdates)
+          .eq("user_id", user.id);
+      }
+    }
+
+    // 9. Atomic Database Transaction via RPC
     const { data: planId, error: rpcError } = await supabase.rpc(
       "create_fitness_os_plan_transaction",
       {

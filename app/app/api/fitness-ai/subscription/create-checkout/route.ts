@@ -66,17 +66,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to create payment order." }, { status: 500 });
     }
 
-    // Upsert subscription as 'created' (pending payment)
+    // Save pending subscription only if user has no record, or update provider_order_id without breaking active status
     const adminSupabase = createAdminClient();
-    const { error: dbError } = await adminSupabase
+    const { data: existingSub } = await adminSupabase
       .from("fitness_os_subscriptions")
-      .upsert({
-        user_id: userId,
-        plan: planId,
-        status: "created",
-        provider: "razorpay",
-        provider_order_id: data.id,
-      }, { onConflict: "user_id" });
+      .select("status, current_period_end")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    let dbError = null;
+    if (!existingSub) {
+      const res = await adminSupabase
+        .from("fitness_os_subscriptions")
+        .insert({
+          user_id: userId,
+          plan: planId,
+          status: "created",
+          provider: "razorpay",
+          provider_order_id: data.id,
+        });
+      dbError = res.error;
+    } else {
+      // If already active, DO NOT downgrade status to 'created' or wipe current_period_end!
+      const res = await adminSupabase
+        .from("fitness_os_subscriptions")
+        .update({
+          provider_order_id: data.id,
+        })
+        .eq("user_id", userId);
+      dbError = res.error;
+    }
 
     if (dbError) {
       console.error("Failed to save pending subscription:", dbError);

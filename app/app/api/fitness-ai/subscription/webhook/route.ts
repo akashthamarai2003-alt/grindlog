@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
+import { calculateExpiryDate } from "@/lib/utils";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -29,9 +30,6 @@ export async function POST(req: NextRequest) {
     const adminClient = createAdminClient();
 
     // Idempotent processing of webhook events
-    // Assuming razorpay_order_id or subscription_id is sent in payload
-    // A full implementation would check event.event === "payment.captured", "subscription.charged", etc.
-
     if (event.event === "payment.captured") {
       const payment = event.payload.payment.entity;
       
@@ -41,18 +39,37 @@ export async function POST(req: NextRequest) {
       }
 
       const orderId = payment.order_id;
+      const userId = payment.notes?.userId;
       
-      if (orderId) {
+      if (orderId && userId) {
+        // Fetch existing subscription to stack expiry
+        const { data: existingSub } = await adminClient
+          .from("fitness_os_subscriptions")
+          .select("current_period_end")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const { data: existingProfile } = await adminClient
+          .from("fitness_os_profiles")
+          .select("fitness_premium_expires_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const baseExpiry = existingSub?.current_period_end || existingProfile?.fitness_premium_expires_at;
+        const tier = payment.notes?.tier || "monthly";
+        const level = payment.notes?.level || "pro";
+        const finalExpiresAt = calculateExpiryDate(tier, baseExpiry);
+
         // Update the profile to grant premium access
         await adminClient
           .from("fitness_os_profiles")
           .update({
             fitness_is_premium: true,
-            fitness_premium_tier: payment.notes?.tier || "monthly",
-            fitness_premium_level: payment.notes?.level || "pro",
-            fitness_premium_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            fitness_premium_tier: tier,
+            fitness_premium_level: level,
+            fitness_premium_expires_at: finalExpiresAt
           })
-          .eq("user_id", payment.notes?.userId);
+          .eq("user_id", userId);
 
         // Update the subscription record to active
         await adminClient
@@ -61,10 +78,9 @@ export async function POST(req: NextRequest) {
             status: "active",
             provider_payment_id: payment.id,
             current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            current_period_end: finalExpiresAt
           })
-          .eq("provider_order_id", orderId)
-          .eq("status", "created");
+          .eq("provider_order_id", orderId);
       }
     }
 

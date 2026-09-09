@@ -39,14 +39,31 @@ export async function POST(req: Request) {
         const adminClient = createAdminClient();
         
         if (notes.source === "fitness_ai_os") {
-          // Process Fitness OS payments
+          // Process Fitness OS payments with fair stacking
+          const { data: existingSub } = await adminClient
+            .from("fitness_os_subscriptions")
+            .select("current_period_end")
+            .eq("user_id", notes.userId)
+            .maybeSingle();
+
+          const { data: existingProfile } = await adminClient
+            .from("fitness_os_profiles")
+            .select("fitness_premium_expires_at")
+            .eq("user_id", notes.userId)
+            .maybeSingle();
+
+          const baseExpiry = existingSub?.current_period_end || existingProfile?.fitness_premium_expires_at;
+          const tier = notes.tier || "monthly";
+          const level = notes.level || "pro";
+          const finalExpiresAt = calculateExpiryDate(tier, baseExpiry);
+
           await adminClient
             .from("fitness_os_profiles")
             .update({ 
               fitness_is_premium: true,
-              fitness_premium_tier: notes.tier || "lifetime",
-              fitness_premium_level: notes.level || "pro",
-              fitness_premium_expires_at: calculateExpiryDate(notes.tier || "lifetime")
+              fitness_premium_tier: tier,
+              fitness_premium_level: level,
+              fitness_premium_expires_at: finalExpiresAt
             })
             .eq("user_id", notes.userId);
             
@@ -56,13 +73,13 @@ export async function POST(req: Request) {
               .upsert(
                 {
                   user_id: notes.userId,
-                  plan: notes.level === "pro" ? "pro" : "starter",
+                  plan: level === "pro" ? "pro" : "starter",
                   status: "active",
                   provider: "razorpay",
                   provider_order_id: payment.order_id,
                   provider_payment_id: payment.id,
                   current_period_start: new Date().toISOString(),
-                  current_period_end: calculateExpiryDate(notes.tier || "lifetime"),
+                  current_period_end: finalExpiresAt,
                 },
                 { onConflict: "user_id" },
               );
@@ -73,11 +90,11 @@ export async function POST(req: Request) {
           try {
             await adminClient.from("subscriptions").insert({
               user_id: notes.userId,
-              plan: `fitness_${notes.tier || "lifetime"}_${notes.level || "pro"}`,
+              plan: `fitness_${tier}_${level}`,
               status: "active",
               razorpay_order_id: payment.order_id,
               razorpay_payment_id: payment.id,
-              expires_at: calculateExpiryDate(notes.tier || "lifetime"),
+              expires_at: finalExpiresAt,
               started_at: new Date().toISOString(),
             });
           } catch (subErr) {
