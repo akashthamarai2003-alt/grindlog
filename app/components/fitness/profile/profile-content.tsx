@@ -471,7 +471,7 @@ export function ProfileContent({
                 </h3>
               </div>
               <Link 
-                href="/payment"
+                href={isPremium ? "/profile/billing" : "/payment"}
                 prefetch={true}
                 className="px-4 py-2 bg-[#ADFF00] text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(173,255,0,0.25)] hover:bg-[#b8ff1a] transition-all active:scale-90 flex items-center gap-1.5"
               >
@@ -614,7 +614,7 @@ export function ProfileContent({
 
             {/* Billing */}
             <Link 
-              href="/payment"
+              href="/profile/billing"
               prefetch={true}
               className="p-4 flex items-center justify-between hover:bg-white/5 active:bg-white/10 active:scale-[0.99] transition-all group duration-75"
             >

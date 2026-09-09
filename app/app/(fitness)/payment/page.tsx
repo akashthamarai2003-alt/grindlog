@@ -512,6 +512,25 @@ export default function FitnessPaymentPage() {
       ) : null}
 
       <div className="px-6 pt-6 pb-12 z-10 max-w-lg mx-auto w-full">
+        {/* Active Subscriber Alert */}
+        {(currentPremiumInfo as any)?.is_premium && !isUpgradeIntent && (
+          <div className="mb-6 p-4 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/30 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck className="w-5 h-5 text-[#ADFF00] shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-white">Active Membership Detected</p>
+                <p className="text-[11px] text-gray-400">View validity, extend plan, or check receipts.</p>
+              </div>
+            </div>
+            <Link
+              href="/profile/billing"
+              className="px-3.5 py-1.5 bg-[#ADFF00] text-black font-extrabold text-xs rounded-xl shadow-[0_0_10px_rgba(173,255,0,0.3)] hover:bg-[#b8ff1a] transition-all shrink-0"
+            >
+              Manage →
+            </Link>
+          </div>
+        )}
+
         {/* Hero Section */}
         <div className="text-center mb-10">
           <motion.div 
@@ -720,32 +739,44 @@ export default function FitnessPaymentPage() {
             </div>
           )}
 
-          <button
-            onClick={handlePayment}
-            disabled={isProcessing || isCurrentPlan || isPolling}
-            className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] disabled:opacity-70 disabled:shadow-none transition-all cursor-pointer touch-manipulation"
-          >
-            {isProcessing || isPolling ? (
-              <span className="flex items-center gap-2 animate-pulse">
-                <Zap size={20} className="animate-spin" /> Processing Payment...
-              </span>
-            ) : isCurrentPlan ? (
-              <span className="flex items-center gap-2">
-                <Check size={20} /> Current Active Plan
-              </span>
-            ) : isCurrentCore ? (
-              <span className="flex items-center gap-2">
-                Upgrade to Fitness OS Pro (₹{proPrice}) <ChevronLeft className="w-5 h-5 rotate-180" />
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                Get Fitness OS {level === "pro" ? "Pro" : "Core"} (₹{currentPrice}/mo) <ChevronLeft className="w-5 h-5 rotate-180" />
-              </span>
-            )}
-          </button>
+          {isCurrentPlan ? (
+            <Link
+              href="/profile/billing"
+              className="w-full py-4 bg-[#ADFF00] hover:bg-[#bbfb2e] text-black rounded-full font-extrabold text-base flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.25)] transition-all cursor-pointer touch-manipulation"
+            >
+              <ShieldCheck size={20} /> Manage Active Membership →
+            </Link>
+          ) : (
+            <button
+              onClick={handlePayment}
+              disabled={isProcessing || isPolling}
+              className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] disabled:opacity-70 disabled:shadow-none transition-all cursor-pointer touch-manipulation"
+            >
+              {isProcessing || isPolling ? (
+                <span className="flex items-center gap-2 animate-pulse">
+                  <Zap size={20} className="animate-spin" /> Processing Payment...
+                </span>
+              ) : isCurrentCore ? (
+                <span className="flex items-center gap-2">
+                  Upgrade to Fitness OS Pro (₹{proPrice}) <ChevronLeft className="w-5 h-5 rotate-180" />
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  Get Fitness OS {level === "pro" ? "Pro" : "Core"} (₹{currentPrice}/mo) <ChevronLeft className="w-5 h-5 rotate-180" />
+                </span>
+              )}
+            </button>
+          )}
 
           <div className="mt-3 text-center">
-            {isCurrentCore ? (
+            {isCurrentPlan ? (
+              <Link
+                href="/profile"
+                className="text-xs font-bold text-white/60 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer touch-manipulation"
+              >
+                ← Back to Profile
+              </Link>
+            ) : isCurrentCore ? (
               <Link
                 href="/"
                 className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer touch-manipulation"
