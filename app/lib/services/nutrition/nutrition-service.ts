@@ -2269,13 +2269,15 @@ export class NutritionService {
           return {
             ...existing,
             is_ai_generated: Boolean(existing.ai_generated),
+            prep_instructions: existing.prep_instructions || NutritionService.getPrepInstructionForSlot(mType, existing.name, dayOfWeek, fitProfile?.food_environment, rawDietStr),
             name: sanitizeMealTitle(existing.name || '', isProfileVegan, isProfileVegetarian, isProfileEggetarian),
             meal_plan_items: sanitizedItems
           };
         }
         return {
           ...existing,
-          is_ai_generated: Boolean(existing.ai_generated)
+          is_ai_generated: Boolean(existing.ai_generated),
+          prep_instructions: existing.prep_instructions || NutritionService.getPrepInstructionForSlot(mType, existing.name, dayOfWeek, fitProfile?.food_environment, rawDietStr)
         };
       }
 

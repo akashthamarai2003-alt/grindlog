@@ -336,7 +336,6 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           carbs: m.carbs,
           fat: m.fat,
           estimated_cost: m.estimated_cost,
-          prep_instructions: m.prep_instructions,
           ai_generated: true
         });
 
@@ -357,17 +356,21 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
     }
 
     // Prepare meal_plan_items linking to the inserted meal plan IDs
+    const defaultFoodId = foodCatalog[0]?.id;
     const mealPlanItemsRows: any[] = [];
     insertedMealPlans.forEach(plan => {
       const slotKey = `${plan.date}_${plan.meal_type}`;
       const items = itemsBySlotKey.get(slotKey) || [];
 
       items.forEach(it => {
-        mealPlanItemsRows.push({
-          meal_plan_id: plan.id,
-          food_id: it.food_id || null,
-          quantity: it.quantity || 1
-        });
+        const resolvedFoodId = it.food_id || defaultFoodId;
+        if (resolvedFoodId) {
+          mealPlanItemsRows.push({
+            meal_plan_id: plan.id,
+            food_id: resolvedFoodId,
+            quantity: it.quantity || 1
+          });
+        }
       });
     });
 
