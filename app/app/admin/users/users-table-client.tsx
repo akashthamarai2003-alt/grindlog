@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Filter, RotateCcw, Mail, Receipt } from "lucide-react";
+import { Search, Filter, RotateCcw, Mail, Receipt, CalendarPlus } from "lucide-react";
 import DeleteUserButton from "./delete-user-button";
 import SendMailModal from "./send-mail-modal";
 import PaymentHistoryModal from "./payment-history-modal";
+import { extendUserSubscriptionAdminAction } from "@/app/actions/admin-users";
 
 interface UserWithDetails {
   id: string;
@@ -108,6 +109,29 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [selectedMailUsers, setSelectedMailUsers] = useState<UserWithDetails[] | null>(null);
   const [selectedHistoryUser, setSelectedHistoryUser] = useState<UserWithDetails | null>(null);
+  const [extendingUserId, setExtendingUserId] = useState<string | null>(null);
+
+  const handleExtendSubscription = async (userId: string, userName?: string, days = 7) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to extend ${userName || "this user"}'s subscription by +${days} days?`
+    );
+    if (!confirmed) return;
+
+    setExtendingUserId(userId);
+    try {
+      const res = await extendUserSubscriptionAdminAction(userId, days);
+      if (res.success) {
+        alert(`Successfully extended subscription by +${days} days!`);
+        window.location.reload();
+      } else {
+        alert(`Failed to extend: ${res.error}`);
+      }
+    } catch (e: any) {
+      alert(`Error extending subscription: ${e.message}`);
+    } finally {
+      setExtendingUserId(null);
+    }
+  };
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -444,6 +468,15 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                         >
                           <Mail className="h-3.5 w-3.5" />
                           <span>Mail</span>
+                        </button>
+                        <button
+                          onClick={() => handleExtendSubscription(user.id, user.display_name, 7)}
+                          disabled={extendingUserId === user.id}
+                          title="Extend Validity by +7 Days"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 hover:text-emerald-800 text-xs font-semibold border border-emerald-200 transition-all active:scale-95 shrink-0 cursor-pointer disabled:opacity-50"
+                        >
+                          <CalendarPlus className="h-3.5 w-3.5" />
+                          <span>+7d</span>
                         </button>
                         <DeleteUserButton
                           userId={user.id}

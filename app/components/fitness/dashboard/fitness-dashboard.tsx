@@ -15,6 +15,9 @@ import { TodaysGoalsCard } from "./todays-goals-card";
 import { ExerciseLibraryCard } from "./exercise-library-card";
 import { ProNutritionGenerationCard } from "./pro-nutrition-generation-card";
 import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
+import { RenewalBanner } from "@/components/fitness/subscription/renewal-banner";
+import { MonthCheckinModal } from "@/components/fitness/recalibration/month-checkin-modal";
+import { FitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 
 interface FitnessDashboardProps {
   user: User;
@@ -29,6 +32,7 @@ interface FitnessDashboardProps {
   dayNumber?: number;
   premiumLevel?: string;
   targetDateStr?: string;
+  subscriptionState?: FitnessSubscriptionState;
 }
 
 export function FitnessDashboard({
@@ -44,8 +48,10 @@ export function FitnessDashboard({
   dayNumber = 1,
   premiumLevel = "core",
   targetDateStr,
+  subscriptionState,
 }: FitnessDashboardProps) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [modalFeature, setModalFeature] = useState("Workout Sessions");
   const isFree = premiumLevel === "free";
 
@@ -68,8 +74,11 @@ export function FitnessDashboard({
           />
         </div>
 
-        {/* Free Preview Mode Banner */}
-        {isFree && (
+        {/* Subscription Renewal / Grace Period / Expiration Alert Banner */}
+        {subscriptionState && <RenewalBanner state={subscriptionState} />}
+
+        {/* Free Preview Mode Banner (Only shown if pure free preview and not expired) */}
+        {isFree && !subscriptionState?.isExpired && !subscriptionState?.isGracePeriod && (
           <div className="bg-gradient-to-r from-[#1A2619] via-[#121E12] to-[#1A2619] border border-[#ADFF00]/40 p-4 rounded-2xl shadow-[0_0_20px_rgba(173,255,0,0.15)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-xl bg-[#ADFF00]/15 border border-[#ADFF00]/30 flex items-center justify-center text-[#ADFF00] shrink-0 mt-0.5">
@@ -112,6 +121,27 @@ export function FitnessDashboard({
           </div>
         )}
 
+        {/* Monthly Recalibration Trigger (Day 25+ or when renewed) */}
+        {hasPlan && !isFree && dayNumber >= 25 && (
+          <div className="bg-gradient-to-r from-[#121E12] via-[#162916] to-[#121E12] border border-[#ADFF00]/40 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#ADFF00]/15 border border-[#ADFF00]/30 flex items-center justify-center text-[#ADFF00] shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-white">Month Check-In Ready</h3>
+                <p className="text-xs text-gray-300">Recalibrate your weight & macros for Phase {Math.floor(dayNumber / 28) + 2}.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowCheckinModal(true)}
+              className="px-3.5 py-2 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-extrabold text-xs rounded-xl shadow-[0_0_10px_rgba(173,255,0,0.3)] shrink-0 transition-all active:scale-95 whitespace-nowrap"
+            >
+              Check In ⚡
+            </button>
+          </div>
+        )}
+
         {/* 3. Transformation Card */}
         <TransformationCard profile={profile} premiumLevel={premiumLevel} />
 
@@ -145,6 +175,14 @@ export function FitnessDashboard({
         onClose={() => setShowUpgradeModal(false)}
         featureName={modalFeature}
         planRequired="any"
+      />
+
+      <MonthCheckinModal
+        isOpen={showCheckinModal}
+        onClose={() => setShowCheckinModal(false)}
+        currentWeight={profile.weight || 0}
+        currentGoal={profile.goal || "Cut"}
+        hasPreviousPain={Array.isArray(profile.physical_problems) && profile.physical_problems.length > 0}
       />
     </div>
   );

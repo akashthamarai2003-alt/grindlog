@@ -4,7 +4,7 @@ import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboa
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
 import { Suspense } from 'react';
 import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
-import { getFitnessPlan } from "@/lib/fitness/subscription/access";
+import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
 import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
 
@@ -44,7 +44,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     { data: activityLog },
     { data: sleepLog },
     { data: waterLogs },
-    subscriptionPlan,
+    subscriptionState,
   ] = await Promise.all([
     supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").maybeSingle(),
@@ -59,12 +59,13 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     supabase.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
     supabase.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
     (supabase as any).from("fitness_os_water_logs").select("amount_ml").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
-    getFitnessPlan(user.id),
+    getFitnessSubscriptionState(user.id),
   ]);
   if (!profile?.onboarding_completed) {
     redirect("/onboarding");
   }
 
+  const subscriptionPlan = subscriptionState?.plan;
   const isFreeUser = !subscriptionPlan || subscriptionPlan.id === "free";
 
   // For paid users who haven't reviewed/locked in their plan yet, direct them to /plan-setup
@@ -120,6 +121,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       dayNumber={dayNumber}
       premiumLevel={isFreeUser ? "free" : subscriptionPlan?.id === "pro" ? "pro" : "core"}
       targetDateStr={targetDateStr}
+      subscriptionState={subscriptionState}
     />
   );
 }

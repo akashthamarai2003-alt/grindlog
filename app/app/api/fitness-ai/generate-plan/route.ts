@@ -47,9 +47,10 @@ export async function POST(req: Request) {
     }
 
     let isRetry = false;
+    let reqBody: any = null;
     try {
-      const body = await req.json().catch(() => null);
-      if (body && typeof body === "object" && body.retry === true) {
+      reqBody = await req.json().catch(() => null);
+      if (reqBody && typeof reqBody === "object" && reqBody.retry === true) {
         isRetry = true;
       }
     } catch {
@@ -102,10 +103,41 @@ export async function POST(req: Request) {
       );
     }
     if (existingPlan) {
-      return NextResponse.json(
-        { success: false, error: "An active plan already exists. Return to dashboard." },
-        { status: 400 },
-      );
+      if (reqBody && reqBody.isRecalibrate === true) {
+        // Archive existing plan to completed
+        await supabase
+          .from("fitness_os_workout_plans")
+          .update({ status: "completed" })
+          .eq("id", existingPlan.id);
+
+        // Update profile with recalibration check-in data
+        const updateData: Record<string, any> = {};
+        if (reqBody.newWeight && Number(reqBody.newWeight) > 0) {
+          updateData.weight = Number(reqBody.newWeight);
+        }
+        if (reqBody.newGoal && typeof reqBody.newGoal === "string") {
+          updateData.goal = reqBody.newGoal;
+        }
+        if (reqBody.painStatus === "healed") {
+          updateData.current_pain_severity = 0;
+          updateData.physical_problems = [];
+          updateData.exercise_limitations = [];
+        } else if (reqBody.painStatus === "better") {
+          updateData.current_pain_severity = Math.max(1, (Number(profile.current_pain_severity) || 4) - 2);
+        }
+        if (Object.keys(updateData).length > 0) {
+          await supabase
+            .from("fitness_os_profiles")
+            .update(updateData)
+            .eq("user_id", user.id);
+          Object.assign(profile, updateData);
+        }
+      } else {
+        return NextResponse.json(
+          { success: false, error: "An active plan already exists. Return to dashboard." },
+          { status: 400 },
+        );
+      }
     }
     if (!limitCheck.allowed) {
       return NextResponse.json(

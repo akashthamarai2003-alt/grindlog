@@ -205,3 +205,79 @@ export async function sendBulkUserEmailAdminAction(users: {email: string, name: 
     return { success: false, error: error.message || "Failed to send bulk email" };
   }
 }
+
+export async function extendUserSubscriptionAdminAction(userId: string, daysToAdd: number = 7) {
+  try {
+    if (!userId) {
+      return { success: false, error: "User ID is required" };
+    }
+    const admin = createAdminClient();
+
+    // 1. Get existing subscription / profile
+    const [subRes, profileRes] = await Promise.all([
+      admin.from("fitness_os_subscriptions").select("current_period_end, plan, status").eq("user_id", userId).maybeSingle(),
+      admin.from("fitness_os_profiles").select("fitness_premium_expires_at, fitness_is_premium, fitness_premium_tier, fitness_premium_level").eq("user_id", userId).maybeSingle(),
+    ]);
+
+    const existingExpiry = subRes.data?.current_period_end || profileRes.data?.fitness_premium_expires_at;
+    const now = Date.now();
+    let baseTime = now;
+
+    if (existingExpiry) {
+      const parsed = new Date(existingExpiry).getTime();
+      if (!isNaN(parsed) && parsed > now) {
+        baseTime = parsed;
+      }
+    }
+
+    const newExpiryDate = new Date(baseTime + daysToAdd * 24 * 60 * 60 * 1000).toISOString();
+
+    // 2. Update fitness_os_profiles
+    await admin
+      .from("fitness_os_profiles")
+      .update({
+        fitness_is_premium: true,
+        fitness_premium_tier: profileRes.data?.fitness_premium_tier || "monthly",
+        fitness_premium_level: profileRes.data?.fitness_premium_level || "pro",
+        fitness_premium_expires_at: newExpiryDate,
+      })
+      .eq("user_id", userId);
+
+    // 3. Update fitness_os_subscriptions
+    await admin
+      .from("fitness_os_subscriptions")
+      .upsert(
+        {
+          user_id: userId,
+          plan: profileRes.data?.fitness_premium_level === "core" ? "starter" : "pro",
+          status: "active",
+          provider: "admin_grant",
+          provider_payment_id: `admin_ext_${Date.now()}`,
+          current_period_start: new Date().toISOString(),
+          current_period_end: newExpiryDate,
+        },
+        { onConflict: "user_id" },
+      );
+
+    // 4. Update legacy profiles table as well
+    await admin
+      .from("profiles")
+      .update({
+        is_premium: true,
+        premium_tier: "monthly",
+        premium_level: "pro",
+        premium_expires_at: newExpiryDate,
+      })
+      .eq("id", userId);
+
+    revalidatePath("/admin/users");
+    revalidatePath("/admin/fitness");
+    revalidatePath("/admin");
+    revalidatePath("/", "layout");
+
+    return { success: true, newExpiry: newExpiryDate };
+  } catch (error: any) {
+    console.error("extendUserSubscriptionAdminAction error:", error);
+    return { success: false, error: error.message || "Failed to extend subscription" };
+  }
+}

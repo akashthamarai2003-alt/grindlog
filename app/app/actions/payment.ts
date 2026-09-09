@@ -392,14 +392,32 @@ export async function verifyRazorpayPayment(
     }
   }
 
+  let finalExpiresAt: string | null = null;
+
   if (appName === "fitness_os") {
+      // 1. Fetch current subscription to check existing period end for stacking
+      const { data: existingSub } = await adminClient
+        .from("fitness_os_subscriptions")
+        .select("current_period_end")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const { data: existingProfile } = await adminClient
+        .from("fitness_os_profiles")
+        .select("fitness_premium_expires_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const baseExpiry = existingSub?.current_period_end || existingProfile?.fitness_premium_expires_at;
+      finalExpiresAt = calculateExpiryDate(tier, baseExpiry);
+
       const { error } = await adminClient
         .from("fitness_os_profiles")
         .update({ 
           fitness_is_premium: true,
           fitness_premium_tier: tier,
           fitness_premium_level: level,
-          fitness_premium_expires_at: calculateExpiryDate(tier)
+          fitness_premium_expires_at: finalExpiresAt
         })
         .eq("user_id", user.id);
 
@@ -422,7 +440,7 @@ export async function verifyRazorpayPayment(
             provider_order_id: isBypass ? null : razorpayOrderId,
             provider_payment_id: isBypass ? "bypass" : razorpayPaymentId,
             current_period_start: new Date().toISOString(),
-            current_period_end: calculateExpiryDate(tier),
+            current_period_end: finalExpiresAt,
           },
           { onConflict: "user_id" },
         );
@@ -432,13 +450,21 @@ export async function verifyRazorpayPayment(
         return { success: false, error: "Payment was verified, but Fitness access could not be activated." };
       }
     } else {
+      const { data: existingMainProfile } = await adminClient
+        .from("profiles")
+        .select("premium_expires_at")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      finalExpiresAt = calculateExpiryDate(tier, existingMainProfile?.premium_expires_at);
+
       const { error } = await adminClient
         .from("profiles")
         .update({ 
           is_premium: true,
           premium_tier: tier,
           premium_level: level,
-          premium_expires_at: calculateExpiryDate(tier)
+          premium_expires_at: finalExpiresAt
         })
         .eq("id", user.id);
 
@@ -456,7 +482,7 @@ export async function verifyRazorpayPayment(
       status: "active",
       razorpay_order_id: razorpayOrderId,
       razorpay_payment_id: razorpayPaymentId,
-      expires_at: calculateExpiryDate(tier),
+      expires_at: finalExpiresAt,
       started_at: new Date().toISOString(),
     });
   } catch (subErr) {

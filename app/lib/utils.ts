@@ -5,16 +5,26 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function calculateExpiryDate(tier: string) {
+export function calculateExpiryDate(tier: string, baseDate?: Date | string | null) {
   if (tier === "lifetime") return null;
   
+  // If baseDate is valid and in the future, stack from baseDate so the user doesn't lose remaining days.
+  // Otherwise, start from current time.
   const now = new Date();
-  if (tier === "monthly") {
-    now.setMonth(now.getMonth() + 1);
-  } else if (tier === "six_months") {
-    now.setMonth(now.getMonth() + 6);
+  let start = now;
+  if (baseDate) {
+    const parsedBase = typeof baseDate === "string" ? new Date(baseDate) : baseDate;
+    if (!isNaN(parsedBase.getTime()) && parsedBase.getTime() > now.getTime()) {
+      start = new Date(parsedBase.getTime());
+    }
   }
-  return now.toISOString();
+
+  if (tier === "monthly") {
+    start.setMonth(start.getMonth() + 1);
+  } else if (tier === "six_months") {
+    start.setMonth(start.getMonth() + 6);
+  }
+  return start.toISOString();
 }
 
 export function formatDate(date: Date | string): string {
