@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Droplet, Calendar as CalendarIcon, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Droplet, Calendar as CalendarIcon } from "lucide-react";
 import { nutritionApi } from "@/lib/api/nutrition";
 
 interface DayData {

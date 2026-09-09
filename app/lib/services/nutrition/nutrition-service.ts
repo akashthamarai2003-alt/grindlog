@@ -2244,7 +2244,19 @@ export class NutritionService {
         ALL_MEAL_TYPES.forEach(mType => {
           const mItems = itemsByType[mType];
           const mCals = mItems.reduce((acc, it) => acc + Math.round((it.foods?.calories || 0) * it.quantity), 0);
-          const mPro = mItems.reduce((acc, it) => acc + Number((it.foods?.protein || 0) * it.quantity), 0);
+          const mPro = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.protein || 0) * it.quantity), 0).toFixed(1));
+          const mCarbs = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.carbs || 0) * it.quantity), 0).toFixed(1));
+          const mFat = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.fat || 0) * it.quantity), 0).toFixed(1));
+          const mCost = mItems.reduce((acc, it) => {
+            const foodNameLower = String(it.foods?.name || '').toLowerCase();
+            const isItemCore = isCoreProvided && (
+              foodNameLower.includes('core meal') || 
+              foodNameLower.includes('base meal') || 
+              foodNameLower.includes('provided core') ||
+              foodNameLower.includes('standard base')
+            );
+            return acc + (isItemCore ? 0 : Math.round((it.foods?.estimated_cost || 20) * it.quantity));
+          }, 0);
           const mName = titleByType[mType] || (mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan");
           plansByMealType.set(mType, {
             id: `${dailyPlan.id}-${mType}`,
@@ -2252,6 +2264,9 @@ export class NutritionService {
             name: sanitizeMealTitle(mName, isProfileVegan, isProfileVegetarian, isProfileEggetarian),
             calories: mCals,
             protein: mPro,
+            carbs: mCarbs,
+            fat: mFat,
+            estimated_cost: mCost,
             meal_plan_items: mItems,
             is_ai_generated: Boolean(dailyPlan.ai_generated),
             ai_generated: Boolean(dailyPlan.ai_generated),

@@ -164,6 +164,15 @@ CRITICAL USER PROFILE & STRICT CONSTRAINTS:
    - Allergies: ${profile?.food_allergies || 'None'}
    - Disliked / Avoided: ${[profile?.foods_disliked, profile?.foods_avoided].filter(Boolean).join(', ') || 'None'}
 
+6. STRICT SERVING QUANTITY & CALORIE RULES:
+   - "quantity" MUST be a small portion count (e.g. 1, 2, or 3). NEVER output grams, milliliters, or numbers >= 5 as "quantity"! (e.g. for 100g paneer, quantity is 1 and serving_size is "100g". For 250ml milk, quantity is 1 and serving_size is "1 glass (250ml)").
+   - TARGET CALORIES PER MEAL: Distribute total daily calories (${targets.calories} kcal) realistically:
+     * Breakfast: ~${Math.round(targets.calories * (slotPercentages['breakfast'] || 0.30))} kcal, ~${Math.round(targets.protein * (slotPercentages['breakfast'] || 0.30))}g protein
+     * Lunch: ~${Math.round(targets.calories * (slotPercentages['lunch'] || 0.40))} kcal, ~${Math.round(targets.protein * (slotPercentages['lunch'] || 0.40))}g protein
+     * Dinner: ~${Math.round(targets.calories * (slotPercentages['dinner'] || 0.30))} kcal, ~${Math.round(targets.protein * (slotPercentages['dinner'] || 0.30))}g protein
+   - Items in each meal MUST sum up to approximately that meal's target calories. Do NOT over-pack meals.
+   - Do NOT repeat the exact same food item multiple times in one meal (e.g. never list milk twice in one meal).
+
 Return ONLY valid JSON matching this schema:
 {
   "plan_summary": "7-Day Personalized Luna AI Master Plan",
@@ -176,7 +185,7 @@ Return ONLY valid JSON matching this schema:
           "name": "Title of the meal (e.g. Desi Egg Bhurji with Warm Phulkas)",
           "prep_instruction": "Short, practical kitchen or kettle hack tip suited for ${profile?.food_environment || 'PG'}",
           "items": [
-            { "name": "Exact whole food name", "quantity": 1, "serving_size": "portion e.g. 2 large, 2 medium, 1 bowl" }
+            { "name": "Exact whole food name", "quantity": 1, "serving_size": "portion e.g. 2 large, 2 medium, 1 bowl, 100g" }
           ]
         }
       ]
@@ -222,6 +231,51 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       throw new Error("Luna AI returned an incomplete plan format. Please try again.");
     }
 
+    // Helper: Category-aware fallback food resolution
+    const findFallbackFood = (fName: string): NutritionFoodReference | undefined => {
+      const lower = (fName || '').toLowerCase();
+      if (lower.includes('egg') || lower.includes('omelette') || lower.includes('bhurji')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('boiled egg') || f.name.toLowerCase().includes('egg'));
+      }
+      if (lower.includes('paneer') || lower.includes('cottage cheese')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('paneer'));
+      }
+      if (lower.includes('bread') || lower.includes('toast')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('bread'));
+      }
+      if (lower.includes('roti') || lower.includes('chapati') || lower.includes('phulka')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('chapati'));
+      }
+      if (lower.includes('rice') || lower.includes('pulao') || lower.includes('biryani')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('white rice') || f.name.toLowerCase().includes('rice'));
+      }
+      if (lower.includes('dal') || lower.includes('sambar') || lower.includes('curry') || lower.includes('chana') || lower.includes('rajma') || lower.includes('lentil')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('dal') || f.name.toLowerCase().includes('curry'));
+      }
+      if (lower.includes('curd') || lower.includes('dahi') || lower.includes('yogurt') || lower.includes('raita')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('curd') || f.name.toLowerCase().includes('dahi'));
+      }
+      if (lower.includes('soya') || lower.includes('soy')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('soya') || f.name.toLowerCase().includes('soy'));
+      }
+      if (lower.includes('milk') || lower.includes('chaas') || lower.includes('lassi')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('milk'));
+      }
+      if (lower.includes('banana') || lower.includes('apple') || lower.includes('fruit')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('banana') || f.name.toLowerCase().includes('apple'));
+      }
+      if (lower.includes('peanut') || lower.includes('almond') || lower.includes('nut')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('peanut'));
+      }
+      if (lower.includes('chicken')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('chicken'));
+      }
+      if (lower.includes('fish')) {
+        return foodCatalog.find(f => f.name.toLowerCase().includes('fish'));
+      }
+      return foodCatalog.find(f => f.name.toLowerCase().includes('chapati') || f.name.toLowerCase().includes('rice')) || foodCatalog[0];
+    };
+
     // 6. Build Master Day Schedules with Verified Nutrition Math
     const daySchedules = aiPlan.days.map((d, dIdx) => {
       const meals = d.meals.map(m => {
@@ -238,10 +292,31 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
 
         const processedItems = rawItems.map(item => {
           let fName = sanitizeAIItemName(item.name, isVegan, isVegetarian, isEggetarian);
-          const ref = findFoodReference(fName, foodCatalog, profile?.food_environment);
+          let ref = findFoodReference(fName, foodCatalog, profile?.food_environment);
+          if (!ref) {
+            ref = findFallbackFood(fName);
+          }
 
-          const qty = Number(item.quantity) || 1;
-          const sSize = item.serving_size || ref?.serving_size || '1 serving';
+          let qty = Number(item.quantity) || 1;
+          const rawServing = String(item.serving_size || '').toLowerCase();
+          // Guard against AI returning grams/ml as quantity (e.g. quantity: 100, serving_size: "grams")
+          if (qty >= 10 || rawServing.includes('gram') || rawServing === 'g' || rawServing.includes('ml')) {
+            if (ref?.serving_size) {
+              const numInRef = Number(ref.serving_size.match(/(\d+(?:\.\d+)?)\s*(?:g|ml)/i)?.[1]);
+              if (numInRef && numInRef > 0 && qty >= 10) {
+                qty = Math.max(0.5, Math.min(3, Number((qty / numInRef).toFixed(1))));
+              } else {
+                qty = 1;
+              }
+            } else {
+              qty = 1;
+            }
+          }
+          qty = Math.min(4, Math.max(0.25, qty));
+
+          const sSize = (item.serving_size && !['grams', 'g', 'ml'].includes(rawServing))
+            ? item.serving_size
+            : (ref?.serving_size || '1 serving');
 
           const defCals = fName.toLowerCase().includes('egg') ? 78 : (fName.toLowerCase().includes('banana') ? 105 : 150);
           const defPro = fName.toLowerCase().includes('egg') ? 6.3 : 5;
@@ -271,25 +346,60 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           };
         });
 
+        // Deduplicate any repeated food references in the same meal
+        const dedupedItems: typeof processedItems = [];
+        const seenFoodKeys = new Set<string>();
+        processedItems.forEach(it => {
+          const key = it.food_id || it.name.toLowerCase();
+          if (seenFoodKeys.has(key)) {
+            const existing = dedupedItems.find(e => (e.food_id || e.name.toLowerCase()) === key);
+            if (existing) {
+              existing.quantity = Math.min(3, existing.quantity + it.quantity);
+              existing.calories += it.calories;
+              existing.protein = Number((existing.protein + it.protein).toFixed(1));
+              existing.carbs = Number((existing.carbs + it.carbs).toFixed(1));
+              existing.fat = Number((existing.fat + it.fat).toFixed(1));
+            }
+          } else {
+            seenFoodKeys.add(key);
+            dedupedItems.push({ ...it });
+          }
+        });
+
         // Compute total meal macros
-        const mealTotals = processedItems.reduce((acc, it) => ({
-          calories: acc.calories + it.calories,
-          protein: Number((acc.protein + it.protein).toFixed(1)),
-          carbs: Number((acc.carbs + it.carbs).toFixed(1)),
-          fat: Number((acc.fat + it.fat).toFixed(1)),
-          cost: acc.cost + it.estimated_cost
-        }), { calories: 0, protein: 0, carbs: 0, fat: 0, cost: 0 });
+        let mealCals = dedupedItems.reduce((sum, it) => sum + it.calories, 0);
+
+        // Scale non-discrete items proportionally if meal calories deviate from slot target by > 15%
+        if (mealCals > 0 && Math.abs(mealCals - slotTargetCals) > (slotTargetCals * 0.15)) {
+          const scaleFactor = Math.max(0.4, Math.min(1.8, slotTargetCals / mealCals));
+          dedupedItems.forEach(it => {
+            const isDiscrete = /(?:egg|banana|apple)/i.test(it.name);
+            if (!isDiscrete) {
+              it.calories = Math.round(it.calories * scaleFactor);
+              it.protein = Number((it.protein * scaleFactor).toFixed(1));
+              it.carbs = Number((it.carbs * scaleFactor).toFixed(1));
+              it.fat = Number((it.fat * scaleFactor).toFixed(1));
+              it.estimated_cost = Math.round(it.estimated_cost * scaleFactor);
+            }
+          });
+        }
+
+        const finalMealCals = dedupedItems.reduce((sum, it) => sum + it.calories, 0);
+        const finalMealPro = Number(dedupedItems.reduce((sum, it) => sum + it.protein, 0).toFixed(1));
+        const finalMealCarbs = Number(dedupedItems.reduce((sum, it) => sum + it.carbs, 0).toFixed(1));
+        const finalMealFat = Number(dedupedItems.reduce((sum, it) => sum + it.fat, 0).toFixed(1));
+        const finalMealCost = dedupedItems.reduce((sum, it) => sum + it.estimated_cost, 0);
 
         return {
           meal_type: mType,
           name: cleanedTitle,
           prep_instructions: m.prep_instruction || NutritionService.getPrepInstructionForSlot(mType, cleanedTitle, dIdx, profile?.food_environment, combinedDiet),
-          calories: mealTotals.calories || slotTargetCals,
-          protein: mealTotals.protein || slotTargetPro,
-          carbs: mealTotals.carbs,
-          fat: mealTotals.fat,
-          estimated_cost: mealTotals.cost,
-          items: processedItems
+          calories: finalMealCals || slotTargetCals,
+          protein: finalMealPro || slotTargetPro,
+          carbs: finalMealCarbs,
+          fat: finalMealFat,
+          estimated_cost: finalMealCost,
+          items: dedupedItems
         };
       });
 
@@ -376,13 +486,12 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
     }
 
     // Prepare meal_plan_items linking to the inserted meal plan IDs
-    const defaultFoodId = foodCatalog[0]?.id;
     const mealPlanItemsRows: any[] = [];
     insertedMealPlans.forEach(plan => {
       const items = itemsByDate.get(plan.date) || [];
 
       items.forEach(it => {
-        const resolvedFoodId = it.food_id || defaultFoodId;
+        const resolvedFoodId = it.food_id || findFallbackFood(it.name)?.id || foodCatalog[0]?.id;
         if (resolvedFoodId) {
           mealPlanItemsRows.push({
             meal_plan_id: plan.id,

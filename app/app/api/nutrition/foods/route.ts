@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     // 0. Fetch user's onboarding profile to strictly enforce dietary classification
     const { data: profile } = await supabase
       .from('fitness_os_profiles')
-      .select('diet_preference, food_type, food_allergies')
+      .select('diet_preference, food_type')
       .eq('user_id', user.id)
       .maybeSingle();
 

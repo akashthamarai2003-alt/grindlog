@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Droplet, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Edit3, X, Check, Trash2, Sparkles, Calendar, Lock, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Edit3, X, Check, Trash2, Sparkles, Lock, Clock } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
 import { TodaySummaryCard } from "./today-summary-card";
-import { getFoodImage, getFoodSvgAvatar } from "@/lib/utils/food-images";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
 import { SwapMealModal } from "./swap-meal-modal";
@@ -18,7 +17,6 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const [data, setData] = useState<any>(initialData || null);
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<any>(null);
-  const [swappingMeal, setSwappingMeal] = useState<string | null>(null);
 
   const initialDateStr = initialData?.date;
   const todayDateStr = useMemo(() => {
@@ -35,7 +33,6 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
   const isFuture = Boolean(selectedDate && selectedDate > todayDateStr);
   const isToday = !selectedDate || selectedDate === todayDateStr;
-  const isPast = Boolean(selectedDate && selectedDate < todayDateStr);
   const dateCacheRef = useRef<Record<string, any>>({});
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [swapMealType, setSwapMealType] = useState<string>("breakfast");
@@ -1114,7 +1111,6 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 };
               }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
               
-              const isToday = !selectedDate || selectedDate === todayDateStr;
               const isActive = !completed && isToday && getActiveMealType() === meal.meal_type;
 
               return (

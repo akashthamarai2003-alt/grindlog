@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Check, RefreshCw, Sparkles, ChevronRight } from "lucide-react";
+import { X, Loader2, Check, RefreshCw, ChevronRight } from "lucide-react";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { FoodAvatar } from "./food-avatar";
 import { toast } from "sonner";

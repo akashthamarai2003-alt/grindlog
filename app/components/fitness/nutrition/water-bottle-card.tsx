@@ -10,7 +10,6 @@ interface WaterBottleCardProps {
   onAddWater: (amount: number) => Promise<void> | void;
   onRemoveWater: (amount: number) => Promise<void> | void;
   onEditGoal: () => void;
-  isLoading?: boolean;
   isPro?: boolean;
   disabled?: boolean;
 }
@@ -21,7 +20,6 @@ export function WaterBottleCard({
   onAddWater,
   onRemoveWater,
   onEditGoal,
-  isLoading = false,
   isPro = true,
   disabled = false,
 }: WaterBottleCardProps) {

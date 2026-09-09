@@ -208,16 +208,15 @@ export async function POST(request: Request) {
     });
     const candidates = categoryFoods.length >= 2 ? categoryFoods : compatibleFoods;
 
-    // Read only the selected meal override.
+    // Find existing plan for today (single daily plan or legacy slot plan)
     const { data: existingPlans, error: plansError } = await supabase
       .from("meal_plans")
-      .select("id, meal_type, meal_plan_items(food_id, quantity, serving_size)")
+      .select("id, meal_type, meal_plan_items(id, food_id, quantity, serving_size)")
       .eq("user_id", user.id)
-      .eq("date", localDate)
-      .order("created_at", { ascending: false });
+      .eq("date", localDate);
     if (plansError) throw plansError;
 
-    const targetPlan = (existingPlans || []).find((planRow: any) => planRow.meal_type === mealType);
+    const existingPlan = (existingPlans || [])[0];
 
     let optionName = `${mealType.replace("_", " ")} alternative`;
     let selectedFoods: any[] = [];
@@ -248,7 +247,12 @@ export async function POST(request: Request) {
         quantity: Number(it.quantity) || 1,
       }));
     } else {
-      const previousItems = targetPlan?.meal_plan_items || [];
+      const slotPrefix = `${mealType}::`;
+      const previousItems = (existingPlan?.meal_plan_items || []).filter((it: any) =>
+        existingPlan.meal_type === 'daily'
+          ? (typeof it.serving_size === 'string' && it.serving_size.startsWith(slotPrefix))
+          : true
+      );
       const previousFoodIds = new Set(previousItems.map((item: any) => item.food_id));
       const withoutCurrent = candidates.filter((food) => !previousFoodIds.has(food.id));
       const selectionPool = withoutCurrent.length >= 2 ? withoutCurrent : candidates;
@@ -263,7 +267,7 @@ export async function POST(request: Request) {
 
     const totals = totalsForFoods(selectedFoods);
 
-    let swapPlan = targetPlan;
+    let swapPlan = existingPlan;
     let createdPlan = false;
     if (!swapPlan) {
       const { data: newPlan, error: createError } = await supabase
@@ -271,7 +275,7 @@ export async function POST(request: Request) {
         .insert({
           user_id: user.id,
           date: localDate,
-          meal_type: mealType,
+          meal_type: 'daily',
           name: optionName,
           calories: Math.round(totals.calories),
           protein: totals.protein,
@@ -280,17 +284,35 @@ export async function POST(request: Request) {
           estimated_cost: totals.estimated_cost,
           ai_generated: false,
         })
-        .select("id, meal_type, meal_plan_items(food_id, quantity, serving_size)")
+        .select("id, meal_type, meal_plan_items(id, food_id, quantity, serving_size)")
         .single();
       if (createError || !newPlan) throw createError || new Error("Could not create meal alternative.");
       swapPlan = newPlan;
       createdPlan = true;
     } else {
-      const { error: deleteError } = await supabase
-        .from("meal_plan_items")
-        .delete()
-        .eq("meal_plan_id", swapPlan.id);
-      if (deleteError) throw deleteError;
+      // Remove only previous items belonging to this specific mealType slot
+      if (swapPlan.meal_type === 'daily') {
+        const slotPrefix = `${mealType}::`;
+        const itemsToDelete = (swapPlan.meal_plan_items || []).filter((it: any) =>
+          typeof it.serving_size === 'string' && it.serving_size.startsWith(slotPrefix)
+        );
+        if (itemsToDelete.length > 0) {
+          const deleteIds = itemsToDelete.map((it: any) => it.id).filter(Boolean);
+          if (deleteIds.length > 0) {
+            const { error: delErr } = await supabase
+              .from("meal_plan_items")
+              .delete()
+              .in("id", deleteIds);
+            if (delErr) throw delErr;
+          }
+        }
+      } else {
+        const { error: deleteError } = await supabase
+          .from("meal_plan_items")
+          .delete()
+          .eq("meal_plan_id", swapPlan.id);
+        if (deleteError) throw deleteError;
+      }
     }
 
     const { error: itemError } = await supabase
@@ -299,7 +321,7 @@ export async function POST(request: Request) {
         meal_plan_id: swapPlan.id,
         food_id: food.id || food.food_id,
         quantity: food.quantity || 1,
-        serving_size: food.serving_size || '1 serving',
+        serving_size: `${mealType}::${optionName}::${food.serving_size || '1 serving'}`,
       })));
 
     if (itemError) {
@@ -307,23 +329,6 @@ export async function POST(request: Request) {
         await supabase.from("meal_plans").delete().eq("id", swapPlan.id).eq("user_id", user.id);
       }
       throw itemError;
-    }
-
-    if (!createdPlan) {
-      const { error: updateError } = await supabase
-        .from("meal_plans")
-        .update({
-          name: optionName,
-          calories: Math.round(totals.calories),
-          protein: totals.protein,
-          carbs: totals.carbs,
-          fat: totals.fat,
-          estimated_cost: totals.estimated_cost,
-          ai_generated: false,
-        })
-        .eq("id", swapPlan.id)
-        .eq("user_id", user.id);
-      if (updateError) throw updateError;
     }
 
     await NutritionService.updateDailySummary(user.id);

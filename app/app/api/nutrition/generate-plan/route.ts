@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { AINutritionService } from "@/lib/services/nutrition/ai-nutrition-service";
-import { isFitnessPro } from "@/lib/fitness/subscription/access";
 
 export async function POST() {
   try {
