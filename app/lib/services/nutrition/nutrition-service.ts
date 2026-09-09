@@ -2161,6 +2161,20 @@ export class NutritionService {
     }
     const dailyLimit = Math.round(monthlyLimit / 30);
 
+    // 7-day rotating menu calculation strictly adhering to user onboarding profile
+    const targetDate = new Date(`${localDate}T12:00:00.000Z`);
+    const dayOfWeek = isNaN(targetDate.getTime()) ? new Date().getDay() : targetDate.getUTCDay();
+    // 2-week cycle calculation (Week A = 0, Week B = 1) ensuring next week has a brand new fresh rotation
+    const epochWeeks = Math.floor((targetDate.getTime() || Date.now()) / (7 * 24 * 60 * 60 * 1000));
+    const weekCycle = Math.abs(epochWeeks) % 2;
+    const rotatingPlans = NutritionService.getRotatingMealPlanForDay(dayOfWeek, fitProfile, targets, foodCatalog, weekCycle);
+
+    const rawDietStr = `${fitProfile?.diet_preference || ''} ${fitProfile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
+    const isProfileVegan = rawDietStr.includes('vegan');
+    const isProfileNonVeg = !isProfileVegan && (rawDietStr.includes('non') || rawDietStr.includes('meat') || rawDietStr.includes('chicken') || rawDietStr.includes('fish'));
+    const isProfileEggetarian = !isProfileVegan && !isProfileNonVeg && (rawDietStr.includes('egg') || rawDietStr.includes('eggetarian'));
+    const isProfileVegetarian = !isProfileVegan && !isProfileNonVeg && !isProfileEggetarian;
+
     // Determine meal types based on user's meals_per_day preference
     const mealsPerDay = fitProfile?.meals_per_day || '4 meals';
     let ALL_MEAL_TYPES: string[];
@@ -2260,20 +2274,6 @@ export class NutritionService {
         });
       }
     }
-
-    // 7-day rotating menu calculation strictly adhering to user onboarding profile
-    const targetDate = new Date(`${localDate}T12:00:00.000Z`);
-    const dayOfWeek = isNaN(targetDate.getTime()) ? new Date().getDay() : targetDate.getUTCDay();
-    // 2-week cycle calculation (Week A = 0, Week B = 1) ensuring next week has a brand new fresh rotation
-    const epochWeeks = Math.floor((targetDate.getTime() || Date.now()) / (7 * 24 * 60 * 60 * 1000));
-    const weekCycle = Math.abs(epochWeeks) % 2;
-    const rotatingPlans = NutritionService.getRotatingMealPlanForDay(dayOfWeek, fitProfile, targets, foodCatalog, weekCycle);
-
-    const rawDietStr = `${fitProfile?.diet_preference || ''} ${fitProfile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
-    const isProfileVegan = rawDietStr.includes('vegan');
-    const isProfileNonVeg = !isProfileVegan && (rawDietStr.includes('non') || rawDietStr.includes('meat') || rawDietStr.includes('chicken') || rawDietStr.includes('fish'));
-    const isProfileEggetarian = !isProfileVegan && !isProfileNonVeg && (rawDietStr.includes('egg') || rawDietStr.includes('eggetarian'));
-    const isProfileVegetarian = !isProfileVegan && !isProfileNonVeg && !isProfileEggetarian;
 
     // Always output Breakfast, Lunch, Snack, Dinner cards
     let formattedMeals = ALL_MEAL_TYPES.map((mType, slotIdx) => {
