@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { generateDeterministicNutritionPlan, convertToAIPlanFormat } from "@/lib/fitness/nutrition/nutrition-engine";
+import { buildHybridNutritionPrompt, mergeHybridNutrition } from "@/lib/fitness/nutrition/hybrid-merger";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import {
   FITNESS_PLAN_MODEL,
@@ -217,11 +219,23 @@ ${JSON.stringify(foodCatalog || [], null, 2)}
 
 Return only the nutrition object. Keep the deterministic daily calorie and protein targets exactly as supplied. Generate the user's requested number of meals and a practical 30-day grocery list. Respect diet, allergies, disliked foods, available foods, food environment, budget, and saved routine. For PG, Hostel, Home, or Office/Canteen, label breakfast, lunch, and dinner as provided meals and price only the add-ons. For Lose Fat or Cut, mention limiting added sugar, sugary drinks, deep-fried foods, and frequent fast food; never demand zero sugar or zero oil. Use realistic INR prices and concise instructions.`;
 
+    // Step A: Generate deterministic nutrition plan (60% Math Ground Truth)
+    let deterministicNutrition = null;
+    try {
+      const nutritionPlan = await generateDeterministicNutritionPlan(profile);
+      deterministicNutrition = convertToAIPlanFormat(nutritionPlan);
+    } catch (nutritionErr) {
+      console.warn("Deterministic nutrition generation failed in upgrade-nutrition:", nutritionErr);
+    }
+
+    const hybridPrompt = deterministicNutrition ? buildHybridNutritionPrompt(deterministicNutrition) : "";
+    const promptToSend = `${userPrompt}\n\n${hybridPrompt}`;
+
     await recordGenerationAttempt(supabase, user.id, "plan_nutrition_upgrade_attempt", FITNESS_PLAN_MODEL);
 
     const aiResponse = await generateOpenAIResponseJSON<unknown>({
       systemPrompt: `You are Grindlog's cautious nutrition coach. Generate only a safe, practical nutrition object for an existing workout plan. Never change workouts. Follow the saved profile exactly. For vegan users, every meal and grocery item must be plant-based. Never include foods that conflict with allergies, restrictions, or the saved available-food list. Never provide medical advice or extreme calorie restriction. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise.`,
-      userPrompt,
+      userPrompt: promptToSend,
       model: FITNESS_PLAN_MODEL,
       maxTokens: 5500,
       minimumOutputTokens: 5500,
@@ -242,9 +256,14 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
       return NextResponse.json({ success: false, error: "The Pro nutrition response could not be validated.", errorType: "SYSTEM" }, { status: 400 });
     }
 
+    // 60% Code Math + 40% AI Hybrid Nutrition Merge
+    const hybridNutrition = deterministicNutrition
+      ? mergeHybridNutrition(parsedNutrition.data, deterministicNutrition)
+      : parsedNutrition.data;
+
     const mergedPlan = {
       ...existingPlan.data,
-      nutrition: parsedNutrition.data,
+      nutrition: hybridNutrition,
     };
     const safetyCheck = runFitnessAISafetyCheck(mergedPlan, profile);
     const profileCheck = validatePlanAgainstProfile(mergedPlan, profile, {

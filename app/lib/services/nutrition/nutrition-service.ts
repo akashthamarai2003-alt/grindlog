@@ -34,14 +34,44 @@ function parseAIItemText(value: unknown): Array<{ name: string; servingSize: str
     .map((part) => part.trim())
     .filter(Boolean)
     .map((part) => {
-      const match = part.match(/^(.+?),\s*(\d+(?:\.\d+)?)\s+(.+)$/);
-      if (!match) {
-        return { name: part, servingSize: "", multiplier: 1 };
+      let name = part;
+      let multiplier = 1;
+      let servingSize = "";
+
+      // Pattern A: Leading multiplier like '3x Boiled Eggs...' or '3 Boiled Eggs...'
+      const leadingMatch = name.match(/^(\d+(?:\.\d+)?)\s*x?\s+(.+)$/i);
+      if (leadingMatch && !/^(?:bowl|cup|serving|plate|tbsp|tsp|g|kg|ml|l)\b/i.test(leadingMatch[2])) {
+        multiplier = Math.max(Number(leadingMatch[1]) || 1, 0.25);
+        name = leadingMatch[2].trim();
+        servingSize = `${multiplier} servings`;
       }
+
+      // Pattern B: Dash format like 'Whole Eggs (Boiled) - 3 large eggs' or 'Soya Chunks - 50g dry'
+      const dashMatch = name.match(/^(.+?)\s*[-—–]\s*(.+)$/);
+      if (dashMatch) {
+        name = dashMatch[1].trim();
+        servingSize = dashMatch[2].trim();
+        const numInServing = servingSize.match(/^(\d+(?:\.\d+)?)/);
+        if (numInServing && multiplier === 1) {
+          const num = Number(numInServing[1]);
+          if (/egg|piece|chapati|roti|banana|apple|slice/i.test(servingSize)) {
+            multiplier = num;
+          }
+        }
+      }
+
+      // Pattern C: Comma format like 'Boiled Eggs, 3 pieces'
+      const commaMatch = name.match(/^(.+?),\s*(\d+(?:\.\d+)?)\s*(.+)$/);
+      if (commaMatch) {
+        name = commaMatch[1].trim();
+        multiplier = Math.max(Number(commaMatch[2]) || 1, 0.25);
+        servingSize = `${commaMatch[2]} ${commaMatch[3].trim()}`;
+      }
+
       return {
-        name: match[1].trim(),
-        multiplier: Math.max(Number(match[2]) || 1, 0.25),
-        servingSize: `${match[2]} ${match[3].trim()}`,
+        name,
+        servingSize,
+        multiplier,
       };
     });
 }
@@ -50,11 +80,37 @@ function findFoodReference(name: string, catalog: NutritionFoodReference[]): Nut
   const normalizedName = normalizeFoodName(name);
   if (!normalizedName) return undefined;
 
-  return catalog.find((food) => normalizeFoodName(food.name) === normalizedName)
-    || catalog.find((food) => {
-      const candidate = normalizeFoodName(food.name);
-      return candidate.includes(normalizedName) || normalizedName.includes(candidate);
-    });
+  // 1. Check if it's a provided core meal (PG, Hostel, Mess, Home Core)
+  if (/\b(?:pg|hostel|mess|provided core|provided meal|core meal)\b/i.test(name)) {
+    const coreRef = catalog.find((f) => f.name.includes("Provided Core"));
+    if (coreRef) return coreRef;
+  }
+
+  // 2. Exact match on normalized food name
+  const exact = catalog.find((food) => normalizeFoodName(food.name) === normalizedName);
+  if (exact) return exact;
+
+  // 3. Substring match
+  const sub = catalog.find((food) => {
+    const candidate = normalizeFoodName(food.name);
+    return candidate.includes(normalizedName) || normalizedName.includes(candidate);
+  });
+  if (sub) return sub;
+
+  // 4. Keyword token match for common staple foods
+  const keywords = [
+    'egg', 'soya', 'paneer', 'curd', 'dahi', 'chicken', 'fish', 'tofu',
+    'rice', 'dal', 'chana', 'rajma', 'oats', 'poha', 'upma', 'dosa',
+    'idli', 'milk', 'peanut', 'banana', 'apple', 'sprouts'
+  ];
+  for (const kw of keywords) {
+    if (normalizedName.includes(kw)) {
+      const match = catalog.find((f) => normalizeFoodName(f.name).includes(kw));
+      if (match) return match;
+    }
+  }
+
+  return undefined;
 }
 
 function sanitizeAIItemName(name: string, isVegan?: boolean, isVegetarian?: boolean): string {
@@ -1595,17 +1651,7 @@ export class NutritionService {
       const existing = plansByMealType.get(mType);
       if (existing) return existing;
 
-      // 2. Priority: True 7-Day Rotating Menu (Distinct authentic Indian whole foods for every day of the week)
-      const rotating = rotatingPlans.get(mType);
-      if (rotating) {
-        return {
-          ...rotating,
-          is_natural_whole_food: true,
-          has_7day_variety: true,
-        };
-      }
-
-      // 3. Fallback: AI generated template if slot not present in rotating plans
+      // 2. Priority: Active AI Hybrid Plan (The 60% Math + 40% AI personalized blueprint)
       const aiMeal = findAiMealForSlot(mType, slotIdx, ALL_MEAL_TYPES, aiMeals);
 
       if (aiMeal) {
@@ -1618,15 +1664,16 @@ export class NutritionService {
           dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.25 : (mealsPerDay === '2 meals' ? 0.45 : 0.25)),
         };
         const proportion = slotProportions[mType] ?? 0.25;
-        const slotTargetCalories = Math.round(targets.calories * proportion);
-        const slotTargetProtein = Number((targets.protein * proportion).toFixed(1));
+        const slotTargetCalories = (aiMeal.total_calories && Number(aiMeal.total_calories) > 0)
+          ? Math.round(Number(aiMeal.total_calories))
+          : Math.round(targets.calories * proportion);
+        const slotTargetProtein = (aiMeal.protein_grams && Number(aiMeal.protein_grams) > 0)
+          ? Number((Number(aiMeal.protein_grams)).toFixed(1))
+          : Number((targets.protein * proportion).toFixed(1));
         
         // Real-world estimate: ~₹0.15–0.20 per calorie for average Indian whole foods
         let estCost = Math.round(slotTargetCalories * 0.18);
         const envStr = fitProfile?.food_environment?.toLowerCase() || '';
-        if ((envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen') && (mType === 'breakfast' || mType === 'lunch' || mType === 'dinner')) {
-          estCost = 0; // Core meals are provided
-        }
 
         // AI sometimes returns several foods as one string joined with "+".
         const parsedItems = (Array.isArray(aiMeal.items) ? aiMeal.items : [])
@@ -1654,15 +1701,21 @@ export class NutritionService {
         const fallbackCost = Math.round(estCost / itemParts.length);
 
         // 1. Resolve each item and calculate its unscaled values
+        const isCoreProvided = envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen';
         const unscaledItems = itemParts.map((part) => {
           const reference = findFoodReference(part.name, foodCatalog);
           const multiplier = part.multiplier || 1;
+          const isItemCore = isCoreProvided && (
+            reference?.name?.includes("Provided Core") ||
+            /\b(?:pg|hostel|mess|provided core|provided meal|core meal)\b/i.test(part.name)
+          );
+
           const cals = Math.round(Number(reference?.calories || fallbackCalories) * (reference ? multiplier : 1));
           const pro = Number((Number(reference?.protein || fallbackProtein) * (reference ? multiplier : 1)).toFixed(1));
           const carbs = Number((Number(reference?.carbs || 0) * (reference ? multiplier : 1)).toFixed(1));
           const fat = Number((Number(reference?.fat || 0) * (reference ? multiplier : 1)).toFixed(1));
-          const cost = Math.round(Number(reference?.estimated_cost || fallbackCost) * (reference ? multiplier : 1));
-          return { part, reference, multiplier, cals, pro, carbs, fat, cost };
+          const cost = isItemCore ? 0 : Math.round(Number(reference?.estimated_cost || fallbackCost) * (reference ? multiplier : 1));
+          return { part, reference, multiplier, cals, pro, carbs, fat, cost, isItemCore };
         });
 
         const unscaledTotalCalories = unscaledItems.reduce((sum, it) => sum + it.cals, 0);
@@ -1670,14 +1723,12 @@ export class NutritionService {
         const scaleFactor = unscaledTotalCalories > 0 ? (slotTargetCalories / unscaledTotalCalories) : 1;
 
         // 2. Scale each item proportionally
-        const isCoreProvided = envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen';
         const mealPlanItems = unscaledItems.map((it, index) => {
           const scaledCalories = Math.round(it.cals * scaleFactor);
           const scaledProtein = Number((it.pro * scaleFactor).toFixed(1));
           const scaledCarbs = Number((it.carbs * scaleFactor).toFixed(1));
           const scaledFat = Number((it.fat * scaleFactor).toFixed(1));
-          const isProvidedCore = (isCoreProvided && (mType === 'breakfast' || mType === 'lunch' || mType === 'dinner'));
-          const scaledCost = isProvidedCore ? 0 : Math.round(it.cost * scaleFactor);
+          const scaledCost = it.isItemCore ? 0 : Math.round(it.cost * scaleFactor);
 
           let servingDisplay = it.part.servingSize || it.reference?.serving_size || '1 serving';
           if (Math.abs(scaleFactor - 1) > 0.15 && it.reference?.serving_size) {
@@ -1722,6 +1773,16 @@ export class NutritionService {
           is_ai_generated: true,
           is_natural_whole_food: true,
           meal_plan_items: mealPlanItems
+        };
+      }
+
+      // 3. Fallback: True 7-Day Rotating Menu (when user does not have an active AI plan or slot not present)
+      const rotating = rotatingPlans.get(mType);
+      if (rotating) {
+        return {
+          ...rotating,
+          is_natural_whole_food: true,
+          has_7day_variety: true,
         };
       }
 

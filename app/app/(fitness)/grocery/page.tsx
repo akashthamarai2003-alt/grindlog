@@ -4,6 +4,7 @@ import { Utensils, ShoppingCart } from "lucide-react";
 import { getCachedUser, createServerSupabase } from "@/lib/services/supabase/server";
 import { parseBudget } from "@/lib/fitness/nutrition/constants";
 import { calculateGroceryList } from "@/lib/fitness/nutrition/grocery-calculator";
+import { generateDeterministicNutritionPlan } from "@/lib/fitness/nutrition/nutrition-engine";
 import { GroceryView } from "@/components/fitness/grocery/grocery-view";
 import { GroceryItemData, GroceryBudgetSummary } from "@/components/fitness/grocery/types";
 
@@ -37,7 +38,7 @@ export default async function GroceryPage() {
       .maybeSingle(),
     supabase
       .from("fitness_os_profiles")
-      .select("nutrition_budget, diet_preference, food_type, food_environment, onboarding_completed")
+      .select("*")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -71,67 +72,78 @@ export default async function GroceryPage() {
     ? (activePlan?.id ? dbGroceryItems.filter((it: any) => it.plan_id === activePlan.id) : dbGroceryItems)
     : [];
 
-  if (currentPlanDbItems.length > 0) {
-    // Map existing DB items and enrich with macro info from plan_data
-    itemsToRender = currentPlanDbItems.map((dbItem: any) => {
-      const matchInPlan = planGroceryList.find(
-        (p: any) => p.name?.toLowerCase() === dbItem.name?.toLowerCase()
+  if (planGroceryList.length > 0) {
+    // 1. Authoritative active hybrid plan grocery list (60% Math locked numbers + 40% AI kirana tips)
+    itemsToRender = planGroceryList.map((planItem: any, idx: number) => {
+      // Find matching DB item to preserve checkbox state
+      const dbMatch = currentPlanDbItems.find(
+        (db: any) => db.name?.toLowerCase() === planItem.name?.toLowerCase()
       );
 
       return {
-        id: dbItem.id,
-        name: dbItem.name,
-        monthlyQuantity: Number(dbItem.monthly_quantity) || 1,
-        unit: dbItem.unit || "unit",
-        estimatedPrice: Number(dbItem.estimated_price) || 0,
-        category: dbItem.category || "General",
-        isOptional: Boolean(dbItem.is_optional),
-        reason: dbItem.reason || matchInPlan?.reason || "",
-        purchased: Boolean(dbItem.purchased),
-        foodServingSize: matchInPlan?.food_serving_size,
-        proteinGrams: matchInPlan?.protein_grams_per_serving,
-        calories: matchInPlan?.calories_per_serving,
-        carbsGrams: matchInPlan?.carbs_grams_per_serving,
-        fatGrams: matchInPlan?.fat_grams_per_serving,
-        usedInMeals: matchInPlan?.used_in_meals || (matchInPlan?.reason?.includes("used in") ? [matchInPlan.reason.split("used in")[1].trim()] : undefined),
+        id: dbMatch?.id || `plan-item-${idx}`,
+        name: planItem.name,
+        monthlyQuantity: Number(planItem.monthly_quantity) || 1,
+        unit: planItem.unit || "unit",
+        estimatedPrice: Number(planItem.estimated_price) || 0,
+        category: planItem.category || "General",
+        isOptional: Boolean(planItem.is_optional),
+        reason: planItem.reason || "",
+        purchased: Boolean(dbMatch?.purchased),
+        foodServingSize: planItem.food_serving_size,
+        proteinGrams: planItem.protein_grams_per_serving,
+        calories: planItem.calories_per_serving,
+        carbsGrams: planItem.carbs_grams_per_serving,
+        fatGrams: planItem.fat_grams_per_serving,
+        usedInMeals: planItem.used_in_meals || (planItem.reason?.includes("used in") ? [planItem.reason.split("used in")[1].trim()] : undefined),
       };
     });
-  } else if (planGroceryList.length > 0 && activePlan?.id) {
-    // DB table had no items yet, but plan_data has grocery items. Seed DB in background
-    itemsToRender = planGroceryList.map((item: any, idx: number) => ({
-      id: `plan-item-${idx}`,
-      name: item.name,
-      monthlyQuantity: Number(item.monthly_quantity) || 1,
-      unit: item.unit || "unit",
-      estimatedPrice: Number(item.estimated_price) || 0,
-      category: item.category || "General",
-      isOptional: Boolean(item.is_optional),
-      reason: item.reason || "",
-      purchased: false,
-      foodServingSize: item.food_serving_size,
-      proteinGrams: item.protein_grams_per_serving,
-      calories: item.calories_per_serving,
-      carbsGrams: item.carbs_grams_per_serving,
-      fatGrams: item.fat_grams_per_serving,
+
+    // If DB items are out of sync with active plan, synchronize DB in background
+    if (activePlan?.id) {
+      const namesInDb = new Set(currentPlanDbItems.map((i: any) => i.name?.toLowerCase()));
+      const namesInPlan = new Set(planGroceryList.map((i: any) => i.name?.toLowerCase()));
+      const isOutOfSync = currentPlanDbItems.length !== planGroceryList.length ||
+        planGroceryList.some((p: any) => !namesInDb.has(p.name?.toLowerCase())) ||
+        currentPlanDbItems.some((d: any) => !namesInPlan.has(d.name?.toLowerCase()));
+
+      if (isOutOfSync) {
+        (async () => {
+          try {
+            await supabase.from("fitness_grocery_items").delete().eq("user_id", user.id).eq("plan_id", activePlan.id);
+            await supabase.from("fitness_grocery_items").insert(
+              planGroceryList.map((item: any) => ({
+                user_id: user.id,
+                plan_id: activePlan.id,
+                name: item.name,
+                monthly_quantity: Number(item.monthly_quantity) || 1,
+                unit: item.unit || "unit",
+                estimated_price: Number(item.estimated_price) || 0,
+                category: item.category || "General",
+                is_optional: Boolean(item.is_optional),
+                reason: item.reason || "",
+                purchased: Boolean(currentPlanDbItems.find((d: any) => d.name?.toLowerCase() === item.name?.toLowerCase())?.purchased),
+              }))
+            );
+          } catch (syncErr: any) {
+            console.warn("Background grocery auto-sync error:", syncErr);
+          }
+        })();
+      }
+    }
+  } else if (currentPlanDbItems.length > 0) {
+    // Map existing DB items if plan_data doesn't have grocery list
+    itemsToRender = currentPlanDbItems.map((dbItem: any) => ({
+      id: dbItem.id,
+      name: dbItem.name,
+      monthlyQuantity: Number(dbItem.monthly_quantity) || 1,
+      unit: dbItem.unit || "unit",
+      estimatedPrice: Number(dbItem.estimated_price) || 0,
+      category: dbItem.category || "General",
+      isOptional: Boolean(dbItem.is_optional),
+      reason: dbItem.reason || "",
+      purchased: Boolean(dbItem.purchased),
     }));
-
-    // Async seed DB without blocking page delivery
-    supabase
-      .from("fitness_grocery_items")
-      .insert(planGroceryList.map((item: any) => ({
-        user_id: user.id,
-        plan_id: activePlan.id,
-        name: item.name,
-        monthly_quantity: Number(item.monthly_quantity) || 1,
-        unit: item.unit || "unit",
-        estimated_price: Number(item.estimated_price) || 0,
-        category: item.category || "General",
-        is_optional: Boolean(item.is_optional),
-        reason: item.reason || "",
-        purchased: false,
-      })))
-      .then(undefined, (err: any) => console.warn("Background grocery seed error:", err));
-
   } else if (planNutrition?.meals && activePlan?.id) {
     // Dynamic fallback: compute grocery list from active meals using grocery calculator
     try {
@@ -176,6 +188,28 @@ export default async function GroceryPage() {
       }
     } catch (calcError) {
       console.warn("Dynamic grocery list calculation fallback error:", calcError);
+    }
+  } else if (profile) {
+    // Dynamic fallback for onboarding-completed users who haven't generated a full plan yet
+    try {
+      const detPlan = await generateDeterministicNutritionPlan(profile as any, supabase);
+      if (detPlan?.grocery && detPlan.grocery.length > 0) {
+        itemsToRender = detPlan.grocery.map((item: any, idx: number) => ({
+          id: `onboarding-grocery-${idx}`,
+          name: item.name,
+          monthlyQuantity: Number(item.monthlyQuantity) || 1,
+          unit: item.unit || "unit",
+          estimatedPrice: Number(item.estimatedPrice) || 0,
+          category: item.category || "General",
+          isOptional: Boolean(item.isOptional),
+          reason: item.reason || "",
+          purchased: false,
+          proteinGrams: item.proteinPerServing,
+          calories: item.caloriesPerServing,
+        }));
+      }
+    } catch (onboardingErr) {
+      console.warn("Onboarding deterministic grocery fallback error:", onboardingErr);
     }
   }
 
