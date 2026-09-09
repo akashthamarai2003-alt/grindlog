@@ -28,12 +28,13 @@ import { calculateGroceryList, optimizeBudget, getGrocerySummary } from "./groce
 
 export async function generateDeterministicNutritionPlan(
   profile: NutritionProfile,
+  customSupabase?: any
 ): Promise<DeterministicNutritionPlan> {
   // 1. Calculate macro targets
   const targets = calculateTargets(profile);
 
   // 2. Get compatible foods from database
-  const allFoods = await selectFoodsForProfile(profile);
+  const allFoods = await selectFoodsForProfile(profile, customSupabase);
   const rankedFoods = rankFoodsByProteinEfficiency(allFoods);
 
   // 3. Parse budget and filter foods

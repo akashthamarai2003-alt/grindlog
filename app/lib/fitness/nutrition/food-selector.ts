@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import {
   getCompatibleDietTypes,
   parseRestrictions,
@@ -12,9 +13,19 @@ import type { NutritionProfile, FoodItem, BudgetTier } from "./types";
  * Does NOT make AI calls — purely deterministic filtering.
  */
 export async function selectFoodsForProfile(
-  profile: NutritionProfile
+  profile: NutritionProfile,
+  customSupabase?: any
 ): Promise<FoodItem[]> {
-  const supabase = await createServerSupabase();
+  let supabase = customSupabase;
+  if (!supabase) {
+    try {
+      supabase = await createServerSupabase();
+    } catch {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+      supabase = createClient(url, key);
+    }
+  }
 
   const { data, error } = await supabase
     .from("foods")
@@ -158,8 +169,6 @@ export function getProteinSources(
   foods: FoodItem[],
   dietType: string
 ): FoodItem[] {
-  const highProtein = foods.filter((f) => f.protein > 10);
-
   const normalizedDiet = dietType.toLowerCase();
   let dietKey = "Vegetarian";
   
@@ -172,6 +181,13 @@ export function getProteinSources(
   }
 
   const priorityList = PRIORITY_PROTEINS[dietKey] || [];
+
+  // Protein sources: foods with >= 6.0g protein OR foods explicitly in PRIORITY_PROTEINS
+  const highProtein = foods.filter((f) => {
+    if (f.protein >= 6) return true;
+    const foodName = f.name.toLowerCase();
+    return priorityList.some((p) => foodName.includes(p.toLowerCase()));
+  });
 
   return [...highProtein].sort((a, b) => {
     const aName = a.name.toLowerCase();
@@ -187,7 +203,13 @@ export function getProteinSources(
       return aScore - bScore;
     }
     
-    // Fallback to highest protein absolute if priorities tie
+    // Protein efficiency fallback
+    const aRatio = a.estimated_cost > 0 ? a.protein / a.estimated_cost : 0;
+    const bRatio = b.estimated_cost > 0 ? b.protein / b.estimated_cost : 0;
+    if (Math.abs(bRatio - aRatio) > 0.05) {
+      return bRatio - aRatio;
+    }
+
     return b.protein - a.protein;
   });
 }

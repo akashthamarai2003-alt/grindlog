@@ -328,6 +328,47 @@ export function parseServingGrams(servingSize: string): number {
 }
 
 // ─────────────────────────────────────────────────────────
+// Daily Safe Intake & Practical Serving Limits
+// Prevents overconsumption (e.g. Soya Chunks cap at 50g dry/day)
+// ─────────────────────────────────────────────────────────
+
+export interface FoodServingLimit {
+  maxDailyServings: number;
+  minMealServings: number;
+  maxMealServings: number;
+  preferredSlots?: string[];
+}
+
+export const DAILY_FOOD_CAPS: Record<string, FoodServingLimit> = {
+  "soya chunk": { maxDailyServings: 1.0, minMealServings: 0.5, maxMealServings: 1.0, preferredSlots: ["Lunch", "Dinner"] },
+  "soya": { maxDailyServings: 1.0, minMealServings: 0.5, maxMealServings: 1.0, preferredSlots: ["Lunch", "Dinner"] },
+  "boiled egg white": { maxDailyServings: 6.0, minMealServings: 2.0, maxMealServings: 4.0, preferredSlots: ["Breakfast", "Dinner", "Snack"] },
+  "boiled egg": { maxDailyServings: 4.0, minMealServings: 2.0, maxMealServings: 3.0, preferredSlots: ["Breakfast", "Dinner"] },
+  "egg omelette": { maxDailyServings: 1.0, minMealServings: 1.0, maxMealServings: 1.0, preferredSlots: ["Breakfast"] },
+  "scrambled egg": { maxDailyServings: 1.0, minMealServings: 1.0, maxMealServings: 1.0, preferredSlots: ["Breakfast"] },
+  "egg bhurji": { maxDailyServings: 1.0, minMealServings: 1.0, maxMealServings: 1.0, preferredSlots: ["Breakfast", "Dinner"] },
+  "curd": { maxDailyServings: 2.0, minMealServings: 1.0, maxMealServings: 1.0, preferredSlots: ["Lunch", "Dinner"] },
+  "dahi": { maxDailyServings: 2.0, minMealServings: 1.0, maxMealServings: 1.0, preferredSlots: ["Lunch", "Dinner"] },
+  "toned milk": { maxDailyServings: 2.0, minMealServings: 1.0, maxMealServings: 1.0, preferredSlots: ["Breakfast", "Snack", "Dinner"] },
+  "whole milk": { maxDailyServings: 1.5, minMealServings: 1.0, maxMealServings: 1.0, preferredSlots: ["Breakfast", "Snack"] },
+  "milk": { maxDailyServings: 2.0, minMealServings: 1.0, maxMealServings: 1.0, preferredSlots: ["Breakfast", "Snack", "Dinner"] },
+  "paneer": { maxDailyServings: 1.0, minMealServings: 0.5, maxMealServings: 1.0, preferredSlots: ["Lunch", "Dinner"] },
+  "tofu": { maxDailyServings: 1.0, minMealServings: 0.5, maxMealServings: 1.0, preferredSlots: ["Lunch", "Dinner"] },
+  "roasted chana": { maxDailyServings: 1.5, minMealServings: 1.0, maxMealServings: 1.5, preferredSlots: ["Snack", "Dinner"] },
+  "peanut butter": { maxDailyServings: 1.0, minMealServings: 0.5, maxMealServings: 1.0, preferredSlots: ["Breakfast", "Snack"] },
+  "chicken breast": { maxDailyServings: 1.5, minMealServings: 1.0, maxMealServings: 1.5, preferredSlots: ["Lunch", "Dinner"] },
+  "fish": { maxDailyServings: 1.5, minMealServings: 1.0, maxMealServings: 1.5, preferredSlots: ["Lunch", "Dinner"] },
+};
+
+export function getFoodServingLimit(foodName: string): FoodServingLimit {
+  const lower = foodName.toLowerCase();
+  for (const [key, limit] of Object.entries(DAILY_FOOD_CAPS)) {
+    if (lower.includes(key)) return limit;
+  }
+  return { maxDailyServings: 2.0, minMealServings: 0.5, maxMealServings: 2.0 };
+}
+
+// ─────────────────────────────────────────────────────────
 // Retail Packaging → Grocery Unit Conversion
 // ─────────────────────────────────────────────────────────
 
@@ -338,10 +379,12 @@ export type RetailUnit = {
 };
 
 export const CATEGORY_RETAIL_UNITS: Record<string, RetailUnit> = {
+  egg: { unit: "pieces", gramsPerUnit: 50, minPurchase: 6 },
   eggs: { unit: "pieces", gramsPerUnit: 50, minPurchase: 6 },
   milk: { unit: "liters", gramsPerUnit: 1000, minPurchase: 1 },
   "soy milk": { unit: "cartons", gramsPerUnit: 1000, minPurchase: 1 },
   curd: { unit: "kg", gramsPerUnit: 1000, minPurchase: 0.5 },
+  dahi: { unit: "kg", gramsPerUnit: 1000, minPurchase: 0.5 },
   yogurt: { unit: "kg", gramsPerUnit: 1000, minPurchase: 0.5 },
   paneer: { unit: "kg", gramsPerUnit: 1000, minPurchase: 0.2 },
   chicken: { unit: "kg", gramsPerUnit: 1000, minPurchase: 0.5 },
@@ -349,6 +392,7 @@ export const CATEGORY_RETAIL_UNITS: Record<string, RetailUnit> = {
   "peanut butter": { unit: "jars", gramsPerUnit: 1000, minPurchase: 1 },
   oats: { unit: "packs", gramsPerUnit: 1000, minPurchase: 1 },
   "soya chunks": { unit: "packs", gramsPerUnit: 200, minPurchase: 1 },
+  soya: { unit: "packs", gramsPerUnit: 200, minPurchase: 1 },
   chana: { unit: "kg", gramsPerUnit: 1000, minPurchase: 0.5 },
   rice: { unit: "kg", gramsPerUnit: 1000, minPurchase: 1 },
   bread: { unit: "packs", gramsPerUnit: 400, minPurchase: 1 },

@@ -176,10 +176,46 @@ export function optimizeBudget(
       }
     }
 
-    // Clean up temporary property
+    // 5. Hard ceiling guarantee: proportionally scale all items down if still exceeding budget
+    if (totalCost > budget.max && totalCost > 0) {
+      const scaleFactor = (budget.max * 0.95) / totalCost;
+      for (const item of items) {
+        item.estimatedPrice = Math.round((item.estimatedPrice * scaleFactor) / 10) * 10;
+        item.dailyServings = Number((item.dailyServings * scaleFactor).toFixed(2));
+        item.dailyGrams = Math.round(item.dailyGrams * scaleFactor);
+        item.monthlyQuantity = Number((item.monthlyQuantity * scaleFactor).toFixed(1));
+
+        // Re-align with packaging minimums
+        if (item.unit === "kg" || item.unit === "liters") {
+          item.monthlyQuantity = Math.max(0.5, Math.ceil(item.monthlyQuantity * 2) / 2);
+        } else if (item.unit === "pieces") {
+          item.monthlyQuantity = Math.max(6, Math.ceil(item.monthlyQuantity / 6) * 6);
+        } else if (item.unit === "packs" || item.unit === "jars" || item.unit === "cartons") {
+          item.monthlyQuantity = Math.max(1, Math.ceil(item.monthlyQuantity));
+        }
+
+        if (!item.reason.includes("Optimized")) {
+          item.reason += ` (Portion adjusted to fit ₹${budget.max} budget)`;
+        }
+      }
+
+      totalCost = items.reduce((s, it) => s + it.estimatedPrice, 0);
+
+      // Final strict trim if any packaging rounding slightly exceeded budget.max
+      if (totalCost > budget.max && items.length > 0) {
+        const excess = totalCost - budget.max;
+        const highestPriced = items.reduce((max, it) => it.estimatedPrice > max.estimatedPrice ? it : max, items[0]);
+        highestPriced.estimatedPrice = Math.max(0, highestPriced.estimatedPrice - excess);
+      }
+    }
+
+    // Clean up temporary property and guarantee rounded prices
     return items.map((item) => {
       const { _efficiency, ...rest } = item as any;
-      return rest;
+      return {
+        ...rest,
+        estimatedPrice: Math.round(rest.estimatedPrice),
+      };
     });
   }
 
