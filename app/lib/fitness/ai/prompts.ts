@@ -1,5 +1,6 @@
 import { OnboardingData } from "@/types/fitness/onboarding";
 import { getPlanNutritionTargets } from "@/lib/fitness/validation/fitness-plan-profile";
+import { getCoreMealLabel } from "@/lib/fitness/nutrition/constants";
 
 export const FITNESS_PLAN_SYSTEM_PROMPT = `You are Grindlog's elite, cautious fitness and sports science coach. Build one complete, personalised 7-day plan from the supplied PROFILE JSON. The profile is the absolute source of truth.
 
@@ -310,11 +311,8 @@ function budgetPlanningReference(value: unknown): number | undefined {
 
 function providedCoreMealLabel(foodEnvironment: unknown): string | undefined {
   const environment = typeof foodEnvironment === "string" ? foodEnvironment.trim() : "";
-  if (environment === "PG") return "PG-provided core meal (free)";
-  if (environment === "Hostel") return "Hostel-provided core meal (free)";
-  if (environment === "Home") return "Home-provided core meal (free)";
-  if (environment === "Office/Canteen") return "Canteen-provided core meal (free)";
-  return undefined;
+  if (!["PG", "Hostel", "Home", "Office/Canteen"].includes(environment)) return undefined;
+  return getCoreMealLabel(environment);
 }
 
 function buildCompactPlanProfile(

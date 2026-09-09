@@ -220,9 +220,9 @@ export function assembleMeals(
         items.push({
           food: {
             id: `provided-${slot.type}`,
-            name: getCoreMealLabel(env),
+            name: getCoreMealLabel(env, slot.type),
             category: "Core Meal",
-            serving_size: "1 meal",
+            serving_size: "1 Plate",
             calories: coreCalories,
             protein: coreProtein,
             carbs: coreCarbs,

@@ -47,14 +47,15 @@ function parseAIItemText(value: unknown): Array<{ name: string; servingSize: str
       }
 
       // Pattern B: Dash format like 'Whole Eggs (Boiled) - 3 large eggs' or 'Soya Chunks - 50g dry'
-      const dashMatch = name.match(/^(.+?)\s*[-—–]\s*(.+)$/);
+      // Strictly require whitespace around dash to prevent splitting words like 'Hostel-provided' or 'Pre-workout'
+      const dashMatch = name.match(/^(.+?)\s+[-—–]\s+(.+)$/);
       if (dashMatch) {
         name = dashMatch[1].trim();
         servingSize = dashMatch[2].trim();
         const numInServing = servingSize.match(/^(\d+(?:\.\d+)?)/);
         if (numInServing && multiplier === 1) {
           const num = Number(numInServing[1]);
-          if (/egg|piece|chapati|roti|banana|apple|slice/i.test(servingSize)) {
+          if (/(?:egg|piece|chapati|roti|banana|apple|slice|large|medium|bowl|cup|plate|g|ml)/i.test(servingSize + " " + name)) {
             multiplier = num;
           }
         }
@@ -81,9 +82,15 @@ function findFoodReference(name: string, catalog: NutritionFoodReference[]): Nut
   if (!normalizedName) return undefined;
 
   // 1. Check if it's a provided core meal (PG, Hostel, Mess, Home Core)
-  if (/\b(?:pg|hostel|mess|provided core|provided meal|core meal)\b/i.test(name)) {
-    const coreRef = catalog.find((f) => f.name.includes("Provided Core"));
-    if (coreRef) return coreRef;
+  if (/\b(?:pg|hostel|mess|provided core|provided meal|core meal|base meal)\b/i.test(name)) {
+    const coreRef = catalog.find((f) => f.name.includes("Provided Core") || f.name.includes("Core Meal") || f.name.includes("Base Meal"));
+    if (coreRef) {
+      return {
+        ...coreRef,
+        name: "Mess Core Meal (Rice, Dal & Sabzi)",
+        serving_size: "1 Plate",
+      };
+    }
   }
 
   // 2. Exact match on normalized food name
@@ -746,6 +753,79 @@ export class NutritionService {
       .upsert(upsertData, { onConflict: 'user_id, date' });
   }
 
+  static getPrepInstructionForSlot(
+  mealType: string,
+  title: string,
+  dayOfWeek: number,
+  foodEnv?: string
+): string {
+  const env = (foodEnv || "Hostel").toLowerCase();
+  const isPgOrHostel = env.includes("pg") || env.includes("hostel");
+  const tLower = title.toLowerCase();
+
+  if (mealType === "breakfast") {
+    if (tLower.includes("idli") || tLower.includes("dosa") || tLower.includes("pongal")) {
+      return isPgOrHostel
+        ? "Hostel/PG Hack: Enjoy freshly steamed mess idli/dosa with sambar. Boil 2–3 eggs using an electric kettle or request hard-boiled eggs from the mess kitchen. Season with roasted jeera, black pepper, and rock salt."
+        : "Enjoy warm steamed idli/dosa with homemade dal sambar. Pair with boiled farm eggs or paneer for an optimal 25–30g morning protein anchor.";
+    }
+    if (tLower.includes("poha") || tLower.includes("upma")) {
+      return isPgOrHostel
+        ? "Mess Hack: Request a warm bowl of mess poha/upma; top with crunchy roasted peanuts and squeeze fresh lemon juice (vitamin C dramatically boosts non-heme iron absorption). Pair with boiled eggs."
+        : "Cook homestyle poha/upma with mustard seeds, curry leaves, and crunchy peanuts. Squeeze fresh lemon and pair with boiled eggs or curd.";
+    }
+    if (tLower.includes("oats")) {
+      return isPgOrHostel
+        ? "Kettle Hack: Soak rolled oats in hot water or warm milk in your room for 5 minutes. Fold in sliced banana, roasted peanuts, and a dash of cinnamon. Eat with boiled eggs."
+        : "Cook rolled oats in warm toned milk for 3–5 minutes. Top with fresh banana slices and roasted peanuts. Pair with farm eggs for 4 hours of steady energy.";
+    }
+    if (tLower.includes("cheela") || tLower.includes("bhurji")) {
+      return "High-protein breakfast: Cook cheela or egg/paneer bhurji with minimal oil on a tawa. Serve with fresh cooling curd or mint chutney.";
+    }
+    return isPgOrHostel
+      ? "Kettle Hack: Hard-boil farm eggs using an electric kettle in your room. Season with chaat masala, roasted cumin, and black pepper. Pair with whole wheat toast."
+      : "Homestyle whole food breakfast: Enjoy warm phulkas or toast with farm eggs or paneer tikka, accompanied by fresh fruit.";
+  }
+
+  if (mealType === "lunch") {
+    if (tLower.includes("chicken") || tLower.includes("fish")) {
+      return isPgOrHostel
+        ? "Protein Anchor: Source pre-cooked grilled or curry chicken/fish from a trusted local vendor or mess. Pair with mess steamed rice and yellow dal for a complete amino acid profile."
+        : "Lean athletic lunch: Pair homestyle chicken curry or fish with steamed rice, yellow dal, and a fresh kachumber salad.";
+    }
+    if (tLower.includes("rajma") || tLower.includes("chana")) {
+      return "High-protein comfort thali: Pair slow-cooked kidney beans/chickpeas with steamed rice or phulkas. Eat with cooling dahi/curd for optimal gut digestion.";
+    }
+    if (tLower.includes("soya")) {
+      return isPgOrHostel
+        ? "Hot Soya Hack: Soak 50g soya chunks in kettle-boiled hot water with salt for 10 minutes. Squeeze out water thoroughly to remove any raw taste, then fold into hot mess dal or sabzi."
+        : "High-protein soya lunch: Sauté soaked soya chunks with onion, tomatoes, and garam masala. Serve with phulkas and cooling cucumber curd.";
+    }
+    return isPgOrHostel
+      ? "Mess Lunch Balance: Take your standard mess rice, dal tadka, and seasonal sabzi. Top with fresh curd and your planned protein anchor."
+      : "Balanced lunch: Pair yellow dal tadka, steamed rice, paneer or eggs, and a crisp fresh cucumber-tomato salad.";
+  }
+
+  if (mealType === "pre_workout" || mealType === "snack") {
+    return "Athletic Fuel (< 3g Fat): Keep shelf-stable in your room. Eat 45–60 minutes before training with 300ml water for rapid glycogen replenishment with zero digestive sluggishness.";
+  }
+
+  if (mealType === "post_workout") {
+    return "Post-Workout Recovery: Consume within 45 minutes of training to initiate immediate muscle glycogen replenishment and protein synthesis.";
+  }
+
+  if (mealType === "dinner") {
+    if (tLower.includes("khichdi")) {
+      return "Soothing Recovery Dinner: Light moong dal khichdi paired with cooling probiotic dahi and a pinch of roasted jeera to aid overnight gut repair.";
+    }
+    return isPgOrHostel
+      ? "Mess Dinner Routine: Enjoy 2–3 warm phulkas with mess dal and green sabzi. Finish with a bowl of cooling curd to support overnight muscle protein synthesis."
+      : "Restorative Dinner: Warm whole wheat phulkas with yellow dal tadka, lightly spiced sabzi, and cooling curd seasoned with roasted cumin.";
+  }
+
+  return "Whole-food balanced plate scaled to your exact daily macro targets.";
+}
+
   /**
    * Builds a deterministic 7-day rotating meal plan tailored strictly to the user's onboarding preferences:
    * - Diet preference (Vegan, Vegetarian, Eggetarian, Non-Vegetarian)
@@ -978,17 +1058,54 @@ export class NutritionService {
       const targetCals = Math.round(Number(targets?.calories || 2000) * slotPct);
       const scale = rawCals > 0 ? (targetCals / rawCals) : 1;
 
-      const scaledItems = items.map((it) => ({
-        ...it,
-        foods: {
-          ...it.foods,
-          calories: Math.round(it.foods.calories * scale),
-          protein: Number((it.foods.protein * scale).toFixed(1)),
-          carbs: Number((it.foods.carbs * scale).toFixed(1)),
-          fat: Number((it.foods.fat * scale).toFixed(1)),
-          estimated_cost: Math.round(it.foods.estimated_cost * scale),
+      const scaledItems = items.map((it) => {
+        const foodNameLower = it.foods.name.toLowerCase();
+        const isDiscrete = /(?:egg|banana|apple|fruit|chapati|roti|bread|cheela)/i.test(foodNameLower);
+
+        if (isDiscrete) {
+          // Discrete whole foods maintain exact verified per-unit calories and macros (e.g. 3 eggs = 234 kcal)
+          return {
+            ...it,
+            foods: {
+              ...it.foods,
+              calories: it.foods.calories,
+              protein: it.foods.protein,
+              carbs: it.foods.carbs,
+              fat: it.foods.fat,
+              estimated_cost: it.foods.estimated_cost,
+            }
+          };
         }
-      }));
+
+        // Scalable items (grains, dals, sambar, curd, milk, sabzi) scale portion smoothly
+        const itemScale = Math.min(1.4, Math.max(0.65, scale));
+        const scaledCalories = Math.round(it.foods.calories * itemScale);
+        const scaledProtein = Number((it.foods.protein * itemScale).toFixed(1));
+        const scaledCarbs = Number((it.foods.carbs * itemScale).toFixed(1));
+        const scaledFat = Number((it.foods.fat * itemScale).toFixed(1));
+        const scaledCost = Math.round(it.foods.estimated_cost * itemScale);
+
+        let sSize = it.foods.serving_size;
+        if (Math.abs(itemScale - 1) > 0.15) {
+          const scaledQty = Number((it.quantity * itemScale).toFixed(1));
+          if (scaledQty > 0) {
+            sSize = `${scaledQty > 1 ? scaledQty + '× ' : ''}${it.foods.serving_size.replace(/^\d+(\.\d+)?\s*[×x]?\s*/, '')}`;
+          }
+        }
+
+        return {
+          ...it,
+          foods: {
+            ...it.foods,
+            serving_size: sSize,
+            calories: scaledCalories,
+            protein: scaledProtein,
+            carbs: scaledCarbs,
+            fat: scaledFat,
+            estimated_cost: scaledCost,
+          }
+        };
+      });
 
       const totals = scaledItems.reduce((acc, it) => ({
         calories: acc.calories + it.foods.calories,
@@ -1004,8 +1121,10 @@ export class NutritionService {
         calories: totals.calories || targetCals,
         protein: totals.protein,
         carbs: totals.carbs,
-        prep_instructions: `Cook at home or enjoy planned whole foods. Scaled to your exact ${Math.round(slotPct * 100)}% daily target.`,
+        fat: totals.fat,
+        prep_instructions: NutritionService.getPrepInstructionForSlot(mealType, title, dayOfWeek, profile?.food_environment),
         is_natural_whole_food: true,
+        has_7day_variety: true,
         meal_plan_items: scaledItems
       };
     };
@@ -1651,7 +1770,17 @@ export class NutritionService {
       const existing = plansByMealType.get(mType);
       if (existing) return existing;
 
-      // 2. Priority: Active AI Hybrid Plan (The 60% Math + 40% AI personalized blueprint)
+      // 2. Priority: True 7-Day Rotating Menu (Strictly varies by dayOfWeek, ensuring fresh variety every single day)
+      const rotating = rotatingPlans.get(mType);
+      if (rotating) {
+        return {
+          ...rotating,
+          is_natural_whole_food: true,
+          has_7day_variety: true,
+        };
+      }
+
+      // 3. Fallback: Active AI Hybrid Plan (if slot not covered in rotating menu)
       const aiMeal = findAiMealForSlot(mType, slotIdx, ALL_MEAL_TYPES, aiMeals);
 
       if (aiMeal) {
@@ -1707,6 +1836,7 @@ export class NutritionService {
           const multiplier = part.multiplier || 1;
           const isItemCore = isCoreProvided && (
             reference?.name?.includes("Provided Core") ||
+            reference?.name?.includes("Core Meal") ||
             /\b(?:pg|hostel|mess|provided core|provided meal|core meal)\b/i.test(part.name)
           );
 
@@ -1722,27 +1852,36 @@ export class NutritionService {
         // Proportional scale factor so the meal strictly hits slotTargetCalories
         const scaleFactor = unscaledTotalCalories > 0 ? (slotTargetCalories / unscaledTotalCalories) : 1;
 
-        // 2. Scale each item proportionally
+        // 2. Scale each item proportionally (protecting discrete items)
         const mealPlanItems = unscaledItems.map((it, index) => {
-          const scaledCalories = Math.round(it.cals * scaleFactor);
-          const scaledProtein = Number((it.pro * scaleFactor).toFixed(1));
-          const scaledCarbs = Number((it.carbs * scaleFactor).toFixed(1));
-          const scaledFat = Number((it.fat * scaleFactor).toFixed(1));
-          const scaledCost = it.isItemCore ? 0 : Math.round(it.cost * scaleFactor);
+          const foodNameLower = (it.reference?.name || it.part.name).toLowerCase();
+          const isDiscrete = /(?:egg|banana|apple|fruit|chapati|roti|bread|cheela)/i.test(foodNameLower);
+
+          const scaledCalories = isDiscrete ? it.cals : Math.round(it.cals * scaleFactor);
+          const scaledProtein = isDiscrete ? it.pro : Number((it.pro * scaleFactor).toFixed(1));
+          const scaledCarbs = isDiscrete ? it.carbs : Number((it.carbs * scaleFactor).toFixed(1));
+          const scaledFat = isDiscrete ? it.fat : Number((it.fat * scaleFactor).toFixed(1));
+          const scaledCost = it.isItemCore ? 0 : Math.round(it.cost * (isDiscrete ? 1 : scaleFactor));
 
           let servingDisplay = it.part.servingSize || it.reference?.serving_size || '1 serving';
-          if (Math.abs(scaleFactor - 1) > 0.15 && it.reference?.serving_size) {
+          if (!isDiscrete && Math.abs(scaleFactor - 1) > 0.15 && it.reference?.serving_size) {
             const scaledMult = Number((it.multiplier * scaleFactor).toFixed(1));
             if (scaledMult > 0) {
               servingDisplay = `${scaledMult > 1 ? scaledMult + '× ' : (scaledMult < 1 ? scaledMult + ' ' : '')}${it.reference.serving_size}`;
             }
           }
 
+          let displayName = it.reference?.name || it.part.name;
+          if (it.isItemCore || displayName.includes("Provided Core")) {
+            displayName = "Mess Core Meal (Rice, Dal & Sabzi)";
+            servingDisplay = "1 Plate";
+          }
+
           return {
             id: `ai-item-${mType}-${index}`,
             quantity: 1,
             foods: {
-              name: it.reference?.name || it.part.name,
+              name: displayName,
               category: it.reference?.category || mType,
               serving_size: servingDisplay,
               calories: scaledCalories,
@@ -1773,16 +1912,6 @@ export class NutritionService {
           is_ai_generated: true,
           is_natural_whole_food: true,
           meal_plan_items: mealPlanItems
-        };
-      }
-
-      // 3. Fallback: True 7-Day Rotating Menu (when user does not have an active AI plan or slot not present)
-      const rotating = rotatingPlans.get(mType);
-      if (rotating) {
-        return {
-          ...rotating,
-          is_natural_whole_food: true,
-          has_7day_variety: true,
         };
       }
 
