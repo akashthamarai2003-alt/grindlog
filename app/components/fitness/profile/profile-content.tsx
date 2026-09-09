@@ -35,6 +35,9 @@ import {
   Loader2,
   ShoppingCart,
   Headphones,
+  FileText,
+  HeartPulse,
+  ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -647,6 +650,42 @@ export function ProfileContent({
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-amber-400 transition-colors" />
+            </Link>
+
+            {/* Terms & Health Disclaimer */}
+            <Link 
+              href="/terms"
+              prefetch={true}
+              className="p-4 flex items-center justify-between hover:bg-white/5 active:bg-white/10 active:scale-[0.99] transition-all group duration-75"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-rose-400">
+                  <HeartPulse className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Terms & Health Disclaimer</p>
+                  <p className="text-xs text-gray-400">Exercise safety, medical disclaimers & platform terms</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-rose-400 transition-colors" />
+            </Link>
+
+            {/* Refund Policy */}
+            <Link 
+              href="/refund"
+              prefetch={true}
+              className="p-4 flex items-center justify-between hover:bg-white/5 active:bg-white/10 active:scale-[0.99] transition-all group duration-75"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#1A2619] flex items-center justify-center text-red-400">
+                  <ShieldAlert className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Refund Policy</p>
+                  <p className="text-xs text-gray-400">Strictly non-refundable digital membership terms</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-red-400 transition-colors" />
             </Link>
 
             {/* Sign Out Button */}

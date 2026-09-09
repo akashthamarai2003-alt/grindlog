@@ -434,6 +434,21 @@ export function BillingManagementClient({
               <span>Contact Support Desk →</span>
             </Link>
           </div>
+
+          {/* Legal & Policy Links */}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-gray-500 font-semibold pt-2">
+            <Link href="/terms" className="hover:text-gray-300 transition-colors">
+              Terms & Health Disclaimer
+            </Link>
+            <span>•</span>
+            <Link href="/refund" className="hover:text-gray-300 transition-colors">
+              Refund Policy (Non-Refundable)
+            </Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:text-gray-300 transition-colors">
+              Privacy Policy
+            </Link>
+          </div>
         </div>
       </div>
     </>
