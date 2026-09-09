@@ -1,38 +1,81 @@
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { Users, Activity, CreditCard, Sparkles } from "lucide-react";
+import FitnessTableClient, { FitnessUserDetails } from "./fitness-table-client";
+
+export const dynamic = "force-dynamic";
 
 export default async function FitnessAdminDashboard() {
   const supabase = createAdminClient();
 
-  // Fetch metrics in parallel
-  const [
-    { count: usersCount },
-    { count: activeSubsCount },
-    { count: proCount },
-    { count: aiSessionsCount }
-  ] = await Promise.all([
-    supabase.from("fitness_os_profiles").select("*", { count: "exact", head: true }),
-    supabase.from("fitness_os_subscriptions").select("*", { count: "exact", head: true }).eq("status", "active"),
-    supabase.from("fitness_os_subscriptions").select("*", { count: "exact", head: true }).eq("status", "active").eq("plan", "pro"),
-    supabase.from("fitness_os_ai_sessions").select("*", { count: "exact", head: true })
-  ]);
+  // 1. Fetch fitness profiles ordered by newest first
+  const { data: fitnessProfilesRaw } = await supabase
+    .from("fitness_os_profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const fitnessProfiles = fitnessProfilesRaw || [];
+
+  // 2. Fetch AI sessions count
+  const { count: aiSessionsCount } = await supabase
+    .from("fitness_os_ai_sessions")
+    .select("*", { count: "exact", head: true });
+
+  // 3. Fetch user IDs to fetch user profiles and subscriptions
+  const userIds = fitnessProfiles.map((p) => p.user_id).filter(Boolean);
+
+  let profilesMap = new Map<string, { display_name?: string | null; email?: string | null }>();
+  let subscriptionsMap = new Map<string, { plan?: string; status?: string; current_period_end?: string }>();
+
+  if (userIds.length > 0) {
+    const [profilesRes, subsRes] = await Promise.all([
+      supabase.from("profiles").select("id, display_name, email").in("id", userIds),
+      supabase.from("fitness_os_subscriptions").select("user_id, plan, status, current_period_end").in("user_id", userIds),
+    ]);
+
+    if (profilesRes.data) {
+      profilesRes.data.forEach((p) => {
+        profilesMap.set(p.id, { display_name: p.display_name, email: p.email });
+      });
+    }
+
+    if (subsRes.data) {
+      subsRes.data.forEach((sub) => {
+        subscriptionsMap.set(sub.user_id, {
+          plan: sub.plan,
+          status: sub.status,
+          current_period_end: sub.current_period_end,
+        });
+      });
+    }
+  }
+
+  // Calculate metrics accurately
+  const totalUsers = fitnessProfiles.length;
+  const activeSubsCount = fitnessProfiles.filter(
+    (p) => p.fitness_is_premium || subscriptionsMap.get(p.user_id)?.status === "active"
+  ).length;
+  const proSubscribersCount = fitnessProfiles.filter(
+    (p) =>
+      (p.fitness_is_premium && (p.fitness_premium_tier === "pro" || p.fitness_premium_level === "pro" || p.fitness_premium_tier === "monthly")) ||
+      subscriptionsMap.get(p.user_id)?.plan === "pro"
+  ).length;
 
   const metrics = [
     {
       name: "Total Fitness Users",
-      value: usersCount || 0,
+      value: totalUsers,
       icon: Users,
       color: "bg-blue-500",
     },
     {
       name: "Active Subscriptions",
-      value: activeSubsCount || 0,
+      value: activeSubsCount,
       icon: Activity,
-      color: "bg-green-500",
+      color: "bg-emerald-500",
     },
     {
       name: "Pro Subscribers",
-      value: proCount || 0,
+      value: proSubscribersCount,
       icon: CreditCard,
       color: "bg-purple-500",
     },
@@ -44,51 +87,110 @@ export default async function FitnessAdminDashboard() {
     },
   ];
 
-  // Fetch recent fitness profiles with their user details
-  const { data: recentProfiles } = await supabase
-    .from("fitness_os_profiles")
-    .select(`
-      user_id,
-      created_at,
-      profiles (
-        display_name,
-        email
-      )
-    `)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  // Map user data into comprehensive FitnessUserDetails
+  const fitnessUsers: FitnessUserDetails[] = fitnessProfiles.map((fp) => {
+    const ob = (fp.onboarding_data as Record<string, any>) || {};
+    const mainProf = profilesMap.get(fp.user_id);
+    const sub = subscriptionsMap.get(fp.user_id);
 
-  // Fetch their subscriptions
-  const userIds = recentProfiles?.map(p => p.user_id) || [];
-  let subscriptionsMap: Record<string, { plan: string; status: string }> = {};
-  
-  if (userIds.length > 0) {
-    const { data: subs } = await supabase
-      .from("fitness_os_subscriptions")
-      .select("user_id, plan, status")
-      .in("user_id", userIds);
-      
-    if (subs) {
-      subscriptionsMap = subs.reduce((acc, sub) => {
-        acc[sub.user_id] = { plan: sub.plan, status: sub.status };
-        return acc;
-      }, {} as Record<string, { plan: string; status: string }>);
-    }
-  }
+    const rawName = fp.name || ob.name || mainProf?.display_name || "Member";
+    const cleanName = String(rawName).trim() || "Member";
 
-  const recentUsers = recentProfiles?.map(p => ({
-    id: p.user_id,
-    display_name: Array.isArray(p.profiles) ? p.profiles[0]?.display_name : (p.profiles as any)?.display_name,
-    email: Array.isArray(p.profiles) ? p.profiles[0]?.email : (p.profiles as any)?.email,
-    created_at: p.created_at,
-    subscription: subscriptionsMap[p.user_id] || null
-  })) || [];
+    const email = mainProf?.email || ob.email || "No email";
+    const gender = fp.gender || ob.gender || "Not specified";
+    const age = fp.age || ob.age || "-";
+    const language = fp.preferred_language || ob.preferred_language || "English";
+    const country = (fp.country || ob.country || "Global").trim() || "Global";
+
+    const goal = fp.goal || ob.goal || "-";
+    const fitnessLevel = fp.fitness_level || ob.fitness_level || "-";
+    const height = fp.height || ob.height || "-";
+    const weight = fp.weight || ob.weight || "-";
+    const targetWeight = fp.target_weight || ob.target_weight || "-";
+    const bmi = fp.bmi || ob.bmi || "-";
+
+    const dietPreference = fp.diet_preference || ob.food_type || ob.diet_preference || "-";
+    const foodEnvironment = fp.food_environment || ob.food_environment || "-";
+    const nutritionBudget = fp.nutrition_budget || ob.nutrition_budget || "-";
+    const mealsPerDay = fp.meals_per_day || ob.meals_per_day || "-";
+
+    const trainingLocation = fp.training_location || ob.training_location || "-";
+    const equipment = Array.isArray(fp.equipment) && fp.equipment.length > 0
+      ? fp.equipment
+      : Array.isArray(ob.equipment)
+      ? ob.equipment
+      : [];
+
+    const trainingDaysPerWeek = fp.training_days_per_week || ob.training_days_per_week || "-";
+    const workoutDurationMinutes = fp.workout_duration_minutes || ob.workout_duration_minutes || "-";
+    const preferredTrainingTime = fp.preferred_training_time || ob.preferred_training_time || "-";
+
+    const physicalProblems = Array.isArray(fp.physical_problems) && fp.physical_problems.length > 0
+      ? fp.physical_problems
+      : Array.isArray(ob.physical_problems)
+      ? ob.physical_problems
+      : [];
+
+    const exerciseLimitations = Array.isArray(fp.exercise_limitations) && fp.exercise_limitations.length > 0
+      ? fp.exercise_limitations
+      : Array.isArray(ob.exercise_limitations)
+      ? ob.exercise_limitations
+      : [];
+
+    const currentPainSeverity = fp.current_pain_severity ?? ob.current_pain_severity;
+    const sleepDuration = fp.sleep_duration || ob.sleep_duration || "-";
+    const dailySteps = fp.daily_steps || ob.daily_steps || "-";
+
+    const isPremium = Boolean(fp.fitness_is_premium || sub?.status === "active");
+    const premiumTier = fp.fitness_premium_tier || sub?.plan || "monthly";
+    const premiumLevel = fp.fitness_premium_level || sub?.plan || "pro";
+    const premiumExpiresAt = fp.fitness_premium_expires_at || sub?.current_period_end;
+
+    return {
+      userId: fp.user_id,
+      name: cleanName,
+      email,
+      gender,
+      age,
+      language,
+      country,
+      goal,
+      fitnessLevel,
+      height,
+      weight,
+      targetWeight,
+      bmi,
+      dietPreference,
+      foodEnvironment,
+      nutritionBudget,
+      mealsPerDay,
+      trainingLocation,
+      equipment,
+      trainingDaysPerWeek,
+      workoutDurationMinutes,
+      preferredTrainingTime,
+      physicalProblems,
+      exerciseLimitations,
+      currentPainSeverity,
+      sleepDuration,
+      dailySteps,
+      isPremium,
+      premiumTier,
+      premiumLevel,
+      premiumExpiresAt,
+      joinedAt: fp.created_at,
+    };
+  });
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Fitness AI OS Overview</h1>
-        <p className="text-gray-500">Welcome to the isolated Fitness Admin control panel.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Fitness AI OS Overview</h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            Monitor and review all onboarded fitness members, their physical profiles, and training plans.
+          </p>
+        </div>
       </div>
 
       {/* Metrics Grid */}
@@ -108,78 +210,8 @@ export default async function FitnessAdminDashboard() {
         ))}
       </div>
 
-      {/* Recent Users Section */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Recent Fitness Signups</h2>
-        </div>
-
-        {/* Mobile View: Cards */}
-        <div className="block sm:hidden divide-y divide-gray-100">
-          {recentUsers.map((user) => (
-            <div key={user.id} className="p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm text-gray-900">{user.display_name || "Unnamed"}</span>
-                {user.subscription && user.subscription.status === 'active' ? (
-                  user.subscription.plan === "pro" ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800">Pro</span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">Starter</span>
-                  )
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-800">No Active Sub</span>
-                )}
-              </div>
-              <div className="text-xs text-gray-500 truncate">{user.email}</div>
-              <div className="text-[11px] text-gray-400">Joined: {new Date(user.created_at).toLocaleDateString()}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop View: Table */}
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-              <tr>
-                <th className="px-6 py-3">Name</th>
-                <th className="px-6 py-3">Email</th>
-                <th className="px-6 py-3">Fitness Plan</th>
-                <th className="px-6 py-3">Joined OS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentUsers.map((user) => (
-                <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {user.display_name || "Unnamed"}
-                  </td>
-                  <td className="px-6 py-4">{user.email}</td>
-                  <td className="px-6 py-4">
-                    {user.subscription && user.subscription.status === 'active' ? (
-                      user.subscription.plan === "pro" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          Pro
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                          Starter
-                        </span>
-                      )
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {user.subscription?.status || "None"}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Fitness Members Table & Detail Modal */}
+      <FitnessTableClient users={fitnessUsers} />
     </div>
   );
 }
