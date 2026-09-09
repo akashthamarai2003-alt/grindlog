@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { generateDeterministicNutritionPlan, convertToAIPlanFormat } from "@/lib/fitness/nutrition/nutrition-engine";
+import { buildHybridNutritionPrompt, mergeHybridNutrition } from "@/lib/fitness/nutrition/hybrid-merger";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import {
   FITNESS_PLAN_MODEL,
@@ -221,14 +223,27 @@ export async function POST(req: Request) {
         try {
           console.log(`Fitness AI Generation Attempt ${attempt}...`);
           const isPro = subscriptionPlan.id === "pro";
+
+          // Step A: Generate deterministic nutrition plan (60% Math Ground Truth)
+          let deterministicNutrition = null;
+          if (isPro) {
+            try {
+              const nutritionPlan = await generateDeterministicNutritionPlan(profile);
+              deterministicNutrition = convertToAIPlanFormat(nutritionPlan);
+            } catch (nutritionErr) {
+              console.warn("Deterministic nutrition generation failed, AI will handle nutrition:", nutritionErr);
+            }
+          }
+
+          // Step B: AI generates workouts + 40% culinary & coaching nutrition layer
           const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}\n\n${isPro ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`,
+            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}${deterministicNutrition ? `\n\n${buildHybridNutritionPrompt(deterministicNutrition)}` : `\n\n${isPro ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`}`,
             userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
             model: FITNESS_PLAN_MODEL,
-            maxTokens: isPro ? 10000 : 4500,
-            minimumOutputTokens: isPro ? 10000 : 4500,
-            reasoningEffort: isPro ? "medium" : "low",
-            promptCacheKey: isPro ? "fitness-plan-pro-v3" : "fitness-plan-core-v2",
+            maxTokens: deterministicNutrition ? (isPro ? 8500 : 3500) : (isPro ? 10000 : 4500),
+            minimumOutputTokens: deterministicNutrition ? (isPro ? 6000 : 3500) : (isPro ? 10000 : 4500),
+            reasoningEffort: deterministicNutrition ? "low" : (isPro ? "medium" : "low"),
+            promptCacheKey: deterministicNutrition ? "fitness-plan-hybrid-v1" : (isPro ? "fitness-plan-pro-v3" : "fitness-plan-core-v2"),
             temperature: 0.2,
             jsonSchema: {
               name: "fitness_plan",
@@ -285,8 +300,17 @@ export async function POST(req: Request) {
             continue;
           }
 
+          // 60% Code Math + 40% AI Hybrid Nutrition Merge
+          let mergedPlan = profileCheck.plan;
+          if (deterministicNutrition && mergedPlan.nutrition) {
+            mergedPlan = {
+              ...mergedPlan,
+              nutrition: mergeHybridNutrition(candidatePlan.nutrition, deterministicNutrition),
+            };
+          }
+
           planData = applyFitnessPlanEntitlements(
-            enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []),
+            enrichPlanWithFoodLibrary(mergedPlan, foodCatalog || []),
             subscriptionPlan.id,
           );
           break; // Success!
