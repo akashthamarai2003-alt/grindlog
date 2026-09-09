@@ -131,12 +131,82 @@ function findFoodReference(name: string, catalog: NutritionFoodReference[], food
 }
 
 function sanitizeAIItemName(name: string, isVegan?: boolean, isVegetarian?: boolean): string {
-  const cleaned = String(name || '').trim();
+  let cleaned = String(name || '').trim();
+  if (!cleaned) return cleaned;
+
   if (/\b(?:whey|casein|pea\s*protein|plant\s*protein|protein\s*powder|protein\s*shake|mass\s*gainer)\b/i.test(cleaned)) {
-    if (isVegan) return "Tofu (Firm)";
+    if (isVegan) return "Soy Chunks (Cooked)";
     if (isVegetarian) return "Low Fat Paneer";
     return "Boiled Eggs (2 pieces)";
   }
+
+  if (isVegan) {
+    if (/\b(?:palak\s*paneer|paneer\s*bhurji|paneer\s*tikka|paneer|cottage\s*cheese)\b/i.test(cleaned)) {
+      return "Soy Chunks (Cooked)";
+    }
+    if (/\b(?:curd|dahi|yogurt|raita)\b/i.test(cleaned)) {
+      return "Mixed Vegetables";
+    }
+    if (/\b(?:whole\s*milk|toned\s*milk|cow\s*milk|buffalo\s*milk|milk|chaas|buttermilk|lassi)\b/i.test(cleaned)) {
+      return "Apple";
+    }
+    if (/\b(?:egg\s*bhurji|boiled\s*egg|egg\s*white|egg|eggs|omelette)\b/i.test(cleaned)) {
+      return "Soy Chunks (Cooked)";
+    }
+    if (/\b(?:chicken\s*breast|chicken\s*curry|chicken|fish\s*curry|fish|mutton|meat|beef|pork|prawn|shrimp)\b/i.test(cleaned)) {
+      return "Soy Chunks (Cooked)";
+    }
+    if (/\b(?:ghee|butter|cheese)\b/i.test(cleaned)) {
+      return "Roasted Peanuts";
+    }
+  } else if (isVegetarian) {
+    if (/\b(?:egg\s*bhurji|boiled\s*egg|egg\s*white|egg|eggs|omelette)\b/i.test(cleaned)) {
+      return "Paneer Tikka";
+    }
+    if (/\b(?:chicken|fish|mutton|meat|beef|pork|prawn|shrimp)\b/i.test(cleaned)) {
+      return "Paneer Tikka";
+    }
+  }
+
+  return cleaned;
+}
+
+function sanitizeMealTitle(title: string, isVegan?: boolean, isVegetarian?: boolean): string {
+  let cleaned = String(title || '').trim();
+  if (!cleaned) return cleaned;
+
+  if (isVegan) {
+    cleaned = cleaned
+      .replace(/\bPalak Paneer\b/gi, 'Light Dal Tadka')
+      .replace(/\b(?:Paneer|Egg)\s*Bhurji\b/gi, 'Savory Soya')
+      .replace(/\bPaneer Tikka\b/gi, 'Soy Chunks')
+      .replace(/\bPaneer\b/gi, 'Soya')
+      .replace(/\bBoiled Eggs?\b/gi, 'Roasted Peanuts')
+      .replace(/\bEggs?\b/gi, 'Soya')
+      .replace(/\bBhurji\b/gi, 'Savory Soya')
+      .replace(/\bChicken (?:Curry|Breast)?\b/gi, 'Soya Curry')
+      .replace(/\bFish Curry\b/gi, 'Dal Tadka')
+      .replace(/\bRohu Fish Curry\b/gi, 'Dal Tadka')
+      .replace(/\bWhole Milk\b/gi, 'Peanuts')
+      .replace(/\bMilk\b/gi, 'Peanuts')
+      .replace(/\bFresh Curd\b/gi, 'Salad')
+      .replace(/\bCooling Dahi\b/gi, 'Salad')
+      .replace(/\bDahi\b/gi, 'Salad')
+      .replace(/\bCurd\b/gi, 'Salad')
+      .replace(/&\s*Salad/gi, '& Salad')
+      .replace(/with\s*Salad/gi, 'with Salad')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  } else if (isVegetarian) {
+    cleaned = cleaned
+      .replace(/\bChicken (?:Curry|Breast)?\b/gi, 'Paneer Tikka')
+      .replace(/\b(?:Rohu\s*)?Fish Curry\b/gi, 'Paneer Tikka')
+      .replace(/\bEgg Bhurji\b/gi, 'Paneer Bhurji')
+      .replace(/\bBoiled Eggs?\b/gi, 'Paneer Tikka')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
   return cleaned;
 }
 
@@ -974,7 +1044,8 @@ export class NutritionService {
     mealType: string,
     title: string,
     dayOfWeek: number,
-    foodEnv?: string
+    foodEnv?: string,
+    dietPref?: string
   ): string {
     const rawEnv = (foodEnv || "PG").trim();
     const envLower = rawEnv.toLowerCase();
@@ -1002,27 +1073,79 @@ export class NutritionService {
       roomLabel = "office";
     }
 
+    const rawDiet = (dietPref || '').toLowerCase();
+    const isVegan = rawDiet.includes('vegan');
+    const isNonVeg = !isVegan && (rawDiet.includes('non') || rawDiet.includes('meat') || rawDiet.includes('chicken') || rawDiet.includes('fish'));
+    const isEggetarian = !isVegan && !isNonVeg && (rawDiet.includes('egg') || rawDiet.includes('eggetarian'));
+    const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
+
     const isRoomLiving = envName === "PG" || envName === "Hostel";
     const tLower = title.toLowerCase();
 
     if (mealType === "breakfast") {
       if (tLower.includes("idli") || tLower.includes("dosa") || tLower.includes("pongal")) {
+        if (isVegan) {
+          return isRoomLiving
+            ? `${hackLabel}: Enjoy freshly steamed ${messLabel} idli/dosa with hot sambar. Top with crunchy roasted peanuts and a fresh fruit for clean plant energy.`
+            : "Enjoy warm steamed idli/dosa with homemade dal sambar. Pair with roasted peanuts or fresh fruit for clean plant-powered energy.";
+        }
+        if (isVegetarian) {
+          return isRoomLiving
+            ? `${hackLabel}: Enjoy freshly steamed ${messLabel} idli/dosa with sambar. Pair with fresh curd or paneer for an optimal morning protein anchor.`
+            : "Enjoy warm steamed idli/dosa with homemade dal sambar. Pair with fresh curd or paneer for an optimal morning protein anchor.";
+        }
         return isRoomLiving
           ? `${hackLabel}: Enjoy freshly steamed ${messLabel} idli/dosa with sambar. Boil 2–3 eggs using an electric kettle in your ${roomLabel} or request hard-boiled eggs from the ${messLabel} kitchen. Season with roasted jeera, black pepper, and rock salt.`
           : "Enjoy warm steamed idli/dosa with homemade dal sambar. Pair with boiled farm eggs or paneer for an optimal 25–30g morning protein anchor.";
       }
       if (tLower.includes("poha") || tLower.includes("upma")) {
+        if (isVegan) {
+          return isRoomLiving
+            ? `${hackLabel}: Request a warm bowl of ${messLabel} poha/upma; top with crunchy roasted peanuts and squeeze fresh lemon juice (vitamin C dramatically boosts non-heme iron absorption).`
+            : "Cook homestyle poha/upma with mustard seeds, curry leaves, and crunchy peanuts. Squeeze fresh lemon for vitamin C absorption.";
+        }
+        if (isVegetarian) {
+          return isRoomLiving
+            ? `${hackLabel}: Request a warm bowl of ${messLabel} poha/upma; top with crunchy roasted peanuts, squeeze fresh lemon, and pair with fresh curd.`
+            : "Cook homestyle poha/upma with mustard seeds, curry leaves, and crunchy peanuts. Squeeze fresh lemon and pair with fresh curd.";
+        }
         return isRoomLiving
           ? `${hackLabel}: Request a warm bowl of ${messLabel} poha/upma; top with crunchy roasted peanuts and squeeze fresh lemon juice (vitamin C dramatically boosts non-heme iron absorption). Pair with boiled eggs.`
           : "Cook homestyle poha/upma with mustard seeds, curry leaves, and crunchy peanuts. Squeeze fresh lemon and pair with boiled eggs or curd.";
       }
       if (tLower.includes("oats")) {
+        if (isVegan) {
+          return isRoomLiving
+            ? `${hackLabel}: Soak rolled oats in hot water in your ${roomLabel} for 5 minutes. Fold in sliced banana, roasted peanuts, and a dash of cinnamon.`
+            : "Cook rolled oats in hot water or soy milk for 3–5 minutes. Top with fresh banana slices, apple, and roasted peanuts for sustained morning energy.";
+        }
+        if (isVegetarian) {
+          return isRoomLiving
+            ? `${hackLabel}: Soak rolled oats in hot water or warm milk in your ${roomLabel} for 5 minutes. Fold in sliced banana, roasted peanuts, and a dash of cinnamon.`
+            : "Cook rolled oats in warm toned milk for 3–5 minutes. Top with fresh banana slices and roasted peanuts for steady energy.";
+        }
         return isRoomLiving
           ? `${hackLabel}: Soak rolled oats in hot water or warm milk in your ${roomLabel} for 5 minutes. Fold in sliced banana, roasted peanuts, and a dash of cinnamon. Eat with boiled eggs.`
           : "Cook rolled oats in warm toned milk for 3–5 minutes. Top with fresh banana slices and roasted peanuts. Pair with farm eggs for 4 hours of steady energy.";
       }
       if (tLower.includes("cheela") || tLower.includes("bhurji")) {
+        if (isVegan) {
+          return "High-protein breakfast: Cook besan/moong dal cheela or soya bhurji with minimal oil on a tawa. Serve with fresh mint chutney.";
+        }
+        if (isVegetarian) {
+          return "High-protein breakfast: Cook cheela or paneer bhurji with minimal oil on a tawa. Serve with fresh cooling curd or mint chutney.";
+        }
         return "High-protein breakfast: Cook cheela or egg/paneer bhurji with minimal oil on a tawa. Serve with fresh cooling curd or mint chutney.";
+      }
+      if (isVegan) {
+        return isRoomLiving
+          ? `${envName} Breakfast: Pair warm phulkas or toast with boiled soya chunks or peanuts and fresh fruit.`
+          : "Homestyle whole food breakfast: Enjoy warm phulkas or toast with plant protein and fresh fruit.";
+      }
+      if (isVegetarian) {
+        return isRoomLiving
+          ? `${envName} Breakfast: Pair warm phulkas or toast with paneer tikka or curd, accompanied by fresh fruit.`
+          : "Homestyle whole food breakfast: Enjoy warm phulkas or toast with fresh paneer tikka, accompanied by fresh fruit.";
       }
       return isRoomLiving
         ? `${envName} Kettle Hack: Hard-boil farm eggs using an electric kettle in your ${roomLabel}. Season with chaat masala, roasted cumin, and black pepper. Pair with whole wheat toast.`
@@ -1036,12 +1159,30 @@ export class NutritionService {
           : "Lean athletic lunch: Pair homestyle chicken curry or fish with steamed rice, yellow dal, and a fresh kachumber salad.";
       }
       if (tLower.includes("rajma") || tLower.includes("chana")) {
+        if (isVegan) {
+          return "High-protein comfort thali: Pair slow-cooked kidney beans/chickpeas with steamed rice or phulkas. Eat with fresh lemon and kachumber salad for optimal plant iron absorption.";
+        }
         return "High-protein comfort thali: Pair slow-cooked kidney beans/chickpeas with steamed rice or phulkas. Eat with cooling dahi/curd for optimal gut digestion.";
       }
       if (tLower.includes("soya")) {
+        if (isVegan) {
+          return isRoomLiving
+            ? `${envName} Soya Hack: Soak 50g soya chunks in kettle-boiled hot water with salt for 10 minutes. Squeeze out water thoroughly to remove any raw taste, then fold into hot ${messLabel} dal or sabzi.`
+            : "High-protein soya lunch: Sauté soaked soya chunks with onion, tomatoes, and garam masala. Serve with phulkas and fresh cucumber salad.";
+        }
         return isRoomLiving
           ? `${envName} Soya Hack: Soak 50g soya chunks in kettle-boiled hot water with salt for 10 minutes. Squeeze out water thoroughly to remove any raw taste, then fold into hot ${messLabel} dal or sabzi.`
           : "High-protein soya lunch: Sauté soaked soya chunks with onion, tomatoes, and garam masala. Serve with phulkas and cooling cucumber curd.";
+      }
+      if (isVegan) {
+        return isRoomLiving
+          ? `${envName} Lunch: Take your standard ${messLabel} rice, dal tadka, and seasonal sabzi. Top with soaked soya chunks and a crisp fresh salad.`
+          : "Balanced vegan lunch: Pair yellow dal tadka, steamed rice, soya chunks or chana, and a crisp fresh cucumber-tomato salad.";
+      }
+      if (isVegetarian) {
+        return isRoomLiving
+          ? `${envName} Lunch: Take your standard ${messLabel} rice, dal tadka, and seasonal sabzi. Top with fresh curd and paneer.`
+          : "Balanced lunch: Pair yellow dal tadka, steamed rice, paneer, and a crisp fresh cucumber-tomato salad.";
       }
       return isRoomLiving
         ? `${envName} Lunch: Take your standard ${messLabel} rice, dal tadka, and seasonal sabzi. Top with fresh curd and your planned protein anchor.`
@@ -1060,7 +1201,20 @@ export class NutritionService {
 
     if (mealType === "dinner") {
       if (tLower.includes("khichdi")) {
+        if (isVegan) {
+          return "Soothing Recovery Dinner: Light moong dal khichdi paired with a crisp fresh salad, squeeze of lemon, and roasted jeera for easy digestion.";
+        }
         return "Soothing Recovery Dinner: Light moong dal khichdi paired with cooling probiotic dahi and a pinch of roasted jeera to aid overnight gut repair.";
+      }
+      if (isVegan) {
+        return isRoomLiving
+          ? `${envName} Dinner: Enjoy 2–3 warm phulkas with ${messLabel} dal and green sabzi. Pair with fresh seasonal fruit or salad to support overnight recovery.`
+          : "Restorative Vegan Dinner: Warm whole wheat phulkas with yellow dal tadka, lightly spiced seasonal sabzi, and fresh fruit.";
+      }
+      if (isVegetarian) {
+        return isRoomLiving
+          ? `${envName} Dinner: Enjoy 2–3 warm phulkas with ${messLabel} dal and green sabzi. Finish with a bowl of cooling curd to support overnight muscle protein synthesis.`
+          : "Restorative Dinner: Warm whole wheat phulkas with yellow dal tadka, lightly spiced sabzi, and cooling curd seasoned with roasted cumin.";
       }
       return isRoomLiving
         ? `${envName} Dinner: Enjoy 2–3 warm phulkas with ${messLabel} dal and green sabzi. Finish with a bowl of cooling curd to support overnight muscle protein synthesis.`
@@ -1086,10 +1240,10 @@ export class NutritionService {
     weekCycle: number = 0 // 0 = Week A, 1 = Week B (Bi-weekly variety rotation)
   ): Map<string, any> {
     const plansMap = new Map<string, any>();
-    const rawDiet = (profile?.diet_preference || profile?.food_type || 'balanced').toLowerCase();
-    const isVegan = rawDiet.includes('vegan');
-    const isNonVeg = !isVegan && (rawDiet.includes('non') || rawDiet.includes('meat') || rawDiet.includes('chicken') || rawDiet.includes('fish'));
-    const isEggetarian = !isVegan && !isNonVeg && (rawDiet.includes('egg') || rawDiet.includes('eggetarian'));
+    const combinedDiet = `${profile?.diet_preference || ''} ${profile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
+    const isVegan = combinedDiet.includes('vegan');
+    const isNonVeg = !isVegan && (combinedDiet.includes('non') || combinedDiet.includes('meat') || combinedDiet.includes('chicken') || combinedDiet.includes('fish'));
+    const isEggetarian = !isVegan && !isNonVeg && (combinedDiet.includes('egg') || combinedDiet.includes('eggetarian'));
     const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
 
     const foodEnv = (profile?.food_environment || 'Home').toLowerCase();
@@ -1114,7 +1268,22 @@ export class NutritionService {
           if (foodName.toLowerCase().includes('banana')) foodName = 'Apple';
           else if (foodName.toLowerCase().includes('peanut')) foodName = isVegan ? 'Soy Chunks (Cooked)' : 'Curd (Plain)';
           else if (foodName.toLowerCase().includes('milk')) foodName = isVegan ? 'Soy Chunks (Cooked)' : 'Curd (Plain)';
-          else if (foodName.toLowerCase().includes('egg')) foodName = 'Paneer Tikka';
+          else if (foodName.toLowerCase().includes('egg')) foodName = isVegan ? 'Soy Chunks (Cooked)' : 'Paneer Tikka';
+        }
+
+        // Strict dietary safety filter on every food item
+        if (isVegan) {
+          const fnLower = foodName.toLowerCase();
+          if (fnLower.includes('paneer') || fnLower.includes('curd') || fnLower.includes('dahi') || fnLower.includes('milk') || fnLower.includes('egg') || fnLower.includes('chicken') || fnLower.includes('fish') || fnLower.includes('meat')) {
+            if (fnLower.includes('curd') || fnLower.includes('dahi')) foodName = 'Mixed Vegetables';
+            else if (fnLower.includes('milk')) foodName = 'Apple';
+            else foodName = 'Soy Chunks (Cooked)';
+          }
+        } else if (isVegetarian) {
+          const fnLower = foodName.toLowerCase();
+          if (fnLower.includes('egg') || fnLower.includes('chicken') || fnLower.includes('fish') || fnLower.includes('meat')) {
+            foodName = 'Paneer Tikka';
+          }
         }
 
         const ref = findFoodReference(foodName, foodCatalog, profile?.food_environment);
@@ -1363,12 +1532,12 @@ export class NutritionService {
       return {
         id: `rotating-${mealType}-${dayOfWeek}`,
         meal_type: mealType,
-        name: title,
+        name: sanitizeMealTitle(title, isVegan, isVegetarian),
         calories: totals.calories || targetCals,
         protein: totals.protein,
         carbs: totals.carbs,
         fat: totals.fat,
-        prep_instructions: NutritionService.getPrepInstructionForSlot(mealType, title, dayOfWeek, profile?.food_environment),
+        prep_instructions: NutritionService.getPrepInstructionForSlot(mealType, title, dayOfWeek, profile?.food_environment, combinedDiet),
         is_natural_whole_food: true,
         has_7day_variety: true,
         meal_plan_items: scaledItems
@@ -1376,31 +1545,31 @@ export class NutritionService {
     };
 
     const breakfastTitles: Record<number, string> = {
-      0: isVegetarian ? 'Paneer Tikka with Warm Phulkas' : (isVegan ? 'Tofu & Phulkas' : 'Farm Boiled Eggs & Whole Wheat Toast'),
-      1: 'Creamy Rolled Oats with Milk & Banana',
+      0: isVegan ? 'Soy Chunks with Warm Phulkas' : (isVegetarian ? 'Paneer Tikka with Warm Phulkas' : 'Farm Boiled Eggs & Whole Wheat Toast'),
+      1: isVegan ? 'Warm Rolled Oats with Banana & Peanuts' : (isVegetarian ? 'Creamy Rolled Oats with Milk & Banana' : 'Rolled Oats with Milk, Eggs & Banana'),
       2: 'Homestyle Veggie Poha with Peanuts',
-      3: 'Steamed Idlis with Dal Sambar',
-      4: 'Roasted Veggie Upma with Peanuts',
-      5: 'Crispy Dosa with Dal Sambar',
-      6: 'Ven Pongal with Dal Sambar',
+      3: isVegan ? 'Steamed Idlis with Dal Sambar & Peanuts' : (isVegetarian ? 'Steamed Idlis with Dal Sambar & Curd' : 'Steamed Idlis with Dal Sambar & Eggs'),
+      4: isVegan ? 'Roasted Veggie Upma with Peanuts & Fruit' : (isVegetarian ? 'Roasted Veggie Upma with Milk & Peanuts' : 'Roasted Veggie Upma with Eggs & Milk'),
+      5: isVegan ? 'Crispy Dosa with Dal Sambar & Peanuts' : (isVegetarian ? 'Crispy Dosa with Dal Sambar & Milk' : 'Crispy Dosa with Dal Sambar & Eggs'),
+      6: isVegan ? 'Ven Pongal with Dal Sambar & Peanuts' : (isVegetarian ? 'Ven Pongal with Dal Sambar & Curd' : 'Ven Pongal with Dal Sambar & Eggs'),
     };
 
     const lunchTitles: Record<number, string> = {
-      0: isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Comfort Rajma Chawal & Curd',
-      1: isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Yellow Dal Tadka with Steamed Rice & Paneer',
-      2: 'Punjabi Chana Masala with Phulkas & Curd',
-      3: isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Comfort Rajma Chawal with Paneer & Salad',
-      4: isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Yellow Dal Tadka with Steamed Rice & Paneer',
-      5: isNonVeg ? 'Homestyle Chicken Curry with Phulkas' : 'High-Protein Chana Masala with Phulkas',
-      6: 'Yellow Dal Tadka with Steamed Rice & Salad',
+      0: isVegan ? 'Comfort Rajma Chawal with Soya & Veggies' : (isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Comfort Rajma Chawal & Curd'),
+      1: isVegan ? 'Yellow Dal Tadka with Steamed Rice & Soya' : (isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Yellow Dal Tadka with Steamed Rice & Paneer'),
+      2: isVegan ? 'Punjabi Chana Masala with Phulkas & Soya' : (isVegetarian ? 'Punjabi Chana Masala with Phulkas & Curd' : 'Punjabi Chana Masala with Phulkas & Eggs'),
+      3: isVegan ? 'Comfort Rajma Chawal with Soya & Salad' : (isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Comfort Rajma Chawal with Paneer & Salad'),
+      4: isVegan ? 'Yellow Dal Tadka with Steamed Rice & Chana' : (isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Yellow Dal Tadka with Steamed Rice & Paneer'),
+      5: isVegan ? 'High-Protein Chana Masala with Phulkas & Soya' : (isNonVeg ? 'Homestyle Chicken Curry with Phulkas' : 'High-Protein Chana Masala with Phulkas & Paneer'),
+      6: isVegan ? 'Yellow Dal Tadka with Steamed Rice & Soya' : (isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Yellow Dal Tadka with Steamed Rice & Paneer'),
     };
 
     const dinnerTitles: Record<number, string> = {
       0: 'Light Dal Tadka with Warm Phulkas',
       1: 'Homestyle Dal Tadka with Phulkas & Salad',
-      2: 'Steamed Rice with Dal Sambar & Curd',
+      2: isVegan ? 'Steamed Rice with Dal Sambar & Veggies' : 'Steamed Rice with Dal Sambar & Curd',
       3: 'Homestyle Dal Tadka with Phulkas & Aloo Sabzi',
-      4: 'Phulkas with Dal Sambar & Curd',
+      4: isVegan ? 'Phulkas with Dal Sambar & Soya Chunks' : (isVegetarian ? 'Phulkas with Dal Sambar & Paneer' : 'Phulkas with Dal Sambar & Eggs'),
       5: 'Comfort Rajma with Steamed Rice',
       6: 'Light Dal Tadka with Warm Phulkas',
     };
@@ -1504,40 +1673,46 @@ export class NutritionService {
       2: isVegan
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
         : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Bhurji', quantity: 0.7, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }],
-      3: [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }],
+      3: isVegan
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }],
       4: [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }],
-      5: [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
-      6: [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+      5: isVegan
+        ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Roasted Peanuts', quantity: 1, servingSize: '1 handful (30g)' }]
+        : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+      6: isVegan
+        ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
+        : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
     };
 
     const breakfastTitlesWeekB: Record<number, string> = {
-      0: isVegetarian ? 'Paneer Tikka with Warm Phulkas' : (isVegan ? 'Tofu & Phulkas' : 'Farm Boiled Eggs & Whole Wheat Toast'),
-      1: 'Besan Cheela with Fresh Curd & Chutney',
-      2: 'Moong Dal Cheela with Cucumber Salad',
-      3: isNonVeg || isEggetarian ? 'Desi Egg Bhurji with Warm Phulkas' : 'Paneer Bhurji with Warm Phulkas',
-      4: 'Homestyle Veggie Poha with Moong Sprouts',
-      5: 'Creamy Rolled Oats with Milk & Apple',
-      6: 'Steamed Idlis with Dal Sambar',
+      0: isVegan ? 'Soy Chunks with Warm Phulkas' : (isVegetarian ? 'Paneer Tikka with Warm Phulkas' : 'Farm Boiled Eggs & Whole Wheat Toast'),
+      1: isVegan ? 'Besan Cheela with Mint Chutney & Peanuts' : (isVegetarian ? 'Besan Cheela with Fresh Curd & Chutney' : 'Besan Cheela with Boiled Eggs & Chutney'),
+      2: isVegan ? 'Moong Dal Cheela with Cucumber Salad & Peanuts' : (isVegetarian ? 'Moong Dal Cheela with Cucumber Salad & Curd' : 'Moong Dal Cheela with Boiled Eggs'),
+      3: isVegan ? 'Savory Soya with Warm Phulkas' : (isNonVeg || isEggetarian ? 'Desi Egg Bhurji with Warm Phulkas' : 'Paneer Bhurji with Warm Phulkas'),
+      4: isVegan ? 'Homestyle Veggie Poha with Moong Sprouts & Peanuts' : (isVegetarian ? 'Homestyle Veggie Poha with Moong Sprouts & Curd' : 'Homestyle Veggie Poha with Moong Sprouts & Eggs'),
+      5: isVegan ? 'Warm Rolled Oats with Apple & Peanuts' : (isVegetarian ? 'Creamy Rolled Oats with Milk & Apple' : 'Rolled Oats with Milk, Eggs & Apple'),
+      6: isVegan ? 'Steamed Idlis with Dal Sambar & Peanuts' : (isVegetarian ? 'Steamed Idlis with Dal Sambar & Curd' : 'Steamed Idlis with Dal Sambar & Eggs'),
     };
 
     const lunchTitlesWeekB: Record<number, string> = {
-      0: isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Special Paneer Tikka with Jeera Rice',
-      1: isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'High-Protein Soya Matar Curry with Phulkas',
-      2: 'Punjabi Chana Masala with Jeera Rice & Dahi',
-      3: isNonVeg ? 'Dhaba Egg Curry with Hot Phulkas' : 'Yellow Dal Tadka with Phulkas & Paneer',
-      4: isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Comfort Rajma Chawal with Kachumber',
-      5: 'Yellow Dal Tadka with Steamed Rice & Paneer',
-      6: 'Punjabi Chana Masala with Phulkas & Salad',
+      0: isVegan ? 'Comfort Rajma Chawal with Soya & Veggies' : (isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Special Paneer Tikka with Jeera Rice'),
+      1: isVegan ? 'High-Protein Soya Matar Curry with Phulkas' : (isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'High-Protein Soya Matar Curry with Phulkas & Curd'),
+      2: isVegan ? 'Punjabi Chana Masala with Jeera Rice & Soya' : (isVegetarian ? 'Punjabi Chana Masala with Jeera Rice & Dahi' : 'Punjabi Chana Masala with Jeera Rice & Eggs'),
+      3: isVegan ? 'Yellow Dal Tadka with Phulkas & Soya' : (isNonVeg ? 'Dhaba Egg Curry with Hot Phulkas' : 'Yellow Dal Tadka with Phulkas & Paneer'),
+      4: isVegan ? 'Comfort Rajma Chawal with Soya & Kachumber' : (isNonVeg ? 'Homestyle Chicken Curry with Steamed Rice' : 'Comfort Rajma Chawal with Kachumber'),
+      5: isVegan ? 'Yellow Dal Tadka with Steamed Rice & Soya' : (isNonVeg ? 'Rohu Fish Curry with Steamed Rice' : 'Yellow Dal Tadka with Steamed Rice & Paneer'),
+      6: isVegan ? 'Punjabi Chana Masala with Phulkas & Soya' : (isVegetarian ? 'Punjabi Chana Masala with Phulkas & Paneer' : 'Punjabi Chana Masala with Phulkas & Eggs'),
     };
 
     const dinnerTitlesWeekB: Record<number, string> = {
       0: 'Light Dal Tadka with Warm Phulkas',
-      1: 'Moong Dal Khichdi with Cooling Dahi',
-      2: 'Paneer Bhurji with Warm Phulkas & Salad',
-      3: 'Palak Paneer with Hot Phulkas',
+      1: isVegan ? 'Moong Dal Khichdi with Cucumber Salad' : 'Moong Dal Khichdi with Cooling Dahi',
+      2: isVegan ? 'Savory Soya with Warm Phulkas & Salad' : 'Paneer Bhurji with Warm Phulkas & Salad',
+      3: isVegan ? 'Light Dal Tadka with Warm Phulkas & Veggies' : 'Palak Paneer with Hot Phulkas',
       4: 'Mixed Dal Khichdi with Cucumber Salad',
-      5: 'Light Dal Tadka with Steamed Rice & Curd',
-      6: 'Moong Dal Khichdi with Cooling Dahi',
+      5: isVegan ? 'Steamed Rice with Dal Sambar & Peanuts' : 'Light Dal Tadka with Steamed Rice & Curd',
+      6: isVegan ? 'Moong Dal Khichdi with Apple & Salad' : 'Moong Dal Khichdi with Cooling Dahi',
     };
 
     const isWeekB = weekCycle === 1;
@@ -1567,10 +1742,10 @@ export class NutritionService {
     targets: any,
     foodCatalog: NutritionFoodReference[]
   ) {
-    const rawDiet = (profile?.diet_preference || profile?.food_type || 'balanced').toLowerCase();
-    const isVegan = rawDiet.includes('vegan');
-    const isNonVeg = !isVegan && (rawDiet.includes('non') || rawDiet.includes('meat') || rawDiet.includes('chicken') || rawDiet.includes('fish'));
-    const isEggetarian = !isVegan && !isNonVeg && (rawDiet.includes('egg') || rawDiet.includes('eggetarian'));
+    const combinedDiet = `${profile?.diet_preference || ''} ${profile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
+    const isVegan = combinedDiet.includes('vegan');
+    const isNonVeg = !isVegan && (combinedDiet.includes('non') || combinedDiet.includes('meat') || combinedDiet.includes('chicken') || combinedDiet.includes('fish'));
+    const isEggetarian = !isVegan && !isNonVeg && (combinedDiet.includes('egg') || combinedDiet.includes('eggetarian'));
     const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
 
     const foodEnv = (profile?.food_environment || 'Home').toLowerCase();
@@ -1596,7 +1771,22 @@ export class NutritionService {
           if (foodName.toLowerCase().includes('banana')) foodName = 'Apple';
           else if (foodName.toLowerCase().includes('peanut')) foodName = isVegan ? 'Soy Chunks (Cooked)' : 'Curd (Plain)';
           else if (foodName.toLowerCase().includes('milk')) foodName = isVegan ? 'Soy Chunks (Cooked)' : 'Curd (Plain)';
-          else if (foodName.toLowerCase().includes('egg')) foodName = 'Paneer Tikka';
+          else if (foodName.toLowerCase().includes('egg')) foodName = isVegan ? 'Soy Chunks (Cooked)' : 'Paneer Tikka';
+        }
+
+        // Strict dietary safety filter on every food item
+        if (isVegan) {
+          const fnLower = foodName.toLowerCase();
+          if (fnLower.includes('paneer') || fnLower.includes('curd') || fnLower.includes('dahi') || fnLower.includes('milk') || fnLower.includes('egg') || fnLower.includes('chicken') || fnLower.includes('fish') || fnLower.includes('meat')) {
+            if (fnLower.includes('curd') || fnLower.includes('dahi')) foodName = 'Mixed Vegetables';
+            else if (fnLower.includes('milk')) foodName = 'Apple';
+            else foodName = 'Soy Chunks (Cooked)';
+          }
+        } else if (isVegetarian) {
+          const fnLower = foodName.toLowerCase();
+          if (fnLower.includes('egg') || fnLower.includes('chicken') || fnLower.includes('fish') || fnLower.includes('meat')) {
+            foodName = 'Paneer Tikka';
+          }
         }
 
         const ref = findFoodReference(foodName, foodCatalog, profile?.food_environment);
@@ -2022,15 +2212,36 @@ export class NutritionService {
     const weekCycle = Math.abs(epochWeeks) % 2;
     const rotatingPlans = NutritionService.getRotatingMealPlanForDay(dayOfWeek, fitProfile, targets, foodCatalog, weekCycle);
 
-    const rawDietStr = String(fitProfile?.food_type || fitProfile?.diet_preference || '').toLowerCase();
+    const rawDietStr = `${fitProfile?.diet_preference || ''} ${fitProfile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
     const isProfileVegan = rawDietStr.includes('vegan');
-    const isProfileVegetarian = !isProfileVegan && (rawDietStr.includes('vegetarian') || rawDietStr.includes('veg'));
+    const isProfileVegetarian = !isProfileVegan && !rawDietStr.includes('non') && !rawDietStr.includes('meat') && !rawDietStr.includes('egg') && (rawDietStr.includes('vegetarian') || rawDietStr.includes('veg'));
 
     // Always output Breakfast, Lunch, Snack, Dinner cards
     let formattedMeals = ALL_MEAL_TYPES.map((mType, slotIdx) => {
       // 1. Manually saved/logged meal plan items for this specific date take top priority
       const existing = plansByMealType.get(mType);
-      if (existing) return existing;
+      if (existing) {
+        if (isProfileVegan || isProfileVegetarian) {
+          const sanitizedItems = (existing.meal_plan_items || []).map((it: any) => {
+            const foodName = it.foods?.name || '';
+            const sanitizedName = sanitizeAIItemName(foodName, isProfileVegan, isProfileVegetarian);
+            if (sanitizedName !== foodName) {
+              const ref = findFoodReference(sanitizedName, foodCatalog, fitProfile?.food_environment);
+              return {
+                ...it,
+                foods: ref ? { ...it.foods, ...ref } : { ...it.foods, name: sanitizedName }
+              };
+            }
+            return it;
+          });
+          return {
+            ...existing,
+            name: sanitizeMealTitle(existing.name || '', isProfileVegan, isProfileVegetarian),
+            meal_plan_items: sanitizedItems
+          };
+        }
+        return existing;
+      }
 
       // 2. Priority: True 7-Day Rotating Menu (Strictly varies by dayOfWeek, ensuring fresh variety every single day)
       const rotating = rotatingPlans.get(mType);
@@ -2174,7 +2385,7 @@ export class NutritionService {
         return {
           id: `ai-${mType}`,
           meal_type: mType,
-          name: aiMeal.meal_name || (mType.charAt(0).toUpperCase() + mType.slice(1)),
+          name: sanitizeMealTitle(aiMeal.meal_name || (mType.charAt(0).toUpperCase() + mType.slice(1)), isProfileVegan, isProfileVegetarian),
           calories: mealTotals.calories || slotTargetCalories,
           protein: mealTotals.protein || slotTargetProtein,
           carbs: mealTotals.carbs,
@@ -2245,7 +2456,7 @@ export class NutritionService {
       nutrition_score: score,
       has_ai_plan: Boolean(aiMeals && aiMeals.length > 0),
       is_natural_whole_food: true,
-      food_type: fitProfile?.food_type || fitProfile?.diet_preference || undefined
+      food_type: isProfileVegan ? 'Vegan' : (isProfileVegetarian ? 'Vegetarian' : (fitProfile?.food_type || fitProfile?.diet_preference || undefined))
     };
   }
 }
