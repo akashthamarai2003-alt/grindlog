@@ -54,7 +54,7 @@ export default function RefundPolicyPage() {
 
         <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">5. How to Report an Issue</h2>
         <p className="mt-4 leading-relaxed">
-          If you are experiencing any technical issues, or if you believe you were charged in error, please contact us at support@grindlog.in with your account email and purchase receipt. Our team will work to resolve the issue as quickly as possible.
+          If you are experiencing any technical issues, or if you believe you were charged in error, please contact us at grindlogapp6@gmail.com with your account email and purchase receipt. Our team will work to resolve the issue as quickly as possible.
         </p>
       </motion.div>
     </div>

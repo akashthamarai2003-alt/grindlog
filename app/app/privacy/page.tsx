@@ -59,7 +59,7 @@ export default function PrivacyPolicyPage() {
 
         <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">6. Contact Us</h2>
         <p className="mt-4 leading-relaxed">
-          If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at support@grindlog.app.
+          If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at grindlogapp6@gmail.com.
         </p>
       </motion.div>
     </div>

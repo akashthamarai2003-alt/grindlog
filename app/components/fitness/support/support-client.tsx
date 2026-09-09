@@ -321,7 +321,7 @@ export function SupportClient({
             <Mail className="w-4 h-4 text-[#ADFF00] shrink-0" />
             <div>
               <p className="text-white font-bold text-xs">Direct Email Support</p>
-              <p className="text-[11px] text-gray-400">Prefer email? Reach us directly at <a href="mailto:support@grindlog.in" className="text-[#ADFF00] underline">support@grindlog.in</a></p>
+              <p className="text-[11px] text-gray-400">Prefer email? Reach us directly at <a href="mailto:grindlogapp6@gmail.com" className="text-[#ADFF00] underline">grindlogapp6@gmail.com</a></p>
             </div>
           </div>
           <span className="text-[10px] text-gray-500">Fast tracking for Pro athletes</span>

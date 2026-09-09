@@ -108,7 +108,7 @@ export async function sendUserEmailAdminAction(toEmail: string, subject: string,
         </div>
       `;
 
-      const fromAddress = process.env.RESEND_FROM_EMAIL || "GrindLog <support@grindlog.in>";
+      const fromAddress = process.env.RESEND_FROM_EMAIL || "GrindLog <grindlogapp6@gmail.com>";
 
       const { data, error } = await resend.emails.send({
         from: fromAddress,
@@ -153,7 +153,7 @@ export async function sendBulkUserEmailAdminAction(users: {email: string, name: 
       const resend = new Resend(process.env.RESEND_API_KEY);
       
       const safeSubject = subject.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const fromAddress = process.env.RESEND_FROM_EMAIL || "GrindLog <support@grindlog.in>";
+      const fromAddress = process.env.RESEND_FROM_EMAIL || "GrindLog <grindlogapp6@gmail.com>";
 
       const emailsToSend = users.map(user => {
         const cleanEmail = user.email.trim();
