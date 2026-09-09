@@ -164,30 +164,40 @@ export function getCoreMealLabel(env: string, mealType?: string): string {
   const isBreakfast = type.includes("breakfast");
   const isLunch = type.includes("lunch");
   const isDinner = type.includes("dinner");
+  const cleanEnv = (env || "Home").trim();
 
-  switch (env) {
-    case "PG":
-    case "Hostel":
-      if (isBreakfast) return "Mess Breakfast (Poha / Upma / Idli & Sambar)";
-      if (isLunch) return "Mess Lunch (Rice, Dal Tadka & Sabzi)";
-      if (isDinner) return "Mess Dinner (Phulkas, Dal & Sabzi)";
-      return "Mess Core Meal (Rice, Dal & Sabzi)";
-    case "Home":
-      if (isBreakfast) return "Homestyle Breakfast (Poha / Idli / Upma)";
-      if (isLunch) return "Homestyle Lunch (Rice, Dal & Sabzi)";
-      if (isDinner) return "Homestyle Dinner (Phulkas, Dal & Sabzi)";
-      return "Homestyle Core Meal (Rice, Dal & Sabzi)";
-    case "Office/Canteen":
-      if (isBreakfast) return "Canteen Breakfast (Poha / Idli & Sambar)";
-      if (isLunch) return "Canteen Lunch Thali (Rice, Dal & Sabzi)";
-      if (isDinner) return "Canteen Dinner Thali";
-      return "Canteen Core Meal (Rice, Dal & Sabzi)";
-    default:
-      if (isBreakfast) return "Breakfast Plate";
-      if (isLunch) return "Lunch Thali (Rice, Dal & Sabzi)";
-      if (isDinner) return "Dinner Thali (Phulkas, Dal & Sabzi)";
-      return "Balanced Meal (Rice, Dal & Sabzi)";
+  if (cleanEnv === "PG") {
+    if (isBreakfast) return "PG Mess Breakfast (Poha / Upma / Idli & Sambar)";
+    if (isLunch) return "PG Mess Lunch (Rice, Dal Tadka & Sabzi)";
+    if (isDinner) return "PG Mess Dinner (Phulkas, Dal & Sabzi)";
+    return "PG Mess Meal (Rice, Dal & Sabzi)";
   }
+
+  if (cleanEnv === "Hostel") {
+    if (isBreakfast) return "Hostel Mess Breakfast (Poha / Upma / Idli & Sambar)";
+    if (isLunch) return "Hostel Mess Lunch (Rice, Dal Tadka & Sabzi)";
+    if (isDinner) return "Hostel Mess Dinner (Phulkas, Dal & Sabzi)";
+    return "Hostel Mess Meal (Rice, Dal & Sabzi)";
+  }
+
+  if (cleanEnv === "Home") {
+    if (isBreakfast) return "Home Breakfast (Poha / Idli / Upma)";
+    if (isLunch) return "Home Lunch (Rice, Dal & Sabzi)";
+    if (isDinner) return "Home Dinner (Phulkas, Dal & Sabzi)";
+    return "Home Meal (Rice, Dal & Sabzi)";
+  }
+
+  if (cleanEnv === "Office/Canteen") {
+    if (isBreakfast) return "Canteen Breakfast (Poha / Idli & Sambar)";
+    if (isLunch) return "Canteen Lunch Thali (Rice, Dal & Sabzi)";
+    if (isDinner) return "Canteen Dinner Thali";
+    return "Canteen Meal (Rice, Dal & Sabzi)";
+  }
+
+  if (isBreakfast) return "Breakfast Plate";
+  if (isLunch) return "Lunch Thali (Rice, Dal & Sabzi)";
+  if (isDinner) return "Dinner Thali (Phulkas, Dal & Sabzi)";
+  return "Balanced Meal (Rice, Dal & Sabzi)";
 }
 
 /** Estimated protein from a typical Indian provided core meal. */

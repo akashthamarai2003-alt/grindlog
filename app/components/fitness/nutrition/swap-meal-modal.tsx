@@ -183,7 +183,7 @@ export function SwapMealModal({
                       {opt.estimated_cost > 0 ? (
                         <span className="text-white/40 font-normal">₹{opt.estimated_cost}</span>
                       ) : (
-                        <span className="text-[#ADFF00]/70 font-normal text-[10px]">Free (PG/Home)</span>
+                        <span className="text-[#ADFF00]/70 font-normal text-[10px]">Free (Included)</span>
                       )}
                     </div>
 

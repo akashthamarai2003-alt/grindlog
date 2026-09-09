@@ -77,17 +77,27 @@ function parseAIItemText(value: unknown): Array<{ name: string; servingSize: str
     });
 }
 
-function findFoodReference(name: string, catalog: NutritionFoodReference[]): NutritionFoodReference | undefined {
+function findFoodReference(name: string, catalog: NutritionFoodReference[], foodEnv?: string): NutritionFoodReference | undefined {
   const normalizedName = normalizeFoodName(name);
   if (!normalizedName) return undefined;
 
   // 1. Check if it's a provided core meal (PG, Hostel, Mess, Home Core)
-  if (/\b(?:pg|hostel|mess|provided core|provided meal|core meal|base meal)\b/i.test(name)) {
-    const coreRef = catalog.find((f) => f.name.includes("Provided Core") || f.name.includes("Core Meal") || f.name.includes("Base Meal"));
+  if (/\b(?:pg|hostel|mess|provided core|provided meal|core meal|base meal|standard base)\b/i.test(name)) {
+    const coreRef = catalog.find((f) => f.name.includes("Provided Core") || f.name.includes("Core Meal") || f.name.includes("Base Meal") || f.name.includes("Standard Base"));
     if (coreRef) {
+      const cleanEnv = (foodEnv || '').trim().toLowerCase();
+      const displayName = cleanEnv === 'pg'
+        ? 'PG Meal (Rice, Dal & Sabzi)'
+        : cleanEnv === 'hostel'
+        ? 'Hostel Mess Meal (Rice, Dal & Sabzi)'
+        : cleanEnv === 'home' || cleanEnv === 'i cook'
+        ? 'Home Meal (Rice, Dal & Sabzi)'
+        : cleanEnv.includes('canteen') || cleanEnv.includes('office')
+        ? 'Canteen Meal (Rice, Dal & Sabzi)'
+        : 'Standard Base Meal (Rice, Dal & Sabzi)';
       return {
         ...coreRef,
-        name: "Mess Core Meal (Rice, Dal & Sabzi)",
+        name: displayName,
         serving_size: "1 Plate",
       };
     }
@@ -754,77 +764,104 @@ export class NutritionService {
   }
 
   static getPrepInstructionForSlot(
-  mealType: string,
-  title: string,
-  dayOfWeek: number,
-  foodEnv?: string
-): string {
-  const env = (foodEnv || "Hostel").toLowerCase();
-  const isPgOrHostel = env.includes("pg") || env.includes("hostel");
-  const tLower = title.toLowerCase();
+    mealType: string,
+    title: string,
+    dayOfWeek: number,
+    foodEnv?: string
+  ): string {
+    const rawEnv = (foodEnv || "PG").trim();
+    const envLower = rawEnv.toLowerCase();
+    
+    // Strictly isolate the environment name without slashes
+    let envName = "PG";
+    let messLabel = "PG mess";
+    let hackLabel = "PG Hack";
+    let roomLabel = "PG room";
 
-  if (mealType === "breakfast") {
-    if (tLower.includes("idli") || tLower.includes("dosa") || tLower.includes("pongal")) {
-      return isPgOrHostel
-        ? "Hostel/PG Hack: Enjoy freshly steamed mess idli/dosa with sambar. Boil 2–3 eggs using an electric kettle or request hard-boiled eggs from the mess kitchen. Season with roasted jeera, black pepper, and rock salt."
-        : "Enjoy warm steamed idli/dosa with homemade dal sambar. Pair with boiled farm eggs or paneer for an optimal 25–30g morning protein anchor.";
+    if (envLower === "hostel") {
+      envName = "Hostel";
+      messLabel = "hostel mess";
+      hackLabel = "Hostel Hack";
+      roomLabel = "hostel room";
+    } else if (envLower === "home" || envLower === "i cook" || envLower === "self-cooked") {
+      envName = "Home";
+      messLabel = "home kitchen";
+      hackLabel = "Kitchen Tip";
+      roomLabel = "home";
+    } else if (envLower === "office/canteen" || envLower === "canteen" || envLower === "office") {
+      envName = "Canteen";
+      messLabel = "canteen";
+      hackLabel = "Canteen Tip";
+      roomLabel = "office";
     }
-    if (tLower.includes("poha") || tLower.includes("upma")) {
-      return isPgOrHostel
-        ? "Mess Hack: Request a warm bowl of mess poha/upma; top with crunchy roasted peanuts and squeeze fresh lemon juice (vitamin C dramatically boosts non-heme iron absorption). Pair with boiled eggs."
-        : "Cook homestyle poha/upma with mustard seeds, curry leaves, and crunchy peanuts. Squeeze fresh lemon and pair with boiled eggs or curd.";
+
+    const isRoomLiving = envName === "PG" || envName === "Hostel";
+    const tLower = title.toLowerCase();
+
+    if (mealType === "breakfast") {
+      if (tLower.includes("idli") || tLower.includes("dosa") || tLower.includes("pongal")) {
+        return isRoomLiving
+          ? `${hackLabel}: Enjoy freshly steamed ${messLabel} idli/dosa with sambar. Boil 2–3 eggs using an electric kettle in your ${roomLabel} or request hard-boiled eggs from the ${messLabel} kitchen. Season with roasted jeera, black pepper, and rock salt.`
+          : "Enjoy warm steamed idli/dosa with homemade dal sambar. Pair with boiled farm eggs or paneer for an optimal 25–30g morning protein anchor.";
+      }
+      if (tLower.includes("poha") || tLower.includes("upma")) {
+        return isRoomLiving
+          ? `${hackLabel}: Request a warm bowl of ${messLabel} poha/upma; top with crunchy roasted peanuts and squeeze fresh lemon juice (vitamin C dramatically boosts non-heme iron absorption). Pair with boiled eggs.`
+          : "Cook homestyle poha/upma with mustard seeds, curry leaves, and crunchy peanuts. Squeeze fresh lemon and pair with boiled eggs or curd.";
+      }
+      if (tLower.includes("oats")) {
+        return isRoomLiving
+          ? `${hackLabel}: Soak rolled oats in hot water or warm milk in your ${roomLabel} for 5 minutes. Fold in sliced banana, roasted peanuts, and a dash of cinnamon. Eat with boiled eggs.`
+          : "Cook rolled oats in warm toned milk for 3–5 minutes. Top with fresh banana slices and roasted peanuts. Pair with farm eggs for 4 hours of steady energy.";
+      }
+      if (tLower.includes("cheela") || tLower.includes("bhurji")) {
+        return "High-protein breakfast: Cook cheela or egg/paneer bhurji with minimal oil on a tawa. Serve with fresh cooling curd or mint chutney.";
+      }
+      return isRoomLiving
+        ? `${envName} Kettle Hack: Hard-boil farm eggs using an electric kettle in your ${roomLabel}. Season with chaat masala, roasted cumin, and black pepper. Pair with whole wheat toast.`
+        : "Homestyle whole food breakfast: Enjoy warm phulkas or toast with farm eggs or paneer tikka, accompanied by fresh fruit.";
     }
-    if (tLower.includes("oats")) {
-      return isPgOrHostel
-        ? "Kettle Hack: Soak rolled oats in hot water or warm milk in your room for 5 minutes. Fold in sliced banana, roasted peanuts, and a dash of cinnamon. Eat with boiled eggs."
-        : "Cook rolled oats in warm toned milk for 3–5 minutes. Top with fresh banana slices and roasted peanuts. Pair with farm eggs for 4 hours of steady energy.";
+
+    if (mealType === "lunch") {
+      if (tLower.includes("chicken") || tLower.includes("fish")) {
+        return isRoomLiving
+          ? `${envName} Protein Anchor: Source pre-cooked grilled or curry chicken/fish from a trusted local vendor or ${messLabel}. Pair with ${messLabel} steamed rice and yellow dal for a complete amino acid profile.`
+          : "Lean athletic lunch: Pair homestyle chicken curry or fish with steamed rice, yellow dal, and a fresh kachumber salad.";
+      }
+      if (tLower.includes("rajma") || tLower.includes("chana")) {
+        return "High-protein comfort thali: Pair slow-cooked kidney beans/chickpeas with steamed rice or phulkas. Eat with cooling dahi/curd for optimal gut digestion.";
+      }
+      if (tLower.includes("soya")) {
+        return isRoomLiving
+          ? `${envName} Soya Hack: Soak 50g soya chunks in kettle-boiled hot water with salt for 10 minutes. Squeeze out water thoroughly to remove any raw taste, then fold into hot ${messLabel} dal or sabzi.`
+          : "High-protein soya lunch: Sauté soaked soya chunks with onion, tomatoes, and garam masala. Serve with phulkas and cooling cucumber curd.";
+      }
+      return isRoomLiving
+        ? `${envName} Lunch: Take your standard ${messLabel} rice, dal tadka, and seasonal sabzi. Top with fresh curd and your planned protein anchor.`
+        : "Balanced lunch: Pair yellow dal tadka, steamed rice, paneer or eggs, and a crisp fresh cucumber-tomato salad.";
     }
-    if (tLower.includes("cheela") || tLower.includes("bhurji")) {
-      return "High-protein breakfast: Cook cheela or egg/paneer bhurji with minimal oil on a tawa. Serve with fresh cooling curd or mint chutney.";
+
+    if (mealType === "pre_workout" || mealType === "snack") {
+      return isRoomLiving
+        ? `Athletic Fuel (< 3g Fat): Keep shelf-stable in your ${roomLabel}. Eat 45–60 minutes before training with 300ml water for rapid glycogen replenishment with zero digestive sluggishness.`
+        : "Athletic Fuel (< 3g Fat): Consume 45–60 minutes before training with 300ml water for rapid glycogen replenishment with zero digestive sluggishness.";
     }
-    return isPgOrHostel
-      ? "Kettle Hack: Hard-boil farm eggs using an electric kettle in your room. Season with chaat masala, roasted cumin, and black pepper. Pair with whole wheat toast."
-      : "Homestyle whole food breakfast: Enjoy warm phulkas or toast with farm eggs or paneer tikka, accompanied by fresh fruit.";
+
+    if (mealType === "post_workout") {
+      return "Post-Workout Recovery: Consume within 45 minutes of training to initiate immediate muscle glycogen replenishment and protein synthesis.";
+    }
+
+    if (mealType === "dinner") {
+      if (tLower.includes("khichdi")) {
+        return "Soothing Recovery Dinner: Light moong dal khichdi paired with cooling probiotic dahi and a pinch of roasted jeera to aid overnight gut repair.";
+      }
+      return isRoomLiving
+        ? `${envName} Dinner: Enjoy 2–3 warm phulkas with ${messLabel} dal and green sabzi. Finish with a bowl of cooling curd to support overnight muscle protein synthesis.`
+        : "Restorative Dinner: Warm whole wheat phulkas with yellow dal tadka, lightly spiced sabzi, and cooling curd seasoned with roasted cumin.";
+    }
+
+    return "Whole-food balanced plate scaled to your exact daily macro targets.";
   }
-
-  if (mealType === "lunch") {
-    if (tLower.includes("chicken") || tLower.includes("fish")) {
-      return isPgOrHostel
-        ? "Protein Anchor: Source pre-cooked grilled or curry chicken/fish from a trusted local vendor or mess. Pair with mess steamed rice and yellow dal for a complete amino acid profile."
-        : "Lean athletic lunch: Pair homestyle chicken curry or fish with steamed rice, yellow dal, and a fresh kachumber salad.";
-    }
-    if (tLower.includes("rajma") || tLower.includes("chana")) {
-      return "High-protein comfort thali: Pair slow-cooked kidney beans/chickpeas with steamed rice or phulkas. Eat with cooling dahi/curd for optimal gut digestion.";
-    }
-    if (tLower.includes("soya")) {
-      return isPgOrHostel
-        ? "Hot Soya Hack: Soak 50g soya chunks in kettle-boiled hot water with salt for 10 minutes. Squeeze out water thoroughly to remove any raw taste, then fold into hot mess dal or sabzi."
-        : "High-protein soya lunch: Sauté soaked soya chunks with onion, tomatoes, and garam masala. Serve with phulkas and cooling cucumber curd.";
-    }
-    return isPgOrHostel
-      ? "Mess Lunch Balance: Take your standard mess rice, dal tadka, and seasonal sabzi. Top with fresh curd and your planned protein anchor."
-      : "Balanced lunch: Pair yellow dal tadka, steamed rice, paneer or eggs, and a crisp fresh cucumber-tomato salad.";
-  }
-
-  if (mealType === "pre_workout" || mealType === "snack") {
-    return "Athletic Fuel (< 3g Fat): Keep shelf-stable in your room. Eat 45–60 minutes before training with 300ml water for rapid glycogen replenishment with zero digestive sluggishness.";
-  }
-
-  if (mealType === "post_workout") {
-    return "Post-Workout Recovery: Consume within 45 minutes of training to initiate immediate muscle glycogen replenishment and protein synthesis.";
-  }
-
-  if (mealType === "dinner") {
-    if (tLower.includes("khichdi")) {
-      return "Soothing Recovery Dinner: Light moong dal khichdi paired with cooling probiotic dahi and a pinch of roasted jeera to aid overnight gut repair.";
-    }
-    return isPgOrHostel
-      ? "Mess Dinner Routine: Enjoy 2–3 warm phulkas with mess dal and green sabzi. Finish with a bowl of cooling curd to support overnight muscle protein synthesis."
-      : "Restorative Dinner: Warm whole wheat phulkas with yellow dal tadka, lightly spiced sabzi, and cooling curd seasoned with roasted cumin.";
-  }
-
-  return "Whole-food balanced plate scaled to your exact daily macro targets.";
-}
 
   /**
    * Builds a deterministic 7-day rotating meal plan tailored strictly to the user's onboarding preferences:
@@ -873,18 +910,20 @@ export class NutritionService {
           else if (foodName.toLowerCase().includes('egg')) foodName = 'Paneer Tikka';
         }
 
-        const ref = findFoodReference(foodName, foodCatalog);
+        const ref = findFoodReference(foodName, foodCatalog, profile?.food_environment);
         const qty = def.quantity || 1;
         const sSize = def.servingSize || (ref ? (qty > 1 ? `${qty} servings` : ref.serving_size || '1 serving') : `${qty} serving`);
-        const cals = Math.round(Number(ref?.calories || 150) * qty);
-        const pro = Number((Number(ref?.protein || 5) * qty).toFixed(1));
+        const defaultCals = foodName.toLowerCase().includes('egg') ? 78 : (foodName.toLowerCase().includes('banana') ? 105 : 150);
+        const defaultPro = foodName.toLowerCase().includes('egg') ? 6.3 : 5;
+        const cals = Math.round(Number(ref?.calories || defaultCals) * qty);
+        const pro = Number((Number(ref?.protein || defaultPro) * qty).toFixed(1));
         const carbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
         const fat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
         const cost = (isCoreProvided && isCore) ? 0 : Math.round(Number(ref?.estimated_cost || 25) * qty);
 
         return {
           id: `rotating-item-${index}`,
-          quantity: qty,
+          quantity: 1,
           foods: {
             id: ref?.id || `food-${index}`,
             name: ref?.name || foodName,
@@ -1353,11 +1392,13 @@ export class NutritionService {
           else if (foodName.toLowerCase().includes('egg')) foodName = 'Paneer Tikka';
         }
 
-        const ref = findFoodReference(foodName, foodCatalog);
+        const ref = findFoodReference(foodName, foodCatalog, profile?.food_environment);
         const qty = def.quantity || 1;
         const sSize = def.servingSize || (ref ? (qty > 1 ? `${qty} servings` : ref.serving_size || '1 serving') : `${qty} serving`);
-        const cals = Math.round(Number(ref?.calories || 150) * qty);
-        const pro = Number((Number(ref?.protein || 5) * qty).toFixed(1));
+        const defaultCals = foodName.toLowerCase().includes('egg') ? 78 : (foodName.toLowerCase().includes('banana') ? 105 : 150);
+        const defaultPro = foodName.toLowerCase().includes('egg') ? 6.3 : 5;
+        const cals = Math.round(Number(ref?.calories || defaultCals) * qty);
+        const pro = Number((Number(ref?.protein || defaultPro) * qty).toFixed(1));
         const carbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
         const fat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
         const cost = (isCoreProvided && isCore) ? 0 : Math.round(Number(ref?.estimated_cost || 25) * qty);
@@ -1368,7 +1409,7 @@ export class NutritionService {
           name: ref?.name || foodName,
           category: ref?.category || 'General',
           serving_size: sSize,
-          quantity: qty,
+          quantity: 1,
           calories: cals,
           protein: pro,
           carbs: carbs,
@@ -1832,7 +1873,7 @@ export class NutritionService {
         // 1. Resolve each item and calculate its unscaled values
         const isCoreProvided = envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen';
         const unscaledItems = itemParts.map((part) => {
-          const reference = findFoodReference(part.name, foodCatalog);
+          const reference = findFoodReference(part.name, foodCatalog, fitProfile?.food_environment);
           const multiplier = part.multiplier || 1;
           const isItemCore = isCoreProvided && (
             reference?.name?.includes("Provided Core") ||
@@ -1872,8 +1913,17 @@ export class NutritionService {
           }
 
           let displayName = it.reference?.name || it.part.name;
-          if (it.isItemCore || displayName.includes("Provided Core")) {
-            displayName = "Mess Core Meal (Rice, Dal & Sabzi)";
+          if (it.isItemCore || displayName.includes("Provided Core") || displayName.includes("Core Meal") || displayName.includes("Base Meal") || displayName.includes("Standard Base")) {
+            const cleanEnv = (fitProfile?.food_environment || '').trim().toLowerCase();
+            displayName = cleanEnv === 'pg'
+              ? 'PG Meal (Rice, Dal & Sabzi)'
+              : cleanEnv === 'hostel'
+              ? 'Hostel Mess Meal (Rice, Dal & Sabzi)'
+              : cleanEnv === 'home' || cleanEnv === 'i cook'
+              ? 'Home Meal (Rice, Dal & Sabzi)'
+              : cleanEnv.includes('canteen') || cleanEnv.includes('office')
+              ? 'Canteen Meal (Rice, Dal & Sabzi)'
+              : 'Standard Base Meal (Rice, Dal & Sabzi)';
             servingDisplay = "1 Plate";
           }
 
