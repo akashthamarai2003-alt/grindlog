@@ -209,6 +209,7 @@ export interface Database {
           title: string;
           body: string | null;
           type: string | null;
+          link?: string | null;
           read: boolean;
           created_at: string;
         };
@@ -218,6 +219,7 @@ export interface Database {
           title: string;
           body?: string | null;
           type?: string | null;
+          link?: string | null;
           read?: boolean;
           created_at?: string;
         };

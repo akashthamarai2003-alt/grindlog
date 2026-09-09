@@ -3,7 +3,7 @@
 import { Bell, Bot } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/services/supabase/client";
+import { getUnreadNotificationsCountAction } from "@/app/actions/fitness-notifications";
 
 interface DashboardHeaderProps {
   name: string;
@@ -17,21 +17,10 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
   useEffect(() => {
     async function fetchUnreadCount() {
       try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { count, error } = await supabase
-          .from('in_app_notifications')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('read', false);
-        
-        if (!error && count !== null) {
-          setUnreadCount(count);
-        }
+        const count = await getUnreadNotificationsCountAction();
+        setUnreadCount(count);
       } catch {
-        // Silently ignore if table doesn't exist
+        // Silently ignore
       }
     }
     fetchUnreadCount();
