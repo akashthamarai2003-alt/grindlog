@@ -36,6 +36,17 @@ export const nutritionApi = {
     return json.data;
   },
 
+  async logFoods(items: LogFoodRequest[]) {
+    const res = await fetch('/api/nutrition/log-food', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    const json = await res.json();
+    if (!res.ok) throw json.error;
+    return json.data;
+  },
+
   async deleteFood(id: string) {
     const res = await fetch(`/api/nutrition/log-food/${id}`, {
       method: 'DELETE'

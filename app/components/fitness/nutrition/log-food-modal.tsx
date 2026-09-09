@@ -68,7 +68,8 @@ export function LogFoodModal({
   preselectedFoods
 }: LogFoodModalProps) {
   const [mealType, setMealType] = useState(defaultMealType);
-  const [isReviewingPlan, setIsReviewingPlan] = useState(false);
+  const [isReviewingPlan, setIsReviewingPlan] = useState(() => Boolean(preselectedFoods && preselectedFoods.length > 0));
+  const [isLogging, setIsLogging] = useState(false);
   const [plannedFoods, setPlannedFoods] = useState<PlannedItem[]>([]);
 
   // Search, category filter & single food selection state
@@ -102,6 +103,7 @@ export function LogFoodModal({
       setDietFilter("onboarding");
       setSelectedFood(null);
       setQuantity(1);
+      setIsLogging(false);
 
       if (preselectedFoods && preselectedFoods.length > 0) {
         setIsReviewingPlan(true);
@@ -134,12 +136,12 @@ export function LogFoodModal({
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (isOpen && !isReviewingPlan && !selectedFood) {
+      if (isOpen && !isReviewingPlan && !selectedFood && (!preselectedFoods || preselectedFoods.length === 0)) {
         fetchFoods(search, selectedCategory, dietFilter);
       }
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [search, selectedCategory, dietFilter, isOpen, isReviewingPlan, selectedFood]);
+  }, [search, selectedCategory, dietFilter, isOpen, isReviewingPlan, selectedFood, preselectedFoods]);
 
   // Calculations for planned meal
   const plannedTotals = useMemo(() => {
@@ -175,139 +177,96 @@ export function LogFoodModal({
   };
 
   const handleLogPlannedMeal = async () => {
+    if (isLogging) return;
     const itemsToLog = plannedFoods.filter(item => item.checked && item.quantity > 0);
     if (itemsToLog.length === 0) {
       toast.error("Select at least one food item to log");
       return;
     }
 
-    const optimisticItems = itemsToLog.map((item, idx) => {
-      const foodObj = item.rawItem?.foods || item.rawItem;
-      const q = Number(item.quantity) || 1;
-      return {
-        id: `temp-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`,
-        food_id: foodObj?.id,
-        meal_type: mealType,
-        quantity: q,
-        calories: Math.round((item.calories || 0) * q),
-        protein: Number(((item.protein || 0) * q).toFixed(1)),
-        carbs: Number(((item.carbs || 0) * q).toFixed(1)),
-        fat: Number(((item.fat || 0) * q).toFixed(1)),
-        estimated_cost: Number(((item.estimated_cost || 0) * q).toFixed(1)),
-        source: 'manual',
-        logged_at: new Date().toISOString(),
-        foods: {
-          id: foodObj?.id,
-          name: item.name,
-          category: foodObj?.category || mealType,
-          serving_size: item.serving_size || '1 serving',
-          image_url: foodObj?.image_url,
-          calories: item.calories,
-          protein: item.protein,
-          carbs: item.carbs,
-          fat: item.fat,
-          estimated_cost: item.estimated_cost
+    setIsLogging(true);
+
+    try {
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      const payloadItems = itemsToLog.map(item => {
+        const foodObj = item.rawItem?.foods || item.rawItem;
+        const q = Number(item.quantity) || 1;
+        const hasValidUuid = foodObj?.id && UUID_REGEX.test(foodObj.id);
+
+        if (hasValidUuid) {
+          return {
+            food_id: foodObj.id,
+            meal_type: mealType,
+            quantity: q,
+          };
+        } else {
+          return {
+            meal_type: mealType,
+            quantity: q,
+            custom_food: {
+              name: item.name || foodObj?.name || 'Food item',
+              category: foodObj?.category || mealType,
+              serving_size: item.serving_size || foodObj?.serving_size || '1 serving',
+              calories: item.calories,
+              protein: item.protein,
+              carbs: item.carbs,
+              fat: item.fat,
+              estimated_cost: item.estimated_cost || 0,
+            },
+          };
         }
-      };
-    });
+      });
 
-    // INSTANT: Close modal immediately, trigger optimistic dashboard update, show toast
-    toast.success(`Logged ${itemsToLog.length} foods for ${formatMealType(mealType)}!`);
-    onSuccess(optimisticItems);
-    onClose();
+      const loggedData = await nutritionApi.logFoods(payloadItems);
 
-    // Fire all API requests in parallel via Promise.all in background
-    Promise.all(itemsToLog.map(item => {
-      const foodObj = item.rawItem?.foods || item.rawItem;
-      if (foodObj?.id) {
-        return nutritionApi.logFood({
-          food_id: foodObj.id,
-          meal_type: mealType,
-          quantity: item.quantity,
-        });
-      } else {
-        return nutritionApi.logFood({
-          meal_type: mealType,
-          quantity: item.quantity,
-          custom_food: {
-            name: item.name,
-            category: foodObj?.category || mealType,
-            calories: item.calories,
-            protein: item.protein,
-            carbs: item.carbs,
-            fat: item.fat,
-            estimated_cost: item.estimated_cost,
-          },
-        });
-      }
-    })).catch((err: any) => {
-      console.error("Background logMeal error:", err);
-      toast.error(err?.message || "Some meal items failed to save to server");
-    });
+      toast.success(`Logged ${itemsToLog.length} foods for ${formatMealType(mealType)}!`);
+      onSuccess(loggedData);
+      onClose();
+    } catch (err: any) {
+      console.error("Failed to log planned meal:", err);
+      toast.error(err?.message || "Failed to log meal to server");
+    } finally {
+      setIsLogging(false);
+    }
   };
 
   const handleLogSingle = async () => {
-    if (!selectedFood) return;
+    if (!selectedFood || isLogging) return;
+    setIsLogging(true);
 
-    const scaledCalories = Math.round((selectedFood.calories || 0) * quantity);
-    const scaledProtein = Number(((selectedFood.protein || 0) * quantity).toFixed(1));
-    const scaledCarbs = Number(((selectedFood.carbs || 0) * quantity).toFixed(1));
-    const scaledFat = Number(((selectedFood.fat || 0) * quantity).toFixed(1));
-    const scaledCost = Number(((selectedFood.estimated_cost || 0) * quantity).toFixed(1));
+    try {
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isExternalOff = selectedFood.source === 'open_food_facts' || String(selectedFood.id || '').startsWith('off-');
+      const hasValidUuid = selectedFood.id && UUID_REGEX.test(selectedFood.id) && !isExternalOff;
 
-    const optimisticItem = {
-      id: `temp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      food_id: selectedFood.id,
-      meal_type: mealType,
-      quantity,
-      calories: scaledCalories,
-      protein: scaledProtein,
-      carbs: scaledCarbs,
-      fat: scaledFat,
-      estimated_cost: scaledCost,
-      source: 'manual',
-      logged_at: new Date().toISOString(),
-      foods: {
-        id: selectedFood.id,
-        name: selectedFood.name,
-        category: selectedFood.category || mealType,
-        serving_size: selectedFood.serving_size || '1 serving',
-        image_url: selectedFood.image_url,
-        calories: selectedFood.calories,
-        protein: selectedFood.protein,
-        carbs: selectedFood.carbs,
-        fat: selectedFood.fat,
-        estimated_cost: selectedFood.estimated_cost
+      const payload: any = { meal_type: mealType, quantity };
+      if (hasValidUuid) {
+        payload.food_id = selectedFood.id;
+      } else {
+        payload.custom_food = {
+          name: selectedFood.name,
+          category: selectedFood.category || mealType,
+          serving_size: selectedFood.serving_size || '1 serving',
+          calories: selectedFood.calories || 0,
+          protein: selectedFood.protein || 0,
+          carbs: selectedFood.carbs || 0,
+          fat: selectedFood.fat || 0,
+          estimated_cost: selectedFood.estimated_cost || 0,
+        };
       }
-    };
 
-    const payload: any = { meal_type: mealType, quantity };
-    const isExternalOff = selectedFood.source === 'open_food_facts' || String(selectedFood.id || '').startsWith('off-');
-    if (selectedFood.id && !isExternalOff) {
-      payload.food_id = selectedFood.id;
-    } else {
-      payload.custom_food = {
-        name: selectedFood.name,
-        category: selectedFood.category || mealType,
-        serving_size: selectedFood.serving_size || '1 serving',
-        calories: selectedFood.calories || 0,
-        protein: selectedFood.protein || 0,
-        carbs: selectedFood.carbs || 0,
-        fat: selectedFood.fat || 0,
-        estimated_cost: selectedFood.estimated_cost || 0,
-      };
-    }
+      const loggedData = await nutritionApi.logFood(payload);
 
-    // INSTANT: Close modal immediately, update parent dashboard UI, show toast
-    toast.success(`Logged ${quantity}x ${selectedFood.name}`);
-    onSuccess(optimisticItem);
-    onClose();
-
-    // Background server sync
-    nutritionApi.logFood(payload).catch((err: any) => {
-      console.error("Background logFood error:", err);
+      toast.success(`Logged ${quantity}x ${selectedFood.name}`);
+      onSuccess(loggedData);
+      onClose();
+    } catch (err: any) {
+      console.error("Failed to log single food:", err);
       toast.error(err?.message || `Failed to save ${selectedFood.name} to server`);
-    });
+    } finally {
+      setIsLogging(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -338,7 +297,11 @@ export function LogFoodModal({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white transition-colors">
+          <button 
+            onClick={onClose} 
+            disabled={isLogging}
+            className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white transition-colors disabled:opacity-50"
+          >
             <X size={16} />
           </button>
         </div>
@@ -465,17 +428,25 @@ export function LogFoodModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-3.5 rounded-xl border border-white/10 text-white/70 hover:text-white text-xs font-black tracking-widest uppercase hover:bg-white/5 transition-colors"
+                  disabled={isLogging}
+                  className="flex-1 py-3.5 rounded-xl border border-white/10 text-white/70 hover:text-white text-xs font-black tracking-widest uppercase hover:bg-white/5 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleLogPlannedMeal}
-                  disabled={plannedTotals.count === 0}
-                  className="flex-[2] py-3.5 rounded-xl bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-[0_0_15px_rgba(173,255,0,0.2)]"
+                  disabled={plannedTotals.count === 0 || isLogging}
+                  className="flex-[2] py-3.5 rounded-xl bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-[0_0_15px_rgba(173,255,0,0.2)] active:scale-[0.98]"
                 >
-                  Log Meal ({plannedTotals.count} items)
+                  {isLogging ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Logging Meal...</span>
+                    </>
+                  ) : (
+                    <span>Log Meal ({plannedTotals.count} items)</span>
+                  )}
                 </button>
               </div>
             </div>
@@ -696,17 +667,25 @@ export function LogFoodModal({
               <button
                 type="button"
                 onClick={() => setSelectedFood(null)}
-                className="flex-1 py-3.5 rounded-xl border border-white/10 text-white text-xs font-black tracking-widest uppercase hover:bg-white/5 transition-colors"
+                disabled={isLogging}
+                className="flex-1 py-3.5 rounded-xl border border-white/10 text-white text-xs font-black tracking-widest uppercase hover:bg-white/5 transition-colors disabled:opacity-50"
               >
                 Back
               </button>
               <button
                 type="button"
                 onClick={handleLogSingle}
-                disabled={quantity <= 0}
-                className="flex-[2] py-3.5 rounded-xl bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black text-xs font-black tracking-widest uppercase disabled:opacity-50 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(173,255,0,0.2)]"
+                disabled={quantity <= 0 || isLogging}
+                className="flex-[2] py-3.5 rounded-xl bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black text-xs font-black tracking-widest uppercase disabled:opacity-50 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(173,255,0,0.2)] active:scale-[0.98]"
               >
-                Log Food
+                {isLogging ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Logging Food...</span>
+                  </>
+                ) : (
+                  <span>Log Food</span>
+                )}
               </button>
             </div>
           </div>

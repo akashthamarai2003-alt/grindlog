@@ -398,7 +398,8 @@ export class NutritionService {
     if (!input.food_id && !input.custom_food) throw new Error("Must provide food_id or custom_food");
     
     const supabase = await createServerSupabase();
-    let finalFoodId = input.food_id;
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let finalFoodId = input.food_id && UUID_REGEX.test(input.food_id) ? input.food_id : null;
     let food: any = null;
 
     if (finalFoodId) {
@@ -409,16 +410,19 @@ export class NutritionService {
         .eq('id', finalFoodId)
         .eq('is_active', true)
         .single();
-      if (error || !data) throw new Error("FOOD_NOT_FOUND");
-      food = data;
-    } else if (input.custom_food) {
-      // Search for existing custom food by exact name
+      if (!error && data) {
+        food = data;
+      }
+    }
+
+    if (!food && input.custom_food) {
+      // Search for existing custom food by name
       const adminClient = require('@/lib/services/supabase/admin').createAdminClient();
+      const foodName = input.custom_food.name.trim();
       const { data: existing } = await adminClient
         .from('foods')
         .select('*')
-        .eq('name', input.custom_food.name)
-        .eq('is_active', true)
+        .ilike('name', foodName)
         .limit(1)
         .maybeSingle();
 
@@ -430,23 +434,41 @@ export class NutritionService {
         const { data: newFood, error: newFoodErr } = await adminClient
           .from('foods')
           .insert({
-            name: input.custom_food.name,
+            name: foodName,
             category: input.custom_food.category,
             serving_size: (input.custom_food as any).serving_size || '1 serving',
-            calories: input.custom_food.calories,
-            protein: input.custom_food.protein,
-            carbs: input.custom_food.carbs,
-            fat: input.custom_food.fat,
-            estimated_cost: input.custom_food.estimated_cost || 0,
+            calories: Number(input.custom_food.calories) || 0,
+            protein: Number(input.custom_food.protein) || 0,
+            carbs: Number(input.custom_food.carbs) || 0,
+            fat: Number(input.custom_food.fat) || 0,
+            estimated_cost: Number(input.custom_food.estimated_cost) || 0,
             is_active: false // Critical: Keep custom foods out of the public AI database pool!
-
           })
           .select()
-          .single();
-        if (newFoodErr || !newFood) throw new Error("FAILED_TO_CREATE_CUSTOM_FOOD: " + JSON.stringify(newFoodErr));
-        food = newFood;
-        finalFoodId = newFood.id;
+          .maybeSingle();
+
+        if (newFood) {
+          food = newFood;
+          finalFoodId = newFood.id;
+        } else if (newFoodErr?.code === '23505') {
+          const { data: dupFood } = await adminClient
+            .from('foods')
+            .select('*')
+            .ilike('name', foodName)
+            .limit(1)
+            .maybeSingle();
+          if (dupFood) {
+            food = dupFood;
+            finalFoodId = dupFood.id;
+          }
+        } else {
+          throw new Error("FAILED_TO_CREATE_CUSTOM_FOOD: " + JSON.stringify(newFoodErr));
+        }
       }
+    }
+
+    if (!food) {
+      throw new Error("FOOD_NOT_FOUND");
     }
 
     // 2. Calculate scaled values
@@ -471,7 +493,7 @@ export class NutritionService {
         estimated_cost: scaledCost,
         source: 'manual'
       })
-      .select()
+      .select('*, foods(*)')
       .single();
 
     if (logErr) throw logErr;
@@ -482,6 +504,191 @@ export class NutritionService {
     });
 
     return log;
+  }
+
+  static async logMultipleFoods(userId: string, items: LogFoodInput[]) {
+    if (!items || items.length === 0) return [];
+
+    const supabase = await createServerSupabase();
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    // Collect valid food UUIDs
+    const validUuids = items
+      .map(it => it.food_id)
+      .filter((id): id is string => Boolean(id && UUID_REGEX.test(id)));
+
+    let foodsById = new Map<string, any>();
+    if (validUuids.length > 0) {
+      const { data: dbFoods } = await supabase
+        .from('foods')
+        .select('*')
+        .in('id', validUuids);
+      if (dbFoods) {
+        dbFoods.forEach(f => foodsById.set(f.id, f));
+      }
+    }
+
+    let adminClient: any = null;
+    const logsToInsert: any[] = [];
+
+    for (const item of items) {
+      const q = Number(item.quantity) || 1;
+      if (q <= 0) continue;
+
+      let food: any = null;
+      let finalFoodId: string | null = null;
+
+      if (item.food_id && UUID_REGEX.test(item.food_id)) {
+        food = foodsById.get(item.food_id);
+        if (food) finalFoodId = food.id;
+      }
+
+      if (!food && item.custom_food) {
+        if (!adminClient) {
+          adminClient = require('@/lib/services/supabase/admin').createAdminClient();
+        }
+
+        const foodName = item.custom_food.name.trim();
+        const { data: existing } = await adminClient
+          .from('foods')
+          .select('*')
+          .ilike('name', foodName)
+          .limit(1)
+          .maybeSingle();
+
+        if (existing) {
+          food = existing;
+          finalFoodId = existing.id;
+        } else {
+          const { data: newFood, error: newFoodErr } = await adminClient
+            .from('foods')
+            .insert({
+              name: foodName,
+              category: item.custom_food.category || item.meal_type,
+              serving_size: (item.custom_food as any).serving_size || '1 serving',
+              calories: Number(item.custom_food.calories) || 0,
+              protein: Number(item.custom_food.protein) || 0,
+              carbs: Number(item.custom_food.carbs) || 0,
+              fat: Number(item.custom_food.fat) || 0,
+              estimated_cost: Number(item.custom_food.estimated_cost) || 0,
+              is_active: false
+            })
+            .select()
+            .maybeSingle();
+
+          if (newFood) {
+            food = newFood;
+            finalFoodId = newFood.id;
+          } else if (newFoodErr?.code === '23505') {
+            const { data: dupFood } = await adminClient
+              .from('foods')
+              .select('*')
+              .ilike('name', foodName)
+              .limit(1)
+              .maybeSingle();
+            if (dupFood) {
+              food = dupFood;
+              finalFoodId = dupFood.id;
+            }
+          }
+        }
+      }
+
+      if (!food) {
+        // Fallback placeholder food to guarantee foreign key validity
+        if (!adminClient) {
+          adminClient = require('@/lib/services/supabase/admin').createAdminClient();
+        }
+        const foodName = ((item as any).name || (item.custom_food as any)?.name || 'Meal Item').trim();
+        const { data: existingPlaceholder } = await adminClient
+          .from('foods')
+          .select('*')
+          .ilike('name', foodName)
+          .limit(1)
+          .maybeSingle();
+
+        if (existingPlaceholder) {
+          food = existingPlaceholder;
+          finalFoodId = existingPlaceholder.id;
+        } else {
+          const { data: placeholderFood, error: pErr } = await adminClient
+            .from('foods')
+            .insert({
+              name: foodName,
+              category: item.meal_type || 'meal',
+              serving_size: '1 serving',
+              calories: 0,
+              protein: 0,
+              carbs: 0,
+              fat: 0,
+              estimated_cost: 0,
+              is_active: false
+            })
+            .select()
+            .maybeSingle();
+
+          if (placeholderFood) {
+            food = placeholderFood;
+            finalFoodId = placeholderFood.id;
+          } else if (pErr?.code === '23505') {
+            const { data: dupFood } = await adminClient
+              .from('foods')
+              .select('*')
+              .ilike('name', foodName)
+              .limit(1)
+              .maybeSingle();
+            if (dupFood) {
+              food = dupFood;
+              finalFoodId = dupFood.id;
+            }
+          }
+        }
+      }
+
+      const rawCals = item.custom_food?.calories !== undefined ? item.custom_food.calories : (food?.calories || 0);
+      const rawPro = item.custom_food?.protein !== undefined ? item.custom_food.protein : (food?.protein || 0);
+      const rawCarbs = item.custom_food?.carbs !== undefined ? item.custom_food.carbs : (food?.carbs || 0);
+      const rawFat = item.custom_food?.fat !== undefined ? item.custom_food.fat : (food?.fat || 0);
+      const rawCost = item.custom_food?.estimated_cost !== undefined ? item.custom_food.estimated_cost : (food?.estimated_cost || 0);
+
+      const scaledCalories = Math.round(Number(rawCals) * q);
+      const scaledProtein = Number((Number(rawPro) * q).toFixed(2));
+      const scaledCarbs = Number((Number(rawCarbs) * q).toFixed(2));
+      const scaledFat = Number((Number(rawFat) * q).toFixed(2));
+      const scaledCost = Number((Number(rawCost) * q).toFixed(2));
+
+      logsToInsert.push({
+        user_id: userId,
+        food_id: finalFoodId,
+        meal_type: item.meal_type,
+        quantity: q,
+        calories: scaledCalories,
+        protein: scaledProtein,
+        carbs: scaledCarbs,
+        fat: scaledFat,
+        estimated_cost: scaledCost,
+        source: 'manual'
+      });
+    }
+
+    if (logsToInsert.length === 0) return [];
+
+    const { data: logs, error: logErr } = await supabase
+      .from('food_logs')
+      .insert(logsToInsert)
+      .select('*, foods(*)');
+
+    if (logErr) {
+      console.error("Error in batch insert food_logs:", logErr);
+      throw logErr;
+    }
+
+    // Single background update of daily summary
+    this.updateDailySummary(userId).catch(err => {
+      console.warn("Background updateDailySummary warning in logMultipleFoods:", err);
+    });
+
+    return logs || [];
   }
 
   static async logWater(userId: string, amountMl: number) {

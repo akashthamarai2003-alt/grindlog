@@ -3,6 +3,36 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { isFitnessPro } from "@/lib/fitness/subscription/access";
 
+const VALID_MEAL_TYPES = [
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+  "pre_workout",
+  "post_workout",
+  "morning_snack",
+  "evening_snack",
+  "late_snack",
+];
+
+function normalizeMealType(mealType: string): string {
+  const normalizedMealType = String(mealType || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[-\s]+/g, "_");
+
+  if (VALID_MEAL_TYPES.includes(normalizedMealType)) return normalizedMealType;
+  if (normalizedMealType.includes("pre")) return "pre_workout";
+  if (normalizedMealType.includes("post")) return "post_workout";
+  if (normalizedMealType.includes("break")) return "breakfast";
+  if (normalizedMealType.includes("lunch")) return "lunch";
+  if (normalizedMealType.includes("din")) return "dinner";
+  if (/^[a-z0-9_]+$/.test(normalizedMealType) && normalizedMealType.length > 0) {
+    return normalizedMealType;
+  }
+  return "snack";
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabase();
@@ -23,6 +53,27 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+
+    // 1. Batch logging support: { items: [...] }
+    if (body.items && Array.isArray(body.items)) {
+      if (body.items.length === 0) {
+        return NextResponse.json(
+          { success: false, error: { code: 'INVALID_INPUT', message: 'Items array cannot be empty.' } },
+          { status: 400 }
+        );
+      }
+
+      const normalizedItems = body.items.map((it: any) => ({
+        ...it,
+        meal_type: normalizeMealType(it.meal_type),
+        quantity: Number(it.quantity) || 1
+      }));
+
+      const logs = await NutritionService.logMultipleFoods(user.id, normalizedItems);
+      return NextResponse.json({ success: true, data: logs });
+    }
+
+    // 2. Single food logging fallback
     const { food_id, meal_type, quantity, custom_food } = body;
 
     if ((!food_id && !custom_food) || !meal_type || quantity === undefined) {
@@ -39,37 +90,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Normalize and validate meal_type
-    const normalizedMealType = String(meal_type || "")
-      .toLowerCase()
-      .trim()
-      .replace(/[-\s]+/g, "_");
-
-    const validMealTypes = [
-      "breakfast",
-      "lunch",
-      "dinner",
-      "snack",
-      "pre_workout",
-      "post_workout",
-      "morning_snack",
-      "evening_snack",
-      "late_snack",
-    ];
-
-    let finalMealType = normalizedMealType;
-    if (!validMealTypes.includes(finalMealType)) {
-      if (finalMealType.includes("pre")) finalMealType = "pre_workout";
-      else if (finalMealType.includes("post")) finalMealType = "post_workout";
-      else if (finalMealType.includes("break")) finalMealType = "breakfast";
-      else if (finalMealType.includes("lunch")) finalMealType = "lunch";
-      else if (finalMealType.includes("din")) finalMealType = "dinner";
-      else if (/^[a-z0-9_]+$/.test(finalMealType) && finalMealType.length > 0) {
-        // Accept valid custom meal type
-      } else {
-        finalMealType = "snack";
-      }
-    }
+    const finalMealType = normalizeMealType(meal_type);
 
     const log = await NutritionService.logFood(user.id, { 
       food_id, 

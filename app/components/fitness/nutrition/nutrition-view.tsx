@@ -571,14 +571,16 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }, 450);
   };
 
-  const handleFoodLoggedSuccess = (optimisticData?: any) => {
-    if (optimisticData) {
-      const items = Array.isArray(optimisticData) ? optimisticData : [optimisticData];
+  const handleFoodLoggedSuccess = (loggedData?: any) => {
+    if (loggedData) {
+      const items = Array.isArray(loggedData) ? loggedData : [loggedData];
       if (items.length > 0) {
         setData((prev: any) => {
           if (!prev) return prev;
           const currentLogged = Array.isArray(prev.logged_foods) ? [...prev.logged_foods] : [];
-          const updatedLogged = [...currentLogged, ...items];
+          const existingIds = new Set(currentLogged.map((f: any) => f.id));
+          const newItems = items.filter((f: any) => !existingIds.has(f.id));
+          const updatedLogged = [...currentLogged, ...newItems];
 
           let addedCals = 0;
           let addedPro = 0;
@@ -586,7 +588,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           let addedFat = 0;
           let addedCost = 0;
 
-          items.forEach((item: any) => {
+          newItems.forEach((item: any) => {
             addedCals += Number(item.calories) || 0;
             addedPro += Number(item.protein) || 0;
             addedCarbs += Number(item.carbs) || 0;
@@ -601,7 +603,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           const targetCals = Number(prev.targets?.calories) || 2000;
           const targetPro = Number(prev.targets?.protein) || 130;
 
-          return {
+          const updatedState = {
             ...prev,
             logged_foods: updatedLogged,
             consumed: {
@@ -627,11 +629,21 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               protein_percent: Math.min(100, Math.round((newConsumedPro / (targetPro || 1)) * 100)),
             }
           };
+
+          if (selectedDateRef.current) {
+            dateCacheRef.current[selectedDateRef.current] = updatedState;
+          }
+
+          return updatedState;
         });
 
         // Reconcile quietly in the background without disturbing the user
-        nutritionApi.getToday(selectedDateRef.current).then(res => {
-          if (res) setData(res);
+        const targetDate = selectedDateRef.current;
+        nutritionApi.getToday(targetDate).then(res => {
+          if (res && selectedDateRef.current === targetDate) {
+            setData(res);
+            dateCacheRef.current[targetDate] = res;
+          }
         }).catch(() => {});
         return;
       }
