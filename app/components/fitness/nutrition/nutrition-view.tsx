@@ -855,6 +855,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     if (/\bpaneer\b/i.test(name) && !name.includes('matar paneer')) {
       return false;
     }
+    // For Home living: Family curd/dahi and homemade buttermilk are provided by family
+    if (isHome && (name.includes('curd') || name.includes('dahi') || name.includes('chaas') || name.includes('buttermilk') || name.includes('raita'))) {
+      return true;
+    }
     return (
       name.includes('rice') || 
       name.includes('roti') || 
@@ -874,6 +878,76 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       name.includes('core meal') ||
       name.includes('base meal')
     );
+  };
+
+  const getRealisticItemCost = (foodName?: string, defaultCost?: number) => {
+    if (!foodName) return typeof defaultCost === 'number' && defaultCost > 0 ? defaultCost : 20;
+    const lower = foodName.toLowerCase();
+
+    if (lower.includes('egg white')) return 5;
+    if (lower.includes('egg')) return 7; // 1 farm egg = ₹7
+    if (lower.includes('curd') || lower.includes('dahi')) return 12; // 100g curd = ₹12
+    if (lower.includes('paneer')) return 35; // 100g paneer = ₹35
+    if (lower.includes('soya chunk') || lower.includes('soy chunk')) return 15; // 50g = ₹15
+    if (lower.includes('tofu')) return 28;
+    if (lower.includes('chicken breast')) return 45; // 100g = ₹45
+    if (lower.includes('chicken curry') || lower.includes('chicken')) return 50;
+    if (lower.includes('fish')) return 50;
+    if (lower.includes('roasted peanut')) return 8; // 30g = ₹8
+    if (lower.includes('roasted chana')) return 8; // 25-30g = ₹8
+    if (lower.includes('banana')) return 6; // 1 banana = ₹6
+    if (lower.includes('apple')) return 25; // 1 apple = ₹25
+    if (lower.includes('milk')) return 15; // 250ml milk = ₹15
+    if (lower.includes('whey') || lower.includes('protein powder')) return 65; // 1 scoop = ₹65
+
+    return typeof defaultCost === 'number' && defaultCost > 0 ? defaultCost : 20;
+  };
+
+  const formatItemServing = (qty: number, rawServing?: string, foodName?: string) => {
+    const q = Number(qty) || 1;
+    const serving = (rawServing || '1 serving').trim();
+    const nameLower = (foodName || '').toLowerCase();
+
+    // If serving already starts with this quantity (e.g. q=2 and serving="2 large" or "2 bowls")
+    if (serving.startsWith(`${q} `) || serving.startsWith(`${q}x`)) {
+      if (nameLower.includes('egg') && !serving.toLowerCase().includes('egg')) {
+        return `${serving} eggs`;
+      }
+      return serving;
+    }
+
+    if (q <= 1) {
+      return serving;
+    }
+
+    // Match leading "1 " or "1x " (e.g. "1 large (50g)", "1 bowl (150g)", "1 cup (200ml)")
+    const leadingOneMatch = serving.match(/^1\s*(.+)$/i);
+    if (leadingOneMatch) {
+      const unit = leadingOneMatch[1].trim();
+      
+      // Match grammar like "large (50g)" or "bowl (150g)"
+      const bracketMatch = unit.match(/^([^(]+)\((\d+)\s*([a-zA-Z]+)\)$/);
+      if (bracketMatch) {
+        const descriptor = bracketMatch[1].trim();
+        const amount = parseInt(bracketMatch[2], 10);
+        const unitSuffix = bracketMatch[3];
+        const totalAmount = amount * q;
+
+        if (nameLower.includes('egg')) {
+          return `${q} large eggs (${totalAmount}${unitSuffix})`;
+        }
+        const pluralDesc = descriptor.endsWith('s') ? descriptor : `${descriptor}s`;
+        return `${q} ${pluralDesc} (${totalAmount}${unitSuffix})`;
+      }
+
+      if (nameLower.includes('egg')) {
+        return `${q} large eggs`;
+      }
+      const pluralUnit = unit.endsWith('s') ? unit : `${unit}s`;
+      return `${q} ${pluralUnit}`;
+    }
+
+    return `x${q} ${serving}`;
   };
 
   return (
@@ -1211,8 +1285,16 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
               const corePlannedItems = plannedFoods.filter((it: any) => isItemCoreCheck(it));
               const addonPlannedItems = plannedFoods.filter((it: any) => !isItemCoreCheck(it));
-              const addonCost = addonPlannedItems.reduce((acc: number, it: any) => acc + Math.round((Number(it.foods?.estimated_cost) || 20) * (Number(it.quantity) || 1)), 0);
-              const totalMealCost = plannedFoods.reduce((acc: number, it: any) => acc + Math.round((Number(it.foods?.estimated_cost) || 20) * (Number(it.quantity) || 1)), 0);
+              const addonCost = addonPlannedItems.reduce((acc: number, it: any) => {
+                const itemUnitCost = getRealisticItemCost(it.foods?.name, Number(it.foods?.estimated_cost));
+                return acc + Math.round(itemUnitCost * (Number(it.quantity) || 1));
+              }, 0);
+              const totalMealCost = plannedFoods.reduce((acc: number, it: any) => {
+                const isCore = isItemCoreCheck(it);
+                if (isCore) return acc;
+                const itemUnitCost = getRealisticItemCost(it.foods?.name, Number(it.foods?.estimated_cost));
+                return acc + Math.round(itemUnitCost * (Number(it.quantity) || 1));
+              }, 0);
               const hasCoreAndAddon = corePlannedItems.length > 0 && addonPlannedItems.length > 0;
               
               const isActive = !completed && isToday && getActiveMealType() === meal.meal_type;
@@ -1229,8 +1311,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   }`}
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
                         isActive 
                           ? 'bg-[#ADFF00] text-black font-black' 
                           : completed 
@@ -1239,7 +1321,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                       }`}>
                         {getMealIcon(meal.meal_type)}
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-sm font-bold text-white">{formatMealType(meal.meal_type)}</h3>
                           {isActive && (
@@ -1255,24 +1337,29 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-white/50 font-medium">
+                          <p className="text-xs text-white/50 font-medium shrink-0">
                             {completed ? 'Logged' : (meal.meal_plan_items?.length > 0 ? 'Planned' : 'Not planned yet')}
                           </p>
                           {meal.name && meal.name.toLowerCase() !== formatMealType(meal.meal_type).toLowerCase() && (
-                            <span className="text-xs text-white/70 font-semibold truncate max-w-[180px]">
+                            <span className="text-xs text-white/70 font-semibold truncate max-w-[240px] sm:max-w-md" title={meal.name}>
                               • {meal.name}
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      {completed && (
+                    <div className="text-right shrink-0">
+                      {completed ? (
                         <>
                           <p className="text-sm font-black text-white">{mealCals} <span className="text-[10px] text-white/50">kcal</span></p>
                           <p className="text-xs font-bold text-[#ADFF00]">{mealPro}g Protein</p>
                         </>
-                      )}
+                      ) : plannedFoods.length > 0 ? (
+                        <>
+                          <p className="text-sm font-bold text-white/90">{Math.round(plannedTotals.calories)} <span className="text-[10px] text-white/40 font-medium">kcal</span></p>
+                          <p className="text-xs font-bold text-[#ADFF00]">{Math.round(plannedTotals.protein)}g Protein</p>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                   
@@ -1289,7 +1376,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                               />
                               <div>
                                 <span className="font-bold block text-white/90">{f.foods?.name || 'Logged food'}</span>
-                                <span className="text-[11px] text-white/40 font-medium">x{f.quantity} serving{f.quantity > 1 ? 's' : ''}</span>
+                                <span className="text-[11px] text-white/40 font-medium">{formatItemServing(f.quantity, f.foods?.serving_size, f.foods?.name)}</span>
                               </div>
                             </span>
                             <div className="flex items-center gap-2.5">
@@ -1330,7 +1417,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                                       />
                                       <div>
                                         <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Base staple'}</span>
-                                        <span className="text-[10px] text-white/40 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
+                                        <span className="text-[10px] text-white/40 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
                                       </div>
                                     </span>
                                     <span className="text-xs font-bold text-white/60">
@@ -1363,16 +1450,16 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                                         <div className="flex items-center gap-1.5">
                                           <span className="font-bold block text-xs text-white">{item.foods?.name || 'Protein booster'}</span>
                                           {item.foods?.protein ? (
-                                            <span className="text-[9px] font-extrabold text-[#ADFF00] bg-[#ADFF00]/15 px-1 py-0.2 rounded border border-[#ADFF00]/30">
+                                            <span className="text-[9px] font-extrabold text-[#ADFF00] bg-[#ADFF00]/15 px-1.5 py-0.5 rounded border border-[#ADFF00]/30 shadow-[0_0_8px_rgba(173,255,0,0.15)]">
                                               +{Math.round(Number(item.foods.protein) * (Number(item.quantity) || 1))}g P
                                             </span>
                                           ) : null}
                                         </div>
-                                        <span className="text-[10px] text-white/50 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
+                                        <span className="text-[10px] text-white/50 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
                                       </div>
                                     </span>
-                                    <span className="text-xs font-black text-[#ADFF00]">
-                                      {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span>
+                                    <span className="text-xs font-bold text-white/80">
+                                      {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
                                     </span>
                                   </li>
                                 ))}
@@ -1400,7 +1487,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                                     />
                                     <div>
                                       <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Food item'}</span>
-                                      <span className="text-[10px] text-white/40 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
+                                      <span className="text-[10px] text-white/40 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
                                     </div>
                                   </span>
                                   <span className="text-xs font-black text-white/70">
@@ -1431,7 +1518,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                                     />
                                     <div>
                                       <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Food item'}</span>
-                                      <span className="text-[10px] text-white/40 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
+                                      <span className="text-[10px] text-white/40 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
                                     </div>
                                   </span>
                                   <span className="text-xs font-black text-white/70">

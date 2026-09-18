@@ -6,6 +6,7 @@ import {
   sanitizeAIItemName,
   sanitizeMealTitle,
   isStapleCoreFood,
+  getRealisticFoodCost,
   NutritionFoodReference
 } from "@/lib/services/nutrition/nutrition-service";
 
@@ -177,6 +178,7 @@ CRITICAL USER PROFILE & STRICT CONSTRAINTS:
 
 6. STRICT SERVING QUANTITY & CALORIE RULES:
    - "quantity" MUST be a small portion count (e.g. 1, 2, or 3). NEVER output grams, milliliters, or numbers >= 5 as "quantity"! (e.g. for 100g paneer, quantity is 1 and serving_size is "100g". For 250ml milk, quantity is 1 and serving_size is "1 glass (250ml)").
+   - "serving_size": Describe the single unit cleanly (e.g. "large", "piece", "bowl (150g)", "cup (200ml)"). NEVER prefix with "1 " if quantity > 1 (e.g., for 3 eggs: quantity: 3, serving_size: "large (50g)" or "large eggs").
    - TARGET CALORIES PER MEAL: Distribute total daily calories (${targets.calories} kcal) realistically:
      * Breakfast: ~${Math.round(targets.calories * (slotPercentages['breakfast'] || 0.30))} kcal, ~${Math.round(targets.protein * (slotPercentages['breakfast'] || 0.30))}g protein
      * Lunch: ~${Math.round(targets.calories * (slotPercentages['lunch'] || 0.40))} kcal, ~${Math.round(targets.protein * (slotPercentages['lunch'] || 0.40))}g protein
@@ -337,7 +339,8 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           const baseCarbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
           const baseFat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
           const isItemCore = isStapleCoreFood(fName, profile?.food_environment);
-          const baseCost = isItemCore ? 0 : Math.round(Number(ref?.estimated_cost || 20) * qty);
+          const unitCost = isItemCore ? 0 : getRealisticFoodCost(fName, Number(ref?.estimated_cost));
+          const baseCost = isItemCore ? 0 : Math.round(unitCost * qty);
 
           return {
             food_id: ref?.id,

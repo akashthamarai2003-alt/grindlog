@@ -79,6 +79,11 @@ export function isStapleCoreFood(foodName?: string, foodEnv?: string): boolean {
     return false;
   }
 
+  // For Home living: Family curd/dahi and homemade buttermilk (chaas) are provided by family
+  if (env === 'home' && (name.includes('curd') || name.includes('dahi') || name.includes('chaas') || name.includes('buttermilk') || name.includes('raita'))) {
+    return true;
+  }
+
   // Staples typically provided by PG Mess / Hostel / Family Home Kitchen
   const stapleTerms = [
     'rice', 'chawal', 'jeera rice', 'brown rice', 'pulao', 'biryani',
@@ -91,6 +96,33 @@ export function isStapleCoreFood(foodName?: string, foodEnv?: string): boolean {
   ];
 
   return stapleTerms.some(term => name.includes(term));
+}
+
+/**
+ * Realistic Indian food cost estimator (₹ INR) for common fitness ingredients.
+ * Aligns out-of-pocket budget calculations with real-world kirana / market prices.
+ */
+export function getRealisticFoodCost(foodName?: string, defaultCost?: number): number {
+  if (!foodName) return typeof defaultCost === 'number' && defaultCost > 0 ? defaultCost : 20;
+  const lower = foodName.toLowerCase();
+
+  if (lower.includes('egg white')) return 5;
+  if (lower.includes('egg')) return 7; // 1 farm egg = ₹7
+  if (lower.includes('curd') || lower.includes('dahi')) return 12; // 100g curd = ₹12
+  if (lower.includes('paneer')) return 35; // 100g paneer = ₹35
+  if (lower.includes('soya chunk') || lower.includes('soy chunk')) return 15; // 50g = ₹15
+  if (lower.includes('tofu')) return 28;
+  if (lower.includes('chicken breast')) return 45; // 100g = ₹45
+  if (lower.includes('chicken curry') || lower.includes('chicken')) return 50;
+  if (lower.includes('fish')) return 50;
+  if (lower.includes('roasted peanut')) return 8; // 30g = ₹8
+  if (lower.includes('roasted chana')) return 8; // 25-30g = ₹8
+  if (lower.includes('banana')) return 6; // 1 banana = ₹6
+  if (lower.includes('apple')) return 25; // 1 apple = ₹25
+  if (lower.includes('milk')) return 15; // 250ml milk = ₹15
+  if (lower.includes('whey') || lower.includes('protein powder')) return 65; // 1 scoop = ₹65
+
+  return typeof defaultCost === 'number' && defaultCost > 0 ? defaultCost : 20;
 }
 
 function parseAIItemText(value: unknown): Array<{ name: string; servingSize: string; multiplier: number }> {
@@ -1389,7 +1421,8 @@ export class NutritionService {
         const carbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
         const fat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
         const isCoreItem = isStapleCoreFood(foodName, profile?.food_environment);
-        const cost = isCoreItem ? 0 : Math.round(Number(ref?.estimated_cost || 25) * qty);
+        const unitCost = getRealisticFoodCost(foodName, Number(ref?.estimated_cost));
+        const cost = isCoreItem ? 0 : Math.round(unitCost * qty);
 
         return {
           id: `rotating-item-${index}`,
@@ -2174,11 +2207,8 @@ export class NutritionService {
         consumed.carbs += Number(f.carbs);
         consumed.fat += Number(f.fat);
         
-        let cost = Number(f.estimated_cost || 0);
         const isItemCore = isStapleCoreFood(f.foods?.name, fitProfile?.food_environment);
-        if (isItemCore) {
-          cost = 0; // core meals are free from PG/Hostel/Home/Canteen
-        }
+        const cost = isItemCore ? 0 : (Number(f.estimated_cost) || getRealisticFoodCost(f.foods?.name));
         consumed.spent += cost;
         
         if (f.meal_type) completedMealTypes.add(f.meal_type);
@@ -2195,11 +2225,8 @@ export class NutritionService {
     let monthSpent = 0;
     if (monthFoods) {
       monthFoods.forEach((f: any) => {
-        let cost = Number(f.estimated_cost || 0);
         const isItemCore = isStapleCoreFood(f.foods?.name, fitProfile?.food_environment);
-        if (isItemCore) {
-          cost = 0; // core meals are free from PG/Hostel/Home/Canteen
-        }
+        const cost = isItemCore ? 0 : (Number(f.estimated_cost) || getRealisticFoodCost(f.foods?.name));
         monthSpent += cost;
       });
     }
@@ -2266,13 +2293,14 @@ export class NutritionService {
           }
 
           const isItemCore = isStapleCoreFood(item.foods?.name, fitProfile?.food_environment);
+          const unitCost = isItemCore ? 0 : getRealisticFoodCost(item.foods?.name, item.foods?.estimated_cost);
           const normalizedItem = {
             ...item,
             is_core: isItemCore,
             serving_size: actualServing,
             foods: item.foods ? {
               ...item.foods,
-              estimated_cost: isItemCore ? 0 : (item.foods.estimated_cost || 20)
+              estimated_cost: unitCost
             } : item.foods
           };
 
@@ -2310,7 +2338,8 @@ export class NutritionService {
           const mFat = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.fat || 0) * it.quantity), 0).toFixed(1));
           const mCost = mItems.reduce((acc, it) => {
             const isCore = it.is_core ?? isStapleCoreFood(it.foods?.name, fitProfile?.food_environment);
-            return acc + (isCore ? 0 : Math.round((it.foods?.estimated_cost || 20) * it.quantity));
+            const itemUnitCost = isCore ? 0 : getRealisticFoodCost(it.foods?.name, it.foods?.estimated_cost);
+            return acc + Math.round(itemUnitCost * it.quantity);
           }, 0);
           const mName = titleByType[mType] || (mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan");
           plansByMealType.set(mType, {
