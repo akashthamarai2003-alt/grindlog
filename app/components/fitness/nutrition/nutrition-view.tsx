@@ -383,16 +383,52 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     if (delta === 0) return;
     pendingWaterDeltaRef.current = 0;
 
+    const targetDate = selectedDateRef.current;
+
     if (delta > 0) {
-      nutritionApi.logWater(delta).then(() => {
-        nutritionApi.getToday(selectedDateRef.current).then(res => { if (res) setData(res); }).catch(() => {});
+      nutritionApi.logWater(delta).then((res) => {
+        if (res?.total_water_ml !== undefined) {
+          setData((prev: any) => {
+            if (!prev) return prev;
+            const targetWater = Number(prev.targets?.water_ml) || 2500;
+            const updated = {
+              ...prev,
+              consumed: { ...prev.consumed, water_ml: res.total_water_ml },
+              progress: {
+                ...prev.progress,
+                water_percent: Math.min(100, Math.round((res.total_water_ml / (targetWater || 1)) * 100))
+              }
+            };
+            if (targetDate) {
+              dateCacheRef.current[targetDate] = updated;
+            }
+            return updated;
+          });
+        }
       }).catch(err => {
         console.error("Failed to sync water to server:", err);
         toast.error("Failed to sync water to server");
       });
     } else {
-      nutritionApi.removeWater(Math.abs(delta)).then(() => {
-        nutritionApi.getToday(selectedDateRef.current).then(res => { if (res) setData(res); }).catch(() => {});
+      nutritionApi.removeWater(Math.abs(delta)).then((res) => {
+        if (res?.total_water_ml !== undefined) {
+          setData((prev: any) => {
+            if (!prev) return prev;
+            const targetWater = Number(prev.targets?.water_ml) || 2500;
+            const updated = {
+              ...prev,
+              consumed: { ...prev.consumed, water_ml: res.total_water_ml },
+              progress: {
+                ...prev.progress,
+                water_percent: Math.min(100, Math.round((res.total_water_ml / (targetWater || 1)) * 100))
+              }
+            };
+            if (targetDate) {
+              dateCacheRef.current[targetDate] = updated;
+            }
+            return updated;
+          });
+        }
       }).catch(err => {
         console.error("Failed to sync water removal:", err);
         toast.error("Failed to sync water removal");
@@ -490,22 +526,12 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     if (!data) return;
     
     const targetWater = Number(data.targets?.water_ml) || 2500;
-    const currentWater = Math.min(targetWater, Number(data.consumed?.water_ml) || 0);
-    
-    // Check if goal is already reached
-    if (currentWater >= targetWater) {
-      toast.info(`Daily goal of ${(targetWater / 1000).toFixed(1)}L reached! Tap Goal ✏️ to increase.`);
-      return;
-    }
-
-    // Strictly cap at target
-    const newWater = Math.min(targetWater, currentWater + amount);
-    const addedActual = newWater - currentWater;
-    if (addedActual <= 0) return;
+    const currentWater = Number(data.consumed?.water_ml) || 0;
+    const newWater = currentWater + amount;
     
     setData((prev: any) => {
       if (!prev) return prev;
-      return {
+      const updated = {
         ...prev,
         consumed: { ...prev.consumed, water_ml: newWater },
         progress: {
@@ -513,16 +539,20 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           water_percent: Math.min(100, Math.round((newWater / (targetWater || 1)) * 100))
         }
       };
+      if (selectedDateRef.current) {
+        dateCacheRef.current[selectedDateRef.current] = updated;
+      }
+      return updated;
     });
     
-    if (newWater >= targetWater) {
+    if (newWater >= targetWater && currentWater < targetWater) {
       toast.success(`🎉 Daily water goal of ${(targetWater / 1000).toFixed(1)}L reached!`);
     } else {
-      toast.success(`Logged ${addedActual}ml of water`);
+      toast.success(`Logged ${amount}ml of water`);
     }
 
     // Debounce background API sync
-    pendingWaterDeltaRef.current += addedActual;
+    pendingWaterDeltaRef.current += amount;
     if (waterDebounceTimerRef.current) {
       clearTimeout(waterDebounceTimerRef.current);
     }
@@ -542,13 +572,13 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }
     if (!data) return;
     const targetWater = Number(data.targets?.water_ml) || 2500;
-    const currentWater = Math.min(targetWater, Number(data.consumed?.water_ml) || 0);
+    const currentWater = Number(data.consumed?.water_ml) || 0;
     if (currentWater <= 0) return;
     const newWater = Math.max(0, currentWater - amount);
 
     setData((prev: any) => {
       if (!prev) return prev;
-      return {
+      const updated = {
         ...prev,
         consumed: { ...prev.consumed, water_ml: newWater },
         progress: {
@@ -556,6 +586,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           water_percent: Math.min(100, Math.round((newWater / (targetWater || 1)) * 100))
         }
       };
+      if (selectedDateRef.current) {
+        dateCacheRef.current[selectedDateRef.current] = updated;
+      }
+      return updated;
     });
     toast.success(`Removed ${amount}ml of water`);
 
@@ -1683,7 +1717,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         <WaterBottleCard
           isPro={isPro}
           disabled={isFuture}
-          consumedMl={Math.min(Number(targets.water_ml) || 2500, Number(consumed.water_ml) || 0)}
+          consumedMl={Number(consumed.water_ml) || 0}
           targetMl={Number(targets.water_ml) || 2500}
           onAddWater={handleAddWater}
           onRemoveWater={handleRemoveWater}
@@ -1692,7 +1726,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
         {/* Water Intake History & Heatmap Card */}
         <WaterHistoryCard
-          todayConsumedMl={Math.min(Number(targets.water_ml) || 2500, Number(consumed.water_ml) || 0)}
+          todayConsumedMl={Number(consumed.water_ml) || 0}
           targetMl={Number(targets.water_ml) || 2500}
         />
 

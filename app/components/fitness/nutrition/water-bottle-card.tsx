@@ -27,12 +27,10 @@ export function WaterBottleCard({
 
   const rawConsumed = typeof consumedMl === 'number' && !isNaN(consumedMl) ? Math.max(0, consumedMl) : 0;
   const safeTarget = typeof targetMl === 'number' && !isNaN(targetMl) && targetMl > 0 ? targetMl : 2500;
-  // Strictly cap at user's chosen goal
-  const safeConsumed = Math.min(safeTarget, rawConsumed);
-  const isGoalReached = safeConsumed >= safeTarget;
-  const percent = Math.min(100, Math.max(0, Math.round((safeConsumed / safeTarget) * 100))) || 0;
+  const isGoalReached = rawConsumed >= safeTarget;
+  const percent = Math.min(100, Math.max(0, Math.round((rawConsumed / safeTarget) * 100))) || 0;
   const targetInLiters = (safeTarget / 1000).toFixed(1).replace(/\.0$/, "");
-  const consumedInLiters = (safeConsumed / 1000).toFixed(1);
+  const consumedInLiters = (rawConsumed / 1000).toFixed(1);
 
   // SVG Geometry Constants for Bottle ViewBox 0 0 110 230
   // Bottle liquid fills from base (y=196) up to shoulder (y=58) => height delta = 138
@@ -223,15 +221,13 @@ export function WaterBottleCard({
             )}
           </div>
 
-          {/* Value Display: 1.5 / 2.5 L */}
+          {/* Value Display: 3.0 / 3 L */}
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              {safeConsumed >= 1000
-                ? (safeConsumed / 1000).toFixed(1).replace(/\.0$/, "")
-                : safeConsumed}
+              {consumedInLiters}
             </span>
             <span className="text-sm sm:text-base font-bold text-white/50 pb-0.5">
-              / {targetInLiters} {safeConsumed >= 1000 ? "L" : "ml"}
+              / {targetInLiters} L
             </span>
           </div>
 
@@ -277,7 +273,7 @@ export function WaterBottleCard({
             {/* Minus Button */}
             <button
               type="button"
-              disabled={disabled || (isPro && safeConsumed <= 0)}
+              disabled={disabled || (isPro && rawConsumed <= 0)}
               onClick={() => onRemoveWater(stepAmount)}
               className="w-10 h-10 rounded-xl bg-black/40 hover:bg-black/70 active:scale-95 disabled:opacity-30 disabled:pointer-events-none text-white flex items-center justify-center transition-all cursor-pointer"
               title={`Remove ${stepAmount}ml`}
@@ -299,14 +295,14 @@ export function WaterBottleCard({
             {isPro ? (
               <button
                 type="button"
-                disabled={disabled || isGoalReached}
+                disabled={disabled}
                 onClick={() => onAddWater(stepAmount)}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${
-                  disabled || isGoalReached
+                  disabled
                     ? "bg-white/10 text-white/30 cursor-not-allowed shadow-none"
                     : "bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 text-black cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
                 }`}
-                title={isGoalReached ? `Daily goal of ${targetInLiters}L reached!` : `Add ${stepAmount}ml`}
+                title={`Add ${stepAmount}ml`}
               >
                 <Plus size={16} strokeWidth={3.5} />
               </button>

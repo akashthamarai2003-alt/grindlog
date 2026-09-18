@@ -39,12 +39,13 @@ export async function POST(request: Request) {
       );
     }
 
-    await NutritionService.logWater(user.id, amount_ml);
+    const result = await NutritionService.logWater(user.id, amount_ml);
 
     return NextResponse.json({ 
       success: true, 
       data: {
-        amount_ml
+        amount_ml,
+        total_water_ml: result.total_water_ml
       } 
     });
   } catch (error: any) {
@@ -73,17 +74,18 @@ export async function DELETE(request: Request) {
 
     if (isReset) {
       await NutritionService.resetTodayWater(user.id);
-      return NextResponse.json({ success: true, data: { reset: true } });
+      return NextResponse.json({ success: true, data: { reset: true, total_water_ml: 0 } });
     }
 
     const amount_ml = Number(searchParams.get('amount')) || 250;
 
-    await NutritionService.removeWater(user.id, amount_ml);
+    const result = await NutritionService.removeWater(user.id, amount_ml);
 
     return NextResponse.json({ 
       success: true, 
       data: {
-        amount_ml
+        amount_ml,
+        total_water_ml: result.total_water_ml
       } 
     });
   } catch (error: any) {

@@ -1089,10 +1089,19 @@ export class NutritionService {
     const supabase = await createServerSupabase();
     const tz = await this.getUserTimezone(userId);
     const { start, end } = await this.getLocalDateBoundaries(userId, tz);
-    const targets = await this.getEffectiveTargets(userId);
-    const targetMl = targets?.water_ml || 2500;
 
-    // Check today's current water total to prevent exceeding chosen goal
+    const { data, error } = await supabase
+      .from('fitness_os_water_logs')
+      .insert({
+        user_id: userId,
+        amount_ml: amountMl
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Fetch today's actual accumulated water
     const { data: todayWaters } = await supabase
       .from('fitness_os_water_logs')
       .select('amount_ml')
@@ -1100,37 +1109,20 @@ export class NutritionService {
       .gte('logged_at', start)
       .lte('logged_at', end);
 
-    const currentTotal = (todayWaters || []).reduce((sum, w) => sum + w.amount_ml, 0);
-    const allowedAmount = Math.max(0, Math.min(amountMl, targetMl - currentTotal));
-
-    if (allowedAmount <= 0) {
-      return { user_id: userId, amount_ml: 0, capped: true };
-    }
-
-    const { data, error } = await supabase
-      .from('fitness_os_water_logs')
-      .insert({
-        user_id: userId,
-        amount_ml: allowedAmount
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
+    const totalWaterMl = (todayWaters || []).reduce((sum, w) => sum + (Number(w.amount_ml) || 0), 0);
     
     // Non-blocking background summary update
     this.updateDailySummary(userId).catch(err => {
       console.warn("Background updateDailySummary warning in logWater:", err);
     });
-    return data;
+
+    return { ...data, total_water_ml: totalWaterMl };
   }
 
   static async removeWater(userId: string, amountMl: number = 250) {
     const supabase = await createServerSupabase();
     const tz = await this.getUserTimezone(userId);
     const { start, end } = await this.getLocalDateBoundaries(userId, tz);
-    const targets = await this.getEffectiveTargets(userId);
-    const targetMl = targets?.water_ml || 2500;
 
     const { data: todayLogs } = await supabase
       .from('fitness_os_water_logs')
@@ -1141,38 +1133,39 @@ export class NutritionService {
       .order('logged_at', { ascending: false });
 
     if (todayLogs && todayLogs.length > 0) {
-      const totalLogged = todayLogs.reduce((sum, l) => sum + l.amount_ml, 0);
-
-      // If user had bloated test logs (e.g. 8500ml), clean them to target - amountMl immediately
-      if (totalLogged > targetMl) {
-        const desiredTotal = Math.max(0, targetMl - amountMl);
-        await supabase
-          .from('fitness_os_water_logs')
-          .delete()
-          .eq('user_id', userId)
-          .gte('logged_at', start)
-          .lte('logged_at', end);
-
-        if (desiredTotal > 0) {
-          await supabase.from('fitness_os_water_logs').insert({ user_id: userId, amount_ml: desiredTotal });
-        }
-      } else {
-        const latestLog = todayLogs[0];
-        if (latestLog.amount_ml <= amountMl) {
-          await supabase.from('fitness_os_water_logs').delete().eq('id', latestLog.id);
+      let remainingToRemove = amountMl;
+      for (const log of todayLogs) {
+        if (remainingToRemove <= 0) break;
+        if (log.amount_ml <= remainingToRemove) {
+          remainingToRemove -= log.amount_ml;
+          await supabase.from('fitness_os_water_logs').delete().eq('id', log.id);
         } else {
           await supabase
             .from('fitness_os_water_logs')
-            .update({ amount_ml: latestLog.amount_ml - amountMl })
-            .eq('id', latestLog.id);
+            .update({ amount_ml: log.amount_ml - remainingToRemove })
+            .eq('id', log.id);
+          remainingToRemove = 0;
+          break;
         }
       }
     }
+
+    // Fetch today's actual remaining water
+    const { data: remainingWaters } = await supabase
+      .from('fitness_os_water_logs')
+      .select('amount_ml')
+      .eq('user_id', userId)
+      .gte('logged_at', start)
+      .lte('logged_at', end);
+
+    const totalWaterMl = (remainingWaters || []).reduce((sum, w) => sum + (Number(w.amount_ml) || 0), 0);
 
     // Non-blocking background summary update
     this.updateDailySummary(userId).catch(err => {
       console.warn("Background updateDailySummary warning in removeWater:", err);
     });
+
+    return { total_water_ml: totalWaterMl };
   }
 
   static async resetTodayWater(userId: string) {
@@ -1329,10 +1322,8 @@ export class NutritionService {
     const targets = await this.getEffectiveTargets(userId);
     const targetWater = Number(targets?.water_ml) || 2500;
     if (waters) {
-      waters.forEach(w => consumed.water_ml += w.amount_ml);
+      waters.forEach(w => consumed.water_ml += (Number(w.amount_ml) || 0));
     }
-    // Strictly cap at user's chosen goal
-    consumed.water_ml = Math.min(targetWater, consumed.water_ml);
     const totalMeals = plans && plans.length > 0 ? plans.length : 0;
     
     // We only consider a meal "completed" if it is in the meal plan AND we have logged something for it
@@ -2429,10 +2420,8 @@ export class NutritionService {
 
     const targetWater = Number(targets.water_ml) || 2500;
     if (waters) {
-      waters.forEach(w => consumed.water_ml += w.amount_ml);
+      waters.forEach(w => consumed.water_ml += (Number(w.amount_ml) || 0));
     }
-    // Strictly cap at user's chosen goal
-    consumed.water_ml = Math.min(targetWater, consumed.water_ml);
 
     let monthSpent = 0;
     if (monthFoods) {
