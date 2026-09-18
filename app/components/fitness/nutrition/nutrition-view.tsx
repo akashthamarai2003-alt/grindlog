@@ -368,8 +368,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       if (res.existing) {
         toast.info(res.message);
       } else {
-        toast.success("Meal plan generated successfully!");
+        toast.success(res.message || "7-Day weekly meal plan generated successfully!");
       }
+      // Invalidate local client date cache so all days reload fresh meals
+      dateCacheRef.current = {};
       await fetchToday(selectedDateRef.current);
     } catch (err: any) {
       toast.error(err?.message || "Failed to generate plan");
@@ -787,6 +789,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     Array.isArray(meal?.meal_plan_items) && meal.meal_plan_items.length > 0
   ));
   const hasLoggedFoods = loggedFoods.length > 0;
+  const weeklyStatus = data?.weekly_plan_status;
+  const canGeneratePlan = weeklyStatus ? Boolean(weeklyStatus.can_generate) : true;
 
   // Safe numerical calculations resistant to overflow/wrapping
   const targetCals = Number(targets.calories) || 2000;
@@ -1265,7 +1269,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             </h2>
             {data?.has_ai_plan ? (
               <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-[0_0_10px_rgba(173,255,0,0.15)]">
-                <Sparkles size={10} /> Luna AI 30-Day Plan
+                <Sparkles size={10} /> Luna AI Weekly Plan
               </span>
             ) : (
               <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
@@ -1287,16 +1291,28 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 {data.food_type}
               </span>
             )}
-            <button
-              type="button"
-              disabled={isGenerating}
-              onClick={handleGeneratePlan}
-              className="text-[10px] font-black text-black bg-[#ADFF00] hover:bg-[#c4ff33] px-3 py-1.5 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(173,255,0,0.25)] disabled:opacity-50 cursor-pointer shrink-0"
-              title="Generate or refresh your 30-day personalized diet plan with Luna AI"
-            >
-              {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
-              {isGenerating ? "Luna is planning..." : (data?.has_ai_plan ? "Regenerate Plan" : "Generate with Luna AI")}
-            </button>
+            {canGeneratePlan ? (
+              <button
+                type="button"
+                disabled={isGenerating}
+                onClick={handleGeneratePlan}
+                className="text-[10px] font-black text-black bg-[#ADFF00] hover:bg-[#c4ff33] px-3 py-1.5 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(173,255,0,0.25)] disabled:opacity-50 cursor-pointer shrink-0 active:scale-95"
+                title="Generate your weekly personalized diet plan with Luna AI (1 per week, max 4 per month)"
+              >
+                {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                {isGenerating ? "Luna is planning..." : (data?.has_ai_plan ? "Generate Next Week's Plan" : "Generate Weekly Plan")}
+              </button>
+            ) : (
+              <div 
+                className="flex items-center gap-1.5 text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/25 px-2.5 py-1.5 rounded-lg shrink-0 select-none shadow-[0_0_10px_rgba(173,255,0,0.08)]"
+                title={`Active Weekly Plan (${weeklyStatus?.plans_used_this_month || 1}/4 this month). Next plan generation available on ${weeklyStatus?.next_available_formatted || 'next week'}.`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF00] animate-pulse shrink-0" />
+                <span>Week Plan Active</span>
+                <span className="text-white/40">•</span>
+                <span className="text-white/80">Next: {weeklyStatus?.next_available_formatted || `in ${weeklyStatus?.days_remaining || 7}d`}</span>
+              </div>
+            )}
           </div>
         </div>
         
@@ -1317,14 +1333,23 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               }
             </p>
             {isPro ? (
-              <button 
-                disabled={isGenerating}
-                onClick={handleGeneratePlan}
-                className="px-5 py-3 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black font-black uppercase tracking-wider rounded-xl text-xs disabled:opacity-50 flex items-center justify-center gap-2 mx-auto transition-all shadow-[0_0_15px_rgba(173,255,0,0.3)] cursor-pointer"
-              >
-                {isGenerating ? <Loader2 className="animate-spin" size={14} /> : null}
-                {isGenerating ? "Generating Meal Plan..." : "Generate AI Meal Plan"}
-              </button>
+              canGeneratePlan ? (
+                <button 
+                  disabled={isGenerating}
+                  onClick={handleGeneratePlan}
+                  className="px-5 py-3 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black font-black uppercase tracking-wider rounded-xl text-xs disabled:opacity-50 flex items-center justify-center gap-2 mx-auto transition-all shadow-[0_0_15px_rgba(173,255,0,0.3)] cursor-pointer active:scale-95"
+                >
+                  {isGenerating ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                  {isGenerating ? "Generating Weekly Plan..." : "Generate AI Weekly Plan"}
+                </button>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#ADFF00]/10 border border-[#ADFF00]/20 rounded-xl text-xs font-bold text-[#ADFF00] mx-auto">
+                  <span className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse shrink-0" />
+                  <span>Week Plan Active</span>
+                  <span className="text-white/40">•</span>
+                  <span className="text-white/80">Next generation on {weeklyStatus?.next_available_formatted || 'next week'}</span>
+                </div>
+              )
             ) : (
               <a
                 href="/payment?returnTo=/nutrition&intent=upgrade_pro"

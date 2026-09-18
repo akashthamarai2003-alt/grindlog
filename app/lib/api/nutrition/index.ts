@@ -116,6 +116,13 @@ export const nutritionApi = {
     return json.data;
   },
 
+  async getPlanEligibility() {
+    const res = await fetch('/api/nutrition/generate-plan');
+    const json = await res.json();
+    if (!res.ok) throw json.error;
+    return json.data;
+  },
+
   async generatePlan() {
     const res = await fetch('/api/nutrition/generate-plan', {
       method: 'POST'

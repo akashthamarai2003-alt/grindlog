@@ -687,8 +687,143 @@ export interface LogFoodInput {
   };
 }
 
+export interface WeeklyPlanEligibility {
+  can_generate: boolean;
+  has_active_plan: boolean;
+  last_generated_at: string | null;
+  next_available_date: string | null;
+  next_available_formatted: string | null;
+  days_remaining: number;
+  plans_used_this_month: number;
+  max_plans_per_month: number;
+  reason?: 'weekly_cooldown' | 'monthly_limit_reached' | null;
+  message?: string;
+}
+
 export class NutritionService {
   
+  /**
+   * Checks whether the user is eligible to generate a new AI weekly meal plan.
+   * Strictly enforces 1 generation per 7 days and max 4 generations per month.
+   */
+  static async getWeeklyPlanEligibility(userId: string): Promise<WeeklyPlanEligibility> {
+    try {
+      const supabase = await createServerSupabase();
+      const { data: logs, error } = await supabase
+        .from('ai_usage_logs')
+        .select('created_at')
+        .eq('user_id', userId)
+        .eq('feature', 'meal_generation')
+        .eq('status', 'success')
+        .order('created_at', { ascending: false });
+
+      if (error || !logs || logs.length === 0) {
+        return {
+          can_generate: true,
+          has_active_plan: false,
+          last_generated_at: null,
+          next_available_date: null,
+          next_available_formatted: null,
+          days_remaining: 0,
+          plans_used_this_month: 0,
+          max_plans_per_month: 4,
+          reason: null
+        };
+      }
+
+      const now = Date.now();
+      const lastLog = logs[0];
+      const lastGenTime = new Date(lastLog.created_at).getTime();
+
+      const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+      const nextWeeklyAvailTime = lastGenTime + WEEK_MS;
+      const isWeeklyCooldown = now < nextWeeklyAvailTime;
+
+      // Check rolling 30-day count for monthly limit
+      const thirtyDaysAgoTime = now - THIRTY_DAYS_MS;
+      const logsInLast30Days = logs.filter(l => new Date(l.created_at).getTime() >= thirtyDaysAgoTime);
+      const plansUsedThisMonth = logsInLast30Days.length;
+      const isMonthlyLimitReached = plansUsedThisMonth >= 4;
+
+      if (isMonthlyLimitReached) {
+        const sortedLogs = [...logsInLast30Days].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        const oldestLog = sortedLogs[0];
+        const nextMonthlyAvailTime = new Date(oldestLog.created_at).getTime() + THIRTY_DAYS_MS;
+        const effectiveNextTime = Math.max(nextWeeklyAvailTime, nextMonthlyAvailTime);
+        const daysRemaining = Math.max(1, Math.ceil((effectiveNextTime - now) / (24 * 60 * 60 * 1000)));
+
+        const nextDate = new Date(effectiveNextTime);
+        const formattedDate = nextDate.toLocaleDateString("en-US", {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric'
+        });
+
+        return {
+          can_generate: false,
+          has_active_plan: true,
+          last_generated_at: lastLog.created_at,
+          next_available_date: nextDate.toISOString(),
+          next_available_formatted: formattedDate,
+          days_remaining: daysRemaining,
+          plans_used_this_month: plansUsedThisMonth,
+          max_plans_per_month: 4,
+          reason: 'monthly_limit_reached',
+          message: `Monthly limit of 4 AI meal plans reached (${plansUsedThisMonth}/4). Next plan unlocks on ${formattedDate}.`
+        };
+      }
+
+      if (isWeeklyCooldown) {
+        const daysRemaining = Math.max(1, Math.ceil((nextWeeklyAvailTime - now) / (24 * 60 * 60 * 1000)));
+        const nextDate = new Date(nextWeeklyAvailTime);
+        const formattedDate = nextDate.toLocaleDateString("en-US", {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric'
+        });
+
+        return {
+          can_generate: false,
+          has_active_plan: true,
+          last_generated_at: lastLog.created_at,
+          next_available_date: nextDate.toISOString(),
+          next_available_formatted: formattedDate,
+          days_remaining: daysRemaining,
+          plans_used_this_month: plansUsedThisMonth,
+          max_plans_per_month: 4,
+          reason: 'weekly_cooldown',
+          message: `Your active 7-day meal plan is currently running. Next weekly plan unlocks on ${formattedDate} (Limit: 1 per week, 4 per month).`
+        };
+      }
+
+      return {
+        can_generate: true,
+        has_active_plan: true,
+        last_generated_at: lastLog.created_at,
+        next_available_date: null,
+        next_available_formatted: null,
+        days_remaining: 0,
+        plans_used_this_month: plansUsedThisMonth,
+        max_plans_per_month: 4,
+        reason: null
+      };
+    } catch {
+      return {
+        can_generate: true,
+        has_active_plan: false,
+        last_generated_at: null,
+        next_available_date: null,
+        next_available_formatted: null,
+        days_remaining: 0,
+        plans_used_this_month: 0,
+        max_plans_per_month: 4,
+        reason: null
+      };
+    }
+  }
+
   /**
    * Retrieves the user's timezone from their profile, defaulting to UTC.
    */
@@ -2507,7 +2642,7 @@ export class NutritionService {
     const monthStartISO = new Date(`${firstDayOfMonth}T00:00:00.000${mOffsetStr}`).toISOString();
 
     // Parallelize all data fetching
-    const [targets, foodsRes, watersRes, plansRes, monthFoodsRes, fitProfileRes, activePlanRes, foodCatalogRes] = await Promise.all([
+    const [targets, foodsRes, watersRes, plansRes, monthFoodsRes, fitProfileRes, activePlanRes, foodCatalogRes, weeklyPlanStatus] = await Promise.all([
       this.getEffectiveTargets(userId),
       supabase
         .from('food_logs')
@@ -2547,7 +2682,8 @@ export class NutritionService {
         .from('foods')
         .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly')
         .eq('is_active', true)
-        .limit(300)
+        .limit(300),
+      this.getWeeklyPlanEligibility(userId)
     ]);
 
     if (!targets) {
@@ -2996,6 +3132,7 @@ export class NutritionService {
       progress,
       nutrition_score: score,
       has_ai_plan: Boolean((aiMeals && aiMeals.length > 0) || formattedMeals.some((m: any) => m.ai_generated || m.is_ai_generated)),
+      weekly_plan_status: weeklyPlanStatus,
       is_natural_whole_food: true,
       food_environment: fitProfile?.food_environment || 'Home',
       food_type: isProfileVegan

@@ -66,19 +66,10 @@ export class AINutritionService {
     const supabase = await createServerSupabase();
     const localDate = await NutritionService.getLocalDateString(userId);
 
-    // 1. Rate Limiting Check (Allow up to 10 generations per day)
-    const { start, end } = await NutritionService.getLocalDateBoundaries(userId);
-    const { count } = await supabase
-      .from('ai_usage_logs')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('feature', 'meal_generation')
-      .eq('status', 'success')
-      .gte('created_at', start)
-      .lte('created_at', end);
-
-    if (count !== null && count >= this.MEAL_GEN_LIMIT_PER_DAY) {
-      throw new Error("Daily limit for Luna AI meal plan generation reached (max 10/day). Please try again tomorrow.");
+    // 1. Weekly Rate Limiting Check (1 per week, max 4 per month)
+    const eligibility = await NutritionService.getWeeklyPlanEligibility(userId);
+    if (!eligibility.can_generate) {
+      throw new Error(eligibility.message || "Weekly limit reached. You can generate 1 meal plan per week (max 4 per month).");
     }
 
     // 2. Gather User Context
@@ -141,7 +132,7 @@ export class AINutritionService {
 
     // 4. Construct High-Precision Groq Prompt
     const systemPrompt = `You are Luna AI, an elite Indian sports and clinical dietitian.
-Your mission is to generate a comprehensive 7-Day Precision Master Meal Plan (Day 1 through Day 7) designed to repeat across a 30-day month.
+Your mission is to generate a comprehensive 7-Day Precision Weekly Meal Plan (Day 1 through Day 7) specifically tailored to the user's macros and lifestyle.
 
 CRITICAL USER PROFILE & STRICT CONSTRAINTS:
 1. DIET CATEGORY: ${dietLabel}
@@ -423,9 +414,9 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       };
     });
 
-    // 7. Populate 30 Days of Meal Plans in Supabase (Starting from localDate)
+    // 7. Populate 7 Days of Weekly Meal Plans in Supabase (Starting from localDate)
     const startDate = new Date(`${localDate}T12:00:00.000Z`);
-    const numDaysToGenerate = 30;
+    const numDaysToGenerate = 7;
 
     const allDates: string[] = [];
     for (let i = 0; i < numDaysToGenerate; i++) {
@@ -434,7 +425,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       allDates.push(d.toISOString().slice(0, 10));
     }
 
-    // Clean up existing meal plans in this 30-day window
+    // Clean up existing meal plans in this 7-day window
     await supabase
       .from('meal_plans')
       .delete()
@@ -539,8 +530,8 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
     return {
       success: true,
       daysGenerated: numDaysToGenerate,
-      summary: aiPlan.plan_summary || "Luna AI 30-Day Personalized Master Plan",
-      message: `Luna AI has generated a customized 30-day diet plan tailored to your ${profile?.diet_preference || 'Eggetarian'} diet and ${profile?.food_environment || 'PG'} environment.`
+      summary: aiPlan.plan_summary || "Luna AI 7-Day Personalized Weekly Plan",
+      message: `Luna AI has generated your customized 7-day weekly diet plan tailored to your ${profile?.diet_preference || 'Eggetarian'} diet and ${profile?.food_environment || 'PG'} environment.`
     };
   }
 }

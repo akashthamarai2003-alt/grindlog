@@ -1,6 +1,29 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { AINutritionService } from "@/lib/services/nutrition/ai-nutrition-service";
+import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+
+export async function GET() {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated.' } },
+        { status: 401 }
+      );
+    }
+
+    const eligibility = await NutritionService.getWeeklyPlanEligibility(user.id);
+    return NextResponse.json({ success: true, data: eligibility });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: { code: 'SERVER_ERROR', message: error?.message || 'Failed to check eligibility' } },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST() {
   try {
@@ -15,7 +38,7 @@ export async function POST() {
     }
 
     // Luna AI Meal Plan generation is powered by Groq (Free Tier)
-    // Authenticated users can generate their personalized 30-day plan
+    // Authenticated users can generate their personalized weekly 7-day plan (1/week, max 4/month)
     const result = await AINutritionService.generateMealPlan(user.id);
 
     return NextResponse.json({ 
@@ -27,7 +50,14 @@ export async function POST() {
     
     const message = error.message || "Failed to generate plan.";
     
-    if (message.includes("daily limit")) {
+    if (
+      message.includes("limit") || 
+      message.includes("Weekly") || 
+      message.includes("weekly") || 
+      message.includes("unlocks") ||
+      message.includes("running") ||
+      message.includes("cooldown")
+    ) {
       return NextResponse.json(
         { success: false, error: { code: 'RATE_LIMIT_EXCEEDED', message } },
         { status: 429 }
