@@ -223,13 +223,15 @@ export function WaterBottleCard({
             )}
           </div>
 
-          {/* Value Display: 1500 / 2.5 L */}
+          {/* Value Display: 1.5 / 2.5 L */}
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              {safeConsumed}
+              {safeConsumed >= 1000
+                ? (safeConsumed / 1000).toFixed(1).replace(/\.0$/, "")
+                : safeConsumed}
             </span>
             <span className="text-sm sm:text-base font-bold text-white/50 pb-0.5">
-              / {targetInLiters} L
+              / {targetInLiters} {safeConsumed >= 1000 ? "L" : "ml"}
             </span>
           </div>
 
