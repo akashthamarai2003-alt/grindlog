@@ -1261,58 +1261,50 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           </div>
         </div>
 
-        {/* Meals Header */}
-        <div className="mt-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 suppressHydrationWarning className="text-[13px] font-black tracking-widest text-white uppercase">
-              {(!selectedDate || selectedDate === todayDateStr) ? "Today's Meals" : `${weekDates.find(w => w.dateStr === selectedDate)?.dayName || 'Selected'}'s Meals`}
-            </h2>
-            {data?.has_ai_plan ? (
-              <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-[0_0_10px_rgba(173,255,0,0.15)]">
-                <Sparkles size={10} /> Luna AI Weekly Plan
-              </span>
-            ) : (
-              <span className="text-[9px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                <Sparkles size={10} /> 7-Day Variety Plan
-              </span>
-            )}
-            <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-              🍃 100% Natural Whole Foods
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {data?.food_environment && (
-              <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-1 rounded-md border border-[#ADFF00]/20 shrink-0">
-                {data.food_environment === 'PG' ? '🏢 PG' : data.food_environment === 'Hostel' ? '🎓 Hostel' : data.food_environment === 'Home' ? '🏠 Home' : data.food_environment === 'I Cook' ? '🍳 I Cook' : data.food_environment}
-              </span>
-            )}
-            {data?.food_type && (
-              <span className="text-[10px] font-bold text-white/50 capitalize bg-white/5 px-2.5 py-1 rounded-md border border-white/5 shrink-0">
-                {data.food_type}
-              </span>
-            )}
-            {canGeneratePlan ? (
-              <button
-                type="button"
-                disabled={isGenerating}
-                onClick={handleGeneratePlan}
-                className="text-[10px] font-black text-black bg-[#ADFF00] hover:bg-[#c4ff33] px-3 py-1.5 rounded-lg uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(173,255,0,0.25)] disabled:opacity-50 cursor-pointer shrink-0 active:scale-95"
-                title="Generate your weekly personalized diet plan with Luna AI (1 per week, max 4 per month)"
-              >
-                {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
-                {isGenerating ? "Luna is planning..." : (data?.has_ai_plan ? "Generate Next Week's Plan" : "Generate Weekly Plan")}
-              </button>
-            ) : (
-              <div 
-                className="flex items-center gap-1.5 text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/25 px-2.5 py-1.5 rounded-lg shrink-0 select-none shadow-[0_0_10px_rgba(173,255,0,0.08)]"
-                title={`Active Weekly Plan (${weeklyStatus?.plans_used_this_month || 1}/4 this month). Next plan generation available on ${weeklyStatus?.next_available_formatted || 'next week'}.`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF00] animate-pulse shrink-0" />
-                <span>Week Plan Active</span>
-                <span className="text-white/40">•</span>
-                <span className="text-white/80">Next: {weeklyStatus?.next_available_formatted || `in ${weeklyStatus?.days_remaining || 7}d`}</span>
+        {/* Meals Section Header */}
+        <div className="mt-6 mb-3 px-1">
+          <div className="flex items-center justify-between gap-3">
+            {/* Title & User Setup Subtitle */}
+            <div className="min-w-0">
+              <h2 suppressHydrationWarning className="text-sm sm:text-base font-black tracking-wider text-white uppercase truncate">
+                {(!selectedDate || selectedDate === todayDateStr) ? "Today's Meals" : `${weekDates.find(w => w.dateStr === selectedDate)?.dayName || 'Selected'}'s Meals`}
+              </h2>
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-white/50 mt-0.5 flex-wrap">
+                <span className="text-[#ADFF00] font-bold">
+                  {data?.food_environment === 'PG' ? '🏢 PG Mess' : data?.food_environment === 'Hostel' ? '🎓 Hostel' : data?.food_environment === 'Home' ? '🏠 Home' : data?.food_environment === 'I Cook' ? '🍳 I Cook' : (data?.food_environment || 'Home')}
+                </span>
+                <span className="text-white/20">•</span>
+                <span className="capitalize">{data?.food_type || 'Balanced'}</span>
+                <span className="text-white/20">•</span>
+                <span className="text-white/40">Whole Foods</span>
               </div>
-            )}
+            </div>
+
+            {/* Status Badge or Action Button */}
+            <div className="shrink-0">
+              {canGeneratePlan ? (
+                <button
+                  type="button"
+                  disabled={isGenerating}
+                  onClick={handleGeneratePlan}
+                  className="text-[10px] sm:text-xs font-black text-black bg-[#ADFF00] hover:bg-[#c4ff33] px-3.5 py-1.5 rounded-full uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-[0_0_14px_rgba(173,255,0,0.3)] disabled:opacity-50 cursor-pointer active:scale-95 whitespace-nowrap"
+                  title="Generate your weekly personalized diet plan with Luna AI (1 per week, max 4 per month)"
+                >
+                  {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                  {isGenerating ? "Planning..." : (data?.has_ai_plan ? "New Week Plan" : "Generate Plan")}
+                </button>
+              ) : (
+                <div 
+                  className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-3 py-1 rounded-full whitespace-nowrap select-none shadow-[0_0_10px_rgba(173,255,0,0.06)]"
+                  title={`Active Weekly Plan (${weeklyStatus?.plans_used_this_month || 1}/4 this month). Next plan generation available on ${weeklyStatus?.next_available_formatted || 'next week'}.`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF00] animate-pulse shrink-0" />
+                  <span className="font-extrabold tracking-wide">Week Active</span>
+                  <span className="text-white/30">•</span>
+                  <span className="text-white/70 font-medium">Next: {weeklyStatus?.next_available_formatted || `in ${weeklyStatus?.days_remaining || 7}d`}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
