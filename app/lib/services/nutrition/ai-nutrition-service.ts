@@ -89,7 +89,7 @@ export class AINutritionService {
       .from('fitness_os_profiles')
       .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, nutrition_budget, food_environment, available_foods, meals_per_day')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     const { data: allFoods } = await supabase
       .from('foods')
@@ -462,7 +462,8 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         dayFat += m.fat;
         dayCost += m.estimated_cost;
 
-        (m.items || []).forEach((it: any) => {
+        const mItems = m.items || m.meal_plan_items || [];
+        mItems.forEach((it: any) => {
           allDayItems.push({
             ...it,
             meal_type: m.meal_type,
@@ -505,7 +506,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       const items = itemsByDate.get(plan.date) || [];
 
       items.forEach(it => {
-        const resolvedFoodId = it.food_id || findFallbackFood(it.name)?.id || foodCatalog[0]?.id;
+        const resolvedFoodId = it.food_id || it.foods?.id || findFallbackFood(it.name)?.id || foodCatalog[0]?.id;
         if (resolvedFoodId) {
           mealPlanItemsRows.push({
             meal_plan_id: plan.id,

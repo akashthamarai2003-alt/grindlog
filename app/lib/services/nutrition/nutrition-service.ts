@@ -160,6 +160,41 @@ export function calibrateMealsToTargets(
     dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.25 : (mealsPerDay === '2 meals' ? 0.50 : 0.25)),
   };
 
+  // Helper to extract item properties regardless of whether item comes from DB or AI generator
+  const getItemInfo = (it: any) => {
+    const fName = String(it.foods?.name || it.name || '').trim();
+    let q = Number(it.quantity) || 1;
+    let unitCals = Number(it.foods?.calories ?? it.calories ?? 0);
+    let unitPro = Number(it.foods?.protein ?? it.protein ?? 0);
+    let unitCarbs = Number(it.foods?.carbs ?? it.carbs ?? 0);
+    let unitFat = Number(it.foods?.fat ?? it.fat ?? 0);
+    let unitCost = Number(it.foods?.estimated_cost ?? it.estimated_cost ?? 0);
+
+    // If unitCals seems already multiplied by q (e.g. from raw AI object where it.calories = unit * q)
+    // and it.foods is undefined, adjust to base unit values:
+    if (!it.foods && q > 1 && unitCals > 0) {
+      unitCals = Math.round(unitCals / q);
+      unitPro = Number((unitPro / q).toFixed(1));
+      unitCarbs = Number((unitCarbs / q).toFixed(1));
+      unitFat = Number((unitFat / q).toFixed(1));
+      unitCost = Math.round(unitCost / q);
+    }
+
+    const isCore = it.is_core ?? isStapleCoreFood(fName, profile?.food_environment);
+    const realisticCost = isCore ? 0 : getRealisticFoodCost(fName, unitCost);
+
+    return {
+      fName,
+      q,
+      unitCals,
+      unitPro,
+      unitCarbs,
+      unitFat,
+      unitCost: realisticCost,
+      isCore
+    };
+  };
+
   // PASS 1: Slot-level intelligent scaling
   let calibratedMeals = meals.map((m: any) => {
     const mType = (m.meal_type || 'lunch').toLowerCase();
@@ -167,20 +202,22 @@ export function calibrateMealsToTargets(
     const mealTargetCals = Math.round(targetCals * slotFraction);
     const mealTargetFat = Number((targetFat * slotFraction).toFixed(1));
 
-    const items = m.meal_plan_items || [];
-    if (items.length === 0) return m;
+    const rawItems = m.meal_plan_items || m.items || [];
+    if (rawItems.length === 0) return m;
 
-    const currentMealCals = items.reduce((sum: number, it: any) => sum + (Number(it.foods?.calories) || 0) * (Number(it.quantity) || 1), 0);
+    const currentMealCals = rawItems.reduce((sum: number, it: any) => {
+      const info = getItemInfo(it);
+      return sum + info.unitCals * info.q;
+    }, 0);
+
     const mealScale = currentMealCals > 0 ? (mealTargetCals / currentMealCals) : 1;
 
-    const calibratedItems = items.map((it: any) => {
-      const fName = String(it.foods?.name || '').toLowerCase();
-      const isCore = it.is_core ?? isStapleCoreFood(it.foods?.name, profile?.food_environment);
-      let q = Number(it.quantity) || 1;
+    const calibratedItems = rawItems.map((it: any) => {
+      const info = getItemInfo(it);
+      const lowerName = info.fName.toLowerCase();
+      let q = info.q;
 
-      const unitCost = isCore ? 0 : getRealisticFoodCost(it.foods?.name, it.foods?.estimated_cost);
-
-      if (fName.includes('boiled egg') || fName.includes('egg')) {
+      if (lowerName.includes('boiled egg') || lowerName.includes('egg')) {
         // Discrete egg portions: scale down if meal or fat target is exceeded
         if (mealTargetCals <= 450 || mealScale < 0.85) {
           if (q >= 3) q = 2;
@@ -188,123 +225,191 @@ export function calibrateMealsToTargets(
         } else if (mealScale > 1.35 && q < 3) {
           q = 3;
         }
-      } else if (fName.includes('rice') || fName.includes('chawal')) {
-        if (mealScale < 0.75 && q >= 2) {
-          q = 1;
-        } else if (mealScale < 0.9 && q > 1) {
-          q = 1;
-        } else if (mealScale > 1.3 && q <= 1) {
-          q = 1.5;
-        }
-      } else if (fName.includes('roti') || fName.includes('chapati') || fName.includes('phulka')) {
-        if (mealScale < 0.70 && q >= 3) {
-          q = 2;
-        } else if (mealScale < 0.60 && q >= 2) {
-          q = 1;
-        } else if (mealScale > 1.35 && q <= 2) {
-          q = 3;
-        }
-      } else if (fName.includes('soya chunk') || fName.includes('soy chunk')) {
+      } else if (lowerName.includes('rice') || lowerName.includes('chawal')) {
+        if (mealScale < 0.75 && q >= 2) q = 1;
+        else if (mealScale < 0.9 && q > 1) q = 1;
+        else if (mealScale > 1.3 && q <= 1) q = 1.5;
+      } else if (lowerName.includes('roti') || lowerName.includes('chapati') || lowerName.includes('phulka')) {
+        if (mealScale < 0.70 && q >= 3) q = 2;
+        else if (mealScale < 0.60 && q >= 2) q = 1;
+        else if (mealScale > 1.35 && q <= 2) q = 3;
+      } else if (lowerName.includes('soya chunk') || lowerName.includes('soy chunk')) {
         if (mealScale < 0.7) q = 0.5;
         else if (mealScale < 0.9) q = 0.6;
         else q = Math.min(1.2, Number((q * mealScale).toFixed(2)));
-      } else if (fName.includes('paneer')) {
+      } else if (lowerName.includes('paneer')) {
         if (dailyBudgetCap <= 50 || mealTargetFat <= 15 || mealScale < 0.85) {
           q = 0.5; // 50g serving
         } else if (mealScale < 1.0) {
           q = 0.75;
         }
-      } else if (fName.includes('curd') || fName.includes('dahi')) {
+      } else if (lowerName.includes('curd') || lowerName.includes('dahi')) {
         if (mealScale < 0.85) q = 0.75;
+      } else if (lowerName.includes('chicken breast') || lowerName.includes('chicken')) {
+        if (mealScale > 1.25 && q <= 1) q = 1.25;
+        else if (mealScale < 0.8) q = 0.75;
       } else {
         // Scalable items (dals, sambar, oats, milk, sabzi, poha)
         q = Math.max(0.4, Math.min(2.0, Number((q * mealScale).toFixed(2))));
       }
 
+      const totalItemCals = Math.round(info.unitCals * q);
+      const totalItemPro = Number((info.unitPro * q).toFixed(1));
+      const totalItemCarbs = Number((info.unitCarbs * q).toFixed(1));
+      const totalItemFat = Number((info.unitFat * q).toFixed(1));
+      const totalItemCost = info.isCore ? 0 : Math.round(info.unitCost * q);
+
       return {
         ...it,
         quantity: q,
-        is_core: isCore,
-        foods: {
+        is_core: info.isCore,
+        calories: totalItemCals,
+        protein: totalItemPro,
+        carbs: totalItemCarbs,
+        fat: totalItemFat,
+        estimated_cost: totalItemCost,
+        foods: it.foods ? {
           ...it.foods,
-          estimated_cost: unitCost
+          calories: info.unitCals,
+          protein: info.unitPro,
+          carbs: info.unitCarbs,
+          fat: info.unitFat,
+          estimated_cost: info.unitCost
+        } : {
+          id: it.food_id,
+          name: info.fName,
+          serving_size: it.serving_size || '1 serving',
+          calories: info.unitCals,
+          protein: info.unitPro,
+          carbs: info.unitCarbs,
+          fat: info.unitFat,
+          estimated_cost: info.unitCost
         }
       };
     });
 
     return {
       ...m,
-      meal_plan_items: calibratedItems
+      meal_plan_items: calibratedItems,
+      items: calibratedItems
     };
   });
 
   // PASS 2: Global budget reconciliation
   const totalSpend = calibratedMeals.reduce((sum: number, m: any) => {
-    return sum + (m.meal_plan_items || []).reduce((mSum: number, it: any) => {
-      const isCore = it.is_core ?? isStapleCoreFood(it.foods?.name, profile?.food_environment);
-      return mSum + (isCore ? 0 : (Number(it.foods?.estimated_cost) || 20) * (Number(it.quantity) || 1));
+    const rawItems = m.meal_plan_items || m.items || [];
+    return sum + rawItems.reduce((mSum: number, it: any) => {
+      const info = getItemInfo(it);
+      return mSum + (info.isCore ? 0 : info.unitCost * (Number(it.quantity) || 1));
     }, 0);
   }, 0);
 
   if (totalSpend > dailyBudgetCap) {
     calibratedMeals = calibratedMeals.map((m: any) => {
-      const items = (m.meal_plan_items || []).map((it: any) => {
-        const isCore = it.is_core ?? isStapleCoreFood(it.foods?.name, profile?.food_environment);
-        if (isCore) return it;
-        const fName = String(it.foods?.name || '').toLowerCase();
+      const rawItems = m.meal_plan_items || m.items || [];
+      const items = rawItems.map((it: any) => {
+        const info = getItemInfo(it);
+        if (info.isCore) return it;
+        const lowerName = info.fName.toLowerCase();
         let q = Number(it.quantity) || 1;
 
-        if (fName.includes('paneer') && dailyBudgetCap <= 50 && q > 0.5) {
+        if (lowerName.includes('paneer') && dailyBudgetCap <= 50 && q > 0.5) {
           q = 0.5;
-        } else if ((fName.includes('boiled egg') || fName.includes('egg')) && totalSpend > dailyBudgetCap && q >= 3) {
+        } else if ((lowerName.includes('boiled egg') || lowerName.includes('egg')) && totalSpend > dailyBudgetCap && q >= 3) {
           q = 2;
         }
-        return { ...it, quantity: q };
+
+        const totalItemCals = Math.round(info.unitCals * q);
+        const totalItemPro = Number((info.unitPro * q).toFixed(1));
+        const totalItemCarbs = Number((info.unitCarbs * q).toFixed(1));
+        const totalItemFat = Number((info.unitFat * q).toFixed(1));
+        const totalItemCost = Math.round(info.unitCost * q);
+
+        return {
+          ...it,
+          quantity: q,
+          calories: totalItemCals,
+          protein: totalItemPro,
+          carbs: totalItemCarbs,
+          fat: totalItemFat,
+          estimated_cost: totalItemCost
+        };
       });
-      return { ...m, meal_plan_items: items };
+      return { ...m, meal_plan_items: items, items };
     });
   }
 
   // PASS 3: Global Calorie Fine-Tuning
   const currentGrandCals = calibratedMeals.reduce((sum: number, m: any) => {
-    return sum + (m.meal_plan_items || []).reduce((mSum: number, it: any) => {
-      return mSum + (Number(it.foods?.calories) || 0) * (Number(it.quantity) || 1);
+    const rawItems = m.meal_plan_items || m.items || [];
+    return sum + rawItems.reduce((mSum: number, it: any) => {
+      const info = getItemInfo(it);
+      return mSum + (info.unitCals * (Number(it.quantity) || 1));
     }, 0);
   }, 0);
 
   if (currentGrandCals > 0 && Math.abs(currentGrandCals - targetCals) > (targetCals * 0.04)) {
     const fineScale = targetCals / currentGrandCals;
     calibratedMeals = calibratedMeals.map((m: any) => {
-      const items = (m.meal_plan_items || []).map((it: any) => {
-        const fName = String(it.foods?.name || '').toLowerCase();
+      const rawItems = m.meal_plan_items || m.items || [];
+      const items = rawItems.map((it: any) => {
+        const info = getItemInfo(it);
+        const lowerName = info.fName.toLowerCase();
         let q = Number(it.quantity) || 1;
-        if (fName.includes('boiled egg') || fName.includes('egg')) {
+        if (lowerName.includes('boiled egg') || lowerName.includes('egg')) {
           if (fineScale < 0.85 && q > 1) {
             q = Math.max(1, Math.round(q * fineScale));
           }
-        } else if (fName.includes('roti') || fName.includes('chapati')) {
+        } else if (lowerName.includes('roti') || lowerName.includes('chapati')) {
           if (fineScale < 0.80 && q > 1) {
             q = Math.max(1, Math.round(q * fineScale));
           }
         } else {
           q = Math.max(0.3, Math.min(2.5, Number((q * fineScale).toFixed(2))));
         }
-        return { ...it, quantity: q };
+
+        const totalItemCals = Math.round(info.unitCals * q);
+        const totalItemPro = Number((info.unitPro * q).toFixed(1));
+        const totalItemCarbs = Number((info.unitCarbs * q).toFixed(1));
+        const totalItemFat = Number((info.unitFat * q).toFixed(1));
+        const totalItemCost = info.isCore ? 0 : Math.round(info.unitCost * q);
+
+        return {
+          ...it,
+          quantity: q,
+          calories: totalItemCals,
+          protein: totalItemPro,
+          carbs: totalItemCarbs,
+          fat: totalItemFat,
+          estimated_cost: totalItemCost
+        };
       });
-      return { ...m, meal_plan_items: items };
+      return { ...m, meal_plan_items: items, items };
     });
   }
 
   // PASS 4: Final recalculation of meal totals
   return calibratedMeals.map((m: any) => {
-    const items = m.meal_plan_items || [];
-    const finalCals = Math.round(items.reduce((s: number, it: any) => s + (Number(it.foods?.calories) || 0) * (Number(it.quantity) || 1), 0));
-    const finalPro = Number(items.reduce((s: number, it: any) => s + (Number(it.foods?.protein) || 0) * (Number(it.quantity) || 1), 0).toFixed(1));
-    const finalCarbs = Number(items.reduce((s: number, it: any) => s + (Number(it.foods?.carbs) || 0) * (Number(it.quantity) || 1), 0).toFixed(1));
-    const finalFat = Number(items.reduce((s: number, it: any) => s + (Number(it.foods?.fat) || 0) * (Number(it.quantity) || 1), 0).toFixed(1));
+    const items = m.meal_plan_items || m.items || [];
+    const finalCals = Math.round(items.reduce((s: number, it: any) => {
+      const info = getItemInfo(it);
+      return s + (info.unitCals * (Number(it.quantity) || 1));
+    }, 0));
+    const finalPro = Number(items.reduce((s: number, it: any) => {
+      const info = getItemInfo(it);
+      return s + (info.unitPro * (Number(it.quantity) || 1));
+    }, 0).toFixed(1));
+    const finalCarbs = Number(items.reduce((s: number, it: any) => {
+      const info = getItemInfo(it);
+      return s + (info.unitCarbs * (Number(it.quantity) || 1));
+    }, 0).toFixed(1));
+    const finalFat = Number(items.reduce((s: number, it: any) => {
+      const info = getItemInfo(it);
+      return s + (info.unitFat * (Number(it.quantity) || 1));
+    }, 0).toFixed(1));
     const finalCost = Math.round(items.reduce((s: number, it: any) => {
-      const isCore = it.is_core ?? isStapleCoreFood(it.foods?.name, profile?.food_environment);
-      return s + (isCore ? 0 : (Number(it.foods?.estimated_cost) || 20) * (Number(it.quantity) || 1));
+      const info = getItemInfo(it);
+      return s + (info.isCore ? 0 : info.unitCost * (Number(it.quantity) || 1));
     }, 0));
 
     return {
@@ -314,7 +419,8 @@ export function calibrateMealsToTargets(
       carbs: finalCarbs,
       fat: finalFat,
       estimated_cost: finalCost,
-      meal_plan_items: items
+      meal_plan_items: items,
+      items: items
     };
   });
 }
@@ -1686,28 +1792,27 @@ export class NutritionService {
         const sSize = def.servingSize || (ref ? (qty > 1 ? `${qty} servings` : ref.serving_size || '1 serving') : `${qty} serving`);
         const defaultCals = foodName.toLowerCase().includes('egg') ? 78 : (foodName.toLowerCase().includes('banana') ? 105 : 150);
         const defaultPro = foodName.toLowerCase().includes('egg') ? 6.3 : 5;
-        const cals = Math.round(Number(ref?.calories || defaultCals) * qty);
-        const pro = Number((Number(ref?.protein || defaultPro) * qty).toFixed(1));
-        const carbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
-        const fat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
+        const unitCals = Math.round(Number(ref?.calories || defaultCals));
+        const unitPro = Number((Number(ref?.protein || defaultPro)).toFixed(1));
+        const unitCarbs = Number((Number(ref?.carbs || 15)).toFixed(1));
+        const unitFat = Number((Number(ref?.fat || 3)).toFixed(1));
         const isCoreItem = isStapleCoreFood(foodName, profile?.food_environment);
-        const unitCost = getRealisticFoodCost(foodName, Number(ref?.estimated_cost));
-        const cost = isCoreItem ? 0 : Math.round(unitCost * qty);
+        const unitCost = isCoreItem ? 0 : getRealisticFoodCost(foodName, Number(ref?.estimated_cost));
 
         return {
           id: `rotating-item-${index}`,
-          quantity: 1,
+          quantity: qty,
           is_core: isCoreItem,
           foods: {
             id: ref?.id || `food-${index}`,
             name: ref?.name || foodName,
             category: ref?.category || 'General',
             serving_size: sSize,
-            calories: cals,
-            protein: pro,
-            carbs: carbs,
-            fat: fat,
-            estimated_cost: cost,
+            calories: unitCals,
+            protein: unitPro,
+            carbs: unitCarbs,
+            fat: unitFat,
+            estimated_cost: unitCost,
           }
         };
       });
