@@ -606,31 +606,42 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     if (loggedData) {
       const items = Array.isArray(loggedData) ? loggedData : [loggedData];
       if (items.length > 0) {
+        const isRealServerData = items.some((it: any) => it.id && !String(it.id).startsWith('opt-'));
+
         setData((prev: any) => {
           if (!prev) return prev;
           const currentLogged = Array.isArray(prev.logged_foods) ? [...prev.logged_foods] : [];
-          const existingIds = new Set(currentLogged.map((f: any) => f.id));
+
+          // If real server data arrives, remove any temporary optimistic placeholders for this meal
+          let baseLogged = currentLogged;
+          if (isRealServerData) {
+            const targetMealType = items[0]?.meal_type;
+            baseLogged = currentLogged.filter((f: any) => !(String(f.id || '').startsWith('opt-') && f.meal_type === targetMealType));
+          }
+
+          const existingIds = new Set(baseLogged.map((f: any) => f.id));
           const newItems = items.filter((f: any) => !existingIds.has(f.id));
-          const updatedLogged = [...currentLogged, ...newItems];
+          const updatedLogged = [...baseLogged, ...newItems];
 
-          let addedCals = 0;
-          let addedPro = 0;
-          let addedCarbs = 0;
-          let addedFat = 0;
-          let addedCost = 0;
+          // Recalculate totals directly from updatedLogged for 100% mathematical consistency
+          let totalCals = 0;
+          let totalPro = 0;
+          let totalCarbs = 0;
+          let totalFat = 0;
+          let totalCost = 0;
 
-          newItems.forEach((item: any) => {
-            addedCals += Number(item.calories) || 0;
-            addedPro += Number(item.protein) || 0;
-            addedCarbs += Number(item.carbs) || 0;
-            addedFat += Number(item.fat) || 0;
-            addedCost += Number(item.estimated_cost) || 0;
+          updatedLogged.forEach((item: any) => {
+            totalCals += Number(item.calories) || 0;
+            totalPro += Number(item.protein) || 0;
+            totalCarbs += Number(item.carbs) || 0;
+            totalFat += Number(item.fat) || 0;
+            totalCost += Number(item.estimated_cost) || 0;
           });
 
-          const newConsumedCals = Math.round((Number(prev.consumed?.calories) || 0) + addedCals);
-          const newConsumedPro = Math.round(((Number(prev.consumed?.protein) || 0) + addedPro) * 10) / 10;
-          const newConsumedCarbs = Math.round(((Number(prev.consumed?.carbs) || 0) + addedCarbs) * 10) / 10;
-          const newConsumedFat = Math.round(((Number(prev.consumed?.fat) || 0) + addedFat) * 10) / 10;
+          const newConsumedCals = Math.round(totalCals);
+          const newConsumedPro = Math.round(totalPro * 10) / 10;
+          const newConsumedCarbs = Math.round(totalCarbs * 10) / 10;
+          const newConsumedFat = Math.round(totalFat * 10) / 10;
           const targetCals = Number(prev.targets?.calories) || 2000;
           const targetPro = Number(prev.targets?.protein) || 130;
 
@@ -651,8 +662,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             },
             budget: {
               ...prev.budget,
-              spent: Math.round(((Number(prev.budget?.spent) || 0) + addedCost) * 100) / 100,
-              monthly_spent: Math.round(((Number(prev.budget?.monthly_spent) || 0) + addedCost) * 100) / 100,
+              spent: Math.round(totalCost * 100) / 100,
+              monthly_spent: Math.round(((Number(prev.budget?.monthly_spent) || 0) + (isRealServerData ? 0 : totalCost)) * 100) / 100,
             },
             progress: {
               ...prev.progress,
@@ -668,14 +679,17 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           return updatedState;
         });
 
-        // Reconcile quietly in the background without disturbing the user
-        const targetDate = selectedDateRef.current;
-        nutritionApi.getToday(targetDate).then(res => {
-          if (res && selectedDateRef.current === targetDate) {
-            setData(res);
-            dateCacheRef.current[targetDate] = res;
-          }
-        }).catch(() => {});
+        // Only reconcile quietly with server when confirmed server data has committed!
+        // Never call getToday during optimistic update to avoid premature overwrite race condition
+        if (isRealServerData) {
+          const targetDate = selectedDateRef.current;
+          nutritionApi.getToday(targetDate).then(res => {
+            if (res && selectedDateRef.current === targetDate) {
+              setData(res);
+              dateCacheRef.current[targetDate] = res;
+            }
+          }).catch(() => {});
+        }
         return;
       }
     }
@@ -810,12 +824,29 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     return data.logged_foods?.some((f: any) => f.meal_type === type);
   };
 
-  const foodsByMeal = loggedFoods.reduce((acc: any, log: any) => {
-    const t = log.meal_type || 'snack';
-    if (!acc[t]) acc[t] = [];
-    acc[t].push(log);
+  const foodsByMeal = useMemo(() => {
+    const acc: Record<string, any[]> = {};
+    for (const log of loggedFoods) {
+      const t = log.meal_type || 'snack';
+      if (!acc[t]) acc[t] = [];
+
+      // Defensive deduplication safeguard: merge duplicate rows by food_id or name
+      const logFoodId = log.food_id || log.foods?.id;
+      const logName = (log.foods?.name || log.name || '').toLowerCase().trim();
+
+      const isDuplicate = acc[t].some((existing: any) => {
+        const existingFoodId = existing.food_id || existing.foods?.id;
+        if (logFoodId && existingFoodId && logFoodId === existingFoodId) return true;
+        const existingName = (existing.foods?.name || existing.name || '').toLowerCase().trim();
+        return Boolean(logName && existingName && logName === existingName);
+      });
+
+      if (!isDuplicate) {
+        acc[t].push(log);
+      }
+    }
     return acc;
-  }, {});
+  }, [loggedFoods]);
 
   const foodEnvironment = (data?.food_environment || 'Home').trim();
   const envLower = foodEnvironment.toLowerCase();
@@ -1742,13 +1773,16 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
       </div>
 
-      <LogFoodModal 
-        isOpen={modalOpen} 
-        onClose={() => setModalOpen(false)} 
-        onSuccess={handleFoodLoggedSuccess}
-        defaultMealType={modalMealType}
-        preselectedFoods={modalPreselectedFoods}
-      />
+      {modalOpen && (
+        <LogFoodModal 
+          key={`${modalMealType}-${modalPreselectedFoods?.length || 0}`}
+          isOpen={modalOpen} 
+          onClose={() => setModalOpen(false)} 
+          onSuccess={handleFoodLoggedSuccess}
+          defaultMealType={modalMealType}
+          preselectedFoods={modalPreselectedFoods}
+        />
+      )}
 
       <SwapMealModal
         isOpen={swapModalOpen}

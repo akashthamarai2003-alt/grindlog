@@ -861,7 +861,22 @@ export class NutritionService {
     const scaledFat = Number((food.fat * input.quantity).toFixed(2));
     const scaledCost = Number((unitCost * input.quantity).toFixed(2));
 
-    // 3. Insert log
+    // 3. Double-click prevention: check for duplicate log in the last 5 seconds
+    const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
+    const { data: recentDuplicate } = await supabase
+      .from('food_logs')
+      .select('*, foods(*)')
+      .eq('user_id', userId)
+      .eq('meal_type', input.meal_type)
+      .eq('food_id', finalFoodId)
+      .gte('logged_at', fiveSecondsAgo)
+      .maybeSingle();
+
+    if (recentDuplicate) {
+      return recentDuplicate;
+    }
+
+    // Insert log
     const { data: log, error: logErr } = await supabase
       .from('food_logs')
       .insert({
@@ -1065,14 +1080,66 @@ export class NutritionService {
 
     if (logsToInsert.length === 0) return [];
 
-    const { data: logs, error: logErr } = await supabase
-      .from('food_logs')
-      .insert(logsToInsert)
-      .select('*, foods(*)');
+    // Idempotency & Deduplication: Check existing food_logs for this user on this local date
+    const tz = await this.getUserTimezone(userId);
+    const { start, end } = await this.getLocalDateBoundaries(userId, tz);
 
-    if (logErr) {
-      console.error("Error in batch insert food_logs:", logErr);
-      throw logErr;
+    const { data: existingLogs } = await supabase
+      .from('food_logs')
+      .select('*, foods(*)')
+      .eq('user_id', userId)
+      .gte('logged_at', start)
+      .lte('logged_at', end);
+
+    const finalLogs: any[] = [];
+    const newInserts: any[] = [];
+
+    for (const newLog of logsToInsert) {
+      // Check if this food was already logged for this meal today
+      const existing = (existingLogs || []).find((el: any) => {
+        if (el.meal_type !== newLog.meal_type) return false;
+        if (newLog.food_id && el.food_id && el.food_id === newLog.food_id) return true;
+        const newName = (foodsById.get(newLog.food_id)?.name || '').toLowerCase().trim();
+        const existingName = (el.foods?.name || '').toLowerCase().trim();
+        return Boolean(newName && existingName && newName === existingName);
+      });
+
+      if (existing) {
+        // Update existing row in-place instead of creating a duplicate row!
+        const { data: updated } = await supabase
+          .from('food_logs')
+          .update({
+            quantity: newLog.quantity,
+            calories: newLog.calories,
+            protein: newLog.protein,
+            carbs: newLog.carbs,
+            fat: newLog.fat,
+            estimated_cost: newLog.estimated_cost
+          })
+          .eq('id', existing.id)
+          .select('*, foods(*)')
+          .maybeSingle();
+
+        finalLogs.push(updated || existing);
+      } else {
+        newInserts.push(newLog);
+      }
+    }
+
+    if (newInserts.length > 0) {
+      const { data: insertedLogs, error: logErr } = await supabase
+        .from('food_logs')
+        .insert(newInserts)
+        .select('*, foods(*)');
+
+      if (logErr) {
+        console.error("Error in batch insert food_logs:", logErr);
+        throw logErr;
+      }
+
+      if (insertedLogs) {
+        finalLogs.push(...insertedLogs);
+      }
     }
 
     // Single background update of daily summary
@@ -1080,7 +1147,7 @@ export class NutritionService {
       console.warn("Background updateDailySummary warning in logMultipleFoods:", err);
     });
 
-    return logs || [];
+    return finalLogs;
   }
 
   static async logWater(userId: string, amountMl: number) {

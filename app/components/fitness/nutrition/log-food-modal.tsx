@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Search, X, Loader2, Check, Plus, Minus, ChevronLeft } from "lucide-react";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { toast } from "sonner";
@@ -60,17 +60,40 @@ function formatMealType(type: string) {
   return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
+function parsePlannedItems(items?: any[]): PlannedItem[] {
+  if (!items || items.length === 0) return [];
+  return items.map((item, idx) => {
+    const foodObj = item.foods || item;
+    const q = Number(item.quantity) || 1;
+    return {
+      key: foodObj?.id || `planned-${foodObj?.name || 'food'}-${idx}`,
+      name: foodObj?.name || 'Food item',
+      serving_size: foodObj?.serving_size || '1 serving',
+      calories: Number(foodObj?.calories) || 0,
+      protein: Number(foodObj?.protein) || 0,
+      carbs: Number(foodObj?.carbs) || 0,
+      fat: Number(foodObj?.fat) || 0,
+      estimated_cost: Number(foodObj?.estimated_cost) || 0,
+      quantity: q,
+      checked: true,
+      rawItem: item,
+    };
+  });
+}
+
 export function LogFoodModal({
   isOpen,
   onClose,
   onSuccess,
   defaultMealType = 'lunch',
-  preselectedFoods
+  preselectedFoods = []
 }: LogFoodModalProps) {
+  const isInitialPlanReview = Boolean(preselectedFoods && preselectedFoods.length > 0);
   const [mealType, setMealType] = useState(defaultMealType);
-  const [isReviewingPlan, setIsReviewingPlan] = useState(() => Boolean(preselectedFoods && preselectedFoods.length > 0));
+  const [isReviewingPlan, setIsReviewingPlan] = useState(isInitialPlanReview);
   const [isLogging, setIsLogging] = useState(false);
-  const [plannedFoods, setPlannedFoods] = useState<PlannedItem[]>([]);
+  const [plannedFoods, setPlannedFoods] = useState<PlannedItem[]>(() => parsePlannedItems(preselectedFoods));
+  const isSubmittingRef = useRef(false);
 
   // Search, category filter & single food selection state
   const [search, setSearch] = useState("");
@@ -104,28 +127,11 @@ export function LogFoodModal({
       setSelectedFood(null);
       setQuantity(1);
       setIsLogging(false);
+      isSubmittingRef.current = false;
 
       if (preselectedFoods && preselectedFoods.length > 0) {
         setIsReviewingPlan(true);
-        setPlannedFoods(
-          preselectedFoods.map((item, idx) => {
-            const foodObj = item.foods || item;
-            const q = Number(item.quantity) || 1;
-            return {
-              key: foodObj?.id || `planned-${foodObj?.name || 'food'}-${idx}`,
-              name: foodObj?.name || 'Food item',
-              serving_size: foodObj?.serving_size || '1 serving',
-              calories: Number(foodObj?.calories) || 0,
-              protein: Number(foodObj?.protein) || 0,
-              carbs: Number(foodObj?.carbs) || 0,
-              fat: Number(foodObj?.fat) || 0,
-              estimated_cost: Number(foodObj?.estimated_cost) || 0,
-              quantity: q,
-              checked: true,
-              rawItem: item,
-            };
-          })
-        );
+        setPlannedFoods(parsePlannedItems(preselectedFoods));
       } else {
         setIsReviewingPlan(false);
         setPlannedFoods([]);
@@ -177,13 +183,14 @@ export function LogFoodModal({
   };
 
   const handleLogPlannedMeal = async () => {
-    if (isLogging) return;
+    if (isLogging || isSubmittingRef.current) return;
     const itemsToLog = plannedFoods.filter(item => item.checked && item.quantity > 0);
     if (itemsToLog.length === 0) {
       toast.error("Select at least one food item to log");
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsLogging(true);
 
     try {
@@ -218,23 +225,59 @@ export function LogFoodModal({
         }
       });
 
-      // Persist to database FIRST so the follow-up getToday() fetch
-      // in onSuccess won't overwrite the optimistic state with stale data
-      const serverData = await nutritionApi.logFoods(payloadItems);
+      // Prepare optimistic items so modal closes in 0ms and dashboard updates instantly
+      const optimisticLogs = itemsToLog.map((item, idx) => {
+        const foodObj = item.rawItem?.foods || item.rawItem;
+        return {
+          id: `opt-${Date.now()}-${idx}`,
+          food_id: foodObj?.id,
+          meal_type: mealType,
+          quantity: item.quantity,
+          calories: Math.round(item.calories * item.quantity),
+          protein: Math.round(item.protein * item.quantity * 10) / 10,
+          carbs: Math.round(item.carbs * item.quantity * 10) / 10,
+          fat: Math.round(item.fat * item.quantity * 10) / 10,
+          estimated_cost: Math.round((item.estimated_cost || 0) * item.quantity),
+          foods: {
+            id: foodObj?.id,
+            name: item.name,
+            serving_size: item.serving_size,
+            category: foodObj?.category || mealType,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+            estimated_cost: item.estimated_cost || 0
+          }
+        };
+      });
 
+      // 0ms Instant UI feedback: notify parent to show meal as completed and close modal immediately
       toast.success(`Logged ${itemsToLog.length} foods for ${formatMealType(mealType)}!`);
-      onSuccess(serverData);
+      onSuccess(optimisticLogs);
       onClose();
+
+      // Persist to server in background
+      try {
+        const serverData = await nutritionApi.logFoods(payloadItems);
+        if (serverData && serverData.length > 0) {
+          onSuccess(serverData);
+        }
+      } catch (err: any) {
+        console.error("Background sync error in logFoods:", err);
+        toast.error("Failed to sync logged meal with server");
+      }
     } catch (err: any) {
       console.error("Failed to log planned meal:", err);
-      toast.error(err?.message || "Failed to log meal to server");
-    } finally {
+      toast.error(err?.message || "Failed to log meal");
       setIsLogging(false);
+      isSubmittingRef.current = false;
     }
   };
 
   const handleLogSingle = async () => {
-    if (!selectedFood || isLogging) return;
+    if (!selectedFood || isLogging || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setIsLogging(true);
 
     try {
@@ -258,16 +301,37 @@ export function LogFoodModal({
         };
       }
 
-      const loggedData = await nutritionApi.logFood(payload);
+      const optimisticLog = {
+        id: `opt-${Date.now()}-single`,
+        food_id: selectedFood.id,
+        meal_type: mealType,
+        quantity,
+        calories: Math.round((Number(selectedFood.calories) || 0) * quantity),
+        protein: Math.round((Number(selectedFood.protein) || 0) * quantity * 10) / 10,
+        carbs: Math.round((Number(selectedFood.carbs) || 0) * quantity * 10) / 10,
+        fat: Math.round((Number(selectedFood.fat) || 0) * quantity * 10) / 10,
+        estimated_cost: Math.round((Number(selectedFood.estimated_cost) || 0) * quantity),
+        foods: { ...selectedFood }
+      };
 
       toast.success(`Logged ${quantity}x ${selectedFood.name}`);
-      onSuccess(loggedData);
+      onSuccess(optimisticLog);
       onClose();
+
+      try {
+        const loggedData = await nutritionApi.logFood(payload);
+        if (loggedData) {
+          onSuccess(loggedData);
+        }
+      } catch (err: any) {
+        console.error("Background sync error in logFood:", err);
+        toast.error(err?.message || `Failed to save ${selectedFood.name} to server`);
+      }
     } catch (err: any) {
       console.error("Failed to log single food:", err);
-      toast.error(err?.message || `Failed to save ${selectedFood.name} to server`);
-    } finally {
+      toast.error(err?.message || `Failed to save ${selectedFood.name}`);
       setIsLogging(false);
+      isSubmittingRef.current = false;
     }
   };
 
