@@ -25,6 +25,74 @@ export function normalizeFoodName(value: unknown): string {
     .trim();
 }
 
+/**
+ * Determines whether a food item is a standard staple provided for free in the user's food environment
+ * (e.g., PG Mess, Hostel Mess, Home Family Kitchen, Canteen) vs. a fitness booster/add-on that requires purchase.
+ */
+export function isStapleCoreFood(foodName?: string, foodEnv?: string): boolean {
+  if (!foodName) return false;
+  const env = (foodEnv || '').toLowerCase().trim();
+
+  // "I Cook" / "Self-Cooked": User buys and cooks all ingredients personally.
+  if (env === 'i cook' || env === 'self-cooked' || env === 'i_cook') {
+    return false;
+  }
+
+  // Environments where a base meal is provided (PG, Hostel, Home, Canteen, Mixed):
+  const isCoreEnv = env === 'pg' || env === 'hostel' || env === 'home' || env === 'office/canteen' || env === 'canteen' || env === 'mixed' || env === '';
+  if (!isCoreEnv) return false;
+
+  const name = foodName.toLowerCase().trim();
+
+  // Explicit protein hacks and fitness add-ons are NEVER free core staples
+  if (
+    name.includes('boiled egg') ||
+    name.includes('egg white') ||
+    name.includes('egg bhurji') ||
+    name.includes('omelette') ||
+    name.includes('paneer tikka') ||
+    name.includes('paneer bhurji') ||
+    name.includes('raw paneer') ||
+    name.includes('soy chunk') ||
+    name.includes('soya chunk') ||
+    name.includes('whey') ||
+    name.includes('protein powder') ||
+    name.includes('chicken breast') ||
+    name.includes('fish curry') ||
+    name.includes('chicken curry') ||
+    name.includes('mutton') ||
+    name.includes('roasted peanut') ||
+    name.includes('roasted chana') ||
+    name.includes('almond') ||
+    name.includes('walnut')
+  ) {
+    return false;
+  }
+
+  // Standalone eggs (e.g. "Boiled Egg", "Farm Egg", "3 Eggs")
+  if (/\b(?:egg|eggs)\b/i.test(name) && !name.includes('egg curry')) {
+    return false;
+  }
+
+  // Standalone paneer
+  if (/\bpaneer\b/i.test(name) && !name.includes('matar paneer')) {
+    return false;
+  }
+
+  // Staples typically provided by PG Mess / Hostel / Family Home Kitchen
+  const stapleTerms = [
+    'rice', 'chawal', 'jeera rice', 'brown rice', 'pulao', 'biryani',
+    'roti', 'chapati', 'phulka', 'paratha', 'naan',
+    'dal', 'tadka', 'sambar', 'rasam', 'curry',
+    'sabzi', 'vegetable', 'aloo', 'gobi', 'bhindi', 'palak', 'beans', 'matar',
+    'poha', 'upma', 'idli', 'dosa', 'pongal', 'khichdi', 'cheela',
+    'bread', 'toast', 'tea', 'chai', 'milk',
+    'core meal', 'base meal', 'provided core', 'standard base', 'thali'
+  ];
+
+  return stapleTerms.some(term => name.includes(term));
+}
+
 function parseAIItemText(value: unknown): Array<{ name: string; servingSize: string; multiplier: number }> {
   const text = String(value || "").trim();
   if (!text) return [];
@@ -1320,11 +1388,13 @@ export class NutritionService {
         const pro = Number((Number(ref?.protein || defaultPro) * qty).toFixed(1));
         const carbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
         const fat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
-        const cost = (isCoreProvided && isCore) ? 0 : Math.round(Number(ref?.estimated_cost || 25) * qty);
+        const isCoreItem = isStapleCoreFood(foodName, profile?.food_environment);
+        const cost = isCoreItem ? 0 : Math.round(Number(ref?.estimated_cost || 25) * qty);
 
         return {
           id: `rotating-item-${index}`,
           quantity: 1,
+          is_core: isCoreItem,
           foods: {
             id: ref?.id || `food-${index}`,
             name: ref?.name || foodName,
@@ -2105,17 +2175,9 @@ export class NutritionService {
         consumed.fat += Number(f.fat);
         
         let cost = Number(f.estimated_cost || 0);
-        const env = fitProfile?.food_environment?.toLowerCase() || '';
-        const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home' || env === 'office/canteen';
-        const foodNameLower = String(f.foods?.name || '').toLowerCase();
-        const isItemCore = isCoreProvided && (
-          foodNameLower.includes('core meal') || 
-          foodNameLower.includes('base meal') || 
-          foodNameLower.includes('provided core') ||
-          foodNameLower.includes('standard base')
-        );
+        const isItemCore = isStapleCoreFood(f.foods?.name, fitProfile?.food_environment);
         if (isItemCore) {
-          cost = 0; // core meals are free from PG/Home
+          cost = 0; // core meals are free from PG/Hostel/Home/Canteen
         }
         consumed.spent += cost;
         
@@ -2130,22 +2192,13 @@ export class NutritionService {
     // Strictly cap at user's chosen goal
     consumed.water_ml = Math.min(targetWater, consumed.water_ml);
 
-    const env = fitProfile?.food_environment?.toLowerCase() || '';
-    const isCoreProvided = env === 'pg' || env === 'hostel' || env === 'home' || env === 'office/canteen';
-
     let monthSpent = 0;
     if (monthFoods) {
       monthFoods.forEach((f: any) => {
         let cost = Number(f.estimated_cost || 0);
-        const foodNameLower = String(f.foods?.name || '').toLowerCase();
-        const isItemCore = isCoreProvided && (
-          foodNameLower.includes('core meal') || 
-          foodNameLower.includes('base meal') || 
-          foodNameLower.includes('provided core') ||
-          foodNameLower.includes('standard base')
-        );
+        const isItemCore = isStapleCoreFood(f.foods?.name, fitProfile?.food_environment);
         if (isItemCore) {
-          cost = 0; // core meals are free from PG/Home
+          cost = 0; // core meals are free from PG/Hostel/Home/Canteen
         }
         monthSpent += cost;
       });
@@ -2212,31 +2265,39 @@ export class NutritionService {
             actualServing = parts.slice(2).join('::') || parts[1] || '1 serving';
           }
 
+          const isItemCore = isStapleCoreFood(item.foods?.name, fitProfile?.food_environment);
+          const normalizedItem = {
+            ...item,
+            is_core: isItemCore,
+            serving_size: actualServing,
+            foods: item.foods ? {
+              ...item.foods,
+              estimated_cost: isItemCore ? 0 : (item.foods.estimated_cost || 20)
+            } : item.foods
+          };
+
           if (targetType && itemsByType[targetType]) {
             if (mealTitle && !titleByType[targetType]) {
               titleByType[targetType] = mealTitle;
             }
-            itemsByType[targetType].push({
-              ...item,
-              serving_size: actualServing
-            });
+            itemsByType[targetType].push(normalizedItem);
           } else {
             // Fallback: heuristic categorization
             const cat = (item.foods?.category || '').toLowerCase();
             const name = (item.foods?.name || '').toLowerCase();
 
             if (itemsByType.breakfast && (cat.includes('breakfast') || name.includes('idli') || name.includes('dosa') || name.includes('poha') || name.includes('upma') || name.includes('oats') || name.includes('coffee') || name.includes('milk') || name.includes('egg'))) {
-              itemsByType.breakfast.push(item);
+              itemsByType.breakfast.push(normalizedItem);
             } else if ((itemsByType.pre_workout || itemsByType.post_workout || itemsByType.snack) && (cat.includes('fruit') || cat.includes('snack') || name.includes('banana') || name.includes('apple') || name.includes('peanut'))) {
               const bucket = itemsByType.pre_workout || itemsByType.snack || itemsByType.post_workout;
-              if (bucket) bucket.push(item);
+              if (bucket) bucket.push(normalizedItem);
             } else if (itemsByType.lunch && idx % 2 === 0) {
-              itemsByType.lunch.push(item);
+              itemsByType.lunch.push(normalizedItem);
             } else if (itemsByType.dinner) {
-              itemsByType.dinner.push(item);
+              itemsByType.dinner.push(normalizedItem);
             } else {
               const firstType = ALL_MEAL_TYPES[0];
-              if (itemsByType[firstType]) itemsByType[firstType].push(item);
+              if (itemsByType[firstType]) itemsByType[firstType].push(normalizedItem);
             }
           }
         });
@@ -2248,14 +2309,8 @@ export class NutritionService {
           const mCarbs = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.carbs || 0) * it.quantity), 0).toFixed(1));
           const mFat = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.fat || 0) * it.quantity), 0).toFixed(1));
           const mCost = mItems.reduce((acc, it) => {
-            const foodNameLower = String(it.foods?.name || '').toLowerCase();
-            const isItemCore = isCoreProvided && (
-              foodNameLower.includes('core meal') || 
-              foodNameLower.includes('base meal') || 
-              foodNameLower.includes('provided core') ||
-              foodNameLower.includes('standard base')
-            );
-            return acc + (isItemCore ? 0 : Math.round((it.foods?.estimated_cost || 20) * it.quantity));
+            const isCore = it.is_core ?? isStapleCoreFood(it.foods?.name, fitProfile?.food_environment);
+            return acc + (isCore ? 0 : Math.round((it.foods?.estimated_cost || 20) * it.quantity));
           }, 0);
           const mName = titleByType[mType] || (mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan");
           plansByMealType.set(mType, {
@@ -2442,6 +2497,7 @@ export class NutritionService {
           return {
             id: `ai-item-${mType}-${index}`,
             quantity: 1,
+            is_core: it.isItemCore,
             foods: {
               name: displayName,
               category: it.reference?.category || mType,
@@ -2536,6 +2592,7 @@ export class NutritionService {
       nutrition_score: score,
       has_ai_plan: Boolean((aiMeals && aiMeals.length > 0) || formattedMeals.some((m: any) => m.ai_generated || m.is_ai_generated)),
       is_natural_whole_food: true,
+      food_environment: fitProfile?.food_environment || 'Home',
       food_type: isProfileVegan
         ? 'Vegan'
         : isProfileVegetarian

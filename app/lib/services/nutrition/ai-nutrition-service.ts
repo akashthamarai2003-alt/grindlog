@@ -5,6 +5,7 @@ import {
   findFoodReference,
   sanitizeAIItemName,
   sanitizeMealTitle,
+  isStapleCoreFood,
   NutritionFoodReference
 } from "@/lib/services/nutrition/nutrition-service";
 
@@ -148,8 +149,18 @@ CRITICAL USER PROFILE & STRICT CONSTRAINTS:
    ${isVegetarian ? '- For Vegetarian: Plant foods and dairy (Paneer, Curd, Milk, Dals, Chana, Rajma). NEVER include eggs, chicken, fish, or meat.' : ''}
    ${isNonVeg ? '- For Non-Vegetarian: Include Chicken Breast, Fish Curry, Chicken Curry, Eggs, Paneer, Curd, Dal, Rice.' : ''}
 
-2. LIVING ENVIRONMENT: ${profile?.food_environment || 'PG'}
-   ${isPG ? '- In a PG/Hostel, core meals (rice, dal, chapati, seasonal sabzi) are provided by the mess.\n- Add high-protein hacks (boiled eggs via kettle, egg bhurji on tawa, curd, roasted peanuts, soy chunks) that fit within their monthly budget.' : '- Home environment with access to regular home cooking.'}
+2. LIVING ENVIRONMENT & REAL-WORLD FLOW: ${profile?.food_environment || 'PG'}
+   ${
+     isPG
+       ? '- PG / HOSTEL LIVING: The mess provides core meals (Breakfast: Poha, Upma, Idli & Sambar, Dosa, Bread; Lunch & Dinner: White Rice, Dal Tadka, Seasonal Sabzi, Chapatis) for free (₹0).\n' +
+         '- The user CANNOT cook elaborate curries from scratch. You MUST pair the standard mess meal with practical high-protein add-ons (e.g. 2–3 boiled eggs cooked in electric kettle, fresh curd, roasted peanuts, soy chunks boiled in kettle, paneer).\n' +
+         '- Example Breakfast: "Poha (1 bowl, Mess Base) + 3 Boiled Eggs (Kettle Add-on)".\n' +
+         '- Example Lunch: "White Rice (2 bowls) + Dal Tadka (1 bowl) + Mixed Veggies (1 bowl) + 2 Boiled Eggs or Paneer (Add-on)".'
+       : rawEnv === 'i cook' || rawEnv === 'self-cooked'
+       ? '- SELF-COOKED / I COOK: The user personally buys groceries and cooks all meals from scratch in their kitchen.\n' +
+         '- Plan complete, delicious, easy-to-cook whole-food recipes with simple ingredients and step-by-step cooking instructions (e.g., "10 min prep: Sauté onions, scramble 3 eggs, toast bread").'
+       : '- HOME LIVING: Family kitchen prepares everyday meals (phulkas, dal, steamed rice, seasonal sabzi). Pair family meals with simple fitness protein boosters (e.g., 3 boiled eggs or egg scramble on stove, paneer bowl, fresh curd).'
+   }
 
 3. MEALS PER DAY: Exactly these meal slots: ${mealSlots.join(', ')}.
 
@@ -325,11 +336,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           const basePro = Number((Number(ref?.protein || defPro) * qty).toFixed(1));
           const baseCarbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
           const baseFat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
-          const isItemCore = isCoreProvided && (
-            ref?.name?.includes("Provided Core") ||
-            ref?.name?.includes("Core Meal") ||
-            /\b(?:pg|hostel|mess|provided core|provided meal|core meal)\b/i.test(fName)
-          );
+          const isItemCore = isStapleCoreFood(fName, profile?.food_environment);
           const baseCost = isItemCore ? 0 : Math.round(Number(ref?.estimated_cost || 20) * qty);
 
           return {

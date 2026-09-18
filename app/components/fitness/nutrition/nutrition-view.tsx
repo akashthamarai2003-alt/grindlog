@@ -783,6 +783,99 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     return acc;
   }, {});
 
+  const foodEnvironment = (data?.food_environment || 'Home').trim();
+  const envLower = foodEnvironment.toLowerCase();
+  const isPG = envLower === 'pg';
+  const isHostel = envLower === 'hostel';
+  const isCanteen = envLower.includes('canteen') || envLower.includes('office');
+  const isICook = envLower === 'i cook' || envLower === 'self-cooked' || envLower === 'i_cook';
+  const isHome = envLower === 'home';
+
+  const getEnvBadge = () => {
+    if (isPG) {
+      return {
+        label: "🏢 PG Mess + Hack",
+        className: "text-[9px] font-black text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider"
+      };
+    }
+    if (isHostel) {
+      return {
+        label: "🎓 Hostel Mess + Hack",
+        className: "text-[9px] font-black text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider"
+      };
+    }
+    if (isCanteen) {
+      return {
+        label: "🍱 Canteen + Hack",
+        className: "text-[9px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider"
+      };
+    }
+    if (isICook) {
+      return {
+        label: "🍳 Self-Cooked",
+        className: "text-[9px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider"
+      };
+    }
+    return {
+      label: "🏠 Home Kitchen",
+      className: "text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider"
+    };
+  };
+
+  const isItemCoreCheck = (it: any) => {
+    if (typeof it.is_core === 'boolean') return it.is_core;
+    if (isICook) return false;
+    const name = String(it.foods?.name || '').toLowerCase();
+    if (
+      name.includes('boiled egg') ||
+      name.includes('egg white') ||
+      name.includes('egg bhurji') ||
+      name.includes('omelette') ||
+      name.includes('paneer tikka') ||
+      name.includes('paneer bhurji') ||
+      name.includes('raw paneer') ||
+      name.includes('soy chunk') ||
+      name.includes('soya chunk') ||
+      name.includes('whey') ||
+      name.includes('protein powder') ||
+      name.includes('chicken breast') ||
+      name.includes('fish curry') ||
+      name.includes('chicken curry') ||
+      name.includes('mutton') ||
+      name.includes('roasted peanut') ||
+      name.includes('roasted chana') ||
+      name.includes('almond') ||
+      name.includes('walnut')
+    ) {
+      return false;
+    }
+    if (/\b(?:egg|eggs)\b/i.test(name) && !name.includes('egg curry')) {
+      return false;
+    }
+    if (/\bpaneer\b/i.test(name) && !name.includes('matar paneer')) {
+      return false;
+    }
+    return (
+      name.includes('rice') || 
+      name.includes('roti') || 
+      name.includes('chapati') || 
+      name.includes('phulka') || 
+      name.includes('dal') || 
+      name.includes('sambar') || 
+      name.includes('vegetable') || 
+      name.includes('sabzi') || 
+      name.includes('poha') || 
+      name.includes('upma') || 
+      name.includes('idli') || 
+      name.includes('dosa') || 
+      name.includes('pongal') || 
+      name.includes('bread') || 
+      name.includes('milk') ||
+      name.includes('core meal') ||
+      name.includes('base meal')
+    );
+  };
+
   return (
     <>
       <div className="space-y-4">
@@ -1041,6 +1134,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {data?.food_environment && (
+              <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2.5 py-1 rounded-md border border-[#ADFF00]/20 shrink-0">
+                {data.food_environment === 'PG' ? '🏢 PG' : data.food_environment === 'Hostel' ? '🎓 Hostel' : data.food_environment === 'Home' ? '🏠 Home' : data.food_environment === 'I Cook' ? '🍳 I Cook' : data.food_environment}
+              </span>
+            )}
             {data?.food_type && (
               <span className="text-[10px] font-bold text-white/50 capitalize bg-white/5 px-2.5 py-1 rounded-md border border-white/5 shrink-0">
                 {data.food_type}
@@ -1110,6 +1208,12 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   fat: totals.fat + Number(item.foods?.fat || 0) * quantity,
                 };
               }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+              const corePlannedItems = plannedFoods.filter((it: any) => isItemCoreCheck(it));
+              const addonPlannedItems = plannedFoods.filter((it: any) => !isItemCoreCheck(it));
+              const addonCost = addonPlannedItems.reduce((acc: number, it: any) => acc + Math.round((Number(it.foods?.estimated_cost) || 20) * (Number(it.quantity) || 1)), 0);
+              const totalMealCost = plannedFoods.reduce((acc: number, it: any) => acc + Math.round((Number(it.foods?.estimated_cost) || 20) * (Number(it.quantity) || 1)), 0);
+              const hasCoreAndAddon = corePlannedItems.length > 0 && addonPlannedItems.length > 0;
               
               const isActive = !completed && isToday && getActiveMealType() === meal.meal_type;
 
@@ -1136,14 +1240,17 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                         {getMealIcon(meal.meal_type)}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-sm font-bold text-white">{formatMealType(meal.meal_type)}</h3>
                           {isActive && (
                             <span className="text-[9px] font-black text-black bg-[#ADFF00] px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(173,255,0,0.4)] animate-pulse">
                               NOW
                             </span>
                           )}
-                          <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/20">
+                          <span className={getEnvBadge().className}>
+                            {getEnvBadge().label}
+                          </span>
+                          <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/20 hidden sm:inline-flex">
                             {getMealTiming(meal.meal_type)}
                           </span>
                         </div>
@@ -1169,11 +1276,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     </div>
                   </div>
                   
-                  {/* Show planned or logged foods with image reference */}
+                  {/* Show planned or logged foods with real-world environment grouping */}
                   <div className="bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
-                    <ul className="text-[13px] font-medium text-white/80 space-y-2.5">
-                      {loggedFoods.length > 0 ? (
-                        loggedFoods.map((f: any) => (
+                    {loggedFoods.length > 0 ? (
+                      <ul className="text-[13px] font-medium text-white/80 space-y-2.5">
+                        {loggedFoods.map((f: any) => (
                           <li key={f.id} className="flex justify-between items-center group">
                             <span className="flex items-center gap-2.5 text-white/90">
                               <FoodAvatar 
@@ -1197,35 +1304,157 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                               </button>
                             </div>
                           </li>
-                        ))
-                      ) : (meal.meal_plan_items && meal.meal_plan_items.length > 0) ? (
-                        meal.meal_plan_items.map((item: any) => (
-                           <li key={item.id} className="flex justify-between items-center">
-                            <span className="flex items-center gap-2.5 text-white/80">
-                              <FoodAvatar 
-                                name={item.foods?.name || ''} 
-                                className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
-                              />
-                              <div>
-                                <span className="font-bold block text-white/90">{item.foods?.name || 'Food item'}</span>
-                                <span className="text-[11px] text-white/40 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
+                        ))}
+                      </ul>
+                    ) : (plannedFoods.length > 0) ? (
+                      <div className="space-y-3">
+                        {!isICook && hasCoreAndAddon ? (
+                          <>
+                            {/* Section 1: Mess / Home Kitchen Base (Included · ₹0) */}
+                            <div className="bg-white/[0.02] rounded-xl p-2.5 border border-white/5">
+                              <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-white/70 flex items-center gap-1.5">
+                                  {isPG ? '🍱 PG Mess Base' : isHostel ? '🎓 Hostel Mess Base' : isCanteen ? '🍱 Canteen Base' : '🍲 Family Kitchen Base'}
+                                </span>
+                                <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                  Included (₹0)
+                                </span>
                               </div>
-                            </span>
-                            <span className="text-xs font-black text-white/70">{Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span></span>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="text-center py-2 text-white/40 text-xs">
-                          {isFuture
-                            ? "No foods scheduled for this meal."
-                            : <>No foods planned yet. Tap <span className="text-[#ADFF00] font-bold">Log Meal</span> to add foods!</>
-                          }
-                        </li>
-                      )}
-                    </ul>
+                              <ul className="text-[13px] font-medium text-white/80 space-y-2">
+                                {corePlannedItems.map((item: any) => (
+                                  <li key={item.id} className="flex justify-between items-center">
+                                    <span className="flex items-center gap-2 text-white/80">
+                                      <FoodAvatar 
+                                        name={item.foods?.name || ''} 
+                                        className="w-7 h-7 rounded-lg object-cover border border-white/10 shrink-0"
+                                      />
+                                      <div>
+                                        <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Base staple'}</span>
+                                        <span className="text-[10px] text-white/40 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
+                                      </div>
+                                    </span>
+                                    <span className="text-xs font-bold text-white/60">
+                                      {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Section 2: High-Protein Add-ons */}
+                            <div className="bg-[#ADFF00]/[0.03] rounded-xl p-2.5 border border-[#ADFF00]/25 shadow-[0_0_15px_rgba(173,255,0,0.03)]">
+                              <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-[#ADFF00]/15">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-[#ADFF00] flex items-center gap-1.5">
+                                  ⚡ {isPG ? 'PG Protein Add-ons' : isHostel ? 'Hostel Protein Hacks' : isHome ? 'Your Fitness Add-ons' : 'Protein Add-ons'}
+                                </span>
+                                <span className="text-[9px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-md border border-[#ADFF00]/20">
+                                  ₹{addonCost} {isPG || isHostel ? 'Out of Pocket' : 'Grocery'}
+                                </span>
+                              </div>
+                              <ul className="text-[13px] font-medium text-white/90 space-y-2">
+                                {addonPlannedItems.map((item: any) => (
+                                  <li key={item.id} className="flex justify-between items-center">
+                                    <span className="flex items-center gap-2 text-white/90">
+                                      <FoodAvatar 
+                                        name={item.foods?.name || ''} 
+                                        className="w-7 h-7 rounded-lg object-cover border border-[#ADFF00]/30 shrink-0 shadow-[0_0_6px_rgba(173,255,0,0.15)]"
+                                      />
+                                      <div>
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="font-bold block text-xs text-white">{item.foods?.name || 'Protein booster'}</span>
+                                          {item.foods?.protein ? (
+                                            <span className="text-[9px] font-extrabold text-[#ADFF00] bg-[#ADFF00]/15 px-1 py-0.2 rounded border border-[#ADFF00]/30">
+                                              +{Math.round(Number(item.foods.protein) * (Number(item.quantity) || 1))}g P
+                                            </span>
+                                          ) : null}
+                                        </div>
+                                        <span className="text-[10px] text-white/50 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
+                                      </div>
+                                    </span>
+                                    <span className="text-xs font-black text-[#ADFF00]">
+                                      {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span>
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </>
+                        ) : isICook ? (
+                          /* Self-Cooked Recipe view */
+                          <div className="bg-white/[0.02] rounded-xl p-2.5 border border-emerald-500/20">
+                            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                                🍳 Homemade Recipe Ingredients
+                              </span>
+                              <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                ₹{totalMealCost} Grocery
+                              </span>
+                            </div>
+                            <ul className="text-[13px] font-medium text-white/80 space-y-2">
+                              {plannedFoods.map((item: any) => (
+                                <li key={item.id} className="flex justify-between items-center">
+                                  <span className="flex items-center gap-2.5 text-white/80">
+                                    <FoodAvatar 
+                                      name={item.foods?.name || ''} 
+                                      className="w-7 h-7 rounded-lg object-cover border border-white/10 shrink-0"
+                                    />
+                                    <div>
+                                      <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Food item'}</span>
+                                      <span className="text-[10px] text-white/40 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
+                                    </div>
+                                  </span>
+                                  <span className="text-xs font-black text-white/70">
+                                    {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          /* Single category (Snack, or only add-ons, or only base) */
+                          <div className="bg-white/[0.02] rounded-xl p-2.5 border border-white/5">
+                            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-[#ADFF00] flex items-center gap-1.5">
+                                ⚡ {addonPlannedItems.length > 0 ? 'High-Protein Fuel' : 'Mess Meal'}
+                              </span>
+                              <span className="text-[9px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-md border border-[#ADFF00]/20">
+                                {addonPlannedItems.length > 0 ? `₹${addonCost}` : 'Included (₹0)'}
+                              </span>
+                            </div>
+                            <ul className="text-[13px] font-medium text-white/80 space-y-2">
+                              {plannedFoods.map((item: any) => (
+                                <li key={item.id} className="flex justify-between items-center">
+                                  <span className="flex items-center gap-2.5 text-white/80">
+                                    <FoodAvatar 
+                                      name={item.foods?.name || ''} 
+                                      className="w-7 h-7 rounded-lg object-cover border border-white/10 shrink-0"
+                                    />
+                                    <div>
+                                      <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Food item'}</span>
+                                      <span className="text-[10px] text-white/40 font-medium">{item.quantity > 1 ? `x${item.quantity} ` : ''}{item.foods?.serving_size || '1 serving'}</span>
+                                    </div>
+                                  </span>
+                                  <span className="text-xs font-black text-white/70">
+                                    {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-2 text-white/40 text-xs">
+                        {isFuture
+                          ? "No foods scheduled for this meal."
+                          : <>No foods planned yet. Tap <span className="text-[#ADFF00] font-bold">Log Meal</span> to add foods!</>
+                        }
+                      </div>
+                    )}
                     {meal.prep_instructions && !completed && (
-                      <div className="pt-2 mt-2 border-t border-white/5 text-[11px] text-white/50 leading-relaxed italic">
-                        💡 {meal.prep_instructions}
+                      <div className="pt-2.5 mt-2.5 border-t border-white/5 text-[11px] text-white/70 leading-relaxed bg-white/[0.02] p-2.5 rounded-xl border border-white/5 flex items-start gap-2">
+                        <span className="text-sm shrink-0">💡</span>
+                        <span>{meal.prep_instructions}</span>
                       </div>
                     )}
                   </div>
