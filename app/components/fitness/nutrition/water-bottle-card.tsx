@@ -129,7 +129,7 @@ export function WaterBottleCard({
                   width="80"
                   height={currentFillHeight + 20}
                   fill="url(#cyanWaterGrad)"
-                  className="transition-all duration-700 ease-out"
+                  className="transition-all duration-300 ease-out"
                 />
 
                 {/* Surface meniscus curvature */}
@@ -140,7 +140,7 @@ export function WaterBottleCard({
                     rx="31"
                     ry="4.5"
                     fill="#38E1FF"
-                    className="transition-all duration-700 ease-out opacity-80"
+                    className="transition-all duration-300 ease-out opacity-80"
                   />
                 )}
 
@@ -181,7 +181,7 @@ export function WaterBottleCard({
               {/* 8. FLOATING PERCENTAGE BADGE */}
               <g
                 transform={`translate(68, ${badgeY})`}
-                className="transition-transform duration-700 ease-out"
+                className="transition-transform duration-300 ease-out"
               >
                 <circle
                   cx="0"

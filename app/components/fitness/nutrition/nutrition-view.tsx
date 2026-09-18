@@ -39,6 +39,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   
   // Water debouncing refs for instantaneous zero-lag tapping
   const pendingWaterDeltaRef = useRef<number>(0);
+  const waterInFlightDeltaRef = useRef<number>(0);
   const waterDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -173,6 +174,13 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
   const handleSelectDate = (dateStr: string) => {
     if (selectedDate === dateStr) return;
+
+    // Flush any pending water updates before switching dates
+    if (waterDebounceTimerRef.current) {
+      clearTimeout(waterDebounceTimerRef.current);
+      flushWaterSync();
+    }
+
     setSelectedDate(dateStr);
     selectedDateRef.current = dateStr;
 
@@ -384,57 +392,60 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     const delta = pendingWaterDeltaRef.current;
     if (delta === 0) return;
     pendingWaterDeltaRef.current = 0;
+    waterInFlightDeltaRef.current += delta;
 
     const targetDate = selectedDateRef.current;
 
+    const handleSuccess = (res: any) => {
+      waterInFlightDeltaRef.current -= delta;
+      if (res?.total_water_ml !== undefined) {
+        setData((prev: any) => {
+          if (!prev) return prev;
+          const targetWater = Number(prev.targets?.water_ml) || 2500;
+          // Reconcile: server confirmed total + any in-flight or newly queued user clicks
+          const unconfirmed = waterInFlightDeltaRef.current + pendingWaterDeltaRef.current;
+          const reconciledTotal = Math.max(0, res.total_water_ml + unconfirmed);
+          const updated = {
+            ...prev,
+            consumed: { ...prev.consumed, water_ml: reconciledTotal },
+            progress: {
+              ...prev.progress,
+              water_percent: Math.min(100, Math.round((reconciledTotal / (targetWater || 1)) * 100))
+            }
+          };
+          if (targetDate) {
+            dateCacheRef.current[targetDate] = updated;
+          }
+          return updated;
+        });
+      }
+    };
+
+    const handleError = (err: any) => {
+      waterInFlightDeltaRef.current -= delta;
+      console.error("Failed to sync water to server:", err);
+      toast.error("Failed to sync water to server");
+      // Revert the failed delta
+      setData((prev: any) => {
+        if (!prev) return prev;
+        const current = Number(prev.consumed?.water_ml) || 0;
+        const reverted = Math.max(0, current - delta);
+        const targetWater = Number(prev.targets?.water_ml) || 2500;
+        return {
+          ...prev,
+          consumed: { ...prev.consumed, water_ml: reverted },
+          progress: {
+            ...prev.progress,
+            water_percent: Math.min(100, Math.round((reverted / (targetWater || 1)) * 100))
+          }
+        };
+      });
+    };
+
     if (delta > 0) {
-      nutritionApi.logWater(delta).then((res) => {
-        if (res?.total_water_ml !== undefined) {
-          setData((prev: any) => {
-            if (!prev) return prev;
-            const targetWater = Number(prev.targets?.water_ml) || 2500;
-            const updated = {
-              ...prev,
-              consumed: { ...prev.consumed, water_ml: res.total_water_ml },
-              progress: {
-                ...prev.progress,
-                water_percent: Math.min(100, Math.round((res.total_water_ml / (targetWater || 1)) * 100))
-              }
-            };
-            if (targetDate) {
-              dateCacheRef.current[targetDate] = updated;
-            }
-            return updated;
-          });
-        }
-      }).catch(err => {
-        console.error("Failed to sync water to server:", err);
-        toast.error("Failed to sync water to server");
-      });
+      nutritionApi.logWater(delta).then(handleSuccess).catch(handleError);
     } else {
-      nutritionApi.removeWater(Math.abs(delta)).then((res) => {
-        if (res?.total_water_ml !== undefined) {
-          setData((prev: any) => {
-            if (!prev) return prev;
-            const targetWater = Number(prev.targets?.water_ml) || 2500;
-            const updated = {
-              ...prev,
-              consumed: { ...prev.consumed, water_ml: res.total_water_ml },
-              progress: {
-                ...prev.progress,
-                water_percent: Math.min(100, Math.round((res.total_water_ml / (targetWater || 1)) * 100))
-              }
-            };
-            if (targetDate) {
-              dateCacheRef.current[targetDate] = updated;
-            }
-            return updated;
-          });
-        }
-      }).catch(err => {
-        console.error("Failed to sync water removal:", err);
-        toast.error("Failed to sync water removal");
-      });
+      nutritionApi.removeWater(Math.abs(delta)).then(handleSuccess).catch(handleError);
     }
   };
 
@@ -526,13 +537,19 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       return;
     }
     if (!data) return;
-    
-    const targetWater = Number(data.targets?.water_ml) || 2500;
-    const currentWater = Number(data.consumed?.water_ml) || 0;
-    const newWater = currentWater + amount;
-    
+
+    let reachedGoal = false;
+    let targetGoalLiters = "2.5";
+
     setData((prev: any) => {
       if (!prev) return prev;
+      const targetWater = Number(prev.targets?.water_ml) || 2500;
+      targetGoalLiters = (targetWater / 1000).toFixed(1);
+      const currentWater = Number(prev.consumed?.water_ml) || 0;
+      const newWater = currentWater + amount;
+      if (newWater >= targetWater && currentWater < targetWater) {
+        reachedGoal = true;
+      }
       const updated = {
         ...prev,
         consumed: { ...prev.consumed, water_ml: newWater },
@@ -546,9 +563,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       }
       return updated;
     });
-    
-    if (newWater >= targetWater && currentWater < targetWater) {
-      toast.success(`🎉 Daily water goal of ${(targetWater / 1000).toFixed(1)}L reached!`);
+
+    if (reachedGoal) {
+      toast.success(`🎉 Daily water goal of ${targetGoalLiters}L reached!`);
     } else {
       toast.success(`Logged ${amount}ml of water`);
     }
@@ -560,7 +577,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }
     waterDebounceTimerRef.current = setTimeout(() => {
       flushWaterSync();
-    }, 450);
+    }, 350);
   };
 
   const handleRemoveWater = (amount: number = 250) => {
@@ -573,13 +590,16 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       return;
     }
     if (!data) return;
-    const targetWater = Number(data.targets?.water_ml) || 2500;
-    const currentWater = Number(data.consumed?.water_ml) || 0;
-    if (currentWater <= 0) return;
-    const newWater = Math.max(0, currentWater - amount);
+
+    let didRemove = false;
 
     setData((prev: any) => {
       if (!prev) return prev;
+      const targetWater = Number(prev.targets?.water_ml) || 2500;
+      const currentWater = Number(prev.consumed?.water_ml) || 0;
+      if (currentWater <= 0) return prev;
+      didRemove = true;
+      const newWater = Math.max(0, currentWater - amount);
       const updated = {
         ...prev,
         consumed: { ...prev.consumed, water_ml: newWater },
@@ -593,6 +613,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       }
       return updated;
     });
+
+    if (!didRemove) return;
+
     toast.success(`Removed ${amount}ml of water`);
 
     pendingWaterDeltaRef.current -= amount;
@@ -601,7 +624,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }
     waterDebounceTimerRef.current = setTimeout(() => {
       flushWaterSync();
-    }, 450);
+    }, 350);
   };
 
   const handleFoodLoggedSuccess = (loggedData?: any) => {
