@@ -908,46 +908,50 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     const serving = (rawServing || '1 serving').trim();
     const nameLower = (foodName || '').toLowerCase();
 
-    // If serving already starts with this quantity (e.g. q=2 and serving="2 large" or "2 bowls")
-    if (serving.startsWith(`${q} `) || serving.startsWith(`${q}x`)) {
-      if (nameLower.includes('egg') && !serving.toLowerCase().includes('egg')) {
-        return `${serving} eggs`;
-      }
-      return serving;
+    // 1. Eggs
+    if (nameLower.includes('egg')) {
+      const count = Math.max(1, Math.round(q));
+      return `${count} large egg${count > 1 ? 's' : ''} (${count * 50}g)`;
     }
 
-    if (q <= 1) {
-      return serving;
+    // 2. Chapatis / Rotis
+    if (nameLower.includes('roti') || nameLower.includes('chapati') || nameLower.includes('phulka')) {
+      const count = Math.max(1, Math.round(q));
+      return `${count} chapati${count > 1 ? 's' : ''} (${count * 40}g)`;
     }
 
-    // Match leading "1 " or "1x " (e.g. "1 large (50g)", "1 bowl (150g)", "1 cup (200ml)")
-    const leadingOneMatch = serving.match(/^1\s*(.+)$/i);
-    if (leadingOneMatch) {
-      const unit = leadingOneMatch[1].trim();
-      
-      // Match grammar like "large (50g)" or "bowl (150g)"
-      const bracketMatch = unit.match(/^([^(]+)\((\d+)\s*([a-zA-Z]+)\)$/);
-      if (bracketMatch) {
-        const descriptor = bracketMatch[1].trim();
-        const amount = parseInt(bracketMatch[2], 10);
-        const unitSuffix = bracketMatch[3];
-        const totalAmount = amount * q;
-
-        if (nameLower.includes('egg')) {
-          return `${q} large eggs (${totalAmount}${unitSuffix})`;
-        }
-        const pluralDesc = descriptor.endsWith('s') ? descriptor : `${descriptor}s`;
-        return `${q} ${pluralDesc} (${totalAmount}${unitSuffix})`;
-      }
-
-      if (nameLower.includes('egg')) {
-        return `${q} large eggs`;
-      }
-      const pluralUnit = unit.endsWith('s') ? unit : `${unit}s`;
-      return `${q} ${pluralUnit}`;
+    // 3. Simple weight servings: e.g. "100g", "50g (dry weight)"
+    const simpleWeightMatch = serving.match(/^(\d+)\s*g(\s*\(.*?\))?$/i);
+    if (simpleWeightMatch) {
+      const baseWeight = parseInt(simpleWeightMatch[1], 10);
+      const suffix = simpleWeightMatch[2] || '';
+      const totalWeight = Math.round(baseWeight * q);
+      return `${totalWeight}g${suffix}`;
     }
 
-    return `x${q} ${serving}`;
+    // 4. Bowls or Cups with gram weights: e.g. "bowl (150g)", "cup (100g)", "1 bowl (150g)"
+    const bowlCupMatch = serving.match(/^(?:1\s*)?(bowl|cup|plate)\s*\(([0-9]+)\s*([a-zA-Z]+)\)$/i);
+    if (bowlCupMatch) {
+      const vessel = bowlCupMatch[1].toLowerCase();
+      const baseGrams = parseInt(bowlCupMatch[2], 10);
+      const unit = bowlCupMatch[3];
+      const totalGrams = Math.round(baseGrams * q);
+
+      let fractionText = '1';
+      if (q <= 0.35) fractionText = '1/3';
+      else if (q <= 0.65) fractionText = '1/2';
+      else if (q <= 0.88) fractionText = '3/4';
+      else if (q <= 1.15) fractionText = '1';
+      else if (q <= 1.65) fractionText = '1.5';
+      else fractionText = `${Math.round(q)}`;
+
+      const pluralVessel = (fractionText === '1' || fractionText === '1/2' || fractionText === '3/4' || fractionText === '1/3') ? vessel : `${vessel}s`;
+      return `${fractionText} ${pluralVessel} (${totalGrams}${unit})`;
+    }
+
+    if (q === 1) return serving;
+    if (Math.abs(q - Math.round(q)) < 0.05) return `${Math.round(q)}× ${serving}`;
+    return `${Number(q.toFixed(1))}× ${serving}`;
   };
 
   return (

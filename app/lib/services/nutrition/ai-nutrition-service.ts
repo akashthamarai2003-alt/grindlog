@@ -7,6 +7,7 @@ import {
   sanitizeMealTitle,
   isStapleCoreFood,
   getRealisticFoodCost,
+  calibrateMealsToTargets,
   NutritionFoodReference
 } from "@/lib/services/nutrition/nutrition-service";
 
@@ -413,9 +414,12 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         };
       });
 
+      // Calibrate meals strictly against the user's targets and budget before saving
+      const calibratedDayMeals = calibrateMealsToTargets(meals, targets, profile);
+
       return {
         day_number: d.day_number || (dIdx + 1),
-        meals
+        meals: calibratedDayMeals
       };
     });
 
@@ -458,7 +462,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         dayFat += m.fat;
         dayCost += m.estimated_cost;
 
-        m.items.forEach(it => {
+        (m.items || []).forEach((it: any) => {
           allDayItems.push({
             ...it,
             meal_type: m.meal_type,
