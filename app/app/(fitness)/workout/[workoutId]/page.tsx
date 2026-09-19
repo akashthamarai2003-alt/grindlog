@@ -133,6 +133,38 @@ export default async function ActiveWorkoutPage({
     }
   }
 
+  // Check how many sets have been logged
+  const exercises = workout.fitness_os_exercises || [];
+  const completedSetsCount = exercises.reduce((acc: number, ex: any) => {
+    const sets = ex.fitness_os_sets || [];
+    return acc + sets.filter((s: any) => s.completed).length;
+  }, 0);
+
+  // If no sets have been logged yet and the session is older than 60 seconds (e.g. from previewing or testing),
+  // refresh started_at to right now so the user's workout timer starts accurately at 00:00!
+  if (activeSession && activeSession.started_at && completedSetsCount === 0) {
+    const sessionAgeMs = Date.now() - new Date(activeSession.started_at).getTime();
+    if (sessionAgeMs > 60 * 1000) {
+      const nowIso = new Date().toISOString();
+      await supabase
+        .from("fitness_os_workout_sessions")
+        .update({
+          started_at: nowIso,
+          paused_at: null,
+          status: "active",
+        })
+        .eq("id", activeSession.id);
+
+      await supabase
+        .from("fitness_os_workouts")
+        .update({ started_at: nowIso })
+        .eq("id", workoutId);
+
+      activeSession.started_at = nowIso;
+      activeSession.status = "active";
+    }
+  }
+
   if (!activeSession) {
     const nowIso = new Date().toISOString();
     const { data: newSession } = await supabase

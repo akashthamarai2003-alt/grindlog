@@ -7,7 +7,8 @@ import { WorkoutHeader } from "./workout-header";
 import { ExerciseDetail } from "./exercise-detail";
 import { WorkoutExecution } from "./workout-execution";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
-import { completeExerciseSetsAction } from "@/app/actions/fitness";
+import { completeExerciseSetsAction, resetWorkoutTimerAction } from "@/app/actions/fitness";
+import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 
 interface WorkoutSessionManagerProps {
   workout: FitnessWorkout & {
@@ -41,6 +42,27 @@ export function WorkoutSessionManager({
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(initialExerciseId);
   const [isPaused, setIsPaused] = useState<boolean>(initialIsPaused || false);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [effectiveStartedAt, setEffectiveStartedAt] = useState<string | null | undefined>(startedAt);
+
+  useEffect(() => {
+    setEffectiveStartedAt(startedAt);
+  }, [startedAt]);
+
+  const handleResetTimer = async () => {
+    const nowIso = new Date().toISOString();
+    clearWorkoutTimer(workout.id);
+    setEffectiveStartedAt(nowIso);
+    setIsPaused(false);
+    toast.success("Workout timer reset to 00:00!");
+
+    if (workout.id !== "mock") {
+      try {
+        await resetWorkoutTimerAction({ sessionId, workoutId: workout.id });
+      } catch (err) {
+        console.error("Failed to reset workout timer in DB:", err);
+      }
+    }
+  };
 
   // Refs to track state for cleanup without stale closures
   const isPausedRef = useRef(isPaused);
@@ -279,9 +301,10 @@ export function WorkoutSessionManager({
           dateStr={isEarlyStart ? `Scheduled ${scheduledDateLabel} • Started early` : undefined}
           backUrl="/workout"
           avatarUrl={avatarUrl}
-          startedAt={startedAt}
+          startedAt={effectiveStartedAt}
           isPaused={isPaused}
           workoutId={workout.id}
+          onResetTimer={handleResetTimer}
         />
       )}
 
@@ -290,7 +313,7 @@ export function WorkoutSessionManager({
           exercise={activeExercise as any}
           workoutId={workout.id}
           sessionId={sessionId}
-          startedAt={startedAt}
+          startedAt={effectiveStartedAt}
           isPaused={isPaused}
           onBack={handleBackToOverview}
           onSetCompleted={handleSetCompleted}
@@ -310,6 +333,7 @@ export function WorkoutSessionManager({
           onTogglePause={handleTogglePause}
           isFinishing={isFinishing}
           onFinish={handleFinish}
+          onResetTimer={handleResetTimer}
         />
       )}
     </>

@@ -78,6 +78,10 @@ export function useWorkoutTimer(
         if (idleDiff > MAX_IDLE_GAP_SECONDS || (parsed.elapsed || 0) > MAX_WORKOUT_SECONDS) {
           clearWorkoutTimer(workoutId);
           currentElapsed = Math.min(rawElapsedSinceStart, MAX_WORKOUT_SECONDS);
+        } else if ((parsed.elapsed || 0) > rawElapsedSinceStart + 15) {
+          // If startedAt was reset/updated to now, the saved timer in localStorage is from an older session. Discard it!
+          clearWorkoutTimer(workoutId);
+          currentElapsed = Math.max(0, Math.min(rawElapsedSinceStart, MAX_WORKOUT_SECONDS));
         } else {
           currentElapsed = parsed.elapsed || 0;
           // Don't add idle time if timer was saved as paused
@@ -97,10 +101,12 @@ export function useWorkoutTimer(
     elapsedRef.current = currentElapsed;
 
     if (isPaused) {
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({ elapsed: currentElapsed, lastTick: Date.now(), isPaused: true })
-      );
+      try {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({ elapsed: currentElapsed, lastTick: Date.now(), isPaused: true })
+        );
+      } catch { /* ignore */ }
       // Clear any running interval
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -122,10 +128,12 @@ export function useWorkoutTimer(
         }
         const next = prev + 1;
         elapsedRef.current = next;
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({ elapsed: next, lastTick: Date.now(), isPaused: false })
-        );
+        try {
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({ elapsed: next, lastTick: Date.now(), isPaused: false })
+          );
+        } catch { /* ignore */ }
         return next;
       });
     }, 1000);

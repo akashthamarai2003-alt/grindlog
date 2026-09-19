@@ -7,7 +7,7 @@ import { useWakeLock } from "@/hooks/fitness/useWakeLock";
 import { TodaysExercisesList } from "./todays-exercises-list";
 import { AiCoachNote } from "./ai-coach-note";
 import { WorkoutSummaryCard } from "./workout-summary-card";
-import { Pause, Play, CheckCircle, Loader2, AlertTriangle, X, Trash2 } from "lucide-react";
+import { Pause, Play, CheckCircle, Loader2, AlertTriangle, X, Trash2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
@@ -28,6 +28,7 @@ interface WorkoutExecutionProps {
   onTogglePause?: () => void;
   isFinishing?: boolean;
   onFinish?: () => void;
+  onResetTimer?: () => void;
 }
 
 export function WorkoutExecution({
@@ -42,12 +43,14 @@ export function WorkoutExecution({
   onTogglePause,
   isFinishing: externalIsFinishing,
   onFinish,
+  onResetTimer,
 }: WorkoutExecutionProps) {
   const router = useRouter();
   const [isFinishing, setIsFinishing] = useState(false);
   const [showEarlyFinishModal, setShowEarlyFinishModal] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const [showResetTimerModal, setShowResetTimerModal] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
   
   const effectiveIsFinishing = externalIsFinishing !== undefined ? externalIsFinishing : isFinishing;
@@ -192,24 +195,37 @@ export function WorkoutExecution({
       <div className="w-full h-px bg-white/10 my-8" />
 
       <div className="flex flex-col gap-3 px-2">
-        {/* Pause / Resume button — Instant 0ms toggle */}
-        <button 
-          onClick={handlePauseToggle}
-          className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] cursor-pointer ${
-            isPaused
-              ? "bg-[#ADFF00]/10 border border-[#ADFF00]/30 hover:bg-[#ADFF00]/20"
-              : "bg-[#111A10] border border-white/10 hover:bg-white/5"
-          }`}
-        >
-          {isPaused ? (
-            <Play className="w-4 h-4 text-[#ADFF00] fill-current" />
-          ) : (
-            <Pause className="w-4 h-4 text-white/50" />
+        {/* Pause / Resume + Reset Timer Action Row */}
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handlePauseToggle}
+            className={`flex-1 py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] cursor-pointer ${
+              isPaused
+                ? "bg-[#ADFF00]/10 border border-[#ADFF00]/30 hover:bg-[#ADFF00]/20"
+                : "bg-[#111A10] border border-white/10 hover:bg-white/5"
+            }`}
+          >
+            {isPaused ? (
+              <Play className="w-4 h-4 text-[#ADFF00] fill-current" />
+            ) : (
+              <Pause className="w-4 h-4 text-white/50" />
+            )}
+            <span className={`text-xs font-black uppercase tracking-widest ${isPaused ? "text-[#ADFF00]" : "text-white/70"}`}>
+              {isPaused ? "Resume Workout" : "Pause Workout"}
+            </span>
+          </button>
+
+          {onResetTimer && (
+            <button
+              onClick={() => setShowResetTimerModal(true)}
+              title="Reset timer to 00:00"
+              className="py-4 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-[0.98] cursor-pointer bg-[#111A10] border border-white/10 hover:bg-white/5 text-white/50 hover:text-white"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span className="text-xs font-black uppercase tracking-widest hidden sm:inline">Reset</span>
+            </button>
           )}
-          <span className={`text-xs font-black uppercase tracking-widest ${isPaused ? "text-[#ADFF00]" : "text-white/70"}`}>
-            {isPaused ? "Resume Workout" : "Pause Workout"}
-          </span>
-        </button>
+        </div>
 
         {/* Next exercise shortcut if not all exercises complete */}
         {!allExercisesCompleted && nextIncompleteExercise && (
@@ -473,6 +489,71 @@ export function WorkoutExecution({
                 >
                   {isDiscarding && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{isDiscarding ? "Discarding..." : "Yes, Discard Workout"}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Reset Timer Confirmation Modal */}
+      <AnimatePresence>
+        {showResetTimerModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowResetTimerModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md bg-[#0A1108] border-t border-white/10 sm:border sm:rounded-[24px] rounded-t-[32px] p-6 shadow-2xl z-10"
+            >
+              <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
+
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/30 flex items-center justify-center">
+                    <RotateCcw className="w-4 h-4 text-[#ADFF00]" />
+                  </div>
+                  <h3 className="text-base font-black text-white uppercase tracking-wider">
+                    Reset Workout Timer?
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowResetTimerModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-sm text-white/70 leading-relaxed mb-6">
+                Do you want to reset your active timer back to <span className="text-[#ADFF00] font-bold">00:00</span>? Your completed sets and exercises will remain saved.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    setShowResetTimerModal(false);
+                    if (onResetTimer) onResetTimer();
+                  }}
+                  className="w-full py-4 bg-[#ADFF00] text-black font-black uppercase tracking-widest rounded-xl active:scale-[0.98] transition-transform cursor-pointer hover:bg-[#b8ff1a]"
+                >
+                  Yes, Reset to 00:00
+                </button>
+
+                <button
+                  onClick={() => setShowResetTimerModal(false)}
+                  className="w-full py-3.5 bg-white/5 hover:bg-white/10 text-white/70 font-bold uppercase tracking-widest text-xs rounded-xl active:scale-[0.98] transition-colors cursor-pointer"
+                >
+                  Cancel
                 </button>
               </div>
             </motion.div>

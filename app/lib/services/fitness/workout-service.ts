@@ -398,6 +398,25 @@ export class WorkoutService {
           })
           .eq("id", sess.id);
       } else {
+        // If older than 60s, check if any sets were completed. If 0 sets logged, refresh started_at to now!
+        if (sessionAgeMs > 60 * 1000) {
+          const { data: sets } = await supabase
+            .from("fitness_os_sets")
+            .select("id, completed, fitness_os_exercises!inner(workout_id)")
+            .eq("fitness_os_exercises.workout_id", workoutId)
+            .eq("completed", true)
+            .limit(1);
+
+          if (!sets || sets.length === 0) {
+            const nowIso = new Date().toISOString();
+            await supabase
+              .from("fitness_os_workout_sessions")
+              .update({ started_at: nowIso, paused_at: null, status: "active" })
+              .eq("id", sess.id);
+            sess.started_at = nowIso;
+            sess.status = "active";
+          }
+        }
         // Idempotent: return valid existing session immediately
         return sess;
       }

@@ -386,6 +386,38 @@ export async function resumeWorkoutSessionAction(payload: { sessionId: string })
   return { success: true };
 }
 
+export async function resetWorkoutTimerAction(payload: { sessionId: string; workoutId: string }) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  const nowIso = new Date().toISOString();
+
+  // Reset session started_at, clear paused_at, and set active
+  if (payload.sessionId && payload.sessionId !== "mock-session") {
+    await supabase
+      .from("fitness_os_workout_sessions")
+      .update({
+        started_at: nowIso,
+        paused_at: null,
+        status: "active",
+      })
+      .eq("id", payload.sessionId)
+      .eq("user_id", user.id);
+  }
+
+  if (payload.workoutId && payload.workoutId !== "mock") {
+    await supabase
+      .from("fitness_os_workouts")
+      .update({ started_at: nowIso })
+      .eq("id", payload.workoutId)
+      .eq("user_id", user.id);
+  }
+
+  revalidatePath(`/workout/${payload.workoutId}`);
+  return { success: true, startedAt: nowIso };
+}
+
 export async function finishWorkoutSessionAction(payload: { sessionId: string }) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
