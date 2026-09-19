@@ -3,7 +3,9 @@
 import { motion } from "framer-motion";
 import { Utensils, ArrowRight, CheckCircle2, Circle, Flame, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { nutritionApi } from "@/lib/api/nutrition";
+import { toast } from "sonner";
 
 interface TodaysNutritionCardProps {
   nutrition?: any; // The nutrition plan object from DB
@@ -112,6 +114,30 @@ export function TodaysNutritionCard({
     });
   }, [rawMeals, totalMealsCount, targetCalories, targetProtein, targetCarbs, targetFats]);
 
+  // Helper to clean awkward decimals in item names: e.g. "1.91 bowls" -> "1.9 bowls"
+  const cleanItemDisplay = (itemStr: string): string => {
+    return String(itemStr || "").replace(/(\d+)\.(\d+)\s*(bowls?|cups?|plates?|servings?|pieces?|g|cheelas?|rotis?|chapatis?|eggs?)/gi, (match, whole, dec, unit) => {
+      const val = parseFloat(`${whole}.${dec}`);
+      if (isNaN(val)) return match;
+      if (Math.abs(val - Math.round(val)) <= 0.12) {
+        const rounded = Math.round(val);
+        return `${rounded} ${rounded === 1 ? unit.replace(/s$/, '') : unit}`;
+      }
+      return `${Number(val.toFixed(1))} ${unit}`;
+    });
+  };
+
+  // Set of meal types that are already logged in the database for today
+  const dbCompletedTypes = useMemo(() => {
+    const set = new Set<string>();
+    if (Array.isArray(nutrition?.logged_foods)) {
+      nutrition.logged_foods.forEach((f: any) => {
+        if (f.meal_type) set.add(String(f.meal_type).toLowerCase().trim());
+      });
+    }
+    return set;
+  }, [nutrition?.logged_foods]);
+
   // Persistent storage key per effective date
   const storageKey = `grindlog_meals_completed_${effectiveDate}`;
   const [completedMeals, setCompletedMeals] = useState<Record<number, boolean>>({});
@@ -128,46 +154,197 @@ export function TodaysNutritionCard({
     } catch {
       setCompletedMeals({});
     }
+
+    const handleSync = () => {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) setCompletedMeals(JSON.parse(saved));
+      } catch {}
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("grindlog_meals_updated", handleSync);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("grindlog_meals_updated", handleSync);
+      }
+    };
   }, [storageKey]);
 
-  const toggleMeal = (id: number) => {
+  const isMealDone = useCallback((meal: any) => {
+    const mType = String(meal.meal_type || meal.name || '').toLowerCase();
+    const typeKey = mType.includes('breakfast') ? 'breakfast'
+      : mType.includes('lunch') ? 'lunch'
+      : mType.includes('dinner') ? 'dinner'
+      : mType.includes('pre') ? 'pre_workout'
+      : mType.includes('post') ? 'post_workout'
+      : mType.includes('snack') ? 'snack'
+      : '';
+    if (typeKey && dbCompletedTypes.has(typeKey)) return true;
+    return Boolean(completedMeals[meal.id]);
+  }, [dbCompletedTypes, completedMeals]);
+
+  const toggleMeal = (meal: any) => {
+    const alreadyDone = isMealDone(meal);
+    const nextState = !alreadyDone;
+
     setCompletedMeals((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
+      const next = { ...prev, [meal.id]: nextState };
       try {
         localStorage.setItem(storageKey, JSON.stringify(next));
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("grindlog_meals_updated"));
-        }
       } catch (err) {
         console.warn("Failed to persist completed meals:", err);
       }
       return next;
     });
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("grindlog_meals_updated"));
+    }
+
+    const mType = String(meal.meal_type || meal.name || 'lunch').toLowerCase();
+    const typeKey = mType.includes('breakfast') ? 'breakfast'
+      : mType.includes('lunch') ? 'lunch'
+      : mType.includes('dinner') ? 'dinner'
+      : mType.includes('pre') ? 'pre_workout'
+      : mType.includes('post') ? 'post_workout'
+      : 'snack';
+
+    if (nextState) {
+      // Background log to database
+      const itemsToLog = (meal.meal_plan_items && meal.meal_plan_items.length > 0)
+        ? meal.meal_plan_items.map((it: any) => ({
+            food_id: it.food_id || it.foods?.id,
+            meal_type: typeKey,
+            quantity: Number(it.quantity) || 1,
+            custom_food: !it.food_id && !it.foods?.id ? {
+              name: it.foods?.name || it.name,
+              calories: it.foods?.calories || Math.round(meal.calories / Math.max(1, (meal.items?.length || 1))),
+              protein: it.foods?.protein || Number((meal.protein / Math.max(1, (meal.items?.length || 1))).toFixed(1)),
+              serving_size: it.foods?.serving_size || '1 serving',
+            } : undefined
+          }))
+        : [{
+            meal_type: typeKey,
+            quantity: 1,
+            custom_food: {
+              name: meal.name,
+              calories: meal.calories,
+              protein: meal.protein,
+              carbs: meal.carbs,
+              fat: meal.fats,
+              serving_size: '1 meal'
+            }
+          }];
+
+      nutritionApi.logFoods(itemsToLog).then(() => {
+        toast.success(`Logged ${meal.name}!`);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("grindlog_meals_updated"));
+        }
+      }).catch((err) => {
+        console.warn("Could not sync logged meal to DB:", err);
+        toast.success(`Logged ${meal.name}!`);
+      });
+    } else {
+      // Background unlog
+      const foodsToRemove = (nutrition?.logged_foods || []).filter((f: any) => String(f.meal_type).toLowerCase() === typeKey);
+      if (foodsToRemove.length > 0) {
+        Promise.all(foodsToRemove.map((f: any) => nutritionApi.deleteFood(f.id))).then(() => {
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("grindlog_meals_updated"));
+          }
+        }).catch(() => {});
+      }
+      toast.info(`Unlogged ${meal.name}`);
+    }
   };
 
   // Real-world dynamic calculations: sum actual checked meal macros
   const completedCount = useMemo(() => {
-    return Object.entries(completedMeals).filter(([id, completed]) => {
-      const numId = Number(id);
-      return completed && numId >= 0 && numId < meals.length;
-    }).length;
-  }, [completedMeals, meals.length]);
+    return meals.filter(m => isMealDone(m)).length;
+  }, [meals, isMealDone]);
 
   const consumedCalories = useMemo(() => {
-    return meals.reduce((acc: number, m: any) => (completedMeals[m.id] ? acc + m.calories : acc), 0);
-  }, [meals, completedMeals]);
+    const dbCals = Math.round(Number(nutrition?.consumed?.calories) || 0);
+    const localExtraCals = meals.reduce((acc: number, m: any) => {
+      const mType = String(m.meal_type || m.name || '').toLowerCase();
+      const typeKey = mType.includes('breakfast') ? 'breakfast'
+        : mType.includes('lunch') ? 'lunch'
+        : mType.includes('dinner') ? 'dinner'
+        : mType.includes('pre') ? 'pre_workout'
+        : mType.includes('post') ? 'post_workout'
+        : mType.includes('snack') ? 'snack'
+        : '';
+      const inDb = typeKey && dbCompletedTypes.has(typeKey);
+      if (completedMeals[m.id] && !inDb) {
+        return acc + m.calories;
+      }
+      return acc;
+    }, 0);
+    return dbCals + localExtraCals;
+  }, [nutrition?.consumed?.calories, dbCompletedTypes, meals, completedMeals]);
 
   const consumedProtein = useMemo(() => {
-    return meals.reduce((acc: number, m: any) => (completedMeals[m.id] ? acc + m.protein : acc), 0);
-  }, [meals, completedMeals]);
+    const dbPro = Math.round(Number(nutrition?.consumed?.protein) || 0);
+    const localExtraPro = meals.reduce((acc: number, m: any) => {
+      const mType = String(m.meal_type || m.name || '').toLowerCase();
+      const typeKey = mType.includes('breakfast') ? 'breakfast'
+        : mType.includes('lunch') ? 'lunch'
+        : mType.includes('dinner') ? 'dinner'
+        : mType.includes('pre') ? 'pre_workout'
+        : mType.includes('post') ? 'post_workout'
+        : mType.includes('snack') ? 'snack'
+        : '';
+      const inDb = typeKey && dbCompletedTypes.has(typeKey);
+      if (completedMeals[m.id] && !inDb) {
+        return acc + m.protein;
+      }
+      return acc;
+    }, 0);
+    return dbPro + localExtraPro;
+  }, [nutrition?.consumed?.protein, dbCompletedTypes, meals, completedMeals]);
 
   const consumedCarbs = useMemo(() => {
-    return meals.reduce((acc: number, m: any) => (completedMeals[m.id] ? acc + m.carbs : acc), 0);
-  }, [meals, completedMeals]);
+    const dbCarbs = Math.round(Number(nutrition?.consumed?.carbs) || 0);
+    const localExtraCarbs = meals.reduce((acc: number, m: any) => {
+      const mType = String(m.meal_type || m.name || '').toLowerCase();
+      const typeKey = mType.includes('breakfast') ? 'breakfast'
+        : mType.includes('lunch') ? 'lunch'
+        : mType.includes('dinner') ? 'dinner'
+        : mType.includes('pre') ? 'pre_workout'
+        : mType.includes('post') ? 'post_workout'
+        : mType.includes('snack') ? 'snack'
+        : '';
+      const inDb = typeKey && dbCompletedTypes.has(typeKey);
+      if (completedMeals[m.id] && !inDb) {
+        return acc + m.carbs;
+      }
+      return acc;
+    }, 0);
+    return dbCarbs + localExtraCarbs;
+  }, [nutrition?.consumed?.carbs, dbCompletedTypes, meals, completedMeals]);
 
   const consumedFats = useMemo(() => {
-    return meals.reduce((acc: number, m: any) => (completedMeals[m.id] ? acc + m.fats : acc), 0);
-  }, [meals, completedMeals]);
+    const dbFat = Math.round(Number(nutrition?.consumed?.fat) || 0);
+    const localExtraFat = meals.reduce((acc: number, m: any) => {
+      const mType = String(m.meal_type || m.name || '').toLowerCase();
+      const typeKey = mType.includes('breakfast') ? 'breakfast'
+        : mType.includes('lunch') ? 'lunch'
+        : mType.includes('dinner') ? 'dinner'
+        : mType.includes('pre') ? 'pre_workout'
+        : mType.includes('post') ? 'post_workout'
+        : mType.includes('snack') ? 'snack'
+        : '';
+      const inDb = typeKey && dbCompletedTypes.has(typeKey);
+      if (completedMeals[m.id] && !inDb) {
+        return acc + m.fats;
+      }
+      return acc;
+    }, 0);
+    return dbFat + localExtraFat;
+  }, [nutrition?.consumed?.fat, dbCompletedTypes, meals, completedMeals]);
 
   const caloriesPercent = targetCalories ? Math.min(Math.round((consumedCalories / targetCalories) * 100), 100) : 0;
   const proteinPercent = targetProtein ? Math.min(Math.round((consumedProtein / targetProtein) * 100), 100) : 0;
@@ -352,12 +529,12 @@ export function TodaysNutritionCard({
           ) : meals.length > 0 ? (
             <div className="divide-y divide-white/5">
               {meals.map((meal: any) => {
-                const isCompleted = !!completedMeals[meal.id];
+                const isCompleted = isMealDone(meal);
 
                 return (
                   <div
                     key={meal.id}
-                    onClick={() => toggleMeal(meal.id)}
+                    onClick={() => toggleMeal(meal)}
                     role="button"
                     tabIndex={0}
                     className={`flex items-start gap-3 p-3.5 cursor-pointer transition-all duration-200 select-none ${
@@ -419,13 +596,13 @@ export function TodaysNutritionCard({
                                   : "bg-white/[0.04] text-white/70 border-white/5"
                               }`}
                             >
-                              {item}
+                              {cleanItemDisplay(item)}
                             </span>
                           ))}
                         </div>
                       ) : (
                         <p className="text-xs font-medium text-white/40 mt-1">
-                          {meal.desc}
+                          {cleanItemDisplay(meal.desc)}
                         </p>
                       )}
 

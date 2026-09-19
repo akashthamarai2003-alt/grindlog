@@ -7,6 +7,7 @@ import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } fr
 import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
 import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
+import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -45,6 +46,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     { data: sleepLog },
     { data: waterLogs },
     subscriptionState,
+    todayNutritionRes,
   ] = await Promise.all([
     supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle(),
@@ -60,6 +62,10 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     supabase.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
     (supabase as any).from("fitness_os_water_logs").select("amount_ml").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
     getFitnessSubscriptionState(user.id),
+    NutritionService.getTodaySummaryAndDetails(user.id, targetDateStr).catch((err) => {
+      console.warn("Could not load today nutrition details for dashboard:", err);
+      return null;
+    }),
   ]);
   if (!profile?.onboarding_completed) {
     redirect("/onboarding");
@@ -111,6 +117,37 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       }
     : undefined;
 
+  const effectiveNutrition = todayNutritionRes ? {
+    ...effectivePlan?.plan_data?.nutrition,
+    daily_calories: todayNutritionRes.targets?.calories || effectivePlan?.plan_data?.nutrition?.daily_calories,
+    protein_grams: todayNutritionRes.targets?.protein || effectivePlan?.plan_data?.nutrition?.protein_grams,
+    carbs_grams: todayNutritionRes.targets?.carbs || effectivePlan?.plan_data?.nutrition?.carbs_grams,
+    fat_grams: todayNutritionRes.targets?.fat || effectivePlan?.plan_data?.nutrition?.fat_grams,
+    water_ml: todayNutritionRes.targets?.water_ml,
+    consumed: todayNutritionRes.consumed || { calories: 0, protein: 0, carbs: 0, fat: 0, water_ml: 0 },
+    logged_foods: todayNutritionRes.logged_foods || [],
+    progress: todayNutritionRes.progress,
+    meals: (todayNutritionRes.meals && todayNutritionRes.meals.length > 0 && todayNutritionRes.meals.some((m: any) => m.meal_plan_items?.length > 0))
+      ? todayNutritionRes.meals.map((m: any, idx: number) => ({
+          id: m.id || idx,
+          meal_type: m.meal_type,
+          meal_name: m.name,
+          time_of_day: m.meal_type === 'breakfast' ? 'After waking' : m.meal_type === 'lunch' ? 'Midday' : m.meal_type === 'pre_workout' ? 'Pre-workout' : 'Evening',
+          total_calories: m.calories,
+          protein_grams: m.protein,
+          carbs_grams: m.carbs,
+          fat_grams: m.fat,
+          items: (m.meal_plan_items || []).map((it: any) => {
+            const fName = it.foods?.name || it.name;
+            const sSize = it.foods?.serving_size || it.serving_size || '1 serving';
+            return `${fName} - ${sSize}`;
+          }),
+          meal_plan_items: m.meal_plan_items,
+          prep_instructions: m.prep_instructions,
+        }))
+      : (effectivePlan?.plan_data?.nutrition?.meals || []),
+  } : effectivePlan?.plan_data?.nutrition;
+
   return (
     <FitnessDashboard
       user={user}
@@ -119,7 +156,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       todayWorkout={effectiveTodayWorkout}
       weekWorkouts={effectiveWeekWorkouts}
       hasPlan={!!effectivePlan}
-      nutrition={effectivePlan?.plan_data?.nutrition}
+      nutrition={effectiveNutrition}
       lifestyle={effectivePlan?.plan_data?.lifestyle}
       dailyActivity={dailyActivity}
       dayNumber={dayNumber}

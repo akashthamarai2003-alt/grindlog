@@ -248,7 +248,7 @@ export function calibrateMealsToTargets(
       } else if (lowerName.includes('soya chunk') || lowerName.includes('soy chunk')) {
         if (mealScale < 0.7) q = 0.5;
         else if (mealScale < 0.9) q = 0.6;
-        else q = Math.min(1.2, Number((q * mealScale).toFixed(2)));
+        else q = Math.min(1.2, Number((q * mealScale).toFixed(1)));
       } else if (lowerName.includes('paneer')) {
         if (dailyBudgetCap <= 50 || mealTargetFat <= 15 || mealScale < 0.85) {
           q = 0.5; // 50g serving
@@ -262,7 +262,10 @@ export function calibrateMealsToTargets(
         else if (mealScale < 0.8) q = 0.75;
       } else {
         // Scalable items (dals, sambar, oats, milk, sabzi, poha)
-        q = Math.max(0.4, Math.min(2.0, Number((q * mealScale).toFixed(2))));
+        const rawScaled = q * mealScale;
+        q = Math.abs(rawScaled - Math.round(rawScaled)) <= 0.12
+          ? Math.round(rawScaled)
+          : Math.max(0.4, Math.min(2.0, Number(rawScaled.toFixed(1))));
       }
 
       const totalItemCals = Math.round(info.unitCals * q);

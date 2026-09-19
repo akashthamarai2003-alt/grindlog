@@ -53,45 +53,48 @@ export function TodaysGoalsCard({
 
   const checkNutritionStorage = useCallback(() => {
     try {
+      // 1. Direct DB consumed check if present
+      const dbCals = Math.round(Number(nutrition?.consumed?.calories) || 0);
+      const dbPro = Math.round(Number(nutrition?.consumed?.protein) || 0);
+
       const savedMeals = localStorage.getItem(mealsStorageKey);
+      let localCals = 0;
+      let localPro = 0;
+      let allMealsDone = false;
+
       if (savedMeals && nutrition?.meals && Array.isArray(nutrition.meals) && nutrition.meals.length > 0) {
         const parsed: Record<string, boolean> = JSON.parse(savedMeals);
         const totalMeals = nutrition.meals.length;
         const checkedCount = Object.entries(parsed).filter(([_, v]) => Boolean(v)).length;
 
-        let sumCals = 0;
-        let sumPro = 0;
         nutrition.meals.forEach((m: any, idx: number) => {
           if (parsed[idx]) {
             const cal = Number(m.total_calories ?? m.calories) || (targetCalories ? Math.round(targetCalories / totalMeals) : 0);
             const pro = Number(m.protein_grams ?? m.protein) || (proteinTarget ? Math.round(proteinTarget / totalMeals) : 0);
-            sumCals += cal;
-            sumPro += pro;
+            localCals += cal;
+            localPro += pro;
           }
         });
 
-        const allMealsDone = checkedCount >= totalMeals;
-        const calsMet = allMealsDone || (targetCalories ? sumCals >= targetCalories * 0.9 : false);
-        const proMet = allMealsDone || (proteinTarget ? sumPro >= proteinTarget * 0.9 : false);
-
-        setNutritionProgress({
-          caloriesHit: calsMet,
-          proteinHit: proMet,
-          consumedCalories: sumCals,
-          consumedProtein: sumPro,
-        });
-      } else {
-        setNutritionProgress({
-          caloriesHit: false,
-          proteinHit: false,
-          consumedCalories: 0,
-          consumedProtein: 0,
-        });
+        allMealsDone = checkedCount >= totalMeals;
       }
+
+      const effectiveCals = Math.max(dbCals, localCals);
+      const effectivePro = Math.max(dbPro, localPro);
+
+      const calsMet = allMealsDone || (targetCalories ? effectiveCals >= targetCalories * 0.9 : false);
+      const proMet = allMealsDone || (proteinTarget ? effectivePro >= proteinTarget * 0.9 : false);
+
+      setNutritionProgress({
+        caloriesHit: calsMet,
+        proteinHit: proMet,
+        consumedCalories: effectiveCals,
+        consumedProtein: effectivePro,
+      });
     } catch {
       // ignore
     }
-  }, [mealsStorageKey, nutrition?.meals, targetCalories, proteinTarget]);
+  }, [mealsStorageKey, nutrition?.meals, nutrition?.consumed, targetCalories, proteinTarget]);
 
   // Initial check and live event listener for instant reactivity across cards
   useEffect(() => {
