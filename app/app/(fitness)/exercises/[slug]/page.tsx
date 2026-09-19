@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import { Target, Dumbbell, Activity, ShieldAlert, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { ExerciseAnimationPlayer } from "@/components/fitness/workout/exercise-animation-player";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -64,19 +65,34 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
                 </div>
               </div>
 
-              {/* Images */}
+              {/* Form Demonstration Animation */}
+              <div className="w-full">
+                <ExerciseAnimationPlayer
+                  name={exercise.name}
+                  targetMuscle={exercise.target_muscle}
+                  aspectRatio="video"
+                  className="shadow-2xl"
+                />
+              </div>
+
+              {/* Static Step Photos (if available) */}
               {exercise.image_urls && exercise.image_urls.length > 0 && (
-                <div className="flex overflow-x-auto gap-4 pb-2 snap-x">
-                  {exercise.image_urls.map((url: string, i: number) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img 
-                      key={i}
-                      src={url} 
-                      alt={`${exercise.name} - step ${i+1}`}
-                      className="w-[280px] h-[280px] object-cover rounded-3xl border border-white/10 bg-white/5 shrink-0 snap-center"
-                      loading="lazy"
-                    />
-                  ))}
+                <div className="flex flex-col gap-2">
+                  <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                    Step Photos
+                  </span>
+                  <div className="flex overflow-x-auto gap-4 pb-2 snap-x">
+                    {exercise.image_urls.map((url: string, i: number) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img 
+                        key={i}
+                        src={url} 
+                        alt={`${exercise.name} - step ${i+1}`}
+                        className="w-[200px] h-[200px] object-cover rounded-2xl border border-white/10 bg-white/5 shrink-0 snap-center"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
 

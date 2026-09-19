@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 import { estimated1RM, format1RM } from "@/lib/fitness/calculations/one-rm";
+import { ExerciseAnimationPlayer } from "./exercise-animation-player";
 
 interface ExerciseDetailProps {
   exercise: FitnessExercise & { fitness_os_sets: FitnessSet[] };
@@ -279,7 +280,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       </h2>
 
       {/* Target muscle & equipment chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-4">
         {(exercise as any).target_muscles?.[0] && (
           <span className="flex items-center gap-1 text-[10px] font-black tracking-[0.2em] text-[#ADFF00] uppercase bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2.5 py-1 rounded-full">
             <Target className="w-3 h-3" /> {(exercise as any).target_muscles[0]}
@@ -290,6 +291,16 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
             <Dumbbell className="w-3 h-3" /> Bodyweight
           </span>
         )}
+      </div>
+
+      {/* Animated Workout Demonstration */}
+      <div className="mb-6">
+        <ExerciseAnimationPlayer
+          name={exercise.name}
+          targetMuscle={(exercise as any).target_muscles?.[0] || (exercise as any).muscle}
+          aspectRatio="video"
+          className="shadow-2xl"
+        />
       </div>
 
       {/* Exercise meta bar */}

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { completeExerciseSetsAction } from "@/app/actions/fitness";
+import { ExerciseAnimationPlayer } from "./exercise-animation-player";
 
 interface Exercise {
   id: string;
@@ -124,56 +125,64 @@ export function TodaysExercisesList({
             >
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/5 group-hover:bg-[#ADFF00]/50 transition-colors" />
 
-              <div className="flex justify-between items-start">
-                {/* Left side: Info */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-white/30 tracking-widest uppercase mb-1">
-                      {numStr}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <Dumbbell className="w-3.5 h-3.5 text-white/50" />
-                      <h4 className="text-sm font-black text-white uppercase tracking-wide">
-                        {exercise.name}
-                      </h4>
+              <div className="flex justify-between items-start gap-3">
+                {/* Left side: Thumbnail + Info */}
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  <ExerciseAnimationPlayer
+                    name={exercise.name}
+                    targetMuscle={exercise.muscle}
+                    compact={true}
+                    className="mt-0.5 shrink-0 shadow-md"
+                  />
+                  <div className="flex flex-col gap-2 min-w-0 flex-1">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-white/30 tracking-widest uppercase mb-0.5">
+                        {numStr}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <Dumbbell className="w-3.5 h-3.5 text-white/50 shrink-0" />
+                        <h4 className="text-sm font-black text-white uppercase tracking-wide truncate">
+                          {exercise.name}
+                        </h4>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-3 mt-1">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
-                        Target
-                      </span>
-                      <span className="text-xs font-semibold text-white/80">
-                        {exercise.muscle || "Muscle"}
-                      </span>
+                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
+                          Target
+                        </span>
+                        <span className="text-xs font-semibold text-white/80">
+                          {exercise.muscle || "Muscle"}
+                        </span>
+                      </div>
+                      <div className="w-px h-6 bg-white/10" />
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
+                          Sets × Reps
+                        </span>
+                        <span className="text-xs font-semibold text-white/80">
+                          {(exercise as any).target_sets || exercise.sets} ×{" "}
+                          {String((exercise as any).target_reps || exercise.reps || "").replace(
+                            /^\d+\s*[xX×]\s*/,
+                            ""
+                          )}
+                        </span>
+                      </div>
+                      {((exercise as any).targetWeight || exercise.targetWeight) && (
+                        <>
+                          <div className="w-px h-6 bg-white/10" />
+                          <div className="flex flex-col">
+                            <span className="text-[9px] font-bold text-[#ADFF00]/60 uppercase tracking-widest">
+                              Weight
+                            </span>
+                            <span className="text-xs font-black text-[#ADFF00]">
+                              {(exercise as any).targetWeight || exercise.targetWeight}
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <div className="w-px h-6 bg-white/10" />
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
-                        Sets × Reps
-                      </span>
-                      <span className="text-xs font-semibold text-white/80">
-                        {(exercise as any).target_sets || exercise.sets} ×{" "}
-                        {String((exercise as any).target_reps || exercise.reps || "").replace(
-                          /^\d+\s*[xX×]\s*/,
-                          ""
-                        )}
-                      </span>
-                    </div>
-                    {((exercise as any).targetWeight || exercise.targetWeight) && (
-                      <>
-                        <div className="w-px h-6 bg-white/10" />
-                        <div className="flex flex-col">
-                          <span className="text-[9px] font-bold text-[#ADFF00]/60 uppercase tracking-widest">
-                            Weight
-                          </span>
-                          <span className="text-xs font-black text-[#ADFF00]">
-                            {(exercise as any).targetWeight || exercise.targetWeight}
-                          </span>
-                        </div>
-                      </>
-                    )}
                   </div>
                 </div>
 

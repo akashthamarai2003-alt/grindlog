@@ -2,6 +2,7 @@
 
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { SetRow } from "./set-row";
+import { ExerciseAnimationPlayer } from "./exercise-animation-player";
 
 interface ExerciseCardProps {
   exercise: FitnessExercise & { fitness_os_sets: FitnessSet[] };
@@ -15,7 +16,7 @@ export function ExerciseCard({ exercise, onSetCompleted, isTimerActive }: Exerci
   
   return (
     <div className="w-full bg-[#111A10] rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-5 sm:p-6 mb-6">
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex justify-between items-start mb-4">
         <div>
           <p className="text-xs font-bold text-[#ADFF00] uppercase tracking-widest mb-1">
             Exercise {exercise.exercise_order}
@@ -34,6 +35,14 @@ export function ExerciseCard({ exercise, onSetCompleted, isTimerActive }: Exerci
           </p>
         </div>
       </div>
+
+      {/* Animated Workout Demonstration */}
+      <ExerciseAnimationPlayer
+        name={exercise.name}
+        targetMuscle={(exercise as any).muscle || (exercise as any).target_muscles?.[0]}
+        aspectRatio="video"
+        className="mb-5"
+      />
       
       {exercise.notes && (
         <div className="bg-[#ADFF00]/10 rounded-2xl p-4 mb-6 border border-[#ADFF00]/20">

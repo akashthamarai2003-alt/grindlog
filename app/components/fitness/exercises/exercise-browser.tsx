@@ -7,6 +7,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useSearchParams } from "next/navigation";
+import { ExerciseAnimationPlayer } from "@/components/fitness/workout/exercise-animation-player";
 
 interface LibraryExercise {
   id: string;
@@ -199,17 +200,12 @@ function ExerciseBrowserContent({ initialExercises }: { initialExercises?: Libra
                 key={ex.id}
                 className="bg-[#111A10] border border-white/5 rounded-2xl p-4 flex items-center gap-4 hover:bg-white/5 active:scale-[0.99] transition-all group"
               >
-                {ex.image_urls && ex.image_urls[0] ? (
-                  <div className="w-16 h-16 rounded-xl bg-white/5 overflow-hidden shrink-0 border border-white/10">
-                    {/* Using standard img to avoid Next.js domains config issues with external URLs */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={ex.image_urls[0]} alt={ex.name} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                    <Dumbbell className="w-6 h-6 text-white/20" />
-                  </div>
-                )}
+                <ExerciseAnimationPlayer
+                  name={ex.name}
+                  targetMuscle={ex.target_muscle}
+                  compact={true}
+                  className="w-16 h-16 rounded-xl shrink-0"
+                />
                 
                 <div className="flex-1 flex flex-col">
                   <h3 className="text-sm font-black text-white capitalize line-clamp-1">{ex.name}</h3>
