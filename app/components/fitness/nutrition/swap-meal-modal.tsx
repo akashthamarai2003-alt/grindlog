@@ -75,7 +75,7 @@ export function SwapMealModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 pb-20 sm:pb-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg max-h-[88dvh] bg-[#111A10] border border-white/10 rounded-[24px] sm:rounded-[28px] overflow-hidden flex flex-col shadow-2xl">
         
         {/* Header */}

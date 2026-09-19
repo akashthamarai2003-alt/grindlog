@@ -2777,12 +2777,43 @@ export class NutritionService {
     const slotPct = slotProportions[mt] ?? 0.25;
     const targetCals = Math.round(Number(targets?.calories || 2000) * slotPct);
 
+function scaleServingSize(servingSize: string, scale: number): string {
+  if (!servingSize || Math.abs(scale - 1) < 0.02) return servingSize;
+
+  let res = servingSize;
+
+  // 1. Grams: e.g. "(150g)", "100g" -> round to nearest 5g
+  res = res.replace(/\b(\d+)\s*g\b/gi, (_, g) => {
+    const val = Number(g);
+    if (val <= 0) return `${g}g`;
+    const scaledG = Math.round(val * scale / 5) * 5;
+    return `${Math.max(5, scaledG)}g`;
+  });
+
+  // 2. Bowls: e.g. "2 bowls cooked", "1 bowl"
+  res = res.replace(/\b(\d+(?:\.\d+)?)\s*bowls?\b/gi, (_, b) => {
+    const val = Number(b);
+    const scaledB = parseFloat((val * scale).toFixed(1));
+    return `${scaledB} ${scaledB === 1 ? 'bowl' : 'bowls'}`;
+  });
+
+  // 3. Pieces or medium: e.g. "3 medium", "3 pieces"
+  res = res.replace(/\b(\d+(?:\.\d+)?)\s*(medium|pieces?)\b/gi, (_, p, unit) => {
+    const val = Number(p);
+    const scaledP = parseFloat((val * scale).toFixed(1));
+    return `${scaledP} ${unit}`;
+  });
+
+  return res;
+}
+
     return rawOptions.map((opt, optIndex) => {
       const items = buildItems(opt.items);
       const rawCals = items.reduce((acc, it) => acc + it.calories, 0);
       const scale = rawCals > 0 ? (targetCals / rawCals) : 1;
       const scaledItems = items.map(it => ({
         ...it,
+        serving_size: scaleServingSize(it.serving_size, scale),
         calories: Math.round(it.calories * scale),
         protein: Number((it.protein * scale).toFixed(1)),
         carbs: Number((it.carbs * scale).toFixed(1)),
