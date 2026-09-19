@@ -46,6 +46,7 @@ export function WorkoutExecution({
   const router = useRouter();
   const [isFinishing, setIsFinishing] = useState(false);
   const [showEarlyFinishModal, setShowEarlyFinishModal] = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
   
@@ -125,15 +126,12 @@ export function WorkoutExecution({
 
   const triggerFinish = onFinish || handleFinish;
 
-  // Auto-finish if all exercises completed and not already finishing
+  // Prompt user with finish confirmation modal when all exercises are completed
   useEffect(() => {
     if (allExercisesCompleted && !effectiveIsFinishing) {
-      const timer = setTimeout(() => {
-        triggerFinish();
-      }, 400);
-      return () => clearTimeout(timer);
+      setShowFinishModal(true);
     }
-  }, [allExercisesCompleted, effectiveIsFinishing, triggerFinish]);
+  }, [allExercisesCompleted, effectiveIsFinishing]);
 
   const handlePauseToggle = async () => {
     if (onTogglePause) {
@@ -239,7 +237,7 @@ export function WorkoutExecution({
         {/* Finish Workout button — enabled ONLY when all exercises completed */}
         {allExercisesCompleted ? (
           <button 
-            onClick={triggerFinish}
+            onClick={() => setShowFinishModal(true)}
             disabled={effectiveIsFinishing}
             className="w-full py-4 bg-[#ADFF00] text-black font-black uppercase tracking-widest active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(173,255,0,0.35)] cursor-pointer hover:bg-[#b8ff1a]"
           >
@@ -264,6 +262,83 @@ export function WorkoutExecution({
           </div>
         )}
       </div>
+
+      {/* Finish Workout Confirmation Modal */}
+      <AnimatePresence>
+        {showFinishModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !effectiveIsFinishing && setShowFinishModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md bg-[#0A1108] border-t border-white/10 sm:border sm:rounded-[24px] rounded-t-[32px] p-6 shadow-2xl z-10"
+            >
+              <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
+
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-[#ADFF00]" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest">
+                      Workout Complete
+                    </span>
+                    <h3 className="text-base font-black text-white uppercase tracking-wider">
+                      Finish This Workout?
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => !effectiveIsFinishing && setShowFinishModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-sm text-white/70 leading-relaxed mb-6">
+                All <strong className="text-[#ADFF00]">{totalExercises} exercises</strong> are completed! Do you want to finish this workout and save your session to your workout summary?
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    setShowFinishModal(false);
+                    triggerFinish();
+                  }}
+                  disabled={effectiveIsFinishing}
+                  className="w-full py-4 bg-[#ADFF00] text-black font-black uppercase tracking-widest rounded-xl active:scale-[0.98] transition-transform cursor-pointer hover:bg-[#b8ff1a] flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(173,255,0,0.35)]"
+                >
+                  {effectiveIsFinishing ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4 text-black" />
+                  )}
+                  <span>{effectiveIsFinishing ? "Finishing..." : "Yes, Finish Workout"}</span>
+                </button>
+
+                <button
+                  onClick={() => setShowFinishModal(false)}
+                  disabled={effectiveIsFinishing}
+                  className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 font-bold uppercase tracking-widest text-xs rounded-xl active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  Keep Reviewing
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Early Finish Confirmation Modal */}
       <AnimatePresence>

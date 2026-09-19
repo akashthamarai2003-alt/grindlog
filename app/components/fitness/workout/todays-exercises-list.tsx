@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Dumbbell, Play, Loader2, Check, Pause } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Dumbbell, Play, Loader2, Check, Pause, CheckCircle2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -40,6 +40,7 @@ export function TodaysExercisesList({
   const router = useRouter();
   const [navigatingExerciseId, setNavigatingExerciseId] = useState<string | null>(null);
   const [finishingExerciseId, setFinishingExerciseId] = useState<string | null>(null);
+  const [confirmExercise, setConfirmExercise] = useState<Exercise | null>(null);
 
   useEffect(() => {
     if (workoutId && workoutId !== "mock") {
@@ -233,7 +234,13 @@ export function TodaysExercisesList({
 
                       {/* FINISH button directly below Start button */}
                       <button
-                        onClick={() => handleFinishExercise(exercise.id)}
+                        onClick={() => {
+                          if (isPaused) {
+                            toast.info("Workout is paused. Tap 'Resume Workout' below to continue.");
+                            return;
+                          }
+                          setConfirmExercise(exercise);
+                        }}
                         disabled={navigatingExerciseId !== null || isPaused || finishingExerciseId === exercise.id}
                         className="h-7 px-3 bg-[#111A10] border border-[#ADFF00]/30 hover:bg-[#ADFF00] hover:text-black rounded-lg flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer text-[#ADFF00] disabled:opacity-50 group/finish"
                       >
@@ -259,6 +266,84 @@ export function TodaysExercisesList({
           );
         })}
       </div>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {confirmExercise && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !finishingExerciseId && setConfirmExercise(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md bg-[#0A1108] border-t border-white/10 sm:border sm:rounded-[24px] rounded-t-[32px] p-6 shadow-2xl z-10"
+            >
+              <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
+
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-[#ADFF00]" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest">
+                      Confirmation
+                    </span>
+                    <h3 className="text-base font-black text-white uppercase tracking-wider">
+                      Finish This Workout?
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => !finishingExerciseId && setConfirmExercise(null)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-sm text-white/70 leading-relaxed mb-6">
+                Do you want to finish <strong className="text-white uppercase">{confirmExercise.name}</strong> and complete these sets?
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={async () => {
+                    const id = confirmExercise.id;
+                    setConfirmExercise(null);
+                    await handleFinishExercise(id);
+                  }}
+                  disabled={finishingExerciseId !== null}
+                  className="w-full py-4 bg-[#ADFF00] text-black font-black uppercase tracking-widest rounded-xl active:scale-[0.98] transition-transform cursor-pointer hover:bg-[#b8ff1a] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.3)]"
+                >
+                  {finishingExerciseId === confirmExercise.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  ) : (
+                    <Check className="w-4 h-4 text-black" />
+                  )}
+                  <span>Yes, Finish</span>
+                </button>
+
+                <button
+                  onClick={() => setConfirmExercise(null)}
+                  disabled={finishingExerciseId !== null}
+                  className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 font-bold uppercase tracking-widest text-xs rounded-xl active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  Keep Training
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
