@@ -42,9 +42,15 @@ export async function POST(req: Request) {
           // Process Fitness OS payments with fair stacking
           const { data: existingSub } = await adminClient
             .from("fitness_os_subscriptions")
-            .select("current_period_end")
+            .select("current_period_end, provider_payment_id")
             .eq("user_id", notes.userId)
             .maybeSingle();
+
+          // Idempotency: if this payment was already processed by client verification, skip re-stacking
+          if (payment.id && existingSub?.provider_payment_id === payment.id) {
+            console.log("Webhook: Payment already processed for", payment.id);
+            return NextResponse.json({ status: "ok", message: "Already processed" });
+          }
 
           const { data: existingProfile } = await adminClient
             .from("fitness_os_profiles")

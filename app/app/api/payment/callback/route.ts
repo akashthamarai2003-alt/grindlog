@@ -90,9 +90,14 @@ export async function POST(req: NextRequest) {
         // Fitness OS payment — update fitness-specific tables with fair stacking
         const { data: existingSub } = await adminClient
           .from("fitness_os_subscriptions")
-          .select("current_period_end")
+          .select("current_period_end, provider_payment_id")
           .eq("user_id", userId)
           .maybeSingle();
+
+        // Idempotency: if already processed for this transaction, redirect immediately
+        if (razorpayPaymentId && existingSub?.provider_payment_id === razorpayPaymentId) {
+          return NextResponse.redirect(new URL("/profile/billing?success=true", request.url));
+        }
 
         const { data: existingProfile } = await adminClient
           .from("fitness_os_profiles")

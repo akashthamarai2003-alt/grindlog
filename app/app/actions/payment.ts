@@ -398,9 +398,14 @@ export async function verifyRazorpayPayment(
       // 1. Fetch current subscription to check existing period end for stacking
       const { data: existingSub } = await adminClient
         .from("fitness_os_subscriptions")
-        .select("current_period_end")
+        .select("current_period_end, provider_payment_id")
         .eq("user_id", user.id)
         .maybeSingle();
+
+      // Idempotency: if this exact transaction was already processed, do not stack again
+      if (razorpayPaymentId && existingSub?.provider_payment_id === razorpayPaymentId) {
+        return { success: true, message: "Payment already processed." };
+      }
 
       const { data: existingProfile } = await adminClient
         .from("fitness_os_profiles")
