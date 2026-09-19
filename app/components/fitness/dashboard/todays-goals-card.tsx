@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Circle, Target, Sparkles, Zap } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { nutritionApi } from "@/lib/api/nutrition";
 
 interface TodaysGoalsCardProps {
   lifestyle?: any;
@@ -51,11 +52,22 @@ export function TodaysGoalsCard({
     consumedProtein: 0,
   });
 
-  const checkNutritionStorage = useCallback(() => {
+  const checkNutritionStorage = useCallback(async () => {
     try {
       // 1. Direct DB consumed check if present
-      const dbCals = Math.round(Number(nutrition?.consumed?.calories) || 0);
-      const dbPro = Math.round(Number(nutrition?.consumed?.protein) || 0);
+      let dbCals = Math.round(Number(nutrition?.consumed?.calories) || 0);
+      let dbPro = Math.round(Number(nutrition?.consumed?.protein) || 0);
+
+      // Attempt live fetch if initial db values are 0
+      try {
+        const fresh = await nutritionApi.getToday(effectiveDate);
+        if (fresh?.consumed) {
+          dbCals = Math.max(dbCals, Math.round(Number(fresh.consumed.calories) || 0));
+          dbPro = Math.max(dbPro, Math.round(Number(fresh.consumed.protein) || 0));
+        }
+      } catch {
+        // ignore network error
+      }
 
       const savedMeals = localStorage.getItem(mealsStorageKey);
       let localCals = 0;
@@ -94,19 +106,23 @@ export function TodaysGoalsCard({
     } catch {
       // ignore
     }
-  }, [mealsStorageKey, nutrition?.meals, nutrition?.consumed, targetCalories, proteinTarget]);
+  }, [mealsStorageKey, nutrition?.meals, nutrition?.consumed, targetCalories, proteinTarget, effectiveDate]);
 
   // Initial check and live event listener for instant reactivity across cards
   useEffect(() => {
     checkNutritionStorage();
 
-    const handleUpdate = () => checkNutritionStorage();
+    const handleUpdate = () => {
+      checkNutritionStorage();
+    };
     window.addEventListener("grindlog_meals_updated", handleUpdate);
     window.addEventListener("storage", handleUpdate);
+    window.addEventListener("focus", handleUpdate);
 
     return () => {
       window.removeEventListener("grindlog_meals_updated", handleUpdate);
       window.removeEventListener("storage", handleUpdate);
+      window.removeEventListener("focus", handleUpdate);
     };
   }, [checkNutritionStorage]);
 

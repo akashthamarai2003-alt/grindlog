@@ -30,25 +30,73 @@ export function TodaysNutritionCard({
     }).format(new Date());
   }, [targetDateStr]);
 
-  const targetCalories = Number(nutrition?.daily_calories) > 0 ? Math.round(Number(nutrition.daily_calories)) : null;
-  const targetProtein = Number(nutrition?.protein_grams) > 0 ? Math.round(Number(nutrition.protein_grams)) : null;
+  const [activeNutrition, setActiveNutrition] = useState<any>(nutrition);
+
+  useEffect(() => {
+    setActiveNutrition(nutrition);
+  }, [nutrition]);
+
+  const refreshNutrition = useCallback(async () => {
+    try {
+      const fresh = await nutritionApi.getToday(effectiveDate);
+      if (fresh) {
+        setActiveNutrition((prev: any) => ({
+          ...prev,
+          ...fresh,
+          consumed: fresh.consumed || prev?.consumed,
+          logged_foods: fresh.logged_foods || prev?.logged_foods,
+          meals: (fresh.meals && fresh.meals.length > 0) ? fresh.meals : prev?.meals,
+        }));
+      }
+    } catch {
+      // silently ignore network errors
+    }
+  }, [effectiveDate]);
+
+  useEffect(() => {
+    refreshNutrition();
+    const handleSync = () => {
+      refreshNutrition();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("grindlog_meals_updated", handleSync);
+      window.addEventListener("focus", handleSync);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("grindlog_meals_updated", handleSync);
+        window.removeEventListener("focus", handleSync);
+      }
+    };
+  }, [refreshNutrition]);
+
+  const targetCalories = Number(activeNutrition?.daily_calories ?? nutrition?.daily_calories) > 0 
+    ? Math.round(Number(activeNutrition?.daily_calories ?? nutrition?.daily_calories)) 
+    : null;
+  const targetProtein = Number(activeNutrition?.protein_grams ?? nutrition?.protein_grams) > 0 
+    ? Math.round(Number(activeNutrition?.protein_grams ?? nutrition?.protein_grams)) 
+    : null;
 
   // Derive target fats and carbs consistently with the backend formula
   const targetFats = useMemo(() => {
-    if (Number(nutrition?.fat_grams) > 0) return Math.round(Number(nutrition.fat_grams));
+    const rawFat = Number(activeNutrition?.fat_grams ?? nutrition?.fat_grams);
+    if (rawFat > 0) return Math.round(rawFat);
     if (targetCalories) return Math.round((targetCalories * 0.25) / 9);
     return null;
-  }, [nutrition?.fat_grams, targetCalories]);
+  }, [activeNutrition?.fat_grams, nutrition?.fat_grams, targetCalories]);
 
   const targetCarbs = useMemo(() => {
-    if (Number(nutrition?.carbs_grams) > 0) return Math.round(Number(nutrition.carbs_grams));
+    const rawCarbs = Number(activeNutrition?.carbs_grams ?? nutrition?.carbs_grams);
+    if (rawCarbs > 0) return Math.round(rawCarbs);
     if (targetCalories && targetProtein && targetFats) {
       return Math.max(0, Math.round((targetCalories - targetProtein * 4 - targetFats * 9) / 4));
     }
     return null;
-  }, [nutrition?.carbs_grams, targetCalories, targetProtein, targetFats]);
+  }, [activeNutrition?.carbs_grams, nutrition?.carbs_grams, targetCalories, targetProtein, targetFats]);
 
-  const rawMeals = Array.isArray(nutrition?.meals) ? nutrition.meals : [];
+  const rawMeals = (Array.isArray(activeNutrition?.meals) && activeNutrition.meals.length > 0)
+    ? activeNutrition.meals
+    : (Array.isArray(nutrition?.meals) ? nutrition.meals : []);
   const totalMealsCount = rawMeals.length || 1;
 
   // Process meals and assign realistic macros based on meal data or intelligent goal split
@@ -56,6 +104,7 @@ export function TodaysNutritionCard({
     return rawMeals.map((m: any, idx: number) => {
       const mealName = String(m.meal_name || m.name || `Meal ${idx + 1}`).trim();
       const timeStr = String(m.time_of_day || m.time || "").trim();
+      const instructions = String(m.prep_instructions || m.notes || "").trim();
 
       // Normalize items list
       let itemsList: string[] = [];
@@ -74,13 +123,12 @@ export function TodaysNutritionCard({
       const explicitFats = Number(m.fat_grams ?? m.fats ?? m.fat);
 
       // Intelligent proportion based on meal type if explicit values are missing
-      const nameLower = mealName.toLowerCase();
       let ratio = 1 / totalMealsCount;
       if (totalMealsCount >= 3) {
-        if (nameLower.includes("breakfast")) ratio = 0.25;
-        else if (nameLower.includes("lunch")) ratio = 0.35;
-        else if (nameLower.includes("dinner")) ratio = 0.30;
-        else if (nameLower.includes("snack") || nameLower.includes("pre") || nameLower.includes("post")) ratio = 0.10;
+        if (idx === 0) ratio = 0.25;
+        else if (idx === 1) ratio = 0.35;
+        else if (idx === 2) ratio = 0.30;
+        else ratio = 0.10;
       }
 
       const mealCalories = explicitCalories > 0
@@ -99,17 +147,53 @@ export function TodaysNutritionCard({
         ? Math.round(explicitFats)
         : (targetFats ? Math.round(targetFats * ratio) : 0);
 
+      // Derive canonical meal_type
+      let resolvedMealType = String(m.meal_type || "").toLowerCase().trim();
+      if (!resolvedMealType) {
+        const fullContext = `${mealName} ${timeStr} ${instructions}`.toLowerCase();
+        if (fullContext.includes("breakfast") || fullContext.includes("waking") || fullContext.includes("morning")) {
+          resolvedMealType = "breakfast";
+        } else if (fullContext.includes("lunch") || fullContext.includes("midday") || fullContext.includes("noon")) {
+          resolvedMealType = "lunch";
+        } else if (fullContext.includes("dinner") || fullContext.includes("night") || fullContext.includes("supper")) {
+          resolvedMealType = "dinner";
+        } else if (fullContext.includes("pre-workout") || fullContext.includes("preworkout") || fullContext.includes("pre workout")) {
+          resolvedMealType = "pre_workout";
+        } else if (fullContext.includes("post-workout") || fullContext.includes("postworkout") || fullContext.includes("post workout")) {
+          resolvedMealType = "post_workout";
+        } else if (fullContext.includes("snack") || fullContext.includes("evening")) {
+          if (totalMealsCount === 3 && idx === 2) {
+            resolvedMealType = "dinner";
+          } else {
+            resolvedMealType = "snack";
+          }
+        } else {
+          // Positional fallback
+          if (totalMealsCount === 3) {
+            resolvedMealType = idx === 0 ? "breakfast" : idx === 1 ? "lunch" : "dinner";
+          } else if (totalMealsCount === 4) {
+            resolvedMealType = idx === 0 ? "breakfast" : idx === 1 ? "lunch" : idx === 2 ? "pre_workout" : "dinner";
+          } else if (totalMealsCount === 2) {
+            resolvedMealType = idx === 0 ? "lunch" : "dinner";
+          } else {
+            resolvedMealType = idx === 0 ? "breakfast" : idx === totalMealsCount - 1 ? "dinner" : "lunch";
+          }
+        }
+      }
+
       return {
         id: idx,
+        meal_type: resolvedMealType,
         name: mealName,
         time: timeStr,
         items: itemsList,
         desc: itemsList.length > 0 ? itemsList.join(" + ") : "Planned Meal",
-        instructions: String(m.prep_instructions || m.notes || "").trim(),
+        instructions,
         calories: mealCalories,
         protein: mealProtein,
         carbs: mealCarbs,
         fats: mealFats,
+        meal_plan_items: m.meal_plan_items,
       };
     });
   }, [rawMeals, totalMealsCount, targetCalories, targetProtein, targetCarbs, targetFats]);
@@ -130,13 +214,14 @@ export function TodaysNutritionCard({
   // Set of meal types that are already logged in the database for today
   const dbCompletedTypes = useMemo(() => {
     const set = new Set<string>();
-    if (Array.isArray(nutrition?.logged_foods)) {
-      nutrition.logged_foods.forEach((f: any) => {
+    const logs = activeNutrition?.logged_foods || nutrition?.logged_foods;
+    if (Array.isArray(logs)) {
+      logs.forEach((f: any) => {
         if (f.meal_type) set.add(String(f.meal_type).toLowerCase().trim());
       });
     }
     return set;
-  }, [nutrition?.logged_foods]);
+  }, [activeNutrition?.logged_foods, nutrition?.logged_foods]);
 
   // Persistent storage key per effective date
   const storageKey = `grindlog_meals_completed_${effectiveDate}`;
@@ -173,21 +258,33 @@ export function TodaysNutritionCard({
   }, [storageKey]);
 
   const isMealDone = useCallback((meal: any) => {
-    const mType = String(meal.meal_type || meal.name || '').toLowerCase();
-    const typeKey = mType.includes('breakfast') ? 'breakfast'
-      : mType.includes('lunch') ? 'lunch'
-      : mType.includes('dinner') ? 'dinner'
-      : mType.includes('pre') ? 'pre_workout'
-      : mType.includes('post') ? 'post_workout'
-      : mType.includes('snack') ? 'snack'
-      : '';
+    const typeKey = String(meal.meal_type || "").toLowerCase().trim();
     if (typeKey && dbCompletedTypes.has(typeKey)) return true;
+
+    // Check if food logs contain items matching this meal
+    const logs = activeNutrition?.logged_foods || nutrition?.logged_foods;
+    if (Array.isArray(logs) && logs.length > 0) {
+      if (typeKey && logs.some((f: any) => String(f.meal_type || "").toLowerCase().trim() === typeKey)) {
+        return true;
+      }
+      const mealItemKeywords = (meal.items || []).map((it: string) => {
+        return it.toLowerCase().split('-')[0].replace(/[^a-z0-9]/g, ' ').trim();
+      }).filter((k: string) => k.length >= 3);
+
+      const hasMatchingFood = logs.some((f: any) => {
+        const fName = String(f.foods?.name || f.name || "").toLowerCase();
+        return mealItemKeywords.some((k: string) => fName.includes(k) || k.includes(fName));
+      });
+      if (hasMatchingFood) return true;
+    }
+
     return Boolean(completedMeals[meal.id]);
-  }, [dbCompletedTypes, completedMeals]);
+  }, [dbCompletedTypes, activeNutrition?.logged_foods, nutrition?.logged_foods, completedMeals]);
 
   const toggleMeal = (meal: any) => {
     const alreadyDone = isMealDone(meal);
     const nextState = !alreadyDone;
+    const typeKey = meal.meal_type || 'lunch';
 
     setCompletedMeals((prev) => {
       const next = { ...prev, [meal.id]: nextState };
@@ -202,14 +299,6 @@ export function TodaysNutritionCard({
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("grindlog_meals_updated"));
     }
-
-    const mType = String(meal.meal_type || meal.name || 'lunch').toLowerCase();
-    const typeKey = mType.includes('breakfast') ? 'breakfast'
-      : mType.includes('lunch') ? 'lunch'
-      : mType.includes('dinner') ? 'dinner'
-      : mType.includes('pre') ? 'pre_workout'
-      : mType.includes('post') ? 'post_workout'
-      : 'snack';
 
     if (nextState) {
       // Background log to database
@@ -240,6 +329,7 @@ export function TodaysNutritionCard({
 
       nutritionApi.logFoods(itemsToLog).then(() => {
         toast.success(`Logged ${meal.name}!`);
+        refreshNutrition();
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("grindlog_meals_updated"));
         }
@@ -249,9 +339,11 @@ export function TodaysNutritionCard({
       });
     } else {
       // Background unlog
-      const foodsToRemove = (nutrition?.logged_foods || []).filter((f: any) => String(f.meal_type).toLowerCase() === typeKey);
+      const currentLogs = activeNutrition?.logged_foods || nutrition?.logged_foods || [];
+      const foodsToRemove = currentLogs.filter((f: any) => String(f.meal_type).toLowerCase() === typeKey);
       if (foodsToRemove.length > 0) {
         Promise.all(foodsToRemove.map((f: any) => nutritionApi.deleteFood(f.id))).then(() => {
+          refreshNutrition();
           if (typeof window !== "undefined") {
             window.dispatchEvent(new Event("grindlog_meals_updated"));
           }
@@ -267,16 +359,9 @@ export function TodaysNutritionCard({
   }, [meals, isMealDone]);
 
   const consumedCalories = useMemo(() => {
-    const dbCals = Math.round(Number(nutrition?.consumed?.calories) || 0);
+    const dbCals = Math.round(Number(activeNutrition?.consumed?.calories || nutrition?.consumed?.calories) || 0);
     const localExtraCals = meals.reduce((acc: number, m: any) => {
-      const mType = String(m.meal_type || m.name || '').toLowerCase();
-      const typeKey = mType.includes('breakfast') ? 'breakfast'
-        : mType.includes('lunch') ? 'lunch'
-        : mType.includes('dinner') ? 'dinner'
-        : mType.includes('pre') ? 'pre_workout'
-        : mType.includes('post') ? 'post_workout'
-        : mType.includes('snack') ? 'snack'
-        : '';
+      const typeKey = m.meal_type;
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
       if (completedMeals[m.id] && !inDb) {
         return acc + m.calories;
@@ -284,19 +369,12 @@ export function TodaysNutritionCard({
       return acc;
     }, 0);
     return dbCals + localExtraCals;
-  }, [nutrition?.consumed?.calories, dbCompletedTypes, meals, completedMeals]);
+  }, [activeNutrition?.consumed?.calories, nutrition?.consumed?.calories, dbCompletedTypes, meals, completedMeals]);
 
   const consumedProtein = useMemo(() => {
-    const dbPro = Math.round(Number(nutrition?.consumed?.protein) || 0);
+    const dbPro = Math.round(Number(activeNutrition?.consumed?.protein || nutrition?.consumed?.protein) || 0);
     const localExtraPro = meals.reduce((acc: number, m: any) => {
-      const mType = String(m.meal_type || m.name || '').toLowerCase();
-      const typeKey = mType.includes('breakfast') ? 'breakfast'
-        : mType.includes('lunch') ? 'lunch'
-        : mType.includes('dinner') ? 'dinner'
-        : mType.includes('pre') ? 'pre_workout'
-        : mType.includes('post') ? 'post_workout'
-        : mType.includes('snack') ? 'snack'
-        : '';
+      const typeKey = m.meal_type;
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
       if (completedMeals[m.id] && !inDb) {
         return acc + m.protein;
@@ -304,19 +382,12 @@ export function TodaysNutritionCard({
       return acc;
     }, 0);
     return dbPro + localExtraPro;
-  }, [nutrition?.consumed?.protein, dbCompletedTypes, meals, completedMeals]);
+  }, [activeNutrition?.consumed?.protein, nutrition?.consumed?.protein, dbCompletedTypes, meals, completedMeals]);
 
   const consumedCarbs = useMemo(() => {
-    const dbCarbs = Math.round(Number(nutrition?.consumed?.carbs) || 0);
+    const dbCarbs = Math.round(Number(activeNutrition?.consumed?.carbs || nutrition?.consumed?.carbs) || 0);
     const localExtraCarbs = meals.reduce((acc: number, m: any) => {
-      const mType = String(m.meal_type || m.name || '').toLowerCase();
-      const typeKey = mType.includes('breakfast') ? 'breakfast'
-        : mType.includes('lunch') ? 'lunch'
-        : mType.includes('dinner') ? 'dinner'
-        : mType.includes('pre') ? 'pre_workout'
-        : mType.includes('post') ? 'post_workout'
-        : mType.includes('snack') ? 'snack'
-        : '';
+      const typeKey = m.meal_type;
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
       if (completedMeals[m.id] && !inDb) {
         return acc + m.carbs;
@@ -324,19 +395,12 @@ export function TodaysNutritionCard({
       return acc;
     }, 0);
     return dbCarbs + localExtraCarbs;
-  }, [nutrition?.consumed?.carbs, dbCompletedTypes, meals, completedMeals]);
+  }, [activeNutrition?.consumed?.carbs, nutrition?.consumed?.carbs, dbCompletedTypes, meals, completedMeals]);
 
   const consumedFats = useMemo(() => {
-    const dbFat = Math.round(Number(nutrition?.consumed?.fat) || 0);
+    const dbFat = Math.round(Number(activeNutrition?.consumed?.fat || nutrition?.consumed?.fat) || 0);
     const localExtraFat = meals.reduce((acc: number, m: any) => {
-      const mType = String(m.meal_type || m.name || '').toLowerCase();
-      const typeKey = mType.includes('breakfast') ? 'breakfast'
-        : mType.includes('lunch') ? 'lunch'
-        : mType.includes('dinner') ? 'dinner'
-        : mType.includes('pre') ? 'pre_workout'
-        : mType.includes('post') ? 'post_workout'
-        : mType.includes('snack') ? 'snack'
-        : '';
+      const typeKey = m.meal_type;
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
       if (completedMeals[m.id] && !inDb) {
         return acc + m.fats;
@@ -344,7 +408,7 @@ export function TodaysNutritionCard({
       return acc;
     }, 0);
     return dbFat + localExtraFat;
-  }, [nutrition?.consumed?.fat, dbCompletedTypes, meals, completedMeals]);
+  }, [activeNutrition?.consumed?.fat, nutrition?.consumed?.fat, dbCompletedTypes, meals, completedMeals]);
 
   const caloriesPercent = targetCalories ? Math.min(Math.round((consumedCalories / targetCalories) * 100), 100) : 0;
   const proteinPercent = targetProtein ? Math.min(Math.round((consumedProtein / targetProtein) * 100), 100) : 0;

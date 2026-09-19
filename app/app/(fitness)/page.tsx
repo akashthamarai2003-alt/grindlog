@@ -145,7 +145,23 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
           meal_plan_items: m.meal_plan_items,
           prep_instructions: m.prep_instructions,
         }))
-      : (effectivePlan?.plan_data?.nutrition?.meals || []),
+      : (effectivePlan?.plan_data?.nutrition?.meals || []).map((m: any, idx: number, arr: any[]) => {
+          let derivedType = m.meal_type;
+          if (!derivedType) {
+            const ctx = `${m.meal_name || m.name || ''} ${m.time_of_day || ''} ${m.prep_instructions || ''}`.toLowerCase();
+            if (ctx.includes('breakfast') || ctx.includes('waking') || ctx.includes('morning')) derivedType = 'breakfast';
+            else if (ctx.includes('lunch') || ctx.includes('midday') || ctx.includes('noon')) derivedType = 'lunch';
+            else if (ctx.includes('dinner') || ctx.includes('night') || ctx.includes('supper') || ctx.includes('evening')) derivedType = 'dinner';
+            else if (ctx.includes('pre')) derivedType = 'pre_workout';
+            else if (ctx.includes('post')) derivedType = 'post_workout';
+            else if (arr.length === 3) derivedType = idx === 0 ? 'breakfast' : idx === 1 ? 'lunch' : 'dinner';
+            else derivedType = idx === 0 ? 'breakfast' : idx === arr.length - 1 ? 'dinner' : 'lunch';
+          }
+          return {
+            ...m,
+            meal_type: derivedType,
+          };
+        }),
   } : effectivePlan?.plan_data?.nutrition;
 
   return (
