@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { calculateTargets } from "@/lib/fitness/nutrition/nutrition-engine";
 
 export type NutritionFoodReference = {
   id?: string;
@@ -918,11 +919,32 @@ export class NutritionService {
 
     const planNut = activePlan?.plan_data?.nutrition;
 
-    const calories = planNut?.daily_calories || fitProfile?.baseline_calories || 2000;
-    const protein = planNut?.protein_grams || fitProfile?.initial_protein_target || 130;
-    const carbs = Math.round((calories * 0.45) / 4);
-    const fat = Math.round((calories * 0.25) / 9);
-    const water_ml = 3000;
+    let calories = planNut?.daily_calories;
+    let protein = planNut?.protein_grams;
+    let carbs = planNut?.carbs_grams;
+    let fat = planNut?.fat_grams;
+    let water_ml = planNut?.water_ml;
+
+    if (!calories || !protein) {
+      if (fitProfile) {
+        const computed = calculateTargets(fitProfile as any);
+        calories = computed.calories;
+        protein = computed.protein_g;
+        carbs = carbs || computed.carbs_g;
+        fat = fat || computed.fat_g;
+        water_ml = water_ml || computed.water_ml;
+      } else {
+        calories = 2000;
+        protein = 130;
+        carbs = 225;
+        fat = 55;
+        water_ml = 3000;
+      }
+    }
+
+    if (!carbs) carbs = Math.round((calories * 0.45) / 4);
+    if (!fat) fat = Math.round((calories * 0.25) / 9);
+    if (!water_ml) water_ml = 3000;
 
     // Compute budget from fitness profile
     let monthlyBudget = 3000;
