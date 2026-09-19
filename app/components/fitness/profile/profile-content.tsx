@@ -38,8 +38,11 @@ import {
   FileText,
   HeartPulse,
   ShieldAlert,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useFitnessTheme } from "../fitness-theme-provider";
 
 interface ProfileContentProps {
   user: {
@@ -69,6 +72,7 @@ export function ProfileContent({
 }: ProfileContentProps) {
   const router = useRouter();
   const supabase = createClient();
+  const { theme, setTheme } = useFitnessTheme();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [fitnessProfile, setFitnessProfile] = useState(initialFitnessProfile);
   const [aiLimitInfo, setAiLimitInfo] = useState(initialAiLimitInfo);
@@ -615,6 +619,47 @@ export function ProfileContent({
               </div>
               <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-[#ADFF00] transition-colors" />
             </Link>
+
+            {/* Appearance & Theme */}
+            <div className="p-4 flex items-center justify-between border-b border-white/5 hover:bg-white/5 transition-all">
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                  theme === "white" ? "bg-amber-500/15 text-amber-500" : "bg-[#1A2619] text-[#ADFF00]"
+                }`}>
+                  {theme === "white" ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Appearance & Theme</p>
+                  <p className="text-xs text-gray-400">
+                    {theme === "white" ? "White Theme (Active)" : "Primary (Dark Athletic)"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setTheme("primary")}
+                  className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    theme === "primary"
+                      ? "bg-[#ADFF00] text-black shadow-sm"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  Primary
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTheme("white")}
+                  className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    theme === "white"
+                      ? "bg-white text-black shadow-sm"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  White
+                </button>
+              </div>
+            </div>
 
             {/* Billing */}
             <Link 

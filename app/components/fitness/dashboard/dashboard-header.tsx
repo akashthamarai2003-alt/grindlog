@@ -4,6 +4,7 @@ import { Bell, Bot } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getUnreadNotificationsCountAction } from "@/app/actions/fitness-notifications";
+import { ThemeToggleButton } from "../theme-toggle-button";
 
 interface DashboardHeaderProps {
   name: string;
@@ -67,7 +68,8 @@ export function DashboardHeader({ name, dayNumber, avatarUrl }: DashboardHeaderP
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
+        <ThemeToggleButton />
         <button
           type="button"
           onClick={() => {

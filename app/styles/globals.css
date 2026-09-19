@@ -484,3 +484,145 @@ body {
     padding-top: max(16px, env(safe-area-inset-top));
   }
 }
+
+/* ============================================
+   WHITE THEME (Clean Light Athletic Mode)
+   ============================================ */
+html.theme-white,
+html.theme-white body {
+  background-color: #F6FAF6 !important;
+  color: #0F172A !important;
+}
+
+/* Surface backgrounds */
+html.theme-white .bg-\[\#0A1108\],
+html.theme-white .bg-\[\#060D06\],
+html.theme-white .bg-\[\#050905\] {
+  background-color: #F6FAF6 !important;
+}
+
+/* Primary cards & dialogs */
+html.theme-white .bg-\[\#121E12\],
+html.theme-white .bg-\[\#111A10\] {
+  background-color: #FFFFFF !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+}
+
+/* Secondary containers & chips */
+html.theme-white .bg-\[\#1A2619\],
+html.theme-white .bg-\[\#1E2C1D\],
+html.theme-white .bg-\[\#152014\] {
+  background-color: #EDF3ED !important;
+}
+
+/* Subtle opacity backgrounds */
+html.theme-white .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.035) !important;
+}
+html.theme-white .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.065) !important;
+}
+html.theme-white .bg-white\/15,
+html.theme-white .bg-white\/20 {
+  background-color: rgba(0, 0, 0, 0.09) !important;
+}
+html.theme-white .bg-black\/20 {
+  background-color: rgba(0, 0, 0, 0.025) !important;
+}
+html.theme-white .bg-black\/30 {
+  background-color: rgba(0, 0, 0, 0.045) !important;
+}
+html.theme-white .bg-black\/40 {
+  background-color: #EEF4EE !important;
+}
+html.theme-white .bg-black\/50,
+html.theme-white .bg-black\/60,
+html.theme-white .bg-black\/70 {
+  background-color: #E8F0E8 !important;
+}
+
+/* Border overrides */
+html.theme-white .border-\[\#1A2619\],
+html.theme-white .border-\[\#121E12\],
+html.theme-white .border-\[\#1E2C1D\],
+html.theme-white .border-white\/5,
+html.theme-white .border-white\/10,
+html.theme-white .border-white\/15,
+html.theme-white .border-white\/20 {
+  border-color: #E1E8E1 !important;
+}
+
+/* Typography in White Mode */
+html.theme-white .text-white {
+  color: #0F172A !important;
+}
+html.theme-white .text-white\/90,
+html.theme-white .text-white\/80,
+html.theme-white .text-white\/70,
+html.theme-white .text-gray-200,
+html.theme-white .text-gray-300 {
+  color: #334155 !important;
+}
+html.theme-white .text-white\/60,
+html.theme-white .text-white\/50,
+html.theme-white .text-white\/40,
+html.theme-white .text-gray-400,
+html.theme-white .text-gray-500 {
+  color: #64748B !important;
+}
+
+/* High-contrast brand green for text in White Mode */
+html.theme-white .text-\[\#ADFF00\] {
+  color: #15803D !important;
+}
+html.theme-white .bg-\[\#ADFF00\]\/10 {
+  background-color: rgba(22, 163, 74, 0.12) !important;
+}
+html.theme-white .bg-\[\#ADFF00\]\/15,
+html.theme-white .bg-\[\#ADFF00\]\/20 {
+  background-color: rgba(22, 163, 74, 0.18) !important;
+}
+html.theme-white .border-\[\#ADFF00\]\/20,
+html.theme-white .border-\[\#ADFF00\]\/30,
+html.theme-white .border-\[\#ADFF00\]\/40 {
+  border-color: rgba(22, 163, 74, 0.35) !important;
+}
+
+/* Keep primary action CTA buttons vibrant with black text */
+html.theme-white .bg-\[\#ADFF00\] {
+  background-color: #ADFF00 !important;
+  color: #000000 !important;
+}
+html.theme-white .bg-\[\#ADFF00\] * {
+  color: #000000 !important;
+}
+
+/* Bottom Navigation Dock in White Mode */
+html.theme-white .fixed.bottom-0.bg-gradient-to-t {
+  background-image: linear-gradient(to top, #F6FAF6, rgba(246, 250, 246, 0.95), transparent) !important;
+}
+html.theme-white .fixed.bottom-0 .bg-\[\#121E12\] {
+  background-color: #FFFFFF !important;
+  border-color: #E1E8E1 !important;
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Modal Backdrops in White Mode */
+html.theme-white .fixed.inset-0.bg-black\/80,
+html.theme-white .fixed.inset-0.bg-black\/70,
+html.theme-white .fixed.inset-0.bg-black\/85,
+html.theme-white .fixed.inset-0.bg-black\/90 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Form controls */
+html.theme-white input,
+html.theme-white select,
+html.theme-white textarea {
+  color: #0F172A !important;
+}
+html.theme-white input::placeholder,
+html.theme-white textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
