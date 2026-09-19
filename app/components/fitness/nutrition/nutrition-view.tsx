@@ -973,46 +973,126 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const getRealisticItemCost = (foodName?: string, defaultCost?: number) => {
-    if (!foodName) return typeof defaultCost === 'number' && defaultCost > 0 ? defaultCost : 20;
+    if (!foodName) return typeof defaultCost === 'number' && defaultCost > 0 ? defaultCost : 10;
     const lower = foodName.toLowerCase();
 
     if (lower.includes('egg white')) return 5;
     if (lower.includes('egg')) return 7; // 1 farm egg = ₹7
-    if (lower.includes('curd') || lower.includes('dahi')) return 12; // 100g curd = ₹12
+    if (lower.includes('curd') || lower.includes('dahi')) return 10; // 100g curd = ₹10
     if (lower.includes('paneer')) return 35; // 100g paneer = ₹35
-    if (lower.includes('soya chunk') || lower.includes('soy chunk')) return 15; // 50g = ₹15
-    if (lower.includes('tofu')) return 28;
+    if (lower.includes('soya chunk') || lower.includes('soy chunk')) return 12; // 50g = ₹12
+    if (lower.includes('tofu')) return 25;
     if (lower.includes('chicken breast')) return 45; // 100g = ₹45
     if (lower.includes('chicken curry') || lower.includes('chicken')) return 50;
     if (lower.includes('fish')) return 50;
     if (lower.includes('roasted peanut')) return 8; // 30g = ₹8
     if (lower.includes('roasted chana')) return 8; // 25-30g = ₹8
     if (lower.includes('banana')) return 6; // 1 banana = ₹6
-    if (lower.includes('apple')) return 25; // 1 apple = ₹25
-    if (lower.includes('milk')) return 15; // 250ml milk = ₹15
-    if (lower.includes('whey') || lower.includes('protein powder')) return 65; // 1 scoop = ₹65
+    if (lower.includes('apple')) return 20; // 1 apple = ₹20
+    if (lower.includes('milk')) return 12; // 250ml milk = ₹12
+    if (lower.includes('whey') || lower.includes('protein powder')) return 65;
 
-    return typeof defaultCost === 'number' && defaultCost > 0 ? defaultCost : 20;
+    // Home cooking staples & sides (raw cost)
+    if (lower.includes('roti') || lower.includes('chapati') || lower.includes('phulka')) return 2; // ₹2/chapati
+    if (lower.includes('rice') || lower.includes('chawal')) return 5; // ₹5/bowl cooked rice
+    if (lower.includes('idli')) return 4; // ₹4/idli
+    if (lower.includes('sambar')) return 8; // ₹8/bowl
+    if (lower.includes('dal') || lower.includes('moong') || lower.includes('rajma') || lower.includes('chole')) return 8; // ₹8/bowl
+    if (lower.includes('vegetable') || lower.includes('sabzi') || lower.includes('salad')) return 10; // ₹10/bowl
+    if (lower.includes('oats')) return 10;
+    if (lower.includes('poha')) return 8;
+    if (lower.includes('bread')) return 4;
+
+    return typeof defaultCost === 'number' && defaultCost > 0 ? Math.min(defaultCost, 20) : 10;
   };
 
   const formatItemServing = (qty: number, rawServing?: string, foodName?: string) => {
-    const q = Number(qty) || 1;
-    const serving = (rawServing || '1 serving').trim();
+    let q = Number(qty) || 1;
+    let serving = (rawServing || '1 serving').trim();
     const nameLower = (foodName || '').toLowerCase();
 
-    // 1. Eggs
-    if (nameLower.includes('egg')) {
-      const count = Math.max(1, Math.round(q));
+    // Clean any existing embedded multiplier from the serving string (e.g. "1.4× bowl", "2.8× pieces", "1.4× g")
+    const embeddedMatch = serving.match(/^(\d+(?:\.\d+)?)\s*[xX×*]\s*(.*)$/);
+    if (embeddedMatch) {
+      const embeddedMult = parseFloat(embeddedMatch[1]);
+      serving = embeddedMatch[2].trim();
+      if (!Number.isNaN(embeddedMult) && embeddedMult > 0) {
+        // If q is already scaled (> 1), we combine; otherwise use embeddedMult
+        q = q === 1 ? embeddedMult : Number((q * embeddedMult).toFixed(2));
+      }
+    }
+
+    // 1. Whole Meats & Proteins (Chicken Breast, Fish Fillet, Paneer, Tofu) - excluding curries
+    if ((nameLower.includes('chicken') || nameLower.includes('fish') || nameLower.includes('paneer') || nameLower.includes('tofu')) && !nameLower.includes('curry')) {
+      const weightMatch = serving.match(/(\d+)\s*g/i);
+      const baseGrams = weightMatch ? parseInt(weightMatch[1], 10) : 100;
+      const totalGrams = Math.round(baseGrams * (q > 0 ? q : 1));
+      return `${totalGrams}g (cooked)`;
+    }
+
+    // 2. Egg Whites
+    if (nameLower.includes('egg white') || (nameLower.includes('egg') && serving.includes('white'))) {
+      const match = serving.match(/(\d+)/);
+      const base = match ? parseInt(match[1], 10) : 2;
+      const count = Math.max(1, Math.round(q * (q === 1 && base > 1 ? base : 1)));
+      return `${count} egg white${count > 1 ? 's' : ''} (${count * 33}g)`;
+    }
+
+    // 3. Whole Eggs
+    if (nameLower.includes('egg') && !nameLower.includes('bhurji') && !nameLower.includes('curry')) {
+      const match = serving.match(/(\d+)/);
+      const base = match ? parseInt(match[1], 10) : 1;
+      const count = Math.max(1, Math.round(q * (q === 1 && base > 1 ? base : 1)));
       return `${count} large egg${count > 1 ? 's' : ''} (${count * 50}g)`;
     }
 
-    // 2. Chapatis / Rotis
+    // 4. Chapatis / Rotis / Phulkas
     if (nameLower.includes('roti') || nameLower.includes('chapati') || nameLower.includes('phulka')) {
-      const count = Math.max(1, Math.round(q));
+      const match = serving.match(/(\d+)/);
+      const base = match ? parseInt(match[1], 10) : 1;
+      const count = Math.max(1, Math.round(q * (q === 1 && base > 1 ? base : 1)));
       return `${count} chapati${count > 1 ? 's' : ''} (${count * 40}g)`;
     }
 
-    // 3. Simple weight servings: e.g. "100g", "50g (dry weight)"
+    // 5. Whole Fruits (Banana, Apple, Orange)
+    if (nameLower.includes('banana') || nameLower.includes('apple') || nameLower.includes('orange')) {
+      const count = Math.max(1, Math.round(q));
+      const fruitName = nameLower.includes('banana') ? 'banana' : nameLower.includes('apple') ? 'apple' : 'orange';
+      const weight = fruitName === 'banana' ? 118 : 180;
+      return `${count} medium ${fruitName}${count > 1 ? 's' : ''} (${count * weight}g)`;
+    }
+
+    // 6. Idlis / Dosas
+    if (nameLower.includes('idli')) {
+      const pieceMatch = serving.match(/(\d+)\s*piece/i);
+      const basePieces = pieceMatch ? parseInt(pieceMatch[1], 10) : 2;
+      const totalPieces = Math.max(2, Math.round(basePieces * (q === 1 ? 1 : q)));
+      return `${totalPieces} pieces (${totalPieces * 40}g)`;
+    }
+
+    // 7. Cooked Rice / Chawal
+    if (nameLower.includes('rice') || nameLower.includes('chawal')) {
+      const match = serving.match(/(\d+(?:\.\d+)?)\s*bowl/i);
+      const baseBowls = match ? parseFloat(match[1]) : 1;
+      const totalBowls = Number((q * (q === 1 && baseBowls > 1 ? baseBowls : 1)).toFixed(1));
+      const totalGrams = Math.round(150 * totalBowls);
+      return `${totalBowls} bowl${totalBowls > 1 ? 's' : ''} cooked (${totalGrams}g)`;
+    }
+
+    // 8. Bowls or Cups with gram weights: e.g. "bowl (150g)", "cup (100g)", "1 bowl (150g)", "1.5 bowls (150g)"
+    const bowlCupMatch = serving.match(/^(?:(\d+(?:\.\d+)?)\s*)?(bowl|cup|plate)s?\s*\(([0-9]+)\s*([a-zA-Z]+)\)$/i);
+    if (bowlCupMatch) {
+      const baseCount = bowlCupMatch[1] ? parseFloat(bowlCupMatch[1]) : 1;
+      const vessel = bowlCupMatch[2].toLowerCase();
+      const baseGrams = parseInt(bowlCupMatch[3], 10);
+      const unit = bowlCupMatch[4];
+      const effectiveQ = q * (q === 1 && baseCount > 1 ? baseCount : 1);
+      const totalGrams = Math.round(baseGrams * effectiveQ);
+      const roundedQ = Number(effectiveQ.toFixed(1));
+      return `${roundedQ} ${roundedQ === 1 ? vessel : vessel + 's'} (${totalGrams}${unit})`;
+    }
+
+    // 9. Simple weight servings: e.g. "100g", "50g (dry weight)"
     const simpleWeightMatch = serving.match(/^(\d+)\s*g(\s*\(.*?\))?$/i);
     if (simpleWeightMatch) {
       const baseWeight = parseInt(simpleWeightMatch[1], 10);
@@ -1021,26 +1101,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       return `${totalWeight}g${suffix}`;
     }
 
-    // 4. Bowls or Cups with gram weights: e.g. "bowl (150g)", "cup (100g)", "1 bowl (150g)"
-    const bowlCupMatch = serving.match(/^(?:1\s*)?(bowl|cup|plate)\s*\(([0-9]+)\s*([a-zA-Z]+)\)$/i);
-    if (bowlCupMatch) {
-      const vessel = bowlCupMatch[1].toLowerCase();
-      const baseGrams = parseInt(bowlCupMatch[2], 10);
-      const unit = bowlCupMatch[3];
-      const totalGrams = Math.round(baseGrams * q);
-
-      let fractionText = '1';
-      if (q <= 0.35) fractionText = '1/3';
-      else if (q <= 0.65) fractionText = '1/2';
-      else if (q <= 0.88) fractionText = '3/4';
-      else if (q <= 1.15) fractionText = '1';
-      else if (q <= 1.65) fractionText = '1.5';
-      else fractionText = `${Math.round(q)}`;
-
-      const pluralVessel = (fractionText === '1' || fractionText === '1/2' || fractionText === '3/4' || fractionText === '1/3') ? vessel : `${vessel}s`;
-      return `${fractionText} ${pluralVessel} (${totalGrams}${unit})`;
-    }
-
+    // 8. Fallback
     if (q === 1) return serving;
     if (Math.abs(q - Math.round(q)) < 0.05) return `${Math.round(q)}× ${serving}`;
     return `${Number(q.toFixed(1))}× ${serving}`;
