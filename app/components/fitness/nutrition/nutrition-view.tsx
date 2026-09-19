@@ -1404,7 +1404,36 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
             {/* Status Badge or Action Button */}
             <div className="shrink-0">
-              {canGeneratePlan ? (
+              {weekOffset > 0 && !hasPlannedMeals ? (
+                canGeneratePlan ? (
+                  <button
+                    type="button"
+                    disabled={isGenerating}
+                    onClick={handleGeneratePlan}
+                    className="text-[10px] sm:text-xs font-black text-black bg-[#ADFF00] hover:bg-[#c4ff33] px-3.5 py-1.5 rounded-full uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-[0_0_14px_rgba(173,255,0,0.3)] disabled:opacity-50 cursor-pointer active:scale-95 whitespace-nowrap"
+                    title="Generate next week's personalized diet plan with Luna AI"
+                  >
+                    {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                    {isGenerating ? "Planning..." : "Plan Next Week"}
+                  </button>
+                ) : (
+                  <div 
+                    className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full whitespace-nowrap select-none"
+                    title={`Next week plan generation unlocks on ${weeklyStatus?.next_available_formatted || 'next week'}.`}
+                  >
+                    <Lock size={11} className="shrink-0 text-amber-400" />
+                    <span className="font-extrabold tracking-wide">Not Created</span>
+                    <span className="text-white/30">•</span>
+                    <span className="text-white/70 font-medium">Unlocks {weeklyStatus?.next_available_formatted || `in ${weeklyStatus?.days_remaining || 7}d`}</span>
+                  </div>
+                )
+              ) : weekOffset < 0 && !hasPlannedMeals ? (
+                <div 
+                  className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-white/50 bg-white/5 border border-white/10 px-3 py-1 rounded-full whitespace-nowrap select-none"
+                >
+                  <span className="font-medium tracking-wide">Past Week</span>
+                </div>
+              ) : canGeneratePlan ? (
                 <button
                   type="button"
                   disabled={isGenerating}
@@ -1436,18 +1465,56 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               <Sparkles size={24} />
             </div>
             <h3 className="text-base font-black text-white uppercase tracking-wider mb-2">
-              {isPro ? (isFuture ? "Generate Meal Plan" : "Generate Today's Meals") : "Unlock 7-Day AI Meal Plan"}
+              {weekOffset > 0 
+                ? "No Diet Plan for Next Week" 
+                : weekOffset < 0 
+                ? "No Plan Logged for This Week" 
+                : isPro 
+                ? "Generate Today's Meals" 
+                : "Unlock 7-Day AI Meal Plan"}
             </h3>
-            <p className="text-white/60 text-xs sm:text-sm max-w-xs mx-auto mb-5 leading-relaxed">
-              {isPro 
-                ? (isFuture 
-                    ? "Your baseline strategy is active, but you haven't generated this day's specific meal plan."
-                    : "Your baseline strategy is active, but you haven't generated today's specific meal plan.")
-                : `Personalized recipes and grocery lists calibrated to your target of ${targetCals} kcal and ${targetPro}g protein.`
-              }
+            <p className="text-white/60 text-xs sm:text-sm max-w-sm mx-auto mb-5 leading-relaxed">
+              {weekOffset > 0
+                ? (isPro
+                    ? (!canGeneratePlan
+                        ? `Your current week's diet plan is active. Next week's AI meal plan generation unlocks on ${weeklyStatus?.next_available_formatted || 'your next cycle date'} (1 plan per 7-day cycle).`
+                        : `You're eligible to create next week's diet plan! Generate 7 days of whole-food recipes calibrated to your targets.`)
+                    : `Personalized recipes and grocery lists calibrated to your target of ${targetCals} kcal and ${targetPro}g protein.`)
+                : weekOffset < 0
+                ? "No meal plan or food history was recorded for this past week."
+                : (isPro
+                    ? "Your baseline strategy is active. Generate your personalized 7-day whole-food meal plan now."
+                    : `Personalized recipes and grocery lists calibrated to your target of ${targetCals} kcal and ${targetPro}g protein.`)}
             </p>
             {isPro ? (
-              canGeneratePlan ? (
+              weekOffset > 0 ? (
+                canGeneratePlan ? (
+                  <button 
+                    disabled={isGenerating}
+                    onClick={handleGeneratePlan}
+                    className="px-5 py-3 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black font-black uppercase tracking-wider rounded-xl text-xs disabled:opacity-50 flex items-center justify-center gap-2 mx-auto transition-all shadow-[0_0_15px_rgba(173,255,0,0.3)] cursor-pointer active:scale-95"
+                  >
+                    {isGenerating ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                    {isGenerating ? "Generating Weekly Plan..." : "Generate Next Week's Plan"}
+                  </button>
+                ) : (
+                  <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-400/10 border border-amber-400/20 rounded-xl text-xs font-bold text-amber-400 mx-auto">
+                    <Lock size={14} className="shrink-0" />
+                    <span>Plan Creation Unlocks on {weeklyStatus?.next_available_formatted || 'next week'}</span>
+                  </div>
+                )
+              ) : weekOffset < 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWeekOffset(0);
+                    handleSelectDate(todayDateStr);
+                  }}
+                  className="px-5 py-2.5 bg-white/10 hover:bg-white/15 text-white font-bold text-xs rounded-xl uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  Back to Today
+                </button>
+              ) : canGeneratePlan ? (
                 <button 
                   disabled={isGenerating}
                   onClick={handleGeneratePlan}

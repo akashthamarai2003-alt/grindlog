@@ -3056,217 +3056,67 @@ export class NutritionService {
       }
     }
 
-    // Always output Breakfast, Lunch, Snack, Dinner cards
-    let formattedMeals = ALL_MEAL_TYPES.map((mType, slotIdx) => {
-      // 1. Manually saved/logged meal plan items for this specific date take top priority
-      const existing = plansByMealType.get(mType);
-      if (existing) {
-        if (isProfileVegan || isProfileVegetarian || isProfileEggetarian) {
-          const sanitizedItems = (existing.meal_plan_items || []).map((it: any) => {
-            const foodName = it.foods?.name || '';
-            const sanitizedName = sanitizeAIItemName(foodName, isProfileVegan, isProfileVegetarian, isProfileEggetarian);
-            if (sanitizedName !== foodName) {
-              const ref = findFoodReference(sanitizedName, foodCatalog, fitProfile?.food_environment);
-              return {
-                ...it,
-                foods: ref ? { ...it.foods, ...ref } : { ...it.foods, name: sanitizedName }
-              };
-            }
-            return it;
-          });
+    const todayDateStr = await this.getLocalDateString(userId, tz);
+    const hasExplicitPlanForDate = Boolean(plans && plans.length > 0);
+    const isFutureDate = localDate > todayDateStr;
+
+    let formattedMeals: any[] = [];
+
+    if (hasExplicitPlanForDate) {
+      formattedMeals = ALL_MEAL_TYPES.map((mType, slotIdx) => {
+        // 1. Manually saved/logged meal plan items for this specific date take top priority
+        const existing = plansByMealType.get(mType);
+        if (existing) {
+          if (isProfileVegan || isProfileVegetarian || isProfileEggetarian) {
+            const sanitizedItems = (existing.meal_plan_items || []).map((it: any) => {
+              const foodName = it.foods?.name || '';
+              const sanitizedName = sanitizeAIItemName(foodName, isProfileVegan, isProfileVegetarian, isProfileEggetarian);
+              if (sanitizedName !== foodName) {
+                const ref = findFoodReference(sanitizedName, foodCatalog, fitProfile?.food_environment);
+                return {
+                  ...it,
+                  foods: ref ? { ...it.foods, ...ref } : { ...it.foods, name: sanitizedName }
+                };
+              }
+              return it;
+            });
+            return {
+              ...existing,
+              is_ai_generated: Boolean(existing.ai_generated),
+              prep_instructions: existing.prep_instructions || NutritionService.getPrepInstructionForSlot(mType, existing.name, dayOfWeek, fitProfile?.food_environment, rawDietStr),
+              name: sanitizeMealTitle(existing.name || '', isProfileVegan, isProfileVegetarian, isProfileEggetarian),
+              meal_plan_items: sanitizedItems
+            };
+          }
           return {
             ...existing,
             is_ai_generated: Boolean(existing.ai_generated),
-            prep_instructions: existing.prep_instructions || NutritionService.getPrepInstructionForSlot(mType, existing.name, dayOfWeek, fitProfile?.food_environment, rawDietStr),
-            name: sanitizeMealTitle(existing.name || '', isProfileVegan, isProfileVegetarian, isProfileEggetarian),
-            meal_plan_items: sanitizedItems
+            prep_instructions: existing.prep_instructions || NutritionService.getPrepInstructionForSlot(mType, existing.name, dayOfWeek, fitProfile?.food_environment, rawDietStr)
           };
         }
-        return {
-          ...existing,
-          is_ai_generated: Boolean(existing.ai_generated),
-          prep_instructions: existing.prep_instructions || NutritionService.getPrepInstructionForSlot(mType, existing.name, dayOfWeek, fitProfile?.food_environment, rawDietStr)
-        };
-      }
 
-      // 2. Priority: True 7-Day Rotating Menu (Strictly varies by dayOfWeek, ensuring fresh variety every single day)
-      const rotating = rotatingPlans.get(mType);
-      if (rotating) {
-        return {
+        // Slot fallback if individual slot missing in daily plan
+        const rotating = rotatingPlans.get(mType);
+        return rotating ? {
           ...rotating,
           is_natural_whole_food: true,
           has_7day_variety: true,
-        };
-      }
-
-      // 3. Fallback: Active AI Hybrid Plan (if slot not covered in rotating menu)
-      const aiMeal = findAiMealForSlot(mType, slotIdx, ALL_MEAL_TYPES, aiMeals);
-
-      if (aiMeal) {
-        const slotProportions: Record<string, number> = {
-          breakfast: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.20 : (mealsPerDay === '2 meals' ? 0.0 : 0.25)),
-          lunch: mealsPerDay === '3 meals' ? 0.40 : (mealsPerDay === '5+ meals' ? 0.30 : (mealsPerDay === '2 meals' ? 0.55 : 0.35)),
-          pre_workout: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
-          snack: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
-          post_workout: 0.13,
-          dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.25 : (mealsPerDay === '2 meals' ? 0.45 : 0.25)),
-        };
-        const proportion = slotProportions[mType] ?? 0.25;
-        const slotTargetCalories = (aiMeal.total_calories && Number(aiMeal.total_calories) > 0)
-          ? Math.round(Number(aiMeal.total_calories))
-          : Math.round(targets.calories * proportion);
-        const slotTargetProtein = (aiMeal.protein_grams && Number(aiMeal.protein_grams) > 0)
-          ? Number((Number(aiMeal.protein_grams)).toFixed(1))
-          : Number((targets.protein * proportion).toFixed(1));
-        
-        // Real-world estimate: ~₹0.15–0.20 per calorie for average Indian whole foods
-        let estCost = Math.round(slotTargetCalories * 0.18);
-        const envStr = fitProfile?.food_environment?.toLowerCase() || '';
-
-        // AI sometimes returns several foods as one string joined with "+".
-        const parsedItems = (Array.isArray(aiMeal.items) ? aiMeal.items : [])
-          .flatMap((item: unknown) => parseAIItemText(item));
-        const rawParts: Array<{ name: string; servingSize: string; multiplier: number }> = parsedItems.length > 0
-          ? parsedItems
-          : [{ name: aiMeal.meal_name || `${mType} meal`, servingSize: '', multiplier: 1 }];
-
-        const itemParts = rawParts.map(part => {
-          let cleanedName = sanitizeAIItemName(part.name, isProfileVegan, isProfileVegetarian, isProfileEggetarian);
-          // Pre-workout low-fat rule: clean carbs & light protein, avoid heavy fats/peanut butter
-          if (mType === 'pre_workout' || mType === 'snack') {
-            if (/\b(?:peanut\s*butter|peanuts|butter|ghee|oil|fried)\b/i.test(cleanedName)) {
-              cleanedName = "Roasted Chana (Dry Chickpeas)";
-            }
-          }
-          return {
-            ...part,
-            name: cleanedName
-          };
-        });
-
-        const fallbackCalories = Math.round(slotTargetCalories / itemParts.length);
-        const fallbackProtein = Math.round(slotTargetProtein / itemParts.length);
-        const fallbackCost = Math.round(estCost / itemParts.length);
-
-        // 1. Resolve each item and calculate its unscaled values
-        const isCoreProvided = envStr === 'pg' || envStr === 'hostel' || envStr === 'home' || envStr === 'office/canteen';
-        const unscaledItems = itemParts.map((part) => {
-          const reference = findFoodReference(part.name, foodCatalog, fitProfile?.food_environment);
-          const multiplier = part.multiplier || 1;
-          const isItemCore = isCoreProvided && (
-            reference?.name?.includes("Provided Core") ||
-            reference?.name?.includes("Core Meal") ||
-            /\b(?:pg|hostel|mess|provided core|provided meal|core meal)\b/i.test(part.name)
-          );
-
-          const cals = Math.round(Number(reference?.calories || fallbackCalories) * (reference ? multiplier : 1));
-          const pro = Number((Number(reference?.protein || fallbackProtein) * (reference ? multiplier : 1)).toFixed(1));
-          const carbs = Number((Number(reference?.carbs || 0) * (reference ? multiplier : 1)).toFixed(1));
-          const fat = Number((Number(reference?.fat || 0) * (reference ? multiplier : 1)).toFixed(1));
-          const cost = isItemCore ? 0 : Math.round(Number(reference?.estimated_cost || fallbackCost) * (reference ? multiplier : 1));
-          return { part, reference, multiplier, cals, pro, carbs, fat, cost, isItemCore };
-        });
-
-        const unscaledTotalCalories = unscaledItems.reduce((sum, it) => sum + it.cals, 0);
-        // Proportional scale factor so the meal strictly hits slotTargetCalories
-        const scaleFactor = unscaledTotalCalories > 0 ? (slotTargetCalories / unscaledTotalCalories) : 1;
-
-        // 2. Scale each item proportionally (protecting discrete items)
-        const mealPlanItems = unscaledItems.map((it, index) => {
-          const foodNameLower = (it.reference?.name || it.part.name).toLowerCase();
-          const isDiscrete = /(?:egg|banana|apple|fruit|chapati|roti|bread|cheela)/i.test(foodNameLower);
-
-          const scaledCalories = isDiscrete ? it.cals : Math.round(it.cals * scaleFactor);
-          const scaledProtein = isDiscrete ? it.pro : Number((it.pro * scaleFactor).toFixed(1));
-          const scaledCarbs = isDiscrete ? it.carbs : Number((it.carbs * scaleFactor).toFixed(1));
-          const scaledFat = isDiscrete ? it.fat : Number((it.fat * scaleFactor).toFixed(1));
-          const scaledCost = it.isItemCore ? 0 : Math.round(it.cost * (isDiscrete ? 1 : scaleFactor));
-
-          let servingDisplay = it.part.servingSize || it.reference?.serving_size || '1 serving';
-          if (!isDiscrete && Math.abs(scaleFactor - 1) > 0.15 && it.reference?.serving_size) {
-            const scaledMult = Number((it.multiplier * scaleFactor).toFixed(1));
-            if (scaledMult > 0) {
-              const cleanBase = (it.reference.serving_size || '1 serving').replace(/^\d+(?:\.\d+)?\s*[×xX*]\s*/, '').trim();
-              const gMatch = cleanBase.match(/^(\d+)\s*g$/i);
-              const bowlMatch = cleanBase.match(/^(?:(\d+(?:\.\d+)?)\s*)?(bowl|cup|plate)s?\s*(?:\(([0-9]+)\s*([a-zA-Z]+)\))?$/i);
-              if (gMatch) {
-                servingDisplay = `${Math.round(parseInt(gMatch[1], 10) * scaledMult)}g`;
-              } else if (bowlMatch) {
-                const baseCount = bowlMatch[1] ? parseFloat(bowlMatch[1]) : 1;
-                const vessel = bowlMatch[2].toLowerCase();
-                const bQty = Number((baseCount * scaledMult).toFixed(1));
-                const grams = bowlMatch[3] ? ` (${Math.round(parseInt(bowlMatch[3], 10) * scaledMult)}${bowlMatch[4]})` : '';
-                servingDisplay = `${bQty} ${bQty === 1 ? vessel : vessel + 's'}${grams}`;
-              } else {
-                servingDisplay = `${scaledMult > 1 ? scaledMult + '× ' : (scaledMult < 1 ? scaledMult + ' ' : '')}${cleanBase}`;
-              }
-            }
-          }
-
-          let displayName = it.reference?.name || it.part.name;
-          if (it.isItemCore || displayName.includes("Provided Core") || displayName.includes("Core Meal") || displayName.includes("Base Meal") || displayName.includes("Standard Base")) {
-            const cleanEnv = (fitProfile?.food_environment || '').trim().toLowerCase();
-            displayName = cleanEnv === 'pg'
-              ? 'PG Meal (Rice, Dal & Sabzi)'
-              : cleanEnv === 'hostel'
-              ? 'Hostel Mess Meal (Rice, Dal & Sabzi)'
-              : cleanEnv === 'home' || cleanEnv === 'i cook'
-              ? 'Home Meal (Rice, Dal & Sabzi)'
-              : cleanEnv.includes('canteen') || cleanEnv.includes('office')
-              ? 'Canteen Meal (Rice, Dal & Sabzi)'
-              : 'Standard Base Meal (Rice, Dal & Sabzi)';
-            servingDisplay = "1 Plate";
-          }
-
-          return {
-            id: `ai-item-${mType}-${index}`,
-            quantity: 1,
-            is_core: it.isItemCore,
-            foods: {
-              name: displayName,
-              category: it.reference?.category || mType,
-              serving_size: servingDisplay,
-              calories: scaledCalories,
-              protein: scaledProtein,
-              carbs: scaledCarbs,
-              fat: scaledFat,
-              estimated_cost: scaledCost,
-            }
-          };
-        });
-
-        const mealTotals = mealPlanItems.reduce((totals: { calories: number; protein: number; carbs: number; fat: number }, item: any) => ({
-          calories: totals.calories + Number(item.foods.calories || 0),
-          protein: Number((totals.protein + Number(item.foods.protein || 0)).toFixed(1)),
-          carbs: Number((totals.carbs + Number(item.foods.carbs || 0)).toFixed(1)),
-          fat: Number((totals.fat + Number(item.foods.fat || 0)).toFixed(1)),
-        }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
-
-        return {
-          id: `ai-${mType}`,
-          meal_type: mType,
-          name: sanitizeMealTitle(aiMeal.meal_name || (mType.charAt(0).toUpperCase() + mType.slice(1)), isProfileVegan, isProfileVegetarian, isProfileEggetarian),
-          calories: mealTotals.calories || slotTargetCalories,
-          protein: mealTotals.protein || slotTargetProtein,
-          carbs: mealTotals.carbs,
-          fat: mealTotals.fat,
-          prep_instructions: aiMeal.prep_instructions || undefined,
-          is_ai_generated: true,
+        } : null;
+      }).filter(Boolean);
+    } else if (!isFutureDate && localDate === todayDateStr && !weeklyPlanStatus?.has_active_plan) {
+      // Day 1 onboarded users who haven't generated their AI weekly plan yet get baseline rotating meals for today
+      formattedMeals = ALL_MEAL_TYPES.map((mType) => {
+        const rotating = rotatingPlans.get(mType);
+        return rotating ? {
+          ...rotating,
           is_natural_whole_food: true,
-          meal_plan_items: mealPlanItems
-        };
-      }
-
-      return {
-        id: `empty-${mType}`,
-        meal_type: mType,
-        name: mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan",
-        calories: 0,
-        protein: 0,
-        is_natural_whole_food: true,
-        meal_plan_items: []
-      };
-    });
+          has_7day_variety: true,
+        } : null;
+      }).filter(Boolean);
+    } else {
+      // Future dates outside of generated plans, or past dates without plans, have NO planned meals
+      formattedMeals = [];
+    }
 
     // Calibrate all meals to strictly match the user's calories, protein, carbs, fat, and budget
     formattedMeals = calibrateMealsToTargets(formattedMeals, targets, fitProfile);
@@ -3317,7 +3167,7 @@ export class NutritionService {
       },
       progress,
       nutrition_score: score,
-      has_ai_plan: Boolean((aiMeals && aiMeals.length > 0) || formattedMeals.some((m: any) => m.ai_generated || m.is_ai_generated)),
+      has_ai_plan: formattedMeals.some((m: any) => Boolean(m.ai_generated || m.is_ai_generated)),
       weekly_plan_status: weeklyPlanStatus,
       is_natural_whole_food: true,
       food_environment: fitProfile?.food_environment || 'Home',
