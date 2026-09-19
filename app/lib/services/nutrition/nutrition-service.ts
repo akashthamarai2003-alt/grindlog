@@ -351,6 +351,68 @@ export function calibrateMealsToTargets(
     });
   }
 
+  // PASS 2.5: Protein Target Assurance
+  // When user is cutting or building muscle, protein is non-negotiable.
+  // If total protein falls short of targetPro by > 8g, scale up the high-protein items.
+  const currentTotalPro = calibratedMeals.reduce((sum: number, m: any) => {
+    const rawItems = m.meal_plan_items || m.items || [];
+    return sum + rawItems.reduce((mSum: number, it: any) => {
+      const info = getItemInfo(it);
+      return mSum + (info.unitPro * (Number(it.quantity) || 1));
+    }, 0);
+  }, 0);
+
+  const proteinShortfall = targetPro - currentTotalPro;
+  if (proteinShortfall > 8) {
+    calibratedMeals = calibratedMeals.map((m: any) => {
+      const rawItems = m.meal_plan_items || m.items || [];
+      const updatedItems = rawItems.map((it: any) => {
+        const info = getItemInfo(it);
+        const lower = info.fName.toLowerCase();
+        let q = Number(it.quantity) || 1;
+
+        if (lower.includes('boiled egg') || (lower.includes('egg') && !lower.includes('curry'))) {
+          // Discrete eggs: boost egg count to close shortfall
+          if (q <= 2 && proteinShortfall >= 20) q = 4;
+          else if (q <= 2 && proteinShortfall >= 10) q = 3;
+          else if (q === 3 && proteinShortfall >= 15) q = 4;
+        } else if (lower.includes('chicken breast') || lower.includes('chicken')) {
+          const boost = Math.min(1.6, Math.max(1.2, 1 + (proteinShortfall / targetPro)));
+          q = Number((q * boost).toFixed(2));
+        } else if (lower.includes('fish')) {
+          const boost = Math.min(1.6, Math.max(1.2, 1 + (proteinShortfall / targetPro)));
+          q = Number((q * boost).toFixed(2));
+        } else if (lower.includes('paneer')) {
+          if (dailyBudgetCap >= 50) {
+            const boost = Math.min(1.4, Math.max(1.15, 1 + (proteinShortfall / targetPro)));
+            q = Number((q * boost).toFixed(2));
+          }
+        } else if (lower.includes('soya chunk') || lower.includes('soy chunk')) {
+          const boost = Math.min(1.5, Math.max(1.2, 1 + (proteinShortfall / targetPro)));
+          q = Number((q * boost).toFixed(2));
+        }
+
+        const totalItemCals = Math.round(info.unitCals * q);
+        const totalItemPro = Number((info.unitPro * q).toFixed(1));
+        const totalItemCarbs = Number((info.unitCarbs * q).toFixed(1));
+        const totalItemFat = Number((info.unitFat * q).toFixed(1));
+        const totalItemCost = info.isCore ? 0 : Math.round(info.unitCost * q);
+
+        return {
+          ...it,
+          quantity: q,
+          calories: totalItemCals,
+          protein: totalItemPro,
+          carbs: totalItemCarbs,
+          fat: totalItemFat,
+          estimated_cost: totalItemCost
+        };
+      });
+
+      return { ...m, meal_plan_items: updatedItems, items: updatedItems };
+    });
+  }
+
   // PASS 3: Global Calorie Fine-Tuning
   const currentGrandCals = calibratedMeals.reduce((sum: number, m: any) => {
     const rawItems = m.meal_plan_items || m.items || [];
@@ -368,12 +430,10 @@ export function calibrateMealsToTargets(
         const info = getItemInfo(it);
         const lowerName = info.fName.toLowerCase();
         let q = Number(it.quantity) || 1;
-        if (lowerName.includes('boiled egg') || lowerName.includes('egg')) {
-          if (fineScale < 0.85 && q > 1) {
-            q = Math.max(1, Math.round(q * fineScale));
-          }
+        if (lowerName.includes('boiled egg') || lowerName.includes('egg') || lowerName.includes('chicken') || lowerName.includes('fish') || lowerName.includes('soya')) {
+          // Keep protein items protected during calorie fine-tuning
         } else if (lowerName.includes('roti') || lowerName.includes('chapati')) {
-          if (fineScale < 0.80 && q > 1) {
+          if (fineScale < 0.85 && q > 1) {
             q = Math.max(1, Math.round(q * fineScale));
           }
         } else {
@@ -1865,15 +1925,21 @@ export class NutritionService {
         }
         return "Soothing Recovery Dinner: Light moong dal khichdi paired with cooling probiotic dahi and a pinch of roasted jeera to aid overnight gut repair.";
       }
+      if (tLower.includes("fish")) {
+        return "Lean Protein Recovery: Homestyle fish curry paired with steamed rice or phulkas and fresh vegetables for omega-3s and overnight muscle repair.";
+      }
+      if (tLower.includes("chicken")) {
+        return "High-Protein Dinner: Homestyle chicken paired with warm phulkas or rice, yellow dal, and fresh vegetables for optimal overnight muscle repair.";
+      }
+      if (tLower.includes("egg")) {
+        return "High-Protein Dinner: Farm boiled eggs or egg curry paired with warm phulkas or steamed rice and yellow dal for clean overnight muscle recovery.";
+      }
       if (tLower.includes("rice") || tLower.includes("chawal") || tLower.includes("sambar")) {
         return isRoomLiving
           ? `${envName} Dinner: Steamed rice paired with yellow dal or sambar, mixed sabzi, and your protein anchor to support overnight muscle recovery.`
           : isNonVeg || isEggetarian
-          ? "Restorative Dinner: Steamed rice paired with yellow moong dal, seasonal sabzi, and farm boiled eggs to support overnight muscle protein synthesis."
+          ? "Restorative Dinner: Steamed rice paired with yellow moong dal, seasonal sabzi, and lean protein to support overnight muscle protein synthesis."
           : "Restorative Dinner: Steamed rice with yellow dal, seasonal sabzi, and cooling curd seasoned with roasted cumin.";
-      }
-      if (tLower.includes("chicken") || tLower.includes("egg") || tLower.includes("fish")) {
-        return "High-Protein Recovery Dinner: Lean protein paired with warm phulkas or rice, yellow dal, and fresh vegetables for optimal overnight muscle repair.";
       }
       if (isVegan) {
         return isRoomLiving
