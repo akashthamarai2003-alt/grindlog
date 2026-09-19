@@ -1,348 +1,308 @@
 /**
- * Bulletproof Food Image & Avatar System.
- * Combines high-resolution photo URLs with self-contained SVG Data URI Avatars.
- * Guarantees ZERO black empty squares and 100% reliable rendering even if network CDNs are blocked.
+ * Unified Glassmorphic Food Icon Badge System (Option 1).
+ * 
+ * Provides 100% visual consistency, zero broken external links, 
+ * instant 0ms load time, and full offline PWA resilience across GrindLog.
  */
 
-// 1. Map of specific food photos (prioritizing local verified assets and high-res culinary photography)
-const FOOD_PHOTO_MAP: Record<string, string> = {
-  // --- Paneer Dishes (Dedicated & Distinct) ---
-  "palak paneer": "/images/foods/palak-paneer.jpg",
-  "matar paneer": "/images/foods/matar-paneer.jpg",
-  "paneer butter masala": "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400&auto=format&fit=crop&q=80",
-  "kadai paneer": "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400&auto=format&fit=crop&q=80",
-  "paneer tikka": "/images/foods/paneer-tikka.png",
-  "grilled paneer": "/images/foods/paneer-tikka.png",
-  "paneer bhurji": "/images/foods/tofu-bhurji.jpg",
-  "paneer paratha": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&auto=format&fit=crop&q=80",
-  "fresh paneer": "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400&auto=format&fit=crop&q=80",
-  "low fat paneer": "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400&auto=format&fit=crop&q=80",
-  "paneer": "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400&auto=format&fit=crop&q=80",
+interface BadgeConfig {
+  emoji: string;
+  colors: [string, string];
+}
 
-  // --- Cheelas & Savory Pancakes ---
-  "moong dal cheela": "/images/foods/moong-dal-cheela.jpg",
-  "besan cheela": "/images/foods/moong-dal-cheela.jpg",
-  "cheela": "/images/foods/moong-dal-cheela.jpg",
-  "chilla": "/images/foods/moong-dal-cheela.jpg",
+const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
+  // --- Poultry & Chicken (Warm Flame & Tandoor Gradients) ---
+  "chicken breast": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
+  "grilled chicken": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
+  "chicken tikka": { emoji: "🍢", colors: ["#DC2626", "#7F1D1D"] },
+  "tandoori chicken": { emoji: "🍗", colors: ["#DC2626", "#7C2D12"] },
+  "chicken curry": { emoji: "🍛", colors: ["#EA580C", "#7C2D12"] },
+  "chicken keema": { emoji: "🥘", colors: ["#EA580C", "#7C2D12"] },
+  "chicken biryani": { emoji: "🍗", colors: ["#D97706", "#7C2D12"] },
+  "chicken": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
+  "mutton curry": { emoji: "🥩", colors: ["#B91C1C", "#450A0A"] },
+  "mutton": { emoji: "🥩", colors: ["#B91C1C", "#450A0A"] },
 
-  // --- Tofu Items (Authentic scramble & firm blocks, NEVER butter) ---
-  "tofu bhurji": "/images/foods/tofu-bhurji.jpg",
-  "tofu scramble": "/images/foods/tofu-bhurji.jpg",
-  "tofu": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80",
+  // --- Eggs & Egg Whites (Golden Yolk Gradients) ---
+  "boiled egg white": { emoji: "🥚", colors: ["#D97706", "#78350F"] },
+  "egg white": { emoji: "🥚", colors: ["#D97706", "#78350F"] },
+  "boiled egg": { emoji: "🥚", colors: ["#F59E0B", "#B45309"] },
+  "egg curry": { emoji: "🍛", colors: ["#EA580C", "#7C2D12"] },
+  "anda curry": { emoji: "🍛", colors: ["#EA580C", "#7C2D12"] },
+  "egg bhurji": { emoji: "🍳", colors: ["#F59E0B", "#B45309"] },
+  "bread omelette": { emoji: "🍳", colors: ["#F59E0B", "#B45309"] },
+  "egg omelette": { emoji: "🍳", colors: ["#F59E0B", "#B45309"] },
+  "omelette": { emoji: "🍳", colors: ["#F59E0B", "#B45309"] },
+  "egg biryani": { emoji: "🥚", colors: ["#D97706", "#7C2D12"] },
+  "egg": { emoji: "🥚", colors: ["#F59E0B", "#B45309"] },
 
-  // --- Egg Dishes (Real cooked dishes, never raw whole eggs for meals) ---
-  "egg curry": "/images/foods/egg-curry.jpg",
-  "anda curry": "/images/foods/egg-curry.jpg",
-  "egg bhurji": "https://images.unsplash.com/photo-1544414082-112fb25cf35d?w=400&auto=format&fit=crop&q=80",
-  "scrambled egg": "https://images.unsplash.com/photo-1544414082-112fb25cf35d?w=400&auto=format&fit=crop&q=80",
-  "bread omelette": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&auto=format&fit=crop&q=80",
-  "egg omelette": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&auto=format&fit=crop&q=80",
-  "omelette": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&auto=format&fit=crop&q=80",
-  "boiled egg white": "/images/foods/boiled-egg.png",
-  "boiled egg": "/images/foods/boiled-egg.png",
-  "egg": "/images/foods/boiled-egg.png",
+  // --- Fish & Seafood (Ocean Cyan & Deep Blue Gradients) ---
+  "fish curry": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
+  "grilled fish": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
+  "fish fry": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
+  "salmon": { emoji: "🍣", colors: ["#EA580C", "#9A3412"] },
+  "canned tuna": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
+  "tuna": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
+  "prawn": { emoji: "🦐", colors: ["#EA580C", "#7C2D12"] },
+  "fish": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
 
-  // --- Chickpeas, Chana & Dals ---
-  "chickpeas (chana masala)": "/images/foods/chana-masala.png",
-  "chana masala": "/images/foods/chana-masala.png",
-  "chana chaat": "/images/foods/chana-masala.png",
-  "chana dal curry": "/images/foods/dal-tadka.png",
-  "kala chana": "/images/foods/chana-masala.png",
-  "chickpeas": "/images/foods/chana-masala.png",
-  "chickpea": "/images/foods/chana-masala.png",
-  "chole": "/images/foods/chana-masala.png",
-  "chana": "/images/foods/chana-masala.png",
+  // --- Soy & Plant Protein (Rich Emerald Protein Gradients - NO garden sprout!) ---
+  "soya chunks curry": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
+  "soya chunks": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
+  "soya chunk": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
+  "soy chunks": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
+  "soy chunk": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
+  "soya chaap": { emoji: "🍢", colors: ["#059669", "#064E3B"] },
+  "tofu bhurji": { emoji: "🍳", colors: ["#EAB308", "#854D0E"] },
+  "tofu scramble": { emoji: "🍳", colors: ["#EAB308", "#854D0E"] },
+  "tofu": { emoji: "🥗", colors: ["#059669", "#064E3B"] },
+  "tempeh": { emoji: "🥗", colors: ["#059669", "#064E3B"] },
+  "soy": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
 
-  "dal tadka": "/images/foods/dal-tadka.png",
-  "dal fry": "/images/foods/dal-tadka.png",
-  "yellow moong dal": "/images/foods/dal-tadka.png",
-  "toor dal": "/images/foods/dal-tadka.png",
-  "masoor dal": "/images/foods/dal-tadka.png",
-  "moong dal khichdi": "/images/foods/dal-tadka.png",
-  "khichdi": "/images/foods/dal-tadka.png",
-  "lentils": "/images/foods/dal-tadka.png",
-  "dal": "/images/foods/dal-tadka.png",
-
-  // --- Rajma & Beans ---
-  "rajma": "/images/foods/rajma.png",
-  "lobia": "/images/foods/rajma.png",
-
-  // --- South Indian Specialties ---
-  "masala dosa": "/images/foods/dosa.png",
-  "plain dosa": "/images/foods/dosa.png",
-  "set dosa": "/images/foods/dosa.png",
-  "rava dosa": "/images/foods/dosa.png",
-  "dosa": "/images/foods/dosa.png",
-  "idli": "/images/foods/idli.png",
-  "medu vada": "/images/foods/idli.png",
-  "sambar rice": "/images/foods/sambar.png",
-  "sambar": "/images/foods/sambar.png",
-  "rasam": "/images/foods/sambar.png",
-  "ven pongal": "/images/foods/pongal.png",
-  "pongal": "/images/foods/pongal.png",
-
-  // --- Breakfast, Tiffin & Grains ---
-  "poha": "/images/foods/poha.png",
-  "upma": "/images/foods/upma.png",
-  "overnight oats": "/images/foods/oats.png",
-  "oats with milk": "/images/foods/oats.png",
-  "masala oats": "/images/foods/oats.png",
-  "oats": "/images/foods/oats.png",
-  "quinoa": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&auto=format&fit=crop&q=80",
-  "daliya": "/images/foods/upma.png",
-
-  // --- Indian Breads ---
-  "chapati with ghee": "/images/foods/chapati.png",
-  "chapati / phulka": "/images/foods/chapati.png",
-  "chapati": "/images/foods/chapati.png",
-  "phulka": "/images/foods/chapati.png",
-  "multigrain roti": "/images/foods/chapati.png",
-  "roti": "/images/foods/chapati.png",
-  "aloo paratha": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&auto=format&fit=crop&q=80",
-  "gobi paratha": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&auto=format&fit=crop&q=80",
-  "plain paratha": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&auto=format&fit=crop&q=80",
-  "paratha": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&auto=format&fit=crop&q=80",
-  "poori": "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&auto=format&fit=crop&q=80",
-  "whole wheat bread": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=80",
-  "brown bread": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=80",
-  "bread": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=80",
-  "toast": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=80",
-
-  // --- Rice Varieties ---
-  "chicken biryani": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&auto=format&fit=crop&q=80",
-  "egg biryani": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&auto=format&fit=crop&q=80",
-  "veg biryani": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&auto=format&fit=crop&q=80",
-  "biryani": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&auto=format&fit=crop&q=80",
-  "curd rice": "/images/foods/curd.png",
-  "jeera rice": "/images/foods/white-rice.png",
-  "lemon rice": "/images/foods/poha.png",
-  "brown rice": "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&auto=format&fit=crop&q=80",
-  "white rice": "/images/foods/white-rice.png",
-  "rice": "/images/foods/white-rice.png",
-
-  // --- Poultry & Meats ---
-  "tandoori chicken": "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=400&auto=format&fit=crop&q=80",
-  "chicken tikka": "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=400&auto=format&fit=crop&q=80",
-  "chicken curry": "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&auto=format&fit=crop&q=80",
-  "chicken keema": "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&auto=format&fit=crop&q=80",
-  "boiled chicken breast": "/images/foods/chicken-breast.png",
-  "chicken breast": "/images/foods/chicken-breast.png",
-  "chicken": "/images/foods/chicken-breast.png",
-  "mutton curry": "https://images.unsplash.com/photo-1545247181-516773cae754?w=400&auto=format&fit=crop&q=80",
-
-  // --- Seafood ---
-  "fish curry": "/images/foods/fish-curry.png",
-  "grilled fish": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&auto=format&fit=crop&q=80",
-  "fish fry": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&auto=format&fit=crop&q=80",
-  "salmon": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&auto=format&fit=crop&q=80",
-  "canned tuna": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&auto=format&fit=crop&q=80",
-  "tuna": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&auto=format&fit=crop&q=80",
-  "prawn": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&auto=format&fit=crop&q=80",
-  "fish": "/images/foods/fish-curry.png",
-
-  // --- Vegetables & Sabzi ---
-  "aloo sabzi": "/images/foods/aloo-sabzi.png",
-  "aloo gobi": "/images/foods/aloo-sabzi.png",
-  "aloo": "/images/foods/aloo-sabzi.png",
-  "boiled potato": "/images/foods/aloo-sabzi.png",
-  "sweet potato": "/images/foods/aloo-sabzi.png",
-  "potato": "/images/foods/aloo-sabzi.png",
-  "bhindi masala": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&auto=format&fit=crop&q=80",
-  "baingan bharta": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&auto=format&fit=crop&q=80",
-  "mushroom masala": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&auto=format&fit=crop&q=80",
-  "sauteed mushrooms": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&auto=format&fit=crop&q=80",
-  "mushroom": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&auto=format&fit=crop&q=80",
-  "boiled spinach": "/images/foods/spinach.png",
-  "spinach": "/images/foods/spinach.png",
-  "palak": "/images/foods/spinach.png",
-  "boiled broccoli": "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400&auto=format&fit=crop&q=80",
-  "broccoli": "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400&auto=format&fit=crop&q=80",
-  "cucumber": "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&auto=format&fit=crop&q=80",
-  "green peas": "/images/foods/matar-paneer.jpg",
-  "sweet corn": "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&auto=format&fit=crop&q=80",
-  "mixed vegetable sabzi": "/images/foods/mixed-vegetables.png",
-  "mixed vegetables": "/images/foods/mixed-vegetables.png",
-  "mixed vegetable": "/images/foods/mixed-vegetables.png",
-  "green salad": "/images/foods/mixed-vegetables.png",
-  "salad": "/images/foods/mixed-vegetables.png",
-  "vegetable": "/images/foods/mixed-vegetables.png",
-
-  // --- Soy & Plant Proteins ---
-  "soya chunks curry": "/images/foods/soy-chunks.png",
-  "soya chunks": "/images/foods/soy-chunks.png",
-  "soy chunks": "/images/foods/soy-chunks.png",
-  "soya chaap": "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=400&auto=format&fit=crop&q=80",
-  "tempeh": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80",
-  "soy": "/images/foods/soy-chunks.png",
-
-  // --- Dairy & Beverages ---
-  "greek yogurt": "/images/foods/curd.png",
-  "curd (plain)": "/images/foods/curd.png",
-  "curd / dahi": "/images/foods/curd.png",
-  "low fat curd": "/images/foods/curd.png",
-  "curd": "/images/foods/curd.png",
-  "dahi": "/images/foods/curd.png",
-  "yogurt": "/images/foods/curd.png",
-  "sweet lassi": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=400&auto=format&fit=crop&q=80",
-  "chaas": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=400&auto=format&fit=crop&q=80",
-  "buttermilk": "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=400&auto=format&fit=crop&q=80",
-  "whole milk": "/images/foods/whole-milk.png",
-  "toned milk": "/images/foods/whole-milk.png",
-  "skimmed milk": "/images/foods/whole-milk.png",
-  "almond milk": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&auto=format&fit=crop&q=80",
-  "soy milk": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&auto=format&fit=crop&q=80",
-  "oat milk": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&auto=format&fit=crop&q=80",
-  "milk": "/images/foods/whole-milk.png",
-  "indian chai": "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&auto=format&fit=crop&q=80",
-  "chai": "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&auto=format&fit=crop&q=80",
-  "black coffee": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=80",
-  "filter coffee": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=80",
-  "coffee": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=80",
-  "green tea": "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=80",
-  "coconut water": "https://images.unsplash.com/photo-1525385133512-2f3bdd039054?w=400&auto=format&fit=crop&q=80",
-
-  // --- Nuts, Seeds & Supplements ---
-  "natural peanut butter": "https://images.unsplash.com/photo-1522204523234-8729aa6e3d5f?w=400&auto=format&fit=crop&q=80",
-  "peanut butter toast": "https://images.unsplash.com/photo-1522204523234-8729aa6e3d5f?w=400&auto=format&fit=crop&q=80",
-  "peanut butter": "https://images.unsplash.com/photo-1522204523234-8729aa6e3d5f?w=400&auto=format&fit=crop&q=80",
-  "roasted peanuts": "/images/foods/roasted-peanuts.png",
-  "peanuts": "/images/foods/roasted-peanuts.png",
-  "roasted chana": "/images/foods/chana-masala.png",
-  "roasted makhana": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&auto=format&fit=crop&q=80",
-  "makhana": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&auto=format&fit=crop&q=80",
-  "almonds": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400&auto=format&fit=crop&q=80",
-  "cashews": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400&auto=format&fit=crop&q=80",
-  "walnuts": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400&auto=format&fit=crop&q=80",
-  "chia seeds": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400&auto=format&fit=crop&q=80",
-  "flax seeds": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400&auto=format&fit=crop&q=80",
-  "pumpkin seeds": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400&auto=format&fit=crop&q=80",
-  "sunflower seeds": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400&auto=format&fit=crop&q=80",
-  "whey protein": "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&auto=format&fit=crop&q=80",
-  "casein protein": "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&auto=format&fit=crop&q=80",
-  "plant protein": "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&auto=format&fit=crop&q=80",
-  "protein powder": "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&auto=format&fit=crop&q=80",
-
-  // --- Fruits & Produce ---
-  "banana": "/images/foods/banana.png",
-  "apple": "/images/foods/apple.png",
-  "mango": "https://images.unsplash.com/photo-1553279768-865429fa0078?w=400&auto=format&fit=crop&q=80",
-  "papaya": "https://images.unsplash.com/photo-1517282009859-f000ec3b26fe?w=400&auto=format&fit=crop&q=80",
-  "watermelon": "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&auto=format&fit=crop&q=80",
-  "pomegranate": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400&auto=format&fit=crop&q=80",
-  "orange": "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=400&auto=format&fit=crop&q=80",
-  "grapes": "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400&auto=format&fit=crop&q=80",
-  "kiwi": "https://images.unsplash.com/photo-1585059895524-72359e06133a?w=400&auto=format&fit=crop&q=80",
-  "guava": "https://images.unsplash.com/photo-1536511135896-1c2543940173?w=400&auto=format&fit=crop&q=80",
-  "pineapple": "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=400&auto=format&fit=crop&q=80",
-  "dates": "https://images.unsplash.com/photo-1582293041079-7814c2f12063?w=400&auto=format&fit=crop&q=80",
-  "raisins": "https://images.unsplash.com/photo-1582293041079-7814c2f12063?w=400&auto=format&fit=crop&q=80",
-  "fresh tomato": "/images/foods/tomatoes.png",
-  "tomatoes": "/images/foods/tomatoes.png",
-  "tomato": "/images/foods/tomatoes.png",
-  "carrots": "/images/foods/carrots.png",
-  "carrot": "/images/foods/carrots.png",
-  "popcorn": "https://images.unsplash.com/photo-1578849278619-e73505e9610f?w=400&auto=format&fit=crop&q=80",
-  "dark chocolate": "https://images.unsplash.com/photo-1548907040-4baa42d10919?w=400&auto=format&fit=crop&q=80",
-  "ghee": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400&auto=format&fit=crop&q=80",
-  "core meal": "/images/foods/core-meal.png"
-};
-
-// Sort photo keys by descending length so multi-word specific phrases match BEFORE generic words
-const SORTED_PHOTO_KEYS = Object.keys(FOOD_PHOTO_MAP).sort((a, b) => b.length - a.length);
-
-// 2. Map of Emoji & Custom SVG Gradients per food type (100% Offline Guaranteed Fallback)
-const FOOD_AVATAR_CONFIG: Record<string, { emoji: string; colors: [string, string] }> = {
+  // --- Paneer & Dairy (Golden Dairy & Ice Cyan Gradients) ---
+  "paneer tikka": { emoji: "🧀", colors: ["#D97706", "#78350F"] },
+  "grilled paneer": { emoji: "🧀", colors: ["#D97706", "#78350F"] },
   "palak paneer": { emoji: "🥬", colors: ["#16A34A", "#14532D"] },
   "matar paneer": { emoji: "🥘", colors: ["#EA580C", "#9A3412"] },
-  "moong dal cheela": { emoji: "🥞", colors: ["#EAB308", "#A16207"] },
-  "besan cheela": { emoji: "🥞", colors: ["#EAB308", "#A16207"] },
-  "cheela": { emoji: "🥞", colors: ["#EAB308", "#A16207"] },
-  "tofu bhurji": { emoji: "🍳", colors: ["#EAB308", "#A16207"] },
-  "tofu": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
-  "egg curry": { emoji: "🍛", colors: ["#EA580C", "#7C2D12"] },
-  "egg bhurji": { emoji: "🍳", colors: ["#F59E0B", "#B45309"] },
-  "boiled egg": { emoji: "🥚", colors: ["#F59E0B", "#B45309"] },
-  "egg": { emoji: "🥚", colors: ["#F59E0B", "#B45309"] },
-  "poha": { emoji: "🍚", colors: ["#F59E0B", "#B45309"] },
-  "idli": { emoji: "⚪", colors: ["#374151", "#111827"] },
-  "dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
-  "upma": { emoji: "🥣", colors: ["#D97706", "#92400E"] },
-  "pongal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
-  "chapati": { emoji: "🥞", colors: ["#B45309", "#78350F"] },
-  "roti": { emoji: "🥞", colors: ["#B45309", "#78350F"] },
-  "white rice": { emoji: "🍚", colors: ["#4B5563", "#1F2937"] },
-  "rice": { emoji: "🍚", colors: ["#4B5563", "#1F2937"] },
-  "oats": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
-  "sambar": { emoji: "🥘", colors: ["#EA580C", "#7C2D12"] },
-  "dal tadka": { emoji: "🍲", colors: ["#EAB308", "#A16207"] },
-  "dal": { emoji: "🍲", colors: ["#EAB308", "#A16207"] },
-  "chana": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
-  "chickpeas": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
-  "rajma": { emoji: "🍛", colors: ["#991B1B", "#450A0A"] },
-  "aloo": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
-  "chicken": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
+  "paneer butter masala": { emoji: "🥘", colors: ["#EA580C", "#9A3412"] },
+  "kadai paneer": { emoji: "🥘", colors: ["#EA580C", "#9A3412"] },
+  "paneer bhurji": { emoji: "🍳", colors: ["#EAB308", "#854D0E"] },
+  "paneer paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "fresh paneer": { emoji: "🧀", colors: ["#EAB308", "#A16207"] },
+  "low fat paneer": { emoji: "🧀", colors: ["#EAB308", "#A16207"] },
   "paneer": { emoji: "🧀", colors: ["#EAB308", "#A16207"] },
-  "fish": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
-  "soy chunks": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
-  "soy": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
+
+  "greek yogurt": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
+  "curd (plain)": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
+  "curd / dahi": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
+  "low fat curd": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
   "curd": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
-  "milk": { emoji: "🥛", colors: ["#38BDF8", "#0369A1"] },
-  "peanuts": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
-  "banana": { emoji: "🍌", colors: ["#EAB308", "#854D0E"] },
-  "apple": { emoji: "🍎", colors: ["#DC2626", "#7F1D1D"] },
-  "whey": { emoji: "🥤", colors: ["#6366F1", "#312E81"] },
-  "protein": { emoji: "💪", colors: ["#84CC16", "#3F6212"] },
-  "biryani": { emoji: "🍗", colors: ["#D97706", "#7C2D12"] },
-  "paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "khichdi": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
-  "yogurt": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
   "dahi": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
+  "yogurt": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
+  "sweet lassi": { emoji: "🥛", colors: ["#0284C7", "#0C4A6E"] },
+  "chaas": { emoji: "🥛", colors: ["#0284C7", "#0C4A6E"] },
+  "buttermilk": { emoji: "🥛", colors: ["#0284C7", "#0C4A6E"] },
+  "whole milk": { emoji: "🥛", colors: ["#38BDF8", "#0369A1"] },
+  "toned milk": { emoji: "🥛", colors: ["#38BDF8", "#0369A1"] },
+  "skimmed milk": { emoji: "🥛", colors: ["#38BDF8", "#0369A1"] },
+  "almond milk": { emoji: "🥛", colors: ["#D97706", "#78350F"] },
+  "soy milk": { emoji: "🥛", colors: ["#059669", "#064E3B"] },
+  "oat milk": { emoji: "🥛", colors: ["#CA8A04", "#713F12"] },
+  "milk": { emoji: "🥛", colors: ["#38BDF8", "#0369A1"] },
+
+  // --- Dals & Legumes (Warm Turmeric & Earthy Spice Gradients) ---
+  "yellow moong dal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "dal tadka": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "dal fry": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "toor dal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "masoor dal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "moong dal khichdi": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "moong dal cheela": { emoji: "🥞", colors: ["#EAB308", "#854D0E"] },
+  "besan cheela": { emoji: "🥞", colors: ["#EAB308", "#854D0E"] },
+  "cheela": { emoji: "🥞", colors: ["#EAB308", "#854D0E"] },
+  "chilla": { emoji: "🥞", colors: ["#EAB308", "#854D0E"] },
+  "khichdi": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "lentils": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "dal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+
+  "chickpeas (chana masala)": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
+  "chana masala": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
+  "chana chaat": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
+  "chole": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
+  "kala chana": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
+  "chickpeas": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
+  "chana": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
+  "rajma": { emoji: "🍛", colors: ["#991B1B", "#450A0A"] },
+  "lobia": { emoji: "🍛", colors: ["#991B1B", "#450A0A"] },
+  "sambar": { emoji: "🥘", colors: ["#EA580C", "#7C2D12"] },
+  "rasam": { emoji: "🥘", colors: ["#EA580C", "#7C2D12"] },
+
+  // --- Indian Breads (Golden Wheat & Flatbread Gradients) ---
+  "chapati with ghee": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "chapati / phulka": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "chapati": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "phulka": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "multigrain roti": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "roti": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "aloo paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "gobi paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "plain paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "poori": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "whole wheat bread": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
+  "brown bread": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
   "bread": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
   "toast": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
-  "salmon": { emoji: "🍣", colors: ["#F97316", "#9A3412"] },
-  "tuna": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
-  "prawn": { emoji: "🦐", colors: ["#F97316", "#9A3412"] },
-  "mutton": { emoji: "🥩", colors: ["#DC2626", "#7F1D1D"] },
-  "almond": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
-  "walnut": { emoji: "🌰", colors: ["#B45309", "#78350F"] },
-  "chia": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
-  "makhana": { emoji: "⚪", colors: ["#4B5563", "#1F2937"] },
-  "tea": { emoji: "🍵", colors: ["#16A34A", "#14532D"] },
-  "chai": { emoji: "☕", colors: ["#B45309", "#78350F"] },
-  "coffee": { emoji: "☕", colors: ["#78350F", "#451A03"] },
-  "coconut": { emoji: "🥥", colors: ["#16A34A", "#14532D"] },
+
+  // --- Rice & Grains (Aromatic Rice & Breakfast Grains) ---
+  "white rice": { emoji: "🍚", colors: ["#4B5563", "#1F2937"] },
+  "brown rice": { emoji: "🍚", colors: ["#78350F", "#451A03"] },
+  "jeera rice": { emoji: "🍚", colors: ["#4B5563", "#1F2937"] },
+  "lemon rice": { emoji: "🍚", colors: ["#F59E0B", "#B45309"] },
+  "curd rice": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
+  "rice": { emoji: "🍚", colors: ["#4B5563", "#1F2937"] },
+  "veg biryani": { emoji: "🍚", colors: ["#D97706", "#7C2D12"] },
+  "biryani": { emoji: "🍗", colors: ["#D97706", "#7C2D12"] },
+  "poha": { emoji: "🍚", colors: ["#F59E0B", "#B45309"] },
+  "upma": { emoji: "🥣", colors: ["#D97706", "#92400E"] },
+  "ven pongal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "pongal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "idli": { emoji: "⚪", colors: ["#4B5563", "#111827"] },
+  "medu vada": { emoji: "🥯", colors: ["#D97706", "#78350F"] },
+  "masala dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
+  "plain dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
+  "dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
+  "overnight oats": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
+  "oats with milk": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
+  "masala oats": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
+  "oats": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
+  "quinoa": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
+  "daliya": { emoji: "🥣", colors: ["#D97706", "#92400E"] },
+
+  // --- Vegetables & Sabzi (Lush Garden Greens) ---
+  "boiled spinach": { emoji: "🥬", colors: ["#16A34A", "#14532D"] },
+  "spinach": { emoji: "🥬", colors: ["#16A34A", "#14532D"] },
+  "palak": { emoji: "🥬", colors: ["#16A34A", "#14532D"] },
+  "boiled broccoli": { emoji: "🥦", colors: ["#16A34A", "#14532D"] },
   "broccoli": { emoji: "🥦", colors: ["#16A34A", "#14532D"] },
-  "fruit": { emoji: "🍎", colors: ["#DC2626", "#7F1D1D"] },
+  "cucumber": { emoji: "🥒", colors: ["#16A34A", "#14532D"] },
+  "green peas": { emoji: "🫛", colors: ["#16A34A", "#14532D"] },
+  "sweet corn": { emoji: "🌽", colors: ["#EAB308", "#854D0E"] },
+  "mixed vegetable sabzi": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
+  "mixed vegetables": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
+  "mixed vegetable": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
+  "green salad": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
+  "salad": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
   "vegetable": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
-  "salad": { emoji: "🥗", colors: ["#16A34A", "#14532D"] }
+  "aloo sabzi": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
+  "aloo gobi": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
+  "boiled potato": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
+  "sweet potato": { emoji: "🍠", colors: ["#991B1B", "#450A0A"] },
+  "potato": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
+  "aloo": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
+  "bhindi masala": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
+  "baingan bharta": { emoji: "🍆", colors: ["#7C3AED", "#4C1D95"] },
+  "mushroom masala": { emoji: "🍄", colors: ["#78350F", "#451A03"] },
+  "mushroom": { emoji: "🍄", colors: ["#78350F", "#451A03"] },
+  "tomatoes": { emoji: "🍅", colors: ["#DC2626", "#7F1D1D"] },
+  "tomato": { emoji: "🍅", colors: ["#DC2626", "#7F1D1D"] },
+  "carrots": { emoji: "🥕", colors: ["#EA580C", "#9A3412"] },
+  "carrot": { emoji: "🥕", colors: ["#EA580C", "#9A3412"] },
+
+  // --- Fruits & Berries ---
+  "banana": { emoji: "🍌", colors: ["#EAB308", "#854D0E"] },
+  "apple": { emoji: "🍎", colors: ["#DC2626", "#7F1D1D"] },
+  "mango": { emoji: "🥭", colors: ["#EAB308", "#854D0E"] },
+  "papaya": { emoji: "🍈", colors: ["#EA580C", "#9A3412"] },
+  "watermelon": { emoji: "🍉", colors: ["#DC2626", "#14532D"] },
+  "pomegranate": { emoji: "🍎", colors: ["#991B1B", "#450A0A"] },
+  "orange": { emoji: "🍊", colors: ["#EA580C", "#9A3412"] },
+  "grapes": { emoji: "🍇", colors: ["#7C3AED", "#4C1D95"] },
+  "kiwi": { emoji: "🥝", colors: ["#16A34A", "#14532D"] },
+  "guava": { emoji: "🍈", colors: ["#16A34A", "#14532D"] },
+  "pineapple": { emoji: "🍍", colors: ["#EAB308", "#854D0E"] },
+  "dates": { emoji: "🌰", colors: ["#78350F", "#451A03"] },
+  "raisins": { emoji: "🍇", colors: ["#78350F", "#451A03"] },
+  "fruit": { emoji: "🍎", colors: ["#DC2626", "#7F1D1D"] },
+
+  // --- Nuts, Seeds & Dry Fruits ---
+  "natural peanut butter": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "peanut butter": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "roasted peanuts": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "peanuts": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "peanut": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "roasted chana": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
+  "roasted makhana": { emoji: "⚪", colors: ["#4B5563", "#1F2937"] },
+  "makhana": { emoji: "⚪", colors: ["#4B5563", "#1F2937"] },
+  "almonds": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "almond": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "cashews": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "walnuts": { emoji: "🌰", colors: ["#78350F", "#451A03"] },
+  "walnut": { emoji: "🌰", colors: ["#78350F", "#451A03"] },
+  "chia seeds": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
+  "flax seeds": { emoji: "🌱", colors: ["#D97706", "#78350F"] },
+  "pumpkin seeds": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
+  "sunflower seeds": { emoji: "🌱", colors: ["#EAB308", "#854D0E"] },
+
+  // --- Supplements & Fitness Fuel ---
+  "whey protein": { emoji: "🥤", colors: ["#6366F1", "#312E81"] },
+  "casein protein": { emoji: "🥤", colors: ["#6366F1", "#312E81"] },
+  "plant protein": { emoji: "🥤", colors: ["#059669", "#064E3B"] },
+  "protein powder": { emoji: "🥤", colors: ["#6366F1", "#312E81"] },
+  "protein": { emoji: "💪", colors: ["#84CC16", "#3F6212"] },
+  "creatine": { emoji: "⚡", colors: ["#ADFF00", "#14532D"] },
+
+  // --- Beverages & Tea/Coffee ---
+  "indian chai": { emoji: "☕", colors: ["#B45309", "#78350F"] },
+  "chai": { emoji: "☕", colors: ["#B45309", "#78350F"] },
+  "tea": { emoji: "🍵", colors: ["#16A34A", "#14532D"] },
+  "black coffee": { emoji: "☕", colors: ["#78350F", "#451A03"] },
+  "filter coffee": { emoji: "☕", colors: ["#78350F", "#451A03"] },
+  "coffee": { emoji: "☕", colors: ["#78350F", "#451A03"] },
+  "green tea": { emoji: "🍵", colors: ["#16A34A", "#14532D"] },
+  "coconut water": { emoji: "🥥", colors: ["#0284C7", "#075985"] },
+  "ghee": { emoji: "🧈", colors: ["#EAB308", "#854D0E"] },
+  "dark chocolate": { emoji: "🍫", colors: ["#78350F", "#451A03"] },
+  "core meal": { emoji: "🍱", colors: ["#16A34A", "#14532D"] },
 };
 
-const SORTED_AVATAR_KEYS = Object.keys(FOOD_AVATAR_CONFIG).sort((a, b) => b.length - a.length);
+// Sort badge keys by descending length so multi-word keys match first
+const SORTED_BADGE_KEYS = Object.keys(FOOD_BADGE_MAP).sort((a, b) => b.length - a.length);
 
 /**
- * Creates a self-contained SVG Data URI avatar.
- * Requires 0 network calls and NEVER fails to load!
+ * Creates a self-contained, high-resolution SVG Data URI glassmorphic badge.
+ * 100% offline, zero network latency, zero broken image risk!
  */
-export function getFoodSvgAvatar(name?: string): string {
+export function getFoodSvgAvatar(name?: string, category?: string): string {
   const cleanName = (name || "").toLowerCase().trim();
-  let config = { emoji: "🍽️", colors: ["#374151", "#111827"] as [string, string] };
+  let config: BadgeConfig = { emoji: "🍽️", colors: ["#1E293B", "#0F172A"] };
 
-  for (const key of SORTED_AVATAR_KEYS) {
+  // 1. Specific dish or ingredient name match
+  for (const key of SORTED_BADGE_KEYS) {
     if (cleanName.includes(key)) {
-      config = FOOD_AVATAR_CONFIG[key];
+      config = FOOD_BADGE_MAP[key];
       break;
     }
   }
 
+  // 2. Category-based fallback if no specific food matched
+  if (config.emoji === "🍽️" && category) {
+    const catLower = category.toLowerCase().trim();
+    if (catLower.includes("protein") || catLower.includes("meat") || catLower.includes("chicken")) {
+      config = { emoji: "🍗", colors: ["#EA580C", "#9A3412"] };
+    } else if (catLower.includes("curry") || catLower.includes("dal")) {
+      config = { emoji: "🍲", colors: ["#EAB308", "#854D0E"] };
+    } else if (catLower.includes("bread") || catLower.includes("roti") || catLower.includes("grain")) {
+      config = { emoji: "🫓", colors: ["#B45309", "#78350F"] };
+    } else if (catLower.includes("dairy") || catLower.includes("curd")) {
+      config = { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] };
+    } else if (catLower.includes("breakfast")) {
+      config = { emoji: "🥞", colors: ["#D97706", "#78350F"] };
+    } else if (catLower.includes("fruit")) {
+      config = { emoji: "🍎", colors: ["#DC2626", "#7F1D1D"] };
+    } else if (catLower.includes("vegetable") || catLower.includes("sabzi")) {
+      config = { emoji: "🥗", colors: ["#16A34A", "#14532D"] };
+    }
+  }
+
+  // Generate crisp, dark glassmorphic SVG with subtle specular reflection & border
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
     <defs>
-      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="${config.colors[0]}"/>
         <stop offset="100%" stop-color="${config.colors[1]}"/>
       </linearGradient>
+      <radialGradient id="spec" cx="50%" cy="25%" r="60%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.22)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
     </defs>
-    <rect width="100" height="100" rx="28" fill="url(#g)"/>
-    <text x="50" y="60" font-size="44" text-anchor="middle" dominant-baseline="middle">${config.emoji}</text>
+    <!-- Dark Glass Container -->
+    <rect width="96" height="96" x="2" y="2" rx="26" fill="url(#bg)" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+    <!-- Specular Highlight -->
+    <rect width="96" height="48" x="2" y="2" rx="26" fill="url(#spec)"/>
+    <!-- Centered High-Res Emoji Glyph -->
+    <text x="50" y="56" font-size="44" text-anchor="middle" dominant-baseline="central" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.45));">${config.emoji}</text>
   </svg>`;
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
@@ -351,17 +311,11 @@ export function getFoodSvgAvatar(name?: string): string {
 export const DEFAULT_FOOD_IMAGE = getFoodSvgAvatar("food");
 
 export function getFoodImage(name?: string, category?: string, customImageUrl?: string): string {
-  if (customImageUrl && customImageUrl.startsWith("http") && !customImageUrl.includes("wikimedia.org")) {
+  // If a valid custom image URL is provided that is not an unreliable external third-party CDN
+  if (customImageUrl && customImageUrl.startsWith("http") && !customImageUrl.includes("unsplash.com") && !customImageUrl.includes("wikimedia.org")) {
     return customImageUrl;
   }
 
-  const cleanName = (name || "").toLowerCase().trim();
-  for (const key of SORTED_PHOTO_KEYS) {
-    if (cleanName.includes(key)) {
-      return FOOD_PHOTO_MAP[key];
-    }
-  }
-
-  // Fallback to SVG avatar if no match
-  return getFoodSvgAvatar(name);
+  // Unified Glassmorphic Icon Badge System (Option 1)
+  return getFoodSvgAvatar(name, category);
 }
