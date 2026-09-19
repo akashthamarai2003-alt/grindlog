@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Play, Pause, Maximize2, X, Sparkles, Target, Dumbbell } from "lucide-react";
 import { getExerciseAnimation, ExerciseAnimationInfo } from "@/lib/fitness/exercises/exercise-animations";
 import { motion, AnimatePresence } from "framer-motion";
+
+const SAFE_FALLBACK_GIF = "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/lever-chest-press.gif";
 
 interface ExerciseAnimationPlayerProps {
   name: string;
@@ -34,9 +36,18 @@ export function ExerciseAnimationPlayer({
   const [hasError, setHasError] = useState<boolean>(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState<boolean>(false);
 
+  // Synchronize state whenever the animation resolves or exercise changes
+  useEffect(() => {
+    setCurrentSrc(animation.gifUrl);
+    setHasError(false);
+    setIsLoading(true);
+  }, [animation.gifUrl]);
+
   const handleImageError = () => {
     if (currentSrc === animation.gifUrl && animation.secondaryGifUrl) {
       setCurrentSrc(animation.secondaryGifUrl);
+    } else if (currentSrc !== SAFE_FALLBACK_GIF) {
+      setCurrentSrc(SAFE_FALLBACK_GIF);
     } else {
       setHasError(true);
       setIsLoading(false);
