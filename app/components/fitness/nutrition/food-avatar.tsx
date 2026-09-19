@@ -19,7 +19,7 @@ export function FoodAvatar({
   style,
 }: FoodAvatarProps) {
   const photoUrl = getFoodImage(name, category, imageUrl);
-  const fallbackSvg = getFoodSvgAvatar(name);
+  const fallbackSvg = getFoodSvgAvatar(name, category);
   const [imgSrc, setImgSrc] = useState(photoUrl);
 
   useEffect(() => {

@@ -1,8 +1,8 @@
 /**
  * Unified Glassmorphic Food Icon Badge System (Option 1).
  * 
- * Provides 100% visual consistency, zero broken external links, 
- * instant 0ms load time, and full offline PWA resilience across GrindLog.
+ * Provides 100% visual consistency across ALL foods in GrindLog,
+ * zero broken external links, instant 0ms load time, and full offline PWA resilience.
  */
 
 interface BadgeConfig {
@@ -11,7 +11,7 @@ interface BadgeConfig {
 }
 
 const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
-  // --- Poultry & Chicken (Warm Flame & Tandoor Gradients) ---
+  // --- Poultry & Meats (Warm Flame, Tandoor & Crimson Gradients) ---
   "chicken breast": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
   "grilled chicken": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
   "chicken tikka": { emoji: "🍢", colors: ["#DC2626", "#7F1D1D"] },
@@ -20,8 +20,17 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "chicken keema": { emoji: "🥘", colors: ["#EA580C", "#7C2D12"] },
   "chicken biryani": { emoji: "🍗", colors: ["#D97706", "#7C2D12"] },
   "chicken": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
+  "turkey": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
+  "duck": { emoji: "🍗", colors: ["#EA580C", "#9A3412"] },
   "mutton curry": { emoji: "🥩", colors: ["#B91C1C", "#450A0A"] },
   "mutton": { emoji: "🥩", colors: ["#B91C1C", "#450A0A"] },
+  "beef": { emoji: "🥩", colors: ["#B91C1C", "#450A0A"] },
+  "steak": { emoji: "🥩", colors: ["#B91C1C", "#450A0A"] },
+  "pork": { emoji: "🥩", colors: ["#B91C1C", "#450A0A"] },
+  "lamb": { emoji: "🥩", colors: ["#B91C1C", "#450A0A"] },
+  "bacon": { emoji: "🥓", colors: ["#B91C1C", "#450A0A"] },
+  "sausage": { emoji: "🌭", colors: ["#EA580C", "#9A3412"] },
+  "meat": { emoji: "🥩", colors: ["#B91C1C", "#450A0A"] },
 
   // --- Eggs & Egg Whites (Golden Yolk Gradients) ---
   "boiled egg white": { emoji: "🥚", colors: ["#D97706", "#78350F"] },
@@ -36,7 +45,7 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "egg biryani": { emoji: "🥚", colors: ["#D97706", "#7C2D12"] },
   "egg": { emoji: "🥚", colors: ["#F59E0B", "#B45309"] },
 
-  // --- Fish & Seafood (Ocean Cyan & Deep Blue Gradients) ---
+  // --- Fish & Seafood (Ocean Cyan & Deep Marine Gradients) ---
   "fish curry": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
   "grilled fish": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
   "fish fry": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
@@ -44,9 +53,13 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "canned tuna": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
   "tuna": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
   "prawn": { emoji: "🦐", colors: ["#EA580C", "#7C2D12"] },
+  "shrimp": { emoji: "🦐", colors: ["#EA580C", "#7C2D12"] },
+  "crab": { emoji: "🦀", colors: ["#EA580C", "#7C2D12"] },
+  "lobster": { emoji: "🦞", colors: ["#EA580C", "#7C2D12"] },
   "fish": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
+  "seafood": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
 
-  // --- Soy & Plant Protein (Rich Emerald Protein Gradients - NO garden sprout!) ---
+  // --- Soy & Plant Protein (Rich Emerald Protein Gradients - NO sprout in dirt!) ---
   "soya chunks curry": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
   "soya chunks": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
   "soya chunk": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
@@ -57,6 +70,7 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "tofu scramble": { emoji: "🍳", colors: ["#EAB308", "#854D0E"] },
   "tofu": { emoji: "🥗", colors: ["#059669", "#064E3B"] },
   "tempeh": { emoji: "🥗", colors: ["#059669", "#064E3B"] },
+  "edamame": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
   "soy": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
 
   // --- Paneer & Dairy (Golden Dairy & Ice Cyan Gradients) ---
@@ -71,6 +85,10 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "fresh paneer": { emoji: "🧀", colors: ["#EAB308", "#A16207"] },
   "low fat paneer": { emoji: "🧀", colors: ["#EAB308", "#A16207"] },
   "paneer": { emoji: "🧀", colors: ["#EAB308", "#A16207"] },
+  "cheese": { emoji: "🧀", colors: ["#D97706", "#78350F"] },
+  "cottage cheese": { emoji: "🧀", colors: ["#EAB308", "#A16207"] },
+  "cheddar": { emoji: "🧀", colors: ["#D97706", "#78350F"] },
+  "mozzarella": { emoji: "🧀", colors: ["#D97706", "#78350F"] },
 
   "greek yogurt": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
   "curd (plain)": { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] },
@@ -103,6 +121,7 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "chilla": { emoji: "🥞", colors: ["#EAB308", "#854D0E"] },
   "khichdi": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
   "lentils": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
+  "lentil": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
   "dal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
 
   "chickpeas (chana masala)": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
@@ -114,6 +133,9 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "chana": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
   "rajma": { emoji: "🍛", colors: ["#991B1B", "#450A0A"] },
   "lobia": { emoji: "🍛", colors: ["#991B1B", "#450A0A"] },
+  "black beans": { emoji: "🫘", colors: ["#4B5563", "#111827"] },
+  "kidney beans": { emoji: "🫘", colors: ["#991B1B", "#450A0A"] },
+  "beans": { emoji: "🫘", colors: ["#991B1B", "#450A0A"] },
   "sambar": { emoji: "🥘", colors: ["#EA580C", "#7C2D12"] },
   "rasam": { emoji: "🥘", colors: ["#EA580C", "#7C2D12"] },
 
@@ -128,11 +150,18 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "gobi paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
   "plain paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
   "paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "naan": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "kulcha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
   "poori": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
   "whole wheat bread": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
   "brown bread": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
   "bread": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
   "toast": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
+  "sandwich": { emoji: "🥪", colors: ["#B45309", "#78350F"] },
+  "burger": { emoji: "🍔", colors: ["#B45309", "#78350F"] },
+  "wrap": { emoji: "🌯", colors: ["#B45309", "#78350F"] },
+  "roll": { emoji: "🌯", colors: ["#B45309", "#78350F"] },
+  "pizza": { emoji: "🍕", colors: ["#EA580C", "#7C2D12"] },
 
   // --- Rice & Grains (Aromatic Rice & Breakfast Grains) ---
   "white rice": { emoji: "🍚", colors: ["#4B5563", "#1F2937"] },
@@ -149,15 +178,22 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "pongal": { emoji: "🍲", colors: ["#EAB308", "#854D0E"] },
   "idli": { emoji: "⚪", colors: ["#4B5563", "#111827"] },
   "medu vada": { emoji: "🥯", colors: ["#D97706", "#78350F"] },
+  "vada": { emoji: "🥯", colors: ["#D97706", "#78350F"] },
   "masala dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
   "plain dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
   "dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
+  "pasta": { emoji: "🍝", colors: ["#D97706", "#78350F"] },
+  "noodles": { emoji: "🍜", colors: ["#D97706", "#78350F"] },
+  "noodle": { emoji: "🍜", colors: ["#D97706", "#78350F"] },
+  "maggi": { emoji: "🍜", colors: ["#D97706", "#78350F"] },
   "overnight oats": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
   "oats with milk": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
   "masala oats": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
   "oats": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
   "quinoa": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
   "daliya": { emoji: "🥣", colors: ["#D97706", "#92400E"] },
+  "cereal": { emoji: "🥣", colors: ["#CA8A04", "#713F12"] },
+  "cornflakes": { emoji: "🥣", colors: ["#EAB308", "#854D0E"] },
 
   // --- Vegetables & Sabzi (Lush Garden Greens) ---
   "boiled spinach": { emoji: "🥬", colors: ["#16A34A", "#14532D"] },
@@ -172,8 +208,11 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "mixed vegetables": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
   "mixed vegetable": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
   "green salad": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
+  "sprouts": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
   "salad": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
   "vegetable": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
+  "sabzi": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
+  "avocado": { emoji: "🥑", colors: ["#16A34A", "#14532D"] },
   "aloo sabzi": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
   "aloo gobi": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
   "boiled potato": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
@@ -181,13 +220,20 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "potato": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
   "aloo": { emoji: "🥔", colors: ["#B45309", "#78350F"] },
   "bhindi masala": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
+  "bhindi": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
   "baingan bharta": { emoji: "🍆", colors: ["#7C3AED", "#4C1D95"] },
+  "baingan": { emoji: "🍆", colors: ["#7C3AED", "#4C1D95"] },
+  "eggplant": { emoji: "🍆", colors: ["#7C3AED", "#4C1D95"] },
   "mushroom masala": { emoji: "🍄", colors: ["#78350F", "#451A03"] },
   "mushroom": { emoji: "🍄", colors: ["#78350F", "#451A03"] },
   "tomatoes": { emoji: "🍅", colors: ["#DC2626", "#7F1D1D"] },
   "tomato": { emoji: "🍅", colors: ["#DC2626", "#7F1D1D"] },
   "carrots": { emoji: "🥕", colors: ["#EA580C", "#9A3412"] },
   "carrot": { emoji: "🥕", colors: ["#EA580C", "#9A3412"] },
+  "capsicum": { emoji: "🫑", colors: ["#16A34A", "#14532D"] },
+  "onion": { emoji: "🧅", colors: ["#78350F", "#451A03"] },
+  "garlic": { emoji: "🧄", colors: ["#4B5563", "#1F2937"] },
+  "ginger": { emoji: "🧄", colors: ["#78350F", "#451A03"] },
 
   // --- Fruits & Berries ---
   "banana": { emoji: "🍌", colors: ["#EAB308", "#854D0E"] },
@@ -198,9 +244,14 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "pomegranate": { emoji: "🍎", colors: ["#991B1B", "#450A0A"] },
   "orange": { emoji: "🍊", colors: ["#EA580C", "#9A3412"] },
   "grapes": { emoji: "🍇", colors: ["#7C3AED", "#4C1D95"] },
+  "strawberry": { emoji: "🍓", colors: ["#DC2626", "#7F1D1D"] },
+  "blueberry": { emoji: "🫐", colors: ["#7C3AED", "#4C1D95"] },
+  "berry": { emoji: "🫐", colors: ["#7C3AED", "#4C1D95"] },
   "kiwi": { emoji: "🥝", colors: ["#16A34A", "#14532D"] },
   "guava": { emoji: "🍈", colors: ["#16A34A", "#14532D"] },
   "pineapple": { emoji: "🍍", colors: ["#EAB308", "#854D0E"] },
+  "lemon": { emoji: "🍋", colors: ["#EAB308", "#854D0E"] },
+  "lime": { emoji: "🍋", colors: ["#16A34A", "#14532D"] },
   "dates": { emoji: "🌰", colors: ["#78350F", "#451A03"] },
   "raisins": { emoji: "🍇", colors: ["#78350F", "#451A03"] },
   "fruit": { emoji: "🍎", colors: ["#DC2626", "#7F1D1D"] },
@@ -217,20 +268,27 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "almonds": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
   "almond": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
   "cashews": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "cashew": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
   "walnuts": { emoji: "🌰", colors: ["#78350F", "#451A03"] },
   "walnut": { emoji: "🌰", colors: ["#78350F", "#451A03"] },
+  "pistachio": { emoji: "🥜", colors: ["#16A34A", "#14532D"] },
   "chia seeds": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
   "flax seeds": { emoji: "🌱", colors: ["#D97706", "#78350F"] },
   "pumpkin seeds": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
   "sunflower seeds": { emoji: "🌱", colors: ["#EAB308", "#854D0E"] },
+  "nuts": { emoji: "🥜", colors: ["#D97706", "#78350F"] },
+  "seeds": { emoji: "🌱", colors: ["#16A34A", "#14532D"] },
 
   // --- Supplements & Fitness Fuel ---
   "whey protein": { emoji: "🥤", colors: ["#6366F1", "#312E81"] },
   "casein protein": { emoji: "🥤", colors: ["#6366F1", "#312E81"] },
   "plant protein": { emoji: "🥤", colors: ["#059669", "#064E3B"] },
   "protein powder": { emoji: "🥤", colors: ["#6366F1", "#312E81"] },
+  "protein bar": { emoji: "🍫", colors: ["#78350F", "#451A03"] },
   "protein": { emoji: "💪", colors: ["#84CC16", "#3F6212"] },
   "creatine": { emoji: "⚡", colors: ["#ADFF00", "#14532D"] },
+  "pre workout": { emoji: "⚡", colors: ["#ADFF00", "#14532D"] },
+  "bcaa": { emoji: "⚡", colors: ["#ADFF00", "#14532D"] },
 
   // --- Beverages & Tea/Coffee ---
   "indian chai": { emoji: "☕", colors: ["#B45309", "#78350F"] },
@@ -241,8 +299,23 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "coffee": { emoji: "☕", colors: ["#78350F", "#451A03"] },
   "green tea": { emoji: "🍵", colors: ["#16A34A", "#14532D"] },
   "coconut water": { emoji: "🥥", colors: ["#0284C7", "#075985"] },
+  "water": { emoji: "💧", colors: ["#0284C7", "#075985"] },
+  "juice": { emoji: "🧃", colors: ["#EA580C", "#9A3412"] },
+  "shake": { emoji: "🥤", colors: ["#6366F1", "#312E81"] },
+  "smoothie": { emoji: "🥤", colors: ["#6366F1", "#312E81"] },
+
+  // --- Fats, Oils & Sweets ---
+  "olive oil": { emoji: "🫒", colors: ["#16A34A", "#14532D"] },
+  "mustard oil": { emoji: "🫒", colors: ["#CA8A04", "#713F12"] },
+  "oil": { emoji: "🫒", colors: ["#CA8A04", "#713F12"] },
   "ghee": { emoji: "🧈", colors: ["#EAB308", "#854D0E"] },
+  "butter": { emoji: "🧈", colors: ["#EAB308", "#854D0E"] },
+  "honey": { emoji: "🍯", colors: ["#D97706", "#78350F"] },
   "dark chocolate": { emoji: "🍫", colors: ["#78350F", "#451A03"] },
+  "chocolate": { emoji: "🍫", colors: ["#78350F", "#451A03"] },
+  "ice cream": { emoji: "🍨", colors: ["#0284C7", "#0C4A6E"] },
+  "cookie": { emoji: "🍪", colors: ["#B45309", "#78350F"] },
+  "biscuit": { emoji: "🍪", colors: ["#B45309", "#78350F"] },
   "core meal": { emoji: "🍱", colors: ["#16A34A", "#14532D"] },
 };
 
@@ -268,20 +341,26 @@ export function getFoodSvgAvatar(name?: string, category?: string): string {
   // 2. Category-based fallback if no specific food matched
   if (config.emoji === "🍽️" && category) {
     const catLower = category.toLowerCase().trim();
-    if (catLower.includes("protein") || catLower.includes("meat") || catLower.includes("chicken")) {
+    if (catLower.includes("protein") || catLower.includes("meat") || catLower.includes("chicken") || catLower.includes("poultry")) {
       config = { emoji: "🍗", colors: ["#EA580C", "#9A3412"] };
-    } else if (catLower.includes("curry") || catLower.includes("dal")) {
+    } else if (catLower.includes("fish") || catLower.includes("seafood")) {
+      config = { emoji: "🐟", colors: ["#0284C7", "#075985"] };
+    } else if (catLower.includes("curry") || catLower.includes("dal") || catLower.includes("soup") || catLower.includes("gravy")) {
       config = { emoji: "🍲", colors: ["#EAB308", "#854D0E"] };
-    } else if (catLower.includes("bread") || catLower.includes("roti") || catLower.includes("grain")) {
+    } else if (catLower.includes("bread") || catLower.includes("roti") || catLower.includes("grain") || catLower.includes("cereal") || catLower.includes("bakery")) {
       config = { emoji: "🫓", colors: ["#B45309", "#78350F"] };
-    } else if (catLower.includes("dairy") || catLower.includes("curd")) {
+    } else if (catLower.includes("dairy") || catLower.includes("curd") || catLower.includes("milk") || catLower.includes("cheese")) {
       config = { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] };
-    } else if (catLower.includes("breakfast")) {
+    } else if (catLower.includes("breakfast") || catLower.includes("tiffin")) {
       config = { emoji: "🥞", colors: ["#D97706", "#78350F"] };
-    } else if (catLower.includes("fruit")) {
+    } else if (catLower.includes("fruit") || catLower.includes("berry")) {
       config = { emoji: "🍎", colors: ["#DC2626", "#7F1D1D"] };
-    } else if (catLower.includes("vegetable") || catLower.includes("sabzi")) {
+    } else if (catLower.includes("vegetable") || catLower.includes("sabzi") || catLower.includes("produce") || catLower.includes("salad")) {
       config = { emoji: "🥗", colors: ["#16A34A", "#14532D"] };
+    } else if (catLower.includes("snack") || catLower.includes("nut") || catLower.includes("seed")) {
+      config = { emoji: "🥜", colors: ["#D97706", "#78350F"] };
+    } else if (catLower.includes("supplement") || catLower.includes("drink") || catLower.includes("beverage")) {
+      config = { emoji: "🥤", colors: ["#6366F1", "#312E81"] };
     }
   }
 
@@ -311,11 +390,11 @@ export function getFoodSvgAvatar(name?: string, category?: string): string {
 export const DEFAULT_FOOD_IMAGE = getFoodSvgAvatar("food");
 
 export function getFoodImage(name?: string, category?: string, customImageUrl?: string): string {
-  // If a valid custom image URL is provided that is not an unreliable external third-party CDN
-  if (customImageUrl && customImageUrl.startsWith("http") && !customImageUrl.includes("unsplash.com") && !customImageUrl.includes("wikimedia.org")) {
+  // Only use customImageUrl if it is an explicit user photo upload from storage (user meal camera scans)
+  if (customImageUrl && (customImageUrl.includes('/meal-scans/') || customImageUrl.includes('/user-uploads/') || customImageUrl.startsWith('blob:'))) {
     return customImageUrl;
   }
 
-  // Unified Glassmorphic Icon Badge System (Option 1)
+  // 100% of ALL food items in the database, search results, planned meals, and logs use the Unified Glassmorphic Icon Badge System
   return getFoodSvgAvatar(name, category);
 }
