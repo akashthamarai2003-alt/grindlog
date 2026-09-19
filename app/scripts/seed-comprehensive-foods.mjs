@@ -18,12 +18,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export const VERIFIED_FOODS = [
   // ==========================================
-  // 1. HIGH PROTEIN & SUPPLEMENTS
+  // 1. HIGH PROTEIN WHOLE FOODS (100% NATURAL)
   // ==========================================
-  { name: "Whey Protein Isolate", category: "Protein", serving_size: "1 scoop (33g)", calories: 120, protein: 27.0, carbs: 1.0, fat: 0.5, estimated_cost: 70.0, diet_type: "veg", is_pg_friendly: true },
-  { name: "Whey Protein Concentrate", category: "Protein", serving_size: "1 scoop (33g)", calories: 130, protein: 24.0, carbs: 3.0, fat: 2.0, estimated_cost: 55.0, diet_type: "veg", is_pg_friendly: true },
-  { name: "Plant Protein (Pea & Brown Rice)", category: "Protein", serving_size: "1 scoop (33g)", calories: 125, protein: 25.0, carbs: 2.0, fat: 1.5, estimated_cost: 60.0, diet_type: "vegan", is_pg_friendly: true },
-  { name: "Casein Protein Powder", category: "Protein", serving_size: "1 scoop (33g)", calories: 120, protein: 24.0, carbs: 2.0, fat: 1.0, estimated_cost: 75.0, diet_type: "veg", is_pg_friendly: true },
   { name: "Boiled Egg White", category: "Protein", serving_size: "1 large (33g)", calories: 17, protein: 3.6, carbs: 0.2, fat: 0.1, estimated_cost: 6.0, diet_type: "eggetarian", is_pg_friendly: true },
   { name: "Boiled Egg (Whole)", category: "Protein", serving_size: "1 large (50g)", calories: 78, protein: 6.3, carbs: 0.6, fat: 5.3, estimated_cost: 10.0, diet_type: "eggetarian", is_pg_friendly: true },
   { name: "Scrambled Eggs", category: "Protein", serving_size: "2 eggs (100g)", calories: 160, protein: 13.0, carbs: 1.5, fat: 11.0, estimated_cost: 25.0, diet_type: "eggetarian", is_pg_friendly: true },
@@ -204,8 +200,7 @@ export const VERIFIED_FOODS = [
   { name: "Black Coffee", category: "Snack", serving_size: "1 cup (200ml)", calories: 2, protein: 0.3, carbs: 0.0, fat: 0.0, estimated_cost: 10.0, diet_type: "vegan", is_pg_friendly: true },
   { name: "Indian Chai with Milk", category: "Snack", serving_size: "1 cup (150ml)", calories: 75, protein: 3.0, carbs: 9.0, fat: 3.0, estimated_cost: 10.0, diet_type: "veg", is_pg_friendly: true },
   { name: "Filter Coffee with Milk", category: "Snack", serving_size: "1 cup (150ml)", calories: 90, protein: 3.5, carbs: 11.0, fat: 3.5, estimated_cost: 15.0, diet_type: "veg", is_pg_friendly: true },
-  { name: "Tender Coconut Water", category: "Snack", serving_size: "1 coconut (250ml)", calories: 48, protein: 1.5, carbs: 9.0, fat: 0.5, estimated_cost: 40.0, diet_type: "vegan", is_pg_friendly: true },
-  { name: "Whey Protein Shake (with Water)", category: "Protein", serving_size: "300ml shake", calories: 125, protein: 25.0, carbs: 2.0, fat: 1.0, estimated_cost: 60.0, diet_type: "veg", is_pg_friendly: true }
+  { name: "Tender Coconut Water", category: "Snack", serving_size: "1 coconut (250ml)", calories: 48, protein: 1.5, carbs: 9.0, fat: 0.5, estimated_cost: 40.0, diet_type: "vegan", is_pg_friendly: true }
 ];
 
 async function seed() {

@@ -16,11 +16,7 @@ INSERT INTO public.foods (
     name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, is_active,
     source_name, verification_status, nutrition_verified, dietary_classification_verified, cost_verification_status, plan_eligible
 ) VALUES 
-    -- 1. Proteins & Supplements
-    ('Whey Protein Isolate', 'Protein', '1 scoop (33g)', 120, 27.0, 1.0, 0.5, 70.0, 'veg', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
-    ('Whey Protein Concentrate', 'Protein', '1 scoop (33g)', 130, 24.0, 3.0, 2.0, 55.0, 'veg', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
-    ('Plant Protein (Pea & Brown Rice)', 'Protein', '1 scoop (33g)', 125, 25.0, 2.0, 1.5, 60.0, 'vegan', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
-    ('Casein Protein Powder', 'Protein', '1 scoop (33g)', 120, 24.0, 2.0, 1.0, 75.0, 'veg', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
+    -- 1. High Protein Whole Foods (100% Natural)
     ('Boiled Egg White', 'Protein', '1 large (33g)', 17, 3.6, 0.2, 0.1, 6.0, 'eggetarian', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
     ('Boiled Egg (Whole)', 'Protein', '1 large (50g)', 78, 6.3, 0.6, 5.3, 10.0, 'eggetarian', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
     ('Scrambled Eggs', 'Protein', '2 eggs (100g)', 160, 13.0, 1.5, 11.0, 25.0, 'eggetarian', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
@@ -183,8 +179,7 @@ INSERT INTO public.foods (
     ('Black Coffee', 'Snack', '1 cup (200ml)', 2, 0.3, 0.0, 0.0, 10.0, 'vegan', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
     ('Indian Chai with Milk', 'Snack', '1 cup (150ml)', 75, 3.0, 9.0, 3.0, 10.0, 'veg', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
     ('Filter Coffee with Milk', 'Snack', '1 cup (150ml)', 90, 3.5, 11.0, 3.5, 15.0, 'veg', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
-    ('Tender Coconut Water', 'Snack', '1 coconut (250ml)', 48, 1.5, 9.0, 0.5, 40.0, 'vegan', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true),
-    ('Whey Protein Shake (with Water)', 'Protein', '300ml shake', 125, 25.0, 2.0, 1.0, 60.0, 'veg', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true)
+    ('Tender Coconut Water', 'Snack', '1 coconut (250ml)', 48, 1.5, 9.0, 0.5, 40.0, 'vegan', true, true, 'ICMR-NIN / USDA', 'approved_for_plans', true, true, 'curated_estimate', true)
 ON CONFLICT (name) DO UPDATE SET
     category = EXCLUDED.category,
     serving_size = EXCLUDED.serving_size,

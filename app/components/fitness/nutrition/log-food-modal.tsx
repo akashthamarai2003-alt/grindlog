@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Search, X, Loader2, Check, Plus, Minus, ChevronLeft } from "lucide-react";
+import { Search, X, Loader2, Check, Plus, Minus, ChevronLeft, Sparkles } from "lucide-react";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { toast } from "sonner";
 import { FoodAvatar } from "./food-avatar";
@@ -103,6 +103,17 @@ export function LogFoodModal({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
+
+  // Strictly filter out any whey or artificial supplements from display
+  const sanitizedResults = useMemo(() => {
+    return (results || []).filter(food => 
+      !/\b(whey|casein|protein\s*powder|isolate|concentrate|mass\s*gainer|creatine|bcaa|pre[- ]workout|supplement|collagen)\b/i.test(food.name)
+    );
+  }, [results]);
+
+  const isSupplementSearch = useMemo(() => {
+    return /\b(?:whey|casein|protein\s*powder|mass\s*gainer|creatine|bcaa|pre[- ]workout|supplement)\b/i.test(search);
+  }, [search]);
 
   const fetchFoods = async (q: string, cat?: string, dietMode?: 'onboarding' | 'all') => {
     setIsSearching(true);
@@ -548,12 +559,50 @@ export function LogFoodModal({
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
                 <input
                   type="text"
-                  placeholder="Search foods (e.g. Eggs, Oats, Whey, Chicken)..."
+                  placeholder="Search 100% natural foods (e.g. Eggs, Oats, Paneer, Chicken)..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm outline-none focus:border-[#ADFF00]/50 focus:bg-white/10 transition-all"
                 />
               </div>
+
+              {/* 100% Natural Whole Foods Callout when user searches for supplements */}
+              {isSupplementSearch && (
+                <div className="bg-[#0D150D] border border-[#ADFF00]/30 rounded-2xl p-3.5 mb-3 shadow-[0_0_15px_rgba(173,255,0,0.05)] animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2 text-[#ADFF00] font-bold text-xs uppercase tracking-wider mb-1">
+                    <Sparkles size={14} className="shrink-0" />
+                    <span>100% Natural Whole Foods Mandate</span>
+                  </div>
+                  <p className="text-xs text-white/80 leading-relaxed">
+                    GrindLog is strictly powered by 100% real, natural whole foods. No artificial protein powders or chemical supplements needed!
+                  </p>
+                  <p className="text-[11px] text-white/50 mt-1">
+                    Fuel your goals naturally with these verified high-protein foods:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-2.5">
+                    {[
+                      { label: 'Eggs', q: 'egg' },
+                      { label: 'Paneer', q: 'paneer' },
+                      { label: 'Chicken Breast', q: 'chicken' },
+                      { label: 'Soya Chunks', q: 'soya' },
+                      { label: 'Curd / Yogurt', q: 'curd' },
+                      { label: 'Moong Dal', q: 'dal' },
+                    ].map(item => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => {
+                          setSearch(item.q);
+                          fetchFoods(item.q, selectedCategory, dietFilter);
+                        }}
+                        className="px-2.5 py-1 bg-white/10 hover:bg-[#ADFF00]/20 hover:text-[#ADFF00] border border-white/10 hover:border-[#ADFF00]/40 rounded-xl text-xs font-semibold text-white/90 transition-all cursor-pointer"
+                      >
+                        + {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Category Filter Pills */}
               <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 mb-3">
@@ -582,7 +631,7 @@ export function LogFoodModal({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {results.map(food => (
+                  {sanitizedResults.map(food => (
                     <button
                       key={food.id || food.name}
                       onClick={() => setSelectedFood(food)}
@@ -622,9 +671,13 @@ export function LogFoodModal({
                     </button>
                   ))}
 
-                  {results.length === 0 && !isSearching && (
+                  {sanitizedResults.length === 0 && !isSearching && (
                     <div className="text-center py-10 text-white/40 text-sm">
-                      No foods found for &quot;{search}&quot;.
+                      {isSupplementSearch ? (
+                        <span>No artificial supplements in GrindLog database. Choose a 100% natural protein source above!</span>
+                      ) : (
+                        <span>No foods found for &quot;{search}&quot;.</span>
+                      )}
                     </div>
                   )}
                 </div>

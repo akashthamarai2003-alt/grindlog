@@ -32,11 +32,17 @@ export async function GET(request: Request) {
     const isPureVeg = (rawDiet.includes('veg') || rawDiet.includes('vegetarian')) && !rawDiet.includes('non') && !rawDiet.includes('egg') && !isVegan;
     const isNonVeg = rawDiet.includes('non') || rawDiet.includes('meat');
 
-    // 1. Build database query for verified foods
+    // 1. Build database query for verified foods (Strict 100% Whole Foods Mandate)
     let dbQuery = supabase
       .from('foods')
       .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, source_name')
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .not('name', 'ilike', '%whey%')
+      .not('name', 'ilike', '%casein%')
+      .not('name', 'ilike', '%protein powder%')
+      .not('name', 'ilike', '%mass gainer%')
+      .not('name', 'ilike', '%creatine%')
+      .not('name', 'ilike', '%bcaa%');
 
     // Apply strict onboarding dietary filter unless explicitly overridden with diet=all
     if (dietParam !== 'all') {
@@ -80,19 +86,22 @@ export async function GET(request: Request) {
       source_name: f.source_name || 'ICMR-NIN / USDA Verified'
     }));
 
-    // 3. Filter external Open Food Facts by user's diet if active
-    let filteredExternal = externalResult;
+    // 3. Filter external Open Food Facts by user's diet and strict supplement ban
+    let filteredExternal = (externalResult || []).filter(item =>
+      !/\b(whey|casein|protein\s*powder|isolate|concentrate|mass\s*gainer|creatine|bcaa|pre[- ]workout|supplement|collagen)\b/i.test(item.name)
+    );
+
     if (dietParam !== 'all') {
       if (isVegan || dietParam === 'vegan') {
-        filteredExternal = externalResult.filter(item => 
-          !/\b(milk|whey|curd|cheese|paneer|egg|chicken|meat|fish|beef|pork|mutton)\b/i.test(item.name)
+        filteredExternal = filteredExternal.filter(item => 
+          !/\b(milk|curd|cheese|paneer|egg|chicken|meat|fish|beef|pork|mutton)\b/i.test(item.name)
         );
       } else if (isPureVeg || dietParam === 'veg') {
-        filteredExternal = externalResult.filter(item => 
+        filteredExternal = filteredExternal.filter(item => 
           !/\b(chicken|meat|fish|egg|beef|pork|mutton|salmon|tuna|prawn)\b/i.test(item.name)
         );
       } else if (isEggetarian || dietParam === 'eggetarian') {
-        filteredExternal = externalResult.filter(item => 
+        filteredExternal = filteredExternal.filter(item => 
           !/\b(chicken|meat|fish|beef|pork|mutton|salmon|tuna|prawn)\b/i.test(item.name)
         );
       }

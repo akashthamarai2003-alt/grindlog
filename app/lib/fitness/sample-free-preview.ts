@@ -1,4 +1,4 @@
-﻿export const SAMPLE_FREE_PLAN = {
+export const SAMPLE_FREE_PLAN = {
   id: "free-preview-plan",
   name: "Upper / Lower Strength & Hypertrophy",
   description: "Preview sample plan designed to build foundational strength, lean muscle mass, and metabolic stamina.",
@@ -16,15 +16,15 @@
       meals: [
         {
           meal_type: "breakfast",
-          name: "High-Protein Oats & Whey",
+          name: "High-Protein Oatmeal with Greek Yogurt & Chia",
           calories: 520,
-          protein: 38,
-          carbs: 65,
+          protein: 36,
+          carbs: 68,
           fat: 12,
           items: [
             { name: "Rolled Oats", quantity: "80g", calories: 300, protein: 10, carbs: 54, fat: 5 },
-            { name: "Whey Protein Isolate", quantity: "1 scoop", calories: 120, protein: 25, carbs: 2, fat: 1 },
-            { name: "Almond Butter", quantity: "1 tbsp", calories: 100, protein: 3, carbs: 9, fat: 6 }
+            { name: "Greek Yogurt (Plain)", quantity: "1 cup (200g)", calories: 130, protein: 20, carbs: 7, fat: 1 },
+            { name: "Chia Seeds & Honey", quantity: "1 tbsp", calories: 90, protein: 6, carbs: 7, fat: 6 }
           ]
         },
         {

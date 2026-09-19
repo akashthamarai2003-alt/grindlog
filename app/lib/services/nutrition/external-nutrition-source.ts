@@ -71,6 +71,11 @@ export async function searchOpenFoodFacts(query: string, limit: number = 8): Pro
         ? `${rawName.trim()} (${brand})`
         : rawName.trim();
 
+      // 100% Natural Whole Foods Mandate: Skip artificial supplements and powders
+      if (/\b(whey|casein|protein\s*powder|isolate|concentrate|mass\s*gainer|creatine|bcaa|pre[- ]workout|supplement|collagen)\b/i.test(cleanName)) {
+        continue;
+      }
+
       const image = prod.image_front_small_url || prod.image_front_url || prod.image_url || undefined;
 
       // Classify category
