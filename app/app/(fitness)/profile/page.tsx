@@ -19,6 +19,7 @@ export default async function FitnessProfilePage() {
   const [
     { data: fitnessProfile },
     { data: mainProfile },
+    { data: activePlan },
     subscriptionPlan,
     aiLimitInfo,
   ] = await Promise.all([
@@ -31,6 +32,12 @@ export default async function FitnessProfilePage() {
       .from("profiles")
       .select("*")
       .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("fitness_os_workout_plans")
+      .select("id, name, description, status")
+      .eq("user_id", user.id)
+      .eq("status", "active")
       .maybeSingle(),
     getFitnessPlan(user.id),
     checkFitnessAILimit(supabase, user.id),
@@ -70,7 +77,7 @@ export default async function FitnessProfilePage() {
       user={user}
       fitnessProfile={fitnessProfile || {}}
       mainProfile={mainProfile || {}}
-      activePlan={null}
+      activePlan={activePlan || null}
       subscriptionPlan={subscriptionPlan}
       aiLimitInfo={aiLimitInfo}
     />

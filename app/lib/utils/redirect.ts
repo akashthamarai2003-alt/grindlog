@@ -31,11 +31,20 @@ export function getSafeRedirect(redirect: string | null): string {
     return "/";
   }
 
+  // /report and /onboarding are one-time onboarding stages. Returning users logging in
+  // or redirected from auth should always land on their main dashboard.
+  if (
+    parsed.pathname === "/report" ||
+    parsed.pathname === "/onboarding" ||
+    parsed.pathname.startsWith("/report/") ||
+    parsed.pathname.startsWith("/onboarding/")
+  ) {
+    return "/";
+  }
+
   // Only allow real in-app destinations. Payment is deliberately excluded so
   // a return link can never create a payment-page loop.
   const allowedBasePaths = [
-    "/onboarding",
-    "/report",
     "/plan-setup",
     "/roadmap",
     "/profile",

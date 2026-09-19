@@ -108,7 +108,8 @@ function SignInContent() {
       try {
         localStorage.setItem("grindlog_has_seen_onboarding", "true");
       } catch (e) {}
-      router.push(safeRedirect);
+      const targetUrl = (safeRedirect === "/report" || safeRedirect === "/onboarding") ? "/" : safeRedirect;
+      window.location.href = targetUrl;
     } else {
       const rawError = result.error || "";
       if (rawError.toLowerCase().includes("invalid login credentials")) {

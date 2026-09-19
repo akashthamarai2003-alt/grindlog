@@ -36,9 +36,9 @@ export default async function OnboardingPage({
     }
   }
 
-  // Only redirect to report if onboarding is completed AND user is NOT explicitly trying to edit/retake it
+  // Returning users who already completed onboarding belong on their dashboard
   if (profile?.onboarding_completed && !isEditing) {
-    redirect("/report");
+    redirect("/");
   }
 
   return <OnboardingFlow initialData={profile || {}} sessionId={crypto.randomUUID()} />;

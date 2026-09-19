@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
 import { Suspense } from 'react';
@@ -67,7 +68,34 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       return null;
     }),
   ]);
-  if (!profile?.onboarding_completed) {
+  let userProfile = profile;
+  let userPlan = plan;
+
+  const subscriptionPlan = subscriptionState?.plan;
+  const isFreeUser = !subscriptionPlan || subscriptionPlan.id === "free";
+
+  // Fallback to admin client if user client did not find profile or active plan
+  // (guards against session/cookie replication latency after sign-in)
+  if (!userProfile?.onboarding_completed || (!userPlan && !isFreeUser)) {
+    const admin = createAdminClient();
+    const [adminProfileRes, adminPlanRes] = await Promise.all([
+      !userProfile?.onboarding_completed
+        ? admin.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      !userPlan && !isFreeUser
+        ? admin.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+    if (adminProfileRes.data?.onboarding_completed) {
+      userProfile = adminProfileRes.data;
+    }
+    if (adminPlanRes.data) {
+      userPlan = adminPlanRes.data;
+    }
+  }
+
+  if (!userProfile?.onboarding_completed) {
     redirect("/onboarding");
   }
 
@@ -75,22 +103,14 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     ? (workoutsForDate.find((w: any) => w.status === "completed") || workoutsForDate[0] || null)
     : workoutsForDate;
 
-  const subscriptionPlan = subscriptionState?.plan;
-  const isFreeUser = !subscriptionPlan || subscriptionPlan.id === "free";
-
   // For paid users who haven't reviewed/locked in their plan yet, direct them to /plan-setup
-  if (!isFreeUser && !plan) {
+  if (!isFreeUser && !userPlan) {
     redirect("/plan-setup");
-  }
-
-  // Users who finished onboarding but haven't generated/unlocked an active plan belong on /report
-  if (!plan) {
-    redirect("/report");
   }
 
   // Free users: STRICTLY zero AI API requests and zero plan creation in database!
   // Instead, supply static in-memory preview split and nutrition targets.
-  const effectivePlan = plan || (isFreeUser ? SAMPLE_FREE_PLAN : null);
+  const effectivePlan = userPlan || (isFreeUser ? SAMPLE_FREE_PLAN : null);
   const effectiveTodayWorkout = workout || (isFreeUser ? SAMPLE_FREE_WORKOUT : null);
   const effectiveWeekWorkouts = (weekWorkouts && weekWorkouts.length > 0)
     ? weekWorkouts
