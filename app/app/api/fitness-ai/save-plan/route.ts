@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     const profileCheck = validatePlanAgainstProfile(planData, profile, {
       enforceProfileRules: true,
       enforceBudgetUtilisation: false,
-      allowCoreNutrition: subscriptionPlan.id === "starter",
+      allowCoreNutrition: true,
     });
     if (!safetyCheck.safe || !profileCheck.valid) {
       return NextResponse.json(

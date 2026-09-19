@@ -144,7 +144,7 @@ export default async function GroceryPage() {
       reason: dbItem.reason || "",
       purchased: Boolean(dbItem.purchased),
     }));
-  } else if (planNutrition?.meals && activePlan?.id) {
+  } else if (planNutrition?.meals && planNutrition.meals.length > 0 && activePlan?.id) {
     // Dynamic fallback: compute grocery list from active meals using grocery calculator
     try {
       const calculated = calculateGroceryList(
@@ -189,8 +189,11 @@ export default async function GroceryPage() {
     } catch (calcError) {
       console.warn("Dynamic grocery list calculation fallback error:", calcError);
     }
-  } else if (profile) {
-    // Dynamic fallback for onboarding-completed users who haven't generated a full plan yet
+  }
+
+  // If itemsToRender is still empty (e.g. workout-only plan active or onboarding user),
+  // dynamically generate the full deterministic grocery plan
+  if (itemsToRender.length === 0 && profile) {
     try {
       const detPlan = await generateDeterministicNutritionPlan(profile as any, supabase);
       if (detPlan?.grocery && detPlan.grocery.length > 0) {
@@ -213,8 +216,8 @@ export default async function GroceryPage() {
     }
   }
 
-  // If no items found and no plan
-  if (!activePlan || itemsToRender.length === 0) {
+  // If no items found
+  if (itemsToRender.length === 0) {
     return (
       <div className="min-h-screen bg-[#0A1108] text-white">
         <div className="w-full max-w-md mx-auto px-4 pt-12 pb-32 text-center">

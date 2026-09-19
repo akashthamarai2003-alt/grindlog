@@ -79,6 +79,7 @@ Modify the JSON appropriately and return the full updated JSON.`;
     const profileCheck = validatePlanAgainstProfile(parsed.data, profile, {
       enforceProfileRules: true,
       enforceBudgetUtilisation: false,
+      allowCoreNutrition: true,
     });
     if (!safetyCheck.safe || !profileCheck.valid) {
       return NextResponse.json(

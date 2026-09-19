@@ -18,7 +18,7 @@ import {
   buildFitnessPlanSystemPrompt,
 } from "@/lib/fitness/ai/prompts";
 import { autoRepairPlanSafety, runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
-import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
+import { getPlanNutritionTargets, validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 import { enrichPlanWithFoodLibrary, filterFoodCatalogForProfile } from "@/lib/fitness/validation/fitness-food-library";
 import { generateProNutritionLayer } from "@/lib/fitness/ai/nutrition-generator";
 import {
@@ -178,7 +178,8 @@ export async function POST(req: Request) {
           ? 0
           : profile.training_days_per_week
         : undefined;
-    const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount, subscriptionPlan.id);
+    // Workout plan generation for plan-setup: meals and grocery are empty arrays
+    const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount, "starter");
 
     if (cachedDraft?.response) {
       try {
@@ -192,7 +193,7 @@ export async function POST(req: Request) {
           ? validatePlanAgainstProfile(cachedPlan.data, profile, {
               enforceProfileRules: true,
               enforceBudgetUtilisation: false,
-              allowCoreNutrition: subscriptionPlan.id === "starter",
+              allowCoreNutrition: true,
             })
           : null;
         if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
@@ -309,7 +310,7 @@ export async function POST(req: Request) {
                 ? validatePlanAgainstProfile(cachedPlan.data, profile, {
                     enforceProfileRules: true,
                     enforceBudgetUtilisation: false,
-                    allowCoreNutrition: subscriptionPlan.id === "starter",
+                    allowCoreNutrition: true,
                   })
                 : null;
               if (cachedPlan.success && safetyCheck?.safe && profileCheck?.valid) {
@@ -352,35 +353,23 @@ export async function POST(req: Request) {
 
       for (let attempt = 1; attempt <= MAX_AUTOMATIC_GENERATION_ATTEMPTS; attempt++) {
         try {
-          console.log(`Fitness AI Generation Attempt ${attempt}...`);
-          const isPro = subscriptionPlan.id === "pro";
+          console.log(`Fitness AI Workout Plan Generation Attempt ${attempt}...`);
+          const targetDefaults = getPlanNutritionTargets(profile);
 
-          // Step A: Generate deterministic nutrition plan (0 AI tokens)
-          let deterministicNutrition = null;
-          if (isPro) {
-            try {
-              const nutritionPlan = await generateDeterministicNutritionPlan(profile);
-              deterministicNutrition = convertToAIPlanFormat(nutritionPlan);
-              console.log(`Deterministic nutrition generated: ${deterministicNutrition.daily_calories}cal, ${deterministicNutrition.protein_grams}g protein, ${deterministicNutrition.meals.length} meals, ${deterministicNutrition.grocery_list.length} grocery items`);
-            } catch (nutritionErr) {
-              console.warn("Deterministic nutrition generation failed, AI will handle nutrition:", nutritionErr);
-            }
-          }
-
-          // Step B: AI generates workouts + 40% culinary & coaching nutrition layer
+          // AI generates workouts (AI tokens used only for workout plan)
           const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}${deterministicNutrition ? `\n\n${buildHybridNutritionPrompt(deterministicNutrition)}` : `\n\n${isPro ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`}`,
+            systemPrompt: `${buildFitnessPlanSystemPrompt("starter")}\n\nWORKOUT PLAN FOCUS RULE: Focus 100% of your coaching intelligence on generating the 7-day workout split, exercise selection, sets, reps, and coaching cues based on the user's profile. For nutrition, return calorie and protein targets; keep meals and grocery_list arrays strictly empty, as complete nutrition and grocery plans are dynamically handled in their dedicated hubs.`,
             userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
             model: FITNESS_PLAN_MODEL,
-            maxTokens: deterministicNutrition ? (isPro ? 8500 : 3500) : (isPro ? 10000 : 4500),
-            minimumOutputTokens: deterministicNutrition ? (isPro ? 6000 : 3500) : (isPro ? 10000 : 4500),
-            reasoningEffort: deterministicNutrition ? "low" : (isPro ? "medium" : "low"),
-            promptCacheKey: deterministicNutrition ? "fitness-plan-hybrid-v1" : (isPro ? "fitness-plan-pro-v3" : "fitness-plan-core-v2"),
-            temperature: 0.2, // Extremely low temperature to strictly follow negative safety constraints
+            maxTokens: 3500,
+            minimumOutputTokens: 1800,
+            reasoningEffort: "low",
+            promptCacheKey: "fitness-plan-workout-v2",
+            temperature: 0.2, // Low temperature to strictly follow negative safety constraints
             jsonSchema: {
               name: "fitness_plan",
               schema: planJsonSchema,
-              description: "A complete personalized 7-day Grindlog fitness plan.",
+              description: "A complete personalized 7-day Grindlog workout plan.",
               strict: true,
             },
             verbosity: "low",
@@ -427,7 +416,7 @@ export async function POST(req: Request) {
           const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
             enforceProfileRules: true,
             enforceBudgetUtilisation: false,
-            allowCoreNutrition: subscriptionPlan.id === "starter",
+            allowCoreNutrition: true,
           });
           if (!profileCheck.valid) {
             console.warn(`Attempt ${attempt} profile validation failed:`, profileCheck.issues);
@@ -437,19 +426,24 @@ export async function POST(req: Request) {
             continue;
           }
 
-          // 60% Code Math + 40% AI Hybrid Nutrition Merge
-          let mergedPlan = profileCheck.plan;
-          if (deterministicNutrition && mergedPlan.nutrition) {
-            mergedPlan = {
-              ...mergedPlan,
-              nutrition: mergeHybridNutrition(candidatePlan.nutrition, deterministicNutrition),
+          let finalPlan = profileCheck.plan;
+          if (finalPlan.nutrition) {
+            finalPlan = {
+              ...finalPlan,
+              nutrition: {
+                ...finalPlan.nutrition,
+                daily_calories: finalPlan.nutrition.daily_calories ?? targetDefaults.calories,
+                protein_grams: finalPlan.nutrition.protein_grams ?? targetDefaults.protein,
+                carbs_grams: finalPlan.nutrition.carbs_grams ?? targetDefaults.carbs,
+                fat_grams: finalPlan.nutrition.fat_grams ?? targetDefaults.fat,
+                meals_per_day: finalPlan.nutrition.meals_per_day ?? targetDefaults.mealsPerDay,
+                meals: [],
+                grocery_list: [],
+              },
             };
           }
 
-          planData = applyFitnessPlanEntitlements(
-            enrichPlanWithFoodLibrary(mergedPlan, foodCatalog || []),
-            subscriptionPlan.id,
-          );
+          planData = applyFitnessPlanEntitlements(finalPlan, subscriptionPlan.id);
           break; // Success! Break out of the loop.
         } catch (err: any) {
           console.error(`Attempt ${attempt} caught error:`, err);
