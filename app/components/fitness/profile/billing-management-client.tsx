@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { format, addDays } from "date-fns";
 import {
@@ -20,6 +21,7 @@ import {
   Flame,
   CheckCircle2,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { FitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/app/actions/payment";
@@ -51,9 +53,26 @@ export function BillingManagementClient({
   userEmail,
   userName,
 }: BillingManagementClientProps) {
+  const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    router.prefetch("/profile");
+  }, [router]);
+
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isNavigatingBack) return;
+    setIsNavigatingBack(true);
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/profile");
+    }
+  };
 
   const {
     status,
@@ -175,9 +194,15 @@ export function BillingManagementClient({
           <div className="max-w-xl mx-auto flex items-center justify-between">
             <Link
               href="/profile"
-              className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-300 transition-colors"
+              prefetch={true}
+              onClick={handleBack}
+              className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 flex items-center justify-center text-gray-300 hover:text-white transition-all cursor-pointer"
             >
-              <ChevronLeft className="w-5 h-5" />
+              {isNavigatingBack ? (
+                <Loader2 className="w-5 h-5 text-[#ADFF00] animate-spin" />
+              ) : (
+                <ChevronLeft className="w-5 h-5" />
+              )}
             </Link>
             <h1 className="text-base font-black tracking-wide text-white uppercase">
               Billing & Membership

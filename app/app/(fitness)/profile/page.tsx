@@ -15,11 +15,10 @@ export default async function FitnessProfilePage() {
     redirect("/auth/signin?redirect=/profile");
   }
 
-  // Fetch all profile, plan, subscription and AI limit data concurrently
+  // Fetch all profile, subscription and AI limit data concurrently
   const [
     { data: fitnessProfile },
     { data: mainProfile },
-    { data: activePlan },
     subscriptionPlan,
     aiLimitInfo,
   ] = await Promise.all([
@@ -32,12 +31,6 @@ export default async function FitnessProfilePage() {
       .from("profiles")
       .select("*")
       .eq("id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("fitness_os_workout_plans")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("status", "active")
       .maybeSingle(),
     getFitnessPlan(user.id),
     checkFitnessAILimit(supabase, user.id),
@@ -77,7 +70,7 @@ export default async function FitnessProfilePage() {
       user={user}
       fitnessProfile={fitnessProfile || {}}
       mainProfile={mainProfile || {}}
-      activePlan={activePlan || null}
+      activePlan={null}
       subscriptionPlan={subscriptionPlan}
       aiLimitInfo={aiLimitInfo}
     />
