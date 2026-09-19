@@ -84,28 +84,26 @@ export function ExerciseAnimationPlayer({
   const aspectClass =
     aspectRatio === "video"
       ? "aspect-video"
-      : aspectRatio === "square"
-      ? "aspect-[4/3] sm:aspect-square max-h-[340px]"
-      : "h-64";
+      : "aspect-square";
 
   return (
     <>
       <div
-        className={`relative w-full rounded-2xl overflow-hidden bg-[#0A1108] border border-white/10 shadow-2xl flex flex-col items-center justify-center group select-none ${className}`}
+        className={`relative w-full rounded-3xl overflow-hidden bg-white border border-white/10 shadow-2xl flex flex-col items-center justify-center group select-none ${className}`}
       >
         {/* Top Badges Bar */}
         {showBadges && (
           <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2 pointer-events-none">
-            <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 shadow-md">
+            <div className="flex items-center gap-1.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 shadow-lg">
               <span className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse" />
               <span className="text-[10px] font-black tracking-widest text-[#ADFF00] uppercase">
                 Form Demo
               </span>
             </div>
 
-            <div className="flex items-center gap-1 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 shadow-md">
+            <div className="flex items-center gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 shadow-lg">
               <Target className="w-3 h-3 text-[#ADFF00]" />
-              <span className="text-[10px] font-bold tracking-wider text-white/80 uppercase">
+              <span className="text-[10px] font-bold tracking-wider text-white uppercase">
                 {animation.targetMuscle}
               </span>
             </div>
@@ -123,7 +121,7 @@ export function ExerciseAnimationPlayer({
         )}
 
         {/* Media Container */}
-        <div className={`w-full ${aspectClass} relative flex items-center justify-center overflow-hidden bg-black/60`}>
+        <div className={`w-full ${aspectClass} relative flex items-center justify-center overflow-hidden bg-white`}>
           {!hasError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -132,13 +130,13 @@ export function ExerciseAnimationPlayer({
               alt={`${name} form demonstration animation`}
               className={`w-full h-full object-contain transition-opacity duration-300 ${
                 isLoading ? "opacity-0" : "opacity-100"
-              } ${!isPlaying ? "filter brightness-50" : ""}`}
+              } ${!isPlaying ? "filter brightness-75" : ""}`}
               loading="eager"
               onLoad={handleImageLoaded}
               onError={handleImageError}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center p-6 text-center text-white/50">
+            <div className="flex flex-col items-center justify-center p-6 text-center text-white/50 bg-[#0A1108] w-full h-full">
               <Dumbbell className="w-10 h-10 text-[#ADFF00]/40 mb-2" />
               <p className="text-xs font-bold uppercase tracking-wider text-white/70">
                 {name}
@@ -165,7 +163,7 @@ export function ExerciseAnimationPlayer({
               type="button"
               onClick={() => setIsPlaying((prev) => !prev)}
               aria-label={isPlaying ? "Pause animation" : "Play animation"}
-              className="p-2 rounded-full bg-black/70 hover:bg-black text-white hover:text-[#ADFF00] border border-white/10 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+              className="p-2 rounded-full bg-black/80 hover:bg-black text-white hover:text-[#ADFF00] border border-black/20 backdrop-blur-md transition-all active:scale-95 shadow-lg"
               title={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
@@ -176,7 +174,7 @@ export function ExerciseAnimationPlayer({
               type="button"
               onClick={() => setIsZoomModalOpen(true)}
               aria-label="Expand exercise demonstration"
-              className="p-2 rounded-full bg-black/70 hover:bg-black text-white hover:text-[#ADFF00] border border-white/10 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+              className="p-2 rounded-full bg-black/80 hover:bg-black text-white hover:text-[#ADFF00] border border-black/20 backdrop-blur-md transition-all active:scale-95 shadow-lg"
               title="Full View"
             >
               <Maximize2 className="w-3.5 h-3.5" />
@@ -187,7 +185,7 @@ export function ExerciseAnimationPlayer({
         {/* Equipment Chip (Bottom Left) */}
         {animation.equipment && showBadges && (
           <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
-            <span className="text-[9px] font-black tracking-wider text-white/60 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded border border-white/5 uppercase">
+            <span className="text-[9px] font-black tracking-wider text-white bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 uppercase shadow-lg">
               {animation.equipment}
             </span>
           </div>
@@ -230,7 +228,7 @@ export function ExerciseAnimationPlayer({
               </div>
 
               {/* Large Animation View */}
-              <div className="w-full aspect-square bg-black/80 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center">
+              <div className="w-full aspect-square bg-white rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={currentSrc}

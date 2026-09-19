@@ -40,7 +40,7 @@ export function ExerciseCard({ exercise, onSetCompleted, isTimerActive }: Exerci
       <ExerciseAnimationPlayer
         name={exercise.name}
         targetMuscle={(exercise as any).muscle || (exercise as any).target_muscles?.[0]}
-        aspectRatio="video"
+        aspectRatio="square"
         className="mb-5"
       />
       

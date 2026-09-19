@@ -298,7 +298,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
         <ExerciseAnimationPlayer
           name={exercise.name}
           targetMuscle={(exercise as any).target_muscles?.[0] || (exercise as any).muscle}
-          aspectRatio="video"
+          aspectRatio="square"
           className="shadow-2xl"
         />
       </div>
