@@ -377,10 +377,10 @@ export function calibrateMealsToTargets(
           else if (q <= 2 && proteinShortfall >= 10) q = 3;
           else if (q === 3 && proteinShortfall >= 15) q = 4;
         } else if (lower.includes('chicken breast') || lower.includes('chicken')) {
-          const boost = Math.min(1.6, Math.max(1.2, 1 + (proteinShortfall / targetPro)));
+          const boost = Math.min(1.6, Math.max(1.2, 1 + (proteinShortfall / (targetPro * 0.55))));
           q = Number((q * boost).toFixed(2));
         } else if (lower.includes('fish')) {
-          const boost = Math.min(1.6, Math.max(1.2, 1 + (proteinShortfall / targetPro)));
+          const boost = Math.min(1.6, Math.max(1.2, 1 + (proteinShortfall / (targetPro * 0.55))));
           q = Number((q * boost).toFixed(2));
         } else if (lower.includes('paneer')) {
           if (dailyBudgetCap >= 50) {
@@ -422,7 +422,7 @@ export function calibrateMealsToTargets(
     }, 0);
   }, 0);
 
-  if (currentGrandCals > 0 && Math.abs(currentGrandCals - targetCals) > (targetCals * 0.04)) {
+  if (currentGrandCals > 0 && Math.abs(currentGrandCals - targetCals) > (targetCals * 0.03)) {
     const fineScale = targetCals / currentGrandCals;
     calibratedMeals = calibratedMeals.map((m: any) => {
       const rawItems = m.meal_plan_items || m.items || [];
@@ -433,8 +433,12 @@ export function calibrateMealsToTargets(
         if (lowerName.includes('boiled egg') || lowerName.includes('egg') || lowerName.includes('chicken') || lowerName.includes('fish') || lowerName.includes('soya')) {
           // Keep protein items protected during calorie fine-tuning
         } else if (lowerName.includes('roti') || lowerName.includes('chapati')) {
-          if (fineScale < 0.85 && q > 1) {
+          if (fineScale < 0.98 && q > 1) {
             q = Math.max(1, Math.round(q * fineScale));
+          }
+        } else if (lowerName.includes('rice') || lowerName.includes('chawal')) {
+          if (fineScale < 0.98 && q > 1) {
+            q = Math.max(1, Number((q * fineScale).toFixed(1)));
           }
         } else {
           q = Math.max(0.3, Math.min(2.5, Number((q * fineScale).toFixed(2))));
@@ -2908,15 +2912,16 @@ export class NutritionService {
       });
     }
 
-    let monthlyLimit = 3000;
+    let monthlyLimit = 5000;
     if (fitProfile?.nutrition_budget) {
       const bStr = fitProfile.nutrition_budget;
-      if (bStr === '₹5,000+') monthlyLimit = 6000;
-      else if (bStr === '₹2,000–5,000' || bStr === '₹2,000-5,000') monthlyLimit = 3500;
-      else if (bStr === '₹1,000–2,000' || bStr === '₹1,000-2,000') monthlyLimit = 1500;
-      else if (bStr === '₹0–1,000' || bStr === '₹0-1,000') monthlyLimit = 800;
+      if (bStr === '₹5,000+') monthlyLimit = 7500;
+      else if (bStr === '₹2,000–5,000' || bStr === '₹2,000-5,000') monthlyLimit = 5000;
+      else if (bStr === '₹1,000–2,000' || bStr === '₹1,000-2,000') monthlyLimit = 2500;
+      else if (bStr === '₹0–1,000' || bStr === '₹0-1,000') monthlyLimit = 1500;
     }
-    const dailyLimit = Math.round(monthlyLimit / 30);
+    const isHighProteinNonVeg = Boolean(targets.protein >= 140 && (fitProfile?.diet_preference?.toLowerCase().includes('non') || fitProfile?.food_type?.toLowerCase().includes('non')));
+    const dailyLimit = Math.max(Math.round(monthlyLimit / 30), isHighProteinNonVeg ? 200 : 150);
 
     // 7-day rotating menu calculation strictly adhering to user onboarding profile
     const targetDate = new Date(`${localDate}T12:00:00.000Z`);

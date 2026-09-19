@@ -1101,7 +1101,21 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       return `${totalWeight}g${suffix}`;
     }
 
-    // 8. Fallback
+    // 10. Curd, Dahi, Yogurt fallback if serving is generic "1 serving"
+    if (nameLower.includes('curd') || nameLower.includes('dahi') || nameLower.includes('yogurt')) {
+      const totalGrams = Math.round(100 * q);
+      const roundedQ = Number(q.toFixed(1));
+      return `${roundedQ} bowl${roundedQ > 1 ? 's' : ''} (${totalGrams}g)`;
+    }
+
+    // 11. Dal, Sambars, Curries, Sabzis fallback if serving is generic "1 serving"
+    if (nameLower.includes('dal') || nameLower.includes('curry') || nameLower.includes('sambar') || nameLower.includes('chole') || nameLower.includes('rajma') || nameLower.includes('sabzi') || nameLower.includes('gravy')) {
+      const totalGrams = Math.round(150 * q);
+      const roundedQ = Number(q.toFixed(1));
+      return `${roundedQ} bowl${roundedQ > 1 ? 's' : ''} (${totalGrams}g)`;
+    }
+
+    // 12. Fallback
     if (q === 1) return serving;
     if (Math.abs(q - Math.round(q)) < 0.05) return `${Math.round(q)}× ${serving}`;
     return `${Number(q.toFixed(1))}× ${serving}`;
@@ -1836,7 +1850,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             <div className="mt-4">
               <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
                 <div 
-                  className={`h-full rounded-full transition-all duration-300 ${(budget.spent || 0) > (budget.daily_limit || 200) ? 'bg-rose-500' : 'bg-emerald-400'}`} 
+                  className={`h-full rounded-full transition-all duration-300 ${(budget.spent || 0) > ((budget.daily_limit || 200) * 1.1) ? 'bg-rose-500' : (budget.spent || 0) > (budget.daily_limit || 200) ? 'bg-amber-400' : 'bg-emerald-400'}`} 
                   style={{ width: `${Math.min(100, Math.round(((budget.spent || 0) / (budget.daily_limit || 1)) * 100))}%` }} 
                 />
               </div>
