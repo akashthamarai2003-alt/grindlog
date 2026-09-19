@@ -494,43 +494,67 @@ html.theme-white body {
   color: #0F172A !important;
 }
 
-/* Surface backgrounds */
+/* Surface backgrounds — base page canvas */
 html.theme-white .bg-\[\#0A1108\],
 html.theme-white .bg-\[\#060D06\],
 html.theme-white .bg-\[\#050905\] {
   background-color: #F6FAF6 !important;
 }
 
-/* Primary cards & dialogs */
+/* Primary cards & dialogs — pure white with soft shadow */
 html.theme-white .bg-\[\#121E12\],
 html.theme-white .bg-\[\#111A10\] {
   background-color: #FFFFFF !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 2px 12px -2px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* Secondary containers & chips */
+/* Secondary containers, chips, water stepper tray */
 html.theme-white .bg-\[\#1A2619\],
 html.theme-white .bg-\[\#1E2C1D\],
-html.theme-white .bg-\[\#152014\] {
-  background-color: #EDF3ED !important;
+html.theme-white .bg-\[\#152014\],
+html.theme-white .bg-\[\#1E261D\] {
+  background-color: #F0F5F0 !important;
+}
+
+/* Tertiary dark surfaces — water history stats, heatmap empty cells, future cells */
+html.theme-white .bg-\[\#182216\],
+html.theme-white .bg-\[\#141C12\],
+html.theme-white .bg-\[\#121811\] {
+  background-color: #E8EFE8 !important;
+}
+
+/* Water heatmap level colors — keep vibrant on white */
+html.theme-white .bg-\[\#004754\] {
+  background-color: #B2E6F0 !important;
+}
+html.theme-white .bg-\[\#007489\] {
+  background-color: #7DD4E6 !important;
+}
+html.theme-white .bg-\[\#00A9C7\] {
+  background-color: #4DC4DD !important;
+}
+html.theme-white .bg-\[\#00D2FF\] {
+  background-color: #00C2F0 !important;
 }
 
 /* Subtle opacity backgrounds */
 html.theme-white .bg-white\/5 {
-  background-color: rgba(0, 0, 0, 0.035) !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
 }
 html.theme-white .bg-white\/10 {
-  background-color: rgba(0, 0, 0, 0.065) !important;
+  background-color: rgba(0, 0, 0, 0.055) !important;
 }
 html.theme-white .bg-white\/15,
 html.theme-white .bg-white\/20 {
-  background-color: rgba(0, 0, 0, 0.09) !important;
+  background-color: rgba(0, 0, 0, 0.075) !important;
 }
+
+/* Dark overlay backgrounds → subtle light gray */
 html.theme-white .bg-black\/20 {
   background-color: rgba(0, 0, 0, 0.025) !important;
 }
 html.theme-white .bg-black\/30 {
-  background-color: rgba(0, 0, 0, 0.045) !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
 }
 html.theme-white .bg-black\/40 {
   background-color: #EEF4EE !important;
@@ -541,7 +565,7 @@ html.theme-white .bg-black\/70 {
   background-color: #E8F0E8 !important;
 }
 
-/* Border overrides */
+/* Border overrides — unified subtle light borders */
 html.theme-white .border-\[\#1A2619\],
 html.theme-white .border-\[\#121E12\],
 html.theme-white .border-\[\#1E2C1D\],
@@ -549,15 +573,34 @@ html.theme-white .border-white\/5,
 html.theme-white .border-white\/10,
 html.theme-white .border-white\/15,
 html.theme-white .border-white\/20 {
-  border-color: #E1E8E1 !important;
+  border-color: #DFE6DF !important;
 }
 
-/* Typography in White Mode */
+/* Dividers (divide-white/10 etc.) */
+html.theme-white .divide-white\/5 > * + *,
+html.theme-white .divide-white\/10 > * + *,
+html.theme-white .divide-white\/20 > * + * {
+  border-color: #DFE6DF !important;
+}
+
+/* Water heatmap cyan borders */
+html.theme-white .border-cyan-700\/30,
+html.theme-white .border-cyan-600\/40,
+html.theme-white .border-cyan-400\/50,
+html.theme-white .border-cyan-300 {
+  border-color: #A3D9E8 !important;
+}
+
+/* ─── Typography ─── */
 html.theme-white .text-white {
   color: #0F172A !important;
 }
 html.theme-white .text-white\/90,
-html.theme-white .text-white\/80,
+html.theme-white .text-white\/80 {
+  color: #1E293B !important;
+}
+/* FIX: text-white/75 — metric labels like CALORIES, PROTEIN, CARBS were invisible */
+html.theme-white .text-white\/75,
 html.theme-white .text-white\/70,
 html.theme-white .text-gray-200,
 html.theme-white .text-gray-300 {
@@ -570,10 +613,29 @@ html.theme-white .text-gray-400,
 html.theme-white .text-gray-500 {
   color: #64748B !important;
 }
+html.theme-white .text-white\/30,
+html.theme-white .text-white\/20 {
+  color: #94A3B8 !important;
+}
 
-/* High-contrast brand green for text in White Mode */
+/* Water history cyan text — darken for white bg readability */
+html.theme-white .text-\[\#00D2FF\] {
+  color: #0891B2 !important;
+}
+html.theme-white .text-cyan-200,
+html.theme-white .text-cyan-100 {
+  color: #155E75 !important;
+}
+html.theme-white .text-cyan-400 {
+  color: #0E7490 !important;
+}
+
+/* ─── Brand Green ─── */
 html.theme-white .text-\[\#ADFF00\] {
   color: #15803D !important;
+}
+html.theme-white .bg-\[\#ADFF00\]\/5 {
+  background-color: rgba(22, 163, 74, 0.06) !important;
 }
 html.theme-white .bg-\[\#ADFF00\]\/10 {
   background-color: rgba(22, 163, 74, 0.12) !important;
@@ -584,7 +646,8 @@ html.theme-white .bg-\[\#ADFF00\]\/20 {
 }
 html.theme-white .border-\[\#ADFF00\]\/20,
 html.theme-white .border-\[\#ADFF00\]\/30,
-html.theme-white .border-\[\#ADFF00\]\/40 {
+html.theme-white .border-\[\#ADFF00\]\/40,
+html.theme-white .border-\[\#ADFF00\]\/60 {
   border-color: rgba(22, 163, 74, 0.35) !important;
 }
 
@@ -597,25 +660,54 @@ html.theme-white .bg-\[\#ADFF00\] * {
   color: #000000 !important;
 }
 
-/* Bottom Navigation Dock in White Mode */
+/* Water cyan accent backgrounds — keep vibrant on white */
+html.theme-white .bg-\[\#00D2FF\]\/5 {
+  background-color: rgba(8, 145, 178, 0.06) !important;
+}
+html.theme-white .bg-\[\#00D2FF\]\/15,
+html.theme-white .bg-\[\#00D2FF\]\/20 {
+  background-color: rgba(8, 145, 178, 0.15) !important;
+}
+html.theme-white .border-\[\#00D2FF\]\/30 {
+  border-color: rgba(8, 145, 178, 0.3) !important;
+}
+
+/* ─── Shadows — reduce heavy neon glows in white mode ─── */
+html.theme-white [class*="shadow-\[0_4px_24px"] {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 2px 12px -2px rgba(0, 0, 0, 0.04) !important;
+}
+html.theme-white [class*="shadow-\[0_0_15px"],
+html.theme-white [class*="shadow-\[0_0_25px"],
+html.theme-white [class*="shadow-\[0_0_10px"],
+html.theme-white [class*="shadow-\[0_0_12px"],
+html.theme-white [class*="shadow-\[0_0_8px"] {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ─── Bottom Navigation Dock ─── */
 html.theme-white .fixed.bottom-0.bg-gradient-to-t {
   background-image: linear-gradient(to top, #F6FAF6, rgba(246, 250, 246, 0.95), transparent) !important;
 }
 html.theme-white .fixed.bottom-0 .bg-\[\#121E12\] {
   background-color: #FFFFFF !important;
-  border-color: #E1E8E1 !important;
-  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04) !important;
+  border-color: #DFE6DF !important;
+  box-shadow: 0 -2px 20px -4px rgba(0, 0, 0, 0.08), 0 -1px 6px -1px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* Modal Backdrops in White Mode */
+/* ─── Modal Backdrops ─── */
 html.theme-white .fixed.inset-0.bg-black\/80,
 html.theme-white .fixed.inset-0.bg-black\/70,
 html.theme-white .fixed.inset-0.bg-black\/85,
 html.theme-white .fixed.inset-0.bg-black\/90 {
-  background-color: rgba(15, 23, 42, 0.45) !important;
+  background-color: rgba(15, 23, 42, 0.4) !important;
 }
 
-/* Form controls */
+/* ─── Decorative blur orbs — reduce intensity in white mode ─── */
+html.theme-white [class*="blur-\["] {
+  opacity: 0.4;
+}
+
+/* ─── Form controls ─── */
 html.theme-white input,
 html.theme-white select,
 html.theme-white textarea {
@@ -624,5 +716,10 @@ html.theme-white textarea {
 html.theme-white input::placeholder,
 html.theme-white textarea::placeholder {
   color: #94A3B8 !important;
+}
+
+/* ─── Ring colors ─── */
+html.theme-white .ring-\[\#ADFF00\]\/30 {
+  --tw-ring-color: rgba(22, 163, 74, 0.25) !important;
 }
 
