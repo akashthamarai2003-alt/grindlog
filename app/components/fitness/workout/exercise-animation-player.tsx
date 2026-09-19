@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Play, Pause, Maximize2, X, Sparkles, Target, Dumbbell } from "lucide-react";
+import { Maximize2, X, Sparkles, Target, Dumbbell } from "lucide-react";
 import { getExerciseAnimation, ExerciseAnimationInfo } from "@/lib/fitness/exercises/exercise-animations";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -31,7 +31,6 @@ export function ExerciseAnimationPlayer({
   }, [name, targetMuscle]);
 
   const [currentSrc, setCurrentSrc] = useState<string>(animation.gifUrl);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasError, setHasError] = useState<boolean>(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState<boolean>(false);
@@ -130,7 +129,7 @@ export function ExerciseAnimationPlayer({
               alt={`${name} form demonstration animation`}
               className={`w-full h-full object-contain transition-opacity duration-300 ${
                 isLoading ? "opacity-0" : "opacity-100"
-              } ${!isPlaying ? "filter brightness-75" : ""}`}
+              }`}
               loading="eager"
               onLoad={handleImageLoaded}
               onError={handleImageError}
@@ -144,37 +143,17 @@ export function ExerciseAnimationPlayer({
               <p className="text-[10px] text-white/40 mt-1">Form Demonstration Ready</p>
             </div>
           )}
-
-          {/* Paused Overlay Indicator */}
-          {!isPlaying && !isLoading && !hasError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] pointer-events-none">
-              <div className="w-12 h-12 rounded-full bg-black/80 border border-[#ADFF00]/40 flex items-center justify-center text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.3)]">
-                <Pause className="w-5 h-5" />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Interactive Overlay Controls */}
         {showControls && !hasError && !isLoading && (
-          <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
-            {/* Play / Pause Button */}
-            <button
-              type="button"
-              onClick={() => setIsPlaying((prev) => !prev)}
-              aria-label={isPlaying ? "Pause animation" : "Play animation"}
-              className="p-2 rounded-full bg-black/80 hover:bg-black text-white hover:text-[#ADFF00] border border-black/20 backdrop-blur-md transition-all active:scale-95 shadow-lg"
-              title={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            </button>
-
+          <div className="absolute bottom-3 right-3 z-10 opacity-90 group-hover:opacity-100 transition-opacity">
             {/* Expand / Fullscreen Zoom Modal */}
             <button
               type="button"
               onClick={() => setIsZoomModalOpen(true)}
               aria-label="Expand exercise demonstration"
-              className="p-2 rounded-full bg-black/80 hover:bg-black text-white hover:text-[#ADFF00] border border-black/20 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+              className="p-2 rounded-full bg-black/80 hover:bg-black text-white hover:text-[#ADFF00] border border-black/20 backdrop-blur-md transition-all active:scale-95 shadow-lg cursor-pointer"
               title="Full View"
             >
               <Maximize2 className="w-3.5 h-3.5" />
