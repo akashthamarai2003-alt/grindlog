@@ -826,7 +826,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const consumedCarbs = Math.round(Number(consumed.carbs) || 0);
   const consumedFat = Math.round(Number(consumed.fat) || 0);
 
-  const isCalorieSurplus = consumedCals > targetCals;
+  // Real-world athletic nutrition adherence: within ±6% or ±130 kcal of target is "Target Hit" / "On Track"
+  const isTargetHit = consumedCals > 0 && Math.abs(consumedCals - targetCals) <= Math.max(130, Math.round(targetCals * 0.06));
+  const isCalorieSurplus = !isTargetHit && consumedCals > targetCals;
   const surplusCals = consumedCals - targetCals;
   const calsRemaining = Math.max(0, targetCals - consumedCals);
 
@@ -1177,21 +1179,43 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           {/* Hero Calorie Section: Resilient against any number length */}
           <div className="flex flex-wrap justify-between items-end gap-2 mb-4 relative z-10">
             <div>
-              <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
-                {isCalorieSurplus ? "Calorie Surplus" : "Calories Remaining"}
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1 text-white/50">
+                {isTargetHit 
+                  ? "🎯 Daily Target Hit" 
+                  : isCalorieSurplus 
+                  ? "Calorie Surplus" 
+                  : "Calories Remaining"}
               </p>
               <div className="flex items-baseline gap-1.5">
-                <span className={`text-4xl font-black tracking-tighter ${isCalorieSurplus ? "text-amber-400" : "text-white"}`}>
-                  {isCalorieSurplus ? `+${surplusCals}` : calsRemaining}
+                <span className={`text-4xl font-black tracking-tighter ${
+                  isTargetHit 
+                    ? "text-[#ADFF00]" 
+                    : isCalorieSurplus 
+                    ? "text-amber-400" 
+                    : "text-white"
+                }`}>
+                  {isTargetHit 
+                    ? `${consumedCals}` 
+                    : isCalorieSurplus 
+                    ? `+${surplusCals}` 
+                    : calsRemaining}
                 </span>
-                <span className="text-sm font-bold text-white/50">
-                  {isCalorieSurplus ? "kcal over" : "kcal left"}
+                <span className={`text-sm font-bold ${isTargetHit ? "text-[#ADFF00]/80" : "text-white/50"}`}>
+                  {isTargetHit 
+                    ? "kcal (On Track)" 
+                    : isCalorieSurplus 
+                    ? "kcal over" 
+                    : "kcal left"}
                 </span>
               </div>
             </div>
 
             <div className="text-right">
-              <span className="inline-block text-[11px] font-bold text-white/70 bg-black/40 px-3 py-1.5 rounded-full border border-white/5 whitespace-nowrap">
+              <span className={`inline-block text-[11px] font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${
+                isTargetHit 
+                  ? "text-[#ADFF00] bg-[#ADFF00]/10 border-[#ADFF00]/20" 
+                  : "text-white/70 bg-black/40 border-white/5"
+              }`}>
                 {consumedCals} <span className="text-white/40">/ {targetCals} kcal</span>
               </span>
             </div>
