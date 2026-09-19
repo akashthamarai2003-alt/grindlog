@@ -1,11 +1,12 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { cache } from "react";
 
 export class WorkoutService {
 
   /**
    * Retrieves the user's timezone from their profile, defaulting to UTC.
    */
-  static async getUserTimezone(userId: string): Promise<string> {
+  static getUserTimezone = cache(async (userId: string): Promise<string> => {
     const supabase = await createServerSupabase();
     const { data } = await supabase
       .from('profiles')
@@ -13,7 +14,7 @@ export class WorkoutService {
       .eq('id', userId)
       .single();
     return data?.timezone || 'UTC';
-  }
+  });
 
   /**
    * Returns a YYYY-MM-DD string for the current date in the user's timezone.

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Timer, Dumbbell, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Timer, Dumbbell, RotateCcw, X, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 
 interface WorkoutHeaderProps {
@@ -31,8 +32,16 @@ export function WorkoutHeader({
   planBadge,
   onResetTimer,
 }: WorkoutHeaderProps) {
+  const router = useRouter();
   const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
+
+  useEffect(() => {
+    if (backUrl && !isMainPage) {
+      router.prefetch(backUrl);
+    }
+  }, [backUrl, isMainPage, router]);
 
   if (isMainPage) {
     return (
@@ -83,9 +92,15 @@ export function WorkoutHeader({
           <Link
             href={backUrl}
             prefetch={true}
-            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors shrink-0"
+            onClick={() => setIsNavigatingBack(true)}
+            aria-label="Go back"
+            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors shrink-0 flex items-center justify-center cursor-pointer"
           >
-            <ArrowLeft className="w-5 h-5 text-white/70 hover:text-white" />
+            {isNavigatingBack ? (
+              <Loader2 className="w-5 h-5 text-[#ADFF00] animate-spin" />
+            ) : (
+              <ArrowLeft className="w-5 h-5 text-white/70 hover:text-white transition-transform active:scale-90" />
+            )}
           </Link>
           <div className="flex flex-col min-w-0 flex-1">
             <h1 className="text-lg sm:text-xl font-black text-white tracking-tight uppercase leading-tight truncate">

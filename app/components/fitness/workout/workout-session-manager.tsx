@@ -72,6 +72,11 @@ export function WorkoutSessionManager({
   useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
   useEffect(() => { isFinishingRef.current = isFinishing; }, [isFinishing]);
 
+  // Proactively prefetch /workout so navigating back via the arrow button is instant
+  useEffect(() => {
+    router.prefetch("/workout");
+  }, [router]);
+
   // Auto-resume on mount: When user returns to the workout page and the session was
   // auto-paused (from navigating away), immediately resume it
   useEffect(() => {

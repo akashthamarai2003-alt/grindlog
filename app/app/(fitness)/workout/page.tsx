@@ -22,7 +22,14 @@ export default async function WorkoutIndexPage() {
     redirect("/auth/signin?redirect=/workout");
   }
 
-  const [{ data: activePlan }, workout, subscriptionPlan] = await Promise.all([
+  // 1. Fetch all independent data in parallel
+  const [
+    { data: activePlan },
+    workout,
+    subscriptionPlan,
+    weekDays,
+    tz,
+  ] = await Promise.all([
     supabase
       .from("fitness_os_workout_plans")
       .select("id")
@@ -31,14 +38,16 @@ export default async function WorkoutIndexPage() {
       .maybeSingle(),
     WorkoutService.getTodayWorkout(user.id),
     getFitnessPlan(user.id),
+    WorkoutService.getWeeklyWorkout(user.id),
+    WorkoutService.getUserTimezone(user.id),
   ]);
-  const nextWorkout = !workout && activePlan
-    ? await WorkoutService.getNextWorkout(user.id, activePlan.id)
-    : null;
-  const weekDays = await WorkoutService.getWeeklyWorkout(user.id);
-  const planDays = activePlan ? await WorkoutService.getPlanSchedule(user.id, activePlan.id) : null;
 
-  const tz = await WorkoutService.getUserTimezone(user.id);
+  // 2. Fetch plan-dependent schedule in parallel
+  const [nextWorkout, planDays] = await Promise.all([
+    !workout && activePlan ? WorkoutService.getNextWorkout(user.id, activePlan.id) : null,
+    activePlan ? WorkoutService.getPlanSchedule(user.id, activePlan.id) : null,
+  ]);
+
   const formatter = new Intl.DateTimeFormat('en-US', { 
     timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' 
   });
@@ -58,11 +67,18 @@ export default async function WorkoutIndexPage() {
       }).format(new Date(`${nextWorkout.workout_date}T12:00:00Z`))
     : undefined;
 
-  // Resolve cached AI coach note on the server so client never refetches on refresh
+  // 3. Fast DB-only lookup for existing cached AI coach note (takes ~5ms).
+  // NEVER block server page render on live LLM generation!
+  let initialCoachNote: string | null = null;
   const targetWorkoutId = workout?.id || nextWorkout?.id;
-  const initialCoachNote = targetWorkoutId && subscriptionPlan?.id === "pro"
-    ? await AiWorkoutCoachService.getOrGenerateCoachNote(user.id, targetWorkoutId).catch(() => null)
-    : null;
+  if (targetWorkoutId && subscriptionPlan?.id === "pro") {
+    const { data: cachedNote } = await supabase
+      .from("workout_ai_notes")
+      .select("note")
+      .eq("workout_id", targetWorkoutId)
+      .maybeSingle();
+    initialCoachNote = cachedNote?.note || null;
+  }
 
   return (
     <FitnessGuard>
