@@ -63,9 +63,27 @@ export function DietPlanCard({ nutrition }: DietPlanCardProps) {
             </div>
             
             <ul className="text-sm text-gray-600 font-medium pl-6 list-disc marker:text-gray-300">
-              {meal.items.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
+              {Array.isArray(meal.items) && meal.items.map((item: any, i: number) => {
+                let displayText = "";
+                if (typeof item === "string") {
+                  displayText = item.trim();
+                } else if (item && typeof item === "object") {
+                  const foodName = item.foods?.name || item.food?.name || item.name || item.item || "";
+                  const qty = Number(item.quantity ?? item.qty);
+                  const serving = item.serving_size || item.portion || "";
+                  if (qty > 1 && serving) {
+                    displayText = `${qty}× ${serving} ${foodName}`.trim();
+                  } else if (serving) {
+                    displayText = `${serving} ${foodName}`.trim();
+                  } else if (qty > 1) {
+                    displayText = `${qty}× ${foodName}`.trim();
+                  } else {
+                    displayText = foodName;
+                  }
+                }
+                if (!displayText || displayText === "[object Object]") return null;
+                return <li key={i}>{displayText}</li>;
+              })}
             </ul>
 
             {meal.prep_instructions && (

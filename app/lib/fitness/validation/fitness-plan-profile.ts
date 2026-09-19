@@ -484,8 +484,8 @@ export function normalisePlanProfileDetails(
   const isVegetarian = !isNonVegetarian && !isVegan && !isEggetarian && (rawDiet.includes("vegetarian") || rawDiet.includes("veg"));
 
   // Auto-sanitize meal items according to dietary constraints and 100% natural whole foods
-  const sanitizeFoodItem = (text: string): string => {
-    let result = text;
+  const sanitizeFoodItem = (text: any): string => {
+    let result = typeof text === "string" ? text : (text?.foods?.name || text?.name || String(text || ""));
     // Replace any artificial protein powder / whey / supplement with 100% natural whole food
     result = result
       .replace(/\b(?:whey|plant|casein|pea)\s*protein\s*(?:powder|isolate|concentrate)?\b[^\n,;]*/gi, isVegan ? "Tofu (100g)" : isVegetarian ? "Paneer (100g)" : "Boiled Eggs (2 pieces)")

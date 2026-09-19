@@ -13,6 +13,90 @@ interface TodaysNutritionCardProps {
   targetDateStr?: string;
 }
 
+/**
+ * Safely format any food item representation (string, object with name/portion/quantity, etc.)
+ * into a clean, human-readable label without ever leaking "[object Object]".
+ */
+function formatFoodItem(it: any): string {
+  if (!it) return "";
+  if (typeof it === "string") {
+    const trimmed = it.trim();
+    if (trimmed === "[object Object]") return "";
+    return trimmed;
+  }
+  if (typeof it !== "object") {
+    return String(it).trim();
+  }
+
+  // Extract food name from all possible object shapes
+  const name = String(
+    it.foods?.name ||
+    it.food?.name ||
+    it.name ||
+    it.item ||
+    it.title ||
+    it.food_name ||
+    it.food ||
+    ""
+  ).trim();
+
+  if (!name || name === "[object Object]") return "";
+
+  // Check explicit portion string first (e.g. "3 whole eggs", "2 rotis", "150g")
+  const portion = String(it.portion || "").trim();
+  if (portion && portion !== "[object Object]") {
+    if (portion.toLowerCase().includes(name.toLowerCase())) {
+      return portion;
+    }
+    return `${portion} ${name}`.trim();
+  }
+
+  // Extract quantity and serving size
+  const q = Number(it.quantity ?? it.qty);
+  const rawServing = String(
+    it.serving_size ||
+    it.servingSize ||
+    it.foods?.serving_size ||
+    it.foods?.servingSize ||
+    it.unit ||
+    ""
+  ).trim();
+
+  if (!Number.isNaN(q) && q > 0) {
+    if (rawServing && rawServing !== "[object Object]" && rawServing !== "1 serving" && rawServing !== "serving") {
+      // If rawServing has embedded weight like "100g", "150g"
+      const weightMatch = rawServing.match(/^(\d+(?:\.\d+)?)\s*(g|ml|oz|kg)$/i);
+      if (weightMatch) {
+        const totalWeight = Math.round(parseFloat(weightMatch[1]) * q);
+        return `${totalWeight}${weightMatch[2]} ${name}`.trim();
+      }
+
+      // If rawServing has a number like "1 egg", "1 medium roti", "1 cup (cooked)"
+      const unitMatch = rawServing.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
+      if (unitMatch) {
+        const baseNum = parseFloat(unitMatch[1]);
+        const unit = unitMatch[2].trim();
+        const total = Math.round(baseNum * q * 10) / 10;
+        const totalStr = Number.isInteger(total) ? String(total) : total.toFixed(1);
+
+        // If the food name already contains the unit (e.g. name="Whole Eggs", unit="egg")
+        const nameLower = name.toLowerCase();
+        const unitLower = unit.toLowerCase().replace(/s$/, "");
+        if (nameLower.includes(unitLower)) {
+          return `${totalStr} ${name}`.trim();
+        }
+        return `${totalStr} ${unit} ${name}`.trim();
+      }
+
+      return `${q > 1 ? `${q}× ` : ""}${rawServing} ${name}`.trim();
+    } else if (q !== 1) {
+      return `${q}× ${name}`.trim();
+    }
+  }
+
+  return name;
+}
+
 export function TodaysNutritionCard({
   nutrition,
   premiumLevel = "core",
@@ -106,14 +190,18 @@ export function TodaysNutritionCard({
       const timeStr = String(m.time_of_day || m.time || "").trim();
       const instructions = String(m.prep_instructions || m.notes || "").trim();
 
-      // Normalize items list
+      // Normalize items list safely without [object Object]
       let itemsList: string[] = [];
-      if (Array.isArray(m.items)) {
-        itemsList = m.items.map((it: any) => String(it).trim()).filter(Boolean);
+      const rawMealItems = Array.isArray(m.items) && m.items.length > 0
+        ? m.items
+        : (Array.isArray(m.meal_plan_items) && m.meal_plan_items.length > 0 ? m.meal_plan_items : null);
+
+      if (rawMealItems) {
+        itemsList = rawMealItems.map((it: any) => formatFoodItem(it)).filter(Boolean);
       } else if (typeof m.items === "string") {
-        itemsList = m.items.split("+").map((it: string) => it.trim()).filter(Boolean);
+        itemsList = m.items.split("+").map((it: string) => formatFoodItem(it)).filter(Boolean);
       } else if (m.desc) {
-        itemsList = String(m.desc).split("+").map((it: string) => it.trim()).filter(Boolean);
+        itemsList = String(m.desc).split("+").map((it: string) => formatFoodItem(it)).filter(Boolean);
       }
 
       // Check explicit meal-level macros
@@ -200,7 +288,10 @@ export function TodaysNutritionCard({
 
   // Helper to clean awkward decimals in item names: e.g. "1.91 bowls" -> "1.9 bowls"
   const cleanItemDisplay = (itemStr: string): string => {
-    return String(itemStr || "").replace(/(\d+)\.(\d+)\s*(bowls?|cups?|plates?|servings?|pieces?|g|cheelas?|rotis?|chapatis?|eggs?)/gi, (match, whole, dec, unit) => {
+    if (!itemStr || typeof itemStr !== "string") return "";
+    const trimmed = itemStr.trim();
+    if (trimmed === "[object Object]" || trimmed.includes("[object Object]")) return "";
+    return trimmed.replace(/(\d+)\.(\d+)\s*(bowls?|cups?|plates?|servings?|pieces?|g|cheelas?|rotis?|chapatis?|eggs?)/gi, (match, whole, dec, unit) => {
       const val = parseFloat(`${whole}.${dec}`);
       if (isNaN(val)) return match;
       if (Math.abs(val - Math.round(val)) <= 0.12) {
@@ -308,7 +399,7 @@ export function TodaysNutritionCard({
             meal_type: typeKey,
             quantity: Number(it.quantity) || 1,
             custom_food: !it.food_id && !it.foods?.id ? {
-              name: it.foods?.name || it.name,
+              name: it.foods?.name || (typeof it.name === "string" ? it.name : "") || meal.name,
               calories: it.foods?.calories || Math.round(meal.calories / Math.max(1, (meal.items?.length || 1))),
               protein: it.foods?.protein || Number((meal.protein / Math.max(1, (meal.items?.length || 1))).toFixed(1)),
               serving_size: it.foods?.serving_size || '1 serving',
@@ -651,18 +742,21 @@ export function TodaysNutritionCard({
                       {/* Items Display: Clean wrapping chips instead of cut-off single line */}
                       {meal.items.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5 mt-2">
-                          {meal.items.map((item: string, itemIdx: number) => (
-                            <span
-                              key={itemIdx}
-                              className={`text-[11px] font-medium leading-tight px-2 py-0.5 rounded-md border transition-colors ${
-                                isCompleted
-                                  ? "bg-[#ADFF00]/5 text-white/60 border-[#ADFF00]/15 line-through decoration-[#ADFF00]/40"
-                                  : "bg-white/[0.04] text-white/70 border-white/5"
-                              }`}
-                            >
-                              {cleanItemDisplay(item)}
-                            </span>
-                          ))}
+                          {meal.items
+                            .map((item: string) => cleanItemDisplay(item))
+                            .filter(Boolean)
+                            .map((cleanedItem: string, itemIdx: number) => (
+                              <span
+                                key={itemIdx}
+                                className={`text-[11px] font-medium leading-tight px-2 py-0.5 rounded-md border transition-colors ${
+                                  isCompleted
+                                    ? "bg-[#ADFF00]/5 text-white/60 border-[#ADFF00]/15 line-through decoration-[#ADFF00]/40"
+                                    : "bg-white/[0.04] text-white/70 border-white/5"
+                                }`}
+                              >
+                                {cleanedItem}
+                              </span>
+                            ))}
                         </div>
                       ) : (
                         <p className="text-xs font-medium text-white/40 mt-1">

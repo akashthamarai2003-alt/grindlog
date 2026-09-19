@@ -189,7 +189,9 @@ export default function GroceryTab({
     if (!Array.isArray(planData?.nutrition?.meals)) return [];
     return planData.nutrition.meals.flatMap((meal: any) =>
       Array.isArray(meal?.items)
-        ? meal.items.filter((item: unknown): item is string => typeof item === 'string')
+        ? meal.items
+            .map((item: any) => (typeof item === 'string' ? item : item?.foods?.name || item?.name || ''))
+            .filter(Boolean)
         : [],
     );
   }, [planData?.nutrition?.meals]);
