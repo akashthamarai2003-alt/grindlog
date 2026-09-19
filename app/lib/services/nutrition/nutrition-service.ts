@@ -1494,22 +1494,12 @@ export class NutritionService {
   static async logWater(userId: string, amountMl: number) {
     if (amountMl <= 0) throw new Error("Water amount must be positive");
     
+    const MAX_DAILY_WATER_ML = 8000;
     const supabase = await createServerSupabase();
     const tz = await this.getUserTimezone(userId);
     const { start, end } = await this.getLocalDateBoundaries(userId, tz);
 
-    const { data, error } = await supabase
-      .from('fitness_os_water_logs')
-      .insert({
-        user_id: userId,
-        amount_ml: amountMl
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Fetch today's actual accumulated water
+    // Fetch today's current accumulated water
     const { data: todayWaters } = await supabase
       .from('fitness_os_water_logs')
       .select('amount_ml')
@@ -1517,14 +1507,36 @@ export class NutritionService {
       .gte('logged_at', start)
       .lte('logged_at', end);
 
-    const totalWaterMl = (todayWaters || []).reduce((sum, w) => sum + (Number(w.amount_ml) || 0), 0);
+    const currentTotal = (todayWaters || []).reduce((sum, w) => sum + (Number(w.amount_ml) || 0), 0);
+
+    if (currentTotal >= MAX_DAILY_WATER_ML) {
+      return { total_water_ml: currentTotal, capped: true };
+    }
+
+    const effectiveAmount = Math.min(amountMl, MAX_DAILY_WATER_ML - currentTotal);
+    if (effectiveAmount <= 0) {
+      return { total_water_ml: currentTotal, capped: true };
+    }
+
+    const { data, error } = await supabase
+      .from('fitness_os_water_logs')
+      .insert({
+        user_id: userId,
+        amount_ml: effectiveAmount
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const totalWaterMl = currentTotal + effectiveAmount;
     
     // Non-blocking background summary update
     this.updateDailySummary(userId).catch(err => {
       console.warn("Background updateDailySummary warning in logWater:", err);
     });
 
-    return { ...data, total_water_ml: totalWaterMl };
+    return { ...data, total_water_ml: totalWaterMl, capped: totalWaterMl >= MAX_DAILY_WATER_ML };
   }
 
   static async removeWater(userId: string, amountMl: number = 250) {

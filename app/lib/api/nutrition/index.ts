@@ -76,6 +76,15 @@ export const nutritionApi = {
     return json.data;
   },
 
+  async resetWater() {
+    const res = await fetch('/api/nutrition/water?reset=true', {
+      method: 'DELETE'
+    });
+    const json = await res.json();
+    if (!res.ok) throw json.error;
+    return json.data;
+  },
+
   async getWaterHistory() {
     const res = await fetch(`/api/nutrition/water/history?t=${Date.now()}`);
     const json = await res.json();

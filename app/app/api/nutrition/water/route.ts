@@ -45,7 +45,8 @@ export async function POST(request: Request) {
       success: true, 
       data: {
         amount_ml,
-        total_water_ml: result.total_water_ml
+        total_water_ml: result.total_water_ml,
+        capped: result.capped
       } 
     });
   } catch (error: any) {

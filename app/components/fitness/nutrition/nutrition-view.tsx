@@ -260,7 +260,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     const targetPro = Number(payload.protein) || 130;
     const targetCarbs = Number(payload.carbs) || 225;
     const targetFat = Number(payload.fat) || 55;
-    const targetWater = Number(payload.water_ml) || 3000;
+    const targetWater = Math.min(8000, Math.max(1000, Number(payload.water_ml) || 3000));
 
     // 0ms Instant optimistic UI update
     setData((prev: any) => {
@@ -538,6 +538,20 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }
     if (!data) return;
 
+    const MAX_DAILY_WATER_ML = 8000;
+    const currentWater = Number(data.consumed?.water_ml) || 0;
+
+    if (currentWater >= MAX_DAILY_WATER_ML) {
+      toast.warning("Daily safety cap of 8L reached. Excessive water intake can cause water intoxication (hyponatremia).");
+      return;
+    }
+
+    let effectiveAmount = amount;
+    if (currentWater + effectiveAmount > MAX_DAILY_WATER_ML) {
+      effectiveAmount = MAX_DAILY_WATER_ML - currentWater;
+      toast.info(`Capped to daily limit of 8L (+${effectiveAmount}ml added).`);
+    }
+
     let reachedGoal = false;
     let targetGoalLiters = "2.5";
 
@@ -545,9 +559,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       if (!prev) return prev;
       const targetWater = Number(prev.targets?.water_ml) || 2500;
       targetGoalLiters = (targetWater / 1000).toFixed(1);
-      const currentWater = Number(prev.consumed?.water_ml) || 0;
-      const newWater = currentWater + amount;
-      if (newWater >= targetWater && currentWater < targetWater) {
+      const curr = Number(prev.consumed?.water_ml) || 0;
+      const newWater = Math.min(MAX_DAILY_WATER_ML, curr + effectiveAmount);
+      if (newWater >= targetWater && curr < targetWater) {
         reachedGoal = true;
       }
       const updated = {
@@ -566,12 +580,12 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
     if (reachedGoal) {
       toast.success(`🎉 Daily water goal of ${targetGoalLiters}L reached!`);
-    } else {
-      toast.success(`Logged ${amount}ml of water`);
+    } else if (effectiveAmount > 0) {
+      toast.success(`Logged ${effectiveAmount}ml of water`);
     }
 
     // Debounce background API sync
-    pendingWaterDeltaRef.current += amount;
+    pendingWaterDeltaRef.current += effectiveAmount;
     if (waterDebounceTimerRef.current) {
       clearTimeout(waterDebounceTimerRef.current);
     }
@@ -625,6 +639,51 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     waterDebounceTimerRef.current = setTimeout(() => {
       flushWaterSync();
     }, 350);
+  };
+
+  const handleResetWater = async () => {
+    if (isFuture) {
+      toast.info("Cannot modify water for a future date.");
+      return;
+    }
+    if (!isPro) {
+      triggerProModal("Water & Hydration Tracking");
+      return;
+    }
+    if (typeof window !== "undefined" && !window.confirm("Do you want to reset today's logged water to 0L?")) {
+      return;
+    }
+
+    // Cancel pending debounced sync
+    if (waterDebounceTimerRef.current) {
+      clearTimeout(waterDebounceTimerRef.current);
+    }
+    pendingWaterDeltaRef.current = 0;
+    waterInFlightDeltaRef.current = 0;
+
+    setData((prev: any) => {
+      if (!prev) return prev;
+      const updated = {
+        ...prev,
+        consumed: { ...prev.consumed, water_ml: 0 },
+        progress: {
+          ...prev.progress,
+          water_percent: 0
+        }
+      };
+      if (selectedDateRef.current) {
+        dateCacheRef.current[selectedDateRef.current] = updated;
+      }
+      return updated;
+    });
+
+    try {
+      await nutritionApi.resetWater();
+      toast.success("Today's water reset to 0L");
+    } catch (err: any) {
+      console.error("Failed to reset water:", err);
+      toast.error("Failed to reset water on server");
+    }
   };
 
   const handleFoodLoggedSuccess = (loggedData?: any) => {
@@ -1958,6 +2017,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           targetMl={Number(targets.water_ml) || 2500}
           onAddWater={handleAddWater}
           onRemoveWater={handleRemoveWater}
+          onResetWater={handleResetWater}
           onEditGoal={openTargetsModal}
         />
 
@@ -2067,11 +2127,17 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-cyan-400 uppercase tracking-wider mb-1">Water Target (ml)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Water Target (ml)</label>
+                    <span className="text-[10px] text-white/40 font-medium">Max 8,000ml (8L)</span>
+                  </div>
                   <input 
                     type="number"
+                    min={1000}
+                    max={8000}
+                    step={250}
                     value={targetForm.water_ml}
-                    onChange={(e) => setTargetForm(p => ({ ...p, water_ml: Number(e.target.value) }))}
+                    onChange={(e) => setTargetForm(p => ({ ...p, water_ml: Math.min(8000, Number(e.target.value)) }))}
                     className="w-full p-3 rounded-xl bg-black/40 border border-cyan-400/30 text-white font-bold text-sm outline-none focus:border-cyan-400"
                   />
                 </div>

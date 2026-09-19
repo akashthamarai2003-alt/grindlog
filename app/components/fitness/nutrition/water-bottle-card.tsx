@@ -2,13 +2,16 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Plus, Minus, Edit3, Bell, Lock } from "lucide-react";
+import { Plus, Minus, Edit3, Bell, Lock, RotateCcw, AlertTriangle } from "lucide-react";
+
+export const MAX_DAILY_WATER_ML = 8000; // 8 Liters (8,000 ml) maximum daily safety cap
 
 interface WaterBottleCardProps {
   consumedMl: number;
   targetMl: number;
   onAddWater: (amount: number) => Promise<void> | void;
   onRemoveWater: (amount: number) => Promise<void> | void;
+  onResetWater?: () => Promise<void> | void;
   onEditGoal: () => void;
   isPro?: boolean;
   disabled?: boolean;
@@ -19,6 +22,7 @@ export function WaterBottleCard({
   targetMl,
   onAddWater,
   onRemoveWater,
+  onResetWater,
   onEditGoal,
   isPro = true,
   disabled = false,
@@ -28,6 +32,8 @@ export function WaterBottleCard({
   const rawConsumed = typeof consumedMl === 'number' && !isNaN(consumedMl) ? Math.max(0, consumedMl) : 0;
   const safeTarget = typeof targetMl === 'number' && !isNaN(targetMl) && targetMl > 0 ? targetMl : 2500;
   const isGoalReached = rawConsumed >= safeTarget;
+  const isAtMaxCap = rawConsumed >= MAX_DAILY_WATER_ML;
+  const isNearCap = rawConsumed >= 6000 && !isAtMaxCap;
   const percent = Math.min(100, Math.max(0, Math.round((rawConsumed / safeTarget) * 100))) || 0;
   const targetInLiters = (safeTarget / 1000).toFixed(1).replace(/\.0$/, "");
   const consumedInLiters = (rawConsumed / 1000).toFixed(1);
@@ -210,14 +216,29 @@ export function WaterBottleCard({
         {/* RIGHT COLUMN: Water Intake Stats & Stepper Logger */}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           {/* Header Title */}
-          <div className="flex items-center">
-            <h3 className="text-sm font-bold text-white tracking-wide">
-              Water Intake
-            </h3>
-            {!isPro && (
-              <span className="bg-[#00D2FF]/15 text-[#00D2FF] text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider ml-2 border border-[#00D2FF]/20">
-                PRO PREVIEW
-              </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <h3 className="text-sm font-bold text-white tracking-wide">
+                Water Intake
+              </h3>
+              {!isPro && (
+                <span className="bg-[#00D2FF]/15 text-[#00D2FF] text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider ml-2 border border-[#00D2FF]/20">
+                  PRO PREVIEW
+                </span>
+              )}
+            </div>
+
+            {/* Quick Reset Action if water has been logged */}
+            {rawConsumed > 0 && onResetWater && !disabled && (
+              <button
+                type="button"
+                onClick={onResetWater}
+                className="text-[10px] font-semibold text-white/40 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-rose-500/10"
+                title="Reset today's water to 0L"
+              >
+                <RotateCcw size={10} />
+                <span>Reset</span>
+              </button>
             )}
           </div>
 
@@ -229,6 +250,15 @@ export function WaterBottleCard({
             <span className="text-sm sm:text-base font-bold text-white/50 pb-0.5">
               / {targetInLiters} L
             </span>
+            {isAtMaxCap ? (
+              <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                <AlertTriangle size={10} /> Max 8L Cap
+              </span>
+            ) : isNearCap ? (
+              <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#00D2FF]/15 text-[#00D2FF] border border-[#00D2FF]/25">
+                High Intake
+              </span>
+            ) : null}
           </div>
 
           {/* Goal Link with Edit Icon & Reminders Shortcut */}
@@ -295,14 +325,14 @@ export function WaterBottleCard({
             {isPro ? (
               <button
                 type="button"
-                disabled={disabled}
+                disabled={disabled || isAtMaxCap}
                 onClick={() => onAddWater(stepAmount)}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${
-                  disabled
+                  disabled || isAtMaxCap
                     ? "bg-white/10 text-white/30 cursor-not-allowed shadow-none"
                     : "bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 text-black cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
                 }`}
-                title={`Add ${stepAmount}ml`}
+                title={isAtMaxCap ? "Daily safety cap of 8L reached" : `Add ${stepAmount}ml`}
               >
                 <Plus size={16} strokeWidth={3.5} />
               </button>
@@ -317,6 +347,14 @@ export function WaterBottleCard({
               </button>
             )}
           </div>
+
+          {/* Safety Notice if at or above 8L */}
+          {isAtMaxCap && (
+            <p className="text-[10px] font-medium text-amber-300/80 mt-2 flex items-center gap-1 leading-tight">
+              <AlertTriangle size={11} className="shrink-0 text-amber-400" />
+              <span>Daily limit (8L) reached to protect hydration safety.</span>
+            </p>
+          )}
 
           {/* Subtitle: 0.9L logged today */}
           <p className="text-[11px] font-medium text-white/40 mt-2 tracking-wide">
