@@ -135,7 +135,7 @@ export default function RoadmapPage() {
     <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col relative overflow-hidden">
       
       {/* Background Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60" />
+      <div className="dark-ambient-glow absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60" />
 
       <AnimatePresence mode="wait">
         {step === 1 && (

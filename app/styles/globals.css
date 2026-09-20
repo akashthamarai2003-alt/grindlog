@@ -505,7 +505,9 @@ html.theme-white .bg-\[\#050905\] {
 html.theme-white .bg-\[\#060D06\]\/90,
 html.theme-white .bg-\[\#0A1108\]\/90,
 html.theme-white .bg-\[\#0A1108\]\/95,
-html.theme-white .bg-\[\#070C07\]\/85 {
+html.theme-white .bg-\[\#070C07\]\/85,
+html.theme-white .bg-\[\#111A10\]\/90,
+html.theme-white .bg-\[\#121E12\]\/90 {
   background-color: rgba(246, 250, 246, 0.95) !important;
 }
 
@@ -513,7 +515,8 @@ html.theme-white .bg-\[\#070C07\]\/85 {
 html.theme-white .bg-\[\#121E12\],
 html.theme-white .bg-\[\#111A10\],
 html.theme-white .bg-\[\#0E160E\],
-html.theme-white [class*="from-\[\#121E12\]"] {
+html.theme-white [class*="from-\[\#121E12\]"],
+html.theme-white [class*="from-\[\#1A2619\]"] {
   background-image: none !important;
   background-color: #FFFFFF !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 2px 12px -2px rgba(0, 0, 0, 0.04) !important;
@@ -741,8 +744,10 @@ html.theme-white .bg-\[\#ADFF00\]\/20 {
 }
 html.theme-white .border-\[\#ADFF00\]\/15,
 html.theme-white .border-\[\#ADFF00\]\/20,
+html.theme-white .border-\[\#ADFF00\]\/25,
 html.theme-white .border-\[\#ADFF00\]\/30,
 html.theme-white .border-\[\#ADFF00\]\/40,
+html.theme-white .border-\[\#ADFF00\]\/50,
 html.theme-white .border-\[\#ADFF00\]\/60 {
   border-color: #86EFAC !important;
 }
@@ -828,4 +833,21 @@ html.theme-white textarea::placeholder {
 html.theme-white .ring-\[\#ADFF00\]\/30 {
   --tw-ring-color: rgba(22, 163, 74, 0.25) !important;
 }
+
+/* ─── Ambient Glows & Radial Gradients — hide dark glow in white theme ─── */
+html.theme-white .dark-ambient-glow,
+html.theme-white [class*="radial-gradient(ellipse_at_top,#1A2619"],
+html.theme-white [class*="radial-gradient(ellipse_at_top\,#1A2619"],
+html.theme-white [class*="radial-gradient"][class*="1A2619"] {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+/* Small green indicator dots in white theme */
+html.theme-white .w-1\.5.h-1\.5.bg-\[\#ADFF00\],
+html.theme-white .w-2.h-2.bg-\[\#ADFF00\],
+html.theme-white .w-2\.5.h-2\.5.bg-\[\#ADFF00\] {
+  background-color: #16A34A !important;
+}
+
 

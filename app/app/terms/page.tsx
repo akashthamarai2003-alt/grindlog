@@ -11,7 +11,7 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-[#0A1108] text-white">
       {/* Top Ambient Glow */}
-      <div className="absolute top-0 left-0 right-0 h-64 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60 z-0" />
+      <div className="dark-ambient-glow absolute top-0 left-0 right-0 h-64 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60 z-0" />
 
       <div className="relative z-10 w-full max-w-2xl mx-auto px-5 pt-8 pb-28">
         {/* Header */}

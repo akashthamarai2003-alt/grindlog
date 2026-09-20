@@ -466,7 +466,7 @@ export default function FitnessPaymentPage() {
       />
 
       {/* Background glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60" />
+      <div className="dark-ambient-glow absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60" />
 
       {/* Header */}
       <div className="sticky top-0 z-50 px-4 py-4 flex items-center justify-between bg-[#0A1108]/90 backdrop-blur-md transform-gpu">
