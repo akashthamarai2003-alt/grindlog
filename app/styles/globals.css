@@ -537,32 +537,56 @@ html.theme-white .bg-\[\#00D2FF\] {
   background-color: #00C2F0 !important;
 }
 
-/* Subtle opacity backgrounds */
-html.theme-white .bg-white\/5 {
-  background-color: rgba(0, 0, 0, 0.03) !important;
+/* Subtle opacity backgrounds / chip pills */
+html.theme-white .bg-white\/5,
+html.theme-white .bg-white\/\[0\.02\],
+html.theme-white .bg-white\/\[0\.03\],
+html.theme-white .bg-white\/\[0\.04\] {
+  background-color: #FFFFFF !important;
+  border-color: #DFE6DF !important;
 }
 html.theme-white .bg-white\/10 {
-  background-color: rgba(0, 0, 0, 0.055) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
 }
 html.theme-white .bg-white\/15,
 html.theme-white .bg-white\/20 {
   background-color: rgba(0, 0, 0, 0.075) !important;
 }
-
-/* Dark overlay backgrounds → subtle light gray */
-html.theme-white .bg-black\/20 {
+html.theme-white .hover\:bg-white\/\[0\.03\]:hover,
+html.theme-white .hover\:bg-white\/\[0\.04\]:hover,
+html.theme-white .hover\:bg-white\/5:hover,
+html.theme-white .hover\:bg-white\/10:hover {
   background-color: rgba(0, 0, 0, 0.025) !important;
 }
-html.theme-white .bg-black\/30 {
+html.theme-white .hover\:bg-white\/\[0\.08\]:hover {
   background-color: rgba(0, 0, 0, 0.04) !important;
 }
-html.theme-white .bg-black\/40 {
-  background-color: #EEF4EE !important;
+html.theme-white .active\:bg-white\/\[0\.1\]:active {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+/* Dark surfaces & card containers → clean light surfaces */
+html.theme-white .bg-black\/10,
+html.theme-white .bg-black\/15,
+html.theme-white .bg-black\/20,
+html.theme-white .bg-black\/25,
+html.theme-white .bg-black\/30,
+html.theme-white .bg-black\/35,
+html.theme-white .bg-black\/40,
+html.theme-white .bg-black\/45 {
+  background-color: #F8FAF8 !important;
+}
+/* Progress bar tracks inside rounded-full */
+html.theme-white .rounded-full.bg-black\/30,
+html.theme-white .rounded-full.bg-black\/40,
+html.theme-white .rounded-full.bg-black\/50,
+html.theme-white .rounded-full.bg-black\/60 {
+  background-color: #E2E8E2 !important;
 }
 html.theme-white .bg-black\/50,
 html.theme-white .bg-black\/60,
 html.theme-white .bg-black\/70 {
-  background-color: #E8F0E8 !important;
+  background-color: #EEF4EE !important;
 }
 
 /* Border overrides — unified subtle light borders */
@@ -572,7 +596,8 @@ html.theme-white .border-\[\#1E2C1D\],
 html.theme-white .border-white\/5,
 html.theme-white .border-white\/10,
 html.theme-white .border-white\/15,
-html.theme-white .border-white\/20 {
+html.theme-white .border-white\/20,
+html.theme-white .border-white\/\[0\.06\] {
   border-color: #DFE6DF !important;
 }
 
@@ -630,12 +655,37 @@ html.theme-white .text-cyan-400 {
   color: #0E7490 !important;
 }
 
+/* ─── Macro & Accent Text — high contrast for white bg ─── */
+html.theme-white .text-orange-400,
+html.theme-white .text-orange-400\/90,
+html.theme-white .text-orange-300,
+html.theme-white .text-orange-500 {
+  color: #C2410C !important;
+}
+html.theme-white .text-amber-400,
+html.theme-white .text-amber-400\/90,
+html.theme-white .text-amber-300,
+html.theme-white .text-amber-500 {
+  color: #B45309 !important;
+}
+html.theme-white .text-rose-400,
+html.theme-white .text-rose-400\/90,
+html.theme-white .text-rose-300,
+html.theme-white .text-rose-500 {
+  color: #BE123C !important;
+}
+
 /* ─── Brand Green ─── */
-html.theme-white .text-\[\#ADFF00\] {
+html.theme-white .text-\[\#ADFF00\],
+html.theme-white .text-\[\#ADFF00\]\/90,
+html.theme-white .text-\[\#ADFF00\]\/80,
+html.theme-white .text-\[\#ADFF00\]\/70,
+html.theme-white .text-\[\#ADFF00\]\/60 {
   color: #15803D !important;
 }
+html.theme-white .bg-\[\#ADFF00\]\/\[0\.04\],
 html.theme-white .bg-\[\#ADFF00\]\/5 {
-  background-color: rgba(22, 163, 74, 0.06) !important;
+  background-color: #F0FDF4 !important;
 }
 html.theme-white .bg-\[\#ADFF00\]\/10 {
   background-color: rgba(22, 163, 74, 0.12) !important;
@@ -644,11 +694,15 @@ html.theme-white .bg-\[\#ADFF00\]\/15,
 html.theme-white .bg-\[\#ADFF00\]\/20 {
   background-color: rgba(22, 163, 74, 0.18) !important;
 }
+html.theme-white .border-\[\#ADFF00\]\/15,
 html.theme-white .border-\[\#ADFF00\]\/20,
 html.theme-white .border-\[\#ADFF00\]\/30,
 html.theme-white .border-\[\#ADFF00\]\/40,
 html.theme-white .border-\[\#ADFF00\]\/60 {
-  border-color: rgba(22, 163, 74, 0.35) !important;
+  border-color: #86EFAC !important;
+}
+html.theme-white .decoration-\[\#ADFF00\]\/40 {
+  text-decoration-color: rgba(21, 128, 61, 0.45) !important;
 }
 
 /* Keep primary action CTA buttons vibrant with black text */
@@ -682,6 +736,11 @@ html.theme-white [class*="shadow-\[0_0_10px"],
 html.theme-white [class*="shadow-\[0_0_12px"],
 html.theme-white [class*="shadow-\[0_0_8px"] {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+html.theme-white [class*="drop-shadow-\[0_0_8px_rgba(173\,255\,0"],
+html.theme-white [class*="drop-shadow-\[0_0_10px_rgba(173\,255\,0"],
+html.theme-white [class*="drop-shadow-\[0_0_12px_rgba(173\,255\,0"] {
+  filter: none !important;
 }
 
 /* ─── Bottom Navigation Dock ─── */
