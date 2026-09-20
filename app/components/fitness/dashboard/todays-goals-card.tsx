@@ -346,7 +346,7 @@ export function TodaysGoalsCard({
                 className={`text-xs sm:text-sm font-medium tracking-wide transition-colors flex-1 min-w-0 truncate ${
                   goal.completed
                     ? "text-white/40 line-through decoration-[#ADFF00]/40"
-                    : "text-white/85"
+                    : "text-white/90"
                 }`}
               >
                 {goal.text}

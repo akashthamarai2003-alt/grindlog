@@ -620,26 +620,34 @@ html.theme-white .border-cyan-300 {
 html.theme-white .text-white {
   color: #0F172A !important;
 }
+html.theme-white .text-white\/95,
 html.theme-white .text-white\/90,
+html.theme-white .text-white\/85,
 html.theme-white .text-white\/80 {
   color: #1E293B !important;
 }
-/* FIX: text-white/75 — metric labels like CALORIES, PROTEIN, CARBS were invisible */
 html.theme-white .text-white\/75,
 html.theme-white .text-white\/70,
+html.theme-white .text-white\/65,
 html.theme-white .text-gray-200,
 html.theme-white .text-gray-300 {
   color: #334155 !important;
 }
 html.theme-white .text-white\/60,
+html.theme-white .text-white\/55,
 html.theme-white .text-white\/50,
+html.theme-white .text-white\/45,
 html.theme-white .text-white\/40,
 html.theme-white .text-gray-400,
 html.theme-white .text-gray-500 {
   color: #64748B !important;
 }
+html.theme-white .text-white\/35,
 html.theme-white .text-white\/30,
-html.theme-white .text-white\/20 {
+html.theme-white .text-white\/25,
+html.theme-white .text-white\/20,
+html.theme-white .text-white\/15,
+html.theme-white .text-white\/10 {
   color: #94A3B8 !important;
 }
 
@@ -683,7 +691,10 @@ html.theme-white .text-\[\#ADFF00\]\/70,
 html.theme-white .text-\[\#ADFF00\]\/60 {
   color: #15803D !important;
 }
+html.theme-white .bg-\[\#ADFF00\]\/\[0\.02\],
+html.theme-white .bg-\[\#ADFF00\]\/\[0\.03\],
 html.theme-white .bg-\[\#ADFF00\]\/\[0\.04\],
+html.theme-white .bg-\[\#ADFF00\]\/\[0\.05\],
 html.theme-white .bg-\[\#ADFF00\]\/5 {
   background-color: #F0FDF4 !important;
 }
@@ -734,9 +745,11 @@ html.theme-white [class*="shadow-\[0_0_15px"],
 html.theme-white [class*="shadow-\[0_0_25px"],
 html.theme-white [class*="shadow-\[0_0_10px"],
 html.theme-white [class*="shadow-\[0_0_12px"],
-html.theme-white [class*="shadow-\[0_0_8px"] {
+html.theme-white [class*="shadow-\[0_0_8px"],
+html.theme-white [class*="shadow-\[0_0_6px"] {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
+html.theme-white [class*="drop-shadow-\[0_0_6px_rgba(173\,255\,0"],
 html.theme-white [class*="drop-shadow-\[0_0_8px_rgba(173\,255\,0"],
 html.theme-white [class*="drop-shadow-\[0_0_10px_rgba(173\,255\,0"],
 html.theme-white [class*="drop-shadow-\[0_0_12px_rgba(173\,255\,0"] {
