@@ -60,8 +60,8 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
               href={item.href}
               prefetch={true}
               onClick={(e) => {
+                e.preventDefault();
                 if (pathname === item.href) {
-                  e.preventDefault();
                   window.scrollTo({ top: 0, behavior: "smooth" });
                   return;
                 }
