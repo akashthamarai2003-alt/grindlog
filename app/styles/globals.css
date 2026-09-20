@@ -501,19 +501,31 @@ html.theme-white .bg-\[\#050905\] {
   background-color: #F6FAF6 !important;
 }
 
+/* Frosted glass sticky headers */
+html.theme-white .bg-\[\#060D06\]\/90,
+html.theme-white .bg-\[\#0A1108\]\/90,
+html.theme-white .bg-\[\#0A1108\]\/95,
+html.theme-white .bg-\[\#070C07\]\/85 {
+  background-color: rgba(246, 250, 246, 0.95) !important;
+}
+
 /* Primary cards & dialogs — pure white with soft shadow */
 html.theme-white .bg-\[\#121E12\],
-html.theme-white .bg-\[\#111A10\] {
+html.theme-white .bg-\[\#111A10\],
+html.theme-white .bg-\[\#0E160E\],
+html.theme-white [class*="from-\[\#121E12\]"] {
+  background-image: none !important;
   background-color: #FFFFFF !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 2px 12px -2px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* Secondary containers, chips, water stepper tray */
+/* Secondary containers, chips, item insets, water stepper tray */
 html.theme-white .bg-\[\#1A2619\],
 html.theme-white .bg-\[\#1E2C1D\],
 html.theme-white .bg-\[\#152014\],
 html.theme-white .bg-\[\#1E261D\],
-html.theme-white .bg-\[\#0D150D\] {
+html.theme-white .bg-\[\#0D150D\],
+html.theme-white .bg-\[\#081008\] {
   background-color: #F8FAF8 !important;
 }
 
