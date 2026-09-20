@@ -310,6 +310,57 @@ const CANONICAL_EXERCISES: Record<string, { file: string; target: string; equipm
   "skater hops": { file: "cardio/skater-hops.gif", target: "Glutes & Agility", equipment: "Bodyweight" },
   "skater jumps": { file: "cardio/skater-hops.gif", target: "Glutes & Agility", equipment: "Bodyweight" },
   "star jump": { file: "cardio/star-jump-male.gif", target: "Cardio & Power", equipment: "Bodyweight" },
+  "star jumps": { file: "cardio/star-jump-male.gif", target: "Cardio & Power", equipment: "Bodyweight" },
+  "scissor jumps": { file: "cardio/scissor-jumps-male.gif", target: "Cardio & Legs", equipment: "Bodyweight" },
+
+  // ADDITIONAL HOME CALISTHENICS & FLOOR MOVEMENTS
+  "spider crawl push up": { file: "glutes/spider-crawl-push-up.gif", target: "Chest & Core", equipment: "Bodyweight" },
+  "sphinx push up": { file: "triceps/push-up-on-lower-arms.gif", target: "Triceps", equipment: "Bodyweight" },
+  "side push up": { file: "triceps/side-push-up.gif", target: "Triceps", equipment: "Bodyweight" },
+  "deep push up": { file: "pectorals/deep-push-up.gif", target: "Chest Full Range", equipment: "Bodyweight" },
+  "drop push up": { file: "pectorals/drop-push-up.gif", target: "Chest Plyometric", equipment: "Bodyweight" },
+  "clock push up": { file: "pectorals/clock-push-up.gif", target: "Chest & Core", equipment: "Bodyweight" },
+  "chest tap push up": { file: "pectorals/chest-tap-push-up-male.gif", target: "Chest & Stability", equipment: "Bodyweight" },
+  "pike press": { file: "glutes/pike-to-cobra-push-up.gif", target: "Shoulders / Front Delts", equipment: "Bodyweight" },
+  "forward lunge": { file: "glutes/forward-lunge-male.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "forward lunges": { file: "glutes/forward-lunge-male.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "lunge with jump": { file: "glutes/lunge-with-jump.gif", target: "Quads & Power", equipment: "Bodyweight" },
+  "jumping lunge": { file: "glutes/lunge-with-jump.gif", target: "Quads & Power", equipment: "Bodyweight" },
+  "jumping lunges": { file: "glutes/lunge-with-jump.gif", target: "Quads & Power", equipment: "Bodyweight" },
+  "curtsey squat": { file: "glutes/curtsey-squat.gif", target: "Glutes & Quads", equipment: "Bodyweight" },
+  "curtsy lunge": { file: "glutes/curtsey-squat.gif", target: "Glutes & Quads", equipment: "Bodyweight" },
+  "glute bridge march": { file: "glutes/glute-bridge-march.gif", target: "Glutes & Core", equipment: "Bodyweight" },
+  "single leg glute bridge": { file: "glutes/single-leg-bridge-with-outstretched-leg.gif", target: "Glutes & Hamstrings", equipment: "Bodyweight" },
+  "single leg bridge": { file: "glutes/single-leg-bridge-with-outstretched-leg.gif", target: "Glutes & Hamstrings", equipment: "Bodyweight" },
+  "side bridge hip abduction": { file: "abductors/side-bridge-hip-abduction.gif", target: "Hip Abductors & Glutes", equipment: "Bodyweight" },
+  "side hip abduction": { file: "abductors/side-hip-abduction.gif", target: "Hip Abductors & Glutes", equipment: "Bodyweight" },
+  "swimmer kicks": { file: "glutes/swimmer-kicks-v-2-male.gif", target: "Lower Back & Glutes", equipment: "Bodyweight" },
+  "reverse plank": { file: "abs/reverse-plank-with-leg-lift.gif", target: "Posterior Chain & Core", equipment: "Bodyweight" },
+  "air bike": { file: "abs/air-bike.gif", target: "Obliques & Abs", equipment: "Bodyweight" },
+  "cross body crunch": { file: "abs/cross-body-crunch.gif", target: "Obliques", equipment: "Bodyweight" },
+  "heel touchers": { file: "abs/alternate-heel-touchers.gif", target: "Obliques", equipment: "Bodyweight" },
+  "alternate heel touchers": { file: "abs/alternate-heel-touchers.gif", target: "Obliques", equipment: "Bodyweight" },
+  "heel touches": { file: "abs/alternate-heel-touchers.gif", target: "Obliques", equipment: "Bodyweight" },
+  "frog crunch": { file: "abs/frog-crunch.gif", target: "Abs", equipment: "Bodyweight" },
+  "crab twist toe touch": { file: "abs/crab-twist-toe-touch.gif", target: "Core & Agility", equipment: "Bodyweight" },
+  "toe touch": { file: "abs/side-to-side-toe-touch-male.gif", target: "Hamstrings & Core", equipment: "Bodyweight" },
+  "cocoons": { file: "abs/cocoons.gif", target: "Abs & Hip Flexors", equipment: "Bodyweight" },
+  "flutter kicks": { file: "glutes/flutter-kicks.gif", target: "Lower Abs & Hip Flexors", equipment: "Bodyweight" },
+  "flutter kick": { file: "glutes/flutter-kicks.gif", target: "Lower Abs & Hip Flexors", equipment: "Bodyweight" },
+  "monster walk": { file: "glutes/monster-walk.gif", target: "Glutes & Hips", equipment: "Band / Bodyweight" },
+
+  // DUMBBELL HOME EXERCISES
+  "dumbbell floor press": { file: "pectorals/dumbbell-bench-press.gif", target: "Chest & Triceps", equipment: "Dumbbell" },
+  "dumbbell arnold press": { file: "delts/dumbbell-arnold-press.gif", target: "Shoulders", equipment: "Dumbbell" },
+  "arnold press": { file: "delts/dumbbell-arnold-press.gif", target: "Shoulders", equipment: "Dumbbell" },
+  "dumbbell step up": { file: "glutes/dumbbell-step-up.gif", target: "Quads & Glutes", equipment: "Dumbbell" },
+  "step up": { file: "glutes/dumbbell-step-up.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "step ups": { file: "glutes/dumbbell-step-up.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "dumbbell romanian deadlift": { file: "glutes/dumbbell-romanian-deadlift.gif", target: "Hamstrings & Glutes", equipment: "Dumbbell" },
+  "dumbbell rdl": { file: "glutes/dumbbell-romanian-deadlift.gif", target: "Hamstrings & Glutes", equipment: "Dumbbell" },
+  "dumbbell deadlift": { file: "glutes/dumbbell-deadlift.gif", target: "Posterior Chain", equipment: "Dumbbell" },
+  "dumbbell stiff leg deadlift": { file: "glutes/dumbbell-stiff-leg-deadlift.gif", target: "Hamstrings & Glutes", equipment: "Dumbbell" },
+  "dumbbell rear lunge": { file: "glutes/dumbbell-rear-lunge.gif", target: "Quads & Glutes", equipment: "Dumbbell" },
 };
 
 // Pre-sorted canonical keys by length in descending order.
@@ -323,10 +374,13 @@ const SORTED_CANONICAL_KEYS = Object.keys(CANONICAL_EXERCISES).sort((a, b) => b.
 function cleanName(raw: string): string {
   return String(raw || "")
     .toLowerCase()
+    .replace(/\(.*?\)/g, "") // strip anything in parentheses like (bodyweight), (each leg), (tempo)
+    .replace(/\[.*?\]/g, "") // strip brackets
     .replace(/\b\d+\s*[xX×]\s*\d+(\s*reps?)?\b/gi, "") // strip "3x12" or "3x12 reps"
     .replace(/\b\d+\s*(kg|lbs?)\b/gi, "")             // strip "60 kg"
     .replace(/\bdb\b/gi, "dumbbell")
     .replace(/\bbb\b/gi, "barbell")
+    .replace(/\bbw\b/gi, "bodyweight")
     .replace(/[^a-z0-9]/g, " ")                       // strip symbols
     .replace(/\s+/g, " ")
     .trim();
@@ -351,6 +405,22 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
     };
   }
 
+  // 1b. If prefixed with "bodyweight ", test stripped version
+  if (cleaned.startsWith("bodyweight ")) {
+    const stripped = cleaned.replace(/^bodyweight\s+/, "");
+    if (CANONICAL_EXERCISES[stripped]) {
+      const item = CANONICAL_EXERCISES[stripped];
+      return {
+        name: exerciseName,
+        gifUrl: `${CDN_BASE}/${item.file}`,
+        secondaryGifUrl: `${RAW_BASE}/${item.file}`,
+        targetMuscle: item.target,
+        equipment: item.equipment,
+        isFallback: false,
+      };
+    }
+  }
+
   // 2. Longest-match substring search.
   // Iterates from longest specific key to shortest (e.g. 'feet elevated push up' before 'push up')
   for (const key of SORTED_CANONICAL_KEYS) {
@@ -364,6 +434,24 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
         equipment: item.equipment,
         isFallback: false,
       };
+    }
+  }
+
+  // 2b. If bodyweight prefix was present, test substring on stripped version
+  if (cleaned.startsWith("bodyweight ")) {
+    const stripped = cleaned.replace(/^bodyweight\s+/, "");
+    for (const key of SORTED_CANONICAL_KEYS) {
+      if (stripped.includes(key)) {
+        const item = CANONICAL_EXERCISES[key];
+        return {
+          name: exerciseName,
+          gifUrl: `${CDN_BASE}/${item.file}`,
+          secondaryGifUrl: `${RAW_BASE}/${item.file}`,
+          targetMuscle: item.target,
+          equipment: item.equipment,
+          isFallback: false,
+        };
+      }
     }
   }
 
