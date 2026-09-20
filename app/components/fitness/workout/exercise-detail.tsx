@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 import { estimated1RM, format1RM } from "@/lib/fitness/calculations/one-rm";
 import { ExerciseAnimationPlayer } from "./exercise-animation-player";
+import { getExerciseAnimation } from "@/lib/fitness/exercises/exercise-animations";
 
 interface ExerciseDetailProps {
   exercise: FitnessExercise & { fitness_os_sets: FitnessSet[] };
@@ -280,28 +281,40 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       </h2>
 
       {/* Target muscle & equipment chips */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {(exercise as any).target_muscles?.[0] && (
-          <span className="flex items-center gap-1 text-[10px] font-black tracking-[0.2em] text-[#ADFF00] uppercase bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2.5 py-1 rounded-full">
-            <Target className="w-3 h-3" /> {(exercise as any).target_muscles[0]}
-          </span>
-        )}
-        {isBW && (
-          <span className="flex items-center gap-1 text-[10px] font-black tracking-[0.2em] text-white/60 uppercase bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
-            <Dumbbell className="w-3 h-3" /> Bodyweight
-          </span>
-        )}
-      </div>
+      {(() => {
+        const anim = getExerciseAnimation(exercise.name, (exercise as any).target_muscles?.[0] || (exercise as any).muscle);
+        const resolvedTarget =
+          (exercise as any).target_muscles?.[0] ||
+          ((exercise as any).muscle && (exercise as any).muscle.toLowerCase() !== "muscle" ? (exercise as any).muscle : null) ||
+          anim.targetMuscle;
 
-      {/* Animated Workout Demonstration */}
-      <div className="mb-6">
-        <ExerciseAnimationPlayer
-          name={exercise.name}
-          targetMuscle={(exercise as any).target_muscles?.[0] || (exercise as any).muscle}
-          aspectRatio="square"
-          className="shadow-2xl"
-        />
-      </div>
+        return (
+          <>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {resolvedTarget && (
+                <span className="flex items-center gap-1 text-[10px] font-black tracking-[0.2em] text-[#ADFF00] uppercase bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2.5 py-1 rounded-full">
+                  <Target className="w-3 h-3" /> {resolvedTarget}
+                </span>
+              )}
+              {isBW && (
+                <span className="flex items-center gap-1 text-[10px] font-black tracking-[0.2em] text-white/60 uppercase bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                  <Dumbbell className="w-3 h-3" /> Bodyweight
+                </span>
+              )}
+            </div>
+
+            {/* Animated Workout Demonstration */}
+            <div className="mb-6">
+              <ExerciseAnimationPlayer
+                name={exercise.name}
+                targetMuscle={resolvedTarget}
+                aspectRatio="square"
+                className="shadow-2xl"
+              />
+            </div>
+          </>
+        );
+      })()}
 
       {/* Exercise meta bar */}
       <div className="flex justify-between items-end border-b border-white/5 pb-4 mb-6">

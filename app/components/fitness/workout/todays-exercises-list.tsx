@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { completeExerciseSetsAction } from "@/app/actions/fitness";
 import { ExerciseAnimationPlayer } from "./exercise-animation-player";
+import { getExerciseAnimation } from "@/lib/fitness/exercises/exercise-animations";
 
 interface Exercise {
   id: string;
@@ -114,6 +115,12 @@ export function TodaysExercisesList({
             exercise.fitness_os_sets.length > 0 &&
             exercise.fitness_os_sets.every((set: any) => set.completed);
 
+          const anim = getExerciseAnimation(exercise.name, exercise.muscle);
+          const resolvedTargetMuscle =
+            exercise.muscle && exercise.muscle.toLowerCase() !== "muscle"
+              ? exercise.muscle
+              : anim.targetMuscle;
+
           return (
             <motion.div
               key={exercise.id}
@@ -131,7 +138,7 @@ export function TodaysExercisesList({
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                   <ExerciseAnimationPlayer
                     name={exercise.name}
-                    targetMuscle={exercise.muscle}
+                    targetMuscle={resolvedTargetMuscle}
                     compact={true}
                     className="mt-0.5 shrink-0 shadow-md"
                   />
@@ -154,7 +161,7 @@ export function TodaysExercisesList({
                           Target
                         </span>
                         <span className="text-xs font-semibold text-white/80">
-                          {exercise.muscle || "Muscle"}
+                          {resolvedTargetMuscle}
                         </span>
                       </div>
                       <div className="w-px h-6 bg-white/10" />

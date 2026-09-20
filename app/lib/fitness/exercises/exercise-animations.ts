@@ -42,9 +42,73 @@ export const MUSCLE_FALLBACKS: Record<string, { file: string; target: string; eq
   forearms: { file: "forearms/barbell-wrist-curl.gif", target: "Forearms", equipment: "Barbell" },
 };
 
-// Curated Canonical Exercise Dictionary
+// Curated Canonical Exercise Dictionary with Extensive Home & Gym Coverage
 const CANONICAL_EXERCISES: Record<string, { file: string; target: string; equipment: string }> = {
-  // CHEST / PECTORALS
+  // PUSH-UP & CHEST BODYWEIGHT VARIATIONS (Specific multi-word forms first)
+  "feet elevated push up": { file: "pectorals/decline-push-up.gif", target: "Upper Chest & Shoulders", equipment: "Bodyweight" },
+  "feet elevated pushup": { file: "pectorals/decline-push-up.gif", target: "Upper Chest & Shoulders", equipment: "Bodyweight" },
+  "feet elevated push ups": { file: "pectorals/decline-push-up.gif", target: "Upper Chest & Shoulders", equipment: "Bodyweight" },
+  "feet elevated pushups": { file: "pectorals/decline-push-up.gif", target: "Upper Chest & Shoulders", equipment: "Bodyweight" },
+  "elevated push up": { file: "pectorals/decline-push-up.gif", target: "Upper Chest & Shoulders", equipment: "Bodyweight" },
+  "decline push up": { file: "pectorals/decline-push-up.gif", target: "Upper Chest & Shoulders", equipment: "Bodyweight" },
+  "decline pushup": { file: "pectorals/decline-push-up.gif", target: "Upper Chest & Shoulders", equipment: "Bodyweight" },
+  "decline push ups": { file: "pectorals/decline-push-up.gif", target: "Upper Chest & Shoulders", equipment: "Bodyweight" },
+  "diamond push up": { file: "triceps/diamond-push-up.gif", target: "Triceps & Inner Chest", equipment: "Bodyweight" },
+  "diamond pushup": { file: "triceps/diamond-push-up.gif", target: "Triceps & Inner Chest", equipment: "Bodyweight" },
+  "diamond push ups": { file: "triceps/diamond-push-up.gif", target: "Triceps & Inner Chest", equipment: "Bodyweight" },
+  "diamond pushups": { file: "triceps/diamond-push-up.gif", target: "Triceps & Inner Chest", equipment: "Bodyweight" },
+  "triangle push up": { file: "triceps/diamond-push-up.gif", target: "Triceps & Inner Chest", equipment: "Bodyweight" },
+  "close grip push up": { file: "triceps/close-grip-push-up.gif", target: "Triceps & Chest", equipment: "Bodyweight" },
+  "close grip pushup": { file: "triceps/close-grip-push-up.gif", target: "Triceps & Chest", equipment: "Bodyweight" },
+  "close grip push ups": { file: "triceps/close-grip-push-up.gif", target: "Triceps & Chest", equipment: "Bodyweight" },
+  "narrow push up": { file: "triceps/close-grip-push-up.gif", target: "Triceps", equipment: "Bodyweight" },
+  "narrow pushup": { file: "triceps/close-grip-push-up.gif", target: "Triceps", equipment: "Bodyweight" },
+  "pike push up": { file: "glutes/pike-to-cobra-push-up.gif", target: "Shoulders / Front Delts", equipment: "Bodyweight" },
+  "pike pushup": { file: "glutes/pike-to-cobra-push-up.gif", target: "Shoulders / Front Delts", equipment: "Bodyweight" },
+  "pike push ups": { file: "glutes/pike-to-cobra-push-up.gif", target: "Shoulders / Front Delts", equipment: "Bodyweight" },
+  "incline push up": { file: "pectorals/incline-push-up.gif", target: "Lower Chest", equipment: "Bodyweight" },
+  "incline pushup": { file: "pectorals/incline-push-up.gif", target: "Lower Chest", equipment: "Bodyweight" },
+  "incline push ups": { file: "pectorals/incline-push-up.gif", target: "Lower Chest", equipment: "Bodyweight" },
+  "hands elevated push up": { file: "pectorals/incline-push-up.gif", target: "Lower Chest", equipment: "Bodyweight" },
+  "wide grip push up": { file: "pectorals/wide-hand-push-up.gif", target: "Chest", equipment: "Bodyweight" },
+  "wide hand push up": { file: "pectorals/wide-hand-push-up.gif", target: "Chest", equipment: "Bodyweight" },
+  "wide push up": { file: "pectorals/wide-hand-push-up.gif", target: "Chest", equipment: "Bodyweight" },
+  "archer push up": { file: "pectorals/archer-push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "archer pushup": { file: "pectorals/archer-push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "hindu push up": { file: "pectorals/modified-hindu-push-up-male.gif", target: "Shoulders & Chest", equipment: "Bodyweight" },
+  "hindu pushup": { file: "pectorals/modified-hindu-push-up-male.gif", target: "Shoulders & Chest", equipment: "Bodyweight" },
+  "kneeling push up": { file: "pectorals/kneeling-push-up-male.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "knee push up": { file: "pectorals/kneeling-push-up-male.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "handstand push up": { file: "triceps/handstand-push-up.gif", target: "Shoulders & Triceps", equipment: "Bodyweight" },
+  "handstand pushup": { file: "triceps/handstand-push-up.gif", target: "Shoulders & Triceps", equipment: "Bodyweight" },
+  "clap push up": { file: "pectorals/clap-push-up.gif", target: "Chest & Explosive Power", equipment: "Bodyweight" },
+  "plyo push up": { file: "pectorals/plyo-push-up.gif", target: "Chest & Explosive Power", equipment: "Bodyweight" },
+  "shoulder tap push up": { file: "pectorals/shoulder-tap-push-up.gif", target: "Core & Shoulders", equipment: "Bodyweight" },
+  "push up to side plank": { file: "abs/push-up-to-side-plank.gif", target: "Chest & Obliques", equipment: "Bodyweight" },
+  "superman push up": { file: "pectorals/superman-push-up.gif", target: "Chest & Core", equipment: "Bodyweight" },
+  "single arm push up": { file: "pectorals/single-arm-push-up.gif", target: "Chest & Core", equipment: "Bodyweight" },
+  "one arm push up": { file: "pectorals/single-arm-push-up.gif", target: "Chest & Core", equipment: "Bodyweight" },
+  "wall push up": { file: "pectorals/push-up-wall.gif", target: "Chest (Beginner)", equipment: "Bodyweight" },
+  "standard push up": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "standard pushup": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "regular push up": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "push up": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "pushup": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "push ups": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "pushups": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+
+  // DIPS
+  "bench dip": { file: "triceps/bench-dip-on-floor.gif", target: "Triceps", equipment: "Bodyweight" },
+  "bench dips": { file: "triceps/bench-dip-on-floor.gif", target: "Triceps", equipment: "Bodyweight" },
+  "chair dip": { file: "triceps/bench-dip-on-floor.gif", target: "Triceps", equipment: "Bodyweight" },
+  "floor dip": { file: "triceps/bench-dip-on-floor.gif", target: "Triceps", equipment: "Bodyweight" },
+  "chest dip": { file: "pectorals/chest-dip.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "chest dips": { file: "pectorals/chest-dip.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "tricep dip": { file: "triceps/bench-dip-on-floor.gif", target: "Triceps", equipment: "Bodyweight" },
+  "dips": { file: "pectorals/chest-dip.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+  "dip": { file: "pectorals/chest-dip.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
+
+  // GYM CHEST / PECTORALS
   "machine chest press": { file: "pectorals/lever-chest-press.gif", target: "Chest", equipment: "Machine" },
   "lever chest press": { file: "pectorals/lever-chest-press.gif", target: "Chest", equipment: "Machine" },
   "chest press machine": { file: "pectorals/lever-chest-press.gif", target: "Chest", equipment: "Machine" },
@@ -64,13 +128,6 @@ const CANONICAL_EXERCISES: Record<string, { file: string; target: string; equipm
   "dumbbell press": { file: "pectorals/dumbbell-bench-press.gif", target: "Chest", equipment: "Dumbbell" },
   "barbell decline bench press": { file: "pectorals/barbell-decline-bench-press.gif", target: "Lower Chest", equipment: "Barbell" },
   "decline bench press": { file: "pectorals/barbell-decline-bench-press.gif", target: "Lower Chest", equipment: "Barbell" },
-  "push up": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
-  "pushup": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
-  "push ups": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
-  "pushups": { file: "pectorals/push-up.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
-  "chest dip": { file: "pectorals/chest-dip.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
-  "dips": { file: "pectorals/chest-dip.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
-  "dip": { file: "pectorals/chest-dip.gif", target: "Chest & Triceps", equipment: "Bodyweight" },
   "dumbbell fly": { file: "pectorals/dumbbell-fly.gif", target: "Chest", equipment: "Dumbbell" },
   "dumbbell flyes": { file: "pectorals/dumbbell-fly.gif", target: "Chest", equipment: "Dumbbell" },
   "cable fly": { file: "pectorals/cable-standing-fly.gif", target: "Chest", equipment: "Cable" },
@@ -80,7 +137,7 @@ const CANONICAL_EXERCISES: Record<string, { file: string; target: string; equipm
   "machine fly": { file: "pectorals/lever-seated-fly.gif", target: "Chest", equipment: "Machine" },
   "pec fly": { file: "pectorals/lever-seated-fly.gif", target: "Chest", equipment: "Machine" },
 
-  // BACK / LATS
+  // BACK / LATS / CALISTHENICS
   "lat pulldown": { file: "lats/cable-lat-pulldown-full-range-of-motion.gif", target: "Lats", equipment: "Cable" },
   "cable lat pulldown": { file: "lats/cable-lat-pulldown-full-range-of-motion.gif", target: "Lats", equipment: "Cable" },
   "wide grip lat pulldown": { file: "lats/cable-lat-pulldown-full-range-of-motion.gif", target: "Lats", equipment: "Cable" },
@@ -91,6 +148,14 @@ const CANONICAL_EXERCISES: Record<string, { file: string; target: string; equipm
   "pullups": { file: "lats/pull-up.gif", target: "Lats & Back", equipment: "Bodyweight" },
   "chin up": { file: "lats/chin-up.gif", target: "Lats & Biceps", equipment: "Bodyweight" },
   "chinup": { file: "lats/chin-up.gif", target: "Lats & Biceps", equipment: "Bodyweight" },
+  "chin ups": { file: "lats/chin-up.gif", target: "Lats & Biceps", equipment: "Bodyweight" },
+  "close grip chin up": { file: "lats/close-grip-chin-up.gif", target: "Biceps & Lats", equipment: "Bodyweight" },
+  "inverted row": { file: "upper-back/bodyweight-squatting-row.gif", target: "Upper Back & Lats", equipment: "Bodyweight" },
+  "australian pull up": { file: "upper-back/bodyweight-squatting-row.gif", target: "Upper Back & Lats", equipment: "Bodyweight" },
+  "bodyweight row": { file: "upper-back/bodyweight-squatting-row.gif", target: "Upper Back & Lats", equipment: "Bodyweight" },
+  "doorframe row": { file: "upper-back/bodyweight-squatting-row-with-towel.gif", target: "Lats & Back", equipment: "Bodyweight" },
+  "towel row": { file: "upper-back/bodyweight-squatting-row-with-towel.gif", target: "Lats & Back", equipment: "Bodyweight" },
+  "scapula push up": { file: "serratus-anterior/scapula-push-up.gif", target: "Serratus & Upper Back", equipment: "Bodyweight" },
   "seated cable row": { file: "upper-back/cable-seated-row.gif", target: "Middle Back", equipment: "Cable" },
   "cable row": { file: "upper-back/cable-seated-row.gif", target: "Middle Back", equipment: "Cable" },
   "seated row": { file: "upper-back/cable-seated-row.gif", target: "Middle Back", equipment: "Cable" },
@@ -130,11 +195,30 @@ const CANONICAL_EXERCISES: Record<string, { file: string; target: string; equipm
   "dumbbell shrugs": { file: "traps/dumbbell-shrug.gif", target: "Traps", equipment: "Dumbbell" },
   "shrugs": { file: "traps/dumbbell-shrug.gif", target: "Traps", equipment: "Dumbbell" },
 
-  // LEGS / LOWER BODY
+  // LEGS / LOWER BODY (HOME & GYM)
+  "bodyweight squat": { file: "glutes/barbell-full-squat-side-pov.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "air squat": { file: "glutes/barbell-full-squat-side-pov.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "jump squat": { file: "glutes/jump-squat.gif", target: "Quads & Explosive Power", equipment: "Bodyweight" },
+  "squat jump": { file: "glutes/jump-squat.gif", target: "Quads & Explosive Power", equipment: "Bodyweight" },
+  "pistol squat": { file: "glutes/single-leg-squat-pistol-male.gif", target: "Quadriceps & Balance", equipment: "Bodyweight" },
+  "single leg squat": { file: "glutes/single-leg-squat-pistol-male.gif", target: "Quadriceps & Balance", equipment: "Bodyweight" },
+  "cossack squat": { file: "glutes/weighted-cossack-squats-male.gif", target: "Adductors & Quads", equipment: "Bodyweight" },
+  "bulgarian split squat": { file: "quads/dumbbell-single-leg-split-squat.gif", target: "Quads & Glutes", equipment: "Bodyweight / Dumbbell" },
+  "split squat": { file: "quads/split-squats.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "split squats": { file: "quads/split-squats.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "walking lunge": { file: "glutes/dumbbell-lunge.gif", target: "Quads & Glutes", equipment: "Bodyweight / Dumbbell" },
+  "walking lunges": { file: "glutes/dumbbell-lunge.gif", target: "Quads & Glutes", equipment: "Bodyweight / Dumbbell" },
+  "reverse lunge": { file: "quads/barbell-squat-jump-step-rear-lunge.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "lunge": { file: "glutes/dumbbell-lunge.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "lunges": { file: "glutes/dumbbell-lunge.gif", target: "Quads & Glutes", equipment: "Bodyweight" },
+  "wall sit": { file: "quads/smith-chair-squat.gif", target: "Quadriceps Isometric", equipment: "Bodyweight" },
+  "glute bridge": { file: "glutes/barbell-glute-bridge.gif", target: "Glutes & Hamstrings", equipment: "Bodyweight" },
+  "barbell hip thrust": { file: "glutes/barbell-glute-bridge.gif", target: "Glutes", equipment: "Barbell" },
+  "hip thrust": { file: "glutes/barbell-glute-bridge.gif", target: "Glutes", equipment: "Barbell / Bodyweight" },
   "barbell squat": { file: "glutes/barbell-full-squat-side-pov.gif", target: "Quads & Glutes", equipment: "Barbell" },
   "back squat": { file: "glutes/barbell-full-squat-side-pov.gif", target: "Quads & Glutes", equipment: "Barbell" },
-  "squat": { file: "glutes/barbell-full-squat-side-pov.gif", target: "Quads & Glutes", equipment: "Barbell" },
-  "squats": { file: "glutes/barbell-full-squat-side-pov.gif", target: "Quads & Glutes", equipment: "Barbell" },
+  "squat": { file: "glutes/barbell-full-squat-side-pov.gif", target: "Quads & Glutes", equipment: "Barbell / Bodyweight" },
+  "squats": { file: "glutes/barbell-full-squat-side-pov.gif", target: "Quads & Glutes", equipment: "Barbell / Bodyweight" },
   "barbell front squat": { file: "glutes/barbell-front-squat.gif", target: "Quads", equipment: "Barbell" },
   "front squat": { file: "glutes/barbell-front-squat.gif", target: "Quads", equipment: "Barbell" },
   "goblet squat": { file: "quads/dumbbell-goblet-squat.gif", target: "Quads", equipment: "Dumbbell" },
@@ -145,12 +229,6 @@ const CANONICAL_EXERCISES: Record<string, { file: string; target: string; equipm
   "leg extension": { file: "quads/lever-leg-extension.gif", target: "Quads", equipment: "Machine" },
   "lever leg extension": { file: "quads/lever-leg-extension.gif", target: "Quads", equipment: "Machine" },
   "quad extension": { file: "quads/lever-leg-extension.gif", target: "Quads", equipment: "Machine" },
-  "dumbbell lunge": { file: "glutes/dumbbell-lunge.gif", target: "Quads & Glutes", equipment: "Dumbbell" },
-  "walking lunges": { file: "glutes/dumbbell-lunge.gif", target: "Quads & Glutes", equipment: "Dumbbell" },
-  "lunges": { file: "glutes/dumbbell-lunge.gif", target: "Quads & Glutes", equipment: "Dumbbell" },
-  "lunge": { file: "glutes/dumbbell-lunge.gif", target: "Quads & Glutes", equipment: "Dumbbell" },
-  "bulgarian split squat": { file: "quads/dumbbell-single-leg-split-squat.gif", target: "Quads & Glutes", equipment: "Dumbbell" },
-  "split squat": { file: "quads/dumbbell-single-leg-split-squat.gif", target: "Quads & Glutes", equipment: "Dumbbell" },
   "barbell deadlift": { file: "glutes/barbell-deadlift.gif", target: "Posterior Chain", equipment: "Barbell" },
   "deadlift": { file: "glutes/barbell-deadlift.gif", target: "Posterior Chain", equipment: "Barbell" },
   "conventional deadlift": { file: "glutes/barbell-deadlift.gif", target: "Posterior Chain", equipment: "Barbell" },
@@ -161,9 +239,6 @@ const CANONICAL_EXERCISES: Record<string, { file: string; target: string; equipm
   "hamstring curl": { file: "hamstrings/lever-lying-leg-curl.gif", target: "Hamstrings", equipment: "Machine" },
   "leg curl": { file: "hamstrings/lever-lying-leg-curl.gif", target: "Hamstrings", equipment: "Machine" },
   "seated leg curl": { file: "hamstrings/lever-seated-leg-curl.gif", target: "Hamstrings", equipment: "Machine" },
-  "barbell hip thrust": { file: "glutes/barbell-glute-bridge.gif", target: "Glutes", equipment: "Barbell" },
-  "hip thrust": { file: "glutes/barbell-glute-bridge.gif", target: "Glutes", equipment: "Barbell" },
-  "glute bridge": { file: "glutes/barbell-glute-bridge.gif", target: "Glutes", equipment: "Barbell" },
   "standing calf raise": { file: "calves/bodyweight-standing-calf-raise.gif", target: "Calves", equipment: "Bodyweight" },
   "calf raise": { file: "calves/bodyweight-standing-calf-raise.gif", target: "Calves", equipment: "Bodyweight" },
   "calf raises": { file: "calves/bodyweight-standing-calf-raise.gif", target: "Calves", equipment: "Bodyweight" },
@@ -193,25 +268,54 @@ const CANONICAL_EXERCISES: Record<string, { file: string; target: string; equipm
   "overhead tricep extension": { file: "triceps/dumbbell-standing-triceps-extension.gif", target: "Triceps (Long Head)", equipment: "Dumbbell" },
   "overhead dumbbell tricep extension": { file: "triceps/dumbbell-standing-triceps-extension.gif", target: "Triceps", equipment: "Dumbbell" },
   "tricep kickback": { file: "triceps/dumbbell-kickback.gif", target: "Triceps", equipment: "Dumbbell" },
-  "bench dip": { file: "triceps/bench-dip-on-floor.gif", target: "Triceps", equipment: "Bodyweight" },
   "wrist curl": { file: "forearms/barbell-wrist-curl.gif", target: "Forearms", equipment: "Barbell" },
 
-  // CORE / ABS
-  "plank": { file: "abs/weighted-front-plank.gif", target: "Core", equipment: "Bodyweight" },
-  "front plank": { file: "abs/weighted-front-plank.gif", target: "Core", equipment: "Bodyweight" },
-  "dead bug": { file: "abs/dead-bug.gif", target: "Core", equipment: "Bodyweight" },
-  "deadbug": { file: "abs/dead-bug.gif", target: "Core", equipment: "Bodyweight" },
-  "crunch": { file: "abs/crunch-floor.gif", target: "Abs", equipment: "Bodyweight" },
-  "crunches": { file: "abs/crunch-floor.gif", target: "Abs", equipment: "Bodyweight" },
+  // CORE / ABS (HOME & GYM)
+  "plank": { file: "abs/weighted-front-plank.gif", target: "Core & Abs", equipment: "Bodyweight" },
+  "front plank": { file: "abs/weighted-front-plank.gif", target: "Core & Abs", equipment: "Bodyweight" },
+  "side plank": { file: "abs/bodyweight-incline-side-plank.gif", target: "Obliques & Core", equipment: "Bodyweight" },
+  "plank with twist": { file: "abs/front-plank-with-twist.gif", target: "Core & Obliques", equipment: "Bodyweight" },
+  "plank shoulder taps": { file: "abs/kneeling-plank-tap-shoulder-male.gif", target: "Core & Shoulders", equipment: "Bodyweight" },
+  "shoulder tap": { file: "abs/kneeling-plank-tap-shoulder-male.gif", target: "Core & Shoulders", equipment: "Bodyweight" },
+  "dead bug": { file: "abs/dead-bug.gif", target: "Core Stabilizers", equipment: "Bodyweight" },
+  "deadbug": { file: "abs/dead-bug.gif", target: "Core Stabilizers", equipment: "Bodyweight" },
+  "crunch": { file: "abs/crunch-floor.gif", target: "Upper Abs", equipment: "Bodyweight" },
+  "crunches": { file: "abs/crunch-floor.gif", target: "Upper Abs", equipment: "Bodyweight" },
+  "bicycle crunch": { file: "abs/band-bicycle-crunch.gif", target: "Obliques & Abs", equipment: "Bodyweight" },
+  "reverse crunch": { file: "abs/cable-reverse-crunch.gif", target: "Lower Abs", equipment: "Bodyweight" },
   "hanging leg raise": { file: "abs/hanging-leg-raise.gif", target: "Lower Abs", equipment: "Bodyweight" },
+  "lying leg raise": { file: "abs/lying-leg-raise-flat-bench.gif", target: "Lower Abs", equipment: "Bodyweight" },
   "leg raise": { file: "abs/hanging-leg-raise.gif", target: "Lower Abs", equipment: "Bodyweight" },
+  "sit up": { file: "abs/arms-overhead-full-sit-up-male.gif", target: "Abs & Core", equipment: "Bodyweight" },
+  "situp": { file: "abs/arms-overhead-full-sit-up-male.gif", target: "Abs & Core", equipment: "Bodyweight" },
+  "sit ups": { file: "abs/arms-overhead-full-sit-up-male.gif", target: "Abs & Core", equipment: "Bodyweight" },
+  "russian twist": { file: "abs/russian-twist.gif", target: "Obliques & Core", equipment: "Bodyweight" },
   "cable crunch": { file: "abs/cable-kneeling-crunch.gif", target: "Abs", equipment: "Cable" },
-  "russian twist": { file: "abs/russian-twist.gif", target: "Obliques", equipment: "Bodyweight" },
   "ab wheel rollout": { file: "abs/wheel-rollerout.gif", target: "Core", equipment: "Ab Wheel" },
   "ab rollout": { file: "abs/wheel-rollerout.gif", target: "Core", equipment: "Ab Wheel" },
   "mountain climber": { file: "cardio/mountain-climber.gif", target: "Core & Cardio", equipment: "Bodyweight" },
   "mountain climbers": { file: "cardio/mountain-climber.gif", target: "Core & Cardio", equipment: "Bodyweight" },
+  "v up": { file: "abs/band-v-up.gif", target: "Abs & Core", equipment: "Bodyweight" },
+  "v ups": { file: "abs/band-v-up.gif", target: "Abs & Core", equipment: "Bodyweight" },
+
+  // CARDIO & HIIT
+  "jumping jacks": { file: "cardio/jack-jump-male.gif", target: "Full Body Cardio", equipment: "Bodyweight" },
+  "jumping jack": { file: "cardio/jack-jump-male.gif", target: "Full Body Cardio", equipment: "Bodyweight" },
+  "burpee": { file: "cardio/burpee.gif", target: "Full Body & Cardio", equipment: "Bodyweight" },
+  "burpees": { file: "cardio/burpee.gif", target: "Full Body & Cardio", equipment: "Bodyweight" },
+  "jump rope": { file: "cardio/jump-rope.gif", target: "Cardio & Calves", equipment: "Jump Rope" },
+  "skipping": { file: "cardio/jump-rope.gif", target: "Cardio & Calves", equipment: "Jump Rope" },
+  "high knees": { file: "cardio/walking-high-knees-lunge.gif", target: "Cardio & Hip Flexors", equipment: "Bodyweight" },
+  "bear crawl": { file: "cardio/bear-crawl.gif", target: "Full Body & Core", equipment: "Bodyweight" },
+  "skater hops": { file: "cardio/skater-hops.gif", target: "Glutes & Agility", equipment: "Bodyweight" },
+  "skater jumps": { file: "cardio/skater-hops.gif", target: "Glutes & Agility", equipment: "Bodyweight" },
+  "star jump": { file: "cardio/star-jump-male.gif", target: "Cardio & Power", equipment: "Bodyweight" },
 };
+
+// Pre-sorted canonical keys by length in descending order.
+// This ensures specific multi-word variations (e.g., 'feet elevated push up', 'diamond push up')
+// always match before generic base terms (e.g., 'push up').
+const SORTED_CANONICAL_KEYS = Object.keys(CANONICAL_EXERCISES).sort((a, b) => b.length - a.length);
 
 /**
  * Normalizes input exercise name for token and fuzzy matching
@@ -234,7 +338,7 @@ function cleanName(raw: string): string {
 export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: string): ExerciseAnimationInfo {
   const cleaned = cleanName(exerciseName);
 
-  // 1. Direct match in canonical dictionary
+  // 1. Direct O(1) match in canonical dictionary
   if (CANONICAL_EXERCISES[cleaned]) {
     const item = CANONICAL_EXERCISES[cleaned];
     return {
@@ -247,9 +351,11 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
     };
   }
 
-  // 2. Keyword/substring search against canonical map
-  for (const [key, item] of Object.entries(CANONICAL_EXERCISES)) {
-    if (cleaned.includes(key) || key.includes(cleaned)) {
+  // 2. Longest-match substring search.
+  // Iterates from longest specific key to shortest (e.g. 'feet elevated push up' before 'push up')
+  for (const key of SORTED_CANONICAL_KEYS) {
+    if (cleaned.includes(key)) {
+      const item = CANONICAL_EXERCISES[key];
       return {
         name: exerciseName,
         gifUrl: `${CDN_BASE}/${item.file}`,
@@ -261,12 +367,13 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
     }
   }
 
-  // 3. Multi-token partial matching (best score)
+  // 3. Multi-token weighted matching (best token overlap)
   const tokens = cleaned.split(" ").filter((t) => t.length > 2);
   let bestMatch: { file: string; target: string; equipment: string } | null = null;
   let highestScore = 0;
 
-  for (const [key, item] of Object.entries(CANONICAL_EXERCISES)) {
+  for (const key of SORTED_CANONICAL_KEYS) {
+    const item = CANONICAL_EXERCISES[key];
     let score = 0;
     for (const tok of tokens) {
       if (key.includes(tok)) score += 2;
@@ -288,22 +395,24 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
     };
   }
 
-  // 4. Targeted Muscle Hint Fallback
-  const hintLower = String(targetMuscleHint || "").toLowerCase();
-  for (const [muscleKey, fallback] of Object.entries(MUSCLE_FALLBACKS)) {
-    if (hintLower.includes(muscleKey) || cleaned.includes(muscleKey)) {
-      return {
-        name: exerciseName,
-        gifUrl: `${CDN_BASE}/${fallback.file}`,
-        secondaryGifUrl: `${RAW_BASE}/${fallback.file}`,
-        targetMuscle: fallback.target,
-        equipment: fallback.equipment,
-        isFallback: true,
-      };
+  // 4. Targeted Muscle Hint Fallback (if hint is specific and not generic 'Muscle')
+  const hintLower = String(targetMuscleHint || "").toLowerCase().trim();
+  if (hintLower && hintLower !== "muscle") {
+    for (const [muscleKey, fallback] of Object.entries(MUSCLE_FALLBACKS)) {
+      if (hintLower.includes(muscleKey) || cleaned.includes(muscleKey)) {
+        return {
+          name: exerciseName,
+          gifUrl: `${CDN_BASE}/${fallback.file}`,
+          secondaryGifUrl: `${RAW_BASE}/${fallback.file}`,
+          targetMuscle: fallback.target,
+          equipment: fallback.equipment,
+          isFallback: true,
+        };
+      }
     }
   }
 
-  // 5. Default General Compound Fallback (Bench Press / Full Body)
+  // 5. Default General Compound Fallback (Chest & Core)
   const defaultFallback = MUSCLE_FALLBACKS.chest;
   return {
     name: exerciseName,
@@ -314,3 +423,4 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
     isFallback: true,
   };
 }
+
