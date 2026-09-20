@@ -288,41 +288,43 @@ export function TodaySummaryCard({
               className="bg-[#0A1108] border border-white/5 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between hover:border-white/15 transition-all group relative overflow-hidden"
             >
               {/* Subtle hover background sheen */}
-              <div className="absolute inset-0 bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="absolute inset-0 bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-0" />
 
-              {/* Tier 1: Icon on left, Percentage badge on right */}
-              <div className="flex items-center justify-between mb-2">
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg} ${item.iconColor}`}>
-                  {item.icon}
+              <div className="relative z-10 flex flex-col justify-between flex-1">
+                {/* Tier 1: Icon on left, Percentage badge on right */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg} ${item.iconColor}`}>
+                    {item.icon}
+                  </div>
+
+                  <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1 ${item.badgeBg} ${item.badgeColor}`}>
+                    {item.isCompleted && <Check size={9} className="stroke-[3]" />}
+                    <span>{item.percent}%</span>
+                  </span>
                 </div>
 
-                <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1 ${item.badgeBg} ${item.badgeColor}`}>
-                  {item.isCompleted && <Check size={9} className="stroke-[3]" />}
-                  <span>{item.percent}%</span>
-                </span>
-              </div>
+                {/* Tier 2: Category Title - Dedicated full-width line, never truncated */}
+                <p className="text-[10px] sm:text-[11px] font-black text-white/75 uppercase tracking-wider mb-1">
+                  {item.label}
+                </p>
 
-              {/* Tier 2: Category Title - Dedicated full-width line, never truncated */}
-              <p className="text-[10px] sm:text-[11px] font-black text-white/75 uppercase tracking-wider mb-1">
-                {item.label}
-              </p>
+                {/* Tier 3: Value Row - Resilient on all mobile sizes with uniform row height */}
+                <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 mb-2.5 min-h-[28px] sm:min-h-[30px]">
+                  <span className="text-base sm:text-lg font-black text-white tracking-tight leading-snug">
+                    {item.consumed.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-white/40 leading-snug">
+                    / {item.target.toLocaleString()}{item.unit ? ` ${item.unit}` : ""}
+                  </span>
+                </div>
 
-              {/* Tier 3: Value Row - Resilient on all mobile sizes with uniform row height */}
-              <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 mb-2.5 min-h-[28px] sm:min-h-[30px]">
-                <span className="text-base sm:text-lg font-black text-white tracking-tight leading-snug">
-                  {item.consumed.toLocaleString()}
-                </span>
-                <span className="text-[10px] sm:text-[11px] font-semibold text-white/40 leading-snug">
-                  / {item.target.toLocaleString()}{item.unit ? ` ${item.unit}` : ""}
-                </span>
-              </div>
-
-              {/* Tier 4: Smooth Progress Bar Track */}
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-0">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${item.progressGradient}`}
-                  style={{ width: `${Math.min(100, Math.max(0, item.percent))}%` }}
-                />
+                {/* Tier 4: Smooth Progress Bar Track */}
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-0">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${item.progressGradient}`}
+                    style={{ width: `${Math.min(100, Math.max(0, item.percent))}%` }}
+                  />
+                </div>
               </div>
             </div>
           ))}

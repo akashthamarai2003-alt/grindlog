@@ -512,8 +512,9 @@ html.theme-white .bg-\[\#111A10\] {
 html.theme-white .bg-\[\#1A2619\],
 html.theme-white .bg-\[\#1E2C1D\],
 html.theme-white .bg-\[\#152014\],
-html.theme-white .bg-\[\#1E261D\] {
-  background-color: #F0F5F0 !important;
+html.theme-white .bg-\[\#1E261D\],
+html.theme-white .bg-\[\#0D150D\] {
+  background-color: #F8FAF8 !important;
 }
 
 /* Tertiary dark surfaces — water history stats, heatmap empty cells, future cells */
@@ -539,11 +540,13 @@ html.theme-white .bg-\[\#00D2FF\] {
 
 /* Subtle opacity backgrounds / chip pills */
 html.theme-white .bg-white\/5,
-html.theme-white .bg-white\/\[0\.02\],
 html.theme-white .bg-white\/\[0\.03\],
 html.theme-white .bg-white\/\[0\.04\] {
   background-color: #FFFFFF !important;
   border-color: #DFE6DF !important;
+}
+html.theme-white .bg-white\/\[0\.02\] {
+  background-color: rgba(0, 0, 0, 0.02) !important;
 }
 html.theme-white .bg-white\/10 {
   background-color: rgba(0, 0, 0, 0.05) !important;
@@ -681,6 +684,25 @@ html.theme-white .text-rose-400\/90,
 html.theme-white .text-rose-300,
 html.theme-white .text-rose-500 {
   color: #BE123C !important;
+}
+
+/* Sky accent colors for Carbs / Info — readable on white */
+html.theme-white .text-sky-400,
+html.theme-white .text-sky-500 {
+  color: #0284C7 !important;
+}
+html.theme-white .text-sky-300,
+html.theme-white .text-sky-200 {
+  color: #0369A1 !important;
+}
+
+/* Yellow accent colors for Fat / Warn — readable on white */
+html.theme-white .text-yellow-400,
+html.theme-white .text-yellow-500 {
+  color: #B45309 !important;
+}
+html.theme-white .text-yellow-300 {
+  color: #92400E !important;
 }
 
 /* ─── Brand Green ─── */
