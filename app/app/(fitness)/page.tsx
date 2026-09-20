@@ -8,10 +8,7 @@ import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } fr
 import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
 import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
-import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
-
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 async function DashboardContent({ searchParams }: { searchParams?: { date?: string } }) {
   const supabase = await createServerSupabase();
@@ -46,8 +43,8 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     { data: activityLog },
     { data: sleepLog },
     { data: waterLogs },
+    { data: todayFoodLogs },
     subscriptionState,
-    todayNutritionRes,
   ] = await Promise.all([
     supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle(),
@@ -62,11 +59,8 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     supabase.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
     supabase.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
     (supabase as any).from("fitness_os_water_logs").select("amount_ml").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
+    (supabase as any).from("food_logs").select("calories, protein, carbs, fat, meal_type").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
     getFitnessSubscriptionState(user.id),
-    NutritionService.getTodaySummaryAndDetails(user.id, targetDateStr).catch((err) => {
-      console.warn("Could not load today nutrition details for dashboard:", err);
-      return null;
-    }),
   ]);
   let userProfile = profile;
   let userPlan = plan;
@@ -137,52 +131,47 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       }
     : undefined;
 
-  const effectiveNutrition = todayNutritionRes ? {
-    ...effectivePlan?.plan_data?.nutrition,
-    daily_calories: todayNutritionRes.targets?.calories || effectivePlan?.plan_data?.nutrition?.daily_calories,
-    protein_grams: todayNutritionRes.targets?.protein || effectivePlan?.plan_data?.nutrition?.protein_grams,
-    carbs_grams: todayNutritionRes.targets?.carbs || effectivePlan?.plan_data?.nutrition?.carbs_grams,
-    fat_grams: todayNutritionRes.targets?.fat || effectivePlan?.plan_data?.nutrition?.fat_grams,
-    water_ml: todayNutritionRes.targets?.water_ml,
-    consumed: todayNutritionRes.consumed || { calories: 0, protein: 0, carbs: 0, fat: 0, water_ml: 0 },
-    logged_foods: todayNutritionRes.logged_foods || [],
-    progress: todayNutritionRes.progress,
-    meals: (todayNutritionRes.meals && todayNutritionRes.meals.length > 0 && todayNutritionRes.meals.some((m: any) => m.meal_plan_items?.length > 0))
-      ? todayNutritionRes.meals.map((m: any, idx: number) => ({
-          id: m.id || idx,
-          meal_type: m.meal_type,
-          meal_name: m.name,
-          time_of_day: m.meal_type === 'breakfast' ? 'After waking' : m.meal_type === 'lunch' ? 'Midday' : m.meal_type === 'pre_workout' ? 'Pre-workout' : 'Evening',
-          total_calories: m.calories,
-          protein_grams: m.protein,
-          carbs_grams: m.carbs,
-          fat_grams: m.fat,
-          items: (m.meal_plan_items || []).map((it: any) => {
-            const fName = it.foods?.name || it.name;
-            const sSize = it.foods?.serving_size || it.serving_size || '1 serving';
-            return `${fName} - ${sSize}`;
-          }),
-          meal_plan_items: m.meal_plan_items,
-          prep_instructions: m.prep_instructions,
-        }))
-      : (effectivePlan?.plan_data?.nutrition?.meals || []).map((m: any, idx: number, arr: any[]) => {
-          let derivedType = m.meal_type;
-          if (!derivedType) {
-            const ctx = `${m.meal_name || m.name || ''} ${m.time_of_day || ''} ${m.prep_instructions || ''}`.toLowerCase();
-            if (ctx.includes('breakfast') || ctx.includes('waking') || ctx.includes('morning')) derivedType = 'breakfast';
-            else if (ctx.includes('lunch') || ctx.includes('midday') || ctx.includes('noon')) derivedType = 'lunch';
-            else if (ctx.includes('dinner') || ctx.includes('night') || ctx.includes('supper') || ctx.includes('evening')) derivedType = 'dinner';
-            else if (ctx.includes('pre')) derivedType = 'pre_workout';
-            else if (ctx.includes('post')) derivedType = 'post_workout';
-            else if (arr.length === 3) derivedType = idx === 0 ? 'breakfast' : idx === 1 ? 'lunch' : 'dinner';
-            else derivedType = idx === 0 ? 'breakfast' : idx === arr.length - 1 ? 'dinner' : 'lunch';
-          }
-          return {
-            ...m,
-            meal_type: derivedType,
-          };
-        }),
-  } : effectivePlan?.plan_data?.nutrition;
+  const consumed = {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    water_ml: Array.isArray(waterLogs)
+      ? waterLogs.reduce((total: number, entry: any) => total + (Number(entry?.amount_ml) || 0), 0)
+      : 0,
+  };
+
+  if (Array.isArray(todayFoodLogs)) {
+    todayFoodLogs.forEach((f: any) => {
+      consumed.calories += Number(f.calories) || 0;
+      consumed.protein += Number(f.protein) || 0;
+      consumed.carbs += Number(f.carbs) || 0;
+      consumed.fat += Number(f.fat) || 0;
+    });
+  }
+
+  const baseNutrition = effectivePlan?.plan_data?.nutrition;
+  const effectiveNutrition = baseNutrition ? {
+    ...baseNutrition,
+    consumed,
+    meals: (baseNutrition.meals || []).map((m: any, idx: number, arr: any[]) => {
+      let derivedType = m.meal_type;
+      if (!derivedType) {
+        const ctx = `${m.meal_name || m.name || ''} ${m.time_of_day || ''} ${m.prep_instructions || ''}`.toLowerCase();
+        if (ctx.includes('breakfast') || ctx.includes('waking') || ctx.includes('morning')) derivedType = 'breakfast';
+        else if (ctx.includes('lunch') || ctx.includes('midday') || ctx.includes('noon')) derivedType = 'lunch';
+        else if (ctx.includes('dinner') || ctx.includes('night') || ctx.includes('supper') || ctx.includes('evening')) derivedType = 'dinner';
+        else if (ctx.includes('pre')) derivedType = 'pre_workout';
+        else if (ctx.includes('post')) derivedType = 'post_workout';
+        else if (arr.length === 3) derivedType = idx === 0 ? 'breakfast' : idx === 1 ? 'lunch' : 'dinner';
+        else derivedType = idx === 0 ? 'breakfast' : idx === arr.length - 1 ? 'dinner' : 'lunch';
+      }
+      return {
+        ...m,
+        meal_type: derivedType,
+      };
+    }),
+  } : null;
 
   return (
     <FitnessDashboard
@@ -216,7 +205,7 @@ export default async function FitnessHome({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-[#0A1108]">
       <Suspense fallback={
         <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">
           <DashboardSkeleton />
