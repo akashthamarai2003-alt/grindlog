@@ -50,12 +50,24 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading, isOpen]);
+    if (messages.length > 1 || isLoading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isLoading]);
 
   useEffect(() => {
     if (isOpen) {
-      fetchLimitInfo();
+      // Delay initial scroll and limit fetch so they don't stutter the entrance animation
+      const scrollTimer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 250);
+      const limitTimer = setTimeout(() => {
+        fetchLimitInfo();
+      }, 350);
+      return () => {
+        clearTimeout(scrollTimer);
+        clearTimeout(limitTimer);
+      };
     }
   }, [isOpen]);
 
@@ -68,11 +80,9 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
     
     updateHeight();
     window.visualViewport?.addEventListener("resize", updateHeight);
-    window.visualViewport?.addEventListener("scroll", updateHeight);
     
     return () => {
       window.visualViewport?.removeEventListener("resize", updateHeight);
-      window.visualViewport?.removeEventListener("scroll", updateHeight);
     };
   }, []);
 
@@ -152,19 +162,19 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
             initial={{ x: 60, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 60, opacity: 0 }}
-            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-28 right-0 z-40 flex items-center gap-1.5 pl-3 pr-2.5 py-2.5 bg-[#111A10]/95 backdrop-blur-md border-y border-l border-[#ADFF00]/40 rounded-l-full text-[#ADFF00] shadow-[0_0_20px_rgba(173,255,0,0.25)] hover:translate-x-[-2px] active:scale-95 transition-all cursor-pointer group"
+            className="fitness-chatbot-trigger fixed bottom-28 right-0 z-40 flex items-center gap-1.5 pl-3 pr-2.5 py-2.5 bg-[#111A10]/95 border-y border-l border-[#ADFF00]/40 rounded-l-full text-[#ADFF00] shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:translate-x-[-2px] active:scale-95 transition-transform duration-100 ease-out cursor-pointer group touch-manipulation transform-gpu"
             title={isPro ? "Open AI Fitness Coach" : "AI Coach (Pro Preview)"}
           >
             <div className="relative flex items-center justify-center">
-              <Bot className="w-5 h-5 text-[#ADFF00] group-hover:scale-110 transition-transform" />
+              <Bot className="w-5 h-5 text-[#ADFF00] fitness-chatbot-icon group-hover:scale-110 transition-transform" />
               <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF00] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ADFF00]" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ADFF00] fitness-chatbot-dot" />
               </span>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-white/90 group-hover:text-[#ADFF00] transition-colors pr-0.5 select-none hidden min-[360px]:inline">
+            <span className="fitness-chatbot-label text-[10px] font-black uppercase tracking-wider text-white/90 group-hover:text-[#ADFF00] transition-colors pr-0.5 select-none hidden min-[360px]:inline">
               AI Coach
             </span>
             {!isPro && (
@@ -183,19 +193,20 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="fitness-chatbot-backdrop absolute inset-0 bg-black/60"
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 z-[101] flex flex-col bg-[#0A1108] sm:rounded-t-[32px] shadow-2xl overflow-hidden sm:!h-auto sm:!max-h-[85dvh]"
+              transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+              className="fitness-chatbot-drawer fixed bottom-0 left-0 right-0 z-[101] flex flex-col bg-[#0A1108] sm:rounded-t-[32px] shadow-2xl overflow-hidden sm:!h-auto sm:!max-h-[85dvh] transform-gpu will-change-transform"
               style={{ height: vvh }}
             >
               {/* Header */}
-              <div className="sticky top-0 z-20 flex items-center justify-between p-4 sm:p-5 pt-[calc(1rem+env(safe-area-inset-top))] sm:pt-5 border-b border-white/5 shrink-0 bg-[#0A1108]">
+              <div className="fitness-chatbot-header sticky top-0 z-20 flex items-center justify-between p-4 sm:p-5 pt-[calc(1rem+env(safe-area-inset-top))] sm:pt-5 border-b border-white/5 shrink-0 bg-[#0A1108]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[#ADFF00]/10 flex items-center justify-center border border-[#ADFF00]/20">
                     <Bot className="w-5 h-5 text-[#ADFF00]" />
@@ -222,7 +233,7 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => setIsOpen(false)} className="p-2 rounded-full bg-white/5 text-white/60 hover:text-white transition-colors">
+                <button onClick={() => setIsOpen(false)} className="p-2 rounded-full bg-white/5 text-white/60 hover:text-white transition-colors touch-manipulation cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -237,7 +248,7 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
                     <div className={`px-4 py-2.5 rounded-[20px] text-[14px] leading-relaxed font-medium ${
                       msg.role === "user" 
                         ? "bg-[#ADFF00] text-black rounded-tr-[4px]" 
-                        : "bg-[#111A10] text-white/90 border border-white/5 rounded-tl-[4px] prose prose-sm prose-invert prose-p:leading-relaxed prose-strong:text-[#ADFF00] max-w-none"
+                        : "fitness-chatbot-bubble-bot bg-[#111A10] text-white/90 border border-white/5 rounded-tl-[4px] prose prose-sm prose-invert prose-p:leading-relaxed prose-strong:text-[#ADFF00] max-w-none"
                     }`}>
                       {msg.role === "user" ? (
                         msg.content
@@ -249,7 +260,7 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
                 ))}
 
                 {!isPro && (
-                  <div className="bg-gradient-to-b from-[#121E12] to-[#0A1108] border border-[#ADFF00]/30 rounded-2xl p-5 shadow-[0_0_25px_rgba(173,255,0,0.1)] flex flex-col gap-4 my-2">
+                  <div className="fitness-chatbot-pro-card bg-gradient-to-b from-[#121E12] to-[#0A1108] border border-[#ADFF00]/30 rounded-2xl p-5 shadow-[0_0_25px_rgba(173,255,0,0.1)] flex flex-col gap-4 my-2">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full bg-[#ADFF00]/15 flex items-center justify-center text-[#ADFF00]">
                         <Sparkles className="w-4 h-4" />
@@ -277,7 +288,7 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
 
                     <a
                       href="/payment?returnTo=/&intent=upgrade_pro"
-                      className="w-full py-3 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(173,255,0,0.3)] transition-all"
+                      className="w-full py-3 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(173,255,0,0.3)] transition-all touch-manipulation cursor-pointer"
                     >
                       Upgrade to Pro to Chat ⚡
                     </a>
@@ -300,7 +311,7 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
 
               {/* Input Area */}
               {isPro ? (
-                <form onSubmit={sendMessage} className="p-4 sm:p-5 border-t border-white/5 bg-[#0A1108] shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5">
+                <form onSubmit={sendMessage} className="fitness-chatbot-footer p-4 sm:p-5 border-t border-white/5 bg-[#0A1108] shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5">
                   <div className="relative">
                     <input
                       type="text"
@@ -308,22 +319,22 @@ export function FitnessChatbot({ isPro = true }: { isPro?: boolean }) {
                       onChange={(e) => setInput(e.target.value)}
                       disabled={limitInfo?.remaining === 0 || isLoading}
                       placeholder={limitInfo?.remaining === 0 ? "Daily AI generation limit reached for today" : "Ask about your progress..."}
-                      className="w-full bg-[#111A10] border border-white/10 rounded-full py-4 pl-5 pr-14 text-[16px] font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#ADFF00]/50 transition-colors disabled:opacity-50"
+                      className="fitness-chatbot-input w-full bg-[#111A10] border border-white/10 rounded-full py-4 pl-5 pr-14 text-[16px] font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#ADFF00]/50 transition-colors disabled:opacity-50"
                     />
                     <button 
                       type="submit"
                       disabled={!input.trim() || isLoading || limitInfo?.remaining === 0}
-                      className="absolute right-2 top-2 bottom-2 w-10 bg-[#ADFF00] rounded-full flex items-center justify-center text-black disabled:opacity-50 disabled:bg-white/10 disabled:text-white/40 transition-all"
+                      className="absolute right-2 top-2 bottom-2 w-10 bg-[#ADFF00] rounded-full flex items-center justify-center text-black disabled:opacity-50 disabled:bg-white/10 disabled:text-white/40 transition-all touch-manipulation cursor-pointer"
                     >
                       <Send className="w-4 h-4 ml-0.5" />
                     </button>
                   </div>
                 </form>
               ) : (
-                <div className="p-4 sm:p-5 border-t border-white/5 bg-[#0A1108] shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5">
+                <div className="fitness-chatbot-footer p-4 sm:p-5 border-t border-white/5 bg-[#0A1108] shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-5">
                   <a
                     href="/payment?returnTo=/&intent=upgrade_pro"
-                    className="w-full py-3.5 px-5 bg-[#111A10] border border-[#ADFF00]/30 hover:border-[#ADFF00] rounded-full text-xs font-bold text-white/70 flex items-center justify-between transition-all group"
+                    className="fitness-chatbot-input w-full py-3.5 px-5 bg-[#111A10] border border-[#ADFF00]/30 hover:border-[#ADFF00] rounded-full text-xs font-bold text-white/70 flex items-center justify-between transition-all group touch-manipulation"
                   >
                     <span className="text-white/50 group-hover:text-white transition-colors truncate pr-2">
                       Upgrade to Pro to chat with AI Coach...

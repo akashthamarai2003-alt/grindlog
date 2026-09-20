@@ -850,4 +850,91 @@ html.theme-white .w-2\.5.h-2\.5.bg-\[\#ADFF00\] {
   background-color: #16A34A !important;
 }
 
+/* ─── AI Chatbot Trigger Button & Drawer (White Theme) ─── */
+html.theme-white .fitness-chatbot-trigger {
+  background-color: #FFFFFF !important;
+  border-color: #86EFAC !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04) !important;
+  color: #15803D !important;
+}
+html.theme-white .fitness-chatbot-trigger .fitness-chatbot-icon {
+  color: #15803D !important;
+}
+html.theme-white .fitness-chatbot-trigger .fitness-chatbot-dot {
+  background-color: #16A34A !important;
+}
+html.theme-white .fitness-chatbot-trigger .fitness-chatbot-label {
+  color: #0F172A !important;
+}
+html.theme-white .fitness-chatbot-trigger:hover .fitness-chatbot-label {
+  color: #15803D !important;
+}
+
+html.theme-white .fitness-chatbot-backdrop {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+html.theme-white .fitness-chatbot-drawer {
+  background-color: #F6FAF6 !important;
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.08) !important;
+}
+html.theme-white .fitness-chatbot-drawer .fitness-chatbot-header {
+  background-color: #FFFFFF !important;
+  border-color: #DFE6DF !important;
+}
+html.theme-white .fitness-chatbot-drawer .fitness-chatbot-footer {
+  background-color: #FFFFFF !important;
+  border-color: #DFE6DF !important;
+}
+html.theme-white .fitness-chatbot-drawer .fitness-chatbot-input {
+  background-color: #F8FAF8 !important;
+  border-color: #DFE6DF !important;
+  color: #0F172A !important;
+}
+html.theme-white .fitness-chatbot-drawer .fitness-chatbot-input::placeholder {
+  color: #94A3B8 !important;
+}
+html.theme-white .fitness-chatbot-drawer .fitness-chatbot-bubble-bot {
+  background-color: #FFFFFF !important;
+  border-color: #DFE6DF !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+  color: #1E293B !important;
+}
+html.theme-white .fitness-chatbot-drawer .fitness-chatbot-pro-card {
+  background-image: none !important;
+  background-color: #FFFFFF !important;
+  border-color: #86EFAC !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Typography prose inversion reset for markdown inside white theme */
+html.theme-white .prose-invert {
+  --tw-prose-body: #1E293B !important;
+  --tw-prose-headings: #0F172A !important;
+  --tw-prose-lead: #334155 !important;
+  --tw-prose-links: #15803D !important;
+  --tw-prose-bold: #0F172A !important;
+  --tw-prose-counters: #64748B !important;
+  --tw-prose-bullets: #94A3B8 !important;
+  --tw-prose-hr: #E2E8F0 !important;
+  --tw-prose-quotes: #0F172A !important;
+  --tw-prose-quote-borders: #CBD5E1 !important;
+  --tw-prose-captions: #64748B !important;
+  --tw-prose-code: #0F172A !important;
+  --tw-prose-pre-code: #E2E8F0 !important;
+  --tw-prose-pre-bg: #1E293B !important;
+  --tw-prose-th-borders: #CBD5E1 !important;
+  --tw-prose-td-borders: #E2E8F0 !important;
+  color: #1E293B !important;
+}
+html.theme-white .prose-invert p,
+html.theme-white .prose-invert li,
+html.theme-white .prose-invert span {
+  color: #1E293B !important;
+}
+html.theme-white .prose-invert strong {
+  color: #15803D !important;
+}
+
+
 
