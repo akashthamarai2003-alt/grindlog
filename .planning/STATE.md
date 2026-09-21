@@ -1,9 +1,9 @@
 # Project State — GrindLog
 
 ## Current Status
-- **Active Phase**: Phase 1 Completed / Ready for Phase 2 Planning
-- **Last Milestone Achieved**: Instant Tab Switching & Database Query Waterfall Elimination on `/` and `/workout`
-- **Head Git Commit**: `0821391b` (perf(workout): eliminate 15-query waterfall with single batch fetch, Suspense skeleton, and instant tab transitions)
+- **Active Phase**: Phase 1 Completed / Polish
+- **Last Milestone Achieved**: Instant Home Tab Switching & RLS Fallback Elimination (0ms Tab Transitions)
+- **Head Git Commit**: `9b06801a` (perf(home): eliminate RLS fallback queries, remove tab spinner, and enable instant client router caching)
 - **Branch**: `main`
 - **Build Status**: Passing cleanly (`npm run build` succeeds with 0 errors)
 
