@@ -2,8 +2,8 @@
 
 ## Current Status
 - **Active Phase**: Phase 1 Completed / Polish
-- **Last Milestone Achieved**: Instant Home Tab Switching & RLS Fallback Elimination (0ms Tab Transitions)
-- **Head Git Commit**: `9b06801a` (perf(home): eliminate RLS fallback queries, remove tab spinner, and enable instant client router caching)
+- **Last Milestone Achieved**: Instant Workout & Session Tracking (0ms Skeletons & Admin Batching)
+- **Head Git Commit**: `0004fa62` (perf(workout): optimize active workout session page with admin batch queries, loading skeleton, and Suspense streaming)
 - **Branch**: `main`
 - **Build Status**: Passing cleanly (`npm run build` succeeds with 0 errors)
 
