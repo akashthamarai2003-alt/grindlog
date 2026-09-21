@@ -768,9 +768,9 @@
     "semantic_hash": ""
   },
   "app/app/api/workouts/sessions/[sessionId]/exercises/[exerciseId]/route.ts": {
-    "mtime": 1786961904.4358008,
-    "seen": 1789970487.5980399,
-    "ast_hash": "6b01d8a4e73d7295a2d372cd9780eace",
+    "mtime": 1789983889.151215,
+    "seen": 1789984193.1466527,
+    "ast_hash": "02e240e5f27cf8547c2ffa5fc351fc98",
     "semantic_hash": ""
   },
   "app/app/api/workouts/sessions/[sessionId]/exercises/[exerciseId]/sets/route.ts": {
@@ -1482,9 +1482,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/workout/exercise-detail.tsx": {
-    "mtime": 1789915750.1951418,
-    "seen": 1789970487.5985644,
-    "ast_hash": "773ea31e7042f85f9a37fa6284754e35",
+    "mtime": 1789984024.3739786,
+    "seen": 1789984193.1813898,
+    "ast_hash": "2ac92a01fa2e272e1c9cf7d09994d89b",
     "semantic_hash": ""
   },
   "app/components/fitness/workout/generate-workout-button.tsx": {
@@ -1578,9 +1578,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/workout/workout-session-manager.tsx": {
-    "mtime": 1789825323.4243684,
-    "seen": 1789970487.598632,
-    "ast_hash": "78b5de509aa78b5c38f6ae9874044c2e",
+    "mtime": 1789983912.7798204,
+    "seen": 1789984193.1857612,
+    "ast_hash": "b53398a40bda1eacbe5cd030f048fd1e",
     "semantic_hash": ""
   },
   "app/components/fitness/workout/workout-skeleton.tsx": {
@@ -2897,22 +2897,10 @@
     "ast_hash": "99a4c05f88f6e6cd7085b9997eada1c5",
     "semantic_hash": ""
   },
-  "app/scripts/check-user-nutrition.ts": {
-    "mtime": 1789975977.8607244,
-    "seen": 1789982418.3607695,
-    "ast_hash": "de994ed296d9ab1ebc05812d7c9f3eb3",
-    "semantic_hash": ""
-  },
   "app/scripts/cleanup-and-sync-user.ts": {
     "mtime": 1789981207.7386653,
     "seen": 1789982418.3607728,
     "ast_hash": "2007cee5c7fe0ea1230ae8b4d10f5924",
-    "semantic_hash": ""
-  },
-  "app/scripts/generate-perfect-akash-nutrition.ts": {
-    "mtime": 1789976015.8883755,
-    "seen": 1789982418.360775,
-    "ast_hash": "39b95d0d71db3b2d443db467b2c9e0f8",
     "semantic_hash": ""
   },
   "app/scripts/test-universal-calibration.ts": {

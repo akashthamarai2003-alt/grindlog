@@ -1764,9 +1764,9 @@
     "semantic_hash": ""
   },
   "app/lib/fitness/nutrition/nutrition-engine.ts": {
-    "mtime": 1788942751.0828447,
-    "seen": 1789970487.5987666,
-    "ast_hash": "147f0bba524931a9d9e211440fc0b9de",
+    "mtime": 1789977027.7878337,
+    "seen": 1789982418.3462946,
+    "ast_hash": "7eb31f4247cfeabc5f64c584bca06ccb",
     "semantic_hash": ""
   },
   "app/lib/fitness/nutrition/types.ts": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/nutrition-service.ts": {
-    "mtime": 1789973229.369734,
-    "seen": 1789973477.1639652,
-    "ast_hash": "ea51f1c4ae5a373855d25832c5880e0c",
+    "mtime": 1789982194.1024177,
+    "seen": 1789982418.353928,
+    "ast_hash": "e659ffbf777e4ef6c11c0d9b1e74e3d0",
     "semantic_hash": ""
   },
   "app/lib/services/openai/client.ts": {
@@ -2220,9 +2220,9 @@
     "semantic_hash": ""
   },
   ".planning/STATE.md": {
-    "mtime": 1789974075.8376558,
-    "seen": 1789974678.551098,
-    "ast_hash": "fe4acb9f06152348b68548662ed390c3",
+    "mtime": 1789974727.9921045,
+    "seen": 1789982418.3681016,
+    "ast_hash": "a85f1591801ab2e60a0573db8f67cdc5",
     "semantic_hash": ""
   },
   ".planning/codebase/ARCHITECTURE.md": {
@@ -2895,6 +2895,30 @@
     "mtime": 1789974400.5790408,
     "seen": 1789974678.483404,
     "ast_hash": "99a4c05f88f6e6cd7085b9997eada1c5",
+    "semantic_hash": ""
+  },
+  "app/scripts/check-user-nutrition.ts": {
+    "mtime": 1789975977.8607244,
+    "seen": 1789982418.3607695,
+    "ast_hash": "de994ed296d9ab1ebc05812d7c9f3eb3",
+    "semantic_hash": ""
+  },
+  "app/scripts/cleanup-and-sync-user.ts": {
+    "mtime": 1789981207.7386653,
+    "seen": 1789982418.3607728,
+    "ast_hash": "2007cee5c7fe0ea1230ae8b4d10f5924",
+    "semantic_hash": ""
+  },
+  "app/scripts/generate-perfect-akash-nutrition.ts": {
+    "mtime": 1789976015.8883755,
+    "seen": 1789982418.360775,
+    "ast_hash": "39b95d0d71db3b2d443db467b2c9e0f8",
+    "semantic_hash": ""
+  },
+  "app/scripts/test-universal-calibration.ts": {
+    "mtime": 1789982106.51385,
+    "seen": 1789982418.3615708,
+    "ast_hash": "60fe077e6070d1f325aa48be2ddb7fb5",
     "semantic_hash": ""
   }
 }

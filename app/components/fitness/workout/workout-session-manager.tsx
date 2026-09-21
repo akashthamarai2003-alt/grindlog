@@ -45,6 +45,10 @@ export function WorkoutSessionManager({
   const [effectiveStartedAt, setEffectiveStartedAt] = useState<string | null | undefined>(startedAt);
 
   useEffect(() => {
+    setWorkout(initialWorkout);
+  }, [initialWorkout]);
+
+  useEffect(() => {
     setEffectiveStartedAt(startedAt);
   }, [startedAt]);
 
@@ -293,6 +297,19 @@ export function WorkoutSessionManager({
     });
   };
 
+  const handleUpdateRestSeconds = (exerciseId: string, newRest: number) => {
+    setWorkout((prev: any) => {
+      if (!prev?.fitness_os_exercises) return prev;
+      const updatedExercises = prev.fitness_os_exercises.map((ex: any) => {
+        if (ex.id === exerciseId) {
+          return { ...ex, rest_seconds: newRest };
+        }
+        return ex;
+      });
+      return { ...prev, fitness_os_exercises: updatedExercises };
+    });
+  };
+
   const currentIndex = exercises.findIndex((e: any) => e.id === activeExerciseId);
   const nextExercise = currentIndex >= 0 && currentIndex < exercises.length - 1
     ? { id: exercises[currentIndex + 1].id, name: exercises[currentIndex + 1].name }
@@ -322,6 +339,7 @@ export function WorkoutSessionManager({
           isPaused={isPaused}
           onBack={handleBackToOverview}
           onSetCompleted={handleSetCompleted}
+          onUpdateRest={handleUpdateRestSeconds}
           nextExercise={nextExercise}
           onNextExercise={handleSelectExercise}
         />

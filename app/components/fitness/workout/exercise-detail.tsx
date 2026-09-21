@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Check, Loader2, Pencil, X, Timer,
-  BookOpen, ChevronDown, ChevronUp, Dumbbell, Target, Trophy, ArrowRight, Pause
+  BookOpen, ChevronDown, ChevronUp, Dumbbell, Target, Trophy, ArrowRight, Pause, Play, Plus
 } from "lucide-react";
 import { FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { toast } from "sonner";
@@ -22,8 +22,36 @@ interface ExerciseDetailProps {
   isPaused?: boolean;
   onBack?: () => void;
   onSetCompleted?: (setId: string, reps: number, weightKg: number) => void;
+  onUpdateRest?: (exerciseId: string, restSeconds: number) => void;
   nextExercise?: { id: string; name: string } | null;
   onNextExercise?: (exerciseId: string) => void;
+}
+
+// Audio chime when rest timer finishes
+function playRestDoneChime() {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.12);
+
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch {
+    // Graceful silent fallback
+  }
 }
 
 // Bodyweight exercise keywords — show "BW" instead of "0 kg"
@@ -117,7 +145,7 @@ function generateInstructions(exercise: FitnessExercise): string[] {
   ];
 }
 
-export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused, onBack, onSetCompleted, nextExercise, onNextExercise }: ExerciseDetailProps) {
+export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPaused, onBack, onSetCompleted, onUpdateRest, nextExercise, onNextExercise }: ExerciseDetailProps) {
   const router = useRouter();
   const { formattedTime } = useWorkoutTimer(workoutId, startedAt, isPaused);
   
@@ -125,11 +153,18 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
   const isBW = isBodyweightExercise(exercise.name);
   const instructions = generateInstructions(exercise);
   
+  const [restSeconds, setRestSeconds] = useState<number>(exercise.rest_seconds || 60);
   const [activeRestSeconds, setActiveRestSeconds] = useState<number | null>(null);
+  const [isRestTimerPaused, setIsRestTimerPaused] = useState(false);
   const [isNavigatingBack, setIsNavigatingBack] = useState(false);
   const [isEditingRest, setIsEditingRest] = useState(false);
   const [isUpdatingRest, setIsUpdatingRest] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+
+  // Sync rest seconds if exercise changes
+  useEffect(() => {
+    setRestSeconds(exercise.rest_seconds || 60);
+  }, [exercise.id, exercise.rest_seconds]);
 
   // Always start at top of exercise view
   useEffect(() => {
@@ -139,7 +174,21 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
   }, [exercise.id]);
 
   const handleUpdateRest = async (newRest: number) => {
+    if (newRest <= 0) return;
     setIsUpdatingRest(true);
+    // Instant optimistic update
+    setRestSeconds(newRest);
+    if (onUpdateRest) {
+      onUpdateRest(exercise.id, newRest);
+    }
+    setIsEditingRest(false);
+
+    if (workoutId === "mock" || sessionId === "mock-session") {
+      setIsUpdatingRest(false);
+      toast.success(`Rest time updated to ${newRest}s`);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/workouts/sessions/${sessionId}/exercises/${exercise.id}`, {
         method: "PATCH",
@@ -147,14 +196,35 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
         body: JSON.stringify({ rest_seconds: newRest })
       });
       if (!res.ok) throw new Error("Failed");
-      toast.success("Rest time updated");
-      setIsEditingRest(false);
+      toast.success(`Rest time updated to ${newRest}s`);
       router.refresh();
     } catch {
-      toast.error("Could not update rest time");
+      toast.error("Could not save rest time to server, saved locally");
     } finally {
       setIsUpdatingRest(false);
     }
+  };
+
+  const startRestTimer = (seconds?: number) => {
+    const target = seconds ?? restSeconds;
+    setActiveRestSeconds(target);
+    setIsRestTimerPaused(false);
+    setIsEditingRest(false);
+    toast.success(`Rest timer started: ${target}s`);
+  };
+
+  const skipRest = () => {
+    setActiveRestSeconds(null);
+    setIsRestTimerPaused(false);
+  };
+
+  const addRestSeconds = (extra: number) => {
+    setActiveRestSeconds(prev => (prev ? prev + extra : extra));
+    toast.success(`+${extra}s added to rest`);
+  };
+
+  const togglePauseRest = () => {
+    setIsRestTimerPaused(prev => !prev);
   };
 
   const [setInputs, setSetInputs] = useState<Record<string, { weight: string; reps: string }>>(
@@ -168,12 +238,23 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
   );
 
   useEffect(() => {
-    if (activeRestSeconds === null || activeRestSeconds <= 0) return;
+    if (activeRestSeconds === null || activeRestSeconds <= 0 || isRestTimerPaused) return;
     const interval = setInterval(() => {
-      setActiveRestSeconds(prev => (prev && prev > 0 ? prev - 1 : null));
+      setActiveRestSeconds(prev => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          playRestDoneChime();
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate([200, 100, 200]);
+          }
+          toast.success("Rest complete! Ready for your next set! 💪");
+          return null;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(interval);
-  }, [activeRestSeconds]);
+  }, [activeRestSeconds, isRestTimerPaused]);
 
   const handleCompleteSet = async (setRecord: FitnessSet) => {
     if (isPaused) {
@@ -199,7 +280,8 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
 
     // Instant optimistic update (0ms delay)
     setRecord.completed = true;
-    setActiveRestSeconds(exercise.rest_seconds);
+    setActiveRestSeconds(restSeconds);
+    setIsRestTimerPaused(false);
     if (onSetCompleted) {
       onSetCompleted(setRecord.id, reps, weight);
     }
@@ -225,8 +307,6 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
   const handleInputChange = (setId: string, field: "weight" | "reps", value: string) => {
     setSetInputs(prev => ({ ...prev, [setId]: { ...prev[setId], [field]: value } }));
   };
-
-  const skipRest = () => setActiveRestSeconds(null);
 
   return (
     <div className="w-full h-full flex flex-col pb-32">
@@ -322,35 +402,118 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
           <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5">Target</span>
           <span className="text-sm font-semibold text-white/90">{exercise.target_sets} Sets x {String(exercise.target_reps || "").replace(/^\d+\s*[xX×]\s*/, '')} Reps</span>
         </div>
+        {/* Rest Option */}
         <div className="flex flex-col text-right relative">
-          <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5 flex items-center justify-end gap-1.5">
-            Rest
-            {!isEditingRest && (
-              <button onClick={() => setIsEditingRest(true)} className="hover:text-white transition-colors">
-                <Pencil className="w-3 h-3" />
-              </button>
+          <button
+            type="button"
+            onClick={() => setIsEditingRest(prev => !prev)}
+            className="flex flex-col items-end group px-2.5 py-1 -mr-2 rounded-xl hover:bg-white/5 active:scale-95 transition-all text-right cursor-pointer"
+            title="Tap to change rest duration or start timer"
+          >
+            <span className="text-[10px] font-bold text-white/40 group-hover:text-white/70 uppercase tracking-widest mb-0.5 flex items-center justify-end gap-1.5 transition-colors">
+              Rest
+              <Pencil className="w-3 h-3 text-[#ADFF00] group-hover:scale-110 transition-transform" />
+            </span>
+            {activeRestSeconds !== null && activeRestSeconds > 0 ? (
+              <span className="text-sm font-black text-[#ADFF00] font-mono flex items-center gap-1">
+                <Timer className="w-3.5 h-3.5 animate-spin" />
+                {Math.floor(activeRestSeconds / 60).toString().padStart(2, "0")}:{(activeRestSeconds % 60).toString().padStart(2, "0")}
+              </span>
+            ) : (
+              <span className="text-sm font-semibold text-white/90 group-hover:text-[#ADFF00] transition-colors">
+                {restSeconds} sec
+              </span>
             )}
-          </span>
-          {isEditingRest ? (
-            <div className="flex items-center gap-2 mt-1">
-              <select
-                className="bg-[#111A10] border border-white/10 rounded-lg text-sm text-white px-2 py-1 outline-none focus:border-[#ADFF00]"
-                disabled={isUpdatingRest}
-                value={exercise.rest_seconds || 90}
-                onChange={(e) => handleUpdateRest(Number(e.target.value))}
+          </button>
+
+          {/* Quick Rest Menu Dropdown / Popover */}
+          <AnimatePresence>
+            {isEditingRest && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-full mt-2 z-30 w-72 bg-[#111A10] border border-[#ADFF00]/30 rounded-2xl p-4 shadow-[0_12px_32px_rgba(0,0,0,0.85)] flex flex-col gap-3"
               >
-                {[30, 45, 60, 90, 120, 150, 180].map(s => (
-                  <option key={s} value={s}>{s} sec</option>
-                ))}
-              </select>
-              <button onClick={() => setIsEditingRest(false)} className="p-1 hover:bg-white/10 rounded-md">
-                <X className="w-4 h-4 text-white/50" />
-              </button>
-              {isUpdatingRest && <Loader2 className="w-3 h-3 animate-spin text-[#ADFF00]" />}
-            </div>
-          ) : (
-            <span className="text-sm font-semibold text-white/90">{exercise.rest_seconds} sec</span>
-          )}
+                <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                  <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Timer className="w-3.5 h-3.5 text-[#ADFF00]" />
+                    Rest Duration
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingRest(false)}
+                    className="p-1 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Adjust rest time (-15s / +15s) */}
+                <div className="flex items-center justify-between bg-black/40 border border-white/5 rounded-xl p-1.5">
+                  <button
+                    type="button"
+                    disabled={isUpdatingRest}
+                    onClick={() => handleUpdateRest(Math.max(15, restSeconds - 15))}
+                    className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white font-black text-sm active:scale-95 transition-all"
+                    title="-15 seconds"
+                  >
+                    -
+                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-black text-white font-mono">
+                      {restSeconds} sec
+                    </span>
+                    {isUpdatingRest && <Loader2 className="w-3 h-3 animate-spin text-[#ADFF00]" />}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isUpdatingRest}
+                    onClick={() => handleUpdateRest(restSeconds + 15)}
+                    className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white font-black text-sm active:scale-95 transition-all"
+                    title="+15 seconds"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                    Presets
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[30, 45, 60, 90, 120, 180].map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        disabled={isUpdatingRest}
+                        onClick={() => handleUpdateRest(s)}
+                        className={`py-2 px-2 rounded-xl text-xs font-black transition-all active:scale-95 ${
+                          restSeconds === s
+                            ? "bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.35)]"
+                            : "bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        {s}s
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Start Timer Action */}
+                <button
+                  type="button"
+                  onClick={() => startRestTimer(restSeconds)}
+                  className="w-full mt-1 bg-[#ADFF00]/15 border border-[#ADFF00]/30 hover:bg-[#ADFF00]/25 text-[#ADFF00] text-xs font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition-all"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Start Rest Timer ({restSeconds}s)</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -456,18 +619,38 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
                 >
                   <div className="flex flex-col">
                     <span className="text-[10px] font-black text-[#ADFF00] uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                      <Check className="w-3 h-3" /> Set Completed
+                      <Check className="w-3 h-3" /> Set Completed • Resting
                     </span>
-                    <span className="text-xl font-black text-white">
-                      Rest {Math.floor(activeRestSeconds / 60).toString().padStart(2, "0")}:{(activeRestSeconds % 60).toString().padStart(2, "0")}
+                    <span className="text-xl font-black text-white font-mono flex items-center gap-2">
+                      {Math.floor(activeRestSeconds / 60).toString().padStart(2, "0")}:{(activeRestSeconds % 60).toString().padStart(2, "0")}
+                      {isRestTimerPaused && <span className="text-xs text-amber-400 font-sans font-bold">(Paused)</span>}
                     </span>
                   </div>
-                  <button
-                    onClick={skipRest}
-                    className="bg-black/50 border border-white/10 px-4 py-2 rounded-lg text-xs font-bold text-white uppercase tracking-wider hover:bg-white/10 transition-colors"
-                  >
-                    Skip Rest
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => addRestSeconds(30)}
+                      className="bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white/80 hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Add 30s"
+                    >
+                      +30s
+                    </button>
+                    <button
+                      type="button"
+                      onClick={togglePauseRest}
+                      className="bg-white/5 border border-white/10 p-2 rounded-lg text-white/80 hover:bg-white/10 transition-colors cursor-pointer"
+                      title={isRestTimerPaused ? "Resume" : "Pause"}
+                    >
+                      {isRestTimerPaused ? <Play className="w-3.5 h-3.5 fill-current text-[#ADFF00]" /> : <Pause className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={skipRest}
+                      className="bg-black/50 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-bold text-white uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      Skip
+                    </button>
+                  </div>
                 </motion.div>
               )}
 
@@ -565,6 +748,58 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
           </motion.div>
         )}
       </div>
+
+      {/* Floating Active Rest Bar for persistent visibility anywhere on page */}
+      <AnimatePresence>
+        {activeRestSeconds !== null && activeRestSeconds > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md z-40 bg-[#111A10]/95 backdrop-blur-md border border-[#ADFF00]/40 rounded-2xl p-4 shadow-[0_10px_30px_rgba(0,0,0,0.85),0_0_20px_rgba(173,255,0,0.15)] flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#ADFF00]/10 border border-[#ADFF00]/25 flex items-center justify-center text-[#ADFF00]">
+                <Timer className={`w-5 h-5 ${isRestTimerPaused ? "" : "animate-spin"}`} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-[#ADFF00] uppercase tracking-wider">
+                  Resting {isRestTimerPaused ? "• Paused" : ""}
+                </span>
+                <span className="text-2xl font-black text-white font-mono leading-none">
+                  {Math.floor(activeRestSeconds / 60).toString().padStart(2, "0")}:{(activeRestSeconds % 60).toString().padStart(2, "0")}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => addRestSeconds(30)}
+                className="px-2.5 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white/80 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                title="Add 30 seconds"
+              >
+                +30s
+              </button>
+              <button
+                type="button"
+                onClick={togglePauseRest}
+                className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                title={isRestTimerPaused ? "Resume rest timer" : "Pause rest timer"}
+              >
+                {isRestTimerPaused ? <Play className="w-4 h-4 fill-current text-[#ADFF00]" /> : <Pause className="w-4 h-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={skipRest}
+                className="px-3 py-2 rounded-xl bg-[#ADFF00] text-black text-xs font-black uppercase tracking-wider hover:bg-[#b8ff1a] active:scale-95 transition-all shadow-[0_0_10px_rgba(173,255,0,0.3)] cursor-pointer"
+              >
+                Skip
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
