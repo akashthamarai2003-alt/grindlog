@@ -1264,17 +1264,44 @@ export class NutritionService {
     }
   }
 
+  // In-memory cache for user timezone to avoid repeated DB hits on every request (TTL: 10 minutes)
+  private static userTimezoneCache = new Map<string, { tz: string; expiresAt: number }>();
+
+  // In-memory cache for active foods catalog (TTL: 15 minutes)
+  private static cachedFoodCatalog: { data: NutritionFoodReference[]; expiresAt: number } | null = null;
+
+  static async getCachedFoodCatalog(): Promise<NutritionFoodReference[]> {
+    if (this.cachedFoodCatalog && Date.now() < this.cachedFoodCatalog.expiresAt) {
+      return this.cachedFoodCatalog.data;
+    }
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from('foods')
+      .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly')
+      .eq('is_active', true)
+      .limit(300);
+    const result = (data || []) as NutritionFoodReference[];
+    this.cachedFoodCatalog = { data: result, expiresAt: Date.now() + 15 * 60 * 1000 };
+    return result;
+  }
+
   /**
    * Retrieves the user's timezone from their profile, defaulting to UTC.
    */
   static async getUserTimezone(userId: string): Promise<string> {
+    const cached = this.userTimezoneCache.get(userId);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.tz;
+    }
     const supabase = createAdminClient();
     const { data } = await supabase
       .from('profiles')
       .select('timezone')
       .eq('id', userId)
       .maybeSingle();
-    return data?.timezone || 'UTC';
+    const tz = data?.timezone || 'UTC';
+    this.userTimezoneCache.set(userId, { tz, expiresAt: Date.now() + 10 * 60 * 1000 });
+    return tz;
   }
 
   /**
@@ -3363,11 +3390,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
         .eq('user_id', userId)
         .eq('status', 'active')
         .maybeSingle(),
-      supabase
-        .from('foods')
-        .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly')
-        .eq('is_active', true)
-        .limit(300),
+      this.getCachedFoodCatalog(),
       this.getWeeklyPlanEligibility(userId)
     ]);
 
@@ -3381,7 +3404,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
     const monthFoods = monthFoodsRes.data;
     const fitProfile = fitProfileRes.data;
     const activePlan = activePlanRes.data;
-    const foodCatalog = (foodCatalogRes.data || []) as NutritionFoodReference[];
+    const foodCatalog = (Array.isArray(foodCatalogRes) ? foodCatalogRes : (foodCatalogRes?.data || [])) as NutritionFoodReference[];
     const aiMeals = activePlan?.plan_data?.nutrition?.meals || [];
 
     // 3. Compute consumed

@@ -9,7 +9,6 @@ import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
 import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
-export const dynamic = "force-dynamic";
 
 async function DashboardContent({ searchParams }: { searchParams?: { date?: string } }) {
   const supabase = await createServerSupabase();

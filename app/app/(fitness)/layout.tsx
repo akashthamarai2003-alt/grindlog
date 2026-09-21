@@ -3,8 +3,6 @@ import { createAdminClient } from "@/lib/services/supabase/admin";
 import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
-export const dynamic = "force-dynamic";
-
 export default async function FitnessLayout({ children }: { children: React.ReactNode }) {
   const { data: { user } } = await getCachedUser();
 

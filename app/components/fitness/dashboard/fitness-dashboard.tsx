@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { OnboardingData } from "@/types/fitness/onboarding";
 import Link from "next/link";
@@ -54,6 +54,28 @@ export function FitnessDashboard({
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [modalFeature, setModalFeature] = useState("Workout Sessions");
   const isFree = premiumLevel === "free";
+
+  // Native app offline/fast-snapshot persistence
+  useEffect(() => {
+    if (typeof window !== "undefined" && nutrition && profile) {
+      try {
+        const snapshot = {
+          profile,
+          nutrition,
+          todayWorkout,
+          weekWorkouts,
+          dailyActivity,
+          dayNumber,
+          premiumLevel,
+          targetDateStr,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem("grindlog_dashboard_snapshot_v1", JSON.stringify(snapshot));
+      } catch {
+        // quota or private mode safely ignored
+      }
+    }
+  }, [profile, nutrition, todayWorkout, weekWorkouts, dailyActivity, dayNumber, premiumLevel, targetDateStr]);
 
   const openUpgradeModal = (feature: string) => {
     setModalFeature(feature);

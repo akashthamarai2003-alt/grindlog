@@ -4,11 +4,6 @@ import { usePathname } from "next/navigation";
 import { BottomNav } from "./dashboard/bottom-nav";
 import { FitnessChatbot } from "./chatbot/fitness-chatbot";
 import { NavigationProvider, useInstantNav } from "./navigation-context";
-import { WorkoutSkeleton } from "./workout/workout-skeleton";
-import { DashboardSkeleton } from "./dashboard/dashboard-skeleton";
-import NutritionLoading from "@/app/(fitness)/nutrition/loading";
-import ProgressLoading from "@/app/(fitness)/progress/loading";
-import ProfileLoading from "@/app/(fitness)/profile/loading";
 
 // Only primary root tab pages show the bottom navigation bar and floating AI coach button
 const MAIN_PAGES = new Set([
@@ -28,33 +23,22 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
   const cleanPath = pathname ? (pathname.replace(/\/+$/, "") || "/") : "/";
   const isMainPage = MAIN_PAGES.has(cleanPath);
 
-  // If user tapped a tab, immediately render the skeleton for that tab (0ms native app feel)
+  // Native Android-style navigation: keep current screen visible while tab transitions,
+  // showing a sleek 2.5px glowing green top progress line instead of destroying the view with skeletons.
   const isNavigatingAway = Boolean(navigatingTo && navigatingTo !== cleanPath);
-
-  let activeSkeleton: React.ReactNode = null;
-  if (isNavigatingAway) {
-    if (navigatingTo === "/workout") {
-      activeSkeleton = <WorkoutSkeleton />;
-    } else if (navigatingTo === "/nutrition" || navigatingTo === "/diet") {
-      activeSkeleton = <NutritionLoading />;
-    } else if (navigatingTo === "/progress") {
-      activeSkeleton = <ProgressLoading />;
-    } else if (navigatingTo === "/") {
-      activeSkeleton = (
-        <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">
-          <DashboardSkeleton />
-        </div>
-      );
-    } else if (navigatingTo === "/profile") {
-      activeSkeleton = <ProfileLoading />;
-    }
-  }
 
   return (
     <div className="flex justify-center min-h-screen bg-[#0A1108]">
+      {/* Native-style sleek top indicator when switching tabs */}
+      {isNavigatingAway && (
+        <div className="fixed top-0 left-0 right-0 h-[2.5px] z-[9999] overflow-hidden bg-black/40 pointer-events-none">
+          <div className="h-full bg-gradient-to-r from-[#ADFF00] via-[#c4ff33] to-[#ADFF00] shadow-[0_0_12px_#ADFF00] animate-pulse w-full" />
+        </div>
+      )}
+
       <div className="w-full min-h-[100dvh] relative flex flex-col overflow-x-hidden">
         <main className={`flex-1 ${isMainPage ? 'pb-24' : ''}`}>
-          {activeSkeleton || children}
+          {children}
         </main>
         {isMainPage && (
           <>
