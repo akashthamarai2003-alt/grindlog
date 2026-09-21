@@ -14,8 +14,17 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function NutritionView({ initialData, isPro = true }: { initialData?: any; isPro?: boolean } = {}) {
-  const [data, setData] = useState<any>(initialData || null);
-  const [isLoading, setIsLoading] = useState(!initialData);
+  const [data, setData] = useState<any>(() => {
+    if (initialData) return initialData;
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("grindlog_nutrition_snapshot_v1");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+  const [isLoading, setIsLoading] = useState(!initialData && typeof window === "undefined");
   const [error, setError] = useState<any>(null);
 
   const initialDateStr = initialData?.date;
@@ -102,6 +111,13 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   useEffect(() => {
     if (data?.date) {
       dateCacheRef.current[data.date] = data;
+      if (typeof window !== "undefined" && data?.targets && data?.meals) {
+        try {
+          localStorage.setItem("grindlog_nutrition_snapshot_v1", JSON.stringify(data));
+        } catch {
+          // ignore quota limits
+        }
+      }
     }
   }, [data]);
 

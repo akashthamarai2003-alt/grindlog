@@ -264,9 +264,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/[workoutId]/page.tsx": {
-    "mtime": 1789968904.1024425,
-    "seen": 1789970487.597679,
-    "ast_hash": "93f66af0ea78dc9652580c4e5142ea7c",
+    "mtime": 1789993680.2147777,
+    "seen": 1789993837.5044367,
+    "ast_hash": "4b4941cc2fdbd285b747c7c3656d7e13",
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/[workoutId]/summary/page.tsx": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/page.tsx": {
-    "mtime": 1789974516.5487745,
-    "seen": 1789974678.4283066,
-    "ast_hash": "7580b3ac3669487b488afe4f1f0cfaa1",
+    "mtime": 1789993671.9266326,
+    "seen": 1789993837.5064976,
+    "ast_hash": "7d597338956523dfa748a84a262c8aab",
     "semantic_hash": ""
   },
   "app/app/actions/admin-auth.ts": {
