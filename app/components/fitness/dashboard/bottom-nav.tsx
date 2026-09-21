@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Dumbbell, Utensils, User, TrendingUp, Loader2 } from "lucide-react";
+import { Home, Dumbbell, Utensils, User, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -92,11 +92,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
                   ? 'bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.4)]' 
                   : 'text-gray-400 group-hover:text-white'
               }`}>
-                {isPendingThis ? (
-                  <Loader2 size={18} className="animate-spin text-black" strokeWidth={2.5} />
-                ) : (
-                  <Icon size={isActive ? 18 : 20} strokeWidth={isActive ? 2.5 : 2} />
-                )}
+                <Icon size={isActive ? 18 : 20} strokeWidth={isActive ? 2.5 : 2} />
                 {item.proOnly && !isPro && (
                   <span className="absolute -top-1 -right-1 bg-[#ADFF00] text-black text-[7px] font-black px-1 rounded-full uppercase tracking-tight shadow-sm">
                     PRO

@@ -4,7 +4,6 @@ import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
 export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
 
 export default async function FitnessLayout({ children }: { children: React.ReactNode }) {
   const { data: { user } } = await getCachedUser();
@@ -13,19 +12,23 @@ export default async function FitnessLayout({ children }: { children: React.Reac
     return <>{children}</>;
   }
 
-  // If user has not completed onboarding, never render the app shell / bottom nav
+  // Fetch onboarding status and subscription plan in parallel
   const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("fitness_os_profiles")
-    .select("onboarding_completed")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [
+    { data: profile },
+    plan,
+  ] = await Promise.all([
+    admin
+      .from("fitness_os_profiles")
+      .select("onboarding_completed")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    getFitnessPlan(user.id),
+  ]);
 
   if (!profile?.onboarding_completed) {
     return <>{children}</>;
   }
-
-  const plan = await getFitnessPlan(user.id);
 
   return <FitnessShell isPro={plan?.id === "pro"}>{children}</FitnessShell>;
 }

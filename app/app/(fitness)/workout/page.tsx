@@ -1,4 +1,5 @@
-import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
+import { getCachedUser } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
 import { TodaysExercisesList } from "@/components/fitness/workout/todays-exercises-list";
 import { ActiveWorkoutResumeCard } from "@/components/fitness/workout/active-workout-resume-card";
@@ -16,7 +17,7 @@ import { Suspense } from "react";
 export const dynamic = "force-dynamic";
 
 async function WorkoutContent() {
-  const supabase = await createServerSupabase();
+  const admin = createAdminClient();
   const { data: { user } } = await getCachedUser();
   
   if (!user) {
@@ -28,17 +29,23 @@ async function WorkoutContent() {
   // Fetch all core user state in a SINGLE parallel batch
   const [
     { data: profile },
+    { data: mainProfile },
     { data: activePlan },
     subscriptionPlan,
     { data: workouts },
     { data: aiNotes },
   ] = await Promise.all([
-    supabase
+    admin
       .from("fitness_os_profiles")
-      .select("onboarding_completed, timezone")
+      .select("onboarding_completed")
       .eq("user_id", user.id)
       .maybeSingle(),
-    supabase
+    admin
+      .from("profiles")
+      .select("timezone")
+      .eq("id", user.id)
+      .maybeSingle(),
+    admin
       .from("fitness_os_workout_plans")
       .select("id, name, description, plan_data")
       .eq("user_id", user.id)
@@ -47,7 +54,7 @@ async function WorkoutContent() {
       .limit(1)
       .maybeSingle(),
     getFitnessPlan(user.id),
-    supabase
+    admin
       .from("fitness_os_workouts")
       .select(`
         id,
@@ -64,7 +71,7 @@ async function WorkoutContent() {
       .eq("user_id", user.id)
       .order("workout_date", { ascending: true })
       .limit(35),
-    supabase
+    admin
       .from("workout_ai_notes")
       .select("workout_id, note")
       .eq("user_id", user.id)
@@ -76,7 +83,7 @@ async function WorkoutContent() {
     redirect("/onboarding");
   }
 
-  const tz = profile?.timezone || "UTC";
+  const tz = mainProfile?.timezone || "UTC";
   const userLocalDate = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
     year: "numeric",

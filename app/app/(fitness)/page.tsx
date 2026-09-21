@@ -35,6 +35,8 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
   const weekStartStr = format(weekStart, "yyyy-MM-dd");
   const weekEndStr = format(weekEnd, "yyyy-MM-dd");
 
+  const admin = createAdminClient();
+
   const [
     { data: profile },
     { data: plan },
@@ -46,48 +48,27 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     { data: todayFoodLogs },
     subscriptionState,
   ] = await Promise.all([
-    supabase.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-    supabase.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("fitness_os_workouts").select(`
+    admin.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
+    admin.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    admin.from("fitness_os_workouts").select(`
       *,
       fitness_os_exercises (
         id,
         fitness_os_sets (completed)
       )
     `).eq("user_id", user.id).eq("workout_date", targetDateStr).order("created_at", { ascending: false }),
-    supabase.from("fitness_os_workouts").select("id, workout_date, status, name").eq("user_id", user.id).gte("workout_date", weekStartStr).lte("workout_date", weekEndStr).order("created_at", { ascending: false }),
-    supabase.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
-    supabase.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
-    (supabase as any).from("fitness_os_water_logs").select("amount_ml").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
-    (supabase as any).from("food_logs").select("calories, protein, carbs, fat, meal_type").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
+    admin.from("fitness_os_workouts").select("id, workout_date, status, name").eq("user_id", user.id).gte("workout_date", weekStartStr).lte("workout_date", weekEndStr).order("created_at", { ascending: false }),
+    admin.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
+    admin.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
+    (admin as any).from("fitness_os_water_logs").select("amount_ml").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
+    (admin as any).from("food_logs").select("calories, protein, carbs, fat, meal_type").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
     getFitnessSubscriptionState(user.id),
   ]);
-  let userProfile = profile;
-  let userPlan = plan;
+  const userProfile = profile;
+  const userPlan = plan;
 
   const subscriptionPlan = subscriptionState?.plan;
   const isFreeUser = !subscriptionPlan || subscriptionPlan.id === "free";
-
-  // Fallback to admin client if user client did not find profile or active plan
-  // (guards against session/cookie replication latency after sign-in)
-  if (!userProfile?.onboarding_completed || (!userPlan && !isFreeUser)) {
-    const admin = createAdminClient();
-    const [adminProfileRes, adminPlanRes] = await Promise.all([
-      !userProfile?.onboarding_completed
-        ? admin.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle()
-        : Promise.resolve({ data: null }),
-      !userPlan && !isFreeUser
-        ? admin.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
-
-    if (adminProfileRes.data?.onboarding_completed) {
-      userProfile = adminProfileRes.data;
-    }
-    if (adminPlanRes.data) {
-      userPlan = adminPlanRes.data;
-    }
-  }
 
   if (!userProfile?.onboarding_completed) {
     redirect("/onboarding");
