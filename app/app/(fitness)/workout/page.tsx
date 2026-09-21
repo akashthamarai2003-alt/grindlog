@@ -30,7 +30,6 @@ async function WorkoutContent() {
 
   // Fetch all core user state in a SINGLE parallel batch with targeted joins
   const [
-    { data: profile },
     { data: mainProfile },
     { data: activePlan },
     subscriptionPlan,
@@ -38,11 +37,6 @@ async function WorkoutContent() {
     { data: calendarWorkouts },
     { data: aiNotes },
   ] = await Promise.all([
-    admin
-      .from("fitness_os_profiles")
-      .select("onboarding_completed")
-      .eq("user_id", user.id)
-      .maybeSingle(),
     admin
       .from("profiles")
       .select("timezone")
@@ -76,7 +70,7 @@ async function WorkoutContent() {
       .or(`status.eq.in_progress,and(workout_date.gte.${yesterdayStr},workout_date.lte.${tomorrowStr})`)
       .order("created_at", { ascending: false })
       .limit(5),
-    // 2. Fast calendar list (lightweight exercise IDs only, no nested sets)
+    // 2. Fast calendar list (flat query, zero joins)
     admin
       .from("fitness_os_workouts")
       .select(`
@@ -85,8 +79,7 @@ async function WorkoutContent() {
         workout_date,
         status,
         duration_minutes,
-        plan_id,
-        fitness_os_exercises ( id )
+        plan_id
       `)
       .eq("user_id", user.id)
       .order("workout_date", { ascending: true })
@@ -98,10 +91,6 @@ async function WorkoutContent() {
       .order("created_at", { ascending: false })
       .limit(5),
   ]);
-
-  if (!profile?.onboarding_completed) {
-    redirect("/onboarding");
-  }
 
   const tz = mainProfile?.timezone || "UTC";
   const userLocalDate = new Intl.DateTimeFormat("en-CA", {

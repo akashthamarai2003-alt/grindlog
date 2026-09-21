@@ -6,9 +6,9 @@
     "semantic_hash": ""
   },
   ".planning/config.json": {
-    "mtime": 1789969770.7984278,
-    "seen": 1789970487.5974715,
-    "ast_hash": "13a39e08ef724a0d79acc17f3c31dc61",
+    "mtime": 1789971329.562234,
+    "seen": 1789973477.0677743,
+    "ast_hash": "96332ee7307e8b824357b2dbfdd5d799",
     "semantic_hash": ""
   },
   "app/animations/springs.ts": {
@@ -96,9 +96,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/nutrition/page.tsx": {
-    "mtime": 1788868397.8180804,
-    "seen": 1789970487.5975645,
-    "ast_hash": "f129726e1daacd4b08fa89438f9b0c38",
+    "mtime": 1789973235.7139962,
+    "seen": 1789973477.075777,
+    "ast_hash": "6dd338caec3ebeae5422ec3c70348068",
     "semantic_hash": ""
   },
   "app/app/(fitness)/onboarding/page.tsx": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/page.tsx": {
-    "mtime": 1789968589.4817781,
-    "seen": 1789970487.5976944,
-    "ast_hash": "31ab7f9b3f94c4ae22cfacb5582efec4",
+    "mtime": 1789972525.7216153,
+    "seen": 1789973477.0833423,
+    "ast_hash": "f4de8eb3b838b9401a3e65e9ab99d3f2",
     "semantic_hash": ""
   },
   "app/app/actions/admin-auth.ts": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/bottom-nav.tsx": {
-    "mtime": 1789968535.5406795,
-    "seen": 1789970487.5981727,
-    "ast_hash": "15a15dc950a9f90f0ec6590973e7428a",
+    "mtime": 1789972484.836554,
+    "seen": 1789973477.116623,
+    "ast_hash": "95709962268526089b75c55932a6d951",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/category-pills.tsx": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/nutrition-service.ts": {
-    "mtime": 1789828478.4565103,
-    "seen": 1789970487.598853,
-    "ast_hash": "50cab5315003cfd69d5838d25b78aea5",
+    "mtime": 1789973229.369734,
+    "seen": 1789973477.1639652,
+    "ast_hash": "ea51f1c4ae5a373855d25832c5880e0c",
     "semantic_hash": ""
   },
   "app/lib/services/openai/client.ts": {
@@ -2220,9 +2220,9 @@
     "semantic_hash": ""
   },
   ".planning/STATE.md": {
-    "mtime": 1789969141.0075095,
-    "seen": 1789970487.5991104,
-    "ast_hash": "80386ee0a7830a1f85652a3d955c3fbc",
+    "mtime": 1789972725.4865417,
+    "seen": 1789973477.1779392,
+    "ast_hash": "57f31a84fcd15b38f230ba310419afc4",
     "semantic_hash": ""
   },
   ".planning/codebase/ARCHITECTURE.md": {
@@ -2244,9 +2244,9 @@
     "semantic_hash": ""
   },
   ".planning/codebase/INTEGRATIONS.md": {
-    "mtime": 1789967015.9040244,
-    "seen": 1789970487.5991273,
-    "ast_hash": "e9617055fb509c65431d57a222c36623",
+    "mtime": 1789971321.5359852,
+    "seen": 1789973477.1785207,
+    "ast_hash": "5b45dd93111432e949a7e820d3c0a743",
     "semantic_hash": ""
   },
   ".planning/codebase/STACK.md": {
@@ -2883,6 +2883,12 @@
     "mtime": 1788845890.5864263,
     "seen": 1789970487.5995886,
     "ast_hash": "afa0323ca224d7189ab54a89bd0f13bc",
+    "semantic_hash": ""
+  },
+  ".coderabbit.yaml": {
+    "mtime": 1789971282.0237055,
+    "seen": 1789973477.177349,
+    "ast_hash": "7f89e5ab0b5230ae41e0e04a10c64e22",
     "semantic_hash": ""
   }
 }

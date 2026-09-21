@@ -3,12 +3,13 @@
 import { Home, Dumbbell, Utensils, User, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useInstantNav } from "../navigation-context";
 
 export function BottomNav({ isPro = false }: { isPro?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const { navigatingTo, setNavigatingTo } = useInstantNav();
 
   const navItems = [
     { icon: Home, label: "Home", href: "/" },
@@ -29,28 +30,12 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
     });
   }, [router]);
 
-  // Reset optimistic state as soon as pathname catches up
-  useEffect(() => {
-    setPendingHref(null);
-  }, [pathname]);
-
-  // Safety timer in case navigation is cancelled or interrupted
-  useEffect(() => {
-    if (pendingHref) {
-      const timer = setTimeout(() => {
-        setPendingHref(null);
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [pendingHref]);
-
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/90 to-transparent pointer-events-none">
       <div className="max-w-sm mx-auto bg-[#121E12] border border-[#1A2619] rounded-full px-5 py-3 flex items-center justify-between shadow-2xl backdrop-blur-xl pointer-events-auto">
         {navItems.map((item) => {
           const isCurrentRoute = pathname === item.href || (item.href === "/nutrition" && pathname === "/grocery");
-          const isActive = pendingHref ? pendingHref === item.href : isCurrentRoute;
-          const isPendingThis = pendingHref === item.href && !isCurrentRoute;
+          const isActive = navigatingTo ? navigatingTo === item.href : isCurrentRoute;
           const Icon = item.icon;
 
           return (
@@ -64,8 +49,9 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                   return;
                 }
-                // Instant 0ms visual feedback
-                setPendingHref(item.href);
+                // Instant 0ms visual switch & scroll to top
+                window.scrollTo({ top: 0, behavior: "instant" });
+                setNavigatingTo(item.href);
               }}
               onTouchStart={() => {
                 try {

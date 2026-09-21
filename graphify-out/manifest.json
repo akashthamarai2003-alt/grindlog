@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/page.tsx": {
-    "mtime": 1789972525.7216153,
-    "seen": 1789973477.0833423,
-    "ast_hash": "f4de8eb3b838b9401a3e65e9ab99d3f2",
+    "mtime": 1789974516.5487745,
+    "seen": 1789974678.4283066,
+    "ast_hash": "7580b3ac3669487b488afe4f1f0cfaa1",
     "semantic_hash": ""
   },
   "app/app/actions/admin-auth.ts": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/bottom-nav.tsx": {
-    "mtime": 1789972484.836554,
-    "seen": 1789973477.116623,
-    "ast_hash": "95709962268526089b75c55932a6d951",
+    "mtime": 1789974441.816972,
+    "seen": 1789974678.47664,
+    "ast_hash": "1463558e0918339297b7650e22da7e1e",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/category-pills.tsx": {
@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-workout-card.tsx": {
-    "mtime": 1788765198.6205318,
-    "seen": 1789970487.5982552,
-    "ast_hash": "2e3b314206bf81fbdd4045c0ef1600bc",
+    "mtime": 1789974483.900915,
+    "seen": 1789974678.4805098,
+    "ast_hash": "f07d6f4842f3d44aa9ca1bd145507880",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/transformation-card.tsx": {
@@ -1104,9 +1104,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-shell.tsx": {
-    "mtime": 1788760749.205922,
-    "seen": 1789970487.5982842,
-    "ast_hash": "0c6f4e624fadc7de3cc3e3b50cc54afc",
+    "mtime": 1789974426.2342093,
+    "seen": 1789974678.4823155,
+    "ast_hash": "66b79a32911c0e13aefd5a2999583dcd",
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-theme-provider.tsx": {
@@ -2220,9 +2220,9 @@
     "semantic_hash": ""
   },
   ".planning/STATE.md": {
-    "mtime": 1789972725.4865417,
-    "seen": 1789973477.1779392,
-    "ast_hash": "57f31a84fcd15b38f230ba310419afc4",
+    "mtime": 1789974075.8376558,
+    "seen": 1789974678.551098,
+    "ast_hash": "fe4acb9f06152348b68548662ed390c3",
     "semantic_hash": ""
   },
   ".planning/codebase/ARCHITECTURE.md": {
@@ -2889,6 +2889,12 @@
     "mtime": 1789971282.0237055,
     "seen": 1789973477.177349,
     "ast_hash": "7f89e5ab0b5230ae41e0e04a10c64e22",
+    "semantic_hash": ""
+  },
+  "app/components/fitness/navigation-context.tsx": {
+    "mtime": 1789974400.5790408,
+    "seen": 1789974678.483404,
+    "ast_hash": "99a4c05f88f6e6cd7085b9997eada1c5",
     "semantic_hash": ""
   }
 }

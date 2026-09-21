@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Dumbbell, Clock, Activity, Play, CalendarX, Lock } from "lucide-react";
 import Link from "next/link";
+import { useInstantNav } from "../navigation-context";
 
 interface TodaysWorkoutCardProps {
   workout?: any; // To receive today's workout plan
@@ -17,6 +18,7 @@ export function TodaysWorkoutCard({
   isFree = false,
   onFreeClick,
 }: TodaysWorkoutCardProps) {
+  const { setNavigatingTo } = useInstantNav();
   const todayStr = new Date().toISOString().split('T')[0];
   const cardDateStr = workout?.workout_date || targetDateStr || todayStr;
   const isFuture = cardDateStr > todayStr;
@@ -149,7 +151,17 @@ export function TodaysWorkoutCard({
             </button>
           </div>
         ) : (
-          <Link href={workout ? `/workout` : "#"} prefetch={true} className="w-full mt-2">
+          <Link 
+            href={workout ? `/workout` : "#"} 
+            prefetch={true} 
+            onClick={() => {
+              if (workout) {
+                window.scrollTo({ top: 0, behavior: "instant" });
+                setNavigatingTo("/workout");
+              }
+            }}
+            className="w-full mt-2"
+          >
             <button className="w-full py-4 px-4 bg-[#ADFF00] hover:bg-[#bfff33] active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)]">
               <Play className="w-5 h-5 text-black fill-black" />
               <span className="text-base font-black text-black uppercase tracking-wide">Start Workout</span>
