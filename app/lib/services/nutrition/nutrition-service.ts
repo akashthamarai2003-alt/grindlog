@@ -145,35 +145,41 @@ export function getRealisticFoodCost(foodName?: string, defaultCost?: number): n
  */
 export function calibrateMealsToTargets(
   meals: any[],
-  targets: { calories: number; protein?: number; carbs?: number; fat?: number },
+  targets: { calories: number; protein?: number; carbs?: number; fat?: number; protein_g?: number; carbs_g?: number; fat_g?: number },
   profile: any
 ): any[] {
   if (!meals || !Array.isArray(meals) || meals.length === 0 || !targets) return meals;
 
   const targetCals = Math.round(Number(targets.calories) || 2000);
-  const targetPro = Number(Number(targets.protein || 120).toFixed(1));
-  const targetCarbs = Number(Number(targets.carbs || 200).toFixed(1));
-  const targetFat = Number(Number(targets.fat || 50).toFixed(1));
+  const targetPro = Math.round(Number((targets as any).protein_g ?? targets.protein ?? 120));
+  const targetCarbs = Math.round(Number((targets as any).carbs_g ?? targets.carbs ?? 200));
+  const targetFat = Math.round(Number((targets as any).fat_g ?? targets.fat ?? 50));
 
-  // Daily out-of-pocket budget limit (₹ INR) based on onboarding budget tier
+  // 1. Daily Budget Cap based on Onboarding Tier
   const budgetStr = String(profile?.nutrition_budget || '₹1,000–2,000');
-  let dailyBudgetCap = 50;
-  if (budgetStr.includes('0–1,000') || budgetStr.includes('0-1,000')) dailyBudgetCap = 30;
-  else if (budgetStr.includes('1,000–2,000') || budgetStr.includes('1,000-2,000')) dailyBudgetCap = 50;
-  else if (budgetStr.includes('2,000–5,000') || budgetStr.includes('2,000-5,000')) dailyBudgetCap = 120;
-  else if (budgetStr.includes('5,000')) dailyBudgetCap = 250;
+  let dailyBudgetCap = 75;
+  if (budgetStr.includes('0–1,000') || budgetStr.includes('0-1,000')) dailyBudgetCap = 40;
+  else if (budgetStr.includes('1,000–2,000') || budgetStr.includes('1,000-2,000')) dailyBudgetCap = 75;
+  else if (budgetStr.includes('2,000–5,000') || budgetStr.includes('2,000-5,000')) dailyBudgetCap = 200;
+  else if (budgetStr.includes('5,000')) dailyBudgetCap = 300;
 
-  const mealsPerDay = profile?.meals_per_day || (meals.length === 3 ? '3 meals' : (meals.length === 2 ? '2 meals' : '4 meals'));
+  // Diet preference flags
+  const dietStr = `${profile?.diet_preference || ''} ${profile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
+  const isVegan = dietStr.includes('vegan');
+  const isNonVeg = !isVegan && (dietStr.includes('non') || dietStr.includes('meat') || dietStr.includes('chicken') || dietStr.includes('fish'));
+  const isEggetarian = !isVegan && !isNonVeg && (dietStr.includes('egg') || dietStr.includes('eggetarian'));
+  const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
+
+  const mealsPerDay = profile?.meals_per_day || (meals.length === 3 ? '3 meals' : (meals.length === 2 ? '2 meals' : (meals.length >= 5 ? '5+ meals' : '4 meals')));
   const slotRatios: Record<string, number> = {
     breakfast: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.20 : (mealsPerDay === '2 meals' ? 0.0 : 0.25)),
-    lunch: mealsPerDay === '3 meals' ? 0.40 : (mealsPerDay === '5+ meals' ? 0.30 : (mealsPerDay === '2 meals' ? 0.50 : 0.35)),
+    lunch: mealsPerDay === '3 meals' ? 0.40 : (mealsPerDay === '5+ meals' ? 0.28 : (mealsPerDay === '2 meals' ? 0.50 : 0.35)),
     pre_workout: 0.12,
     snack: 0.12,
     post_workout: 0.13,
-    dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.25 : (mealsPerDay === '2 meals' ? 0.50 : 0.25)),
+    dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.27 : (mealsPerDay === '2 meals' ? 0.50 : 0.28)),
   };
 
-  // Helper to extract item properties regardless of whether item comes from DB or AI generator
   const getItemInfo = (it: any) => {
     const fName = String(it.foods?.name || it.name || '').trim();
     let q = Number(it.quantity) || 1;
@@ -183,8 +189,7 @@ export function calibrateMealsToTargets(
     let unitFat = Number(it.foods?.fat ?? it.fat ?? 0);
     let unitCost = Number(it.foods?.estimated_cost ?? it.estimated_cost ?? 0);
 
-    // If unitCals seems already multiplied by q (e.g. from raw AI object where it.calories = unit * q)
-    // and it.foods is undefined, adjust to base unit values:
+    // If unitCals was already multiplied by quantity in raw items:
     if (!it.foods && q > 1 && unitCals > 0) {
       unitCals = Math.round(unitCals / q);
       unitPro = Number((unitPro / q).toFixed(1));
@@ -196,24 +201,36 @@ export function calibrateMealsToTargets(
     const isCore = it.is_core ?? isStapleCoreFood(fName, profile?.food_environment);
     const realisticCost = isCore ? 0 : getRealisticFoodCost(fName, unitCost);
 
+    return { fName, q, unitCals, unitPro, unitCarbs, unitFat, unitCost: realisticCost, isCore };
+  };
+
+  const getTotals = (currMeals: any[]) => {
+    let cal = 0, pro = 0, carb = 0, fat = 0, cost = 0;
+    currMeals.forEach((m: any) => {
+      (m.meal_plan_items || m.items || []).forEach((it: any) => {
+        const info = getItemInfo(it);
+        const q = Number(it.quantity) || 1;
+        cal += Math.round(info.unitCals * q);
+        pro += Number((info.unitPro * q).toFixed(1));
+        carb += Number((info.unitCarbs * q).toFixed(1));
+        fat += Number((info.unitFat * q).toFixed(1));
+        cost += info.isCore ? 0 : Math.round(info.unitCost * q);
+      });
+    });
     return {
-      fName,
-      q,
-      unitCals,
-      unitPro,
-      unitCarbs,
-      unitFat,
-      unitCost: realisticCost,
-      isCore
+      cal: Math.round(cal),
+      pro: Number(pro.toFixed(1)),
+      carb: Number(carb.toFixed(1)),
+      fat: Number(fat.toFixed(1)),
+      cost: Math.round(cost)
     };
   };
 
-  // PASS 1: Slot-level intelligent scaling
+  // STAGE 1: SLOT-LEVEL INITIAL BALANCING
   let calibratedMeals = meals.map((m: any) => {
     const mType = (m.meal_type || 'lunch').toLowerCase();
     const slotFraction = slotRatios[mType] ?? (1 / meals.length);
     const mealTargetCals = Math.round(targetCals * slotFraction);
-    const mealTargetFat = Number((targetFat * slotFraction).toFixed(1));
 
     const rawItems = m.meal_plan_items || m.items || [];
     if (rawItems.length === 0) return m;
@@ -230,267 +247,476 @@ export function calibrateMealsToTargets(
       const lowerName = info.fName.toLowerCase();
       let q = info.q;
 
-      if (lowerName.includes('boiled egg') || lowerName.includes('egg')) {
-        // Discrete egg portions: scale down if meal or fat target is exceeded
-        if (mealTargetCals <= 450 || mealScale < 0.85) {
-          if (q >= 3) q = 2;
-          else if (q === 2 && mealScale < 0.6) q = 1;
-        } else if (mealScale > 1.35 && q < 3) {
-          q = 3;
-        }
+      // Intelligent portioning based on scale & slot target
+      if (lowerName.includes('egg') && !lowerName.includes('white') && !lowerName.includes('curry')) {
+        if (mealTargetCals <= 400 || mealScale < 0.75) q = 1;
+        else q = 2; // Cap whole eggs at 2 per meal
       } else if (lowerName.includes('rice') || lowerName.includes('chawal')) {
-        if (mealScale < 0.75 && q >= 2) q = 1;
-        else if (mealScale < 0.9 && q > 1) q = 1;
-        else if (mealScale > 1.3 && q <= 1) q = 1.5;
+        if (mealScale < 0.7) q = 0.8;
+        else if (mealScale < 0.9) q = 1.0;
+        else if (mealScale > 1.3) q = 1.6;
+        else q = 1.2;
       } else if (lowerName.includes('roti') || lowerName.includes('chapati') || lowerName.includes('phulka')) {
-        if (mealScale < 0.70 && q >= 3) q = 2;
-        else if (mealScale < 0.60 && q >= 2) q = 1;
-        else if (mealScale > 1.35 && q <= 2) q = 3;
+        if (mealScale < 0.65) q = 1;
+        else if (mealScale < 0.9) q = 2;
+        else if (mealScale > 1.35) q = 3;
+        else q = 2;
+      } else if (lowerName.includes('banana') || lowerName.includes('apple')) {
+        if (mealScale < 0.65 || targetCals < 1500) q = 0.5;
+        else q = 1;
+      } else if (lowerName.includes('peanut')) {
+        if (mealScale < 0.8 || targetFat < 50) q = 0.5;
+        else q = 0.8;
       } else if (lowerName.includes('soya chunk') || lowerName.includes('soy chunk')) {
-        if (mealScale < 0.7) q = 0.5;
-        else if (mealScale < 0.9) q = 0.6;
-        else q = Math.min(1.2, Number((q * mealScale).toFixed(1)));
+        q = Math.min(1.5, Math.max(0.6, Number((q * mealScale).toFixed(1))));
       } else if (lowerName.includes('paneer')) {
-        if (dailyBudgetCap <= 50 || mealTargetFat <= 15 || mealScale < 0.85) {
-          q = 0.5; // 50g serving
-        } else if (mealScale < 1.0) {
-          q = 0.75;
-        }
-      } else if (lowerName.includes('curd') || lowerName.includes('dahi')) {
-        if (mealScale < 0.85) q = 0.75;
+        if (dailyBudgetCap <= 75 || targetFat <= 50 || mealScale < 0.8) q = 0.5;
+        else if (mealScale > 1.2) q = 1.0;
+        else q = 0.7;
       } else if (lowerName.includes('chicken breast') || lowerName.includes('chicken')) {
-        if (mealScale > 1.25 && q <= 1) q = 1.25;
-        else if (mealScale < 0.8) q = 0.75;
+        q = Number(Math.min(2.0, Math.max(0.8, q * mealScale)).toFixed(1));
       } else {
-        // Scalable items (dals, sambar, oats, milk, sabzi, poha)
         const rawScaled = q * mealScale;
-        q = Math.abs(rawScaled - Math.round(rawScaled)) <= 0.12
-          ? Math.round(rawScaled)
-          : Math.max(0.4, Math.min(2.0, Number(rawScaled.toFixed(1))));
+        q = Math.max(0.4, Math.min(2.0, Number(rawScaled.toFixed(1))));
       }
-
-      const totalItemCals = Math.round(info.unitCals * q);
-      const totalItemPro = Number((info.unitPro * q).toFixed(1));
-      const totalItemCarbs = Number((info.unitCarbs * q).toFixed(1));
-      const totalItemFat = Number((info.unitFat * q).toFixed(1));
-      const totalItemCost = info.isCore ? 0 : Math.round(info.unitCost * q);
 
       return {
         ...it,
         quantity: q,
         is_core: info.isCore,
-        calories: totalItemCals,
-        protein: totalItemPro,
-        carbs: totalItemCarbs,
-        fat: totalItemFat,
-        estimated_cost: totalItemCost,
-        foods: it.foods ? {
-          ...it.foods,
-          calories: info.unitCals,
-          protein: info.unitPro,
-          carbs: info.unitCarbs,
-          fat: info.unitFat,
-          estimated_cost: info.unitCost
-        } : {
-          id: it.food_id,
-          name: info.fName,
-          serving_size: it.serving_size || '1 serving',
-          calories: info.unitCals,
-          protein: info.unitPro,
-          carbs: info.unitCarbs,
-          fat: info.unitFat,
-          estimated_cost: info.unitCost
-        }
+        calories: Math.round(info.unitCals * q),
+        protein: Number((info.unitPro * q).toFixed(1)),
+        carbs: Number((info.unitCarbs * q).toFixed(1)),
+        fat: Number((info.unitFat * q).toFixed(1)),
+        estimated_cost: info.isCore ? 0 : Math.round(info.unitCost * q),
+        foods: it.foods ? { ...it.foods, calories: info.unitCals, protein: info.unitPro, carbs: info.unitCarbs, fat: info.unitFat, estimated_cost: info.unitCost } : undefined
       };
     });
 
-    return {
-      ...m,
-      meal_plan_items: calibratedItems,
-      items: calibratedItems
-    };
+    return { ...m, meal_plan_items: calibratedItems, items: calibratedItems };
   });
 
-  // PASS 2: Global budget reconciliation
-  const totalSpend = calibratedMeals.reduce((sum: number, m: any) => {
-    const rawItems = m.meal_plan_items || m.items || [];
-    return sum + rawItems.reduce((mSum: number, it: any) => {
-      const info = getItemInfo(it);
-      return mSum + (info.isCore ? 0 : info.unitCost * (Number(it.quantity) || 1));
-    }, 0);
-  }, 0);
+  // STAGE 2: PROTEIN CALIBRATION (Target +/- 6g)
+  let totals = getTotals(calibratedMeals);
+  let proGap = targetPro - totals.pro;
 
-  if (totalSpend > dailyBudgetCap) {
+  if (proGap > 6) {
+    // 2A. Scale existing lean protein sources in lunch & dinner
     calibratedMeals = calibratedMeals.map((m: any) => {
-      const rawItems = m.meal_plan_items || m.items || [];
-      const items = rawItems.map((it: any) => {
-        const info = getItemInfo(it);
-        if (info.isCore) return it;
-        const lowerName = info.fName.toLowerCase();
-        let q = Number(it.quantity) || 1;
-
-        if (lowerName.includes('paneer') && dailyBudgetCap <= 50 && q > 0.5) {
-          q = 0.5;
-        } else if ((lowerName.includes('boiled egg') || lowerName.includes('egg')) && totalSpend > dailyBudgetCap && q >= 3) {
-          q = 2;
-        }
-
-        const totalItemCals = Math.round(info.unitCals * q);
-        const totalItemPro = Number((info.unitPro * q).toFixed(1));
-        const totalItemCarbs = Number((info.unitCarbs * q).toFixed(1));
-        const totalItemFat = Number((info.unitFat * q).toFixed(1));
-        const totalItemCost = Math.round(info.unitCost * q);
-
-        return {
-          ...it,
-          quantity: q,
-          calories: totalItemCals,
-          protein: totalItemPro,
-          carbs: totalItemCarbs,
-          fat: totalItemFat,
-          estimated_cost: totalItemCost
-        };
-      });
-      return { ...m, meal_plan_items: items, items };
-    });
-  }
-
-  // PASS 2.5: Protein Target Assurance
-  // When user is cutting or building muscle, protein is non-negotiable.
-  // If total protein falls short of targetPro by > 8g, scale up the high-protein items.
-  const currentTotalPro = calibratedMeals.reduce((sum: number, m: any) => {
-    const rawItems = m.meal_plan_items || m.items || [];
-    return sum + rawItems.reduce((mSum: number, it: any) => {
-      const info = getItemInfo(it);
-      return mSum + (info.unitPro * (Number(it.quantity) || 1));
-    }, 0);
-  }, 0);
-
-  const proteinShortfall = targetPro - currentTotalPro;
-  if (proteinShortfall > 8) {
-    calibratedMeals = calibratedMeals.map((m: any) => {
-      const rawItems = m.meal_plan_items || m.items || [];
-      const updatedItems = rawItems.map((it: any) => {
+      const items = (m.meal_plan_items || m.items || []).map((it: any) => {
         const info = getItemInfo(it);
         const lower = info.fName.toLowerCase();
         let q = Number(it.quantity) || 1;
 
-        if (lower.includes('boiled egg') || (lower.includes('egg') && !lower.includes('curry'))) {
-          // Discrete eggs: boost egg count to close shortfall
-          if (q <= 2 && proteinShortfall >= 20) q = 4;
-          else if (q <= 2 && proteinShortfall >= 10) q = 3;
-          else if (q === 3 && proteinShortfall >= 15) q = 4;
-        } else if (lower.includes('chicken breast') || lower.includes('chicken')) {
-          const boost = Math.min(1.6, Math.max(1.2, 1 + (proteinShortfall / (targetPro * 0.55))));
-          q = Number((q * boost).toFixed(2));
-        } else if (lower.includes('fish')) {
-          const boost = Math.min(1.6, Math.max(1.2, 1 + (proteinShortfall / (targetPro * 0.55))));
-          q = Number((q * boost).toFixed(2));
-        } else if (lower.includes('paneer')) {
-          if (dailyBudgetCap >= 50) {
-            const boost = Math.min(1.4, Math.max(1.15, 1 + (proteinShortfall / targetPro)));
-            q = Number((q * boost).toFixed(2));
-          }
+        if (lower.includes('chicken breast') || (lower.includes('chicken') && !lower.includes('biryani'))) {
+          const needed = Math.min(1.2, Math.max(0, proGap / 31));
+          q = Number((q + needed).toFixed(1));
+          proGap -= needed * 31;
         } else if (lower.includes('soya chunk') || lower.includes('soy chunk')) {
-          const boost = Math.min(1.5, Math.max(1.2, 1 + (proteinShortfall / targetPro)));
-          q = Number((q * boost).toFixed(2));
+          const needed = Math.min(0.8, Math.max(0, proGap / 45));
+          q = Number((q + needed).toFixed(1));
+          proGap -= needed * 45;
+        } else if (lower.includes('egg white')) {
+          const needed = Math.min(5, Math.round(proGap / 3.6));
+          q = q + needed;
+          proGap -= needed * 3.6;
         }
-
-        const totalItemCals = Math.round(info.unitCals * q);
-        const totalItemPro = Number((info.unitPro * q).toFixed(1));
-        const totalItemCarbs = Number((info.unitCarbs * q).toFixed(1));
-        const totalItemFat = Number((info.unitFat * q).toFixed(1));
-        const totalItemCost = info.isCore ? 0 : Math.round(info.unitCost * q);
 
         return {
           ...it,
           quantity: q,
-          calories: totalItemCals,
-          protein: totalItemPro,
-          carbs: totalItemCarbs,
-          fat: totalItemFat,
-          estimated_cost: totalItemCost
+          calories: Math.round(info.unitCals * q),
+          protein: Number((info.unitPro * q).toFixed(1)),
+          carbs: Number((info.unitCarbs * q).toFixed(1)),
+          fat: Number((info.unitFat * q).toFixed(1)),
+          estimated_cost: info.isCore ? 0 : Math.round(info.unitCost * q),
         };
       });
-
-      return { ...m, meal_plan_items: updatedItems, items: updatedItems };
+      return { ...m, meal_plan_items: items, items };
     });
-  }
 
-  // PASS 3: Global Calorie Fine-Tuning
-  const currentGrandCals = calibratedMeals.reduce((sum: number, m: any) => {
-    const rawItems = m.meal_plan_items || m.items || [];
-    return sum + rawItems.reduce((mSum: number, it: any) => {
-      const info = getItemInfo(it);
-      return mSum + (info.unitCals * (Number(it.quantity) || 1));
-    }, 0);
-  }, 0);
+    // 2B. If still short by > 8g, inject lean protein into lunch AND/OR dinner
+    totals = getTotals(calibratedMeals);
+    proGap = targetPro - totals.pro;
 
-  if (currentGrandCals > 0 && Math.abs(currentGrandCals - targetCals) > (targetCals * 0.03)) {
-    const fineScale = targetCals / currentGrandCals;
-    calibratedMeals = calibratedMeals.map((m: any) => {
-      const rawItems = m.meal_plan_items || m.items || [];
-      const items = rawItems.map((it: any) => {
-        const info = getItemInfo(it);
-        const lowerName = info.fName.toLowerCase();
-        let q = Number(it.quantity) || 1;
-        if (lowerName.includes('boiled egg') || lowerName.includes('egg') || lowerName.includes('chicken') || lowerName.includes('fish') || lowerName.includes('soya')) {
-          // Keep protein items protected during calorie fine-tuning
-        } else if (lowerName.includes('roti') || lowerName.includes('chapati')) {
-          if (fineScale < 0.98 && q > 1) {
-            q = Math.max(1, Math.round(q * fineScale));
-          }
-        } else if (lowerName.includes('rice') || lowerName.includes('chawal')) {
-          if (fineScale < 0.98 && q > 1) {
-            q = Math.max(1, Number((q * fineScale).toFixed(1)));
-          }
+    if (proGap > 8) {
+      // Find candidate meals to inject protein (Lunch and Dinner)
+      const candidateSlots = ['dinner', 'lunch'];
+      for (const slot of candidateSlots) {
+        if (proGap <= 6) break;
+        const targetMealIdx = calibratedMeals.findIndex(m => (m.meal_type || '').toLowerCase() === slot);
+        if (targetMealIdx === -1) continue;
+
+        const targetMeal = calibratedMeals[targetMealIdx];
+        let addOnFood: any = null;
+        let addOnQty = 1;
+
+        if (isNonVeg) {
+          addOnFood = {
+            id: 'chicken-breast-addon',
+            name: 'Chicken Breast (Cooked)',
+            category: 'Non-Vegetarian',
+            serving_size: '100g',
+            calories: 165,
+            protein: 31,
+            carbs: 0,
+            fat: 3.6,
+            estimated_cost: 45,
+          };
+          addOnQty = Number(Math.max(0.5, Math.min(1.2, proGap / 31)).toFixed(1));
+          proGap -= addOnQty * 31;
+        } else if (isEggetarian) {
+          addOnFood = {
+            id: 'egg-white-addon',
+            name: 'Boiled Egg White',
+            category: 'Protein',
+            serving_size: '1 large (33g)',
+            calories: 17,
+            protein: 3.6,
+            carbs: 0.2,
+            fat: 0.1,
+            estimated_cost: 6,
+          };
+          addOnQty = Math.max(2, Math.min(5, Math.round(proGap / 3.6)));
+          proGap -= addOnQty * 3.6;
         } else {
-          q = Math.max(0.3, Math.min(2.5, Number((q * fineScale).toFixed(2))));
+          // Vegetarian & Vegan: Soy Chunks
+          addOnFood = {
+            id: 'soya-chunks-addon',
+            name: 'Soy Chunks (Cooked)',
+            category: 'Protein',
+            serving_size: '1 bowl (100g)',
+            calories: 345,
+            protein: 52,
+            carbs: 33,
+            fat: 0.5,
+            estimated_cost: 20,
+          };
+          addOnQty = Number(Math.max(0.4, Math.min(0.8, proGap / 52)).toFixed(1));
+          proGap -= addOnQty * 52;
         }
 
-        const totalItemCals = Math.round(info.unitCals * q);
-        const totalItemPro = Number((info.unitPro * q).toFixed(1));
-        const totalItemCarbs = Number((info.unitCarbs * q).toFixed(1));
-        const totalItemFat = Number((info.unitFat * q).toFixed(1));
-        const totalItemCost = info.isCore ? 0 : Math.round(info.unitCost * q);
+        const isCore = isStapleCoreFood(addOnFood.name, profile?.food_environment);
+        const unitCost = isCore ? 0 : getRealisticFoodCost(addOnFood.name, addOnFood.estimated_cost);
 
+        const newItems = [
+          ...(targetMeal.meal_plan_items || []),
+          {
+            food_id: addOnFood.id,
+            quantity: addOnQty,
+            is_core: isCore,
+            calories: Math.round(addOnFood.calories * addOnQty),
+            protein: Number((addOnFood.protein * addOnQty).toFixed(1)),
+            carbs: Number((addOnFood.carbs * addOnQty).toFixed(1)),
+            fat: Number((addOnFood.fat * addOnQty).toFixed(1)),
+            estimated_cost: Math.round(unitCost * addOnQty),
+            foods: addOnFood,
+          }
+        ];
+
+        // If cutting or low fat, trim full fat paneer when soya is added to prevent calorie & fat surplus
+        if (targetFat <= 50) {
+          (targetMeal.meal_plan_items || []).forEach((it: any) => {
+            if ((it.foods?.name || it.name || '').toLowerCase().includes('paneer')) {
+              it.quantity = Math.max(0.2, Number((it.quantity * 0.4).toFixed(1)));
+              const pInfo = getItemInfo(it);
+              it.calories = Math.round(pInfo.unitCals * it.quantity);
+              it.protein = Number((pInfo.unitPro * it.quantity).toFixed(1));
+              it.carbs = Number((pInfo.unitCarbs * it.quantity).toFixed(1));
+              it.fat = Number((pInfo.unitFat * it.quantity).toFixed(1));
+              it.estimated_cost = pInfo.isCore ? 0 : Math.round(pInfo.unitCost * it.quantity);
+            }
+          });
+        }
+
+        calibratedMeals[targetMealIdx] = {
+          ...targetMeal,
+          meal_plan_items: newItems,
+          items: newItems
+        };
+      }
+    }
+  } else if (proGap < -8) {
+    // 2C. Scale down excessive protein anchors evenly across all meals
+    let anchorItems: any[] = [];
+    calibratedMeals.forEach(m => {
+      (m.meal_plan_items || []).forEach((it: any) => {
+        const lower = (it.foods?.name || it.name || '').toLowerCase();
+        if (lower.includes('chicken') || lower.includes('soya') || lower.includes('soy chunk') || lower.includes('paneer') || lower.includes('egg white')) {
+          anchorItems.push(it);
+        }
+      });
+    });
+
+    if (anchorItems.length > 0) {
+      const proExcess = totals.pro - targetPro;
+      const trimPerAnchor = proExcess / anchorItems.length;
+
+      calibratedMeals = calibratedMeals.map((m: any) => {
+        const items = (m.meal_plan_items || []).map((it: any) => {
+          const info = getItemInfo(it);
+          const lower = info.fName.toLowerCase();
+          let q = Number(it.quantity) || 1;
+          if (lower.includes('chicken') || lower.includes('soya') || lower.includes('soy chunk') || lower.includes('paneer') || lower.includes('egg white')) {
+            const deltaQ = info.unitPro > 0 ? (trimPerAnchor / info.unitPro) : 0;
+            q = Number(Math.max(0.25, q - deltaQ).toFixed(1));
+          }
+          return {
+            ...it,
+            quantity: q,
+            calories: Math.round(info.unitCals * q),
+            protein: Number((info.unitPro * q).toFixed(1)),
+            carbs: Number((info.unitCarbs * q).toFixed(1)),
+            fat: Number((info.unitFat * q).toFixed(1)),
+            estimated_cost: info.isCore ? 0 : Math.round(info.unitCost * q),
+          };
+        });
+        return { ...m, meal_plan_items: items, items };
+      });
+    }
+  }
+
+  // STAGE 3: STRICT FAT CAP ENFORCEMENT (totalFat <= targetFat + 3g)
+  totals = getTotals(calibratedMeals);
+  let fatOverage = totals.fat - targetFat;
+
+  if (fatOverage > 2) {
+    // 3A. Check whole eggs across entire day - cap at 2 whole eggs total
+    let totalWholeEggs = 0;
+    calibratedMeals.forEach(m => {
+      (m.meal_plan_items || []).forEach((it: any) => {
+        const fName = (it.foods?.name || it.name || '').toLowerCase();
+        if (fName.includes('egg') && !fName.includes('white') && !fName.includes('curry')) {
+          totalWholeEggs += Number(it.quantity) || 0;
+        }
+      });
+    });
+
+    if (totalWholeEggs > 2) {
+      let eggsToTrim = totalWholeEggs - 2;
+      calibratedMeals = calibratedMeals.map(m => {
+        const items = (m.meal_plan_items || []).map((it: any) => {
+          const fName = (it.foods?.name || it.name || '').toLowerCase();
+          if (fName.includes('egg') && !fName.includes('white') && !fName.includes('curry') && eggsToTrim > 0) {
+            const currentQ = Number(it.quantity) || 1;
+            const reduction = Math.min(eggsToTrim, Math.max(1, currentQ - 1));
+            eggsToTrim -= reduction;
+            const newQ = Math.max(1, currentQ - reduction);
+            const info = getItemInfo(it);
+            return {
+              ...it,
+              quantity: newQ,
+              calories: Math.round(info.unitCals * newQ),
+              protein: Number((info.unitPro * newQ).toFixed(1)),
+              carbs: Number((info.unitCarbs * newQ).toFixed(1)),
+              fat: Number((info.unitFat * newQ).toFixed(1)),
+              estimated_cost: info.isCore ? 0 : Math.round(info.unitCost * newQ),
+            };
+          }
+          return it;
+        });
+        return { ...m, meal_plan_items: items, items };
+      });
+    }
+
+    // 3B. Scale down fats, oils, peanuts, full-fat paneer, milk
+    totals = getTotals(calibratedMeals);
+    fatOverage = totals.fat - targetFat;
+
+    if (fatOverage > 2) {
+      calibratedMeals = calibratedMeals.map((m: any) => {
+        const items = (m.meal_plan_items || []).map((it: any) => {
+          const info = getItemInfo(it);
+          const lower = info.fName.toLowerCase();
+          let q = Number(it.quantity) || 1;
+
+          if (lower.includes('peanut')) {
+            q = Math.max(0.4, Number((q * 0.6).toFixed(1)));
+          } else if (lower.includes('paneer') && fatOverage > 4) {
+            q = Math.max(0.35, Number((q * (fatOverage > 12 ? 0.45 : 0.65)).toFixed(1)));
+          } else if (lower.includes('ghee') || lower.includes('butter') || /\b(?:oil|oils|cooking oil|mustard oil|olive oil)\b/i.test(lower)) {
+            q = Math.max(0.3, Number((q * 0.5).toFixed(1)));
+          } else if (lower.includes('whole milk') && fatOverage > 3) {
+            q = Math.max(0.5, Number((q * (fatOverage > 10 ? 0.65 : 0.8)).toFixed(1)));
+          }
+
+          return {
+            ...it,
+            quantity: q,
+            calories: Math.round(info.unitCals * q),
+            protein: Number((info.unitPro * q).toFixed(1)),
+            carbs: Number((info.unitCarbs * q).toFixed(1)),
+            fat: Number((info.unitFat * q).toFixed(1)),
+            estimated_cost: info.isCore ? 0 : Math.round(info.unitCost * q),
+          };
+        });
+        return { ...m, meal_plan_items: items, items };
+      });
+    }
+  }
+
+  // STAGE 4: CALORIE & CARB FINE-TUNING VIA STAPLE FOODS (Target +/- 2%)
+  totals = getTotals(calibratedMeals);
+  const calDelta = targetCals - totals.cal;
+
+  if (Math.abs(calDelta) > 20) {
+    // Calculate total calories currently coming from carb staples
+    let stapleCals = 0;
+    calibratedMeals.forEach(m => {
+      (m.meal_plan_items || []).forEach((it: any) => {
+        const lower = (it.foods?.name || it.name || '').toLowerCase();
+        if (lower.includes('rice') || lower.includes('roti') || lower.includes('chapati') || lower.includes('oat') || lower.includes('poha') || lower.includes('upma') || lower.includes('daliya') || lower.includes('cheela')) {
+          stapleCals += Math.round((it.foods?.calories || it.calories || 0) * (Number(it.quantity) || 1));
+        }
+      });
+    });
+
+    if (stapleCals > 0) {
+      const carbRatio = Math.max(0.4, Math.min(2.2, 1 + (calDelta / stapleCals)));
+      calibratedMeals = calibratedMeals.map((m: any) => {
+        const items = (m.meal_plan_items || []).map((it: any) => {
+          const info = getItemInfo(it);
+          const lower = info.fName.toLowerCase();
+          let q = Number(it.quantity) || 1;
+
+          const isCarbStaple = lower.includes('rice') || lower.includes('roti') || lower.includes('chapati') || lower.includes('oat') || lower.includes('poha') || lower.includes('upma') || lower.includes('daliya') || lower.includes('cheela');
+
+          if (isCarbStaple) {
+            q = Math.max(0.4, Number((q * carbRatio).toFixed(1)));
+          }
+
+          return {
+            ...it,
+            quantity: q,
+            calories: Math.round(info.unitCals * q),
+            protein: Number((info.unitPro * q).toFixed(1)),
+            carbs: Number((info.unitCarbs * q).toFixed(1)),
+            fat: Number((info.unitFat * q).toFixed(1)),
+            estimated_cost: info.isCore ? 0 : Math.round(info.unitCost * q),
+          };
+        });
+        return { ...m, meal_plan_items: items, items };
+      });
+    }
+  }
+
+  // STAGE 4B: FINAL LEAN PROTEIN TOP-UP (Target +/- 6g, within calorie cap)
+  totals = getTotals(calibratedMeals);
+  const finalProGap = targetPro - totals.pro;
+  if (finalProGap > 6 && totals.cal <= targetCals + 40) {
+    const candidateSlots = ['dinner', 'lunch'];
+    for (const slot of candidateSlots) {
+      if (finalProGap <= 4) break;
+      const targetMealIdx = calibratedMeals.findIndex(m => (m.meal_type || '').toLowerCase() === slot);
+      if (targetMealIdx === -1) continue;
+
+      const targetMeal = calibratedMeals[targetMealIdx];
+      let addOnFood: any = null;
+      let addOnQty = 1;
+
+      if (isNonVeg || isEggetarian) {
+        addOnFood = {
+          id: 'boiled-egg-white-addon',
+          name: 'Boiled Egg White',
+          category: 'Protein',
+          serving_size: '1 large (33g)',
+          calories: 17,
+          protein: 3.6,
+          carbs: 0.2,
+          fat: 0.1,
+          estimated_cost: 6,
+        };
+        addOnQty = Math.max(2, Math.min(5, Math.round(finalProGap / 3.6)));
+      } else {
+        // Vegetarian & Vegan: Soy Chunks
+        addOnFood = {
+          id: 'soya-chunks-addon',
+          name: 'Soy Chunks (Cooked)',
+          category: 'Protein',
+          serving_size: '1 bowl (100g)',
+          calories: 345,
+          protein: 52,
+          carbs: 33,
+          fat: 0.5,
+          estimated_cost: 20,
+        };
+        addOnQty = Number(Math.max(0.2, Math.min(0.5, finalProGap / 52)).toFixed(1));
+      }
+
+      const isCore = isStapleCoreFood(addOnFood.name, profile?.food_environment);
+      const unitCost = isCore ? 0 : getRealisticFoodCost(addOnFood.name, addOnFood.estimated_cost);
+
+      const existingItems = [...(targetMeal.meal_plan_items || targetMeal.items || [])];
+      const dupIdx = existingItems.findIndex((it: any) => (it.foods?.name || it.name || '').toLowerCase().includes(addOnFood.name.toLowerCase()));
+
+      if (dupIdx !== -1) {
+        const existing = existingItems[dupIdx];
+        const newQ = Number((Number(existing.quantity) + addOnQty).toFixed(1));
+        const pInfo = getItemInfo(existing);
+        existingItems[dupIdx] = {
+          ...existing,
+          quantity: newQ,
+          calories: Math.round(pInfo.unitCals * newQ),
+          protein: Number((pInfo.unitPro * newQ).toFixed(1)),
+          carbs: Number((pInfo.unitCarbs * newQ).toFixed(1)),
+          fat: Number((pInfo.unitFat * newQ).toFixed(1)),
+          estimated_cost: pInfo.isCore ? 0 : Math.round(pInfo.unitCost * newQ),
+        };
+      } else {
+        existingItems.push({
+          food_id: addOnFood.id,
+          quantity: addOnQty,
+          is_core: isCore,
+          calories: Math.round(addOnFood.calories * addOnQty),
+          protein: Number((addOnFood.protein * addOnQty).toFixed(1)),
+          carbs: Number((addOnFood.carbs * addOnQty).toFixed(1)),
+          fat: Number((addOnFood.fat * addOnQty).toFixed(1)),
+          estimated_cost: Math.round(unitCost * addOnQty),
+          foods: addOnFood,
+        });
+      }
+
+      calibratedMeals[targetMealIdx] = {
+        ...targetMeal,
+        meal_plan_items: existingItems,
+        items: existingItems
+      };
+      break;
+    }
+  }
+
+  // STAGE 5: STRICT BUDGET CAP ENFORCEMENT
+  totals = getTotals(calibratedMeals);
+  if (totals.cost > dailyBudgetCap + 10) {
+    calibratedMeals = calibratedMeals.map((m: any) => {
+      const items = (m.meal_plan_items || []).map((it: any) => {
+        const info = getItemInfo(it);
+        let q = Number(it.quantity) || 1;
+        if (!info.isCore && info.unitCost > 30) {
+          q = Math.max(0.6, Number((q * 0.85).toFixed(1)));
+        }
         return {
           ...it,
           quantity: q,
-          calories: totalItemCals,
-          protein: totalItemPro,
-          carbs: totalItemCarbs,
-          fat: totalItemFat,
-          estimated_cost: totalItemCost
+          calories: Math.round(info.unitCals * q),
+          protein: Number((info.unitPro * q).toFixed(1)),
+          carbs: Number((info.unitCarbs * q).toFixed(1)),
+          fat: Number((info.unitFat * q).toFixed(1)),
+          estimated_cost: info.isCore ? 0 : Math.round(info.unitCost * q),
         };
       });
       return { ...m, meal_plan_items: items, items };
     });
   }
 
-  // PASS 4: Final recalculation of meal totals
+  // Final summary update per meal
   return calibratedMeals.map((m: any) => {
     const items = m.meal_plan_items || m.items || [];
-    const finalCals = Math.round(items.reduce((s: number, it: any) => {
-      const info = getItemInfo(it);
-      return s + (info.unitCals * (Number(it.quantity) || 1));
-    }, 0));
-    const finalPro = Number(items.reduce((s: number, it: any) => {
-      const info = getItemInfo(it);
-      return s + (info.unitPro * (Number(it.quantity) || 1));
-    }, 0).toFixed(1));
-    const finalCarbs = Number(items.reduce((s: number, it: any) => {
-      const info = getItemInfo(it);
-      return s + (info.unitCarbs * (Number(it.quantity) || 1));
-    }, 0).toFixed(1));
-    const finalFat = Number(items.reduce((s: number, it: any) => {
-      const info = getItemInfo(it);
-      return s + (info.unitFat * (Number(it.quantity) || 1));
-    }, 0).toFixed(1));
-    const finalCost = Math.round(items.reduce((s: number, it: any) => {
-      const info = getItemInfo(it);
-      return s + (info.isCore ? 0 : info.unitCost * (Number(it.quantity) || 1));
-    }, 0));
+    const finalCals = Math.round(items.reduce((s: number, it: any) => s + (Number(it.calories) || 0), 0));
+    const finalPro = Number(items.reduce((s: number, it: any) => s + (Number(it.protein) || 0), 0).toFixed(1));
+    const finalCarbs = Number(items.reduce((s: number, it: any) => s + (Number(it.carbs) || 0), 0).toFixed(1));
+    const finalFat = Number(items.reduce((s: number, it: any) => s + (Number(it.fat) || 0), 0).toFixed(1));
+    const finalCost = items.reduce((s: number, it: any) => s + (Number(it.estimated_cost) || 0), 0);
 
     return {
       ...m,
@@ -498,7 +724,7 @@ export function calibrateMealsToTargets(
       protein: finalPro,
       carbs: finalCarbs,
       fat: finalFat,
-      estimated_cost: finalCost,
+      estimated_cost: Math.round(finalCost),
       meal_plan_items: items,
       items: items
     };
@@ -779,6 +1005,10 @@ export interface WeeklyPlanEligibility {
   reason?: 'weekly_cooldown' | 'monthly_limit_reached' | null;
   message?: string;
 }
+
+// Concurrency & debounce locks to prevent duplicate meal logging on rapid clicks
+const mealLogInFlight = new Map<string, Promise<any[]>>();
+const mealLogDebounce = new Map<string, { timestamp: number; result: any[] }>();
 
 export class NutritionService {
   
@@ -1249,247 +1479,272 @@ export class NutritionService {
   static async logMultipleFoods(userId: string, items: LogFoodInput[]) {
     if (!items || items.length === 0) return [];
 
-    const supabase = await createServerSupabase();
-    const { data: fitProfile } = await supabase
-      .from('fitness_os_profiles')
-      .select('food_environment')
-      .eq('user_id', userId)
-      .maybeSingle();
+    const mealTypes = Array.from(new Set(items.map(it => it.meal_type || 'meal'))).sort().join(',');
+    const lockKey = `${userId}:${mealTypes}`;
 
-    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-    // Collect valid food UUIDs
-    const validUuids = items
-      .map(it => it.food_id)
-      .filter((id): id is string => Boolean(id && UUID_REGEX.test(id)));
-
-    let foodsById = new Map<string, any>();
-    if (validUuids.length > 0) {
-      const { data: dbFoods } = await supabase
-        .from('foods')
-        .select('*')
-        .in('id', validUuids);
-      if (dbFoods) {
-        dbFoods.forEach(f => foodsById.set(f.id, f));
-      }
+    const inFlight = mealLogInFlight.get(lockKey);
+    if (inFlight) {
+      return inFlight;
     }
 
-    let adminClient: any = null;
-    const logsToInsert: any[] = [];
+    const debounced = mealLogDebounce.get(lockKey);
+    if (debounced && Date.now() - debounced.timestamp < 3500) {
+      return debounced.result;
+    }
 
-    for (const item of items) {
-      const q = Number(item.quantity) || 1;
-      if (q <= 0) continue;
+    const execLog = async (): Promise<any[]> => {
+      const supabase = await createServerSupabase();
+      const { data: fitProfile } = await supabase
+        .from('fitness_os_profiles')
+        .select('food_environment')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      let food: any = null;
-      let finalFoodId: string | null = null;
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-      if (item.food_id && UUID_REGEX.test(item.food_id)) {
-        food = foodsById.get(item.food_id);
-        if (food) finalFoodId = food.id;
-      }
+      // Collect valid food UUIDs
+      const validUuids = items
+        .map(it => it.food_id)
+        .filter((id): id is string => Boolean(id && UUID_REGEX.test(id)));
 
-      if (!food && item.custom_food) {
-        if (!adminClient) {
-          adminClient = require('@/lib/services/supabase/admin').createAdminClient();
-        }
-
-        const foodName = item.custom_food.name.trim();
-        const { data: existing } = await adminClient
+      let foodsById = new Map<string, any>();
+      if (validUuids.length > 0) {
+        const { data: dbFoods } = await supabase
           .from('foods')
           .select('*')
-          .ilike('name', foodName)
-          .limit(1)
-          .maybeSingle();
+          .in('id', validUuids);
+        if (dbFoods) {
+          dbFoods.forEach(f => foodsById.set(f.id, f));
+        }
+      }
+
+      let adminClient: any = null;
+      const logsToInsert: any[] = [];
+
+      for (const item of items) {
+        const q = Number(item.quantity) || 1;
+        if (q <= 0) continue;
+
+        let food: any = null;
+        let finalFoodId: string | null = null;
+
+        if (item.food_id && UUID_REGEX.test(item.food_id)) {
+          food = foodsById.get(item.food_id);
+          if (food) finalFoodId = food.id;
+        }
+
+        if (!food && item.custom_food) {
+          if (!adminClient) {
+            adminClient = require('@/lib/services/supabase/admin').createAdminClient();
+          }
+
+          const foodName = item.custom_food.name.trim();
+          const { data: existing } = await adminClient
+            .from('foods')
+            .select('*')
+            .ilike('name', foodName)
+            .limit(1)
+            .maybeSingle();
+
+          if (existing) {
+            food = existing;
+            finalFoodId = existing.id;
+          } else {
+            const { data: newFood, error: newFoodErr } = await adminClient
+              .from('foods')
+              .insert({
+                name: foodName,
+                category: item.custom_food.category || item.meal_type,
+                serving_size: (item.custom_food as any).serving_size || '1 serving',
+                calories: Number(item.custom_food.calories) || 0,
+                protein: Number(item.custom_food.protein) || 0,
+                carbs: Number(item.custom_food.carbs) || 0,
+                fat: Number(item.custom_food.fat) || 0,
+                estimated_cost: Number(item.custom_food.estimated_cost) || 0,
+                is_active: false
+              })
+              .select()
+              .maybeSingle();
+
+            if (newFood) {
+              food = newFood;
+              finalFoodId = newFood.id;
+            } else if (newFoodErr?.code === '23505') {
+              const { data: dupFood } = await adminClient
+                .from('foods')
+                .select('*')
+                .ilike('name', foodName)
+                .limit(1)
+                .maybeSingle();
+              if (dupFood) {
+                food = dupFood;
+                finalFoodId = dupFood.id;
+              }
+            }
+          }
+        }
+
+        if (!food) {
+          // Fallback placeholder food to guarantee foreign key validity
+          if (!adminClient) {
+            adminClient = require('@/lib/services/supabase/admin').createAdminClient();
+          }
+          const foodName = ((item as any).name || (item.custom_food as any)?.name || 'Meal Item').trim();
+          const { data: existingPlaceholder } = await adminClient
+            .from('foods')
+            .select('*')
+            .ilike('name', foodName)
+            .limit(1)
+            .maybeSingle();
+
+          if (existingPlaceholder) {
+            food = existingPlaceholder;
+            finalFoodId = existingPlaceholder.id;
+          } else {
+            const { data: placeholderFood, error: pErr } = await adminClient
+              .from('foods')
+              .insert({
+                name: foodName,
+                category: item.meal_type || 'meal',
+                serving_size: '1 serving',
+                calories: 0,
+                protein: 0,
+                carbs: 0,
+                fat: 0,
+                estimated_cost: 0,
+                is_active: false
+              })
+              .select()
+              .maybeSingle();
+
+            if (placeholderFood) {
+              food = placeholderFood;
+              finalFoodId = placeholderFood.id;
+            } else if (pErr?.code === '23505') {
+              const { data: dupFood } = await adminClient
+                .from('foods')
+                .select('*')
+                .ilike('name', foodName)
+                .limit(1)
+                .maybeSingle();
+              if (dupFood) {
+                food = dupFood;
+                finalFoodId = dupFood.id;
+              }
+            }
+          }
+        }
+
+        const rawCals = item.custom_food?.calories !== undefined ? item.custom_food.calories : (food?.calories || 0);
+        const rawPro = item.custom_food?.protein !== undefined ? item.custom_food.protein : (food?.protein || 0);
+        const rawCarbs = item.custom_food?.carbs !== undefined ? item.custom_food.carbs : (food?.carbs || 0);
+        const rawFat = item.custom_food?.fat !== undefined ? item.custom_food.fat : (food?.fat || 0);
+        const foodName = food?.name || item.custom_food?.name || (item as any).name || '';
+        const isCore = isStapleCoreFood(foodName, fitProfile?.food_environment);
+        const rawCost = item.custom_food?.estimated_cost !== undefined ? item.custom_food.estimated_cost : (food?.estimated_cost || 0);
+        const unitCost = isCore ? 0 : getRealisticFoodCost(foodName, rawCost);
+
+        const scaledCalories = Math.round(Number(rawCals) * q);
+        const scaledProtein = Number((Number(rawPro) * q).toFixed(2));
+        const scaledCarbs = Number((Number(rawCarbs) * q).toFixed(2));
+        const scaledFat = Number((Number(rawFat) * q).toFixed(2));
+        const scaledCost = Number((Number(unitCost) * q).toFixed(2));
+
+        logsToInsert.push({
+          user_id: userId,
+          food_id: finalFoodId,
+          meal_type: item.meal_type,
+          quantity: q,
+          calories: scaledCalories,
+          protein: scaledProtein,
+          carbs: scaledCarbs,
+          fat: scaledFat,
+          estimated_cost: scaledCost,
+          source: 'manual'
+        });
+      }
+
+      if (logsToInsert.length === 0) return [];
+
+      // Idempotency & Deduplication: Check existing food_logs for this user on this local date
+      const tz = await NutritionService.getUserTimezone(userId);
+      const { start, end } = await NutritionService.getLocalDateBoundaries(userId, tz);
+
+      const { data: existingLogs } = await supabase
+        .from('food_logs')
+        .select('*, foods(*)')
+        .eq('user_id', userId)
+        .gte('logged_at', start)
+        .lte('logged_at', end);
+
+      const finalLogs: any[] = [];
+      const newInserts: any[] = [];
+
+      for (const newLog of logsToInsert) {
+        // Check if this food was already logged for this meal today
+        const existing = (existingLogs || []).find((el: any) => {
+          if (el.meal_type !== newLog.meal_type) return false;
+          if (newLog.food_id && el.food_id && el.food_id === newLog.food_id) return true;
+          const newName = (foodsById.get(newLog.food_id)?.name || '').toLowerCase().trim();
+          const existingName = (el.foods?.name || '').toLowerCase().trim();
+          return Boolean(newName && existingName && newName === existingName);
+        });
 
         if (existing) {
-          food = existing;
-          finalFoodId = existing.id;
-        } else {
-          const { data: newFood, error: newFoodErr } = await adminClient
-            .from('foods')
-            .insert({
-              name: foodName,
-              category: item.custom_food.category || item.meal_type,
-              serving_size: (item.custom_food as any).serving_size || '1 serving',
-              calories: Number(item.custom_food.calories) || 0,
-              protein: Number(item.custom_food.protein) || 0,
-              carbs: Number(item.custom_food.carbs) || 0,
-              fat: Number(item.custom_food.fat) || 0,
-              estimated_cost: Number(item.custom_food.estimated_cost) || 0,
-              is_active: false
+          // Update existing row in-place instead of creating a duplicate row!
+          const { data: updated } = await supabase
+            .from('food_logs')
+            .update({
+              quantity: newLog.quantity,
+              calories: newLog.calories,
+              protein: newLog.protein,
+              carbs: newLog.carbs,
+              fat: newLog.fat,
+              estimated_cost: newLog.estimated_cost
             })
-            .select()
+            .eq('id', existing.id)
+            .select('*, foods(*)')
             .maybeSingle();
 
-          if (newFood) {
-            food = newFood;
-            finalFoodId = newFood.id;
-          } else if (newFoodErr?.code === '23505') {
-            const { data: dupFood } = await adminClient
-              .from('foods')
-              .select('*')
-              .ilike('name', foodName)
-              .limit(1)
-              .maybeSingle();
-            if (dupFood) {
-              food = dupFood;
-              finalFoodId = dupFood.id;
-            }
-          }
+          finalLogs.push(updated || existing);
+        } else {
+          newInserts.push(newLog);
         }
       }
 
-      if (!food) {
-        // Fallback placeholder food to guarantee foreign key validity
-        if (!adminClient) {
-          adminClient = require('@/lib/services/supabase/admin').createAdminClient();
-        }
-        const foodName = ((item as any).name || (item.custom_food as any)?.name || 'Meal Item').trim();
-        const { data: existingPlaceholder } = await adminClient
-          .from('foods')
-          .select('*')
-          .ilike('name', foodName)
-          .limit(1)
-          .maybeSingle();
-
-        if (existingPlaceholder) {
-          food = existingPlaceholder;
-          finalFoodId = existingPlaceholder.id;
-        } else {
-          const { data: placeholderFood, error: pErr } = await adminClient
-            .from('foods')
-            .insert({
-              name: foodName,
-              category: item.meal_type || 'meal',
-              serving_size: '1 serving',
-              calories: 0,
-              protein: 0,
-              carbs: 0,
-              fat: 0,
-              estimated_cost: 0,
-              is_active: false
-            })
-            .select()
-            .maybeSingle();
-
-          if (placeholderFood) {
-            food = placeholderFood;
-            finalFoodId = placeholderFood.id;
-          } else if (pErr?.code === '23505') {
-            const { data: dupFood } = await adminClient
-              .from('foods')
-              .select('*')
-              .ilike('name', foodName)
-              .limit(1)
-              .maybeSingle();
-            if (dupFood) {
-              food = dupFood;
-              finalFoodId = dupFood.id;
-            }
-          }
-        }
-      }
-
-      const rawCals = item.custom_food?.calories !== undefined ? item.custom_food.calories : (food?.calories || 0);
-      const rawPro = item.custom_food?.protein !== undefined ? item.custom_food.protein : (food?.protein || 0);
-      const rawCarbs = item.custom_food?.carbs !== undefined ? item.custom_food.carbs : (food?.carbs || 0);
-      const rawFat = item.custom_food?.fat !== undefined ? item.custom_food.fat : (food?.fat || 0);
-      const foodName = food?.name || item.custom_food?.name || (item as any).name || '';
-      const isCore = isStapleCoreFood(foodName, fitProfile?.food_environment);
-      const rawCost = item.custom_food?.estimated_cost !== undefined ? item.custom_food.estimated_cost : (food?.estimated_cost || 0);
-      const unitCost = isCore ? 0 : getRealisticFoodCost(foodName, rawCost);
-
-      const scaledCalories = Math.round(Number(rawCals) * q);
-      const scaledProtein = Number((Number(rawPro) * q).toFixed(2));
-      const scaledCarbs = Number((Number(rawCarbs) * q).toFixed(2));
-      const scaledFat = Number((Number(rawFat) * q).toFixed(2));
-      const scaledCost = Number((Number(unitCost) * q).toFixed(2));
-
-      logsToInsert.push({
-        user_id: userId,
-        food_id: finalFoodId,
-        meal_type: item.meal_type,
-        quantity: q,
-        calories: scaledCalories,
-        protein: scaledProtein,
-        carbs: scaledCarbs,
-        fat: scaledFat,
-        estimated_cost: scaledCost,
-        source: 'manual'
-      });
-    }
-
-    if (logsToInsert.length === 0) return [];
-
-    // Idempotency & Deduplication: Check existing food_logs for this user on this local date
-    const tz = await this.getUserTimezone(userId);
-    const { start, end } = await this.getLocalDateBoundaries(userId, tz);
-
-    const { data: existingLogs } = await supabase
-      .from('food_logs')
-      .select('*, foods(*)')
-      .eq('user_id', userId)
-      .gte('logged_at', start)
-      .lte('logged_at', end);
-
-    const finalLogs: any[] = [];
-    const newInserts: any[] = [];
-
-    for (const newLog of logsToInsert) {
-      // Check if this food was already logged for this meal today
-      const existing = (existingLogs || []).find((el: any) => {
-        if (el.meal_type !== newLog.meal_type) return false;
-        if (newLog.food_id && el.food_id && el.food_id === newLog.food_id) return true;
-        const newName = (foodsById.get(newLog.food_id)?.name || '').toLowerCase().trim();
-        const existingName = (el.foods?.name || '').toLowerCase().trim();
-        return Boolean(newName && existingName && newName === existingName);
-      });
-
-      if (existing) {
-        // Update existing row in-place instead of creating a duplicate row!
-        const { data: updated } = await supabase
+      if (newInserts.length > 0) {
+        const { data: insertedLogs, error: logErr } = await supabase
           .from('food_logs')
-          .update({
-            quantity: newLog.quantity,
-            calories: newLog.calories,
-            protein: newLog.protein,
-            carbs: newLog.carbs,
-            fat: newLog.fat,
-            estimated_cost: newLog.estimated_cost
-          })
-          .eq('id', existing.id)
-          .select('*, foods(*)')
-          .maybeSingle();
+          .insert(newInserts)
+          .select('*, foods(*)');
 
-        finalLogs.push(updated || existing);
-      } else {
-        newInserts.push(newLog);
+        if (logErr) {
+          console.error("Error in batch insert food_logs:", logErr);
+          throw logErr;
+        }
+
+        if (insertedLogs) {
+          finalLogs.push(...insertedLogs);
+        }
       }
+
+      // Single background update of daily summary
+      NutritionService.updateDailySummary(userId).catch(err => {
+        console.warn("Background updateDailySummary warning in logMultipleFoods:", err);
+      });
+
+      return finalLogs;
+    };
+
+    const promise = execLog();
+    mealLogInFlight.set(lockKey, promise);
+    try {
+      const result = await promise;
+      mealLogDebounce.set(lockKey, { timestamp: Date.now(), result });
+      return result;
+    } finally {
+      mealLogInFlight.delete(lockKey);
     }
-
-    if (newInserts.length > 0) {
-      const { data: insertedLogs, error: logErr } = await supabase
-        .from('food_logs')
-        .insert(newInserts)
-        .select('*, foods(*)');
-
-      if (logErr) {
-        console.error("Error in batch insert food_logs:", logErr);
-        throw logErr;
-      }
-
-      if (insertedLogs) {
-        finalLogs.push(...insertedLogs);
-      }
-    }
-
-    // Single background update of daily summary
-    this.updateDailySummary(userId).catch(err => {
-      console.warn("Background updateDailySummary warning in logMultipleFoods:", err);
-    });
-
-    return finalLogs;
   }
 
   static async logWater(userId: string, amountMl: number) {
@@ -2213,7 +2468,9 @@ export class NutritionService {
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Bhurji', quantity: 0.7, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
-        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+        : isEggetarian
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       2: isVegan
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
@@ -2232,12 +2489,16 @@ export class NutritionService {
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
-        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+        : isEggetarian
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       5: isVegan
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
-        : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+        : isEggetarian
+        ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Fish Curry', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       6: isVegan
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
@@ -2483,7 +2744,7 @@ export class NutritionService {
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
-        : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+        : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       2: isVegan
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Apple', quantity: 1, servingSize: '1 medium' }]
         : isVegetarian
@@ -2498,7 +2759,9 @@ export class NutritionService {
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Bhurji', quantity: 0.7, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
-        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+        : isEggetarian
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       5: isVegan
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
@@ -2508,7 +2771,9 @@ export class NutritionService {
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
-        : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
+        : isEggetarian
+        ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Fish Curry', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Moong Dal (Cooked)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
     };
 
     const breakfastTitlesWeekB: Record<number, string> = {
@@ -2550,11 +2815,36 @@ export class NutritionService {
     const finalLunchTitle = isWeekB ? (lunchTitlesWeekB[dayOfWeek] || `${dayName} Lunch`) : (lunchTitles[dayOfWeek] || `${dayName} Lunch`);
     const finalDinnerTitle = isWeekB ? (dinnerTitlesWeekB[dayOfWeek] || `${dayName} Dinner`) : (dinnerTitles[dayOfWeek] || `${dayName} Dinner`);
 
-    plansMap.set('breakfast', buildMealResult('breakfast', finalBreakfastTitle, finalBreakfastDefs, true));
-    plansMap.set('lunch', buildMealResult('lunch', finalLunchTitle, finalLunchDefs, true));
-    plansMap.set('pre_workout', buildMealResult('pre_workout', 'Pre-Workout Energy Fuel (< 3g Fat)', snackDefs[dayOfWeek] || snackDefs[1], false));
-    plansMap.set('snack', buildMealResult('snack', `${dayName} Natural Snack`, snackDefs[dayOfWeek] || snackDefs[1], false));
-    plansMap.set('dinner', buildMealResult('dinner', finalDinnerTitle, finalDinnerDefs, true));
+    const mealsPerDayPref = profile?.meals_per_day || '4 meals';
+    let userMealTypes: string[];
+    if (mealsPerDayPref === '2 meals') {
+      userMealTypes = ['lunch', 'dinner'];
+    } else if (mealsPerDayPref === '3 meals') {
+      userMealTypes = ['breakfast', 'lunch', 'dinner'];
+    } else if (mealsPerDayPref === '5+ meals') {
+      userMealTypes = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner'];
+    } else {
+      userMealTypes = ['breakfast', 'lunch', 'pre_workout', 'dinner'];
+    }
+
+    if (userMealTypes.includes('breakfast')) {
+      plansMap.set('breakfast', buildMealResult('breakfast', finalBreakfastTitle, finalBreakfastDefs, true));
+    }
+    if (userMealTypes.includes('lunch')) {
+      plansMap.set('lunch', buildMealResult('lunch', finalLunchTitle, finalLunchDefs, true));
+    }
+    if (userMealTypes.includes('pre_workout')) {
+      plansMap.set('pre_workout', buildMealResult('pre_workout', 'Pre-Workout Energy Fuel (< 3g Fat)', snackDefs[dayOfWeek] || snackDefs[1], false));
+    }
+    if (userMealTypes.includes('snack')) {
+      plansMap.set('snack', buildMealResult('snack', `${dayName} Natural Snack`, snackDefs[dayOfWeek] || snackDefs[1], false));
+    }
+    if (userMealTypes.includes('post_workout')) {
+      plansMap.set('post_workout', buildMealResult('post_workout', 'Post-Workout Fuel', snackDefs[dayOfWeek] || snackDefs[1], false));
+    }
+    if (userMealTypes.includes('dinner')) {
+      plansMap.set('dinner', buildMealResult('dinner', finalDinnerTitle, finalDinnerDefs, true));
+    }
 
     return plansMap;
   }

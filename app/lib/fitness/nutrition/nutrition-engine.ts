@@ -124,10 +124,11 @@ export function calculateTargets(profile: NutritionProfile): NutritionTargets {
   const proteinG = Math.round(weightKg * goalConfig.proteinMultiplier);
   const proteinCalories = proteinG * 4;
 
-  // Remaining calories split between carbs and fat
+  // Remaining calories split between carbs and fat (100% allocation of remaining calories)
   const remainingCalories = Math.max(0, calories - proteinCalories);
-  const carbCalories = Math.round(remainingCalories * goalConfig.carbPercent);
-  const fatCalories = Math.round(remainingCalories * goalConfig.fatPercent);
+  const totalRemainingRatio = (goalConfig.carbPercent + goalConfig.fatPercent) || 1.0;
+  const carbCalories = Math.round(remainingCalories * (goalConfig.carbPercent / totalRemainingRatio));
+  const fatCalories = Math.max(0, remainingCalories - carbCalories);
 
   const carbsG = Math.round(carbCalories / 4);
   const fatG = Math.round(fatCalories / 9);
