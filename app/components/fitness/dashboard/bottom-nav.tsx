@@ -49,8 +49,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                   return;
                 }
-                // Instant 0ms visual switch & scroll to top
-                window.scrollTo({ top: 0, behavior: "instant" });
+                // Instant 0ms visual switch (scroll position is managed per-tab by FitnessShell)
                 setNavigatingTo(item.href);
               }}
               onTouchStart={() => {

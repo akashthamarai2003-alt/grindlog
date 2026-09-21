@@ -216,9 +216,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/progress/page.tsx": {
-    "mtime": 1788760888.1974406,
-    "seen": 1789970487.5976448,
-    "ast_hash": "26146d8020e6ddb3f8267d6a22ed545c",
+    "mtime": 1790002760.8718023,
+    "seen": 1790003055.7132192,
+    "ast_hash": "6858d02211f9b79aabee639288d1d501",
     "semantic_hash": ""
   },
   "app/app/(fitness)/reminders/page.tsx": {
@@ -624,15 +624,15 @@
     "semantic_hash": ""
   },
   "app/app/api/fitness/log-measurements/route.ts": {
-    "mtime": 1788501087.531064,
-    "seen": 1789970487.5979345,
-    "ast_hash": "96ec8665f25074194ec1f6aa712c2491",
+    "mtime": 1790002749.1443844,
+    "seen": 1790003055.7389672,
+    "ast_hash": "cd028edd4e3fa92d4102d4a869716250",
     "semantic_hash": ""
   },
   "app/app/api/fitness/log-weight/route.ts": {
-    "mtime": 1788500740.795164,
-    "seen": 1789970487.5979393,
-    "ast_hash": "2f29178e5953225ba9dce212fd186cf5",
+    "mtime": 1790002723.8667595,
+    "seen": 1790003055.7389736,
+    "ast_hash": "ebdd20bc22a1f2de3d4c54c102fa74ab",
     "semantic_hash": ""
   },
   "app/app/api/fitness/profile-summary/route.ts": {
@@ -1344,9 +1344,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/progress/progress-view.tsx": {
-    "mtime": 1788762201.58522,
-    "seen": 1789970487.5984564,
-    "ast_hash": "e5ecb75576ecb1f9d68b5894191e923c",
+    "mtime": 1790002885.3788576,
+    "seen": 1790003055.7707489,
+    "ast_hash": "2a520c6623a9a9daa3bdd9e4f95994dd",
     "semantic_hash": ""
   },
   "app/components/fitness/progress/transformation-overview.tsx": {
@@ -1836,9 +1836,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/analytics/progress-service.ts": {
-    "mtime": 1788620602.3028598,
-    "seen": 1789970487.5988185,
-    "ast_hash": "fe07a709aab3dbbc04bed6471f9c0f45",
+    "mtime": 1790002700.3519785,
+    "seen": 1790003055.7962728,
+    "ast_hash": "34c9349eb8f694b86923b8c616b98586",
     "semantic_hash": ""
   },
   "app/lib/services/fitness-ai-generation-guard.ts": {
