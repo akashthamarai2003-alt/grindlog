@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
+import { ProgressAnalyticsService } from "@/lib/services/analytics/progress-service";
 
 const MEASUREMENT_LIMITS: Record<string, { label: string; min: number; max: number }> = {
   waist: { label: "Waist", min: 40, max: 200 },
@@ -104,6 +105,9 @@ export async function POST(req: Request) {
       });
 
     if (metricError) throw metricError;
+
+    // Invalidate progress analytics cache so next progress visit sees updated measurements
+    ProgressAnalyticsService.invalidateUserCache(user.id);
 
     return NextResponse.json({ success: true, recordedAt });
 

@@ -15,11 +15,11 @@ export default async function ProgressPage() {
 
   if (!user) return null;
 
-  const plan = await getFitnessPlan(user.id);
+  const [plan, initialData] = await Promise.all([
+    getFitnessPlan(user.id),
+    ProgressAnalyticsService.getAggregatedProgress(user.id, '30D'),
+  ]);
   const isPro = plan?.id === "pro";
-
-  // Fetch initial data (default to 30D)
-  const initialData = await ProgressAnalyticsService.getAggregatedProgress(user.id, '30D');
 
   return (
     <FitnessGuard featureName="advanced progress analysis">

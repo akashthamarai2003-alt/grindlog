@@ -96,9 +96,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/nutrition/page.tsx": {
-    "mtime": 1789973235.7139962,
-    "seen": 1789973477.075777,
-    "ast_hash": "6dd338caec3ebeae5422ec3c70348068",
+    "mtime": 1789994036.9150453,
+    "seen": 1789994235.4311142,
+    "ast_hash": "eca95edd7f9228ebd956c435766eec3f",
     "semantic_hash": ""
   },
   "app/app/(fitness)/onboarding/page.tsx": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/bottom-nav.tsx": {
-    "mtime": 1789990943.3039906,
-    "seen": 1789991649.8084307,
-    "ast_hash": "1eadddcacd5bb1be6f52eb65b56179e4",
+    "mtime": 1789994048.063351,
+    "seen": 1789994235.4674668,
+    "ast_hash": "238888a3ac9a552585b2fbb2692e2cd0",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/category-pills.tsx": {
@@ -1158,9 +1158,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/nutrition-view.tsx": {
-    "mtime": 1789990923.06749,
-    "seen": 1789991649.8167017,
-    "ast_hash": "2d8b44ebeda26df9501f5dec9e97fc7d",
+    "mtime": 1789994073.718479,
+    "seen": 1789994235.4768536,
+    "ast_hash": "9d716bcdb566e068c0a278dbd3afdebf",
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/swap-meal-modal.tsx": {

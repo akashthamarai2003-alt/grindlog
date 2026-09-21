@@ -16,8 +16,26 @@ import {
 } from "@/types/fitness/analytics";
 
 export class ProgressAnalyticsService {
+  // In-memory cache for progress analytics payloads (TTL: 2 minutes)
+  private static progressCache = new Map<string, { data: AggregatedProgressPayload; expiresAt: number }>();
+
+  static invalidateUserCache(userId: string) {
+    for (const key of this.progressCache.keys()) {
+      if (key.startsWith(`${userId}:`)) {
+        this.progressCache.delete(key);
+      }
+    }
+  }
   
   static async getAggregatedProgress(userId: string, period: AnalyticsPeriod = '30D', referenceDate?: Date): Promise<AggregatedProgressPayload> {
+    const cacheKey = `${userId}:${period}`;
+    if (!referenceDate) {
+      const cached = this.progressCache.get(cacheKey);
+      if (cached && Date.now() < cached.expiresAt) {
+        return cached.data;
+      }
+    }
+
     const supabase = await createServerSupabase();
 
     const now = referenceDate || new Date();
@@ -738,7 +756,7 @@ export class ProgressAnalyticsService {
     }
     scans.shouldPromptForScan = shouldPromptForScan;
 
-    return {
+    const result: AggregatedProgressPayload = {
       period,
       transformation,
       consistency,
@@ -752,5 +770,11 @@ export class ProgressAnalyticsService {
       aiReview,
       achievements
     };
+
+    if (!referenceDate) {
+      this.progressCache.set(cacheKey, { data: result, expiresAt: Date.now() + 2 * 60 * 1000 });
+    }
+
+    return result;
   }
 }
