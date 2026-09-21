@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Utensils, ArrowRight, CheckCircle2, Circle, Flame, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { toast } from "sonner";
@@ -102,6 +103,7 @@ export function TodaysNutritionCard({
   premiumLevel = "core",
   targetDateStr,
 }: TodaysNutritionCardProps) {
+  const router = useRouter();
   // Determine effective date for persistent meal state keying
   const effectiveDate = useMemo(() => {
     if (targetDateStr && /^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) {
@@ -348,6 +350,43 @@ export function TodaysNutritionCard({
     };
   }, [storageKey]);
 
+  // Reconcile completedMeals with DB truth when fresh activeNutrition arrives
+  useEffect(() => {
+    if (!activeNutrition?.logged_foods) return;
+    const dbTypes = new Set<string>();
+    activeNutrition.logged_foods.forEach((f: any) => {
+      const t = String(f.meal_type || "").toLowerCase().trim();
+      if (t) dbTypes.add(t);
+    });
+
+    setCompletedMeals((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      const currentMeals = activeNutrition.meals || nutrition?.meals || [];
+      currentMeals.forEach((m: any) => {
+        const t = String(m.meal_type || "").toLowerCase().trim();
+        const hasDbLogs = dbTypes.has(t);
+        // If DB has no logs for this meal type, it is not completed:
+        if (!hasDbLogs && next[m.id] === true) {
+          delete next[m.id];
+          changed = true;
+        }
+        // If DB has logs for this meal type, it is completed:
+        if (hasDbLogs && next[m.id] === false) {
+          delete next[m.id];
+          changed = true;
+        }
+      });
+      if (changed) {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(next));
+        } catch {}
+        return next;
+      }
+      return prev;
+    });
+  }, [activeNutrition?.logged_foods, activeNutrition?.meals, nutrition?.meals, storageKey]);
+
   const isMealDone = useCallback((meal: any) => {
     // 1. Explicit user override in state/localStorage for this date takes highest priority
     if (completedMeals[meal.id] === false) return false;
@@ -401,20 +440,35 @@ export function TodaysNutritionCard({
       });
 
       // Background log to database
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const itemsToLog = (meal.meal_plan_items && meal.meal_plan_items.length > 0)
-        ? meal.meal_plan_items.map((it: any) => ({
-            food_id: it.food_id || it.foods?.id,
-            meal_type: typeKey,
-            quantity: Number(it.quantity) || 1,
-            custom_food: !it.food_id && !it.foods?.id ? {
-              name: it.foods?.name || (typeof it.name === "string" ? it.name : "") || meal.name,
-              calories: it.foods?.calories || Math.round(meal.calories / Math.max(1, (meal.items?.length || 1))),
-              protein: it.foods?.protein || Number((meal.protein / Math.max(1, (meal.items?.length || 1))).toFixed(1)),
-              carbs: it.foods?.carbs || Number((meal.carbs / Math.max(1, (meal.items?.length || 1))).toFixed(1)),
-              fat: it.foods?.fat || Number((meal.fats / Math.max(1, (meal.items?.length || 1))).toFixed(1)),
-              serving_size: it.foods?.serving_size || '1 serving',
-            } : undefined
-          }))
+        ? meal.meal_plan_items.map((it: any) => {
+            const rawId = it.food_id || it.foods?.id;
+            const isUuid = rawId && UUID_REGEX.test(rawId);
+            const q = Number(it.quantity) || 1;
+            const fName = it.foods?.name || (typeof it.name === "string" ? it.name : "") || meal.name;
+            const unitCals = Math.round(Number(it.foods?.calories ?? (it.calories ? it.calories / q : 0)));
+            const unitPro = Number(Number(it.foods?.protein ?? (it.protein ? it.protein / q : 0)).toFixed(1));
+            const unitCarbs = Number(Number(it.foods?.carbs ?? (it.carbs ? it.carbs / q : 0)).toFixed(1));
+            const unitFat = Number(Number(it.foods?.fat ?? (it.fat ? it.fat / q : 0)).toFixed(1));
+            const unitCost = Number(it.foods?.estimated_cost ?? (it.estimated_cost ? it.estimated_cost / q : 0));
+
+            return {
+              food_id: isUuid ? rawId : undefined,
+              meal_type: typeKey,
+              quantity: q,
+              custom_food: {
+                name: fName,
+                calories: unitCals,
+                protein: unitPro,
+                carbs: unitCarbs,
+                fat: unitFat,
+                estimated_cost: unitCost,
+                serving_size: it.foods?.serving_size || it.serving_size || '1 serving',
+                category: it.foods?.category || 'Protein'
+              }
+            };
+          })
         : [{
             meal_type: typeKey,
             quantity: 1,
@@ -433,7 +487,9 @@ export function TodaysNutritionCard({
         refreshNutrition();
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("grindlog_meals_updated"));
+          localStorage.setItem("grindlog_meals_last_updated", String(Date.now()));
         }
+        try { router.refresh(); } catch {}
       }).catch((err) => {
         console.warn("Could not sync logged meal to DB:", err);
         toast.success(`Logged ${meal.name}!`);
@@ -463,7 +519,9 @@ export function TodaysNutritionCard({
         refreshNutrition();
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("grindlog_meals_updated"));
+          localStorage.setItem("grindlog_meals_last_updated", String(Date.now()));
         }
+        try { router.refresh(); } catch {}
       }).catch((err) => {
         console.warn("deleteMeal failed, trying fallback deleteFood by ID:", err);
         const currentLogs = activeNutrition?.logged_foods || nutrition?.logged_foods || [];
@@ -473,7 +531,9 @@ export function TodaysNutritionCard({
             refreshNutrition();
             if (typeof window !== "undefined") {
               window.dispatchEvent(new Event("grindlog_meals_updated"));
+              localStorage.setItem("grindlog_meals_last_updated", String(Date.now()));
             }
+            try { router.refresh(); } catch {}
           }).catch(() => {});
         }
       });

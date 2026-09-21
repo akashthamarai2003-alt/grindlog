@@ -508,7 +508,7 @@ export function calibrateMealsToTargets(
         if (convertedEgg) {
           // Add 2 egg whites to preserve/increase protein with 0 fat
           const eggWhite = {
-            id: 'boiled-egg-white-addon',
+            id: 'd6e9d38d-5c35-4dbb-8d20-2c03e32f3a8a',
             name: 'Boiled Egg White',
             category: 'Protein',
             serving_size: '1 large (33g)',
@@ -641,7 +641,7 @@ export function calibrateMealsToTargets(
 
       if (isNonVeg || isEggetarian) {
         addOnFood = {
-          id: 'boiled-egg-white-addon',
+          id: 'd6e9d38d-5c35-4dbb-8d20-2c03e32f3a8a',
           name: 'Boiled Egg White',
           category: 'Protein',
           serving_size: '1 large (33g)',
@@ -654,7 +654,7 @@ export function calibrateMealsToTargets(
         addOnQty = Math.max(2, Math.min(6, Math.round(finalProGap / 3.6)));
       } else {
         addOnFood = {
-          id: 'soya-chunks-addon',
+          id: '36afa603-8493-478b-a10e-11b5d5dc8be1',
           name: 'Soy Chunks (Cooked)',
           category: 'Protein',
           serving_size: '1 bowl (100g)',
@@ -1491,6 +1491,21 @@ export class NutritionService {
       }
     }
 
+    if (!food && input.food_id && !UUID_REGEX.test(input.food_id)) {
+      const adminClient = require('@/lib/services/supabase/admin').createAdminClient();
+      const candidateName = input.food_id.replace(/-addon$/i, '').replace(/-/g, ' ').trim();
+      const { data: existingByName } = await adminClient
+        .from('foods')
+        .select('*')
+        .ilike('name', candidateName)
+        .limit(1)
+        .maybeSingle();
+      if (existingByName) {
+        food = existingByName;
+        finalFoodId = existingByName.id;
+      }
+    }
+
     if (!food && input.custom_food) {
       // Search for existing custom food by name
       const adminClient = require('@/lib/services/supabase/admin').createAdminClient();
@@ -1663,12 +1678,37 @@ export class NutritionService {
           if (food) finalFoodId = food.id;
         }
 
+        // Try candidate name lookup if food not yet found by UUID
+        const candidateName = (
+          item.custom_food?.name ||
+          (item as any).name ||
+          (item.food_id && !UUID_REGEX.test(item.food_id) ? item.food_id.replace(/-addon$/i, '').replace(/-/g, ' ') : '') ||
+          ''
+        ).trim();
+
+        if (!food && candidateName) {
+          if (!adminClient) {
+            adminClient = require('@/lib/services/supabase/admin').createAdminClient();
+          }
+          const { data: existingByName } = await adminClient
+            .from('foods')
+            .select('*')
+            .ilike('name', candidateName)
+            .limit(1)
+            .maybeSingle();
+
+          if (existingByName) {
+            food = existingByName;
+            finalFoodId = existingByName.id;
+          }
+        }
+
         if (!food && item.custom_food) {
           if (!adminClient) {
             adminClient = require('@/lib/services/supabase/admin').createAdminClient();
           }
 
-          const foodName = item.custom_food.name.trim();
+          const foodName = (item.custom_food.name || candidateName || 'Custom Food').trim();
           const { data: existing } = await adminClient
             .from('foods')
             .select('*')
@@ -1684,7 +1724,7 @@ export class NutritionService {
               .from('foods')
               .insert({
                 name: foodName,
-                category: item.custom_food.category || item.meal_type,
+                category: item.custom_food.category || item.meal_type || 'meal',
                 serving_size: (item.custom_food as any).serving_size || '1 serving',
                 calories: Number(item.custom_food.calories) || 0,
                 protein: Number(item.custom_food.protein) || 0,
@@ -1715,11 +1755,17 @@ export class NutritionService {
         }
 
         if (!food) {
-          // Fallback placeholder food to guarantee foreign key validity
+          // Fallback food to guarantee foreign key validity while preserving macros
           if (!adminClient) {
             adminClient = require('@/lib/services/supabase/admin').createAdminClient();
           }
-          const foodName = ((item as any).name || (item.custom_food as any)?.name || 'Meal Item').trim();
+          const foodName = (candidateName || (item as any).name || 'Meal Item').trim();
+          const fbCals = item.custom_food?.calories ?? (item as any).calories ?? 0;
+          const fbPro = item.custom_food?.protein ?? (item as any).protein ?? 0;
+          const fbCarbs = item.custom_food?.carbs ?? (item as any).carbs ?? 0;
+          const fbFat = item.custom_food?.fat ?? (item as any).fat ?? 0;
+          const fbCost = item.custom_food?.estimated_cost ?? (item as any).estimated_cost ?? 0;
+
           const { data: existingPlaceholder } = await adminClient
             .from('foods')
             .select('*')
@@ -1736,12 +1782,12 @@ export class NutritionService {
               .insert({
                 name: foodName,
                 category: item.meal_type || 'meal',
-                serving_size: '1 serving',
-                calories: 0,
-                protein: 0,
-                carbs: 0,
-                fat: 0,
-                estimated_cost: 0,
+                serving_size: (item.custom_food as any)?.serving_size || '1 serving',
+                calories: Number(fbCals) || 0,
+                protein: Number(fbPro) || 0,
+                carbs: Number(fbCarbs) || 0,
+                fat: Number(fbFat) || 0,
+                estimated_cost: Number(fbCost) || 0,
                 is_active: false
               })
               .select()
@@ -1765,10 +1811,10 @@ export class NutritionService {
           }
         }
 
-        const rawCals = item.custom_food?.calories !== undefined ? item.custom_food.calories : (food?.calories || 0);
-        const rawPro = item.custom_food?.protein !== undefined ? item.custom_food.protein : (food?.protein || 0);
-        const rawCarbs = item.custom_food?.carbs !== undefined ? item.custom_food.carbs : (food?.carbs || 0);
-        const rawFat = item.custom_food?.fat !== undefined ? item.custom_food.fat : (food?.fat || 0);
+        const rawCals = item.custom_food?.calories !== undefined ? item.custom_food.calories : (food?.calories !== undefined ? food.calories : ((item as any).calories || 0));
+        const rawPro = item.custom_food?.protein !== undefined ? item.custom_food.protein : (food?.protein !== undefined ? food.protein : ((item as any).protein || 0));
+        const rawCarbs = item.custom_food?.carbs !== undefined ? item.custom_food.carbs : (food?.carbs !== undefined ? food.carbs : ((item as any).carbs || 0));
+        const rawFat = item.custom_food?.fat !== undefined ? item.custom_food.fat : (food?.fat !== undefined ? food.fat : ((item as any).fat || 0));
         const foodName = food?.name || item.custom_food?.name || (item as any).name || '';
         const isCore = isStapleCoreFood(foodName, fitProfile?.food_environment);
         const rawCost = item.custom_food?.estimated_cost !== undefined ? item.custom_food.estimated_cost : (food?.estimated_cost || 0);

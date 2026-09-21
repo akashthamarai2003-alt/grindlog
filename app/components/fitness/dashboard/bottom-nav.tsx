@@ -19,9 +19,10 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
     { icon: User, label: "Profile", href: "/profile" }
   ];
 
-  // Eagerly prefetch all 5 primary routes into router cache on mount
+  // Eagerly prefetch static routes into router cache on mount
   useEffect(() => {
     navItems.forEach((item) => {
+      if (item.href === "/nutrition") return;
       try {
         router.prefetch(item.href);
       } catch {
@@ -42,7 +43,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
             <Link 
               key={item.href} 
               href={item.href}
-              prefetch={true}
+              prefetch={item.href !== "/nutrition"}
               onClick={(e) => {
                 if (pathname === item.href) {
                   e.preventDefault();

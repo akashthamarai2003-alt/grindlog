@@ -167,6 +167,12 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
+  useEffect(() => {
     if (!initialData) {
       fetchToday(undefined, true);
     } else {
@@ -175,20 +181,39 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }
 
     const handleSync = () => {
-      fetchToday(undefined, false);
+      if (selectedDateRef.current) {
+        delete dateCacheRef.current[selectedDateRef.current];
+      }
+      fetchToday(selectedDateRef.current, false);
+    };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "grindlog_meals_last_updated") {
+        handleSync();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        handleSync();
+      }
     };
 
     if (typeof window !== "undefined") {
       window.addEventListener("grindlog_meals_updated", handleSync);
       window.addEventListener("focus", handleSync);
+      window.addEventListener("storage", handleStorage);
+      document.addEventListener("visibilitychange", handleVisibility);
     }
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("grindlog_meals_updated", handleSync);
         window.removeEventListener("focus", handleSync);
+        window.removeEventListener("storage", handleStorage);
+        document.removeEventListener("visibilitychange", handleVisibility);
       }
     };
-  }, [initialData]);
+  }, []);
 
   const handleSelectDate = (dateStr: string) => {
     if (selectedDate === dateStr) return;
@@ -536,6 +561,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       await nutritionApi.deleteFood(id);
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("grindlog_meals_updated"));
+        localStorage.setItem("grindlog_meals_last_updated", String(Date.now()));
       }
       // Quiet background reconciliation
       nutritionApi.getToday(selectedDateRef.current).then(res => {

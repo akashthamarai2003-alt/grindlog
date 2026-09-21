@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const supabase = await createServerSupabase();
@@ -19,7 +21,16 @@ export async function GET(request: Request) {
 
     const data = await NutritionService.getTodaySummaryAndDetails(user.id, dateParam);
     
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json(
+      { success: true, data },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
+    );
   } catch (error: any) {
     if (error.message === "TARGET_NOT_FOUND") {
       return NextResponse.json(
