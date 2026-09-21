@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/page.tsx": {
-    "mtime": 1789968552.411242,
-    "seen": 1789970487.597572,
-    "ast_hash": "738a4f1f67b8ff9f789c40b65f5d213d",
+    "mtime": 1789987171.6747596,
+    "seen": 1789987381.6961973,
+    "ast_hash": "e6754f560d63c20102bd0fefdf9eed8e",
     "semantic_hash": ""
   },
   "app/app/(fitness)/payment/page.tsx": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-nutrition-card.tsx": {
-    "mtime": 1789825876.5090919,
-    "seen": 1789970487.5982513,
-    "ast_hash": "41a21b2705f7a1ee31ae86d24f320268",
+    "mtime": 1789987129.5011,
+    "seen": 1789987381.748097,
+    "ast_hash": "3f736be615bea87df1a717ffbc0a32da",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-workout-card.tsx": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/nutrition-service.ts": {
-    "mtime": 1789982194.1024177,
-    "seen": 1789982418.353928,
-    "ast_hash": "e659ffbf777e4ef6c11c0d9b1e74e3d0",
+    "mtime": 1789987041.956395,
+    "seen": 1789987381.7953815,
+    "ast_hash": "ab6a7494533cc110bdbcb83dcf383039",
     "semantic_hash": ""
   },
   "app/lib/services/openai/client.ts": {
@@ -2907,6 +2907,48 @@
     "mtime": 1789982106.51385,
     "seen": 1789982418.3615708,
     "ast_hash": "60fe077e6070d1f325aa48be2ddb7fb5",
+    "semantic_hash": ""
+  },
+  "app/scripts/check-all-food-logs.ts": {
+    "mtime": 1789985825.2801247,
+    "seen": 1789987381.8089495,
+    "ast_hash": "aadeea332275de5dd9e8f78433821170",
+    "semantic_hash": ""
+  },
+  "app/scripts/check-food-logs.ts": {
+    "mtime": 1789986313.0927322,
+    "seen": 1789987381.8089547,
+    "ast_hash": "8849b8ba66a3608d03a77290f9da5687",
+    "semantic_hash": ""
+  },
+  "app/scripts/debug-plan-nutrition.ts": {
+    "mtime": 1789985955.3409662,
+    "seen": 1789987381.8093877,
+    "ast_hash": "c66f6272034c79c96227311fcffda32e",
+    "semantic_hash": ""
+  },
+  "app/scripts/inspect-dashboard-nutrition.ts": {
+    "mtime": 1789985669.9011145,
+    "seen": 1789987381.8097732,
+    "ast_hash": "467c90f4fb11aefddc0dc1172c293c36",
+    "semantic_hash": ""
+  },
+  "app/scripts/print-meal-plan-items.ts": {
+    "mtime": 1789986123.388098,
+    "seen": 1789987381.8097785,
+    "ast_hash": "41eee42a0ad888f30b12d8059ee2912a",
+    "semantic_hash": ""
+  },
+  "app/scripts/test-calibrator.ts": {
+    "mtime": 1789986807.192657,
+    "seen": 1789987381.811009,
+    "ast_hash": "58e705319b439193ee9c4d9eafa96712",
+    "semantic_hash": ""
+  },
+  "app/scripts/test-get-today.ts": {
+    "mtime": 1789986012.1453269,
+    "seen": 1789987381.8110116,
+    "ast_hash": "2c13a361a09bdacf51645dc0087acad6",
     "semantic_hash": ""
   }
 }

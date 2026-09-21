@@ -56,6 +56,16 @@ export const nutritionApi = {
     return json;
   },
 
+  async deleteMeal(mealType: string, date?: string) {
+    const url = `/api/nutrition/log-food?meal_type=${encodeURIComponent(mealType)}${date ? `&date=${encodeURIComponent(date)}` : ''}`;
+    const res = await fetch(url, {
+      method: 'DELETE'
+    });
+    const json = await res.json();
+    if (!res.ok) throw json.error;
+    return json;
+  },
+
   async logWater(amount_ml: number) {
     const res = await fetch('/api/nutrition/water', {
       method: 'POST',

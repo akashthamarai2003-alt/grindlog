@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { isFitnessPro } from "@/lib/fitness/subscription/access";
 
@@ -110,6 +111,63 @@ export async function POST(request: Request) {
     console.error("Error in POST /api/nutrition/log-food:", error);
     return NextResponse.json(
       { success: false, error: { code: 'DATABASE_ERROR', message: error?.message || 'Failed to log food.' } },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated.' } },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const mealType = searchParams.get('meal_type');
+    const date = searchParams.get('date');
+
+    if (!mealType) {
+      return NextResponse.json(
+        { success: false, error: { code: 'INVALID_INPUT', message: 'meal_type is required.' } },
+        { status: 400 }
+      );
+    }
+
+    const normalizedMealType = normalizeMealType(mealType);
+
+    // Get user timezone and local boundaries
+    const tz = await NutritionService.getUserTimezone(user.id);
+    const targetDate = date || await NutritionService.getLocalDateString(user.id, tz);
+    const { start, end } = await NutritionService.getLocalDateBoundaries(user.id, tz, targetDate);
+
+    // Delete all food logs for this meal_type within the date boundaries
+    const admin = createAdminClient();
+    const { error: deleteError } = await admin
+      .from('food_logs')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('meal_type', normalizedMealType)
+      .gte('logged_at', start)
+      .lte('logged_at', end);
+
+    if (deleteError) throw deleteError;
+
+    // Trigger background update of daily summary
+    NutritionService.updateDailySummary(user.id).catch(err => {
+      console.warn("Background updateDailySummary warning in deleteMeal:", err);
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Error in DELETE /api/nutrition/log-food:", error);
+    return NextResponse.json(
+      { success: false, error: { code: 'DATABASE_ERROR', message: error?.message || 'Failed to delete meal.' } },
       { status: 500 }
     );
   }

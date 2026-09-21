@@ -169,7 +169,25 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   useEffect(() => {
     if (!initialData) {
       fetchToday(undefined, true);
+    } else {
+      // Quiet background revalidation on mount so navigation from dashboard reflects latest logs
+      fetchToday(undefined, false);
     }
+
+    const handleSync = () => {
+      fetchToday(undefined, false);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("grindlog_meals_updated", handleSync);
+      window.addEventListener("focus", handleSync);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("grindlog_meals_updated", handleSync);
+        window.removeEventListener("focus", handleSync);
+      }
+    };
   }, [initialData]);
 
   const handleSelectDate = (dateStr: string) => {
@@ -516,6 +534,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
     try {
       await nutritionApi.deleteFood(id);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("grindlog_meals_updated"));
+      }
       // Quiet background reconciliation
       nutritionApi.getToday(selectedDateRef.current).then(res => {
         if (res) setData(res);
@@ -766,6 +787,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         // Only reconcile quietly with server when confirmed server data has committed!
         // Never call getToday during optimistic update to avoid premature overwrite race condition
         if (isRealServerData) {
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("grindlog_meals_updated"));
+          }
           const targetDate = selectedDateRef.current;
           nutritionApi.getToday(targetDate).then(res => {
             if (res && selectedDateRef.current === targetDate) {
