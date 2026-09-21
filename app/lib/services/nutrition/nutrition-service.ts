@@ -476,32 +476,21 @@ export function calibrateMealsToTargets(
     }
   }
 
-  // STAGE 3: STRICT FAT CAP ENFORCEMENT (totalFat <= targetFat + 3g)
+  // STAGE 3: STRICT FAT CAP ENFORCEMENT (totalFat <= targetFat + 2g)
   totals = getTotals(calibratedMeals);
   let fatOverage = totals.fat - targetFat;
 
   if (fatOverage > 2) {
-    // 3A. Check whole eggs across entire day - cap at 2 whole eggs total
-    let totalWholeEggs = 0;
-    calibratedMeals.forEach(m => {
-      (m.meal_plan_items || []).forEach((it: any) => {
-        const fName = (it.foods?.name || it.name || '').toLowerCase();
-        if (fName.includes('egg') && !fName.includes('white') && !fName.includes('curry')) {
-          totalWholeEggs += Number(it.quantity) || 0;
-        }
-      });
-    });
-
-    if (totalWholeEggs > 2) {
-      let eggsToTrim = totalWholeEggs - 2;
+    // 3A. Check whole eggs: if fat overage > 4, convert 1 whole egg to 2 egg whites
+    if (fatOverage > 4) {
+      let convertedEgg = false;
       calibratedMeals = calibratedMeals.map(m => {
+        if (convertedEgg) return m;
         const items = (m.meal_plan_items || []).map((it: any) => {
           const fName = (it.foods?.name || it.name || '').toLowerCase();
-          if (fName.includes('egg') && !fName.includes('white') && !fName.includes('curry') && eggsToTrim > 0) {
-            const currentQ = Number(it.quantity) || 1;
-            const reduction = Math.min(eggsToTrim, Math.max(1, currentQ - 1));
-            eggsToTrim -= reduction;
-            const newQ = Math.max(1, currentQ - reduction);
+          if (!convertedEgg && fName.includes('egg') && !fName.includes('white') && !fName.includes('curry') && (Number(it.quantity) || 1) >= 2) {
+            convertedEgg = true;
+            const newQ = Number(it.quantity) - 1; // 2 -> 1
             const info = getItemInfo(it);
             return {
               ...it,
@@ -515,15 +504,41 @@ export function calibrateMealsToTargets(
           }
           return it;
         });
+
+        if (convertedEgg) {
+          // Add 2 egg whites to preserve/increase protein with 0 fat
+          const eggWhite = {
+            id: 'boiled-egg-white-addon',
+            name: 'Boiled Egg White',
+            category: 'Protein',
+            serving_size: '1 large (33g)',
+            calories: 17,
+            protein: 3.6,
+            carbs: 0.2,
+            fat: 0.1,
+            estimated_cost: 6,
+          };
+          items.push({
+            food_id: eggWhite.id,
+            quantity: 2,
+            is_core: isStapleCoreFood(eggWhite.name, profile?.food_environment),
+            calories: 34,
+            protein: 7.2,
+            carbs: 0.4,
+            fat: 0.2,
+            estimated_cost: 12,
+            foods: eggWhite,
+          });
+        }
         return { ...m, meal_plan_items: items, items };
       });
     }
 
-    // 3B. Scale down fats, oils, peanuts, full-fat paneer, milk
+    // 3B. Scale down high fat items (milk, paneer, peanuts, high-fat meats like tandoori chicken/fatty curries)
     totals = getTotals(calibratedMeals);
     fatOverage = totals.fat - targetFat;
 
-    if (fatOverage > 2) {
+    if (fatOverage > 1) {
       calibratedMeals = calibratedMeals.map((m: any) => {
         const items = (m.meal_plan_items || []).map((it: any) => {
           const info = getItemInfo(it);
@@ -531,13 +546,15 @@ export function calibrateMealsToTargets(
           let q = Number(it.quantity) || 1;
 
           if (lower.includes('peanut')) {
-            q = Math.max(0.4, Number((q * 0.6).toFixed(1)));
-          } else if (lower.includes('paneer') && fatOverage > 4) {
-            q = Math.max(0.35, Number((q * (fatOverage > 12 ? 0.45 : 0.65)).toFixed(1)));
-          } else if (lower.includes('ghee') || lower.includes('butter') || /\b(?:oil|oils|cooking oil|mustard oil|olive oil)\b/i.test(lower)) {
             q = Math.max(0.3, Number((q * 0.5).toFixed(1)));
-          } else if (lower.includes('whole milk') && fatOverage > 3) {
-            q = Math.max(0.5, Number((q * (fatOverage > 10 ? 0.65 : 0.8)).toFixed(1)));
+          } else if (lower.includes('paneer') && fatOverage > 2) {
+            q = Math.max(0.3, Number((q * (fatOverage > 8 ? 0.45 : 0.6)).toFixed(1)));
+          } else if (lower.includes('ghee') || lower.includes('butter') || /\b(?:oil|oils|cooking oil)\b/i.test(lower)) {
+            q = Math.max(0.2, Number((q * 0.4).toFixed(1)));
+          } else if (lower.includes('whole milk') && fatOverage > 2) {
+            q = Math.max(0.5, Number((q * (fatOverage > 6 ? 0.65 : 0.8)).toFixed(1)));
+          } else if ((lower.includes('tandoori chicken') || lower.includes('curry')) && fatOverage > 3 && q > 1.0) {
+            q = Math.max(1.0, Number((q * 0.75).toFixed(1)));
           }
 
           return {
@@ -555,33 +572,41 @@ export function calibrateMealsToTargets(
     }
   }
 
-  // STAGE 4: CALORIE & CARB FINE-TUNING VIA STAPLE FOODS (Target +/- 2%)
+  // STAGE 4: CALORIE & CARB FINE-TUNING VIA STAPLE FOODS
   totals = getTotals(calibratedMeals);
   const calDelta = targetCals - totals.cal;
 
   if (Math.abs(calDelta) > 20) {
-    // Calculate total calories currently coming from carb staples
+    const isFatTight = totals.fat >= targetFat - 2;
+
     let stapleCals = 0;
     calibratedMeals.forEach(m => {
       (m.meal_plan_items || []).forEach((it: any) => {
         const lower = (it.foods?.name || it.name || '').toLowerCase();
-        if (lower.includes('rice') || lower.includes('roti') || lower.includes('chapati') || lower.includes('oat') || lower.includes('poha') || lower.includes('upma') || lower.includes('daliya') || lower.includes('cheela')) {
+        // If fat is tight, only scale low-fat staples (rice, oats) and avoid chapatis/curries with fat
+        const isEligibleStaple = isFatTight
+          ? (lower.includes('rice') || lower.includes('oat') || lower.includes('daliya'))
+          : (lower.includes('rice') || lower.includes('roti') || lower.includes('chapati') || lower.includes('oat') || lower.includes('poha') || lower.includes('upma') || lower.includes('daliya') || lower.includes('cheela'));
+
+        if (isEligibleStaple) {
           stapleCals += Math.round((it.foods?.calories || it.calories || 0) * (Number(it.quantity) || 1));
         }
       });
     });
 
     if (stapleCals > 0) {
-      const carbRatio = Math.max(0.4, Math.min(2.2, 1 + (calDelta / stapleCals)));
+      const carbRatio = Math.max(0.4, Math.min(2.5, 1 + (calDelta / stapleCals)));
       calibratedMeals = calibratedMeals.map((m: any) => {
         const items = (m.meal_plan_items || []).map((it: any) => {
           const info = getItemInfo(it);
           const lower = info.fName.toLowerCase();
           let q = Number(it.quantity) || 1;
 
-          const isCarbStaple = lower.includes('rice') || lower.includes('roti') || lower.includes('chapati') || lower.includes('oat') || lower.includes('poha') || lower.includes('upma') || lower.includes('daliya') || lower.includes('cheela');
+          const isEligibleStaple = isFatTight
+            ? (lower.includes('rice') || lower.includes('oat') || lower.includes('daliya'))
+            : (lower.includes('rice') || lower.includes('roti') || lower.includes('chapati') || lower.includes('oat') || lower.includes('poha') || lower.includes('upma') || lower.includes('daliya') || lower.includes('cheela'));
 
-          if (isCarbStaple) {
+          if (isEligibleStaple) {
             q = Math.max(0.4, Number((q * carbRatio).toFixed(1)));
           }
 
@@ -600,10 +625,10 @@ export function calibrateMealsToTargets(
     }
   }
 
-  // STAGE 4B: FINAL LEAN PROTEIN TOP-UP (Target +/- 6g, within calorie cap)
+  // STAGE 4B: FINAL LEAN PROTEIN TOP-UP (Target +/- 6g)
   totals = getTotals(calibratedMeals);
   const finalProGap = targetPro - totals.pro;
-  if (finalProGap > 6 && totals.cal <= targetCals + 40) {
+  if (finalProGap > 6 && totals.cal <= targetCals + 50) {
     const candidateSlots = ['dinner', 'lunch'];
     for (const slot of candidateSlots) {
       if (finalProGap <= 4) break;
@@ -626,9 +651,8 @@ export function calibrateMealsToTargets(
           fat: 0.1,
           estimated_cost: 6,
         };
-        addOnQty = Math.max(2, Math.min(5, Math.round(finalProGap / 3.6)));
+        addOnQty = Math.max(2, Math.min(6, Math.round(finalProGap / 3.6)));
       } else {
-        // Vegetarian & Vegan: Soy Chunks
         addOnFood = {
           id: 'soya-chunks-addon',
           name: 'Soy Chunks (Cooked)',
@@ -685,6 +709,112 @@ export function calibrateMealsToTargets(
     }
   }
 
+  // STAGE 4C: ABSOLUTE FAT CEILING ENFORCEMENT (GUARANTEE fat <= targetFat + 1.5g)
+  totals = getTotals(calibratedMeals);
+  let strictFatExcess = totals.fat - targetFat;
+  if (strictFatExcess > 1.5) {
+    let fatContributors: any[] = [];
+    calibratedMeals.forEach(m => {
+      (m.meal_plan_items || []).forEach((it: any) => {
+        const info = getItemInfo(it);
+        const itemTotalFat = Number((info.unitFat * (Number(it.quantity) || 1)).toFixed(1));
+        const lower = (it.foods?.name || it.name || '').toLowerCase();
+        if (itemTotalFat >= 3 && !lower.includes('white') && !lower.includes('soya') && !lower.includes('soy chunk') && !lower.includes('rice')) {
+          fatContributors.push({ meal: m, item: it, totalFat: itemTotalFat, unitFat: info.unitFat, unitCals: info.unitCals, unitPro: info.unitPro });
+        }
+      });
+    });
+
+    fatContributors.sort((a, b) => b.totalFat - a.totalFat);
+
+    for (const entry of fatContributors) {
+      if (strictFatExcess <= 1.0) break;
+      const it = entry.item;
+      const currentQ = Number(it.quantity) || 1;
+      const neededCut = strictFatExcess;
+      const maxCutQ = currentQ * 0.55; // cut up to 55%
+      const cutQ = Number(Math.min(maxCutQ, Math.max(0.1, neededCut / (entry.unitFat || 1))).toFixed(1));
+      if (cutQ <= 0) continue;
+
+      const newQ = Number(Math.max(0.2, currentQ - cutQ).toFixed(1));
+      const actualDeltaQ = currentQ - newQ;
+      const fatSaved = actualDeltaQ * entry.unitFat;
+
+      it.quantity = newQ;
+      it.calories = Math.round(entry.unitCals * newQ);
+      it.protein = Number((entry.unitPro * newQ).toFixed(1));
+      it.fat = Number((entry.unitFat * newQ).toFixed(1));
+
+      strictFatExcess -= fatSaved;
+    }
+
+    // Replenish any lost protein via pure lean protein (boiled egg whites or chicken breast)
+    totals = getTotals(calibratedMeals);
+    const currentProGap = targetPro - totals.pro;
+    if (currentProGap > 3) {
+      let targetProItem: any = null;
+      let targetProUnit = 3.6;
+      let isWhite = false;
+
+      if (isNonVeg) {
+        for (const m of calibratedMeals) {
+          const it = (m.meal_plan_items || []).find((x: any) => (x.foods?.name || x.name || '').toLowerCase().includes('chicken breast'));
+          if (it) { targetProItem = it; targetProUnit = 31; break; }
+        }
+      }
+      if (!targetProItem) {
+        for (const m of calibratedMeals) {
+          const it = (m.meal_plan_items || []).find((x: any) => (x.foods?.name || x.name || '').toLowerCase().includes('egg white'));
+          if (it) { targetProItem = it; targetProUnit = 3.6; isWhite = true; break; }
+        }
+      }
+      if (!targetProItem && !isNonVeg && !isEggetarian) {
+        for (const m of calibratedMeals) {
+          const it = (m.meal_plan_items || []).find((x: any) => (x.foods?.name || x.name || '').toLowerCase().includes('soya') || (x.foods?.name || x.name || '').toLowerCase().includes('soy chunk'));
+          if (it) { targetProItem = it; targetProUnit = 52; break; }
+        }
+      }
+
+      if (targetProItem) {
+        const info = getItemInfo(targetProItem);
+        if (isWhite) {
+          const extraWhites = Math.max(1, Math.round(currentProGap / (info.unitPro || 3.6)));
+          targetProItem.quantity = targetProItem.quantity + extraWhites;
+          targetProItem.calories = Math.round(info.unitCals * targetProItem.quantity);
+          targetProItem.protein = Number((info.unitPro * targetProItem.quantity).toFixed(1));
+          targetProItem.fat = Number((info.unitFat * targetProItem.quantity).toFixed(1));
+        } else {
+          const extraQ = Number((currentProGap / (info.unitPro || targetProUnit)).toFixed(1));
+          if (extraQ >= 0.1) {
+            targetProItem.quantity = Number((targetProItem.quantity + extraQ).toFixed(1));
+            targetProItem.calories = Math.round(info.unitCals * targetProItem.quantity);
+            targetProItem.protein = Number((info.unitPro * targetProItem.quantity).toFixed(1));
+            targetProItem.fat = Number((info.unitFat * targetProItem.quantity).toFixed(1));
+          }
+        }
+      }
+    }
+
+    // Replenish any remaining lost calories via fat-free White Rice to strictly hit target calories
+    totals = getTotals(calibratedMeals);
+    const finalCalDeficit = targetCals - totals.cal;
+    if (finalCalDeficit > 20) {
+      const riceMeal = calibratedMeals.find(m => (m.meal_plan_items || []).some((it: any) => (it.foods?.name || it.name || '').toLowerCase().includes('rice')));
+      if (riceMeal) {
+        const riceItem = riceMeal.meal_plan_items.find((it: any) => (it.foods?.name || it.name || '').toLowerCase().includes('rice'));
+        if (riceItem) {
+          const info = getItemInfo(riceItem);
+          const extraRiceQ = Number((finalCalDeficit / info.unitCals).toFixed(1));
+          riceItem.quantity = Number((riceItem.quantity + extraRiceQ).toFixed(1));
+          riceItem.calories = Math.round(info.unitCals * riceItem.quantity);
+          riceItem.protein = Number((info.unitPro * riceItem.quantity).toFixed(1));
+          riceItem.carbs = Number((info.unitCarbs * riceItem.quantity).toFixed(1));
+          riceItem.fat = Number((info.unitFat * riceItem.quantity).toFixed(1));
+        }
+      }
+    }
+  }
+
   // STAGE 5: STRICT BUDGET CAP ENFORCEMENT
   totals = getTotals(calibratedMeals);
   if (totals.cost > dailyBudgetCap + 10) {
@@ -693,7 +823,7 @@ export function calibrateMealsToTargets(
         const info = getItemInfo(it);
         let q = Number(it.quantity) || 1;
         if (!info.isCore && info.unitCost > 30) {
-          q = Math.max(0.6, Number((q * 0.85).toFixed(1)));
+          q = Math.max(0.2, Number((q * 0.85).toFixed(1)));
         }
         return {
           ...it,

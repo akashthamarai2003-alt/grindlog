@@ -8,6 +8,7 @@ import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } fr
 import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
 import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
+import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 export const dynamic = "force-dynamic";
 
 async function DashboardContent({ searchParams }: { searchParams?: { date?: string } }) {
@@ -25,8 +26,6 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     && Number.isFinite(new Date(`${requestedDateStr}T00:00:00.000Z`).getTime())
       ? requestedDateStr
       : todayDateStr;
-  const targetDateStart = new Date(`${targetDateStr}T00:00:00.000Z`);
-  const nextTargetDate = new Date(targetDateStart.getTime() + 24 * 60 * 60 * 1000);
 
   // Compute active week range (Monday to Sunday) for weekly consistency & calendar
   const activeDate = parseISO(targetDateStr);
@@ -44,8 +43,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     { data: weekWorkouts },
     { data: activityLog },
     { data: sleepLog },
-    { data: waterLogs },
-    { data: todayFoodLogs },
+    todayNutrition,
     subscriptionState,
   ] = await Promise.all([
     admin.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
@@ -60,8 +58,10 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     admin.from("fitness_os_workouts").select("id, workout_date, status, name").eq("user_id", user.id).gte("workout_date", weekStartStr).lte("workout_date", weekEndStr).order("created_at", { ascending: false }),
     admin.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
     admin.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
-    (admin as any).from("fitness_os_water_logs").select("amount_ml").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
-    (admin as any).from("food_logs").select("calories, protein, carbs, fat, meal_type").eq("user_id", user.id).gte("logged_at", targetDateStart.toISOString()).lt("logged_at", nextTargetDate.toISOString()),
+    NutritionService.getTodaySummaryAndDetails(user.id, targetDateStr).catch((err) => {
+      console.warn("Failed to fetch today nutrition for dashboard:", err?.message || err);
+      return null;
+    }),
     getFitnessSubscriptionState(user.id),
   ]);
   const userProfile = profile;
@@ -100,8 +100,8 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     ? {
         steps: Number(activityLog?.steps) || null,
         sleep_hours: Number(sleepLog?.duration_hours) || null,
-        water_liters: Array.isArray(waterLogs)
-          ? waterLogs.reduce((total: number, entry: any) => total + (Number(entry?.amount_ml) || 0), 0) / 1000
+        water_liters: todayNutrition?.consumed?.water_ml != null
+          ? Number(todayNutrition.consumed.water_ml) / 1000
           : null,
       }
     : isFreeUser
@@ -112,47 +112,40 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       }
     : undefined;
 
-  const consumed = {
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-    water_ml: Array.isArray(waterLogs)
-      ? waterLogs.reduce((total: number, entry: any) => total + (Number(entry?.amount_ml) || 0), 0)
-      : 0,
-  };
-
-  if (Array.isArray(todayFoodLogs)) {
-    todayFoodLogs.forEach((f: any) => {
-      consumed.calories += Number(f.calories) || 0;
-      consumed.protein += Number(f.protein) || 0;
-      consumed.carbs += Number(f.carbs) || 0;
-      consumed.fat += Number(f.fat) || 0;
-    });
-  }
-
   const baseNutrition = effectivePlan?.plan_data?.nutrition;
-  const effectiveNutrition = baseNutrition ? {
-    ...baseNutrition,
-    consumed,
-    meals: (baseNutrition.meals || []).map((m: any, idx: number, arr: any[]) => {
-      let derivedType = m.meal_type;
-      if (!derivedType) {
-        const ctx = `${m.meal_name || m.name || ''} ${m.time_of_day || ''} ${m.prep_instructions || ''}`.toLowerCase();
-        if (ctx.includes('breakfast') || ctx.includes('waking') || ctx.includes('morning')) derivedType = 'breakfast';
-        else if (ctx.includes('lunch') || ctx.includes('midday') || ctx.includes('noon')) derivedType = 'lunch';
-        else if (ctx.includes('dinner') || ctx.includes('night') || ctx.includes('supper') || ctx.includes('evening')) derivedType = 'dinner';
-        else if (ctx.includes('pre')) derivedType = 'pre_workout';
-        else if (ctx.includes('post')) derivedType = 'post_workout';
-        else if (arr.length === 3) derivedType = idx === 0 ? 'breakfast' : idx === 1 ? 'lunch' : 'dinner';
-        else derivedType = idx === 0 ? 'breakfast' : idx === arr.length - 1 ? 'dinner' : 'lunch';
+  const effectiveNutrition = todayNutrition
+    ? {
+        ...baseNutrition,
+        ...todayNutrition,
+        daily_calories: todayNutrition.targets?.calories ?? baseNutrition?.daily_calories,
+        protein_grams: todayNutrition.targets?.protein ?? baseNutrition?.protein_grams,
+        carbs_grams: todayNutrition.targets?.carbs ?? baseNutrition?.carbs_grams,
+        fat_grams: todayNutrition.targets?.fat ?? baseNutrition?.fat_grams,
       }
-      return {
-        ...m,
-        meal_type: derivedType,
-      };
-    }),
-  } : null;
+    : baseNutrition
+    ? {
+        ...baseNutrition,
+        consumed: { calories: 0, protein: 0, carbs: 0, fat: 0, water_ml: 0 },
+        logged_foods: [],
+        meals: (baseNutrition.meals || []).map((m: any, idx: number, arr: any[]) => {
+          let derivedType = m.meal_type;
+          if (!derivedType) {
+            const ctx = `${m.meal_name || m.name || ''} ${m.time_of_day || ''} ${m.prep_instructions || ''}`.toLowerCase();
+            if (ctx.includes('breakfast') || ctx.includes('waking') || ctx.includes('morning')) derivedType = 'breakfast';
+            else if (ctx.includes('lunch') || ctx.includes('midday') || ctx.includes('noon')) derivedType = 'lunch';
+            else if (ctx.includes('dinner') || ctx.includes('night') || ctx.includes('supper') || ctx.includes('evening')) derivedType = 'dinner';
+            else if (ctx.includes('pre')) derivedType = 'pre_workout';
+            else if (ctx.includes('post')) derivedType = 'post_workout';
+            else if (arr.length === 3) derivedType = idx === 0 ? 'breakfast' : idx === 1 ? 'lunch' : 'dinner';
+            else derivedType = idx === 0 ? 'breakfast' : idx === arr.length - 1 ? 'dinner' : 'lunch';
+          }
+          return {
+            ...m,
+            meal_type: derivedType,
+          };
+        }),
+      }
+    : null;
 
   return (
     <FitnessDashboard
