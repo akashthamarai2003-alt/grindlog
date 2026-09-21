@@ -25,14 +25,17 @@ async function WorkoutContent() {
   }
 
   const now = new Date();
+  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-  // Fetch all core user state in a SINGLE parallel batch
+  // Fetch all core user state in a SINGLE parallel batch with targeted joins
   const [
     { data: profile },
     { data: mainProfile },
     { data: activePlan },
     subscriptionPlan,
-    { data: workouts },
+    { data: activeWorkouts },
+    { data: calendarWorkouts },
     { data: aiNotes },
   ] = await Promise.all([
     admin
@@ -54,6 +57,7 @@ async function WorkoutContent() {
       .limit(1)
       .maybeSingle(),
     getFitnessPlan(user.id),
+    // 1. Detailed exercises & sets ONLY for today's active/in-progress workouts (at most 1-2 rows)
     admin
       .from("fitness_os_workouts")
       .select(`
@@ -67,6 +71,22 @@ async function WorkoutContent() {
           id, name, target_sets, target_reps, rest_seconds,
           fitness_os_sets (completed)
         )
+      `)
+      .eq("user_id", user.id)
+      .or(`status.eq.in_progress,and(workout_date.gte.${yesterdayStr},workout_date.lte.${tomorrowStr})`)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    // 2. Fast calendar list (lightweight exercise IDs only, no nested sets)
+    admin
+      .from("fitness_os_workouts")
+      .select(`
+        id,
+        name,
+        workout_date,
+        status,
+        duration_minutes,
+        plan_id,
+        fitness_os_exercises ( id )
       `)
       .eq("user_id", user.id)
       .order("workout_date", { ascending: true })
@@ -98,23 +118,37 @@ async function WorkoutContent() {
 
   const isFree = subscriptionPlan?.id === "free";
 
+  // Map active workouts with full exercises by ID
+  const activeWorkoutMap = new Map((activeWorkouts || []).map((w: any) => [w.id, w]));
+
   // Process workouts in memory with zero database latency
-  const workoutList = (workouts || []).map((w: any) => {
-    const exerciseCount = w.fitness_os_exercises?.length || 0;
-    const completedExercises = w.fitness_os_exercises?.filter((e: any) =>
+  const workoutList = (calendarWorkouts || []).map((w: any) => {
+    const full = activeWorkoutMap.get(w.id) || w;
+    const exerciseCount = full.fitness_os_exercises?.length || 0;
+    const completedExercises = full.fitness_os_exercises?.filter((e: any) =>
       e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
     ).length || 0;
     return {
-      ...w,
+      ...full,
       exerciseCount,
       completedExercises,
     };
   });
 
   // Today workout: in-progress first, then matching local date
-  const inProgress = workoutList.find((w: any) => w.status === "in_progress");
-  const scheduledToday = workoutList.find((w: any) => w.workout_date === userLocalDate);
-  const workout = inProgress || scheduledToday || null;
+  const inProgress = workoutList.find((w: any) => w.status === "in_progress")
+    || (activeWorkouts || []).find((w: any) => w.status === "in_progress");
+  const scheduledToday = workoutList.find((w: any) => w.workout_date === userLocalDate)
+    || (activeWorkouts || []).find((w: any) => w.workout_date === userLocalDate);
+  const rawWorkout = inProgress || scheduledToday || null;
+  const workout = rawWorkout ? (activeWorkoutMap.get(rawWorkout.id) || rawWorkout) : null;
+
+  if (workout && (!workout.exerciseCount || workout.completedExercises === undefined)) {
+    workout.exerciseCount = workout.fitness_os_exercises?.length || 0;
+    workout.completedExercises = workout.fitness_os_exercises?.filter((e: any) =>
+      e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
+    ).length || 0;
+  }
 
   // Next workout: if no workout today, find next upcoming scheduled
   const nextWorkout = !workout

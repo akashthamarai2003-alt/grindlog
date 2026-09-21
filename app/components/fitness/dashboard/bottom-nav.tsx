@@ -3,13 +3,12 @@
 import { Home, Dumbbell, Utensils, User, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 
 export function BottomNav({ isPro = false }: { isPro?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
 
   const navItems = [
     { icon: Home, label: "Home", href: "/" },
@@ -60,16 +59,13 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
               href={item.href}
               prefetch={true}
               onClick={(e) => {
-                e.preventDefault();
                 if (pathname === item.href) {
+                  e.preventDefault();
                   window.scrollTo({ top: 0, behavior: "smooth" });
                   return;
                 }
                 // Instant 0ms visual feedback
                 setPendingHref(item.href);
-                startTransition(() => {
-                  router.push(item.href);
-                });
               }}
               onTouchStart={() => {
                 try {
