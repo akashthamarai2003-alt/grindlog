@@ -1,19 +1,46 @@
-import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
-import { FitnessGuard } from "@/components/fitness/fitness-guard";
+import { getCachedUser } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { WorkoutSessionManager } from "@/components/fitness/workout/workout-session-manager";
+import { WorkoutSkeleton } from "@/components/fitness/workout/workout-skeleton";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
+import { LockKeyhole, ArrowRight } from "lucide-react";
+import { Suspense } from "react";
 
-export default async function ActiveWorkoutPage({ 
-  params,
-  searchParams
+export const dynamic = "force-dynamic";
+
+function PaidAccessGate({ featureName }: { featureName: string }) {
+  return (
+    <div className="min-h-[100dvh] bg-[#0A1108] px-6 py-16 text-white">
+      <div className="mx-auto flex max-w-md flex-col items-center rounded-3xl border border-[#ADFF00]/25 bg-[linear-gradient(145deg,rgba(173,255,0,0.10),rgba(18,30,18,1)_48%)] p-6 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ADFF00]/15 text-[#ADFF00]">
+          <LockKeyhole size={26} />
+        </div>
+        <p className="mt-5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#ADFF00]">Active Plan Required</p>
+        <h1 className="mt-2 text-2xl font-black">Unlock {featureName}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-gray-300">
+          You are currently exploring GrindLog in Free Preview Mode. Upgrade to Core or Pro to record live workouts, track nutrition, and log progress.
+        </p>
+        <Link
+          href="/payment?returnTo=/&intent=upgrade_plan"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#ADFF00] py-3.5 text-sm font-extrabold text-black transition-colors hover:bg-[#c4ff33]"
+        >
+          View Plans & Unlock <ArrowRight size={17} />
+        </Link>
+        <Link href="/workout" className="mt-4 text-xs font-bold text-gray-500 hover:text-white">Back to workouts</Link>
+      </div>
+    </div>
+  );
+}
+
+async function ActiveWorkoutContent({ 
+  workoutId,
+  activeExerciseId
 }: { 
-  params: Promise<{ workoutId: string }>,
-  searchParams: Promise<{ exercise?: string }>
+  workoutId: string;
+  activeExerciseId?: string;
 }) {
-  const { workoutId } = await params;
-  const { exercise: activeExerciseId } = await searchParams;
-  
   const { data: { user } } = await getCachedUser();
   
   if (!user) {
@@ -48,26 +75,24 @@ export default async function ActiveWorkoutPage({
     };
 
     return (
-      <FitnessGuard requirePaid={true} featureName="Live Workout Sessions">
-        <div className="min-h-screen bg-[#0A1108] text-white">
-          <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
-            <WorkoutSessionManager
-              workout={mockWorkout as any}
-              sessionId="mock-session"
-              startedAt={mockWorkout.fitness_os_workout_sessions[0].started_at}
-              isPaused={false}
-              avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
-              showAiCoach={false}
-              isEarlyStart={false}
-              initialExerciseId={activeExerciseId}
-            />
-          </div>
+      <div className="min-h-screen bg-[#0A1108] text-white">
+        <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
+          <WorkoutSessionManager
+            workout={mockWorkout as any}
+            sessionId="mock-session"
+            startedAt={mockWorkout.fitness_os_workout_sessions[0].started_at}
+            isPaused={false}
+            avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
+            showAiCoach={false}
+            isEarlyStart={false}
+            initialExerciseId={activeExerciseId}
+          />
         </div>
-      </FitnessGuard>
+      </div>
     );
   }
 
-  const supabase = await createServerSupabase();
+  const admin = createAdminClient();
 
   // Run independent database and plan fetches in parallel
   const [
@@ -76,7 +101,7 @@ export default async function ActiveWorkoutPage({
     subscriptionPlan,
     cachedNoteRes
   ] = await Promise.all([
-    supabase
+    admin
       .from("fitness_os_workouts")
       .select(`
         *,
@@ -88,9 +113,9 @@ export default async function ActiveWorkoutPage({
       `)
       .eq("id", workoutId)
       .single(),
-    supabase.from("profiles").select("timezone").eq("id", user.id).maybeSingle(),
+    admin.from("profiles").select("timezone").eq("id", user.id).maybeSingle(),
     getFitnessPlan(user.id),
-    supabase
+    admin
       .from("workout_ai_notes")
       .select("note")
       .eq("workout_id", workoutId)
@@ -101,8 +126,6 @@ export default async function ActiveWorkoutPage({
     redirect("/workout");
   }
 
-  const cachedCoachNote = cachedNoteRes?.data?.note || null;
-
   if (workout.user_id !== user.id) {
     redirect("/workout");
   }
@@ -110,6 +133,12 @@ export default async function ActiveWorkoutPage({
   if (workout.status === "completed") {
     redirect(`/workout/${workoutId}/summary`);
   }
+
+  if (!subscriptionPlan || subscriptionPlan.id === "free") {
+    return <PaidAccessGate featureName="Live Workout Sessions" />;
+  }
+
+  const cachedCoachNote = cachedNoteRes?.data?.note || null;
 
   // Find active session
   let activeSession = workout.fitness_os_workout_sessions?.find(
@@ -121,7 +150,7 @@ export default async function ActiveWorkoutPage({
   if (activeSession && activeSession.started_at) {
     const sessionAgeMs = Date.now() - new Date(activeSession.started_at).getTime();
     if (sessionAgeMs > MAX_SESSION_AGE_MS || sessionAgeMs < 0) {
-      await supabase
+      await admin
         .from("fitness_os_workout_sessions")
         .update({
           status: "cancelled",
@@ -146,7 +175,7 @@ export default async function ActiveWorkoutPage({
     const sessionAgeMs = Date.now() - new Date(activeSession.started_at).getTime();
     if (sessionAgeMs > 60 * 1000) {
       const nowIso = new Date().toISOString();
-      await supabase
+      await admin
         .from("fitness_os_workout_sessions")
         .update({
           started_at: nowIso,
@@ -155,7 +184,7 @@ export default async function ActiveWorkoutPage({
         })
         .eq("id", activeSession.id);
 
-      await supabase
+      await admin
         .from("fitness_os_workouts")
         .update({ started_at: nowIso })
         .eq("id", workoutId);
@@ -167,7 +196,7 @@ export default async function ActiveWorkoutPage({
 
   if (!activeSession) {
     const nowIso = new Date().toISOString();
-    const { data: newSession } = await supabase
+    const { data: newSession } = await admin
       .from("fitness_os_workout_sessions")
       .insert({
         user_id: user.id,
@@ -180,7 +209,7 @@ export default async function ActiveWorkoutPage({
     activeSession = newSession;
 
     // Keep parent workout started_at in sync with the fresh session
-    await supabase
+    await admin
       .from("fitness_os_workouts")
       .update({ started_at: nowIso })
       .eq("id", workoutId);
@@ -209,23 +238,38 @@ export default async function ActiveWorkoutPage({
     : undefined;
 
   return (
-    <FitnessGuard requirePaid={true} featureName="Live Workout Sessions">
-      <div className="min-h-screen bg-[#0A1108] text-white">
-        <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
-          <WorkoutSessionManager
-            workout={workout as any}
-            sessionId={activeSession.id}
-            startedAt={activeSession.started_at}
-            isPaused={activeSession.status === "paused"}
-            avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
-            showAiCoach={subscriptionPlan?.id === "pro"}
-            isEarlyStart={isEarlyStart}
-            scheduledDateLabel={scheduledDateLabel}
-            initialExerciseId={activeExerciseId}
-            initialCoachNote={cachedCoachNote || null}
-          />
-        </div>
+    <div className="min-h-screen bg-[#0A1108] text-white">
+      <div className="w-full max-w-md mx-auto px-5 pt-8 pb-8">
+        <WorkoutSessionManager
+          workout={workout as any}
+          sessionId={activeSession.id}
+          startedAt={activeSession.started_at}
+          isPaused={activeSession.status === "paused"}
+          avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
+          showAiCoach={subscriptionPlan?.id === "pro"}
+          isEarlyStart={isEarlyStart}
+          scheduledDateLabel={scheduledDateLabel}
+          initialExerciseId={activeExerciseId}
+          initialCoachNote={cachedCoachNote || null}
+        />
       </div>
-    </FitnessGuard>
+    </div>
+  );
+}
+
+export default async function ActiveWorkoutPage({ 
+  params,
+  searchParams
+}: { 
+  params: Promise<{ workoutId: string }>,
+  searchParams: Promise<{ exercise?: string }>
+}) {
+  const { workoutId } = await params;
+  const { exercise: activeExerciseId } = await searchParams;
+
+  return (
+    <Suspense fallback={<WorkoutSkeleton />}>
+      <ActiveWorkoutContent workoutId={workoutId} activeExerciseId={activeExerciseId} />
+    </Suspense>
   );
 }
