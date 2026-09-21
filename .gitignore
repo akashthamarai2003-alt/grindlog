@@ -1,4 +1,9 @@
-﻿node_modules/
+node_modules/
 app/node_modules/
 *.mp4
 !app/public/**/*.mp4
+
+# Graphify
+graphify-out/cache/
+graphify-out/*.html
+app/graphify-out/
