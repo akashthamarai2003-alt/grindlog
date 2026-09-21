@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
+import { getCachedUser } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
+import { InstantDashboardLoader } from "@/components/fitness/dashboard/instant-dashboard-loader";
 import { Suspense } from 'react';
 import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
 import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
@@ -11,7 +12,6 @@ import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 
 async function DashboardContent({ searchParams }: { searchParams?: { date?: string } }) {
-  const supabase = await createServerSupabase();
   const { data: { user } } = await getCachedUser();
 
   if (!user) {
@@ -53,7 +53,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
         id,
         fitness_os_sets (completed)
       )
-    `).eq("user_id", user.id).eq("workout_date", targetDateStr).order("created_at", { ascending: false }),
+    `).eq("user_id", user.id).eq("workout_date", targetDateStr).order("created_at", { ascending: false }).limit(2),
     admin.from("fitness_os_workouts").select("id, workout_date, status, name").eq("user_id", user.id).gte("workout_date", weekStartStr).lte("workout_date", weekEndStr).order("created_at", { ascending: false }),
     admin.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
     admin.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
@@ -179,11 +179,7 @@ export default async function FitnessHome({
 
   return (
     <div className="min-h-screen bg-[#0A1108]">
-      <Suspense fallback={
-        <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">
-          <DashboardSkeleton />
-        </div>
-      }>
+      <Suspense fallback={<InstantDashboardLoader />}>
         <DashboardContent searchParams={params} />
       </Suspense>
     </div>

@@ -1270,6 +1270,17 @@ export class NutritionService {
   // In-memory cache for active foods catalog (TTL: 15 minutes)
   private static cachedFoodCatalog: { data: NutritionFoodReference[]; expiresAt: number } | null = null;
 
+  // In-memory cache for today's nutrition summary (TTL: 5 minutes)
+  private static todaySummaryCache = new Map<string, { data: any; expiresAt: number }>();
+
+  static invalidateTodaySummaryCache(userId: string) {
+    for (const key of this.todaySummaryCache.keys()) {
+      if (key.startsWith(`${userId}:`)) {
+        this.todaySummaryCache.delete(key);
+      }
+    }
+  }
+
   static async getCachedFoodCatalog(): Promise<NutritionFoodReference[]> {
     if (this.cachedFoodCatalog && Date.now() < this.cachedFoodCatalog.expiresAt) {
       return this.cachedFoodCatalog.data;
@@ -3343,6 +3354,11 @@ function scaleServingSize(servingSize: string, scale: number): string {
     // Fetch timezone once to avoid 3 redundant DB calls
     const tz = await this.getUserTimezone(userId);
     const localDate = targetDateStr || await this.getLocalDateString(userId, tz);
+    const cacheKey = `${userId}:${localDate}`;
+    const cached = this.todaySummaryCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.data;
+    }
     const { start, end } = await this.getLocalDateBoundaries(userId, tz, localDate);
 
     // Monthly spent calculation
@@ -3686,7 +3702,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
 
     const score = this.computeNutritionScore(consumed, targets, mealsCompleted, totalMeals);
 
-    return {
+    const result = {
       date: localDate,
       day_of_week: dayOfWeek,
       targets,
@@ -3717,5 +3733,8 @@ function scaleServingSize(servingSize: string, scale: number): string {
         ? 'Non-Vegetarian'
         : (fitProfile?.food_type || fitProfile?.diet_preference || undefined)
     };
+
+    this.todaySummaryCache.set(cacheKey, { data: result, expiresAt: Date.now() + 5 * 60 * 1000 });
+    return result;
   }
 }

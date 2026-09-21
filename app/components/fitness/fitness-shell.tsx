@@ -6,6 +6,7 @@ import { BottomNav } from "./dashboard/bottom-nav";
 import { FitnessChatbot } from "./chatbot/fitness-chatbot";
 import { NavigationProvider, useInstantNav } from "./navigation-context";
 import { DashboardSkeleton } from "./dashboard/dashboard-skeleton";
+import { InstantDashboardLoader } from "./dashboard/instant-dashboard-loader";
 import { WorkoutSkeleton } from "./workout/workout-skeleton";
 import NutritionLoading from "@/app/(fitness)/nutrition/loading";
 import ProgressLoading from "@/app/(fitness)/progress/loading";
@@ -34,11 +35,7 @@ function getTabSkeleton(tab: string) {
       return <ProfileLoading />;
     case "/":
     default:
-      return (
-        <div className="w-full max-w-md mx-auto px-4 pt-6">
-          <DashboardSkeleton />
-        </div>
-      );
+      return <InstantDashboardLoader />;
   }
 }
 

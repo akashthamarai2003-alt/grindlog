@@ -62,12 +62,14 @@ export function FitnessDashboard({
         const snapshot = {
           profile,
           nutrition,
+          activePlan,
           todayWorkout,
           weekWorkouts,
           dailyActivity,
           dayNumber,
           premiumLevel,
           targetDateStr,
+          subscriptionState,
           timestamp: Date.now(),
         };
         localStorage.setItem("grindlog_dashboard_snapshot_v1", JSON.stringify(snapshot));
@@ -75,7 +77,7 @@ export function FitnessDashboard({
         // quota or private mode safely ignored
       }
     }
-  }, [profile, nutrition, todayWorkout, weekWorkouts, dailyActivity, dayNumber, premiumLevel, targetDateStr]);
+  }, [profile, nutrition, activePlan, todayWorkout, weekWorkouts, dailyActivity, dayNumber, premiumLevel, targetDateStr, subscriptionState]);
 
   const openUpgradeModal = (feature: string) => {
     setModalFeature(feature);
