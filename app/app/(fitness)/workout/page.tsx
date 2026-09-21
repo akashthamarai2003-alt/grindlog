@@ -13,8 +13,7 @@ import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import { CalendarClock } from "lucide-react";
 import { SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
 import { Suspense } from "react";
-
-export const dynamic = "force-dynamic";
+import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 
 async function WorkoutContent() {
   const admin = createAdminClient();
@@ -30,18 +29,14 @@ async function WorkoutContent() {
 
   // Fetch all core user state in a SINGLE parallel batch with targeted joins
   const [
-    { data: mainProfile },
+    tz,
     { data: activePlan },
     subscriptionPlan,
     { data: activeWorkouts },
     { data: calendarWorkouts },
     { data: aiNotes },
   ] = await Promise.all([
-    admin
-      .from("profiles")
-      .select("timezone")
-      .eq("id", user.id)
-      .maybeSingle(),
+    NutritionService.getUserTimezone(user.id),
     admin
       .from("fitness_os_workout_plans")
       .select("id, name, description, plan_data")
@@ -92,7 +87,6 @@ async function WorkoutContent() {
       .limit(5),
   ]);
 
-  const tz = mainProfile?.timezone || "UTC";
   const userLocalDate = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
     year: "numeric",

@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/layout.tsx": {
-    "mtime": 1789968502.128291,
-    "seen": 1789970487.5975246,
-    "ast_hash": "fcd5c9ee39d3933221072bc86869b828",
+    "mtime": 1789993080.6895802,
+    "seen": 1789993266.5398893,
+    "ast_hash": "2a23cf27014c4450c1181da221fb8240",
     "semantic_hash": ""
   },
   "app/app/(fitness)/loading.tsx": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/page.tsx": {
-    "mtime": 1789987171.6747596,
-    "seen": 1789987381.6961973,
-    "ast_hash": "e6754f560d63c20102bd0fefdf9eed8e",
+    "mtime": 1789993089.17914,
+    "seen": 1789993266.5412297,
+    "ast_hash": "bc985df12840d175e25372f4400e96a4",
     "semantic_hash": ""
   },
   "app/app/(fitness)/payment/page.tsx": {
@@ -1002,9 +1002,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/fitness-dashboard.tsx": {
-    "mtime": 1789921401.9570599,
-    "seen": 1789970487.5982068,
-    "ast_hash": "60ea5c69c87a67567f47a91dd44abf4a",
+    "mtime": 1789993107.839911,
+    "seen": 1789993266.5760405,
+    "ast_hash": "866240b3949296b34aa2e0cbaa172e3c",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/fitness-header.tsx": {
@@ -1104,9 +1104,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-shell.tsx": {
-    "mtime": 1789974426.2342093,
-    "seen": 1789974678.4823155,
-    "ast_hash": "66b79a32911c0e13aefd5a2999583dcd",
+    "mtime": 1789993070.2838218,
+    "seen": 1789993266.580965,
+    "ast_hash": "344b4a8bccd6fc1267bcad55e088b5a9",
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-theme-provider.tsx": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/nutrition-service.ts": {
-    "mtime": 1789990816.6608822,
-    "seen": 1789991649.8478196,
-    "ast_hash": "c3a1846789a5736db87e0a201bbc71e9",
+    "mtime": 1789993044.0945268,
+    "seen": 1789993266.6101117,
+    "ast_hash": "8e2ba87bebddb35546982f5bf8932c5e",
     "semantic_hash": ""
   },
   "app/lib/services/openai/client.ts": {
