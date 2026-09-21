@@ -162,9 +162,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/profile/page.tsx": {
-    "mtime": 1789829850.3322709,
-    "seen": 1789970487.5976105,
-    "ast_hash": "e9a8a666c6a4b2324fb1936dfe58cbd7",
+    "mtime": 1790003929.4360552,
+    "seen": 1790004163.273036,
+    "ast_hash": "b4c6a8c1de5d954a4452caf199d35bc1",
     "semantic_hash": ""
   },
   "app/app/(fitness)/progress/add-scan/layout.tsx": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/bottom-nav.tsx": {
-    "mtime": 1789994048.063351,
-    "seen": 1789994235.4674668,
-    "ast_hash": "238888a3ac9a552585b2fbb2692e2cd0",
+    "mtime": 1790003967.2583644,
+    "seen": 1790004163.316515,
+    "ast_hash": "8ce7fcca7ae8183748caaaa274471b4d",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/category-pills.tsx": {
@@ -1104,9 +1104,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-shell.tsx": {
-    "mtime": 1789993070.2838218,
-    "seen": 1789993266.580965,
-    "ast_hash": "344b4a8bccd6fc1267bcad55e088b5a9",
+    "mtime": 1790003957.0443523,
+    "seen": 1790004163.3226864,
+    "ast_hash": "1eb075318ccc56959771f53f4b4baeff",
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-theme-provider.tsx": {

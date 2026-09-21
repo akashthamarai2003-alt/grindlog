@@ -28,12 +28,12 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     }
   }, [pathname, navigatingTo]);
 
-  // Safety fallback: if navigation takes longer than 3.5s or gets cancelled, restore view
+  // Safety fallback: if navigation takes longer than 10s or gets cancelled, restore view
   useEffect(() => {
     if (navigatingTo) {
       const timer = setTimeout(() => {
         setNavigatingTo(null);
-      }, 3500);
+      }, 10000);
       return () => clearTimeout(timer);
     }
   }, [navigatingTo]);

@@ -1,4 +1,4 @@
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { 
   AggregatedProgressPayload, 
   AnalyticsPeriod,
@@ -16,7 +16,7 @@ import {
 } from "@/types/fitness/analytics";
 
 export class ProgressAnalyticsService {
-  // In-memory cache for progress analytics payloads (TTL: 2 minutes)
+  // In-memory cache for progress analytics payloads (TTL: 10 minutes)
   private static progressCache = new Map<string, { data: AggregatedProgressPayload; expiresAt: number }>();
 
   static invalidateUserCache(userId: string) {
@@ -36,7 +36,7 @@ export class ProgressAnalyticsService {
       }
     }
 
-    const supabase = await createServerSupabase();
+    const supabase = createAdminClient();
 
     const now = referenceDate || new Date();
     const startDate = new Date(now.getTime());
@@ -772,7 +772,7 @@ export class ProgressAnalyticsService {
     };
 
     if (!referenceDate) {
-      this.progressCache.set(cacheKey, { data: result, expiresAt: Date.now() + 2 * 60 * 1000 });
+      this.progressCache.set(cacheKey, { data: result, expiresAt: Date.now() + 10 * 60 * 1000 });
     }
 
     return result;

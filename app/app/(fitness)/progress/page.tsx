@@ -1,6 +1,5 @@
 import { Metadata } from "next";
-import { createClient, getCachedUser } from "@/lib/services/supabase/server";
-import { FitnessGuard } from "@/components/fitness/fitness-guard";
+import { getCachedUser } from "@/lib/services/supabase/server";
 import { ProgressView } from "@/components/fitness/progress/progress-view";
 import { ProgressAnalyticsService } from "@/lib/services/analytics/progress-service";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
@@ -21,9 +20,5 @@ export default async function ProgressPage() {
   ]);
   const isPro = plan?.id === "pro";
 
-  return (
-    <FitnessGuard featureName="advanced progress analysis">
-      <ProgressView initialData={initialData} isPro={isPro} />
-    </FitnessGuard>
-  );
+  return <ProgressView initialData={initialData} isPro={isPro} />;
 }
