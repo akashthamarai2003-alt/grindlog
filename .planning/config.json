@@ -1,5 +1,8 @@
 {
   "graphify": {
     "enabled": true
+  },
+  "coderabbit": {
+    "enabled": true
   }
 }

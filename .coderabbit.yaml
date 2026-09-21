@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://www.coderabbit.ai/integrations/schema.v2.json
+version: "2"
+language: "en-US"
+reviews:
+  profile: "assertive"
+  high_level_summary: true
+  poem: false
+  request_changes_workflow: false
+  auto_review:
+    enabled: true
+    ignore_title_keywords:
+      - "wip"
+      - "draft"
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/.next/**"
+    - "!graphify-out/**"
+    - "!public/**"
+    - "!*.mp4"
+    - "!*.svg"
+  rules:
+    - rule: "Preserve dual-theme styling (Dark #0A1108 default and .theme-white class overrides) across all UI components."
+    - rule: "Ensure Next.js Server Components batch database lookups in parallel with Promise.all and avoid sequential waterfalls."
+    - rule: "Check for proper authorization, user authentication checks, and RLS bypass protections in Supabase operations."

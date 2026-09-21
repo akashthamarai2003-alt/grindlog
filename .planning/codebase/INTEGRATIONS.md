@@ -43,3 +43,8 @@
 
 ## 5. Resend (Email Service)
 - **Role**: Handles transactional password resets, verification emails, and milestone celebrations
+
+## 6. Developer Tooling & Agent Workflow Suite
+- **GSD (Get Stuff Done)**: Autonomous roadmap planning, phase execution, verification loops, and state tracking in `.planning/`.
+- **Graphify**: Codebase AST knowledge graph mapping 6,280+ nodes and 22,280+ edges (`graphify-out/graph.json`), powering instant blast-radius impact analysis and visual call flows (`app-callflow.html`, `graph.html`).
+- **CodeRabbit**: Automated AI code reviews, security vulnerability scanning, and PR autofix (`.coderabbit.yaml`, `code-review` / `autofix` agent skills, and `code-reviewer` subagent).
