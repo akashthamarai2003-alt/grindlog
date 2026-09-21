@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { calculateTargets } from "@/lib/fitness/nutrition/nutrition-engine";
 
 export type NutritionFoodReference = {
@@ -787,7 +788,7 @@ export class NutritionService {
    */
   static async getWeeklyPlanEligibility(userId: string): Promise<WeeklyPlanEligibility> {
     try {
-      const supabase = await createServerSupabase();
+      const supabase = createAdminClient();
       const { data: logs, error } = await supabase
         .from('ai_usage_logs')
         .select('created_at')
@@ -907,12 +908,12 @@ export class NutritionService {
    * Retrieves the user's timezone from their profile, defaulting to UTC.
    */
   static async getUserTimezone(userId: string): Promise<string> {
-    const supabase = await createServerSupabase();
+    const supabase = createAdminClient();
     const { data } = await supabase
       .from('profiles')
       .select('timezone')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     return data?.timezone || 'UTC';
   }
 
@@ -954,9 +955,9 @@ export class NutritionService {
     return { start, end };
   }
 
-  static async getEffectiveTargets(userId: string) {
-    const supabase = await createServerSupabase();
-    const localDate = await this.getLocalDateString(userId);
+  static async getEffectiveTargets(userId: string, preFetchedDate?: string, preFetchedTz?: string) {
+    const supabase = createAdminClient();
+    const localDate = preFetchedDate || await this.getLocalDateString(userId, preFetchedTz);
     
     const { data, error } = await supabase
       .from('nutrition_targets')
@@ -2844,7 +2845,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
   }
 
   static async getTodaySummaryAndDetails(userId: string, targetDateStr?: string) {
-    const supabase = await createServerSupabase();
+    const supabase = createAdminClient();
     
     // Fetch timezone once to avoid 3 redundant DB calls
     const tz = await this.getUserTimezone(userId);
@@ -2861,7 +2862,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
 
     // Parallelize all data fetching
     const [targets, foodsRes, watersRes, plansRes, monthFoodsRes, fitProfileRes, activePlanRes, foodCatalogRes, weeklyPlanStatus] = await Promise.all([
-      this.getEffectiveTargets(userId),
+      this.getEffectiveTargets(userId, localDate, tz),
       supabase
         .from('food_logs')
         .select('*, foods(name, category)')
