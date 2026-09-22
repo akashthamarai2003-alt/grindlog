@@ -1,4 +1,4 @@
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { 
   AggregatedProgressPayload, 
   AnalyticsPeriod,
@@ -15,10 +15,53 @@ import {
   Achievement
 } from "@/types/fitness/analytics";
 
+interface ProgressServerCacheEntry {
+  data: AggregatedProgressPayload;
+  timestamp: number;
+}
+
+// Global server-side process cache for progress analytics
+const getGlobalProgressCache = (): Map<string, ProgressServerCacheEntry> => {
+  if (!(globalThis as any).__grindlog_progress_server_cache) {
+    (globalThis as any).__grindlog_progress_server_cache = new Map<string, ProgressServerCacheEntry>();
+  }
+  return (globalThis as any).__grindlog_progress_server_cache;
+};
+
+export function invalidateProgressServerCache(userId?: string) {
+  const cache = getGlobalProgressCache();
+  if (userId) {
+    for (const key of Array.from(cache.keys())) {
+      if (key.startsWith(`${userId}_`)) {
+        cache.delete(key);
+      }
+    }
+  } else {
+    cache.clear();
+  }
+}
+
 export class ProgressAnalyticsService {
   
+  static invalidateServerCache(userId?: string) {
+    invalidateProgressServerCache(userId);
+  }
+
   static async getAggregatedProgress(userId: string, period: AnalyticsPeriod = '30D', referenceDate?: Date): Promise<AggregatedProgressPayload> {
-    const supabase = await createServerSupabase();
+    const isDefaultDate = !referenceDate;
+    const cacheKey = `${userId}_${period}`;
+    const cache = getGlobalProgressCache();
+
+    // Return from server cache in 0ms if requested within the last 60 seconds
+    if (isDefaultDate) {
+      const cached = cache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < 60_000)) {
+        return cached.data;
+      }
+    }
+
+    // Use admin client for high-performance direct DB access (bypasses RLS overhead across 13 queries)
+    const supabase = createAdminClient();
 
     const now = referenceDate || new Date();
     const startDate = new Date(now.getTime());
@@ -738,7 +781,7 @@ export class ProgressAnalyticsService {
     }
     scans.shouldPromptForScan = shouldPromptForScan;
 
-    return {
+    const payload: AggregatedProgressPayload = {
       period,
       transformation,
       consistency,
@@ -752,5 +795,14 @@ export class ProgressAnalyticsService {
       aiReview,
       achievements
     };
+
+    if (isDefaultDate) {
+      cache.set(cacheKey, {
+        data: payload,
+        timestamp: Date.now()
+      });
+    }
+
+    return payload;
   }
 }

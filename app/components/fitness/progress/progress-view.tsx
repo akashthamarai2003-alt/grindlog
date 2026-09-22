@@ -18,9 +18,14 @@ import { MuscleMap } from "../workout/muscle-map";
 import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
 import { Lock } from "lucide-react";
 import Link from "next/link";
+import { progressClientCache } from "@/lib/api/progress-cache";
 
 export function ProgressView({ initialData, isPro = true }: { initialData: AggregatedProgressPayload; isPro?: boolean }) {
-  const [data, setData] = useState<AggregatedProgressPayload>(initialData);
+  const [data, setData] = useState<AggregatedProgressPayload>(() => {
+    const cached = progressClientCache.get(initialData?.period || "30D");
+    if (cached) return cached;
+    return initialData;
+  });
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialData.period);
   const [isFetching, setIsFetching] = useState(false);
   const [workoutDates, setWorkoutDates] = useState<string[]>([]);
@@ -41,6 +46,14 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
     [initialData.period]: initialData,
   });
 
+  // Ensure current initialData is saved to client cache immediately
+  useEffect(() => {
+    if (initialData?.period) {
+      cacheRef.current[initialData.period] = initialData;
+      progressClientCache.set(initialData.period, initialData);
+    }
+  }, [initialData]);
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Background pre-fetch for common periods (7D, 30D, 3M, 6M, ALL) so clicks are instant
@@ -55,12 +68,16 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
       if (!isMounted || index >= toPrefetch.length) return;
       const targetPeriod = toPrefetch[index];
 
-      if (!cacheRef.current[targetPeriod]) {
+      const existing = cacheRef.current[targetPeriod] || progressClientCache.get(targetPeriod);
+      if (existing) {
+        cacheRef.current[targetPeriod] = existing;
+      } else {
         try {
           const res = await fetch(`/api/fitness-ai/progress-data?period=${targetPeriod}`);
           if (res.ok && isMounted) {
             const json = await res.json();
             cacheRef.current[targetPeriod] = json;
+            progressClientCache.set(targetPeriod, json);
           }
         } catch {}
       }
@@ -104,6 +121,7 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
   // Keep local state in sync whenever server component provides fresh initialData
   useEffect(() => {
     cacheRef.current[initialData.period] = initialData;
+    progressClientCache.set(initialData.period, initialData);
     setData(initialData);
   }, [initialData]);
 
@@ -114,6 +132,7 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
       if (res.ok) {
         const json = await res.json();
         cacheRef.current[period] = json;
+        progressClientCache.set(period, json);
         setData(json);
       }
     } catch (err) {
@@ -121,13 +140,24 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
     }
   };
 
+  // Listen for local mutations (weight logged, measurement saved)
+  useEffect(() => {
+    const handleProgressUpdated = () => {
+      refreshData();
+    };
+    window.addEventListener("grindlog_progress_updated", handleProgressUpdated);
+    return () => window.removeEventListener("grindlog_progress_updated", handleProgressUpdated);
+  }, [period]);
+
   const handlePeriodChange = async (newPeriod: AnalyticsPeriod) => {
     if (newPeriod === period) return;
 
-    // 1. INSTANT CACHE HIT: 0ms switch if already in memory
-    if (cacheRef.current[newPeriod]) {
+    // 1. INSTANT CACHE HIT: 0ms switch if already in memory or sessionStorage
+    const cachedEntry = cacheRef.current[newPeriod] || progressClientCache.get(newPeriod);
+    if (cachedEntry) {
+      cacheRef.current[newPeriod] = cachedEntry;
       setPeriod(newPeriod);
-      setData(cacheRef.current[newPeriod]);
+      setData(cachedEntry);
       setIsFetching(false);
       return;
     }
@@ -149,6 +179,7 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
       if (!res.ok) throw new Error("Failed to fetch");
       const json = await res.json();
       cacheRef.current[newPeriod] = json;
+      progressClientCache.set(newPeriod, json);
       setData(json);
     } catch (err: any) {
       if (err.name !== "AbortError") {

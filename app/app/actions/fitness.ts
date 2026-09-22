@@ -15,6 +15,7 @@ import {
 import { WorkoutService } from "@/lib/services/fitness/workout-service";
 import { revalidatePath } from "next/cache";
 import { invalidateWorkoutServerCache } from "@/lib/services/fitness/workout-page-service";
+import { invalidateProgressServerCache } from "@/lib/services/analytics/progress-service";
 
 export async function saveFitnessOnboardingAction(payload: Partial<OnboardingData>) {
   const supabase = await createServerSupabase();
@@ -183,6 +184,7 @@ export async function updateFitnessProfilePartialAction(payload: Record<string, 
   revalidatePath("/profile/details");
   revalidatePath("/progress");
   revalidatePath("/dashboard");
+  invalidateProgressServerCache(user.id);
   return { success: true };
 }
 
@@ -522,6 +524,7 @@ export async function finishWorkoutSessionAction(payload: { sessionId: string })
   revalidatePath(`/workout/${session.workout_id}`);
   revalidatePath(`/workout/history`);
   invalidateWorkoutServerCache(user.id);
+  invalidateProgressServerCache(user.id);
   
   return { success: true };
 }
@@ -604,7 +607,9 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
   revalidatePath("/workout");
   revalidatePath(`/workout/${workoutId}`);
   revalidatePath("/dashboard");
+  revalidatePath("/progress");
   invalidateWorkoutServerCache(user.id);
+  invalidateProgressServerCache(user.id);
 
   return { success: true };
 }
@@ -654,6 +659,9 @@ export async function reopenWorkoutAction(payload: { workoutId: string }) {
   revalidatePath("/workout");
   revalidatePath(`/workout/${workoutId}`);
   revalidatePath("/dashboard");
+  revalidatePath("/progress");
+  invalidateWorkoutServerCache(user.id);
+  invalidateProgressServerCache(user.id);
 
   return { success: true };
 }

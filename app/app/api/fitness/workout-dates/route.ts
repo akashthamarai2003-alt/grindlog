@@ -94,7 +94,12 @@ export async function GET(req: NextRequest) {
       scheduledDates, 
       exerciseNames,
       joinedDate
-    }, { status: 200 });
+    }, { 
+      status: 200,
+      headers: {
+        "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+      }
+    });
   } catch (error: any) {
     console.error("GET /api/fitness/workout-dates error:", error);
     return NextResponse.json({ error: error.message || "Server error" }, { status: 500 });

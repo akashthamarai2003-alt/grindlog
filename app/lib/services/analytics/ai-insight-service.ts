@@ -283,6 +283,10 @@ You MUST output perfectly formatted JSON matching this exact structure:
 
       if (error) {
         console.error("Failed to save AI insight:", error);
+      } else {
+        try {
+          ProgressAnalyticsService.invalidateServerCache(userId);
+        } catch {}
       }
 
       const newUsedCount = limitCheck.usedTodayCount + 1;

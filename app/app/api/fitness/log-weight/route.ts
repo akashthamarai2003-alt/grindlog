@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
+import { invalidateProgressServerCache } from "@/lib/services/analytics/progress-service";
 
 export async function GET(req: Request) {
   try {
@@ -111,6 +112,11 @@ export async function POST(req: Request) {
       .eq('id', user.id);
 
     if (profileError) throw profileError;
+
+    // Invalidate progress cache so next visit gets fresh weight immediately
+    try {
+      invalidateProgressServerCache(user.id);
+    } catch {}
 
     return NextResponse.json({ success: true, weight: cleanWeight });
 
