@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Utensils, ArrowRight, CheckCircle2, Circle, Flame, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { nutritionApi, nutritionClientCache } from "@/lib/api/nutrition";
 import { toast } from "sonner";
 
@@ -104,6 +104,7 @@ export function TodaysNutritionCard({
   targetDateStr,
 }: TodaysNutritionCardProps) {
   const router = useRouter();
+  const isInternalUpdateRef = useRef(false);
   // Determine effective date for persistent meal state keying
   const effectiveDate = useMemo(() => {
     if (targetDateStr && /^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) {
@@ -184,13 +185,17 @@ export function TodaysNutritionCard({
       const fresh = await nutritionApi.getToday(effectiveDate);
       if (fresh) {
         nutritionClientCache.set(effectiveDate, fresh);
-        setActiveNutrition((prev: any) => ({
-          ...prev,
-          ...fresh,
-          consumed: fresh.consumed || prev?.consumed,
-          logged_foods: fresh.logged_foods || prev?.logged_foods,
-          meals: (fresh.meals && fresh.meals.length > 0) ? fresh.meals : prev?.meals,
-        }));
+        setActiveNutrition((prev: any) => {
+          const prevCount = prev?.logged_foods?.length || 0;
+          const freshCount = fresh?.logged_foods?.length || 0;
+          return {
+            ...prev,
+            ...fresh,
+            consumed: (freshCount < prevCount && prev?.consumed) ? prev.consumed : (fresh.consumed || prev?.consumed),
+            logged_foods: (freshCount < prevCount && prev?.logged_foods) ? prev.logged_foods : (fresh.logged_foods || prev?.logged_foods),
+            meals: (fresh.meals && fresh.meals.length > 0) ? fresh.meals : prev?.meals,
+          };
+        });
       }
     } catch {
       // silently ignore network errors
@@ -200,6 +205,10 @@ export function TodaysNutritionCard({
   useEffect(() => {
     refreshNutrition();
     const handleSync = () => {
+      if (isInternalUpdateRef.current) {
+        isInternalUpdateRef.current = false;
+        return;
+      }
       const cached = nutritionClientCache.get(effectiveDate);
       if (cached) {
         setActiveNutrition((prev: any) => ({
@@ -552,8 +561,8 @@ export function TodaysNutritionCard({
 
       nutritionApi.logFoods(itemsToLog).then(() => {
         toast.success(`Logged ${meal.name}!`);
+        isInternalUpdateRef.current = true;
         nutritionClientCache.notifyUpdated();
-        try { router.refresh(); } catch {}
       }).catch((err) => {
         console.warn("Could not sync logged meal to DB:", err);
         toast.success(`Logged ${meal.name}!`);
@@ -581,8 +590,8 @@ export function TodaysNutritionCard({
       // Background unlog: atomic deleteMeal API
       nutritionApi.deleteMeal(typeKey, effectiveDate).then(() => {
         refreshNutrition();
+        isInternalUpdateRef.current = true;
         nutritionClientCache.notifyUpdated();
-        try { router.refresh(); } catch {}
       }).catch((err) => {
         console.warn("deleteMeal failed, trying fallback deleteFood by ID:", err);
         const currentLogs = activeNutrition?.logged_foods || nutrition?.logged_foods || [];
@@ -590,8 +599,8 @@ export function TodaysNutritionCard({
         if (foodsToRemove.length > 0) {
           Promise.all(foodsToRemove.map((f: any) => nutritionApi.deleteFood(f.id))).then(() => {
             refreshNutrition();
+            isInternalUpdateRef.current = true;
             nutritionClientCache.notifyUpdated();
-            try { router.refresh(); } catch {}
           }).catch(() => {});
         }
       });
@@ -599,6 +608,7 @@ export function TodaysNutritionCard({
       toast.info(`Unlogged ${meal.name}`);
     }
 
+    isInternalUpdateRef.current = true;
     nutritionClientCache.notifyUpdated();
   };
 

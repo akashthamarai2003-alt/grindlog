@@ -51,6 +51,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const isFuture = Boolean(selectedDate && selectedDate > todayDateStr);
   const isToday = !selectedDate || selectedDate === todayDateStr;
   const dateCacheRef = useRef<Record<string, any>>({});
+  const isInternalUpdateRef = useRef(false);
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [swapMealType, setSwapMealType] = useState<string>("breakfast");
   
@@ -206,8 +207,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       const prevCals = Number(prev?.consumed?.calories) || 0;
       const newCals = Number(initialData?.consumed?.calories) || 0;
 
-      // Never overwrite active logged meals with an empty stale initialData from router cache
-      if ((prevCount > 0 && newCount === 0) || (prevCals > 0 && newCals === 0)) {
+      // If active state has MORE logged foods than initialData, or active state has calories while initialData has 0,
+      // preserve active state so we never drop newly logged meals!
+      if (prevCount > newCount || (prevCals > 0 && newCals === 0)) {
         return {
           ...initialData,
           consumed: prev.consumed,
@@ -229,6 +231,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }
 
     const handleSync = () => {
+      if (isInternalUpdateRef.current) {
+        isInternalUpdateRef.current = false;
+        return;
+      }
       const targetDate = selectedDateRef.current || todayDateStr;
       const cached = nutritionClientCache.get(targetDate);
       if (cached) {
@@ -613,8 +619,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
     try {
       await nutritionApi.deleteFood(id);
+      isInternalUpdateRef.current = true;
       nutritionClientCache.notifyUpdated();
-      try { router.refresh(); } catch {}
       // Quiet background reconciliation
       nutritionApi.getToday(selectedDateRef.current).then(res => {
         if (res) {
@@ -801,8 +807,13 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           // If real server data arrives, remove any temporary optimistic placeholders for this meal
           let baseLogged = currentLogged;
           if (isRealServerData) {
-            const targetMealType = items[0]?.meal_type;
-            baseLogged = currentLogged.filter((f: any) => !(String(f.id || '').startsWith('opt-') && f.meal_type === targetMealType));
+            const targetMealType = items[0]?.meal_type ? String(items[0].meal_type).toLowerCase().trim() : '';
+            baseLogged = currentLogged.filter((f: any) => {
+              if (String(f.id || '').startsWith('opt-') && String(f.meal_type || '').toLowerCase().trim() === targetMealType) {
+                return false;
+              }
+              return true;
+            });
           }
 
           const existingIds = new Set(baseLogged.map((f: any) => f.id));
@@ -869,12 +880,23 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         // Only reconcile quietly with server when confirmed server data has committed!
         // Never call getToday during optimistic update to avoid premature overwrite race condition
         if (isRealServerData) {
+          isInternalUpdateRef.current = true;
           nutritionClientCache.notifyUpdated();
-          try { router.refresh(); } catch {}
           const targetDate = selectedDateRef.current;
           nutritionApi.getToday(targetDate).then(res => {
             if (res && selectedDateRef.current === targetDate) {
-              setData(res);
+              setData((current: any) => {
+                const currentCount = current?.logged_foods?.length || 0;
+                const resCount = res?.logged_foods?.length || 0;
+                if (resCount < currentCount) {
+                  return {
+                    ...res,
+                    logged_foods: current.logged_foods,
+                    consumed: current.consumed,
+                  };
+                }
+                return res;
+              });
               dateCacheRef.current[targetDate] = res;
               nutritionClientCache.set(res.date || targetDate, res);
             }
@@ -1015,13 +1037,14 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const isMealCompleted = (type: string) => {
-    return data.logged_foods?.some((f: any) => f.meal_type === type);
+    const normalizedType = String(type || "").toLowerCase().trim();
+    return data?.logged_foods?.some((f: any) => String(f.meal_type || "").toLowerCase().trim() === normalizedType);
   };
 
   const foodsByMeal = useMemo(() => {
     const acc: Record<string, any[]> = {};
     for (const log of loggedFoods) {
-      const t = log.meal_type || 'snack';
+      const t = String(log.meal_type || 'snack').toLowerCase().trim();
       if (!acc[t]) acc[t] = [];
 
       // Defensive deduplication safeguard: merge duplicate rows by food_id or name
@@ -1709,7 +1732,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           <div className="space-y-3">
             {meals.map((meal: any) => {
               const completed = isMealCompleted(meal.meal_type);
-              const loggedFoods = foodsByMeal[meal.meal_type] || [];
+              const loggedFoods = foodsByMeal[String(meal.meal_type || '').toLowerCase().trim()] || [];
               const plannedFoods = Array.isArray(meal.meal_plan_items) ? meal.meal_plan_items : [];
               const mealCals = Math.round(loggedFoods.reduce((acc: number, f: any) => acc + (Number(f.calories) || 0), 0));
               const mealPro = Math.round(loggedFoods.reduce((acc: number, f: any) => acc + (Number(f.protein) || 0), 0));

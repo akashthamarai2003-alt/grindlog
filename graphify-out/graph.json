@@ -80567,7 +80567,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/fitness/dashboard/todays-nutrition-card.tsx",
-      "source_location": "L270",
+      "source_location": "L279",
       "weight": 1.0
     },
     {
@@ -338508,5 +338508,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "1309deb1313c57b3769ba3e1a45bd81ccb88ee80"
+  "built_at_commit": "f39cd19039a56893e80f4cad49566b0e017ecc2f"
 }

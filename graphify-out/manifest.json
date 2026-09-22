@@ -1056,9 +1056,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-nutrition-card.tsx": {
-    "mtime": 1790058739.3809347,
-    "seen": 1790058885.4146545,
-    "ast_hash": "5dc0ba5f2070c982defaf966d7124bdd",
+    "mtime": 1790059722.9010053,
+    "seen": 1790059905.1496623,
+    "ast_hash": "7d2e8ad5f278244fb4c8928bae380888",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-workout-card.tsx": {
@@ -1158,9 +1158,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/nutrition-view.tsx": {
-    "mtime": 1790058597.3484044,
-    "seen": 1790058885.4210181,
-    "ast_hash": "bfd0276b02ae48e6bab35644769b0de9",
+    "mtime": 1790059644.7393174,
+    "seen": 1790059905.1563869,
+    "ast_hash": "e4a99bdb7771e25069ccaa38fe67d152",
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/swap-meal-modal.tsx": {

@@ -1,179 +1,195 @@
 # Graph Report - web  (2026-09-22)
 
 ## Corpus Check
-- 402 files · ~3,419,066 words
+- 402 files · ~3,419,981 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 14 file(s) not represented in the graph (top: .css 6, (none) 5, .example 1)
 
 ## Summary
-- 6301 nodes · 22374 edges · 162 communities (149 shown, 13 thin omitted)
+- 6305 nodes · 22382 edges · 178 communities (166 shown, 12 thin omitted)
 - Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 2685 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1c2b39ee`
+- Built from commit: `1309deb1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - uc
 - _
-- next
-- index-B23vSfwu.js
+- ref_framer_motion
+- index-CoRpx3FC.js
 - index-LDG-1p68.js
-- (fitness)/support/page.tsx
+- lucide-react
 - Ph
-- dx
+- _c
 - index-Buds9Sm1.js
 - Ph
-- types/index.ts
+- profile-content.tsx
 - st
 - progress-view.tsx
-- index-DtLkR01C.js
+- index-Cq6kntJJ.js
 - constants.ts
-- pr
+- index-DtLkR01C.js
 - Ih
-- Bi
+- uc
 - analyze/route.ts
 - sf
-- createAdminClient
-- af
+- next
+- of
 - dl
 - Ih
-- il
-- he
+- bl
+- $h
 - r
-- ku
-- ie
-- one-rm.ts
-- We
+- .add
+- tt
+- exercise-detail.tsx
+- Ye
 - n
 - wf
 - uc
 - uc
 - l
-- Ot
+- Pt
 - rf
-- n
-- dx
+- of
+- Wh
 - r
 - ai-insight-card.tsx
-- Q
-- fu
+- pr
+- r0
 - generate-draft/route.ts
 - rf
 - l
-- jn
+- Ai
 - dependencies
-- sf
+- access.ts
 - Ih
-- dx
+- index-B23vSfwu.js
 - et
-- of
-- Hl
-- Rs
+- n
+- uc
+- nn
 - Ye
-- r
-- Vo
+- zn
+- We
 - l
 - Ye
 - app/package.json
-- i
-- Ta
-- lf
+- uc
+- fitness-dashboard.tsx
+- je
 - r
-- next-pwa.d.ts
+- ai-insight-service.ts
 - onboarding-flow.tsx
 - le
-- supabase/server.ts
-- Hi
-- We
+- createServerSupabase
+- y0
+- $h
 - F
-- AIPlanAnimation.tsx
+- react
 - Ih
 - .get
 - fitness-notifications.ts
 - uc
-- vc
-- of
-- ee
-- M0
-- bf
-- Ph
+- ku
 - sf
+- ee
+- Wh
+- uc
+- Ph
+- prompts.ts
 - r
 - l
-- B
-- l
+- Ye
+- i
 - r
 - reminders-client.tsx
-- bt
-- of
-- _0
-- r0
-- uc
-- r
-- import-usda-foundation-foods.mjs
 - rf
-- C
+- We
+- users-table-client.tsx
+- _0
+- fu
+- uc
 - l
+- import-usda-foundation-foods.mjs
+- bt
+- sf
+- hl
 - Ih
 - _0
-- rf
-- Wh
-- rf
+- types/index.ts
+- B
+- ee
 - D0
-- c0
-- hl
+- wf
+- l
 - Ph
-- lf
-- zn
+- rf
+- Ye
 - compilerOptions
-- pc
+- Ye
 - r
 - _0
 - plan-setup/page.tsx
 - D0
 - af
 - ve
+- devDependencies
 - nu
 - manifest.json
 - _0
 - yf
 - ee
-- sf
+- of
+- ei
+- r
+- mi
 - fitness-reminders/route.ts
 - l
-- Ye
-- ue
+- Wh
+- wf
+- workout/page.tsx
 - r
 - _0
 - grocery-tab.tsx
 - ff
 - nutrition-view.tsx
-- $h
-- tt
+- r
+- coach-chat.tsx
 - Key Architectural Patterns
 - Technology Stack — GrindLog
 - Critical Test Flows
-- Wo
-- dx
+- af
+- index-BM9U1lvA.js
 - of
 - Concerns, Technical Debt & Watch-Outs — GrindLog
 - External Integrations & Services — GrindLog
 - Product & Technical Requirements — GrindLog
+- springs.ts
+- he
 - progression.ts
+- yf
 - Onboarding Summary — GrindLog
 - Project Charter — GrindLog
-- fitness-dashboard.tsx
+- fitness-shell.tsx
 - coach.ts
 - package.json
+- add-scan/route.ts
 - firebase-messaging-sw.js
 - Data import scripts
-- createServerSupabase
+- nutrition-service.ts
 - rules/graphify.md
 - workflows/graphify.md
+- swap-meal/route.ts
+- workout-heatmap.tsx
+- Uo
 - next-env.d.ts
+- gsap-C8IefbVz.js
+- admin-login/page.tsx
+- log-measurements/page.tsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `Ph()` - 359 edges
@@ -202,507 +218,531 @@
 ## Import Cycles
 - None detected.
 
-## Communities (162 total, 13 thin omitted)
+## Communities (178 total, 12 thin omitted)
 
 ### Community 0 - "uc"
-Cohesion: 0.07
-Nodes (52): _a(), Bt(), bu(), dt(), er(), Fn(), ft(), gc() (+44 more)
+Cohesion: 0.09
+Nodes (35): ds(), er(), Fa(), Fn(), ft(), gr(), Ic(), ir() (+27 more)
 
 ### Community 1 - "_"
 Cohesion: 0.02
-Nodes (127): _, aa, ac(), al(), ao(), As, at, Be() (+119 more)
+Nodes (137): _, aa, ac(), ao(), As, at, Be(), bf() (+129 more)
 
-### Community 2 - "next"
-Cohesion: 0.02
-Nodes (122): loginAdminAction(), exportUserData(), exportWorkoutHistoryCSV(), completeExerciseSetsAction(), completeSetAction(), discardWorkoutSessionAction(), endWorkoutAction(), finishWorkoutSessionAction() (+114 more)
+### Community 2 - "ref_framer_motion"
+Cohesion: 0.05
+Nodes (65): completeSetAction(), discardWorkoutSessionAction(), endWorkoutAction(), finishWorkoutSessionAction(), pauseWorkoutSessionAction(), quickCompleteWorkoutAction(), reopenWorkoutAction(), resetWorkoutTimerAction() (+57 more)
 
-### Community 3 - "index-B23vSfwu.js"
-Cohesion: 0.06
-Nodes (89): app_public_assets_gsap_c8iefbvz_g, app_public_assets_gsap_c8iefbvz_s, $, A, b, c(), D, e() (+81 more)
+### Community 3 - "index-CoRpx3FC.js"
+Cohesion: 0.04
+Nodes (118): app_public_assets_gsap_c8iefbvz_g, app_public_assets_gsap_c8iefbvz_s, $, A, b, c(), D, e() (+110 more)
 
 ### Community 4 - "index-LDG-1p68.js"
 Cohesion: 0.08
-Nodes (41): e(), Ml(), Ol(), tr(), am(), ax(), Bx, Cc() (+33 more)
+Nodes (66): am(), ap(), ax(), Bn(), Bx, Cc(), cx(), de() (+58 more)
 
-### Community 5 - "(fitness)/support/page.tsx"
-Cohesion: 0.26
-Nodes (9): getUserSupportMessages(), submitSupportMessage(), dynamic, FitnessSupportPage(), revalidate, SUPPORT_CATEGORIES, SupportClient(), SupportClientProps (+1 more)
+### Community 5 - "lucide-react"
+Cohesion: 0.04
+Nodes (21): createCouponAction(), toggleCouponStatusAction(), ClientCouponForm(), CopyButton(), AdminCouponsPage(), ToggleCouponButton(), FitnessTableClient(), FitnessUserDetails (+13 more)
 
 ### Community 6 - "Ph"
 Cohesion: 0.04
-Nodes (85): Ph(), as(), Bd(), bh(), Bl(), bm(), br(), cd() (+77 more)
+Nodes (84): Ph(), A0(), Bd(), Bl(), bm(), cd(), cf(), dc() (+76 more)
 
-### Community 7 - "dx"
-Cohesion: 0.08
-Nodes (49): am(), ap(), ax(), Bn, de(), Dn(), dx(), El() (+41 more)
+### Community 7 - "_c"
+Cohesion: 0.06
+Nodes (66): am(), ap(), ax(), Bn, cx(), de(), Dn(), dx() (+58 more)
 
 ### Community 8 - "index-Buds9Sm1.js"
-Cohesion: 0.05
-Nodes (95): $, A, b, c(), D, e(), f, g (+87 more)
+Cohesion: 0.06
+Nodes (84): $, A, b, c(), D, e(), f, g (+76 more)
 
 ### Community 9 - "Ph"
 Cohesion: 0.04
-Nodes (105): Ih(), Ph(), A0(), ai(), ar(), bh(), cd(), Cl() (+97 more)
+Nodes (81): Ph(), A0(), Bd(), Bl(), bm(), cd(), cf(), Cn() (+73 more)
 
-### Community 10 - "types/index.ts"
-Cohesion: 0.04
-Nodes (53): bottomSheetVariants, cardHover, fadeUpVariants, pageVariants, scaleInVariants, springs, staggerContainer, staggerItem (+45 more)
+### Community 10 - "profile-content.tsx"
+Cohesion: 0.06
+Nodes (38): toggleRemindersEnabledAction(), updateFitnessProfilePartialAction(), ForgotPasswordPage(), ResetPasswordPage(), SignInContent(), SignUpContent(), RoadmapPage(), metadata (+30 more)
 
 ### Community 11 - "st"
-Cohesion: 0.15
-Nodes (22): T0(), E0(), E0(), T0(), E0(), E0(), E0(), b0() (+14 more)
+Cohesion: 0.14
+Nodes (27): T0(), E0(), E0(), T0(), E0(), E0(), E0(), E0() (+19 more)
 
 ### Community 12 - "progress-view.tsx"
-Cohesion: 0.05
-Nodes (59): GET(), POST(), POST(), GET(), AchievementsShowcase(), ActivityRecoveryAnalyticsCard(), AIProgressReviewCard(), BodyMeasurementsList() (+51 more)
+Cohesion: 0.08
+Nodes (35): app_assets_images_placeholder_goal, AchievementsShowcase(), ActivityRecoveryAnalyticsCard(), AIProgressReviewCard(), BodyMeasurementsList(), BodyProgressPhotos(), NutritionAnalyticsCard(), getPeriodDescription() (+27 more)
 
-### Community 13 - "index-DtLkR01C.js"
-Cohesion: 0.04
-Nodes (140): $, A, b, c(), D, e(), f, g (+132 more)
+### Community 13 - "index-Cq6kntJJ.js"
+Cohesion: 0.06
+Nodes (84): $, A, b, c(), D, e(), f, g (+76 more)
 
 ### Community 14 - "constants.ts"
 Cohesion: 0.05
-Nodes (89): resetGroceryItemsAction(), toggleGroceryItemPurchasedAction(), GroceryPage(), metadata, GroceryItemCard, GroceryItemCardProps, GroceryView(), GroceryViewProps (+81 more)
+Nodes (88): resetGroceryItemsAction(), toggleGroceryItemPurchasedAction(), GroceryPage(), metadata, GroceryItemCard, GroceryItemCardProps, GroceryView(), GroceryViewProps (+80 more)
 
-### Community 15 - "pr"
+### Community 15 - "index-DtLkR01C.js"
 Cohesion: 0.09
-Nodes (10): du(), Hn(), lr(), lu(), _n, or(), pr, pu() (+2 more)
+Nodes (59): am(), ap(), ax(), Bn(), Bx, Cc(), cx(), de() (+51 more)
 
 ### Community 16 - "Ih"
-Cohesion: 0.04
-Nodes (85): $h(), Ih(), ad(), ai(), an(), as(), bc(), c0() (+77 more)
+Cohesion: 0.05
+Nodes (68): Ih(), ad(), an(), as(), b0(), bc(), bf(), cd() (+60 more)
 
-### Community 17 - "Bi"
-Cohesion: 0.15
-Nodes (20): a0(), Fn(), gr(), i0(), ju(), l0(), ld(), oh() (+12 more)
+### Community 17 - "uc"
+Cohesion: 0.11
+Nodes (29): a0(), er(), Fn(), ft(), gr(), i0(), Ic(), ir() (+21 more)
 
 ### Community 18 - "analyze/route.ts"
 Cohesion: 0.08
-Nodes (36): POST(), POST(), stableStringify(), stripImagePayload(), POST(), AIStartingReportPage(), displayValue(), dynamic (+28 more)
+Nodes (35): POST(), POST(), stableStringify(), stripImagePayload(), POST(), AIStartingReportPage(), displayValue(), dynamic (+27 more)
 
 ### Community 19 - "sf"
-Cohesion: 0.13
-Nodes (25): bc(), Bd(), Bl(), bm(), D(), Dd(), dn(), fh() (+17 more)
+Cohesion: 0.10
+Nodes (37): ao(), bc(), c0(), ci(), Dd(), Dl(), dn(), ee() (+29 more)
 
-### Community 20 - "createAdminClient"
+### Community 20 - "next"
 Cohesion: 0.04
-Nodes (88): createCouponAction(), toggleCouponStatusAction(), getPlanPricesAction(), updatePlanPricesAction(), fetchSupportMessages(), updateMessageStatus(), verifyAdmin(), deleteUserAdminAction() (+80 more)
+Nodes (76): getPlanPricesAction(), updatePlanPricesAction(), fetchSupportMessages(), updateMessageStatus(), verifyAdmin(), checkUserPremiumStatusAction(), createMessageTopUpOrder(), createRazorpayOrder() (+68 more)
 
-### Community 21 - "af"
-Cohesion: 0.21
-Nodes (17): af(), co(), cs(), fs(), hn(), io(), ll(), ms() (+9 more)
+### Community 21 - "of"
+Cohesion: 0.12
+Nodes (30): af(), At(), fs(), hn(), io(), Kl(), ll(), ls() (+22 more)
 
 ### Community 22 - "dl"
-Cohesion: 0.18
-Nodes (6): dl(), ir(), pl, qi, Rn(), sn()
+Cohesion: 0.22
+Nodes (5): dl(), pl, qi, qn(), yu()
 
 ### Community 23 - "Ih"
 Cohesion: 0.04
-Nodes (87): Ih(), bf(), bh(), bm(), Cl(), cm(), cn(), dc() (+79 more)
+Nodes (85): Ih(), A0(), an(), bc(), bf(), bh(), bm(), cd() (+77 more)
 
-### Community 24 - "il"
-Cohesion: 0.06
-Nodes (18): n(), Fn(), hu(), ic(), il, jr, ma(), mu() (+10 more)
+### Community 24 - "bl"
+Cohesion: 0.05
+Nodes (22): bl(), n(), a(), Fn(), hu(), ic(), il, jr (+14 more)
 
-### Community 25 - "he"
-Cohesion: 0.12
-Nodes (27): bs(), bs(), bs(), bs(), $h(), ct(), el(), m() (+19 more)
+### Community 25 - "$h"
+Cohesion: 0.17
+Nodes (22): $h(), ct(), el(), m(), r(), Re(), y(), zt() (+14 more)
 
 ### Community 26 - "r"
-Cohesion: 0.14
-Nodes (42): ai(), b0(), bh(), di(), Do(), eh(), fi(), Fr() (+34 more)
+Cohesion: 0.13
+Nodes (44): ai(), b0(), bu(), di(), Do(), eh(), fi(), Fr() (+36 more)
 
-### Community 27 - "ku"
-Cohesion: 0.06
-Nodes (23): af, Cn(), a(), Gn, Gu(), kl(), ku(), _l() (+15 more)
+### Community 27 - ".add"
+Cohesion: 0.08
+Nodes (14): af, Cn(), Gn, Gu(), kl(), ks(), _l(), me() (+6 more)
 
-### Community 28 - "ie"
-Cohesion: 0.10
-Nodes (31): ao(), At(), bi(), bo(), co(), cs(), fo(), go() (+23 more)
-
-### Community 29 - "one-rm.ts"
-Cohesion: 0.36
-Nodes (5): bestEstimated1RM(), epley1RM(), estimated1RM(), format1RM(), ONE_RM_REP_CAP
-
-### Community 30 - "We"
+### Community 28 - "tt"
 Cohesion: 0.09
-Nodes (32): A0(), an(), as(), bc(), cd(), da(), Es(), Hl() (+24 more)
+Nodes (37): At(), bi(), bo(), ch(), co(), cs(), Fa(), fo() (+29 more)
+
+### Community 29 - "exercise-detail.tsx"
+Cohesion: 0.10
+Nodes (27): completeExerciseSetsAction(), ExerciseBrowser(), ExerciseBrowserContent(), exerciseCache, LibraryExercise, ExerciseAnimationPlayer(), ExerciseAnimationPlayerProps, BODYWEIGHT_KEYWORDS (+19 more)
+
+### Community 30 - "Ye"
+Cohesion: 0.13
+Nodes (28): _a(), ar(), Bt(), da(), dt(), gc(), gh(), jd() (+20 more)
 
 ### Community 31 - "n"
-Cohesion: 0.15
-Nodes (39): $h(), ct(), el(), g(), m(), ot(), Re(), zt() (+31 more)
+Cohesion: 0.12
+Nodes (45): ad(), an(), bh(), bo(), bu(), di(), eh(), fi() (+37 more)
 
 ### Community 32 - "wf"
-Cohesion: 0.18
-Nodes (13): aa(), Ba(), t(), Ei(), hd(), Ii(), ke(), Mi() (+5 more)
+Cohesion: 0.10
+Nodes (26): aa(), ai(), Cl(), cm(), Ei(), ff(), fl(), Gc() (+18 more)
 
 ### Community 33 - "uc"
 Cohesion: 0.10
-Nodes (32): a0(), er(), Fa(), Fn(), ft(), gr(), i0(), Ic() (+24 more)
+Nodes (33): a0(), bu(), er(), Fn(), ft(), gr(), i0(), Ic() (+25 more)
 
 ### Community 34 - "uc"
-Cohesion: 0.11
-Nodes (28): r(), mx(), as(), br(), cr(), Fn(), gr(), ic() (+20 more)
+Cohesion: 0.12
+Nodes (23): as(), br(), cr(), Fn(), gr(), ic(), id(), Il() (+15 more)
 
 ### Community 35 - "l"
-Cohesion: 0.09
-Nodes (48): ar(), ch(), co(), cs(), Ct(), dd(), df(), eo() (+40 more)
+Cohesion: 0.08
+Nodes (52): At(), bi(), bo(), co(), cs(), Ct(), dd(), df() (+44 more)
 
-### Community 36 - "Ot"
-Cohesion: 0.06
-Nodes (97): Xx(), Yx(), ap(), ax(), Bn, cm(), ep(), Fx() (+89 more)
+### Community 36 - "Pt"
+Cohesion: 0.08
+Nodes (48): am(), ap(), ax(), Bn, de(), Dn(), dx(), El() (+40 more)
 
 ### Community 37 - "rf"
 Cohesion: 0.15
-Nodes (27): ad(), af(), fs(), gi(), Kl(), lf(), ls(), ms() (+19 more)
+Nodes (26): ad(), af(), ao(), fs(), Kl(), lf(), ls(), ms() (+18 more)
 
-### Community 38 - "n"
-Cohesion: 0.21
-Nodes (31): ot(), ad(), an(), bu(), di(), eh(), fi(), Gt() (+23 more)
+### Community 38 - "of"
+Cohesion: 0.10
+Nodes (49): ad(), an(), At(), bh(), bo(), di(), eh(), fi() (+41 more)
 
-### Community 39 - "dx"
-Cohesion: 0.11
-Nodes (30): am(), de(), Dn(), dx(), El(), Ex(), $h(), Ha() (+22 more)
+### Community 39 - "Wh"
+Cohesion: 0.27
+Nodes (14): $h(), w(), X(), r(), rx(), Wh(), ct(), el() (+6 more)
 
 ### Community 40 - "r"
-Cohesion: 0.15
-Nodes (40): af(), ai(), bu(), di(), Do(), fi(), ft(), gs() (+32 more)
+Cohesion: 0.18
+Nodes (35): af(), ai(), bu(), di(), Do(), fi(), gs(), Gt() (+27 more)
 
 ### Community 41 - "ai-insight-card.tsx"
 Cohesion: 0.40
 Nodes (3): PlanAdjustment, ProgressReview, WeeklyWorkoutStats
 
-### Community 42 - "Q"
+### Community 42 - "pr"
 Cohesion: 0.05
-Nodes (21): r0(), r0(), r0(), r0(), r0(), r0(), r0(), Ae() (+13 more)
+Nodes (26): r0(), r0(), r0(), r0(), r0(), r0(), r0(), Ae() (+18 more)
 
-### Community 43 - "fu"
-Cohesion: 0.08
-Nodes (32): z0(), z0(), ah(), bm(), Dl(), ea(), $f(), G0() (+24 more)
+### Community 43 - "r0"
+Cohesion: 0.15
+Nodes (20): bm(), ea(), $f(), G0(), Ga(), Gf(), If(), Jr() (+12 more)
 
 ### Community 44 - "generate-draft/route.ts"
-Cohesion: 0.04
-Nodes (129): GET(), approveFitnessPlanAdjustmentAction(), dynamic, GET(), POST(), revalidate, POST(), maxDuration (+121 more)
+Cohesion: 0.05
+Nodes (106): GET(), dynamic, GET(), POST(), revalidate, maxDuration, POST(), GenerateGroceryResponseSchema (+98 more)
 
 ### Community 45 - "rf"
-Cohesion: 0.14
-Nodes (27): ad(), af(), ao(), At(), fs(), gd(), gi(), Kl() (+19 more)
+Cohesion: 0.15
+Nodes (26): af(), ao(), At(), fs(), gd(), Kl(), lf(), ls() (+18 more)
 
 ### Community 46 - "l"
-Cohesion: 0.08
-Nodes (64): ad(), bf(), bi(), bo(), ch(), co(), cs(), eo() (+56 more)
+Cohesion: 0.07
+Nodes (57): bf(), bi(), ch(), co(), cs(), en(), eo(), gd() (+49 more)
 
-### Community 47 - "jn"
+### Community 47 - "Ai"
 Cohesion: 0.12
-Nodes (31): ao(), bi(), bo(), fo(), fs(), gi(), hs(), io() (+23 more)
+Nodes (26): ao(), en(), fs(), gi(), K0(), Kf(), Le(), t() (+18 more)
 
 ### Community 48 - "dependencies"
 Cohesion: 0.05
 Nodes (44): dependencies, @aws-sdk/client-s3, canvas-confetti, clsx, date-fns, dotenv, @ducanh2912/next-pwa, firebase (+36 more)
 
-### Community 49 - "sf"
-Cohesion: 0.22
-Nodes (10): ah(), Fu(), ke(), la(), md(), Mi(), sf(), wd() (+2 more)
+### Community 49 - "access.ts"
+Cohesion: 0.10
+Nodes (24): generateSlug(), POST(), FitnessProPage(), metadata, ProfileSubscriptionProps, PricingCard(), PricingCardProps, ProPageClient() (+16 more)
 
 ### Community 50 - "Ih"
-Cohesion: 0.04
-Nodes (90): Ih(), A0(), an(), as(), bc(), bm(), cd(), Cl() (+82 more)
+Cohesion: 0.05
+Nodes (60): Ih(), bf(), bh(), bm(), Cl(), cm(), cn(), dc() (+52 more)
 
-### Community 51 - "dx"
+### Community 51 - "index-B23vSfwu.js"
 Cohesion: 0.08
-Nodes (49): am(), ap(), ax(), Bn, cm(), de(), Dn(), dx() (+41 more)
+Nodes (65): am(), ap(), ax(), Bn, Bx, cm(), cx(), de() (+57 more)
 
 ### Community 52 - "et"
-Cohesion: 0.07
-Nodes (14): Bl(), Bl(), Bl(), Bl(), rr(), Bl(), rr(), rr() (+6 more)
+Cohesion: 0.08
+Nodes (13): Bl(), Bl(), Bl(), Bl(), rr(), Bl(), rr(), rr() (+5 more)
 
-### Community 53 - "of"
+### Community 53 - "n"
+Cohesion: 0.17
+Nodes (38): ot(), ad(), an(), bo(), di(), eh(), fi(), go() (+30 more)
+
+### Community 54 - "uc"
+Cohesion: 0.15
+Nodes (19): br(), cr(), Fn(), go(), gs(), id(), ju(), Kn() (+11 more)
+
+### Community 55 - "nn"
 Cohesion: 0.10
-Nodes (50): af(), an(), At(), bh(), di(), eh(), fi(), fs() (+42 more)
-
-### Community 54 - "Hl"
-Cohesion: 0.11
-Nodes (27): A0(), ai(), b0(), Cl(), cm(), co(), cs(), Es() (+19 more)
-
-### Community 55 - "Rs"
-Cohesion: 0.13
-Nodes (6): H(), ls(), Rs(), ru, uc(), vs()
+Nodes (9): ar(), en(), ja(), ls(), nn(), ol(), ru, ur() (+1 more)
 
 ### Community 56 - "Ye"
 Cohesion: 0.17
-Nodes (25): hx(), E(), M(), _a(), bd(), dh(), dt(), fh() (+17 more)
+Nodes (23): _a(), bd(), da(), dh(), dt(), fh(), gc(), gh() (+15 more)
 
-### Community 57 - "r"
-Cohesion: 0.12
-Nodes (38): aa(), ar(), Bt(), Da(), dh(), dt(), ea(), ft() (+30 more)
+### Community 57 - "zn"
+Cohesion: 0.18
+Nodes (28): ar(), Da(), dh(), dt(), ea(), gh(), hh(), jd() (+20 more)
 
-### Community 58 - "Vo"
-Cohesion: 0.14
-Nodes (19): bn, dc(), Fo, ks(), li, Lt(), so(), tn() (+11 more)
+### Community 58 - "We"
+Cohesion: 0.09
+Nodes (30): A0(), an(), as(), bc(), cd(), D(), Es(), fh() (+22 more)
 
 ### Community 59 - "l"
 Cohesion: 0.09
-Nodes (51): At(), bi(), bo(), Ct(), dd(), df(), eo(), fo() (+43 more)
+Nodes (43): At(), co(), cs(), dd(), df(), eo(), hf(), hn() (+35 more)
 
 ### Community 60 - "Ye"
-Cohesion: 0.18
-Nodes (24): hx(), E(), M(), _a(), bd(), bh(), dh(), dt() (+16 more)
+Cohesion: 0.20
+Nodes (23): hx(), E(), M(), _a(), bd(), bh(), dh(), dt() (+15 more)
 
 ### Community 61 - "app/package.json"
-Cohesion: 0.03
-Nodes (66): deleteR2File(), deleteScanPhotosFromR2(), isR2Configured, POST(), deleteR2File(), isR2Configured, POST(), config (+58 more)
+Cohesion: 0.04
+Nodes (54): claimSpinDiscountAction(), FitnessBottomNav(), tabs, LuckyWheelModal(), LuckyWheelModalProps, TimePicker12h(), TimePicker12hProps, PlanPricingConfig (+46 more)
 
-### Community 62 - "i"
-Cohesion: 0.17
-Nodes (20): bi(), bo(), fo(), go(), gs(), ho(), hs(), je() (+12 more)
+### Community 62 - "uc"
+Cohesion: 0.09
+Nodes (33): bu(), er(), Fa(), Fn(), ft(), gr(), Ic(), ir() (+25 more)
 
-### Community 63 - "Ta"
-Cohesion: 0.12
-Nodes (23): bf(), ch(), Dl(), ds(), G0(), hn(), jt(), kr() (+15 more)
+### Community 63 - "fitness-dashboard.tsx"
+Cohesion: 0.11
+Nodes (20): getUnreadNotificationsCountAction(), DailyActivityCard(), DailyActivityCardProps, DashboardHeader(), fetchUnreadCount(), DashboardHeaderProps, ExerciseLibraryCard(), FitnessDashboard() (+12 more)
 
-### Community 64 - "lf"
-Cohesion: 0.27
-Nodes (14): ao(), fs(), gi(), lf(), ms(), _o(), os(), qt() (+6 more)
+### Community 64 - "je"
+Cohesion: 0.14
+Nodes (26): ao(), bi(), bo(), Fa(), fo(), fs(), gi(), hs() (+18 more)
 
 ### Community 65 - "r"
-Cohesion: 0.11
-Nodes (51): ai(), b0(), bu(), di(), Do(), eh(), fi(), Fr() (+43 more)
+Cohesion: 0.12
+Nodes (48): ai(), as(), b0(), bu(), di(), Do(), eh(), fi() (+40 more)
+
+### Community 66 - "ai-insight-service.ts"
+Cohesion: 0.12
+Nodes (19): GET(), POST(), POST(), GET(), AiWorkoutCoachService, activeUserGenerations, AIInsightService, DAILY_AI_REVIEW_LIMIT (+11 more)
 
 ### Community 67 - "onboarding-flow.tsx"
 Cohesion: 0.08
-Nodes (22): saveFitnessOnboardingAction(), app_assets_images_placeholder_back, app_assets_images_placeholder_back_female, app_assets_images_placeholder_back_male_fat, app_assets_images_placeholder_front, app_assets_images_placeholder_front_female, app_assets_images_placeholder_front_male_fat, app_assets_images_placeholder_goal (+14 more)
+Nodes (21): saveFitnessOnboardingAction(), app_assets_images_placeholder_back, app_assets_images_placeholder_back_female, app_assets_images_placeholder_back_male_fat, app_assets_images_placeholder_front, app_assets_images_placeholder_front_female, app_assets_images_placeholder_front_male_fat, app_assets_images_placeholder_left (+13 more)
 
 ### Community 68 - "le"
-Cohesion: 0.12
-Nodes (33): bf(), ch(), dc(), dd(), df(), Fu(), gu(), hf() (+25 more)
-
-### Community 69 - "supabase/server.ts"
-Cohesion: 0.03
-Nodes (68): quickCompleteWorkoutAction(), GET(), POST(), generateSlug(), POST(), POST(), PATCH(), POST() (+60 more)
-
-### Community 70 - "Hi"
 Cohesion: 0.10
-Nodes (27): bm(), dc(), ds(), ea(), $f(), G0(), Ga(), Gf() (+19 more)
+Nodes (48): ar(), ch(), Ct(), dd(), df(), eo(), hf(), hn() (+40 more)
 
-### Community 71 - "We"
-Cohesion: 0.09
-Nodes (34): A0(), ai(), bc(), cd(), Cl(), cm(), D(), en() (+26 more)
+### Community 69 - "createServerSupabase"
+Cohesion: 0.03
+Nodes (73): exportUserData(), exportWorkoutHistoryCSV(), dynamic, POST(), POST(), POST(), GET(), GET() (+65 more)
+
+### Community 70 - "y0"
+Cohesion: 0.14
+Nodes (21): bm(), ds(), ea(), $f(), G0(), Ga(), Gf(), If() (+13 more)
+
+### Community 71 - "$h"
+Cohesion: 0.14
+Nodes (25): $h(), ct(), el(), g(), m(), r(), Re(), zt() (+17 more)
 
 ### Community 72 - "F"
-Cohesion: 0.09
-Nodes (4): F, I, k(), q
+Cohesion: 0.07
+Nodes (5): C, F, I, k(), q
 
-### Community 73 - "AIPlanAnimation.tsx"
-Cohesion: 0.13
-Nodes (24): AICharacter(), AICharacterProps, AIPlanAnimation(), AIPlanAnimationProps, DEFAULT_FALLBACK_PROFILE, PILL_CONFIGS, PillConfig, ProfileSummary (+16 more)
+### Community 73 - "react"
+Cohesion: 0.11
+Nodes (25): AICharacter(), AICharacterProps, AIPlanAnimation(), AIPlanAnimationProps, DEFAULT_FALLBACK_PROFILE, PILL_CONFIGS, PillConfig, ProfileSummary (+17 more)
 
 ### Community 74 - "Ih"
-Cohesion: 0.04
-Nodes (82): Ih(), an(), bc(), cd(), Cl(), cn(), co(), cs() (+74 more)
+Cohesion: 0.05
+Nodes (60): Ih(), ad(), ah(), ar(), b0(), bf(), Bt(), cn() (+52 more)
 
 ### Community 75 - ".get"
 Cohesion: 0.19
 Nodes (8): Ct(), ef, oe(), qc(), rf, rl(), sf(), ul()
 
 ### Community 76 - "fitness-notifications.ts"
-Cohesion: 0.17
-Nodes (19): clearAllNotificationsAction(), deriveLinkFromType(), FitnessNotificationItem, formatDateReadable(), getIstDateString(), getOrSyncFitnessNotifications(), getUnreadNotificationsCountAction(), markAllNotificationsAsReadAction() (+11 more)
+Cohesion: 0.22
+Nodes (15): clearAllNotificationsAction(), deriveLinkFromType(), FitnessNotificationItem, formatDateReadable(), getIstDateString(), getOrSyncFitnessNotifications(), markAllNotificationsAsReadAction(), markNotificationAsReadAction() (+7 more)
 
 ### Community 77 - "uc"
-Cohesion: 0.13
-Nodes (22): Bd(), br(), cr(), Fn(), ic(), id(), Ii(), Il() (+14 more)
+Cohesion: 0.20
+Nodes (14): as(), br(), cr(), Fn(), gr(), id(), ju(), l0() (+6 more)
 
-### Community 78 - "vc"
-Cohesion: 0.07
-Nodes (26): zh(), wh(), zh(), wh(), zh(), zh(), wh(), zh() (+18 more)
+### Community 78 - "ku"
+Cohesion: 0.05
+Nodes (35): zh(), wh(), zh(), wh(), zh(), zh(), wh(), zh() (+27 more)
 
-### Community 79 - "of"
-Cohesion: 0.10
-Nodes (38): ao(), At(), c0(), ci(), dn(), ee(), ef(), ha() (+30 more)
+### Community 79 - "sf"
+Cohesion: 0.09
+Nodes (40): ai(), as(), bc(), Cl(), cm(), Dd(), dn(), Es() (+32 more)
 
 ### Community 80 - "ee"
-Cohesion: 0.29
-Nodes (14): c0(), cf(), ci(), ee(), ef(), is(), lo(), ml() (+6 more)
+Cohesion: 0.21
+Nodes (17): c0(), cf(), ci(), ee(), ef(), Fu(), is(), lo() (+9 more)
 
-### Community 81 - "M0"
+### Community 81 - "Wh"
+Cohesion: 0.36
+Nodes (10): $h(), D(), X(), Wh(), ct(), el(), ot(), r() (+2 more)
+
+### Community 82 - "uc"
 Cohesion: 0.11
-Nodes (28): bc(), cd(), Cl(), cm(), D(), Hl(), ht(), hu() (+20 more)
-
-### Community 82 - "bf"
-Cohesion: 0.22
-Nodes (9): b0(), bf(), dc(), gu(), lh(), Nh(), sd(), tc() (+1 more)
+Nodes (28): er(), Fn(), ft(), gr(), Ic(), ir(), Kn(), l0() (+20 more)
 
 ### Community 83 - "Ph"
 Cohesion: 0.04
-Nodes (78): Ph(), A0(), b0(), bm(), Bt(), cf(), Cl(), dc() (+70 more)
+Nodes (75): Ph(), A0(), ai(), b0(), bh(), Bt(), cf(), Cl() (+67 more)
 
-### Community 84 - "sf"
-Cohesion: 0.11
-Nodes (21): ad(), ar(), Bt(), Fu(), ke(), la(), Ln(), md() (+13 more)
+### Community 84 - "prompts.ts"
+Cohesion: 0.16
+Nodes (22): approveFitnessPlanAdjustmentAction(), POST(), GET(), buildFitnessCoachContext(), addUnique(), budgetPlanningReference(), buildCompactPlanProfile(), buildFitnessCoachPrompt() (+14 more)
 
 ### Community 85 - "r"
-Cohesion: 0.08
-Nodes (50): aa(), ar(), bu(), Da(), dh(), dt(), ea(), fh() (+42 more)
+Cohesion: 0.09
+Nodes (46): aa(), ar(), bu(), Da(), dh(), dt(), ea(), fh() (+38 more)
 
 ### Community 86 - "l"
 Cohesion: 0.08
-Nodes (52): ar(), Bt(), ch(), Ct(), dd(), df(), eo(), hf() (+44 more)
+Nodes (44): Ct(), dd(), df(), eo(), Fu(), hf(), hn(), Ii() (+36 more)
 
-### Community 87 - "B"
-Cohesion: 0.09
-Nodes (40): hx(), E(), M(), _a(), bd(), bh(), Bt(), dh() (+32 more)
+### Community 87 - "Ye"
+Cohesion: 0.10
+Nodes (37): _a(), ah(), ar(), bd(), bh(), Bt(), dh(), dt() (+29 more)
 
-### Community 88 - "l"
-Cohesion: 0.09
-Nodes (52): ar(), bi(), bo(), co(), cs(), Ct(), eo(), Fa() (+44 more)
+### Community 88 - "i"
+Cohesion: 0.10
+Nodes (31): bi(), bo(), co(), cs(), fo(), gi(), go(), gs() (+23 more)
 
 ### Community 89 - "r"
-Cohesion: 0.14
-Nodes (43): S, ot(), af(), an(), b0(), bu(), di(), Do() (+35 more)
+Cohesion: 0.11
+Nodes (48): S, ot(), af(), an(), b0(), bh(), bu(), di() (+40 more)
 
 ### Community 90 - "reminders-client.tsx"
-Cohesion: 0.05
-Nodes (47): toggleRemindersEnabledAction(), updateFitnessProfilePartialAction(), updateRemindersAction(), metadata, RemindersPage(), formatDaysSummary(), getEmojiForType(), ReminderItem (+39 more)
+Cohesion: 0.13
+Nodes (21): updateRemindersAction(), formatDaysSummary(), getEmojiForType(), ReminderItem, RemindersClient(), WEEK_DAYS, REMINDER_TYPES, ReminderTypeSheet() (+13 more)
 
-### Community 91 - "bt"
-Cohesion: 0.07
-Nodes (57): c0(), cf(), ci(), dn(), ee(), ef(), Fr(), Fu() (+49 more)
+### Community 91 - "rf"
+Cohesion: 0.08
+Nodes (51): as(), At(), bc(), c0(), cd(), cf(), ci(), dn() (+43 more)
 
-### Community 92 - "of"
-Cohesion: 0.12
-Nodes (30): ao(), At(), c0(), cf(), ci(), ee(), ef(), Fu() (+22 more)
+### Community 92 - "We"
+Cohesion: 0.11
+Nodes (27): an(), bc(), cd(), D(), E0(), Es(), Hl(), I() (+19 more)
+
+### Community 93 - "users-table-client.tsx"
+Cohesion: 0.17
+Nodes (16): deleteUserAdminAction(), extendUserSubscriptionAdminAction(), sendBulkUserEmailAdminAction(), sendUserEmailAdminAction(), DeleteUserButton(), PaymentHistoryModal(), PaymentHistoryModalProps, SendMailModal() (+8 more)
 
 ### Community 94 - "_0"
-Cohesion: 0.22
-Nodes (19): _0(), D0(), dn(), Ei(), fe(), ff(), Fl(), Gl() (+11 more)
+Cohesion: 0.19
+Nodes (22): _0(), D0(), da(), dn(), Ei(), fe(), ff(), Fl() (+14 more)
 
-### Community 95 - "r0"
-Cohesion: 0.13
-Nodes (21): bm(), Dl(), ea(), $f(), G0(), Ga(), Gf(), If() (+13 more)
+### Community 95 - "fu"
+Cohesion: 0.08
+Nodes (33): bm(), Dl(), ds(), ea(), $f(), G0(), Ga(), Gf() (+25 more)
 
 ### Community 96 - "uc"
-Cohesion: 0.17
-Nodes (18): as(), Fn(), gr(), ju(), l0(), ld(), n0(), pr() (+10 more)
+Cohesion: 0.11
+Nodes (30): er(), Fn(), ft(), gr(), Ic(), ir(), Kn(), l0() (+22 more)
 
-### Community 97 - "r"
-Cohesion: 0.09
-Nodes (54): bf(), bi(), ch(), Ct(), eo(), gd(), e(), l() (+46 more)
+### Community 97 - "l"
+Cohesion: 0.08
+Nodes (51): Ba(), t(), bf(), bi(), ch(), co(), cs(), Ct() (+43 more)
 
 ### Community 98 - "import-usda-foundation-foods.mjs"
 Cohesion: 0.11
 Nodes (17): buildRow(), DEFAULT_JSON_PATH, dryRun, findRecord(), IMPORT_MAP, missing, nutrient(), payload (+9 more)
 
-### Community 99 - "rf"
-Cohesion: 0.10
-Nodes (42): _0(), as(), c0(), cf(), ch(), ci(), da(), ds() (+34 more)
+### Community 99 - "bt"
+Cohesion: 0.08
+Nodes (46): _0(), as(), c0(), cf(), ch(), da(), ds(), fh() (+38 more)
 
-### Community 100 - "C"
-Cohesion: 0.15
-Nodes (8): b0(), bf(), dc(), gu(), Kl(), mf(), Ut(), C
+### Community 100 - "sf"
+Cohesion: 0.11
+Nodes (21): ad(), ar(), Bt(), Fu(), ke(), la(), lh(), Ln() (+13 more)
 
-### Community 101 - "l"
-Cohesion: 0.09
-Nodes (46): At(), Ba(), t(), ch(), co(), cs(), Ct(), dd() (+38 more)
+### Community 101 - "hl"
+Cohesion: 0.08
+Nodes (58): ar(), Ba(), t(), bi(), bo(), ch(), co(), cs() (+50 more)
 
 ### Community 102 - "Ih"
 Cohesion: 0.04
-Nodes (78): Ih(), A0(), ad(), an(), as(), bh(), Bt(), cn() (+70 more)
+Nodes (79): Ih(), A0(), ai(), an(), as(), b0(), bc(), bf() (+71 more)
 
 ### Community 103 - "_0"
-Cohesion: 0.23
-Nodes (19): _0(), D0(), dn(), Ei(), fe(), ff(), Fl(), gd() (+11 more)
+Cohesion: 0.20
+Nodes (20): _0(), D0(), dn(), Ei(), fe(), ff(), Fl(), gd() (+12 more)
 
-### Community 104 - "rf"
-Cohesion: 0.12
-Nodes (31): af(), ao(), At(), da(), fs(), gd(), Ia(), Kl() (+23 more)
+### Community 104 - "types/index.ts"
+Cohesion: 0.10
+Nodes (19): AuthState, Achievement, AchievementCategory, AIHabitPlan, AIHabitPlanItem, AISession, AISessionType, Habit (+11 more)
 
-### Community 105 - "Wh"
-Cohesion: 0.15
-Nodes (25): $h(), hx(), C(), E(), bd(), D(), dh(), fh() (+17 more)
+### Community 105 - "B"
+Cohesion: 0.13
+Nodes (29): _a(), ad(), bd(), Bt(), dh(), dt(), gc(), gh() (+21 more)
 
-### Community 106 - "rf"
-Cohesion: 0.14
-Nodes (26): _0(), cf(), ch(), ci(), ee(), ef(), Gl(), is() (+18 more)
+### Community 106 - "ee"
+Cohesion: 0.16
+Nodes (21): _0(), cf(), ci(), ee(), ef(), Fu(), hc(), hi() (+13 more)
 
 ### Community 107 - "D0"
-Cohesion: 0.24
-Nodes (18): D0(), dn(), Ei(), fe(), ff(), Fl(), gd(), Gl() (+10 more)
+Cohesion: 0.25
+Nodes (17): D0(), dn(), Ei(), fe(), ff(), Fl(), gd(), Gn() (+9 more)
 
-### Community 108 - "c0"
-Cohesion: 0.28
-Nodes (16): c0(), D0(), df(), fe(), Gl(), Gn(), Lu(), nt() (+8 more)
+### Community 108 - "wf"
+Cohesion: 0.12
+Nodes (31): c0(), Ct(), D0(), df(), Ei(), fe(), ff(), Gc() (+23 more)
 
-### Community 109 - "hl"
-Cohesion: 0.08
-Nodes (53): Ba(), t(), bi(), bo(), Ct(), eo(), gd(), e() (+45 more)
+### Community 109 - "l"
+Cohesion: 0.09
+Nodes (50): bf(), bi(), bu(), ch(), co(), cs(), Ct(), eo() (+42 more)
 
 ### Community 110 - "Ph"
-Cohesion: 0.05
-Nodes (67): Ph(), bf(), bh(), bm(), Cn(), dc(), Dl(), ds() (+59 more)
+Cohesion: 0.04
+Nodes (73): Ph(), A0(), ai(), bf(), bm(), Cl(), cm(), Cn() (+65 more)
 
-### Community 111 - "lf"
-Cohesion: 0.31
-Nodes (13): ao(), fs(), gi(), lf(), ms(), no(), os(), Rl() (+5 more)
+### Community 111 - "rf"
+Cohesion: 0.11
+Nodes (32): af(), ao(), At(), ch(), cn(), fs(), gi(), Kl() (+24 more)
 
-### Community 112 - "zn"
-Cohesion: 0.16
-Nodes (29): Bt(), Da(), dh(), dt(), ea(), gh(), hh(), jd() (+21 more)
+### Community 112 - "Ye"
+Cohesion: 0.14
+Nodes (31): ar(), Bt(), Da(), dh(), dt(), ea(), ft(), gh() (+23 more)
 
 ### Community 113 - "compilerOptions"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowJs, baseUrl, esModuleInterop, incremental, isolatedModules, jsx, lib (+11 more)
 
-### Community 114 - "pc"
-Cohesion: 0.16
-Nodes (30): bd(), Da(), dh(), dt(), ea(), fh(), gc(), gh() (+22 more)
+### Community 114 - "Ye"
+Cohesion: 0.11
+Nodes (35): aa(), ad(), Bt(), Da(), dt(), ea(), Fu(), gc() (+27 more)
 
 ### Community 115 - "r"
-Cohesion: 0.16
-Nodes (40): af(), bu(), D(), di(), fi(), Fr(), Gt(), lt() (+32 more)
+Cohesion: 0.11
+Nodes (49): $h(), ai(), c0(), D(), di(), fi(), Fr(), ge() (+41 more)
 
 ### Community 116 - "_0"
-Cohesion: 0.12
-Nodes (30): _0(), D0(), df(), Do(), Ei(), en(), fe(), ff() (+22 more)
+Cohesion: 0.28
+Nodes (16): _0(), D0(), df(), fe(), Gl(), Gn(), Lu(), mn() (+8 more)
 
 ### Community 117 - "plan-setup/page.tsx"
-Cohesion: 0.27
-Nodes (11): DietShowcasePreview(), foodRoutineLabel(), getPlanGenerationErrorType(), GroceryShowcasePreview(), planAnchorDate(), PlanGenerationError, PlanSetupPage(), requestPlanDraft() (+3 more)
+Cohesion: 0.24
+Nodes (12): DietShowcasePreview(), foodRoutineLabel(), getPlanGenerationErrorType(), GroceryShowcasePreview(), planAnchorDate(), PlanGenerationError, PlanSetupPage(), requestPlanDraft() (+4 more)
 
 ### Community 118 - "D0"
-Cohesion: 0.25
-Nodes (17): D0(), dn(), Ei(), fe(), ff(), Fl(), gd(), Gn() (+9 more)
+Cohesion: 0.24
+Nodes (18): D0(), dn(), Ei(), fe(), ff(), Fl(), gd(), Gl() (+10 more)
 
 ### Community 119 - "af"
-Cohesion: 0.36
-Nodes (12): af(), fs(), io(), ms(), no(), _o(), os(), qt() (+4 more)
+Cohesion: 0.24
+Nodes (16): af(), fs(), io(), ll(), ms(), no(), _o(), os() (+8 more)
 
 ### Community 120 - "ve"
+Cohesion: 0.12
+Nodes (38): _0(), c0(), cf(), ci(), D0(), Dl(), dn(), ee() (+30 more)
+
+### Community 121 - "devDependencies"
 Cohesion: 0.11
-Nodes (39): _0(), c0(), cf(), ci(), D0(), Dl(), dn(), ee() (+31 more)
+Nodes (17): devDependencies, eslint, eslint-config-next, prettier, prettier-plugin-tailwindcss, @tailwindcss/typography, @types/canvas-confetti, @types/node (+9 more)
 
 ### Community 122 - "nu"
-Cohesion: 0.10
-Nodes (7): eu(), gf, jf(), Mn, nu, qu(), Ss()
+Cohesion: 0.11
+Nodes (9): eu(), gf, ir(), jf(), nu, qu(), Rn(), sn() (+1 more)
 
 ### Community 123 - "manifest.json"
 Cohesion: 0.11
 Nodes (17): background_color, categories, description, dir, display, icons, lang, name (+9 more)
 
 ### Community 124 - "_0"
-Cohesion: 0.30
-Nodes (15): _0(), D0(), Ei(), fe(), ff(), Gn(), Lu(), mn() (+7 more)
+Cohesion: 0.26
+Nodes (17): _0(), D0(), Ei(), fe(), ff(), Gl(), Gn(), Hr() (+9 more)
 
 ### Community 125 - "yf"
-Cohesion: 0.15
-Nodes (10): df(), hc, hf(), kc(), lc, mf(), pf(), ro (+2 more)
+Cohesion: 0.18
+Nodes (7): hc, kc(), lc, mf(), ro, vf(), yf
 
 ### Community 126 - "ee"
-Cohesion: 0.23
-Nodes (16): c0(), cf(), ci(), ee(), ef(), Fu(), is(), lo() (+8 more)
+Cohesion: 0.31
+Nodes (13): c0(), cf(), ci(), ee(), ef(), is(), lo(), ml() (+5 more)
 
-### Community 127 - "sf"
-Cohesion: 0.09
-Nodes (40): _0(), ao(), bc(), Bl(), cd(), ci(), Dd(), Dl() (+32 more)
+### Community 127 - "of"
+Cohesion: 0.07
+Nodes (54): _0(), ao(), At(), bc(), Bl(), bm(), cd(), ci() (+46 more)
+
+### Community 128 - "ei"
+Cohesion: 0.24
+Nodes (16): ao(), c0(), ci(), ee(), ef(), is(), lo(), ml() (+8 more)
+
+### Community 129 - "r"
+Cohesion: 0.22
+Nodes (15): $h(), ct(), el(), ot(), r(), Re(), zt(), Ih() (+7 more)
+
+### Community 130 - "mi"
+Cohesion: 0.23
+Nodes (15): ci(), Cl(), Dl(), ee(), ef(), is(), jt(), lo() (+7 more)
 
 ### Community 131 - "fitness-reminders/route.ts"
 Cohesion: 0.20
@@ -710,39 +750,43 @@ Nodes (12): dynamic, formatTo12Hour(), GET(), getIstDateInfo(), getServiceSupaba
 
 ### Community 132 - "l"
 Cohesion: 0.07
-Nodes (63): ar(), At(), bi(), bo(), co(), cs(), Ct(), dd() (+55 more)
+Nodes (63): bi(), bo(), co(), cs(), Ct(), dd(), df(), eo() (+55 more)
 
-### Community 133 - "Ye"
-Cohesion: 0.09
-Nodes (44): $h(), hx(), C(), E(), _a(), bd(), D(), dh() (+36 more)
+### Community 133 - "Wh"
+Cohesion: 0.15
+Nodes (26): $h(), hx(), C(), E(), bd(), D(), dh(), fh() (+18 more)
 
-### Community 134 - "ue"
-Cohesion: 0.21
-Nodes (12): aa(), ad(), ar(), Bt(), Ln(), nr(), sc(), Sm() (+4 more)
+### Community 134 - "wf"
+Cohesion: 0.14
+Nodes (15): aa(), Bt(), Ei(), hd(), ke(), Ln(), Mi(), Qc() (+7 more)
+
+### Community 135 - "workout/page.tsx"
+Cohesion: 0.20
+Nodes (5): dynamic, AiCoachNote(), AiCoachNoteProps, WeeklyWorkoutView(), WorkoutSkeleton()
 
 ### Community 136 - "r"
-Cohesion: 0.16
-Nodes (39): ai(), b0(), bu(), di(), Do(), eh(), fi(), Fr() (+31 more)
+Cohesion: 0.11
+Nodes (59): af(), ao(), bh(), di(), eh(), fi(), Fr(), fs() (+51 more)
 
 ### Community 137 - "_0"
-Cohesion: 0.37
-Nodes (13): _0(), D0(), df(), fe(), Gn(), Lu(), mn(), nt() (+5 more)
+Cohesion: 0.26
+Nodes (17): _0(), D0(), df(), fe(), Gl(), Gn(), Lu(), mn() (+9 more)
 
 ### Community 138 - "grocery-tab.tsx"
 Cohesion: 0.32
 Nodes (11): dailyQuantityLabel(), foodKey(), formatMoney(), formatQuantity(), getBudgetReference(), GroceryItem, GroceryTab(), isCoreMeal() (+3 more)
 
 ### Community 140 - "nutrition-view.tsx"
-Cohesion: 0.07
-Nodes (36): TodaysGoalsCard(), TodaysGoalsCardProps, FoodAvatar(), FoodAvatarProps, Food, FOOD_CATEGORIES, formatMealType(), LogFoodModal() (+28 more)
+Cohesion: 0.06
+Nodes (41): TodaysGoalsCard(), TodaysGoalsCardProps, formatFoodItem(), TodaysNutritionCard(), TodaysNutritionCardProps, FoodAvatar(), FoodAvatarProps, Food (+33 more)
 
-### Community 141 - "$h"
+### Community 141 - "r"
 Cohesion: 0.14
-Nodes (25): $h(), ct(), el(), g(), m(), r(), Re(), zt() (+17 more)
+Nodes (29): $h(), ct(), el(), g(), m(), ot(), r(), Re() (+21 more)
 
-### Community 142 - "tt"
-Cohesion: 0.23
-Nodes (19): ui(), bf(), mf(), _o(), Pa(), qs(), ui(), vs() (+11 more)
+### Community 142 - "coach-chat.tsx"
+Cohesion: 0.19
+Nodes (9): CoachChat(), CoachInput(), CoachInputProps, CoachLoading(), CoachMessage(), CoachMessageProps, CoachSuggestions(), CoachSuggestionsProps (+1 more)
 
 ### Community 143 - "Key Architectural Patterns"
 Cohesion: 0.22
@@ -756,13 +800,13 @@ Nodes (8): AI & LLM Integrations, Core Runtime & Framework, Data Layer & State, 
 Cohesion: 0.22
 Nodes (8): 1. Tab Navigation & Instant Switching, 2. Dual-Theme Verification (Dark vs. White), 3. Workout Logging & State Persistence, 4. Nutrition & Calorie Tracking, 5. Authentication & Subscription Guard Rails, Critical Test Flows, Testing & Verification Guide — GrindLog, Verification Commands
 
-### Community 146 - "Wo"
-Cohesion: 0.10
-Nodes (28): _a(), ai(), as(), cm(), Ct(), ds(), Es(), ff() (+20 more)
+### Community 146 - "af"
+Cohesion: 0.15
+Nodes (24): _a(), af(), ds(), fs(), G0(), hn(), Hr(), io() (+16 more)
 
-### Community 147 - "dx"
-Cohesion: 0.07
-Nodes (62): am(), ap(), ax(), Bn, cx(), de(), Dn(), dx() (+54 more)
+### Community 147 - "index-BM9U1lvA.js"
+Cohesion: 0.08
+Nodes (64): am(), ap(), ax(), Bn, Bx, cx(), de(), Dn() (+56 more)
 
 ### Community 149 - "Concerns, Technical Debt & Watch-Outs — GrindLog"
 Cohesion: 0.29
@@ -776,6 +820,18 @@ Nodes (7): 1. Supabase (Database, Auth, Storage), 2. Razorpay (Payment Gateway),
 Cohesion: 0.29
 Nodes (6): 1. Performance & Latency Requirements, 2. Workout & Fitness Requirements, 3. Nutrition & Diet Requirements, 4. Design & Mobile Experience Requirements, 5. Security & Billing Requirements, Product & Technical Requirements — GrindLog
 
+### Community 152 - "springs.ts"
+Cohesion: 0.20
+Nodes (8): bottomSheetVariants, cardHover, fadeUpVariants, pageVariants, scaleInVariants, springs, staggerContainer, staggerItem
+
+### Community 153 - "he"
+Cohesion: 0.18
+Nodes (11): bs(), bs(), bs(), bs(), bs(), bs(), bs(), bs() (+3 more)
+
+### Community 155 - "yf"
+Cohesion: 0.33
+Nodes (11): ch(), hf(), hn(), jf(), Kt(), mn(), Na(), pf() (+3 more)
+
 ### Community 156 - "Onboarding Summary — GrindLog"
 Cohesion: 0.40
 Nodes (4): Artifacts Created:, Next Steps, Onboarding Complete, Onboarding Summary — GrindLog
@@ -784,9 +840,9 @@ Nodes (4): Artifacts Created:, Next Steps, Onboarding Complete, Onboarding Summa
 Cohesion: 0.40
 Nodes (4): Core Modules, Project Charter — GrindLog, Success Metrics, Vision & Purpose
 
-### Community 158 - "fitness-dashboard.tsx"
-Cohesion: 0.04
-Nodes (51): NutritionLoading(), dynamic, ProfileLoading(), ProgressLoading(), FitnessChatbot(), Message, BottomNav(), DailyActivityCard() (+43 more)
+### Community 158 - "fitness-shell.tsx"
+Cohesion: 0.06
+Nodes (33): NutritionLoading(), ProfileLoading(), ProgressLoading(), FitnessChatbot(), Message, BottomNav(), DashboardSkeleton(), TodaysWorkoutCard() (+25 more)
 
 ### Community 159 - "coach.ts"
 Cohesion: 0.50
@@ -796,24 +852,52 @@ Nodes (3): CoachMessage, CoachResponse, CoachSession
 Cohesion: 0.50
 Nodes (3): dependencies, framer-motion, framer-motion
 
-### Community 164 - "createServerSupabase"
-Cohesion: 0.04
-Nodes (79): dynamic, POST(), POST(), POST(), GET(), POST(), GET(), MEASUREMENT_LIMITS (+71 more)
+### Community 161 - "add-scan/route.ts"
+Cohesion: 0.27
+Nodes (8): deleteR2File(), deleteScanPhotosFromR2(), isR2Configured, POST(), deleteR2File(), isR2Configured, POST(), @aws-sdk/client-s3
+
+### Community 164 - "nutrition-service.ts"
+Cohesion: 0.07
+Nodes (42): GET(), POST(), DELETE(), DELETE(), normalizeMealType(), POST(), VALID_MEAL_TYPES, GET() (+34 more)
+
+### Community 168 - "swap-meal/route.ts"
+Cohesion: 0.44
+Nodes (9): ALLOWED_MEAL_TYPES, isDietCompatible(), isFoodAvailable(), isFoodBlocked(), matchesTerm(), normalize(), POST(), profileTerms() (+1 more)
+
+### Community 169 - "workout-heatmap.tsx"
+Cohesion: 0.24
+Nodes (9): CellData, DAY_LABELS, formatDate(), getIntensityClass(), HeatmapCell, HeatmapProps, INTENSITY_COLORS, MONTH_LABELS (+1 more)
+
+### Community 170 - "Uo"
+Cohesion: 0.24
+Nodes (10): Ba(), t(), Cn(), I(), Ii(), js(), oh(), Pl() (+2 more)
+
+### Community 175 - "gsap-C8IefbVz.js"
+Cohesion: 0.38
+Nodes (4): e(), Ml(), Ol(), tr()
+
+### Community 176 - "admin-login/page.tsx"
+Cohesion: 0.70
+Nodes (3): loginAdminAction(), AdminLogin(), handleSubmit()
+
+### Community 177 - "log-measurements/page.tsx"
+Cohesion: 0.40
+Nodes (3): FIELD_CONFIGS, FieldConfig, LogMeasurementsPage()
 
 ## Knowledge Gaps
-- **526 isolated node(s):** `pageVariants`, `fadeUpVariants`, `scaleInVariants`, `staggerContainer`, `staggerItem` (+521 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 875 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **529 isolated node(s):** `pageVariants`, `fadeUpVariants`, `scaleInVariants`, `staggerContainer`, `staggerItem` (+524 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 878 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `_` connect `_` to `uc`, `index-B23vSfwu.js`, `index-LDG-1p68.js`, `Ye`, `Ph`, `index-Buds9Sm1.js`, `ff`, `st`, `index-DtLkR01C.js`, `tt`, `pr`, `Bi`, `Wo`, `of`, `dl`, `Ih`, `il`, `he`, `ku`, `ie`, `uc`, `uc`, `Ot`, `Q`, `fu`, `jn`, `et`, `of`, `Rs`, `Vo`, `Ta`, `r`, `le`, `Hi`, `Ih`, `.get`, `uc`, `vc`, `Ph`, `bt`, `uc`, `rf`, `l`, `Ih`, `_0`, `hl`, `zn`, `pc`, `ve`, `nu`, `yf`, `sf`?**
-  _High betweenness centrality (0.107) - this node is a cross-community bridge._
-- **Why does `Ih()` connect `Ih` to `_`, `index-B23vSfwu.js`, `st`, `tt`, `Bi`, `il`, `he`, `Ot`, `dx`, `r`, `fu`, `et`, `l`, `Ye`, `lf`, `vc`, `bf`, `Ph`, `sf`, `B`, `rf`, `D0`?**
-  _High betweenness centrality (0.078) - this node is a cross-community bridge._
-- **Why does `Ih()` connect `Ih` to `_`, `index-B23vSfwu.js`, `r`, `st`, `tt`, `Bi`, `dx`, `il`, `he`, `l`, `Q`, `fu`, `et`, `Ye`, `i`, `Hi`, `Ih`, `vc`, `M0`, `Ph`, `B`, `rf`, `ve`?**
+- **Why does `_` connect `_` to `uc`, `ei`, `mi`, `index-CoRpx3FC.js`, `index-LDG-1p68.js`, `Ph`, `_c`, `index-Buds9Sm1.js`, `Ph`, `ff`, `st`, `index-Cq6kntJJ.js`, `index-DtLkR01C.js`, `Ih`, `uc`, `index-BM9U1lvA.js`, `sf`, `of`, `dl`, `of`, `bl`, `$h`, `he`, `.add`, `tt`, `uc`, `uc`, `Pt`, `pr`, `Uo`, `Ai`, `index-B23vSfwu.js`, `et`, `uc`, `nn`, `zn`, `uc`, `le`, `.get`, `ku`, `sf`, `uc`, `Ph`, `rf`, `_0`, `fu`, `uc`, `bt`, `hl`, `Ih`, `af`, `ve`, `nu`, `yf`, `of`?**
+  _High betweenness centrality (0.106) - this node is a cross-community bridge._
+- **Why does `Ih()` connect `Ih` to `_`, `index-CoRpx3FC.js`, `r`, `st`, `Ih`, `index-BM9U1lvA.js`, `bl`, `he`, `yf`, `l`, `pr`, `Uo`, `et`, `Ye`, `uc`, `y0`, `ku`, `Wh`, `fu`, `sf`, `B`, `ve`?**
   _High betweenness centrality (0.068) - this node is a cross-community bridge._
+- **Why does `Ih()` connect `Ih` to `_`, `mi`, `index-CoRpx3FC.js`, `st`, `Ih`, `uc`, `bl`, `he`, `Wh`, `r`, `Uo`, `r0`, `et`, `l`, `Ye`, `je`, `ku`, `We`, `bt`, `B`, `D0`?**
+  _High betweenness centrality (0.065) - this node is a cross-community bridge._
 - **Are the 28 inferred relationships involving `Ph()` (e.g. with `bi()` and `bo()`) actually correct?**
   _`Ph()` has 28 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 27 inferred relationships involving `Ph()` (e.g. with `bi()` and `bo()`) actually correct?**
