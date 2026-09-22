@@ -1,5 +1,5 @@
-import { WorkoutSkeleton } from "@/components/fitness/workout/workout-skeleton";
+import { InstantWorkoutLoader } from "@/components/fitness/workout/instant-workout-loader";
 
 export default function WorkoutLoading() {
-  return <WorkoutSkeleton />;
+  return <InstantWorkoutLoader />;
 }

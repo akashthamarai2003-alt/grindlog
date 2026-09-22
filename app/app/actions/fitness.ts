@@ -13,6 +13,8 @@ import {
 } from "@/types/fitness/workout";
 import { WorkoutService } from "@/lib/services/fitness/workout-service";
 import { revalidatePath } from "next/cache";
+import { invalidateProfilePageCache } from "@/lib/services/profile/profile-cache";
+import { invalidateWorkoutPageCache } from "@/lib/services/workout/workout-cache";
 
 export async function saveFitnessOnboardingAction(payload: Partial<OnboardingData>) {
   const supabase = await createServerSupabase();
@@ -149,6 +151,8 @@ export async function updateFitnessProfilePartialAction(payload: Record<string, 
     return { success: false, error: "Failed to update details" };
   }
 
+  invalidateProfilePageCache(user.id);
+
   // Also log to fitness_os_body_metrics if weight or tape measurements updated
   if (updates.weight || updates.waist_cm || updates.chest_cm || updates.arm_cm || updates.thigh_cm) {
     const metricRecord: Record<string, any> = {
@@ -256,6 +260,7 @@ export async function startWorkoutSessionAction(payload: { workoutId: string }) 
     .eq("id", workoutId);
 
   revalidatePath(`/workout/${workoutId}`);
+  invalidateWorkoutPageCache(user.id);
   return { success: true, data: { sessionId: newSession.id } };
 }
 
@@ -312,6 +317,7 @@ export async function completeSetAction(payload: { setId: string; actualReps?: n
   }
 
   revalidatePath(`/workout/${exercise.workout_id}`);
+  invalidateWorkoutPageCache(user.id);
   return { success: true };
 }
 
@@ -493,6 +499,7 @@ export async function finishWorkoutSessionAction(payload: { sessionId: string })
   revalidatePath(`/workout`);
   revalidatePath(`/workout/${session.workout_id}`);
   revalidatePath(`/workout/history`);
+  invalidateWorkoutPageCache(user.id);
   
   return { success: true };
 }
@@ -573,6 +580,7 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
   revalidatePath("/workout");
   revalidatePath(`/workout/${workoutId}`);
   revalidatePath("/dashboard");
+  invalidateWorkoutPageCache(user.id);
 
   return { success: true };
 }
@@ -622,6 +630,7 @@ export async function reopenWorkoutAction(payload: { workoutId: string }) {
   revalidatePath("/workout");
   revalidatePath(`/workout/${workoutId}`);
   revalidatePath("/dashboard");
+  invalidateWorkoutPageCache(user.id);
 
   return { success: true };
 }
@@ -758,6 +767,7 @@ export async function quickCompleteWorkoutAction(payload: { workoutId: string })
   revalidatePath(`/workout/${workoutId}`);
   revalidatePath(`/workout/${workoutId}/summary`);
   revalidatePath("/dashboard");
+  invalidateWorkoutPageCache(user.id);
 
   return { success: true };
 }
@@ -820,6 +830,8 @@ export async function completeExerciseSetsAction(payload: { exerciseId: string }
         .in("id", uncompletedIds);
     }
   }
+
+  invalidateWorkoutPageCache(user.id);
 
   return { success: true };
 }

@@ -5,12 +5,11 @@ import { usePathname } from "next/navigation";
 import { BottomNav } from "./dashboard/bottom-nav";
 import { FitnessChatbot } from "./chatbot/fitness-chatbot";
 import { NavigationProvider, useInstantNav } from "./navigation-context";
-import { DashboardSkeleton } from "./dashboard/dashboard-skeleton";
 import { InstantDashboardLoader } from "./dashboard/instant-dashboard-loader";
-import { WorkoutSkeleton } from "./workout/workout-skeleton";
-import NutritionLoading from "@/app/(fitness)/nutrition/loading";
-import ProgressLoading from "@/app/(fitness)/progress/loading";
-import ProfileLoading from "@/app/(fitness)/profile/loading";
+import { InstantWorkoutLoader } from "./workout/instant-workout-loader";
+import { InstantNutritionLoader } from "./nutrition/instant-nutrition-loader";
+import { InstantProgressLoader } from "./progress/instant-progress-loader";
+import { InstantProfileLoader } from "./profile/instant-profile-loader";
 
 // Primary root tab pages supported by the native warm-tab container
 const MAIN_PAGES = new Set([
@@ -25,14 +24,14 @@ const MAIN_PAGES = new Set([
 function getTabSkeleton(tab: string) {
   switch (tab) {
     case "/workout":
-      return <WorkoutSkeleton />;
+      return <InstantWorkoutLoader />;
     case "/nutrition":
     case "/diet":
-      return <NutritionLoading />;
+      return <InstantNutritionLoader />;
     case "/progress":
-      return <ProgressLoading />;
+      return <InstantProgressLoader />;
     case "/profile":
-      return <ProfileLoading />;
+      return <InstantProfileLoader />;
     case "/":
     default:
       return <InstantDashboardLoader />;
@@ -58,6 +57,19 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
 
   const scrollPositions = useRef<Record<string, number>>({});
   const prevTabRef = useRef<string>(cleanPath);
+
+  // Client-side warm mounting: Pre-populate unvisited main tabs with instant snapshot loaders
+  // so tapping any tab in the bottom nav switches instantly in 0.00ms
+  useEffect(() => {
+    setTabCache((prev) => ({
+      "/": prev["/"] || <InstantDashboardLoader />,
+      "/workout": prev["/workout"] || <InstantWorkoutLoader />,
+      "/nutrition": prev["/nutrition"] || <InstantNutritionLoader />,
+      "/progress": prev["/progress"] || <InstantProgressLoader />,
+      "/profile": prev["/profile"] || <InstantProfileLoader />,
+      ...prev,
+    }));
+  }, []);
 
   // Active tab determination: if a navigation is in-flight to a main tab, switch immediately at 0ms!
   const targetTab = navigatingTo && MAIN_PAGES.has(navigatingTo) ? navigatingTo : cleanPath;
@@ -132,7 +144,7 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
               );
             })}
 
-            {/* If the active tab hasn't finished initial server render yet, show its skeleton in 0ms */}
+            {/* If the active tab hasn't finished initial server render yet, show its instant loader in 0ms */}
             {!tabCache[activeTab] && (
               <div className="animate-in fade-in duration-100">
                 {getTabSkeleton(activeTab)}
