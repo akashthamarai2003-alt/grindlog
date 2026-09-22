@@ -12,8 +12,11 @@ import {
 } from "@/lib/services/fitness-ai-generation-guard";
 import { FITNESS_REPORT_MODEL } from "@/lib/services/openai/client";
 import {
+  BodyScanAnalysis,
   BODY_SCAN_RESPONSE_INSTRUCTIONS,
   parseBodyScanAnalysis,
+  analyzeBodyScanImages,
+  BodyScanImageInput,
 } from "@/lib/fitness/body-scan";
 
 function stableStringify(value: unknown): string {
@@ -106,18 +109,16 @@ export async function POST(req: Request) {
       });
     }
 
-    // Optional: Extract images for Gemini Vision
-    const images: Array<{ label: string; inlineData: { data: string; mimeType: string } }> = [];
+    // Optional: Extract images for AI Vision
+    const images: BodyScanImageInput[] = [];
     const addImage = (label: string, base64Str?: string) => {
       if (base64Str && base64Str.startsWith("data:image")) {
-        const [meta, data] = base64Str.split(",");
-        const mimeType = meta.split(";")[0].split(":")[1];
+        const [meta, rawData] = base64Str.split(",");
+        const mimeType = meta.split(";")[0].split(":")[1] || "image/jpeg";
         images.push({
           label,
-          inlineData: {
-            data,
-            mimeType,
-          },
+          data: rawData,
+          mimeType,
         });
       }
     };
@@ -194,64 +195,18 @@ export async function POST(req: Request) {
       FITNESS_REPORT_MODEL,
     );
 
-    // 1. Task: Gemini Vision (if images uploaded)
+    // 1. Task: AI Vision Analysis (Google Gemini with safety overrides + OpenAI Vision fallback)
+    let structuredBodyScan: BodyScanAnalysis | null = null;
     if (images.length > 0) {
-      console.log(`Sending ${images.length} images to Google Gemini Vision...`);
-      try {
-        const { GoogleGenAI } = await import("@google/genai");
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error("GEMINI_API_KEY missing");
-
-        const gemini = new GoogleGenAI({ apiKey });
-        const models = [
-          process.env.GEMINI_VISION_MODEL?.trim(),
-          "gemini-3.6-flash",
-          "gemini-3.8-flash",
-          "gemini-flash-latest",
-        ].filter((model, index, list): model is string => Boolean(model && list.indexOf(model) === index));
-
-        let response: Awaited<ReturnType<typeof gemini.models.generateContent>> | null = null;
-        let lastModelError: unknown;
-        for (const model of models) {
-          try {
-            response = await gemini.models.generateContent({
-              model,
-              contents: [
-                {
-                  role: "user",
-                  parts: [
-                    {
-                      text: `You are a cautious fitness coach. Analyse the labelled images below. The current-body views show the user from different angles; the optional goal-physique image is only a reference for direction. Keep the response concise, encouraging, and practical.\n${BODY_SCAN_RESPONSE_INSTRUCTIONS}`,
-                    },
-                    ...images.flatMap((image) => [
-                      { text: image.label },
-                      { inlineData: image.inlineData },
-                    ]),
-                  ],
-                },
-              ],
-              config: {
-                temperature: 0.2,
-                responseMimeType: "application/json",
-              },
-            });
-            if (response?.text) break;
-          } catch (modelError) {
-            lastModelError = modelError;
-            console.warn(`Gemini model ${model} failed; trying fallback...`, modelError);
-          }
-        }
-        if (!response?.text) throw lastModelError || new Error("Gemini returned no response.");
-
-        const bodyScan = parseBodyScanAnalysis(response.text);
-        if (!bodyScan) {
-          throw new Error("Gemini returned an invalid body-scan analysis.");
-        }
-        visualObservations = JSON.stringify(bodyScan);
+      console.log(`[Analyze] Analyzing ${images.length} body-scan images with AI vision...`);
+      const visionResult = await analyzeBodyScanImages(images);
+      if (visionResult.success && visionResult.analysis) {
+        structuredBodyScan = visionResult.analysis;
+        visualObservations = visionResult.rawText || JSON.stringify(visionResult.analysis);
         visionAnalysisSucceeded = true;
-        console.log("Gemini Vision Observations:", visualObservations);
-      } catch (err) {
-        console.error("Gemini Vision API Error:", err);
+        console.log(`[Analyze] Vision analysis succeeded via ${visionResult.provider}!`);
+      } else {
+        console.warn("[Analyze] Vision analysis failed:", visionResult.error);
       }
     }
 
@@ -277,8 +232,10 @@ export async function POST(req: Request) {
       };
     }
 
-    // Gemini is the source of truth for photo observations. Merge into strategy.
-    const structuredBodyScan = parseBodyScanAnalysis(visualObservations);
+    // Photo observations are merged into strategy
+    if (!structuredBodyScan && visualObservations) {
+      structuredBodyScan = parseBodyScanAnalysis(visualObservations);
+    }
     if (structuredBodyScan) {
       aiStrategy.body_scan_insights = {
         has_body_scan: true,

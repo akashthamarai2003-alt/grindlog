@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
-import { GoogleGenAI } from "@google/genai";
 import {
-  BODY_SCAN_RESPONSE_INSTRUCTIONS,
   parseBodyScanAnalysis,
+  analyzeBodyScanImages,
+  BodyScanImageInput,
 } from "@/lib/fitness/body-scan";
 import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
 
@@ -23,21 +23,13 @@ export async function POST(req: NextRequest) {
     }
 
     const { images } = await req.json();
-    if (!images || Object.keys(images).length === 0) {
-      return NextResponse.json({ success: false, error: "No images provided" }, { status: 400 });
+
+    if (!images || typeof images !== "object") {
+      return NextResponse.json({ success: false, error: "Images payload missing or invalid" }, { status: 400 });
     }
 
-    // 2. Ensure Gemini API key is present
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ success: false, error: "GEMINI_API_KEY is not configured on the server." }, { status: 500 });
-    }
-
-    // 3. Construct Gemini Payload
-    const geminiClient = new GoogleGenAI({ apiKey });
-
-    // Format base64 images for Gemini
-    const imageParts: any[] = [];
+    // Prepare images for AI Vision
+    const imageInputs: BodyScanImageInput[] = [];
     const imageLabels: Record<string, string> = {
       front: "CURRENT BODY — FRONT VIEW",
       side: "CURRENT BODY — SIDE VIEW",
@@ -46,61 +38,27 @@ export async function POST(req: NextRequest) {
     };
     for (const [view, base64Str] of Object.entries(images as Record<string, string>)) {
       if (base64Str && base64Str.startsWith('data:image')) {
-        const [meta, data] = base64Str.split(',');
-        const mimeType = meta.split(';')[0].split(':')[1];
-        imageParts.push({ text: imageLabels[view] || `CURRENT BODY — ${view.toUpperCase()} VIEW` });
-        imageParts.push({
-          inlineData: {
-            data,
-            mimeType
-          }
+        const [meta, rawData] = base64Str.split(',');
+        const mimeType = meta.split(';')[0].split(':')[1] || "image/jpeg";
+        imageInputs.push({
+          label: imageLabels[view] || `CURRENT BODY — ${view.toUpperCase()} VIEW`,
+          data: rawData,
+          mimeType,
         });
       }
     }
 
-    if (imageParts.length === 0) {
+    if (imageInputs.length === 0) {
       return NextResponse.json({ success: false, error: "Could not process uploaded images" }, { status: 400 });
     }
 
-    const promptText = `You are a cautious fitness coach. Analyse the labelled images below. The current-body views show the user from different angles; the optional goal-physique image is only a reference for direction. Keep the response concise, encouraging, and practical.\n${BODY_SCAN_RESPONSE_INSTRUCTIONS}`;
-
-    // 5. Call Gemini Vision Server-Side
-    const models = [
-      process.env.GEMINI_VISION_MODEL?.trim(),
-      "gemini-3.6-flash",
-      "gemini-3.8-flash",
-      "gemini-flash-latest",
-    ].filter((model, index, list): model is string => Boolean(model && list.indexOf(model) === index));
-    let response: Awaited<ReturnType<typeof geminiClient.models.generateContent>> | null = null;
-    let lastModelError: unknown;
-    for (const model of models) {
-      try {
-        response = await geminiClient.models.generateContent({
-          model,
-          contents: [{
-            role: "user",
-            parts: [
-              { text: promptText },
-              ...imageParts
-            ]
-          }],
-          config: {
-            temperature: 0.1,
-            responseMimeType: "application/json",
-          },
-        });
-        if (response?.text) break;
-      } catch (modelError) {
-        lastModelError = modelError;
-        console.warn(`Gemini scanner model ${model} failed; trying fallback...`, modelError);
-      }
+    // Call dual-AI Vision pipeline (Gemini with safety overrides + OpenAI Vision fallback)
+    const visionResult = await analyzeBodyScanImages(imageInputs);
+    if (!visionResult.success || !visionResult.analysis) {
+      throw new Error(visionResult.error || "Vision models were unable to analyze the body photos");
     }
-    if (!response?.text) throw lastModelError || new Error("Gemini returned no response.");
 
-    const analysis = parseBodyScanAnalysis(response.text);
-    if (!analysis) {
-      throw new Error("Gemini returned an invalid body-scan analysis.");
-    }
+    const analysis = visionResult.analysis;
 
     // 5. Save to Database (Text Analysis ONLY)
     const adminClient = createAdminClient();

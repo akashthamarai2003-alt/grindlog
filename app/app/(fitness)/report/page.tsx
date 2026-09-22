@@ -44,27 +44,31 @@ export default async function AIStartingReportPage() {
       .maybeSingle(),
   ]);
 
-  // Fallback to admin client if user client did not find completed profile
+  // Fallback to admin client if user client did not find completed profile or scan record
   // (guards against any cookie/session replication latency after onboarding completion)
-  if (!profile || !profile.onboarding_completed) {
+  if (!profile || !profile.onboarding_completed || !scan) {
     const admin = createAdminClient();
     const [{ data: adminProfile }, { data: adminScan }] = await Promise.all([
-      admin
-        .from("fitness_os_profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle(),
-      admin
-        .from("fitness_os_scans")
-        .select("gemini_analysis")
-        .eq("user_id", user.id)
-        .maybeSingle(),
+      !profile || !profile.onboarding_completed
+        ? admin
+            .from("fitness_os_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      !scan
+        ? admin
+            .from("fitness_os_scans")
+            .select("gemini_analysis")
+            .eq("user_id", user.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
     if (adminProfile) {
       profile = adminProfile;
     }
     if (adminScan) {
-      scan = adminScan || scan;
+      scan = adminScan;
     }
   }
 
