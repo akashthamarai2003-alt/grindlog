@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/page.tsx": {
-    "mtime": 1790058526.6446397,
-    "seen": 1790058885.3512225,
-    "ast_hash": "7dd4ca5c3a8bc08d98374a1275e2cd39",
+    "mtime": 1790061393.6401594,
+    "seen": 1790061639.858109,
+    "ast_hash": "b873b2883bcee940fd0a4d633e54b657",
     "semantic_hash": ""
   },
   "app/app/(fitness)/payment/page.tsx": {
@@ -1002,9 +1002,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/fitness-dashboard.tsx": {
-    "mtime": 1790054444.607977,
-    "seen": 1790055063.9964373,
-    "ast_hash": "8a213f7b71d768cbb267f9802079f2a6",
+    "mtime": 1790061341.994935,
+    "seen": 1790061639.90236,
+    "ast_hash": "73b50f2df83d2e863fac9b25b44bbbcc",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/fitness-header.tsx": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-nutrition-card.tsx": {
-    "mtime": 1790058739.3809347,
-    "seen": 1790058885.4146545,
-    "ast_hash": "5dc0ba5f2070c982defaf966d7124bdd",
+    "mtime": 1790059722.9010053,
+    "seen": 1790059905.1496623,
+    "ast_hash": "7d2e8ad5f278244fb4c8928bae380888",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-workout-card.tsx": {
@@ -1158,9 +1158,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/nutrition-view.tsx": {
-    "mtime": 1790058597.3484044,
-    "seen": 1790058885.4210181,
-    "ast_hash": "bfd0276b02ae48e6bab35644769b0de9",
+    "mtime": 1790059644.7393174,
+    "seen": 1790059905.1563869,
+    "ast_hash": "e4a99bdb7771e25069ccaa38fe67d152",
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/swap-meal-modal.tsx": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/nutrition-service.ts": {
-    "mtime": 1790054444.7045043,
-    "seen": 1790055064.0296457,
-    "ast_hash": "10ccb9f9fd60d4e964388986623396b0",
+    "mtime": 1790061151.9719727,
+    "seen": 1790061639.9411333,
+    "ast_hash": "fa169bcbe8273b3a983b20165a7e367e",
     "semantic_hash": ""
   },
   "app/lib/services/openai/client.ts": {
@@ -2907,6 +2907,12 @@
     "mtime": 1789982106.51385,
     "seen": 1789982418.3615708,
     "ast_hash": "60fe077e6070d1f325aa48be2ddb7fb5",
+    "semantic_hash": ""
+  },
+  "app/components/fitness/dashboard/fitness-dashboard-bottom.tsx": {
+    "mtime": 1790061173.7430618,
+    "seen": 1790061639.9023535,
+    "ast_hash": "211e1cf508a8aa17e59a1f9f20d58a84",
     "semantic_hash": ""
   }
 }

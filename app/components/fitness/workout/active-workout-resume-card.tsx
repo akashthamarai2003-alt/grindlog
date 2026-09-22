@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { discardWorkoutSessionAction, endWorkoutAction } from "@/app/actions/fitness";
 import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
+import { workoutClientCache } from "@/lib/api/workout-cache";
 
 interface ActiveWorkoutResumeCardProps {
   workoutId: string;
@@ -30,6 +31,8 @@ export function ActiveWorkoutResumeCard({
     setIsDiscarding(true);
     try {
       clearWorkoutTimer(workoutId);
+      workoutClientCache.clear();
+      workoutClientCache.notifyUpdated();
       const res = await discardWorkoutSessionAction({ workoutId });
       if (!res.success) throw new Error(res.error || "Failed to discard workout");
       toast.success("Workout session discarded.");
@@ -45,6 +48,8 @@ export function ActiveWorkoutResumeCard({
     setIsEnding(true);
     try {
       clearWorkoutTimer(workoutId);
+      workoutClientCache.clear();
+      workoutClientCache.notifyUpdated();
       const res = await endWorkoutAction({ workoutId });
       if (!res.success) throw new Error(res.error || "Failed to end workout");
       router.push(`/workout/${workoutId}/summary`);

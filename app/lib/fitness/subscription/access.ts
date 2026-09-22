@@ -35,10 +35,25 @@ export const getFitnessSubscription = cache(async (userId: string): Promise<Fitn
   return data || null;
 });
 
+const subscriptionStateCache = new Map<string, { state: FitnessSubscriptionState; timestamp: number }>();
+
+export function invalidateFitnessSubscriptionCache(userId?: string) {
+  if (userId) {
+    subscriptionStateCache.delete(userId);
+  } else {
+    subscriptionStateCache.clear();
+  }
+}
+
 /**
- * Gets full subscription state including 48-hour grace period calculations (memoized per request).
+ * Gets full subscription state including 48-hour grace period calculations (memoized per request and cached for 60s).
  */
 export const getFitnessSubscriptionState = cache(async (userId: string): Promise<FitnessSubscriptionState> => {
+  const cached = subscriptionStateCache.get(userId);
+  if (cached && (Date.now() - cached.timestamp < 60_000)) {
+    return cached.state;
+  }
+
   const sub = await getFitnessSubscription(userId);
   const now = Date.now();
 
@@ -78,9 +93,11 @@ export const getFitnessSubscriptionState = cache(async (userId: string): Promise
     }
   }
 
+  let result: FitnessSubscriptionState;
+
   // Free user with no past paid subscriptions
   if (!candidatePlanKey) {
-    return {
+    result = {
       status: "free",
       plan: FITNESS_PLANS.free,
       daysRemaining: 0,
@@ -90,12 +107,10 @@ export const getFitnessSubscriptionState = cache(async (userId: string): Promise
       isExpired: false,
       expiresAt: null,
     };
-  }
-
-  // Lifetime plan
-  if (!expiresAt) {
+  } else if (!expiresAt) {
+    // Lifetime plan
     const planConfig = FITNESS_PLANS[candidatePlanKey] || FITNESS_PLANS.pro;
-    return {
+    result = {
       status: "active",
       plan: planConfig,
       daysRemaining: 9999,
@@ -105,52 +120,53 @@ export const getFitnessSubscriptionState = cache(async (userId: string): Promise
       isExpired: false,
       expiresAt: null,
     };
+  } else {
+    const expiryTime = new Date(expiresAt).getTime();
+    const planConfig = FITNESS_PLANS[candidatePlanKey] || FITNESS_PLANS.pro;
+
+    // Active status: current period end is in the future
+    if (expiryTime > now) {
+      const msRemaining = expiryTime - now;
+      result = {
+        status: "active",
+        plan: planConfig,
+        daysRemaining: Math.ceil(msRemaining / (1000 * 60 * 60 * 24)),
+        hoursRemaining: Math.ceil(msRemaining / (1000 * 60 * 60)),
+        graceHoursRemaining: 0,
+        isGracePeriod: false,
+        isExpired: false,
+        expiresAt,
+      };
+    } else if (expiryTime + GRACE_PERIOD_MS > now) {
+      // 48-Hour Grace Period status: expired but within 48-hour buffer window
+      const graceMsRemaining = (expiryTime + GRACE_PERIOD_MS) - now;
+      result = {
+        status: "grace_period",
+        plan: planConfig,
+        daysRemaining: 0,
+        hoursRemaining: 0,
+        graceHoursRemaining: Math.max(1, Math.ceil(graceMsRemaining / (1000 * 60 * 60))),
+        isGracePeriod: true,
+        isExpired: false,
+        expiresAt,
+      };
+    } else {
+      // Expired beyond 48-hour grace period
+      result = {
+        status: "expired",
+        plan: FITNESS_PLANS.free,
+        daysRemaining: 0,
+        hoursRemaining: 0,
+        graceHoursRemaining: 0,
+        isGracePeriod: false,
+        isExpired: true,
+        expiresAt,
+      };
+    }
   }
 
-  const expiryTime = new Date(expiresAt).getTime();
-  const planConfig = FITNESS_PLANS[candidatePlanKey] || FITNESS_PLANS.pro;
-
-  // Active status: current period end is in the future
-  if (expiryTime > now) {
-    const msRemaining = expiryTime - now;
-    return {
-      status: "active",
-      plan: planConfig,
-      daysRemaining: Math.ceil(msRemaining / (1000 * 60 * 60 * 24)),
-      hoursRemaining: Math.ceil(msRemaining / (1000 * 60 * 60)),
-      graceHoursRemaining: 0,
-      isGracePeriod: false,
-      isExpired: false,
-      expiresAt,
-    };
-  }
-
-  // 48-Hour Grace Period status: expired but within 48-hour buffer window
-  if (expiryTime + GRACE_PERIOD_MS > now) {
-    const graceMsRemaining = (expiryTime + GRACE_PERIOD_MS) - now;
-    return {
-      status: "grace_period",
-      plan: planConfig, // Keeps paid features open during gym session
-      daysRemaining: 0,
-      hoursRemaining: 0,
-      graceHoursRemaining: Math.max(1, Math.ceil(graceMsRemaining / (1000 * 60 * 60))),
-      isGracePeriod: true,
-      isExpired: false,
-      expiresAt,
-    };
-  }
-
-  // Expired beyond 48-hour grace period
-  return {
-    status: "expired",
-    plan: FITNESS_PLANS.free,
-    daysRemaining: 0,
-    hoursRemaining: 0,
-    graceHoursRemaining: 0,
-    isGracePeriod: false,
-    isExpired: true,
-    expiresAt,
-  };
+  subscriptionStateCache.set(userId, { state: result, timestamp: Date.now() });
+  return result;
 });
 
 /**
