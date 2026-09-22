@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createAdminClient } from "@/lib/services/supabase/admin";
 import { OnboardingSchema, OnboardingData } from "@/types/fitness/onboarding";
 import { 
   StartWorkoutSchema, 
@@ -534,8 +535,10 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
   if (!parsed.success) return { success: false, error: "Invalid parameters" };
   const { workoutId, sessionId } = parsed.data;
 
+  const admin = createAdminClient();
+
   // 1. Verify workout ownership
-  const { data: workout, error: workoutErr } = await supabase
+  const { data: workout, error: workoutErr } = await admin
     .from("fitness_os_workouts")
     .select("id, user_id, status")
     .eq("id", workoutId)
@@ -548,7 +551,7 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
 
   // 2. Cancel sessions for this workout
   if (sessionId) {
-    await supabase
+    await admin
       .from("fitness_os_workout_sessions")
       .update({
         status: "cancelled",
@@ -557,7 +560,7 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
       .eq("id", sessionId)
       .eq("user_id", user.id);
   } else {
-    await supabase
+    await admin
       .from("fitness_os_workout_sessions")
       .update({
         status: "cancelled",
@@ -569,7 +572,7 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
   }
 
   // 3. Reset workout status back to scheduled and clear started_at
-  await supabase
+  await admin
     .from("fitness_os_workouts")
     .update({
       status: "scheduled",
@@ -580,14 +583,14 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
     .eq("id", workoutId);
 
   // 4. Reset completed sets for this workout so user can train cleanly later
-  const { data: exercises } = await supabase
+  const { data: exercises } = await admin
     .from("fitness_os_exercises")
     .select("id")
     .eq("workout_id", workoutId);
 
   if (exercises && exercises.length > 0) {
     const exerciseIds = exercises.map(e => e.id);
-    await supabase
+    await admin
       .from("fitness_os_sets")
       .update({
         completed: false,

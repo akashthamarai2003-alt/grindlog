@@ -39,7 +39,7 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
     const handleUpdate = () => {
       const cached = workoutClientCache.get();
       if (cached) {
-        setData(cached);
+        setData({ ...cached });
       }
     };
 

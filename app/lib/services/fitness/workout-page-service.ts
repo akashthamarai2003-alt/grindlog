@@ -8,18 +8,26 @@ interface CachedEntry {
   timestamp: number;
 }
 
-const workoutServerCache = new Map<string, CachedEntry>();
+// Use globalThis to ensure cache is shared across all Next.js server actions and RSC bundles in the process
+const getGlobalWorkoutCache = (): Map<string, CachedEntry> => {
+  if (!(globalThis as any).__grindlog_workout_server_cache) {
+    (globalThis as any).__grindlog_workout_server_cache = new Map<string, CachedEntry>();
+  }
+  return (globalThis as any).__grindlog_workout_server_cache;
+};
 
 export function invalidateWorkoutServerCache(userId?: string) {
+  const cache = getGlobalWorkoutCache();
   if (userId) {
-    workoutServerCache.delete(userId);
+    cache.delete(userId);
   } else {
-    workoutServerCache.clear();
+    cache.clear();
   }
 }
 
 export async function getWorkoutPageData(userId: string): Promise<WorkoutPageData> {
-  const cached = workoutServerCache.get(userId);
+  const cache = getGlobalWorkoutCache();
+  const cached = cache.get(userId);
   const now = Date.now();
 
   // 30-second server cache: return in 0ms if visited recently
@@ -268,7 +276,7 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
   };
 
   // Cache result for 30s
-  workoutServerCache.set(userId, { data: result, timestamp: Date.now() });
+  cache.set(userId, { data: result, timestamp: Date.now() });
 
   return result;
 }

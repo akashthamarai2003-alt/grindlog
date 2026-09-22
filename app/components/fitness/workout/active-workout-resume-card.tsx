@@ -31,14 +31,32 @@ export function ActiveWorkoutResumeCard({
     setIsDiscarding(true);
     try {
       clearWorkoutTimer(workoutId);
-      workoutClientCache.clear();
-      workoutClientCache.notifyUpdated();
+
+      // Optimistic instant UI update: mark workout as scheduled so card swaps in 0ms
+      const cached = workoutClientCache.get();
+      if (cached && cached.effectiveWorkout) {
+        const updated = {
+          ...cached,
+          effectiveWorkout: {
+            ...cached.effectiveWorkout,
+            status: "scheduled",
+            completedExercises: 0,
+          }
+        };
+        workoutClientCache.set(updated);
+        workoutClientCache.notifyUpdated();
+      } else {
+        workoutClientCache.clear();
+        workoutClientCache.notifyUpdated();
+      }
+
       const res = await discardWorkoutSessionAction({ workoutId });
       if (!res.success) throw new Error(res.error || "Failed to discard workout");
       toast.success("Workout session discarded.");
       router.refresh();
     } catch (e: any) {
       toast.error(e.message || "Failed to discard workout");
+    } finally {
       setIsDiscarding(false);
     }
   };
@@ -55,6 +73,7 @@ export function ActiveWorkoutResumeCard({
       router.push(`/workout/${workoutId}/summary`);
     } catch (e: any) {
       toast.error(e.message || "Failed to end workout");
+    } finally {
       setIsEnding(false);
     }
   };
