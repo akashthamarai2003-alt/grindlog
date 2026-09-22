@@ -2,6 +2,7 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { redirect } from "next/navigation";
 import { OnboardingFlow } from "@/components/fitness/onboarding/onboarding-flow";
+import { hasGeneratedStartingReport } from "@/lib/services/fitness/starting-report-service";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,11 @@ export default async function OnboardingPage({
     }
   }
 
-  // Returning users who already completed onboarding belong on their dashboard
+  // Returning users who already completed onboarding belong on their report (if unviewed) or dashboard
   if (profile?.onboarding_completed && !isEditing) {
+    if (!profile?.ai_strategy?.starting_report_viewed && hasGeneratedStartingReport(profile?.ai_strategy)) {
+      redirect("/report");
+    }
     redirect("/");
   }
 

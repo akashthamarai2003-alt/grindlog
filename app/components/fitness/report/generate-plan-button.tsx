@@ -12,7 +12,7 @@ export function GeneratePlanButton() {
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
-    router.prefetch("/payment?returnTo=/plan-setup&intent=generate_plan");
+    router.prefetch("/payment?returnTo=/&intent=generate_plan");
     router.prefetch("/plan-setup");
     checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((res) => {
       setIsSubscribed(Boolean(res));
@@ -27,7 +27,7 @@ export function GeneratePlanButton() {
   const handleAnimationComplete = () => {
     const targetUrl = isSubscribed
       ? "/plan-setup"
-      : "/payment?returnTo=/plan-setup&intent=generate_plan";
+      : "/payment?returnTo=/&intent=generate_plan";
     router.push(targetUrl);
   };
 

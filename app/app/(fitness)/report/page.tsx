@@ -127,6 +127,25 @@ export default async function AIStartingReportPage() {
       </div>
     );
   }
+
+  // Mark starting report as viewed in fitness_os_profiles so the user can subsequently visit the dashboard
+  if (!aiStrategy.starting_report_viewed) {
+    try {
+      const admin = createAdminClient();
+      await admin
+        .from("fitness_os_profiles")
+        .update({
+          ai_strategy: {
+            ...aiStrategy,
+            starting_report_viewed: true,
+            starting_report_viewed_at: new Date().toISOString(),
+          },
+        })
+        .eq("user_id", user.id);
+    } catch (err: any) {
+      console.warn("Failed to mark starting report as viewed:", err);
+    }
+  }
   const focusAreas = Array.isArray(aiStrategy.focus_areas) ? aiStrategy.focus_areas : [];
   const onboardingData = isRecord(profile.onboarding_data) ? profile.onboarding_data : {};
   const reportBodyScanInsights = isRecord(aiStrategy.body_scan_insights)
@@ -560,8 +579,14 @@ export default async function AIStartingReportPage() {
         </div>
 
         {/* Continue Button */}
-        <div className="pt-4">
+        <div className="pt-4 space-y-3">
           <GeneratePlanButton />
+          <Link
+            href="/"
+            className="block text-center text-xs font-semibold text-gray-400 hover:text-[#ADFF00] transition-colors py-2"
+          >
+            Explore Dashboard in Preview Mode &rarr;
+          </Link>
         </div>
       </div>
     </div>

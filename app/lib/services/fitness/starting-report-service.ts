@@ -44,6 +44,8 @@ const StartingReportSchema = z.object({
     safety_verdict: z.string().min(2),
     medical_focus_areas: z.array(z.string()).max(3),
   }),
+  starting_report_viewed: z.boolean().optional(),
+  starting_report_viewed_at: z.string().optional(),
 });
 
 export type StartingReport = z.infer<typeof StartingReportSchema>;
