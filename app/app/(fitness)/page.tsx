@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
+import { FitnessDashboardBottom } from "@/components/fitness/dashboard/fitness-dashboard-bottom";
 import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
 import { Suspense } from 'react';
 import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
@@ -12,8 +13,10 @@ import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-async function DashboardContent({ searchParams }: { searchParams?: { date?: string } }) {
-  const supabase = await createServerSupabase();
+// ─────────────────────────────────────────────────────────────────────────────
+// Above-fold: profile, plan, workouts, subscription — fast queries (~400-600ms)
+// ─────────────────────────────────────────────────────────────────────────────
+async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: string } }) {
   const { data: { user } } = await getCachedUser();
 
   if (!user) {
@@ -28,7 +31,6 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       ? requestedDateStr
       : todayDateStr;
 
-  // Compute active week range (Monday to Sunday) for weekly consistency & calendar
   const activeDate = parseISO(targetDateStr);
   const weekStart = startOfWeek(activeDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(activeDate, { weekStartsOn: 1 });
@@ -37,6 +39,7 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
 
   const admin = createAdminClient();
 
+  // Only fast queries here — no nutrition (moved to DashboardBelow)
   const [
     { data: profile },
     { data: plan },
@@ -44,7 +47,6 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     { data: weekWorkouts },
     { data: activityLog },
     { data: sleepLog },
-    todayNutrition,
     subscriptionState,
   ] = await Promise.all([
     admin.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
@@ -59,34 +61,25 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     admin.from("fitness_os_workouts").select("id, workout_date, status, name").eq("user_id", user.id).gte("workout_date", weekStartStr).lte("workout_date", weekEndStr).order("created_at", { ascending: false }),
     admin.from("fitness_os_activity_logs").select("steps").eq("user_id", user.id).eq("activity_date", targetDateStr).maybeSingle(),
     admin.from("fitness_os_sleep_logs").select("duration_hours").eq("user_id", user.id).eq("sleep_date", targetDateStr).maybeSingle(),
-    NutritionService.getTodaySummaryAndDetails(user.id, targetDateStr).catch((err) => {
-      console.warn("Failed to fetch today nutrition for dashboard:", err?.message || err);
-      return null;
-    }),
     getFitnessSubscriptionState(user.id),
   ]);
-  const userProfile = profile;
-  const userPlan = plan;
+
+  if (!profile?.onboarding_completed) {
+    redirect("/onboarding");
+  }
 
   const subscriptionPlan = subscriptionState?.plan;
   const isFreeUser = !subscriptionPlan || subscriptionPlan.id === "free";
 
-  if (!userProfile?.onboarding_completed) {
-    redirect("/onboarding");
+  if (!isFreeUser && !plan) {
+    redirect("/plan-setup");
   }
 
   const workout = Array.isArray(workoutsForDate)
     ? (workoutsForDate.find((w: any) => w.status === "completed") || workoutsForDate[0] || null)
     : workoutsForDate;
 
-  // For paid users who haven't reviewed/locked in their plan yet, direct them to /plan-setup
-  if (!isFreeUser && !userPlan) {
-    redirect("/plan-setup");
-  }
-
-  // Free users: STRICTLY zero AI API requests and zero plan creation in database!
-  // Instead, supply static in-memory preview split and nutrition targets.
-  const effectivePlan = userPlan || (isFreeUser ? SAMPLE_FREE_PLAN : null);
+  const effectivePlan = plan || (isFreeUser ? SAMPLE_FREE_PLAN : null);
   const effectiveTodayWorkout = workout || (isFreeUser ? SAMPLE_FREE_WORKOUT : null);
   const effectiveWeekWorkouts = (weekWorkouts && weekWorkouts.length > 0)
     ? weekWorkouts
@@ -97,56 +90,17 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
     dayNumber = Math.max(1, differenceInCalendarDays(new Date(), new Date(effectivePlan.created_at)) + 1);
   }
 
+  const premiumLevel = isFreeUser ? "free" : subscriptionPlan?.id === "pro" ? "pro" : "core";
+
   const dailyActivity = subscriptionPlan?.id === "pro"
     ? {
         steps: Number(activityLog?.steps) || null,
         sleep_hours: Number(sleepLog?.duration_hours) || null,
-        water_liters: todayNutrition?.consumed?.water_ml != null
-          ? Number(todayNutrition.consumed.water_ml) / 1000
-          : null,
+        water_liters: null, // will be filled in by bottom section via client cache
       }
     : isFreeUser
-    ? {
-        steps: 4200,
-        sleep_hours: 7.5,
-        water_liters: 1.8,
-      }
+    ? { steps: 4200, sleep_hours: 7.5, water_liters: 1.8 }
     : undefined;
-
-  const baseNutrition = effectivePlan?.plan_data?.nutrition;
-  const effectiveNutrition = todayNutrition
-    ? {
-        ...baseNutrition,
-        ...todayNutrition,
-        daily_calories: todayNutrition.targets?.calories ?? baseNutrition?.daily_calories,
-        protein_grams: todayNutrition.targets?.protein ?? baseNutrition?.protein_grams,
-        carbs_grams: todayNutrition.targets?.carbs ?? baseNutrition?.carbs_grams,
-        fat_grams: todayNutrition.targets?.fat ?? baseNutrition?.fat_grams,
-      }
-    : baseNutrition
-    ? {
-        ...baseNutrition,
-        consumed: { calories: 0, protein: 0, carbs: 0, fat: 0, water_ml: 0 },
-        logged_foods: [],
-        meals: (baseNutrition.meals || []).map((m: any, idx: number, arr: any[]) => {
-          let derivedType = m.meal_type;
-          if (!derivedType) {
-            const ctx = `${m.meal_name || m.name || ''} ${m.time_of_day || ''} ${m.prep_instructions || ''}`.toLowerCase();
-            if (ctx.includes('breakfast') || ctx.includes('waking') || ctx.includes('morning')) derivedType = 'breakfast';
-            else if (ctx.includes('lunch') || ctx.includes('midday') || ctx.includes('noon')) derivedType = 'lunch';
-            else if (ctx.includes('dinner') || ctx.includes('night') || ctx.includes('supper') || ctx.includes('evening')) derivedType = 'dinner';
-            else if (ctx.includes('pre')) derivedType = 'pre_workout';
-            else if (ctx.includes('post')) derivedType = 'post_workout';
-            else if (arr.length === 3) derivedType = idx === 0 ? 'breakfast' : idx === 1 ? 'lunch' : 'dinner';
-            else derivedType = idx === 0 ? 'breakfast' : idx === arr.length - 1 ? 'dinner' : 'lunch';
-          }
-          return {
-            ...m,
-            meal_type: derivedType,
-          };
-        }),
-      }
-    : null;
 
   return (
     <FitnessDashboard
@@ -156,17 +110,130 @@ async function DashboardContent({ searchParams }: { searchParams?: { date?: stri
       todayWorkout={effectiveTodayWorkout}
       weekWorkouts={effectiveWeekWorkouts}
       hasPlan={!!effectivePlan}
-      nutrition={effectiveNutrition}
+      nutrition={effectivePlan?.plan_data?.nutrition || null}
       lifestyle={effectivePlan?.plan_data?.lifestyle}
       dailyActivity={dailyActivity}
       dayNumber={dayNumber}
-      premiumLevel={isFreeUser ? "free" : subscriptionPlan?.id === "pro" ? "pro" : "core"}
+      premiumLevel={premiumLevel}
       targetDateStr={targetDateStr}
       subscriptionState={subscriptionState}
+      bottomSlot={
+        // Nutrition, activity, goals stream in below — wrapped in its own Suspense
+        <Suspense fallback={<NutritionSkeleton />}>
+          <DashboardBelow
+            userId={user.id}
+            targetDateStr={targetDateStr}
+            lifestyle={effectivePlan?.plan_data?.lifestyle}
+            workoutCompleted={effectiveTodayWorkout?.status === "completed"}
+            premiumLevel={premiumLevel}
+            isFreeUser={isFreeUser}
+            subscriptionPlanId={subscriptionPlan?.id}
+            activityLog={activityLog}
+            sleepLog={sleepLog}
+          />
+        </Suspense>
+      }
     />
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Nutrition skeleton — shown while DashboardBelow is loading
+// ─────────────────────────────────────────────────────────────────────────────
+function NutritionSkeleton() {
+  return (
+    <div className="flex flex-col gap-5 animate-pulse">
+      {/* Nutrition card skeleton */}
+      <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="space-y-1.5">
+            <div className="h-3 w-16 rounded bg-white/5" />
+            <div className="h-5 w-32 rounded-lg bg-white/10" />
+          </div>
+          <div className="h-9 w-20 rounded-full bg-white/5 border border-white/10" />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white/5 rounded-2xl p-3 space-y-2">
+              <div className="h-3 w-12 rounded bg-white/5 mx-auto" />
+              <div className="h-5 w-10 rounded-lg bg-white/10 mx-auto" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-12 w-full rounded-2xl bg-white/5" />
+          ))}
+        </div>
+      </div>
+      {/* Activity + Goals card skeletons */}
+      <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 h-32 bg-white/5" />
+      <div className="bg-[#121E12] border border-[#1A2619] rounded-3xl p-5 h-40 bg-white/5" />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Below-fold: nutrition data only — uses lightweight getDashboardSummary
+// Streams in ~600-1200ms after the above-fold is already visible
+// ─────────────────────────────────────────────────────────────────────────────
+async function DashboardBelow({
+  userId,
+  targetDateStr,
+  lifestyle,
+  workoutCompleted,
+  premiumLevel,
+  isFreeUser,
+  subscriptionPlanId,
+  activityLog,
+  sleepLog,
+}: {
+  userId: string;
+  targetDateStr: string;
+  lifestyle?: any;
+  workoutCompleted?: boolean;
+  premiumLevel: string;
+  isFreeUser: boolean;
+  subscriptionPlanId?: string;
+  activityLog?: { steps: number } | null;
+  sleepLog?: { duration_hours: number } | null;
+}) {
+  const todayNutrition = await NutritionService.getDashboardSummary(userId, targetDateStr).catch((err) => {
+    console.warn("Failed to fetch dashboard nutrition summary:", err?.message || err);
+    return null;
+  });
+
+  const dailyActivity = subscriptionPlanId === "pro"
+    ? {
+        steps: Number(activityLog?.steps) || null,
+        sleep_hours: Number(sleepLog?.duration_hours) || null,
+        water_liters: todayNutrition?.consumed?.water_ml != null
+          ? Number(todayNutrition.consumed.water_ml) / 1000
+          : null,
+      }
+    : isFreeUser
+    ? { steps: 4200, sleep_hours: 7.5, water_liters: 1.8 }
+    : undefined;
+
+  const effectiveNutrition = todayNutrition
+    ? todayNutrition
+    : null;
+
+  return (
+    <FitnessDashboardBottom
+      nutrition={effectiveNutrition}
+      lifestyle={lifestyle}
+      dailyActivity={dailyActivity}
+      workoutCompleted={workoutCompleted}
+      premiumLevel={premiumLevel}
+      targetDateStr={targetDateStr}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Root page — outer skeleton shown only until above-fold is ready (~400ms)
+// ─────────────────────────────────────────────────────────────────────────────
 export default async function FitnessHome({
   searchParams,
 }: {
@@ -186,7 +253,7 @@ export default async function FitnessHome({
           <DashboardSkeleton />
         </div>
       }>
-        <DashboardContent searchParams={params} />
+        <DashboardAboveFold searchParams={params} />
       </Suspense>
     </div>
   );

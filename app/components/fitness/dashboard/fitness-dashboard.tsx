@@ -9,9 +9,6 @@ import { DashboardHeader } from "./dashboard-header";
 import { HorizontalCalendar } from "./horizontal-calendar";
 import { TodaysWorkoutCard } from "./todays-workout-card";
 import { TransformationCard } from "./transformation-card";
-import { TodaysNutritionCard } from "./todays-nutrition-card";
-import { DailyActivityCard } from "./daily-activity-card";
-import { TodaysGoalsCard } from "./todays-goals-card";
 import { ExerciseLibraryCard } from "./exercise-library-card";
 import { ProNutritionGenerationCard } from "./pro-nutrition-generation-card";
 import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
@@ -33,6 +30,8 @@ interface FitnessDashboardProps {
   premiumLevel?: string;
   targetDateStr?: string;
   subscriptionState?: FitnessSubscriptionState;
+  /** Streaming bottom section (nutrition, activity, goals cards) injected from server */
+  bottomSlot?: React.ReactNode;
 }
 
 export function FitnessDashboard({
@@ -49,6 +48,7 @@ export function FitnessDashboard({
   premiumLevel = "core",
   targetDateStr,
   subscriptionState,
+  bottomSlot,
 }: FitnessDashboardProps) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showCheckinModal, setShowCheckinModal] = useState(false);
@@ -159,14 +159,8 @@ export function FitnessDashboard({
         {/* Exercise Library Entry */}
         <ExerciseLibraryCard />
 
-        {/* 6. Today's Nutrition Card */}
-        <TodaysNutritionCard nutrition={nutrition} premiumLevel={premiumLevel} targetDateStr={targetDateStr} />
-
-        {/* 7. Daily Activity Card */}
-        <DailyActivityCard lifestyle={lifestyle} activity={dailyActivity} activityDate={targetDateStr} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} />
-
-        {/* 8. Today's Goals Card */}
-        <TodaysGoalsCard lifestyle={lifestyle} activity={dailyActivity} nutrition={nutrition} workoutCompleted={todayWorkout?.status === 'completed'} premiumLevel={premiumLevel} targetDateStr={targetDateStr} />
+        {/* Below-fold: Nutrition, Activity, Goals — streamed in separately for fast initial paint */}
+        {bottomSlot}
 
       </main>
 
@@ -187,3 +181,4 @@ export function FitnessDashboard({
     </div>
   );
 }
+

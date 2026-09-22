@@ -3695,4 +3695,214 @@ function scaleServingSize(servingSize: string, scale: number): string {
         : (fitProfile?.food_type || fitProfile?.diet_preference || undefined)
     };
   }
+
+  /**
+   * Lightweight version of getTodaySummaryAndDetails for the dashboard.
+   * Skips the 300-item food catalog, meal_plans table, and weekly plan eligibility
+   * — none of which are needed for dashboard display.
+   * Reduces DB queries from 9 to 6, cutting ~1–1.5s off the dashboard cold start.
+   */
+  static async getDashboardSummary(userId: string, targetDateStr?: string) {
+    const supabase = createAdminClient();
+
+    const tz = await this.getUserTimezone(userId);
+    const localDate = targetDateStr || await this.getLocalDateString(userId, tz);
+    const { start, end } = await this.getLocalDateBoundaries(userId, tz, localDate);
+
+    // Monthly spent calculation
+    const firstDayOfMonth = localDate.substring(0, 8) + '01';
+    const mFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset', year: 'numeric' });
+    let mOffsetStr = mFormatter.formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value;
+    if (!mOffsetStr || mOffsetStr === 'GMT') mOffsetStr = 'GMT+00:00';
+    mOffsetStr = mOffsetStr.replace('GMT', '');
+    const monthStartISO = new Date(`${firstDayOfMonth}T00:00:00.000${mOffsetStr}`).toISOString();
+
+    // 6 parallel queries — food catalog (300 items), meal_plans, and weeklyPlanEligibility are intentionally skipped
+    const [targets, foodsRes, watersRes, monthFoodsRes, fitProfileRes, activePlanRes] = await Promise.all([
+      this.getEffectiveTargets(userId, localDate, tz),
+      supabase
+        .from('food_logs')
+        .select('*, foods(name, category)')
+        .eq('user_id', userId)
+        .gte('logged_at', start)
+        .lte('logged_at', end),
+      supabase
+        .from('fitness_os_water_logs')
+        .select('amount_ml')
+        .eq('user_id', userId)
+        .gte('logged_at', start)
+        .lte('logged_at', end),
+      supabase
+        .from('food_logs')
+        .select('estimated_cost, meal_type, foods(name)')
+        .eq('user_id', userId)
+        .gte('logged_at', monthStartISO)
+        .lte('logged_at', end),
+      supabase
+        .from('fitness_os_profiles')
+        .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods, nutrition_budget, food_environment, meals_per_day')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('fitness_os_workout_plans')
+        .select('plan_data')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .maybeSingle(),
+    ]);
+
+    if (!targets) {
+      throw new Error("TARGET_NOT_FOUND");
+    }
+
+    const foods = foodsRes.data;
+    const waters = watersRes.data;
+    const monthFoods = monthFoodsRes.data;
+    const fitProfile = fitProfileRes.data;
+    const activePlan = activePlanRes.data;
+    const aiMeals = activePlan?.plan_data?.nutrition?.meals || [];
+
+    // Compute consumed macros
+    let consumed = { calories: 0, protein: 0, carbs: 0, fat: 0, water_ml: 0, spent: 0 };
+    const completedMealTypes = new Set<string>();
+
+    if (foods) {
+      foods.forEach(f => {
+        consumed.calories += f.calories;
+        consumed.protein += Number(f.protein);
+        consumed.carbs += Number(f.carbs);
+        consumed.fat += Number(f.fat);
+        const isItemCore = isStapleCoreFood(f.foods?.name, fitProfile?.food_environment);
+        const cost = isItemCore ? 0 : (Number(f.estimated_cost) || getRealisticFoodCost(f.foods?.name));
+        consumed.spent += cost;
+        if (f.meal_type) completedMealTypes.add(f.meal_type);
+      });
+    }
+
+    if (waters) {
+      waters.forEach(w => consumed.water_ml += (Number(w.amount_ml) || 0));
+    }
+
+    let monthSpent = 0;
+    if (monthFoods) {
+      monthFoods.forEach((f: any) => {
+        const isItemCore = isStapleCoreFood(f.foods?.name, fitProfile?.food_environment);
+        const cost = isItemCore ? 0 : (Number(f.estimated_cost) || getRealisticFoodCost(f.foods?.name));
+        monthSpent += cost;
+      });
+    }
+
+    let monthlyLimit = 5000;
+    if (fitProfile?.nutrition_budget) {
+      const bStr = fitProfile.nutrition_budget;
+      if (bStr === '₹5,000+') monthlyLimit = 7500;
+      else if (bStr === '₹2,000–5,000' || bStr === '₹2,000-5,000') monthlyLimit = 5000;
+      else if (bStr === '₹1,000–2,000' || bStr === '₹1,000-2,000') monthlyLimit = 2500;
+      else if (bStr === '₹0–1,000' || bStr === '₹0-1,000') monthlyLimit = 1500;
+    }
+    const isHighProteinNonVeg = Boolean(targets.protein >= 140 && (fitProfile?.diet_preference?.toLowerCase().includes('non') || fitProfile?.food_type?.toLowerCase().includes('non')));
+    const dailyLimit = Math.max(Math.round(monthlyLimit / 30), isHighProteinNonVeg ? 200 : 150);
+
+    const rawDietStr = `${fitProfile?.diet_preference || ''} ${fitProfile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
+    const isProfileVegan = rawDietStr.includes('vegan');
+    const isProfileNonVeg = !isProfileVegan && (rawDietStr.includes('non') || rawDietStr.includes('meat') || rawDietStr.includes('chicken') || rawDietStr.includes('fish'));
+    const isProfileEggetarian = !isProfileVegan && !isProfileNonVeg && (rawDietStr.includes('egg') || rawDietStr.includes('eggetarian'));
+    const isProfileVegetarian = !isProfileVegan && !isProfileNonVeg && !isProfileEggetarian;
+
+    // Use AI plan meals for the dashboard meal list (no food catalog needed)
+    const mealsPerDay = fitProfile?.meals_per_day || '4 meals';
+    let ALL_MEAL_TYPES: string[];
+    if (mealsPerDay === '2 meals') {
+      ALL_MEAL_TYPES = ['lunch', 'dinner'];
+    } else if (mealsPerDay === '3 meals') {
+      ALL_MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
+    } else if (mealsPerDay === '5+ meals') {
+      ALL_MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner'];
+    } else {
+      ALL_MEAL_TYPES = ['breakfast', 'lunch', 'pre_workout', 'dinner'];
+    }
+
+    // Build meals from AI plan only (no DB meal_plans lookup needed for dashboard)
+    let formattedMeals: any[] = [];
+    if (aiMeals && aiMeals.length > 0) {
+      formattedMeals = aiMeals.map((m: any, idx: number, arr: any[]) => {
+        let derivedType = m.meal_type;
+        if (!derivedType) {
+          const ctx = `${m.meal_name || m.name || ''} ${m.time_of_day || ''} ${m.prep_instructions || ''}`.toLowerCase();
+          if (ctx.includes('breakfast') || ctx.includes('waking') || ctx.includes('morning')) derivedType = 'breakfast';
+          else if (ctx.includes('lunch') || ctx.includes('midday') || ctx.includes('noon')) derivedType = 'lunch';
+          else if (ctx.includes('dinner') || ctx.includes('night') || ctx.includes('supper') || ctx.includes('evening')) derivedType = 'dinner';
+          else if (ctx.includes('pre')) derivedType = 'pre_workout';
+          else if (ctx.includes('post')) derivedType = 'post_workout';
+          else if (arr.length === 3) derivedType = idx === 0 ? 'breakfast' : idx === 1 ? 'lunch' : 'dinner';
+          else derivedType = idx === 0 ? 'breakfast' : idx === arr.length - 1 ? 'dinner' : 'lunch';
+        }
+        return {
+          ...m,
+          meal_type: derivedType,
+          name: sanitizeMealTitle(m.meal_name || m.name || derivedType, isProfileVegan, isProfileVegetarian, isProfileEggetarian),
+        };
+      });
+    }
+
+    // Calibrate meals to user's macro targets
+    formattedMeals = calibrateMealsToTargets(formattedMeals, targets, fitProfile);
+
+    // Round consumed values
+    consumed.calories = Math.round(consumed.calories);
+    consumed.protein = Math.round(consumed.protein);
+    consumed.carbs = Math.round(consumed.carbs);
+    consumed.fat = Math.round(consumed.fat);
+    consumed.water_ml = Math.round(consumed.water_ml);
+    consumed.spent = Math.round(consumed.spent);
+
+    const remaining = {
+      calories: Math.round(Math.max(targets.calories - consumed.calories, 0)),
+      protein: Math.round(Math.max(targets.protein - consumed.protein, 0)),
+      carbs: Math.round(Math.max(targets.carbs - consumed.carbs, 0)),
+      fat: Math.round(Math.max(targets.fat - consumed.fat, 0)),
+      water_ml: Math.round(Math.max(targets.water_ml - consumed.water_ml, 0)),
+    };
+
+    const progress = {
+      calories_percent: Math.min(100, (consumed.calories / targets.calories) * 100),
+      protein_percent: Math.min(100, (consumed.protein / targets.protein) * 100),
+      water_percent: Math.min(100, (consumed.water_ml / targets.water_ml) * 100),
+    };
+
+    const totalMeals = formattedMeals.length > 0 ? formattedMeals.length : 4;
+    const mealsCompleted = formattedMeals.filter(p => completedMealTypes.has(p.meal_type)).length;
+    const score = this.computeNutritionScore(consumed, targets, mealsCompleted, totalMeals);
+
+    return {
+      date: localDate,
+      targets,
+      consumed,
+      remaining,
+      meals: formattedMeals,
+      logged_foods: foods || [],
+      budget: {
+        daily_limit: dailyLimit,
+        spent: consumed.spent,
+        remaining: Math.max(dailyLimit - consumed.spent, 0),
+        monthly_limit: monthlyLimit,
+        monthly_spent: monthSpent,
+      },
+      progress,
+      nutrition_score: score,
+      has_ai_plan: formattedMeals.some((m: any) => Boolean(m.ai_generated || m.is_ai_generated)),
+      weekly_plan_status: null,
+      is_natural_whole_food: true,
+      food_environment: fitProfile?.food_environment || 'Home',
+      food_type: isProfileVegan
+        ? 'Vegan'
+        : isProfileVegetarian
+        ? 'Vegetarian'
+        : isProfileEggetarian
+        ? 'Eggetarian'
+        : isProfileNonVeg
+        ? 'Non-Vegetarian'
+        : (fitProfile?.food_type || fitProfile?.diet_preference || undefined),
+    };
+  }
 }
