@@ -19,11 +19,18 @@ import {
   Timer,
   Sparkles,
   Lock,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSafeRedirect } from "@/lib/utils/redirect";
-import { createRazorpayOrder, verifyRazorpayPayment, checkUserPremiumStatusAction, getUserPremiumDetailsAction } from "@/app/actions/payment";
+import { 
+  createRazorpayOrder, 
+  verifyRazorpayPayment, 
+  checkUserPremiumStatusAction, 
+  getUserPremiumDetailsAction,
+  acceptFreePreviewAction
+} from "@/app/actions/payment";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 import { LuckyWheelModal } from "@/components/fitness/subscription/lucky-wheel-modal";
@@ -161,6 +168,23 @@ export default function FitnessPaymentPage() {
   const [premiumStatusLoaded, setPremiumStatusLoaded] = useState(false);
   const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
   const isUpgradeIntent = searchParams.get("intent") === "upgrade_pro";
+  const [isContinuingFree, setIsContinuingFree] = useState(false);
+
+  const handleContinueFree = async () => {
+    if (isContinuingFree || isProcessing) return;
+    setIsContinuingFree(true);
+    try {
+      const res = await acceptFreePreviewAction();
+      if (res?.success) {
+        window.location.href = "/";
+      } else {
+        window.location.href = "/";
+      }
+    } catch (err) {
+      console.error("Failed to accept free preview:", err);
+      window.location.href = "/";
+    }
+  };
 
   // Lucky Wheel & 50% discount state
   const [showSpinModal, setShowSpinModal] = useState(false);
@@ -471,7 +495,13 @@ export default function FitnessPaymentPage() {
       {/* Header */}
       <div className="sticky top-0 z-50 px-4 py-4 flex items-center justify-between bg-[#0A1108]/90 backdrop-blur-md transform-gpu">
         <button
-          onClick={() => router.push(returnTo)}
+          onClick={() => {
+            if (isPlanGenerationIntent) {
+              router.push("/report");
+            } else {
+              router.push(returnTo);
+            }
+          }}
           className="w-10 h-10 rounded-full bg-[#121E12] border border-[#1A2619] flex items-center justify-center hover:bg-[#1A2619] transition-colors touch-manipulation cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5 text-gray-300" />
@@ -784,12 +814,21 @@ export default function FitnessPaymentPage() {
                 Keep Core Plan (Back to Dashboard) →
               </Link>
             ) : (
-              <Link
-                href="/"
-                className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer touch-manipulation"
+              <button
+                type="button"
+                onClick={handleContinueFree}
+                disabled={isContinuingFree || isProcessing}
+                className="text-xs font-bold text-white/50 hover:text-[#ADFF00] transition-colors inline-flex items-center justify-center gap-1.5 py-1 px-3 cursor-pointer touch-manipulation disabled:opacity-50"
               >
-                Continue with Free →
-              </Link>
+                {isContinuingFree ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin text-[#ADFF00]" />
+                    <span>Loading Free Preview...</span>
+                  </>
+                ) : (
+                  <span>Continue with Free →</span>
+                )}
+              </button>
             )}
           </div>
         </div>

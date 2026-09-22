@@ -74,15 +74,31 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
     redirect("/onboarding");
   }
 
-  // If the user completed onboarding and has an AI starting report, but has not yet viewed it,
-  // guide them to /report first rather than prematurely showing the dashboard.
-  const hasSeenReport = Boolean((profile as any)?.ai_strategy?.starting_report_viewed);
-  if (!plan && !hasSeenReport && hasGeneratedStartingReport((profile as any)?.ai_strategy)) {
-    redirect("/report");
-  }
+  const aiStrategy = profile?.ai_strategy && typeof profile.ai_strategy === "object" ? profile.ai_strategy : {};
+  const hasSeenReport = Boolean((aiStrategy as Record<string, unknown>).starting_report_viewed);
+  const hasAcceptedFreePreview = Boolean((aiStrategy as Record<string, unknown>).free_preview_accepted);
 
   const subscriptionPlan = subscriptionState?.plan;
-  const isFreeUser = !subscriptionPlan || subscriptionPlan.id === "free";
+  const isPaidUser =
+    subscriptionState?.status === "active" ||
+    subscriptionState?.status === "grace_period" ||
+    Boolean(subscriptionPlan && subscriptionPlan.id !== "free");
+
+  const hasActivePlan = Boolean(plan);
+
+  // STRICT ACCESS RULE:
+  // User can ONLY access the dashboard if:
+  // 1. Payment was successful (isPaidUser is true)
+  // 2. OR user explicitly clicked "Continue Free" (hasAcceptedFreePreview is true)
+  // 3. OR user already has an active workout plan from a previous session
+  if (!isPaidUser && !hasAcceptedFreePreview && !hasActivePlan) {
+    if (!hasSeenReport && hasGeneratedStartingReport(aiStrategy)) {
+      redirect("/report");
+    }
+    redirect("/payment?returnTo=/&intent=generate_plan");
+  }
+
+  const isFreeUser = !isPaidUser;
 
   if (!isFreeUser && !plan) {
     redirect("/plan-setup");

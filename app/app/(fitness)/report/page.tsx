@@ -127,25 +127,6 @@ export default async function AIStartingReportPage() {
       </div>
     );
   }
-
-  // Mark starting report as viewed in fitness_os_profiles so the user can subsequently visit the dashboard
-  if (!aiStrategy.starting_report_viewed) {
-    try {
-      const admin = createAdminClient();
-      await admin
-        .from("fitness_os_profiles")
-        .update({
-          ai_strategy: {
-            ...aiStrategy,
-            starting_report_viewed: true,
-            starting_report_viewed_at: new Date().toISOString(),
-          },
-        })
-        .eq("user_id", user.id);
-    } catch (err: any) {
-      console.warn("Failed to mark starting report as viewed:", err);
-    }
-  }
   const focusAreas = Array.isArray(aiStrategy.focus_areas) ? aiStrategy.focus_areas : [];
   const onboardingData = isRecord(profile.onboarding_data) ? profile.onboarding_data : {};
   const reportBodyScanInsights = isRecord(aiStrategy.body_scan_insights)

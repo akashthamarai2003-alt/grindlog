@@ -715,6 +715,98 @@ export async function getUserPremiumDetailsAction(appName: "grindlog" | "fitness
   }
 }
 
+export async function acceptFreePreviewAction(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
 
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("fitness_os_profiles")
+      .select("ai_strategy")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
+    const currentStrategy = (profile?.ai_strategy && typeof profile.ai_strategy === "object")
+      ? profile.ai_strategy
+      : {};
 
+    const updatedStrategy = {
+      ...currentStrategy,
+      free_preview_accepted: true,
+      free_preview_accepted_at: new Date().toISOString(),
+    };
+
+    const { error: updateError } = await admin
+      .from("fitness_os_profiles")
+      .update({
+        ai_strategy: updatedStrategy,
+      })
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error("Failed to accept free preview:", updateError);
+      return { success: false, error: updateError.message };
+    }
+
+    revalidatePath("/");
+    revalidatePath("/payment");
+    return { success: true };
+  } catch (err: any) {
+    console.error("acceptFreePreviewAction error:", err);
+    return { success: false, error: err?.message || "Internal server error" };
+  }
+}
+
+export async function markStartingReportViewedAction(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createServerSupabase();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("fitness_os_profiles")
+      .select("ai_strategy")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const currentStrategy = (profile?.ai_strategy && typeof profile.ai_strategy === "object")
+      ? profile.ai_strategy
+      : {};
+
+    if ((currentStrategy as any).starting_report_viewed) {
+      return { success: true };
+    }
+
+    const updatedStrategy = {
+      ...currentStrategy,
+      starting_report_viewed: true,
+      starting_report_viewed_at: new Date().toISOString(),
+    };
+
+    const { error: updateError } = await admin
+      .from("fitness_os_profiles")
+      .update({
+        ai_strategy: updatedStrategy,
+      })
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error("Failed to mark starting report viewed:", updateError);
+      return { success: false, error: updateError.message };
+    }
+
+    revalidatePath("/");
+    revalidatePath("/report");
+    return { success: true };
+  } catch (err: any) {
+    console.error("markStartingReportViewedAction error:", err);
+    return { success: false, error: err?.message || "Internal server error" };
+  }
+}

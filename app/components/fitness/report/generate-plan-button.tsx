@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AIPlanAnimation } from "@/components/fitness/plan-animation";
-import { checkUserPremiumStatusAction } from "@/app/actions/payment";
+import { checkUserPremiumStatusAction, markStartingReportViewedAction } from "@/app/actions/payment";
 
 export function GeneratePlanButton() {
   const router = useRouter();
@@ -22,6 +22,9 @@ export function GeneratePlanButton() {
   const handleClick = () => {
     if (isPreparing) return;
     setIsPreparing(true);
+    markStartingReportViewedAction().catch((err) => {
+      console.warn("Failed to mark starting report as viewed on click:", err);
+    });
   };
 
   const handleAnimationComplete = () => {

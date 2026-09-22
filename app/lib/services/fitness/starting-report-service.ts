@@ -46,6 +46,8 @@ const StartingReportSchema = z.object({
   }),
   starting_report_viewed: z.boolean().optional(),
   starting_report_viewed_at: z.string().optional(),
+  free_preview_accepted: z.boolean().optional(),
+  free_preview_accepted_at: z.string().optional(),
 });
 
 export type StartingReport = z.infer<typeof StartingReportSchema>;
