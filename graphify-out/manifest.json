@@ -1710,9 +1710,9 @@
     "semantic_hash": ""
   },
   "app/lib/fitness/body-scan.ts": {
-    "mtime": 1790078362.2952075,
-    "seen": 1790078554.9908445,
-    "ast_hash": "144d087f9874b6f3e7887707fbb31f29",
+    "mtime": 1790079119.1852324,
+    "seen": 1790079348.559925,
+    "ast_hash": "0498ccfbce3c9a199d81cb1ddd34bdcf",
     "semantic_hash": ""
   },
   "app/lib/fitness/calculations/one-rm.ts": {
@@ -1866,9 +1866,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/groq/client.ts": {
-    "mtime": 1788968456.092363,
-    "seen": 1789970487.5988398,
-    "ast_hash": "b5154dfd4522d1c1b084fac795bd4bcc",
+    "mtime": 1790079103.8509564,
+    "seen": 1790079348.5791054,
+    "ast_hash": "aab6d1e13f3aec793ff691681ebd2e60",
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/ai-nutrition-service.ts": {

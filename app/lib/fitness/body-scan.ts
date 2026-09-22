@@ -121,7 +121,8 @@ export interface BodyScanVisionResult {
  * 1. Executes Google Gemini Vision with explicit safety filter overrides (BLOCK_NONE)
  *    so shirtless/sports-bra gym photos are never blocked as false-positive NSFW.
  * 2. Uses verified working Gemini models (gemini-3.6-flash, gemini-3.5-flash, gemini-3.1-flash-lite).
- * 3. Automatically falls back to OpenAI Vision (gpt-4o-mini) if Gemini is down or exhausted.
+ * 3. Automatically fails over to Groq AI Vision (qwen/qwen3.8-27b) if Gemini is down or exhausted.
+ * 4. Tertiary fallback to OpenAI Vision (gpt-4o-mini) as an additional safety net.
  */
 export async function analyzeBodyScanImages(
   images: BodyScanImageInput[]
@@ -191,7 +192,71 @@ export async function analyzeBodyScanImages(
     }
   }
 
-  // 2. Secondary Fallback: OpenAI Vision (gpt-4o-mini)
+  // 2. Secondary Failover: Groq AI Vision (qwen/qwen3.8-27b)
+  const groqApiKey = process.env.GROQ_API_KEY;
+  if (groqApiKey) {
+    try {
+      console.log("[BodyScan] Trying Groq AI Vision failover...");
+      const Groq = (await import("groq-sdk")).default;
+      const apiKey = groqApiKey.split(",")[0].trim();
+      const groq = new Groq({ apiKey });
+
+      const groqModel = process.env.GROQ_VISION_MODEL?.trim() || "qwen/qwen3.8-27b";
+
+      // Groq vision models support up to 3 images.
+      // Intelligently select the 3 most crucial angles: front, back, side (or first 3).
+      let selectedImages = images;
+      if (images.length > 3) {
+        const front = images.find((img) => /front/i.test(img.label));
+        const back = images.find((img) => /back/i.test(img.label));
+        const side = images.find((img) => /side|left|right/i.test(img.label));
+        const goal = images.find((img) => /goal/i.test(img.label));
+
+        const priorityList = [front, back, side, goal].filter((img): img is BodyScanImageInput => Boolean(img));
+        for (const img of images) {
+          if (priorityList.length >= 3) break;
+          if (!priorityList.includes(img)) {
+            priorityList.push(img);
+          }
+        }
+        selectedImages = priorityList.slice(0, 3);
+      }
+
+      const contentParts: Array<
+        | { type: "text"; text: string }
+        | { type: "image_url"; image_url: { url: string } }
+      > = [{ type: "text", text: promptText }];
+
+      for (const img of selectedImages) {
+        contentParts.push({ type: "text", text: `${img.label}:` });
+        contentParts.push({
+          type: "image_url",
+          image_url: {
+            url: `data:${img.mimeType};base64,${img.data}`,
+          },
+        });
+      }
+
+      const response = await groq.chat.completions.create({
+        model: groqModel,
+        messages: [{ role: "user", content: contentParts as any }],
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+      });
+
+      const rawText = response.choices?.[0]?.message?.content;
+      if (rawText) {
+        const parsed = parseBodyScanAnalysis(rawText);
+        if (parsed) {
+          return { success: true, analysis: parsed, rawText, provider: `groq (${groqModel})` };
+        }
+      }
+    } catch (groqErr: any) {
+      console.warn("[BodyScan] Groq AI Vision failover error:", groqErr?.message || groqErr);
+    }
+  }
+
+  // 3. Tertiary Safety Fallback: OpenAI Vision (gpt-4o-mini)
   const openaiApiKey = process.env.OPENAI_API_KEY;
   if (openaiApiKey) {
     try {

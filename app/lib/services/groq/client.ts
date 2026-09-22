@@ -26,6 +26,7 @@ export const GROQ_MODELS = {
   primary: "qwen/qwen3.8-27b",
   reasoning: "openai/gpt-oss-120b",
   fast: "groq/compound-mini",
+  vision: "qwen/qwen3.8-27b",
 } as const;
 
 export type RouteModel = keyof typeof GROQ_MODELS;
