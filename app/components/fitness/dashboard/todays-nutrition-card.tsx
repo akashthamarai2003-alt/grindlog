@@ -5,7 +5,7 @@ import { Utensils, ArrowRight, CheckCircle2, Circle, Flame, Sparkles } from "luc
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { nutritionApi } from "@/lib/api/nutrition";
+import { nutritionApi, nutritionClientCache } from "@/lib/api/nutrition";
 import { toast } from "sonner";
 
 interface TodaysNutritionCardProps {
@@ -116,16 +116,74 @@ export function TodaysNutritionCard({
     }).format(new Date());
   }, [targetDateStr]);
 
-  const [activeNutrition, setActiveNutrition] = useState<any>(nutrition);
+  const [activeNutrition, setActiveNutrition] = useState<any>(() => {
+    const cached = nutritionClientCache.get(effectiveDate);
+    if (cached && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
+      return {
+        ...(nutrition || {}),
+        ...cached,
+        consumed: cached.consumed || nutrition?.consumed,
+        logged_foods: cached.logged_foods || nutrition?.logged_foods,
+        meals: (cached.meals && cached.meals.length > 0) ? cached.meals : nutrition?.meals,
+      };
+    }
+    return nutrition;
+  });
 
+  // Guard: Never downgrade active logged meals to an empty/stale server prop
   useEffect(() => {
-    setActiveNutrition(nutrition);
+    if (!nutrition) return;
+    setActiveNutrition((prev: any) => {
+      if (!prev) return nutrition;
+      const prevLogged = prev.logged_foods?.length || 0;
+      const prevCals = Number(prev.consumed?.calories) || 0;
+      const newLogged = nutrition.logged_foods?.length || 0;
+      const newCals = Number(nutrition.consumed?.calories) || 0;
+
+      if ((prevLogged > 0 && newLogged === 0) || (prevCals > 0 && newCals === 0)) {
+        return {
+          ...nutrition,
+          consumed: prev.consumed,
+          logged_foods: prev.logged_foods,
+          meals: (prev.meals && prev.meals.length > 0) ? prev.meals : nutrition.meals,
+          daily_calories: nutrition.daily_calories ?? prev.daily_calories,
+          protein_grams: nutrition.protein_grams ?? prev.protein_grams,
+        };
+      }
+      return {
+        ...prev,
+        ...nutrition,
+        consumed: nutrition.consumed || prev.consumed,
+        logged_foods: nutrition.logged_foods || prev.logged_foods,
+        meals: (nutrition.meals && nutrition.meals.length > 0) ? nutrition.meals : prev.meals,
+      };
+    });
   }, [nutrition]);
+
+  // Persist activeNutrition changes to client cache
+  useEffect(() => {
+    if (activeNutrition && effectiveDate) {
+      nutritionClientCache.set(effectiveDate, activeNutrition);
+    }
+  }, [activeNutrition, effectiveDate]);
 
   const refreshNutrition = useCallback(async () => {
     try {
+      // 0ms instant check from cache
+      const cached = nutritionClientCache.get(effectiveDate);
+      if (cached && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
+        setActiveNutrition((prev: any) => ({
+          ...prev,
+          ...cached,
+          consumed: cached.consumed || prev?.consumed,
+          logged_foods: cached.logged_foods || prev?.logged_foods,
+          meals: (cached.meals && cached.meals.length > 0) ? cached.meals : prev?.meals,
+        }));
+      }
+
       const fresh = await nutritionApi.getToday(effectiveDate);
       if (fresh) {
+        nutritionClientCache.set(effectiveDate, fresh);
         setActiveNutrition((prev: any) => ({
           ...prev,
           ...fresh,
@@ -142,6 +200,16 @@ export function TodaysNutritionCard({
   useEffect(() => {
     refreshNutrition();
     const handleSync = () => {
+      const cached = nutritionClientCache.get(effectiveDate);
+      if (cached) {
+        setActiveNutrition((prev: any) => ({
+          ...prev,
+          ...cached,
+          consumed: cached.consumed || prev?.consumed,
+          logged_foods: cached.logged_foods || prev?.logged_foods,
+          meals: (cached.meals && cached.meals.length > 0) ? cached.meals : prev?.meals,
+        }));
+      }
       refreshNutrition();
     };
     if (typeof window !== "undefined") {
@@ -154,7 +222,7 @@ export function TodaysNutritionCard({
         window.removeEventListener("focus", handleSync);
       }
     };
-  }, [refreshNutrition]);
+  }, [refreshNutrition, effectiveDate]);
 
   const targetCalories = Number(activeNutrition?.daily_calories ?? nutrition?.daily_calories ?? activeNutrition?.targets?.calories ?? nutrition?.targets?.calories) > 0 
     ? Math.round(Number(activeNutrition?.daily_calories ?? nutrition?.daily_calories ?? activeNutrition?.targets?.calories ?? nutrition?.targets?.calories)) 
@@ -484,11 +552,7 @@ export function TodaysNutritionCard({
 
       nutritionApi.logFoods(itemsToLog).then(() => {
         toast.success(`Logged ${meal.name}!`);
-        refreshNutrition();
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("grindlog_meals_updated"));
-          localStorage.setItem("grindlog_meals_last_updated", String(Date.now()));
-        }
+        nutritionClientCache.notifyUpdated();
         try { router.refresh(); } catch {}
       }).catch((err) => {
         console.warn("Could not sync logged meal to DB:", err);
@@ -517,10 +581,7 @@ export function TodaysNutritionCard({
       // Background unlog: atomic deleteMeal API
       nutritionApi.deleteMeal(typeKey, effectiveDate).then(() => {
         refreshNutrition();
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("grindlog_meals_updated"));
-          localStorage.setItem("grindlog_meals_last_updated", String(Date.now()));
-        }
+        nutritionClientCache.notifyUpdated();
         try { router.refresh(); } catch {}
       }).catch((err) => {
         console.warn("deleteMeal failed, trying fallback deleteFood by ID:", err);
@@ -529,10 +590,7 @@ export function TodaysNutritionCard({
         if (foodsToRemove.length > 0) {
           Promise.all(foodsToRemove.map((f: any) => nutritionApi.deleteFood(f.id))).then(() => {
             refreshNutrition();
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new Event("grindlog_meals_updated"));
-              localStorage.setItem("grindlog_meals_last_updated", String(Date.now()));
-            }
+            nutritionClientCache.notifyUpdated();
             try { router.refresh(); } catch {}
           }).catch(() => {});
         }
@@ -541,14 +599,12 @@ export function TodaysNutritionCard({
       toast.info(`Unlogged ${meal.name}`);
     }
 
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("grindlog_meals_updated"));
-    }
+    nutritionClientCache.notifyUpdated();
   };
 
   // Real-world dynamic calculations: sum actual checked meal macros
   const completedCount = useMemo(() => {
-    return meals.filter(m => isMealDone(m)).length;
+    return meals.filter((m: any) => isMealDone(m)).length;
   }, [meals, isMealDone]);
 
   const consumedCalories = useMemo(() => {

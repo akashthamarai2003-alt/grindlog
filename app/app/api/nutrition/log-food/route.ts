@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
@@ -71,6 +72,10 @@ export async function POST(request: Request) {
       }));
 
       const logs = await NutritionService.logMultipleFoods(user.id, normalizedItems);
+      try {
+        revalidatePath("/");
+        revalidatePath("/nutrition");
+      } catch {}
       return NextResponse.json({ success: true, data: logs });
     }
 
@@ -99,6 +104,11 @@ export async function POST(request: Request) {
       quantity, 
       custom_food 
     });
+
+    try {
+      revalidatePath("/");
+      revalidatePath("/nutrition");
+    } catch {}
 
     return NextResponse.json({ success: true, data: log });
   } catch (error: any) {
@@ -162,6 +172,11 @@ export async function DELETE(request: Request) {
     NutritionService.updateDailySummary(user.id).catch(err => {
       console.warn("Background updateDailySummary warning in deleteMeal:", err);
     });
+
+    try {
+      revalidatePath("/");
+      revalidatePath("/nutrition");
+    } catch {}
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

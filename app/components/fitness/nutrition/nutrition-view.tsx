@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Edit3, X, Check, Trash2, Sparkles, Lock, Clock } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
 import { TodaySummaryCard } from "./today-summary-card";
-import { nutritionApi } from "@/lib/api/nutrition";
+import { nutritionApi, nutritionClientCache } from "@/lib/api/nutrition";
 import { LogFoodModal } from "./log-food-modal";
 import { SwapMealModal } from "./swap-meal-modal";
 import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
@@ -14,15 +15,31 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function NutritionView({ initialData, isPro = true }: { initialData?: any; isPro?: boolean } = {}) {
-  const [data, setData] = useState<any>(initialData || null);
-  const [isLoading, setIsLoading] = useState(!initialData);
-  const [error, setError] = useState<any>(null);
-
+  const router = useRouter();
   const initialDateStr = initialData?.date;
   const todayDateStr = useMemo(() => {
     if (initialDateStr) return initialDateStr;
     return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   }, [initialDateStr]);
+
+  const [data, setData] = useState<any>(() => {
+    const dateKey = initialDateStr || (typeof window !== "undefined" ? new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) : "");
+    if (dateKey) {
+      const cached = nutritionClientCache.get(dateKey);
+      if (cached && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
+        return {
+          ...(initialData || {}),
+          ...cached,
+          consumed: cached.consumed || initialData?.consumed,
+          logged_foods: cached.logged_foods || initialData?.logged_foods,
+          meals: (cached.meals && cached.meals.length > 0) ? cached.meals : initialData?.meals,
+        };
+      }
+    }
+    return initialData || null;
+  });
+  const [isLoading, setIsLoading] = useState(!initialData && !data);
+  const [error, setError] = useState<any>(null);
 
   // Week navigation offset (0 = current week, +1 = next week, -1 = previous week)
   const [weekOffset, setWeekOffset] = useState(0);
@@ -102,6 +119,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   useEffect(() => {
     if (data?.date) {
       dateCacheRef.current[data.date] = data;
+      nutritionClientCache.set(data.date, data);
     }
   }, [data]);
 
@@ -111,6 +129,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
     if (data.date) {
       dateCacheRef.current[data.date] = data;
+      nutritionClientCache.set(data.date, data);
     }
 
     weekDates.forEach((w) => {
@@ -119,6 +138,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         nutritionApi.getToday(d).then((res) => {
           if (res?.date) {
             dateCacheRef.current[res.date] = res;
+            nutritionClientCache.set(res.date, res);
             if (selectedDateRef.current === res.date) {
               setData(res);
             }
@@ -130,13 +150,26 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
   const fetchToday = async (dateParam?: string, isInitial: boolean = false) => {
     try {
-      if (isInitial || !data) {
+      const targetDate = dateParam || selectedDateRef.current || selectedDate;
+      const cached = nutritionClientCache.get(targetDate);
+      if (cached && (!data || ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0))) {
+        setData((prev: any) => {
+          if (!prev) return cached;
+          const prevCount = prev?.logged_foods?.length || 0;
+          const cachedCount = cached?.logged_foods?.length || 0;
+          if (cachedCount >= prevCount) return cached;
+          return prev;
+        });
+        dateCacheRef.current[targetDate] = cached;
+      }
+
+      if ((isInitial && !data && !cached) || (!data && !cached)) {
         setIsLoading(true);
       }
-      const targetDate = dateParam || selectedDateRef.current || selectedDate;
       const res = await nutritionApi.getToday(targetDate);
       if (res?.date) {
         dateCacheRef.current[res.date] = res;
+        nutritionClientCache.set(res.date, res);
       }
       if (!selectedDateRef.current || selectedDateRef.current === (res?.date || targetDate)) {
         setData(res);
@@ -160,16 +193,31 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         setError(err);
       }
     } finally {
-      if (isInitial || !data) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (initialData) {
-      setData(initialData);
-    }
+    if (!initialData) return;
+    setData((prev: any) => {
+      if (!prev) return initialData;
+      const prevCount = prev?.logged_foods?.length || 0;
+      const newCount = initialData?.logged_foods?.length || 0;
+      const prevCals = Number(prev?.consumed?.calories) || 0;
+      const newCals = Number(initialData?.consumed?.calories) || 0;
+
+      // Never overwrite active logged meals with an empty stale initialData from router cache
+      if ((prevCount > 0 && newCount === 0) || (prevCals > 0 && newCals === 0)) {
+        return {
+          ...initialData,
+          consumed: prev.consumed,
+          logged_foods: prev.logged_foods,
+          meals: (prev.meals && prev.meals.length > 0) ? prev.meals : initialData.meals,
+          targets: initialData.targets || prev.targets,
+        };
+      }
+      return initialData;
+    });
   }, [initialData]);
 
   useEffect(() => {
@@ -181,6 +229,12 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }
 
     const handleSync = () => {
+      const targetDate = selectedDateRef.current || todayDateStr;
+      const cached = nutritionClientCache.get(targetDate);
+      if (cached) {
+        setData(cached);
+        dateCacheRef.current[targetDate] = cached;
+      }
       if (selectedDateRef.current) {
         delete dateCacheRef.current[selectedDateRef.current];
       }
@@ -559,13 +613,14 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
     try {
       await nutritionApi.deleteFood(id);
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("grindlog_meals_updated"));
-        localStorage.setItem("grindlog_meals_last_updated", String(Date.now()));
-      }
+      nutritionClientCache.notifyUpdated();
+      try { router.refresh(); } catch {}
       // Quiet background reconciliation
       nutritionApi.getToday(selectedDateRef.current).then(res => {
-        if (res) setData(res);
+        if (res) {
+          setData(res);
+          nutritionClientCache.set(res.date || selectedDateRef.current, res);
+        }
       }).catch(() => {});
     } catch (err: any) {
       // Revert if API failed
@@ -805,6 +860,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
           if (selectedDateRef.current) {
             dateCacheRef.current[selectedDateRef.current] = updatedState;
+            nutritionClientCache.set(selectedDateRef.current, updatedState);
           }
 
           return updatedState;
@@ -813,14 +869,14 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         // Only reconcile quietly with server when confirmed server data has committed!
         // Never call getToday during optimistic update to avoid premature overwrite race condition
         if (isRealServerData) {
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(new Event("grindlog_meals_updated"));
-          }
+          nutritionClientCache.notifyUpdated();
+          try { router.refresh(); } catch {}
           const targetDate = selectedDateRef.current;
           nutritionApi.getToday(targetDate).then(res => {
             if (res && selectedDateRef.current === targetDate) {
               setData(res);
               dateCacheRef.current[targetDate] = res;
+              nutritionClientCache.set(res.date || targetDate, res);
             }
           }).catch(() => {});
         }

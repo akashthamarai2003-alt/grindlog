@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 
         // Idempotency: if already processed for this transaction, redirect immediately
         if (razorpayPaymentId && existingSub?.provider_payment_id === razorpayPaymentId) {
-          return NextResponse.redirect(new URL("/profile/billing?success=true", request.url));
+          return NextResponse.redirect(new URL("/profile/billing?success=true", req.url));
         }
 
         const { data: existingProfile } = await adminClient

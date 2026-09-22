@@ -55,11 +55,13 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
                 setNavigatingTo(item.href);
               }}
               onTouchStart={() => {
+                if (item.href === "/nutrition") return;
                 try {
                   router.prefetch(item.href);
                 } catch {}
               }}
               onPointerDown={() => {
+                if (item.href === "/nutrition") return;
                 try {
                   router.prefetch(item.href);
                 } catch {}

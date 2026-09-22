@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Circle, Target, Sparkles, Zap } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { nutritionApi } from "@/lib/api/nutrition";
+import { nutritionApi, nutritionClientCache } from "@/lib/api/nutrition";
 
 interface TodaysGoalsCardProps {
   lifestyle?: any;
@@ -45,20 +45,28 @@ export function TodaysGoalsCard({
   const proteinTarget = Number(nutrition?.protein_grams) > 0 ? Number(nutrition.protein_grams) : null;
 
   // Track meal completion from Today's Nutrition card
-  const [nutritionProgress, setNutritionProgress] = useState({
-    caloriesHit: false,
-    proteinHit: false,
-    consumedCalories: 0,
-    consumedProtein: 0,
+  const [nutritionProgress, setNutritionProgress] = useState(() => {
+    const cached = typeof window !== "undefined" ? nutritionClientCache.get(effectiveDate) : null;
+    const dbCals = Math.round(Number(cached?.consumed?.calories ?? nutrition?.consumed?.calories) || 0);
+    const dbPro = Math.round(Number(cached?.consumed?.protein ?? nutrition?.consumed?.protein) || 0);
+    const calsMet = targetCalories ? dbCals >= targetCalories * 0.9 : false;
+    const proMet = proteinTarget ? dbPro >= proteinTarget * 0.9 : false;
+    return {
+      caloriesHit: calsMet,
+      proteinHit: proMet,
+      consumedCalories: dbCals,
+      consumedProtein: dbPro,
+    };
   });
 
   const checkNutritionStorage = useCallback(async () => {
     try {
-      // 1. Direct DB consumed check if present
-      let dbCals = Math.round(Number(nutrition?.consumed?.calories) || 0);
-      let dbPro = Math.round(Number(nutrition?.consumed?.protein) || 0);
+      // 1. Direct DB consumed or client cache check if present
+      const cached = nutritionClientCache.get(effectiveDate);
+      let dbCals = Math.round(Number(cached?.consumed?.calories ?? nutrition?.consumed?.calories) || 0);
+      let dbPro = Math.round(Number(cached?.consumed?.protein ?? nutrition?.consumed?.protein) || 0);
 
-      // Attempt live fetch if initial db values are 0
+      // Attempt live fetch if initial values are 0
       try {
         const fresh = await nutritionApi.getToday(effectiveDate);
         if (fresh?.consumed) {
@@ -74,12 +82,13 @@ export function TodaysGoalsCard({
       let localPro = 0;
       let allMealsDone = false;
 
-      if (savedMeals && nutrition?.meals && Array.isArray(nutrition.meals) && nutrition.meals.length > 0) {
+      const currentMeals = cached?.meals || nutrition?.meals;
+      if (savedMeals && currentMeals && Array.isArray(currentMeals) && currentMeals.length > 0) {
         const parsed: Record<string, boolean> = JSON.parse(savedMeals);
-        const totalMeals = nutrition.meals.length;
+        const totalMeals = currentMeals.length;
         const checkedCount = Object.entries(parsed).filter(([_, v]) => Boolean(v)).length;
 
-        nutrition.meals.forEach((m: any, idx: number) => {
+        currentMeals.forEach((m: any, idx: number) => {
           if (parsed[idx]) {
             const cal = Number(m.total_calories ?? m.calories) || (targetCalories ? Math.round(targetCalories / totalMeals) : 0);
             const pro = Number(m.protein_grams ?? m.protein) || (proteinTarget ? Math.round(proteinTarget / totalMeals) : 0);

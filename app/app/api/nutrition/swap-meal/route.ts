@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
@@ -332,6 +333,11 @@ export async function POST(request: Request) {
     }
 
     await NutritionService.updateDailySummary(user.id);
+
+    try {
+      revalidatePath("/");
+      revalidatePath("/nutrition");
+    } catch {}
 
     return NextResponse.json({
       success: true,

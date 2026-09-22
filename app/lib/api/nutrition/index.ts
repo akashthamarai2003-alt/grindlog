@@ -5,12 +5,104 @@ export interface LogFoodRequest {
   custom_food?: any;
 }
 
+const memoryNutritionCache: Record<string, any> = {};
+
+export const nutritionClientCache = {
+  get(date?: string): any {
+    if (!date && typeof window !== "undefined") {
+      date = new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+    }
+    if (!date) return null;
+
+    if (memoryNutritionCache[date]) {
+      return memoryNutritionCache[date];
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem(`grindlog_nutrition_${date}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed) {
+            memoryNutritionCache[date] = parsed;
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return null;
+  },
+
+  set(date: string, data: any) {
+    if (!date || !data) return;
+    const existing = memoryNutritionCache[date];
+    let toStore = data;
+    if (existing) {
+      const existingCount = existing?.logged_foods?.length || 0;
+      const newCount = data?.logged_foods?.length || 0;
+      const existingCals = Number(existing?.consumed?.calories) || 0;
+      const newCals = Number(data?.consumed?.calories) || 0;
+      if (((existingCount > 0 && newCount === 0) || (existingCals > 0 && newCals === 0)) && !data._isExplicitClear) {
+        toStore = {
+          ...existing,
+          ...data,
+          consumed: existing.consumed,
+          logged_foods: existing.logged_foods,
+        };
+      }
+    }
+
+    memoryNutritionCache[date] = toStore;
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(`grindlog_nutrition_${date}`, JSON.stringify(toStore));
+      } catch {}
+    }
+  },
+
+  clear(date?: string) {
+    if (date) {
+      delete memoryNutritionCache[date];
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem(`grindlog_nutrition_${date}`);
+        } catch {}
+      }
+    } else {
+      Object.keys(memoryNutritionCache).forEach((k) => delete memoryNutritionCache[k]);
+    }
+  },
+
+  notifyUpdated() {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("grindlog_meals_updated"));
+      try {
+        localStorage.setItem("grindlog_meals_last_updated", String(Date.now()));
+      } catch {}
+    }
+  }
+};
+
 export const nutritionApi = {
   async getToday(date?: string) {
     const url = `/api/nutrition/today?t=${Date.now()}${date ? `&date=${encodeURIComponent(date)}` : ''}`;
     const res = await fetch(url);
     const json = await res.json();
     if (!res.ok) throw json.error;
+    if (json.data) {
+      const targetDate = json.data.date || date || (typeof window !== "undefined" ? new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date()) : "");
+      if (targetDate) {
+        nutritionClientCache.set(targetDate, json.data);
+      }
+    }
     return json.data;
   },
 

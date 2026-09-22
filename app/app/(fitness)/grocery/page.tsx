@@ -249,11 +249,11 @@ export default async function GroceryPage() {
     <GroceryView
       initialItems={itemsToRender}
       budget={budgetSummary}
-      planName={activePlan.name}
-      planGoal={activePlan.goal}
+      planName={activePlan?.name || "Fitness Plan"}
+      planGoal={activePlan?.goal || "Health & Fitness"}
       dietType={profile?.diet_preference || profile?.food_type || undefined}
       userId={user.id}
-      planId={activePlan.id}
+      planId={activePlan?.id || ""}
     />
   );
 }

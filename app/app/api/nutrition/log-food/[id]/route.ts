@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 
@@ -37,6 +38,11 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     NutritionService.updateDailySummary(user.id).catch(err => {
       console.warn("Background updateDailySummary warning in deleteFood:", err);
     });
+
+    try {
+      revalidatePath("/");
+      revalidatePath("/nutrition");
+    } catch {}
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
