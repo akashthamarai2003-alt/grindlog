@@ -77,9 +77,9 @@ export function WorkoutAnalyticsCard({ metrics }: { metrics: WorkoutAnalytics })
           {chartData.map((d: any, index: number) => (
             <span 
               key={index}
-              className={d.completed ? "text-[#ADFF00] font-black" : "text-white/40"}
+              className={d?.completed ? "text-[#ADFF00] font-black" : "text-white/40"}
             >
-              {d.day.charAt(0)}
+              {typeof d?.day === "string" ? d.day.charAt(0) : (d?.label ? String(d.label).charAt(0) : "?")}
             </span>
           ))}
         </div>

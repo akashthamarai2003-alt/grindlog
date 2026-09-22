@@ -13,8 +13,17 @@ export function InstantWorkoutLoader() {
         const cached = localStorage.getItem("grindlog_workout_snapshot_v1");
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (parsed && (parsed.effectiveWeekDays || parsed.dateStr)) {
+          // Only use snapshot if effectiveWeekDays is a valid array with day property
+          if (
+            parsed &&
+            Array.isArray(parsed.effectiveWeekDays) &&
+            parsed.effectiveWeekDays.length > 0 &&
+            typeof parsed.effectiveWeekDays[0]?.day === "string"
+          ) {
             setSnapshot(parsed);
+          } else {
+            // Clean up invalid or stale snapshot
+            localStorage.removeItem("grindlog_workout_snapshot_v1");
           }
         }
       } catch {

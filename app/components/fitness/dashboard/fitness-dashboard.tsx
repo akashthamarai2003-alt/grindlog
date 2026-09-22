@@ -86,24 +86,6 @@ export function FitnessDashboard({
         };
         localStorage.setItem("grindlog_profile_snapshot_v1", JSON.stringify(profileSnapshot));
 
-        // Cross-tab seed: Workout snapshot
-        if (todayWorkout || weekWorkouts?.length) {
-          const workoutSnapshot = {
-            dateStr: targetDateStr || new Date().toISOString().split("T")[0],
-            isFree: premiumLevel === "free",
-            planBadge: activePlan ? "Active Plan" : undefined,
-            effectiveWeekDays: weekWorkouts || [],
-            effectivePlanDays: weekWorkouts || [],
-            effectiveWorkout: todayWorkout || null,
-            nextWorkout: null,
-            isPro: premiumLevel === "pro",
-            initialCoachNote: null,
-            hasPlan: Boolean(activePlan),
-            savedAt: Date.now(),
-          };
-          localStorage.setItem("grindlog_workout_snapshot_v1", JSON.stringify(workoutSnapshot));
-        }
-
         // Cross-tab seed: Nutrition snapshot
         if (nutrition) {
           localStorage.setItem("grindlog_nutrition_snapshot_v1", JSON.stringify(nutrition));

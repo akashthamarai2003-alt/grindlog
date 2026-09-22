@@ -1002,9 +1002,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/fitness-dashboard.tsx": {
-    "mtime": 1790052378.0994067,
-    "seen": 1790052805.570328,
-    "ast_hash": "72cd73c762ab643261b8d7ac0edf3195",
+    "mtime": 1790053418.8393478,
+    "seen": 1790053927.2985263,
+    "ast_hash": "403c4e81b1418ba5deb0bd67c1742a27",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/fitness-header.tsx": {
@@ -1368,9 +1368,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/progress/workout-analytics.tsx": {
-    "mtime": 1788534650.0462663,
-    "seen": 1789970487.5984738,
-    "ast_hash": "b0ef46e46bc6c1efbd6c8a7597132b18",
+    "mtime": 1790053430.003933,
+    "seen": 1790053927.324807,
+    "ast_hash": "b71faa77e467e392aa47fe5b7f42047a",
     "semantic_hash": ""
   },
   "app/components/fitness/progress/workout-heatmap.tsx": {
@@ -1518,9 +1518,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/workout/weekly-workout-view.tsx": {
-    "mtime": 1788495118.839751,
-    "seen": 1789970487.5985901,
-    "ast_hash": "3e3c02f253e6bbe27c16dfb6856d9e3e",
+    "mtime": 1790053396.9640129,
+    "seen": 1790053927.3301005,
+    "ast_hash": "22b9e4245c00771c354435c8319fe3f0",
     "semantic_hash": ""
   },
   "app/components/fitness/workout/workout-complete.tsx": {
@@ -1950,9 +1950,9 @@
     "semantic_hash": ""
   },
   "app/next.config.ts": {
-    "mtime": 1788858702.882571,
-    "seen": 1789970487.5989008,
-    "ast_hash": "ef5eceecb757c2612ec43358b8dc0443",
+    "mtime": 1790053371.5402772,
+    "seen": 1790053927.3472579,
+    "ast_hash": "0dacd543904789cf60b6dcab15b5d484",
     "semantic_hash": ""
   },
   "app/package.json": {
@@ -2952,9 +2952,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/workout/instant-workout-loader.tsx": {
-    "mtime": 1790052224.1589053,
-    "seen": 1790052805.615484,
-    "ast_hash": "77ba0918325f45b3c576f9adb54e0f61",
+    "mtime": 1790053408.860257,
+    "seen": 1790053927.3292758,
+    "ast_hash": "c77795deb5082c228241e2ae6d9347ce",
     "semantic_hash": ""
   },
   "app/components/fitness/workout/workout-view-client.tsx": {

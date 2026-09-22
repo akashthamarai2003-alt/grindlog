@@ -52,6 +52,8 @@ const filteredRuntimeCaching = runtimeCaching.filter(
 const config = withPWA({
   dest: "public",
   register: true,
+  dynamicStartUrl: false,
+  cacheStartUrl: false,
   disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     cleanupOutdatedCaches: true,
