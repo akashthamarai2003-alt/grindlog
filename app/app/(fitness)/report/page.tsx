@@ -579,14 +579,8 @@ export default async function AIStartingReportPage() {
         </div>
 
         {/* Continue Button */}
-        <div className="pt-4 space-y-3">
+        <div className="pt-4">
           <GeneratePlanButton />
-          <Link
-            href="/"
-            className="block text-center text-xs font-semibold text-gray-400 hover:text-[#ADFF00] transition-colors py-2"
-          >
-            Explore Dashboard in Preview Mode &rarr;
-          </Link>
         </div>
       </div>
     </div>
