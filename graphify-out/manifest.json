@@ -114,9 +114,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/payment/page.tsx": {
-    "mtime": 1790077304.5169246,
-    "seen": 1790077462.6430507,
-    "ast_hash": "7e52aacdd83093bf6f2918a57e58b925",
+    "mtime": 1790079917.1362877,
+    "seen": 1790080077.410568,
+    "ast_hash": "85a6fd271731660df5dbe54e40589b3b",
     "semantic_hash": ""
   },
   "app/app/(fitness)/plan-setup/layout.tsx": {
@@ -1668,9 +1668,9 @@
     "semantic_hash": ""
   },
   "app/lib/constants/pricing.ts": {
-    "mtime": 1788783685.8467462,
-    "seen": 1789970487.598698,
-    "ast_hash": "0536fd6a050273abc6b4e87735b2e2a6",
+    "mtime": 1790079874.652682,
+    "seen": 1790080077.5517173,
+    "ast_hash": "8905bf5cb6268d3615d6e089df3d5281",
     "semantic_hash": ""
   },
   "app/lib/firebase/client.ts": {
@@ -2943,6 +2943,12 @@
     "mtime": 1790067793.557375,
     "seen": 1790068449.8758838,
     "ast_hash": "11ab0326acb5021822e3d43f90255a92",
+    "semantic_hash": ""
+  },
+  "app/app/(fitness)/payment/payment-client.tsx": {
+    "mtime": 1790079910.4461179,
+    "seen": 1790080077.410576,
+    "ast_hash": "d85ded42c84dce579d466b486d407722",
     "semantic_hash": ""
   }
 }
