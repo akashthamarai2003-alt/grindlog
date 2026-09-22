@@ -2,6 +2,33 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { calculateTargets } from "@/lib/fitness/nutrition/nutrition-engine";
 
+interface NutritionServerCacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+export function getGlobalNutritionCache(): Map<string, NutritionServerCacheEntry> {
+  if (!(globalThis as any).__grindlog_nutrition_server_cache) {
+    (globalThis as any).__grindlog_nutrition_server_cache = new Map<string, NutritionServerCacheEntry>();
+  }
+  return (globalThis as any).__grindlog_nutrition_server_cache;
+}
+
+export function invalidateNutritionServerCache(userId?: string) {
+  const cache = getGlobalNutritionCache();
+  if (userId) {
+    for (const key of cache.keys()) {
+      if (key.includes(userId)) {
+        cache.delete(key);
+      }
+    }
+  } else {
+    cache.clear();
+  }
+}
+
+let globalFoodCatalogCache: { data: any[]; timestamp: number } | null = null;
+
 export type NutritionFoodReference = {
   id?: string;
   name: string;
@@ -1142,6 +1169,10 @@ const mealLogDebounce = new Map<string, { timestamp: number; result: any[] }>();
 
 export class NutritionService {
   
+  static invalidateServerCache(userId?: string) {
+    invalidateNutritionServerCache(userId);
+  }
+
   /**
    * Checks whether the user is eligible to generate a new AI weekly meal plan.
    * Strictly enforces 1 generation per 7 days and max 4 generations per month.
@@ -2203,6 +2234,8 @@ export class NutritionService {
     await supabase
       .from('nutrition_daily_summary')
       .upsert(upsertData, { onConflict: 'user_id, date' });
+
+    invalidateNutritionServerCache(userId);
   }
 
   static getPrepInstructionForSlot(
@@ -3311,6 +3344,16 @@ function scaleServingSize(servingSize: string, scale: number): string {
   }
 
   static async getTodaySummaryAndDetails(userId: string, targetDateStr?: string) {
+    const cache = getGlobalNutritionCache();
+    const cacheKey = `full_${userId}_${targetDateStr || 'today'}`;
+    const cached = cache.get(cacheKey);
+    const now = Date.now();
+
+    // 30-second server cache: return in 0ms if visited recently
+    if (cached && (now - cached.timestamp < 30_000)) {
+      return cached.data;
+    }
+
     const supabase = createAdminClient();
     
     // Fetch timezone once to avoid 3 redundant DB calls
@@ -3325,6 +3368,21 @@ function scaleServingSize(servingSize: string, scale: number): string {
     if (!mOffsetStr || mOffsetStr === 'GMT') mOffsetStr = 'GMT+00:00';
     mOffsetStr = mOffsetStr.replace('GMT', '');
     const monthStartISO = new Date(`${firstDayOfMonth}T00:00:00.000${mOffsetStr}`).toISOString();
+
+    // Food catalog: cached for 5 minutes to avoid pulling 300 rows on every cold hit
+    const foodCatalogPromise = (globalFoodCatalogCache && (Date.now() - globalFoodCatalogCache.timestamp < 5 * 60 * 1000))
+      ? Promise.resolve({ data: globalFoodCatalogCache.data })
+      : supabase
+          .from('foods')
+          .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly')
+          .eq('is_active', true)
+          .limit(300)
+          .then(res => {
+            if (res.data && res.data.length > 0) {
+              globalFoodCatalogCache = { data: res.data, timestamp: Date.now() };
+            }
+            return res;
+          });
 
     // Parallelize all data fetching
     const [targets, foodsRes, watersRes, plansRes, monthFoodsRes, fitProfileRes, activePlanRes, foodCatalogRes, weeklyPlanStatus] = await Promise.all([
@@ -3363,11 +3421,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
         .eq('user_id', userId)
         .eq('status', 'active')
         .maybeSingle(),
-      supabase
-        .from('foods')
-        .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly')
-        .eq('is_active', true)
-        .limit(300),
+      foodCatalogPromise,
       this.getWeeklyPlanEligibility(userId)
     ]);
 
@@ -3663,7 +3717,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
 
     const score = this.computeNutritionScore(consumed, targets, mealsCompleted, totalMeals);
 
-    return {
+    const result = {
       date: localDate,
       day_of_week: dayOfWeek,
       targets,
@@ -3694,6 +3748,9 @@ function scaleServingSize(servingSize: string, scale: number): string {
         ? 'Non-Vegetarian'
         : (fitProfile?.food_type || fitProfile?.diet_preference || undefined)
     };
+
+    cache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   }
 
   /**
@@ -3703,6 +3760,16 @@ function scaleServingSize(servingSize: string, scale: number): string {
    * Reduces DB queries from 9 to 6, cutting ~1–1.5s off the dashboard cold start.
    */
   static async getDashboardSummary(userId: string, targetDateStr?: string) {
+    const cache = getGlobalNutritionCache();
+    const cacheKey = `dash_${userId}_${targetDateStr || 'today'}`;
+    const cached = cache.get(cacheKey);
+    const now = Date.now();
+
+    // 30-second server cache: return in 0ms if visited recently
+    if (cached && (now - cached.timestamp < 30_000)) {
+      return cached.data;
+    }
+
     const supabase = createAdminClient();
 
     const tz = await this.getUserTimezone(userId);
@@ -3874,7 +3941,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
     const mealsCompleted = formattedMeals.filter(p => completedMealTypes.has(p.meal_type)).length;
     const score = this.computeNutritionScore(consumed, targets, mealsCompleted, totalMeals);
 
-    return {
+    const result = {
       date: localDate,
       targets,
       consumed,
@@ -3904,5 +3971,8 @@ function scaleServingSize(servingSize: string, scale: number): string {
         ? 'Non-Vegetarian'
         : (fitProfile?.food_type || fitProfile?.diet_preference || undefined),
     };
+
+    cache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   }
 }

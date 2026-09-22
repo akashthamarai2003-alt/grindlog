@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "app/app/actions/fitness.ts": {
-    "mtime": 1790063038.6235218,
-    "seen": 1790065371.1805277,
-    "ast_hash": "17b67ddfb7e6286f354b48ae945e16ae",
+    "mtime": 1790065858.9761353,
+    "seen": 1790065989.2875235,
+    "ast_hash": "134c789723fbcc442795db29ded707d0",
     "semantic_hash": ""
   },
   "app/app/actions/payment.ts": {
@@ -1458,9 +1458,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/workout/active-workout-resume-card.tsx": {
-    "mtime": 1790063055.1361089,
-    "seen": 1790065371.279953,
-    "ast_hash": "3a3c9e9de10e88b875879e319308e087",
+    "mtime": 1790065874.078846,
+    "seen": 1790065989.3431716,
+    "ast_hash": "6d4255b1e5e7a067c7de831070e0f0b2",
     "semantic_hash": ""
   },
   "app/components/fitness/workout/ai-coach-note.tsx": {
@@ -2916,9 +2916,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/workout/workout-view.tsx": {
-    "mtime": 1790062550.592401,
-    "seen": 1790065371.289077,
-    "ast_hash": "06955c04dd7dcbbc5cf62d4bf724f8e1",
+    "mtime": 1790065885.4897137,
+    "seen": 1790065989.3500788,
+    "ast_hash": "2c56288504a6b66b081e5c82003727d3",
     "semantic_hash": ""
   },
   "app/lib/api/workout-cache.ts": {
@@ -2928,9 +2928,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/fitness/workout-page-service.ts": {
-    "mtime": 1790062540.4849446,
-    "seen": 1790065371.3064947,
-    "ast_hash": "8b53f94394dd44fb9bd148c98be7d8d1",
+    "mtime": 1790065836.0714123,
+    "seen": 1790065989.361718,
+    "ast_hash": "9c4efabae2cf41c3210e4b51d7eca2c1",
     "semantic_hash": ""
   },
   "app/types/fitness/workout-page.ts": {

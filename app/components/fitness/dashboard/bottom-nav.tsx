@@ -22,7 +22,6 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
   // Eagerly prefetch static routes into router cache on mount
   useEffect(() => {
     navItems.forEach((item) => {
-      if (item.href === "/nutrition") return;
       try {
         router.prefetch(item.href);
       } catch {
@@ -43,7 +42,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
             <Link 
               key={item.href} 
               href={item.href}
-              prefetch={item.href !== "/nutrition"}
+              prefetch={true}
               onClick={(e) => {
                 if (pathname === item.href) {
                   e.preventDefault();
@@ -55,13 +54,11 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
                 setNavigatingTo(item.href);
               }}
               onTouchStart={() => {
-                if (item.href === "/nutrition") return;
                 try {
                   router.prefetch(item.href);
                 } catch {}
               }}
               onPointerDown={() => {
-                if (item.href === "/nutrition") return;
                 try {
                   router.prefetch(item.href);
                 } catch {}
