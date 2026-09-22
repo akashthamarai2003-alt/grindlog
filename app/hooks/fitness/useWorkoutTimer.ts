@@ -78,7 +78,7 @@ export function useWorkoutTimer(
         if (idleDiff > MAX_IDLE_GAP_SECONDS || (parsed.elapsed || 0) > MAX_WORKOUT_SECONDS) {
           clearWorkoutTimer(workoutId);
           currentElapsed = Math.min(rawElapsedSinceStart, MAX_WORKOUT_SECONDS);
-        } else if ((parsed.elapsed || 0) > rawElapsedSinceStart + 15) {
+        } else if ((parsed.elapsed || 0) > rawElapsedSinceStart + 5) {
           // If startedAt was reset/updated to now, the saved timer in localStorage is from an older session. Discard it!
           clearWorkoutTimer(workoutId);
           currentElapsed = Math.max(0, Math.min(rawElapsedSinceStart, MAX_WORKOUT_SECONDS));

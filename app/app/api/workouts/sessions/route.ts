@@ -19,13 +19,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { workoutId, allowEarlyStart = false } = await req.json();
+    const { workoutId, allowEarlyStart = false, forceFreshStart = false } = await req.json();
 
     if (!workoutId) {
       return NextResponse.json({ error: "Missing workoutId" }, { status: 400 });
     }
 
-    const session = await WorkoutService.startSession(user.id, workoutId, { allowEarlyStart: allowEarlyStart === true });
+    const session = await WorkoutService.startSession(user.id, workoutId, { 
+      allowEarlyStart: allowEarlyStart === true,
+      forceFreshStart: forceFreshStart === true,
+    });
     
     return NextResponse.json({ session });
   } catch (error: any) {

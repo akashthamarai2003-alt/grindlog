@@ -362,25 +362,27 @@ export class WorkoutService {
   /**
    * Start or resume a session idempotently.
    */
-  static async startSession(userId: string, workoutId: string, options: { allowEarlyStart?: boolean } = {}) {
+  static async startSession(userId: string, workoutId: string, options: { allowEarlyStart?: boolean; forceFreshStart?: boolean } = {}) {
     const supabase = await createServerSupabase();
 
     // 1. Verify ownership and get workout status
     const { data: workout, error: wErr } = await supabase
       .from("fitness_os_workouts")
-      .select("user_id, status, workout_date, plan_id")
+      .select("user_id, status, workout_date, plan_id, started_at")
       .eq("id", workoutId)
       .single();
 
     if (wErr || !workout) throw new Error("WORKOUT_NOT_FOUND");
     if (workout.user_id !== userId) throw new Error("UNAUTHORIZED");
     if (workout.status === "completed") throw new Error("ALREADY_COMPLETED");
+
     // 2. Check for active session first (idempotent resume)
     const { data: existingSessions, error: sErr } = await supabase
       .from("fitness_os_workout_sessions")
       .select("id, started_at, status")
       .eq("workout_id", workoutId)
       .in("status", ["active", "paused"])
+      .order("started_at", { ascending: false })
       .limit(1);
 
     if (sErr) throw sErr;
@@ -388,6 +390,7 @@ export class WorkoutService {
     if (existingSessions && existingSessions.length > 0) {
       const sess = existingSessions[0];
       const sessionAgeMs = sess.started_at ? Date.now() - new Date(sess.started_at).getTime() : 0;
+
       // Stale check: If older than 4 hours (14,400s), auto-retire and don't re-serve stale session
       if (sessionAgeMs > 4 * 60 * 60 * 1000 || sessionAgeMs < 0) {
         await supabase
@@ -399,26 +402,34 @@ export class WorkoutService {
           })
           .eq("id", sess.id);
       } else {
-        // If older than 60s, check if any sets were completed. If 0 sets logged, refresh started_at to now!
-        if (sessionAgeMs > 60 * 1000) {
-          const { data: sets } = await supabase
-            .from("fitness_os_sets")
-            .select("id, completed, fitness_os_exercises!inner(workout_id)")
-            .eq("fitness_os_exercises.workout_id", workoutId)
-            .eq("completed", true)
-            .limit(1);
+        // Check if any sets have actually been logged
+        const { data: sets } = await supabase
+          .from("fitness_os_sets")
+          .select("id, completed, fitness_os_exercises!inner(workout_id)")
+          .eq("fitness_os_exercises.workout_id", workoutId)
+          .eq("completed", true)
+          .limit(1);
 
-          if (!sets || sets.length === 0) {
-            const nowIso = new Date().toISOString();
-            await supabase
-              .from("fitness_os_workout_sessions")
-              .update({ started_at: nowIso, paused_at: null, status: "active" })
-              .eq("id", sess.id);
-            sess.started_at = nowIso;
-            sess.status = "active";
-          }
+        const hasCompletedSets = sets && sets.length > 0;
+
+        // If forceFreshStart requested, or 0 sets completed and session isn't brand new (or was scheduled):
+        // refresh started_at to right NOW so user's workout timer starts accurately at 00:00!
+        if (options.forceFreshStart || (!hasCompletedSets && workout.status !== "in_progress") || (!hasCompletedSets && sessionAgeMs > 10 * 1000)) {
+          const nowIso = new Date().toISOString();
+          await supabase
+            .from("fitness_os_workout_sessions")
+            .update({ started_at: nowIso, paused_at: null, status: "active" })
+            .eq("id", sess.id);
+
+          await supabase
+            .from("fitness_os_workouts")
+            .update({ status: "in_progress", started_at: nowIso })
+            .eq("id", workoutId);
+
+          sess.started_at = nowIso;
+          sess.status = "active";
         }
-        // Idempotent: return valid existing session immediately
+        // Return valid session
         return sess;
       }
     }
@@ -429,12 +440,14 @@ export class WorkoutService {
     }
 
     // 3. Create new session
+    const nowIso = new Date().toISOString();
     const { data: newSession, error: createErr } = await supabase
       .from("fitness_os_workout_sessions")
       .insert({
         user_id: userId,
         workout_id: workoutId,
-        status: "active"
+        status: "active",
+        started_at: nowIso
       })
       .select()
       .single();
@@ -442,10 +455,10 @@ export class WorkoutService {
     if (createErr) throw createErr;
 
     // 4. Update parent workout status to in_progress
-    if (workout.status === "scheduled") {
+    if (workout.status === "scheduled" || !workout.started_at) {
       const updateData: Record<string, any> = {
         status: "in_progress",
-        started_at: new Date().toISOString()
+        started_at: nowIso
       };
       if (workout.workout_date > today) {
         updateData.workout_date = today;

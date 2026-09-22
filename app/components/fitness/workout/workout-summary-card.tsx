@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { reopenWorkoutAction } from "@/app/actions/fitness";
+import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
 
 interface WorkoutSummaryCardProps {
@@ -51,7 +52,8 @@ export function WorkoutSummaryCard({
 
   useEffect(() => {
     if (workout?.id && workout.id !== "mock") {
-      router.prefetch(`/workout/${workout.id}`);
+      // ONLY prefetch summary route if workout is genuinely complete
+      // NEVER prefetch /workout/[workoutId] before start to avoid creating premature sessions or stale router cache
       if (isTrulyCompleted && completedCount === exerciseCount) {
         router.prefetch(`/workout/${workout.id}/summary`);
       }
@@ -67,25 +69,32 @@ export function WorkoutSummaryCard({
       return;
     }
 
-    // Instant 0ms navigation if session is already active or in progress
-    if (isInProgress || workout.id === "mock") {
+    if (workout.id === "mock") {
+      clearWorkoutTimer("mock");
       router.push(`/workout/${workout.id}`);
       return;
     }
 
-    // Immediate optimistic navigation
-    router.push(`/workout/${workout.id}`);
+    // Always clear stale client timer so it begins clean at 00:00
+    clearWorkoutTimer(workout.id);
 
-    // Create session in parallel
     try {
       await fetch("/api/workouts/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workoutId: workout.id, allowEarlyStart: isUpcoming })
+        body: JSON.stringify({ 
+          workoutId: workout.id, 
+          allowEarlyStart: isUpcoming,
+          forceFreshStart: true 
+        })
       });
     } catch (e: any) {
       console.warn("Session initiation background notice:", e);
     }
+
+    // Bust client router cache so fresh server session timestamp is used
+    router.refresh();
+    router.push(`/workout/${workout.id}`);
   };
 
   const handleStart = async () => {
@@ -98,8 +107,10 @@ export function WorkoutSummaryCard({
     // If workout was falsely marked completed with 0 sets (or partial sets), reopen it!
     if (workout?.status === "completed") {
       setIsStarting(true);
+      clearWorkoutTimer(workout.id);
       try {
         await reopenWorkoutAction({ workoutId: workout.id });
+        router.refresh();
         router.push(`/workout/${workout.id}`);
       } catch {
         router.push(`/workout/${workout.id}`);
@@ -107,11 +118,13 @@ export function WorkoutSummaryCard({
       return;
     }
 
-    if (isInProgress) {
+    // Only resume without resetting timer if there are already completed exercises
+    if (isInProgress && completedCount > 0) {
       setIsStarting(true);
       router.push(`/workout/${workout.id}`);
       return;
     }
+
     if (isUpcoming) {
       setShowEarlyStartConfirm(true);
       return;

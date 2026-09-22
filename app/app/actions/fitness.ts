@@ -226,6 +226,29 @@ export async function startWorkoutSessionAction(payload: { workoutId: string }) 
         })
         .eq("id", existingSession.id);
     } else {
+      // If 0 completed sets exist, refresh started_at to now so timer starts accurately at 00:00
+      const { data: sets } = await supabase
+        .from("fitness_os_sets")
+        .select("id, completed, fitness_os_exercises!inner(workout_id)")
+        .eq("fitness_os_exercises.workout_id", workoutId)
+        .eq("completed", true)
+        .limit(1);
+
+      if (!sets || sets.length === 0) {
+        const nowIso = new Date().toISOString();
+        await supabase
+          .from("fitness_os_workout_sessions")
+          .update({ started_at: nowIso, paused_at: null, status: "active" })
+          .eq("id", existingSession.id);
+
+        await supabase
+          .from("fitness_os_workouts")
+          .update({ status: "in_progress", started_at: nowIso })
+          .eq("id", workoutId);
+      }
+
+      revalidatePath(`/workout/${workoutId}`);
+      revalidatePath(`/workout`);
       return { success: true, data: { sessionId: existingSession.id } };
     }
   }

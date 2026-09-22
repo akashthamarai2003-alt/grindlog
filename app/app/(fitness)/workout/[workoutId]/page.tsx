@@ -140,10 +140,10 @@ async function ActiveWorkoutContent({
 
   const cachedCoachNote = cachedNoteRes?.data?.note || null;
 
-  // Find active session
-  let activeSession = workout.fitness_os_workout_sessions?.find(
-    (s: any) => s.status === "active" || s.status === "paused"
-  );
+  // Find latest active session
+  let activeSession = workout.fitness_os_workout_sessions
+    ?.filter((s: any) => s.status === "active" || s.status === "paused")
+    ?.sort((a: any, b: any) => new Date(b.started_at || 0).getTime() - new Date(a.started_at || 0).getTime())[0];
 
   // Stale check: If an active/paused session is older than 4 hours, auto-retire it as cancelled
   const MAX_SESSION_AGE_MS = 4 * 60 * 60 * 1000;
@@ -169,11 +169,11 @@ async function ActiveWorkoutContent({
     return acc + sets.filter((s: any) => s.completed).length;
   }, 0);
 
-  // If no sets have been logged yet and the session is older than 60 seconds (e.g. from previewing or testing),
-  // refresh started_at to right now so the user's workout timer starts accurately at 00:00!
+  // If no sets have been logged yet and the session is older than 10 seconds (e.g. from previewing or prefetch),
+  // OR the workout was still in scheduled status, refresh started_at to right now so the user's workout timer starts accurately at 00:00!
   if (activeSession && activeSession.started_at && completedSetsCount === 0) {
     const sessionAgeMs = Date.now() - new Date(activeSession.started_at).getTime();
-    if (sessionAgeMs > 60 * 1000) {
+    if (workout.status === "scheduled" || sessionAgeMs > 10 * 1000) {
       const nowIso = new Date().toISOString();
       await admin
         .from("fitness_os_workout_sessions")
@@ -186,7 +186,7 @@ async function ActiveWorkoutContent({
 
       await admin
         .from("fitness_os_workouts")
-        .update({ started_at: nowIso })
+        .update({ started_at: nowIso, status: "in_progress" })
         .eq("id", workoutId);
 
       activeSession.started_at = nowIso;
@@ -208,10 +208,10 @@ async function ActiveWorkoutContent({
       .single();
     activeSession = newSession;
 
-    // Keep parent workout started_at in sync with the fresh session
+    // Keep parent workout started_at and status in sync with the fresh session
     await admin
       .from("fitness_os_workouts")
-      .update({ started_at: nowIso })
+      .update({ started_at: nowIso, status: "in_progress" })
       .eq("id", workoutId);
   }
 
