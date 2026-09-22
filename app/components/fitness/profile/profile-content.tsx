@@ -88,35 +88,6 @@ export function ProfileContent({
   }, [initialAiLimitInfo]);
 
   useEffect(() => {
-    if (initialFitnessProfile) {
-      setFitnessProfile(initialFitnessProfile);
-      if (initialFitnessProfile.reminders_enabled !== undefined) {
-        setNotificationsEnabled(initialFitnessProfile.reminders_enabled);
-      }
-    }
-  }, [initialFitnessProfile]);
-
-  // Save local snapshot for 0ms instant tab switching
-  useEffect(() => {
-    if (typeof window !== "undefined" && user?.id) {
-      try {
-        const snapshot = {
-          user: { id: user.id, email: user.email, created_at: user.created_at },
-          fitnessProfile,
-          mainProfile,
-          activePlan,
-          subscriptionPlan,
-          aiLimitInfo,
-          savedAt: Date.now(),
-        };
-        localStorage.setItem("grindlog_profile_snapshot_v1", JSON.stringify(snapshot));
-      } catch {
-        // quota or private browsing safely ignored
-      }
-    }
-  }, [user, fitnessProfile, mainProfile, activePlan, subscriptionPlan, aiLimitInfo]);
-
-  useEffect(() => {
     const handleUsageUpdated = (e: any) => {
       if (e?.detail && typeof e.detail.remaining === "number") {
         setAiLimitInfo((prev) => ({

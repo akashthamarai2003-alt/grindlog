@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { OnboardingData } from "@/types/fitness/onboarding";
 import Link from "next/link";
@@ -54,47 +54,6 @@ export function FitnessDashboard({
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [modalFeature, setModalFeature] = useState("Workout Sessions");
   const isFree = premiumLevel === "free";
-
-  // Native app offline/fast-snapshot persistence across all 5 main tabs
-  useEffect(() => {
-    if (typeof window !== "undefined" && nutrition && profile) {
-      try {
-        const snapshot = {
-          profile,
-          nutrition,
-          activePlan,
-          todayWorkout,
-          weekWorkouts,
-          dailyActivity,
-          dayNumber,
-          premiumLevel,
-          targetDateStr,
-          subscriptionState,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem("grindlog_dashboard_snapshot_v1", JSON.stringify(snapshot));
-
-        // Cross-tab seed: Profile snapshot
-        const profileSnapshot = {
-          user: { id: user.id, email: user.email, created_at: user.created_at },
-          fitnessProfile: profile,
-          mainProfile: { display_name: (profile as any).name || (profile as any).display_name },
-          activePlan: activePlan || null,
-          subscriptionPlan: subscriptionState?.plan || null,
-          aiLimitInfo: { allowed: true, limit: 10, used: 0, remaining: 10 },
-          savedAt: Date.now(),
-        };
-        localStorage.setItem("grindlog_profile_snapshot_v1", JSON.stringify(profileSnapshot));
-
-        // Cross-tab seed: Nutrition snapshot
-        if (nutrition) {
-          localStorage.setItem("grindlog_nutrition_snapshot_v1", JSON.stringify(nutrition));
-        }
-      } catch {
-        // quota or private mode safely ignored
-      }
-    }
-  }, [user, profile, nutrition, activePlan, todayWorkout, weekWorkouts, dailyActivity, dayNumber, premiumLevel, targetDateStr, subscriptionState]);
 
   const openUpgradeModal = (feature: string) => {
     setModalFeature(feature);

@@ -1,18 +1,23 @@
 import { getCachedUser } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
-import { WorkoutViewClient } from "@/components/fitness/workout/workout-view-client";
-import { InstantWorkoutLoader } from "@/components/fitness/workout/instant-workout-loader";
+import { WorkoutHeader } from "@/components/fitness/workout/workout-header";
+import { TodaysExercisesList } from "@/components/fitness/workout/todays-exercises-list";
+import { ActiveWorkoutResumeCard } from "@/components/fitness/workout/active-workout-resume-card";
+import { AiCoachNote } from "@/components/fitness/workout/ai-coach-note";
+import { WeeklyWorkoutView } from "@/components/fitness/workout/weekly-workout-view";
+import { WorkoutSummaryCard } from "@/components/fitness/workout/workout-summary-card";
+import { WorkoutSkeleton } from "@/components/fitness/workout/workout-skeleton";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
+import { CalendarClock } from "lucide-react";
 import { SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
 import { Suspense } from "react";
-import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
-import {
-  getCachedWorkoutPageData,
-  setCachedWorkoutPageData,
-} from "@/lib/services/workout/workout-cache";
+
+export const dynamic = "force-dynamic";
 
 async function WorkoutContent() {
+  const admin = createAdminClient();
   const { data: { user } } = await getCachedUser();
   
   if (!user) {
@@ -20,29 +25,23 @@ async function WorkoutContent() {
   }
 
   const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
-  const cacheKey = `${user.id}_${todayStr}`;
-
-  // In-memory cache hit (<1ms response time)
-  const cached = getCachedWorkoutPageData(cacheKey);
-  if (cached) {
-    return <WorkoutViewClient {...cached} />;
-  }
-
-  const admin = createAdminClient();
   const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split("T")[0];
   const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   // Fetch all core user state in a SINGLE parallel batch with targeted joins
   const [
-    tz,
+    { data: mainProfile },
     { data: activePlan },
     subscriptionPlan,
     { data: activeWorkouts },
     { data: calendarWorkouts },
     { data: aiNotes },
   ] = await Promise.all([
-    NutritionService.getUserTimezone(user.id),
+    admin
+      .from("profiles")
+      .select("timezone")
+      .eq("id", user.id)
+      .maybeSingle(),
     admin
       .from("fitness_os_workout_plans")
       .select("id, name, description, plan_data")
@@ -93,6 +92,7 @@ async function WorkoutContent() {
       .limit(5),
   ]);
 
+  const tz = mainProfile?.timezone || "UTC";
   const userLocalDate = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
     year: "numeric",
@@ -233,29 +233,79 @@ async function WorkoutContent() {
     ? aiNotes?.find((n: any) => n.workout_id === targetWorkoutId)?.note || null
     : null;
 
-  const viewProps = {
-    dateStr,
-    isFree,
-    planBadge: isFree ? "Preview Split" : planDays && planDays.length > 0 ? `${planDays.length}-Day Split` : activePlan ? "Active Plan" : undefined,
-    effectiveWeekDays,
-    effectivePlanDays,
-    effectiveWorkout,
-    nextWorkout,
-    nextWorkoutLabel,
-    isPro: subscriptionPlan?.id === "pro",
-    initialCoachNote,
-    hasPlan: Boolean(activePlan),
-  };
+  return (
+    <div className="min-h-screen bg-[#0A1108] text-white">
+      <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">
+        <WorkoutHeader 
+          title="Your Workouts" 
+          dateStr={dateStr}
+          isMainPage={true}
+          planBadge={isFree ? "Preview Split" : planDays && planDays.length > 0 ? `${planDays.length}-Day Split` : activePlan ? "Active Plan" : undefined}
+        />
+        
+        <div className="mt-2">
+          <WeeklyWorkoutView weekDays={effectiveWeekDays} planDays={effectivePlanDays} />
 
-  // Cache in server memory with 5-minute TTL
-  setCachedWorkoutPageData(cacheKey, viewProps);
-
-  return <WorkoutViewClient {...viewProps} />;
+          {!effectiveWorkout && !nextWorkout ? (
+            <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6 mb-6">
+              <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
+              <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 text-center py-12">
+                <h3 className="text-xl font-black text-white uppercase tracking-tight">Rest & Recovery Day</h3>
+                <p className="text-sm font-medium text-white/60">
+                  {activePlan ? "Your saved AI plan has no workout scheduled for this day." : "Your saved workout plan is not available yet."}
+                </p>
+                {!activePlan && <Link href="/report" className="rounded-xl bg-[#ADFF00] px-6 py-3 font-black uppercase tracking-wider text-black">View Plan Setup</Link>}
+              </div>
+            </div>
+          ) : !effectiveWorkout && nextWorkout ? (
+            <div className="mt-6 mb-6">
+              <div className="mb-3 flex items-center gap-2 px-2 text-[#ADFF00]">
+                <CalendarClock className="h-4 w-4" />
+                <span className="text-[11px] font-black uppercase tracking-widest">Next saved workout</span>
+              </div>
+              <WorkoutSummaryCard
+                workout={nextWorkout}
+                exerciseCount={nextWorkout.exerciseCount}
+                eyebrow="Next Workout"
+                scheduledLabel={nextWorkoutLabel}
+                isUpcoming
+              />
+              {subscriptionPlan?.id === "pro" && (
+                <AiCoachNote workoutId={nextWorkout.id} isEarlyStart initialNote={initialCoachNote} />
+              )}
+            </div>
+          ) : (
+            <>
+              {effectiveWorkout.status === "in_progress" && !isFree ? (
+                <ActiveWorkoutResumeCard 
+                  workoutId={effectiveWorkout.id} 
+                  completedExercises={effectiveWorkout.completedExercises} 
+                  totalExercises={effectiveWorkout.exerciseCount} 
+                />
+              ) : (
+                <WorkoutSummaryCard 
+                  workout={effectiveWorkout} 
+                  exerciseCount={effectiveWorkout.exerciseCount || (effectiveWorkout.fitness_os_exercises?.length || 0)} 
+                  isFree={isFree}
+                />
+              )}
+              
+              {subscriptionPlan?.id === "pro" && (
+                <AiCoachNote workoutId={effectiveWorkout.id} initialNote={initialCoachNote} />
+              )}
+              
+              <TodaysExercisesList workoutId={effectiveWorkout.id} exercises={effectiveWorkout.fitness_os_exercises || []} readonly={true} />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function WorkoutIndexPage() {
   return (
-    <Suspense fallback={<InstantWorkoutLoader />}>
+    <Suspense fallback={<WorkoutSkeleton />}>
       <WorkoutContent />
     </Suspense>
   );

@@ -66,15 +66,15 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/layout.tsx": {
-    "mtime": 1790006430.687317,
-    "seen": 1790006899.583619,
-    "ast_hash": "f30bba584e3d5a6b5e641bab7db1d92e",
+    "mtime": 1790054444.4598677,
+    "seen": 1790055063.9572833,
+    "ast_hash": "46fba6d0cfa63e9d3b1a8354343fbc82",
     "semantic_hash": ""
   },
   "app/app/(fitness)/loading.tsx": {
-    "mtime": 1790006512.2866514,
-    "seen": 1790006899.583628,
-    "ast_hash": "2f0df2c453e8a1727fbd2d798a890c8f",
+    "mtime": 1790054444.4608686,
+    "seen": 1790055063.9572895,
+    "ast_hash": "808fe16f5c306a879a66a171d9a89878",
     "semantic_hash": ""
   },
   "app/app/(fitness)/notifications/page.tsx": {
@@ -90,15 +90,15 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/nutrition/loading.tsx": {
-    "mtime": 1790052346.2318163,
-    "seen": 1790052805.464301,
-    "ast_hash": "934ceeb72cb0396ec711b0b90c1cf061",
+    "mtime": 1790054444.4628668,
+    "seen": 1790055063.9579787,
+    "ast_hash": "e706a84e43bf4c9f78dd235964c5a48d",
     "semantic_hash": ""
   },
   "app/app/(fitness)/nutrition/page.tsx": {
-    "mtime": 1789994036.9150453,
-    "seen": 1789994235.4311142,
-    "ast_hash": "eca95edd7f9228ebd956c435766eec3f",
+    "mtime": 1790054444.4648695,
+    "seen": 1790055063.9579856,
+    "ast_hash": "9d8e04643605e8855bc2e0b229c4a873",
     "semantic_hash": ""
   },
   "app/app/(fitness)/onboarding/page.tsx": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/page.tsx": {
-    "mtime": 1790006584.9913056,
-    "seen": 1790006899.585098,
-    "ast_hash": "6255133853091704cda7e68485fb5a06",
+    "mtime": 1790054444.4668708,
+    "seen": 1790055063.9583986,
+    "ast_hash": "5c8d24add7fb45302abb6210af1586e7",
     "semantic_hash": ""
   },
   "app/app/(fitness)/payment/page.tsx": {
@@ -156,15 +156,15 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/profile/loading.tsx": {
-    "mtime": 1790052207.3490074,
-    "seen": 1790052805.4689202,
-    "ast_hash": "6a3fb6ca61104117b0ff33986623e70f",
+    "mtime": 1790054444.4688687,
+    "seen": 1790055063.9608173,
+    "ast_hash": "9ab32883cc811d73ff9683b124f1790b",
     "semantic_hash": ""
   },
   "app/app/(fitness)/profile/page.tsx": {
-    "mtime": 1790052145.6894672,
-    "seen": 1790052805.4689267,
-    "ast_hash": "b9f6b801f73c5218b20523126eb03952",
+    "mtime": 1790054444.4708693,
+    "seen": 1790055063.9608207,
+    "ast_hash": "7da2b9cdcdcb90ca9ebe2ce638135ec1",
     "semantic_hash": ""
   },
   "app/app/(fitness)/progress/add-scan/layout.tsx": {
@@ -186,9 +186,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/progress/loading.tsx": {
-    "mtime": 1790052367.7918296,
-    "seen": 1790052805.4702997,
-    "ast_hash": "960e62dd61474636749d37d16b3571a7",
+    "mtime": 1790054444.4718707,
+    "seen": 1790055063.961492,
+    "ast_hash": "f78f63b1509748ea10997f38b0fd1ca2",
     "semantic_hash": ""
   },
   "app/app/(fitness)/progress/log-measurements/layout.tsx": {
@@ -216,9 +216,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/progress/page.tsx": {
-    "mtime": 1790004851.3719373,
-    "seen": 1790005157.7831583,
-    "ast_hash": "dd2959fb150fe61af41d75bb64e25fe7",
+    "mtime": 1790054444.4773939,
+    "seen": 1790055063.9625707,
+    "ast_hash": "f1a5bef50b17983d0959f4df6baad61c",
     "semantic_hash": ""
   },
   "app/app/(fitness)/reminders/page.tsx": {
@@ -264,9 +264,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/[workoutId]/page.tsx": {
-    "mtime": 1789993680.2147777,
-    "seen": 1789993837.5044367,
-    "ast_hash": "4b4941cc2fdbd285b747c7c3656d7e13",
+    "mtime": 1790054444.4823983,
+    "seen": 1790055063.9642017,
+    "ast_hash": "ecfb42b32bf9e7035166e896ba965175",
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/[workoutId]/summary/page.tsx": {
@@ -282,15 +282,15 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/loading.tsx": {
-    "mtime": 1790052229.400954,
-    "seen": 1790052805.4782104,
-    "ast_hash": "ba8ef01853bc5a172b98c487ec5e4434",
+    "mtime": 1790054444.485389,
+    "seen": 1790055063.9646173,
+    "ast_hash": "af7f68ed4090241a583d15098b70fbd5",
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/page.tsx": {
-    "mtime": 1790052244.6360302,
-    "seen": 1790052805.4782164,
-    "ast_hash": "a841d21869eafe37e40f1e726abb7f26",
+    "mtime": 1790054444.4893904,
+    "seen": 1790055063.9646199,
+    "ast_hash": "d0c09ee5a9dcc1c003670d65b01e97c6",
     "semantic_hash": ""
   },
   "app/app/actions/admin-auth.ts": {
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "app/app/actions/fitness.ts": {
-    "mtime": 1790052326.3662546,
-    "seen": 1790052805.481824,
-    "ast_hash": "3a8bcc5f0a90a8349e337671e229dd67",
+    "mtime": 1790054444.4943893,
+    "seen": 1790055063.966835,
+    "ast_hash": "d4f2eedc8cb0afee679405cb918c947e",
     "semantic_hash": ""
   },
   "app/app/actions/payment.ts": {
@@ -624,15 +624,15 @@
     "semantic_hash": ""
   },
   "app/app/api/fitness/log-measurements/route.ts": {
-    "mtime": 1790002749.1443844,
-    "seen": 1790003055.7389672,
-    "ast_hash": "cd028edd4e3fa92d4102d4a869716250",
+    "mtime": 1790054444.5093913,
+    "seen": 1790055063.981763,
+    "ast_hash": "425c653164ef74e63d799e13e69dfad2",
     "semantic_hash": ""
   },
   "app/app/api/fitness/log-weight/route.ts": {
-    "mtime": 1790002723.8667595,
-    "seen": 1790003055.7389736,
-    "ast_hash": "ebdd20bc22a1f2de3d4c54c102fa74ab",
+    "mtime": 1790054444.5133896,
+    "seen": 1790055063.9817653,
+    "ast_hash": "6c2574a7c3a4c109c8824e1f2db2f59f",
     "semantic_hash": ""
   },
   "app/app/api/fitness/profile-summary/route.ts": {
@@ -684,9 +684,9 @@
     "semantic_hash": ""
   },
   "app/app/api/nutrition/log-food/route.ts": {
-    "mtime": 1790006372.3262043,
-    "seen": 1790006899.6253912,
-    "ast_hash": "c3d7f87a1360c8ee6ad49e5843b6d6ec",
+    "mtime": 1790054444.5423903,
+    "seen": 1790055063.9833915,
+    "ast_hash": "dc0b37cb3d4ac996b252f98014afa338",
     "semantic_hash": ""
   },
   "app/app/api/nutrition/meals/route.ts": {
@@ -726,9 +726,9 @@
     "semantic_hash": ""
   },
   "app/app/api/nutrition/water/route.ts": {
-    "mtime": 1790006403.098836,
-    "seen": 1790006899.6292093,
-    "ast_hash": "e341b26db33dfe4f126c929c73660679",
+    "mtime": 1790054444.5503888,
+    "seen": 1790055063.9846568,
+    "ast_hash": "f17536f6523c9d7fa64d3424d807a6fe",
     "semantic_hash": ""
   },
   "app/app/api/payment/callback/route.ts": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/bottom-nav.tsx": {
-    "mtime": 1790003967.2583644,
-    "seen": 1790004163.316515,
-    "ast_hash": "8ce7fcca7ae8183748caaaa274471b4d",
+    "mtime": 1790054444.5944548,
+    "seen": 1790055063.9939418,
+    "ast_hash": "17d302d140e731c9a69add5a1ab155d8",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/category-pills.tsx": {
@@ -1002,9 +1002,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/fitness-dashboard.tsx": {
-    "mtime": 1790053418.8393478,
-    "seen": 1790053927.2985263,
-    "ast_hash": "403c4e81b1418ba5deb0bd67c1742a27",
+    "mtime": 1790054444.607977,
+    "seen": 1790055063.9964373,
+    "ast_hash": "8a213f7b71d768cbb267f9802079f2a6",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/fitness-header.tsx": {
@@ -1104,9 +1104,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-shell.tsx": {
-    "mtime": 1790052394.951214,
-    "seen": 1790052805.5820324,
-    "ast_hash": "19e7c665d49896811058c22926ddbb9a",
+    "mtime": 1790054444.6109781,
+    "seen": 1790055063.999938,
+    "ast_hash": "bdf0e67eeeef45523c2cd1869b8e5858",
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-theme-provider.tsx": {
@@ -1158,9 +1158,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/nutrition-view.tsx": {
-    "mtime": 1789994073.718479,
-    "seen": 1789994235.4768536,
-    "ast_hash": "9d716bcdb566e068c0a278dbd3afdebf",
+    "mtime": 1790054444.6175032,
+    "seen": 1790055064.0017617,
+    "ast_hash": "9323c2ab14e305b78c7a5e3df155ce15",
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/swap-meal-modal.tsx": {
@@ -1290,9 +1290,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/profile/profile-content.tsx": {
-    "mtime": 1790052187.0874562,
-    "seen": 1790052805.5977533,
-    "ast_hash": "649a14d64f9adda1ff75939c88fa51dc",
+    "mtime": 1790054444.6215036,
+    "seen": 1790055064.006849,
+    "ast_hash": "849e471639a3a2b5258aac96082fda89",
     "semantic_hash": ""
   },
   "app/components/fitness/profile/profile-subscription.tsx": {
@@ -1344,9 +1344,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/progress/progress-view.tsx": {
-    "mtime": 1790002885.3788576,
-    "seen": 1790003055.7707489,
-    "ast_hash": "2a520c6623a9a9daa3bdd9e4f95994dd",
+    "mtime": 1790054444.6245024,
+    "seen": 1790055064.0086365,
+    "ast_hash": "e5ecb75576ecb1f9d68b5894191e923c",
     "semantic_hash": ""
   },
   "app/components/fitness/progress/transformation-overview.tsx": {
@@ -1368,9 +1368,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/progress/workout-analytics.tsx": {
-    "mtime": 1790053430.003933,
-    "seen": 1790053927.324807,
-    "ast_hash": "b71faa77e467e392aa47fe5b7f42047a",
+    "mtime": 1790054585.8293872,
+    "seen": 1790055064.0092614,
+    "ast_hash": "85a1b1a49d9f1c41413ac4138db2a8d9",
     "semantic_hash": ""
   },
   "app/components/fitness/progress/workout-heatmap.tsx": {
@@ -1518,9 +1518,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/workout/weekly-workout-view.tsx": {
-    "mtime": 1790053396.9640129,
-    "seen": 1790053927.3301005,
-    "ast_hash": "22b9e4245c00771c354435c8319fe3f0",
+    "mtime": 1790054573.6393209,
+    "seen": 1790055064.0142653,
+    "ast_hash": "ec8eb804e784663ec3b70bc4bb50ea6f",
     "semantic_hash": ""
   },
   "app/components/fitness/workout/workout-complete.tsx": {
@@ -1836,9 +1836,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/analytics/progress-service.ts": {
-    "mtime": 1790004832.3602877,
-    "seen": 1790005157.8762708,
-    "ast_hash": "ce4af93ebd29449f3ef3db705dbd42ba",
+    "mtime": 1790054444.6535163,
+    "seen": 1790055064.0272355,
+    "ast_hash": "fe07a709aab3dbbc04bed6471f9c0f45",
     "semantic_hash": ""
   },
   "app/lib/services/fitness-ai-generation-guard.ts": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/nutrition-service.ts": {
-    "mtime": 1790006315.8588343,
-    "seen": 1790006899.7312338,
-    "ast_hash": "5f5a1c4a1316b1023e4134a07ad7ca9e",
+    "mtime": 1790054444.7045043,
+    "seen": 1790055064.0296457,
+    "ast_hash": "10ccb9f9fd60d4e964388986623396b0",
     "semantic_hash": ""
   },
   "app/lib/services/openai/client.ts": {
@@ -1950,9 +1950,9 @@
     "semantic_hash": ""
   },
   "app/next.config.ts": {
-    "mtime": 1790053371.5402772,
-    "seen": 1790053927.3472579,
-    "ast_hash": "0dacd543904789cf60b6dcab15b5d484",
+    "mtime": 1790054554.2496312,
+    "seen": 1790055064.0321188,
+    "ast_hash": "f852bb350f443429fd1118cb1f238109",
     "semantic_hash": ""
   },
   "app/package.json": {
@@ -2892,9 +2892,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/navigation-context.tsx": {
-    "mtime": 1790004861.5508187,
-    "seen": 1790005157.8376744,
-    "ast_hash": "1f5d17b59b16799c836726f6cf551dc2",
+    "mtime": 1790054444.6129773,
+    "seen": 1790055064.000993,
+    "ast_hash": "8890d24452a4696a98f87283249379cf",
     "semantic_hash": ""
   },
   "app/scripts/cleanup-and-sync-user.ts": {
@@ -2907,72 +2907,6 @@
     "mtime": 1789982106.51385,
     "seen": 1789982418.3615708,
     "ast_hash": "60fe077e6070d1f325aa48be2ddb7fb5",
-    "semantic_hash": ""
-  },
-  "app/components/fitness/dashboard/instant-dashboard-loader.tsx": {
-    "mtime": 1790006486.6019545,
-    "seen": 1790006899.6485782,
-    "ast_hash": "62b3b9137d26e43ef0ec93e7b66eae64",
-    "semantic_hash": ""
-  },
-  "app/components/fitness/nutrition/instant-nutrition-loader.tsx": {
-    "mtime": 1790052341.6095498,
-    "seen": 1790052805.5865958,
-    "ast_hash": "376466921d9ed509cb31384b4951524b",
-    "semantic_hash": ""
-  },
-  "app/components/fitness/nutrition/nutrition-skeleton.tsx": {
-    "mtime": 1790052335.0296164,
-    "seen": 1790052805.5869899,
-    "ast_hash": "6f58843a17dd1d01edea103fa91dbdfd",
-    "semantic_hash": ""
-  },
-  "app/components/fitness/profile/instant-profile-loader.tsx": {
-    "mtime": 1790052200.2106075,
-    "seen": 1790052805.5973825,
-    "ast_hash": "3bee658beec31279dca1c2053b7a1d50",
-    "semantic_hash": ""
-  },
-  "app/components/fitness/profile/profile-skeleton.tsx": {
-    "mtime": 1790052193.6856394,
-    "seen": 1790052805.5977592,
-    "ast_hash": "67b35734c3c898f8ffb9fb6e05e0e599",
-    "semantic_hash": ""
-  },
-  "app/components/fitness/progress/instant-progress-loader.tsx": {
-    "mtime": 1790052363.108561,
-    "seen": 1790052805.600205,
-    "ast_hash": "078f1b34be56468c2f1a3b8f375bd9eb",
-    "semantic_hash": ""
-  },
-  "app/components/fitness/progress/progress-skeleton.tsx": {
-    "mtime": 1790052359.0127702,
-    "seen": 1790052805.6014159,
-    "ast_hash": "9cd1d7b88dac7f52c70c13dd5644630e",
-    "semantic_hash": ""
-  },
-  "app/components/fitness/workout/instant-workout-loader.tsx": {
-    "mtime": 1790053408.860257,
-    "seen": 1790053927.3292758,
-    "ast_hash": "c77795deb5082c228241e2ae6d9347ce",
-    "semantic_hash": ""
-  },
-  "app/components/fitness/workout/workout-view-client.tsx": {
-    "mtime": 1790052219.0243697,
-    "seen": 1790052805.629766,
-    "ast_hash": "19ab11051dc07b5d96642627189e32ef",
-    "semantic_hash": ""
-  },
-  "app/lib/services/profile/profile-cache.ts": {
-    "mtime": 1790052131.8714895,
-    "seen": 1790052805.6569207,
-    "ast_hash": "a14d8fa6d957f35a7f1c7630e73554ba",
-    "semantic_hash": ""
-  },
-  "app/lib/services/workout/workout-cache.ts": {
-    "mtime": 1790052212.1762886,
-    "seen": 1790052805.6621668,
-    "ast_hash": "9507c2c1f8a4436fda8c5256caaccd88",
     "semantic_hash": ""
   }
 }

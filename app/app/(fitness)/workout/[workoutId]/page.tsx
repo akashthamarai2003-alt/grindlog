@@ -8,6 +8,8 @@ import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import { LockKeyhole, ArrowRight } from "lucide-react";
 import { Suspense } from "react";
 
+export const dynamic = "force-dynamic";
+
 function PaidAccessGate({ featureName }: { featureName: string }) {
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] px-6 py-16 text-white">

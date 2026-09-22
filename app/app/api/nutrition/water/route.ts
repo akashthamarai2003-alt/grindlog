@@ -40,7 +40,6 @@ export async function POST(request: Request) {
     }
 
     const result = await NutritionService.logWater(user.id, amount_ml);
-    NutritionService.invalidateTodaySummaryCache(user.id);
 
     return NextResponse.json({ 
       success: true, 

@@ -22,6 +22,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
   // Eagerly prefetch static routes into router cache on mount
   useEffect(() => {
     navItems.forEach((item) => {
+      if (item.href === "/nutrition") return;
       try {
         router.prefetch(item.href);
       } catch {
@@ -42,14 +43,15 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
             <Link 
               key={item.href} 
               href={item.href}
-              prefetch={true}
+              prefetch={item.href !== "/nutrition"}
               onClick={(e) => {
                 if (pathname === item.href) {
                   e.preventDefault();
                   window.scrollTo({ top: 0, behavior: "smooth" });
                   return;
                 }
-                // Instant 0ms visual switch (scroll position is managed per-tab by FitnessShell)
+                // Instant 0ms visual switch & scroll to top
+                window.scrollTo({ top: 0, behavior: "instant" });
                 setNavigatingTo(item.href);
               }}
               onTouchStart={() => {

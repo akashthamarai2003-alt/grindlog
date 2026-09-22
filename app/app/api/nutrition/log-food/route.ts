@@ -71,7 +71,6 @@ export async function POST(request: Request) {
       }));
 
       const logs = await NutritionService.logMultipleFoods(user.id, normalizedItems);
-      NutritionService.invalidateTodaySummaryCache(user.id);
       return NextResponse.json({ success: true, data: logs });
     }
 
@@ -100,7 +99,6 @@ export async function POST(request: Request) {
       quantity, 
       custom_food 
     });
-    NutritionService.invalidateTodaySummaryCache(user.id);
 
     return NextResponse.json({ success: true, data: log });
   } catch (error: any) {
@@ -164,7 +162,6 @@ export async function DELETE(request: Request) {
     NutritionService.updateDailySummary(user.id).catch(err => {
       console.warn("Background updateDailySummary warning in deleteMeal:", err);
     });
-    NutritionService.invalidateTodaySummaryCache(user.id);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -9,6 +9,8 @@ import { createAdminClient } from "@/lib/services/supabase/admin";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import NutritionLoading from "./loading";
 
+export const dynamic = "force-dynamic";
+
 async function NutritionContent() {
   const { data: { user } } = await getCachedUser();
 

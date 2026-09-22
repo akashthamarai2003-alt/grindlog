@@ -43,23 +43,16 @@ export function WeeklyWorkoutView({
         </div>
 
         <div className="flex justify-between items-center bg-[#111A10] border border-white/5 rounded-2xl p-4">
-          {(Array.isArray(weekDays) ? weekDays : []).map((d, i) => {
-            const dayStr = typeof d?.day === "string" && d.day.length > 0
-              ? d.day
-              : (d?.workout_date ? new Date(d.workout_date).toLocaleDateString("en-US", { weekday: "short" }) : ["M", "T", "W", "T", "F", "S", "S"][i] || "D");
-            const dayChar = dayStr.charAt(0).toUpperCase();
-
-            return (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <span className={`text-[10px] font-black tracking-widest ${d?.isToday || d?.status === 'today' ? 'text-[#ADFF00]' : 'text-white/40'}`}>
-                  {dayChar}
-                </span>
-                <div className="h-6 flex items-center justify-center">
-                  {getStatusIcon(d?.status)}
-                </div>
+          {weekDays.map((d, i) => (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <span className={`text-[10px] font-black tracking-widest ${d?.isToday || d?.status === 'today' ? 'text-[#ADFF00]' : 'text-white/40'}`}>
+                {(d?.day || 'D').charAt(0)}
+              </span>
+              <div className="h-6 flex items-center justify-center">
+                {getStatusIcon(d?.status)}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
       </div>
@@ -100,30 +93,26 @@ export function WeeklyWorkoutView({
               </div>
               
               <div className="flex flex-col gap-3">
-                {(Array.isArray(modalDays) ? modalDays : []).map((day: any, idx: number) => {
-                  const isCurrentDay = day?.isToday || day?.status === 'today';
-                  const dayLabel = typeof day?.day === "string" && day.day.length > 0
-                    ? day.day
-                    : (day?.workout_date ? new Date(day.workout_date).toLocaleDateString("en-US", { weekday: "short" }).toUpperCase() : `DAY ${idx + 1}`);
-
+                {modalDays.map((day: any, idx: number) => {
+                  const isCurrentDay = day.isToday || day.status === 'today';
                   return (
                     <div key={idx} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isCurrentDay ? 'bg-[#ADFF00]/10 border-[#ADFF00]/50' : 'bg-[#111A10] border-white/5'}`}>
                       
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">
-                          {dayLabel}
+                          {day.day}
                         </span>
                         <span className={`text-sm font-bold uppercase tracking-wider ${isCurrentDay ? 'text-[#ADFF00]' : 'text-white'}`}>
-                          {day?.name || "Rest Day"}
+                          {day.name}
                         </span>
                       </div>
 
                       <div className="flex flex-col items-end gap-1">
                         <div className="h-5 flex items-center justify-center">
-                          {getStatusIcon(day?.status)}
+                          {getStatusIcon(day.status)}
                         </div>
                         <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">
-                          {day?.status || "rest"}
+                          {day.status}
                         </span>
                       </div>
 

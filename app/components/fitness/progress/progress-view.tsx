@@ -20,56 +20,13 @@ import { Lock } from "lucide-react";
 import Link from "next/link";
 
 export function ProgressView({ initialData, isPro = true }: { initialData: AggregatedProgressPayload; isPro?: boolean }) {
-  const [data, setData] = useState<AggregatedProgressPayload>(() => {
-    if (initialData) return initialData;
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("grindlog_progress_snapshot_v1");
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return initialData;
-  });
-  const [period, setPeriod] = useState<AnalyticsPeriod>(initialData?.period || '30D');
+  const [data, setData] = useState<AggregatedProgressPayload>(initialData);
+  const [period, setPeriod] = useState<AnalyticsPeriod>(initialData.period);
   const [isFetching, setIsFetching] = useState(false);
-
-  // Cached workout dates for 0ms instant heatmap and streak render
-  const [workoutDates, setWorkoutDates] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("grindlog_workout_dates_cache_v1");
-        if (cached) return JSON.parse(cached).dates || [];
-      } catch {}
-    }
-    return [];
-  });
-  const [scheduledDates, setScheduledDates] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("grindlog_workout_dates_cache_v1");
-        if (cached) return JSON.parse(cached).scheduledDates || [];
-      } catch {}
-    }
-    return [];
-  });
-  const [recentExercises, setRecentExercises] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("grindlog_workout_dates_cache_v1");
-        if (cached) return JSON.parse(cached).exerciseNames || [];
-      } catch {}
-    }
-    return [];
-  });
-  const [joinedDate, setJoinedDate] = useState<string | undefined>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("grindlog_workout_dates_cache_v1");
-        if (cached) return JSON.parse(cached).joinedDate;
-      } catch {}
-    }
-    return undefined;
-  });
+  const [workoutDates, setWorkoutDates] = useState<string[]>([]);
+  const [scheduledDates, setScheduledDates] = useState<string[]>([]);
+  const [recentExercises, setRecentExercises] = useState<string[]>([]);
+  const [joinedDate, setJoinedDate] = useState<string | undefined>(undefined);
 
   const [proModalOpen, setProModalOpen] = useState(false);
   const [proModalFeature, setProModalFeature] = useState("This feature");
@@ -79,32 +36,10 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
     setProModalOpen(true);
   };
 
-  // In-memory + persistent cache for instant 0ms switching between periods
+  // In-memory cache for instant 0ms switching between periods
   const cacheRef = useRef<Record<string, AggregatedProgressPayload>>({
-    ...(initialData?.period ? { [initialData.period]: initialData } : {}),
+    [initialData.period]: initialData,
   });
-
-  // Hydrate cacheRef from localStorage on client mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("grindlog_progress_periods_v1");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          cacheRef.current = { ...parsed, ...cacheRef.current };
-        }
-      } catch {}
-    }
-  }, []);
-
-  // Save snapshot whenever data updates
-  useEffect(() => {
-    if (typeof window !== "undefined" && data) {
-      try {
-        localStorage.setItem("grindlog_progress_snapshot_v1", JSON.stringify(data));
-      } catch {}
-    }
-  }, [data]);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -126,11 +61,6 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
           if (res.ok && isMounted) {
             const json = await res.json();
             cacheRef.current[targetPeriod] = json;
-            if (typeof window !== "undefined") {
-              try {
-                localStorage.setItem("grindlog_progress_periods_v1", JSON.stringify(cacheRef.current));
-              } catch {}
-            }
           }
         } catch {}
       }
@@ -154,11 +84,6 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (json) {
-          if (typeof window !== "undefined") {
-            try {
-              localStorage.setItem("grindlog_workout_dates_cache_v1", JSON.stringify(json));
-            } catch {}
-          }
           if (json.dates && Array.isArray(json.dates)) {
             setWorkoutDates(json.dates);
           }
@@ -224,11 +149,6 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
       if (!res.ok) throw new Error("Failed to fetch");
       const json = await res.json();
       cacheRef.current[newPeriod] = json;
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("grindlog_progress_periods_v1", JSON.stringify(cacheRef.current));
-        } catch {}
-      }
       setData(json);
     } catch (err: any) {
       if (err.name !== "AbortError") {

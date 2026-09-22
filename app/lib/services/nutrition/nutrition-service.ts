@@ -1264,55 +1264,17 @@ export class NutritionService {
     }
   }
 
-  // In-memory cache for user timezone to avoid repeated DB hits on every request (TTL: 10 minutes)
-  private static userTimezoneCache = new Map<string, { tz: string; expiresAt: number }>();
-
-  // In-memory cache for active foods catalog (TTL: 15 minutes)
-  private static cachedFoodCatalog: { data: NutritionFoodReference[]; expiresAt: number } | null = null;
-
-  // In-memory cache for today's nutrition summary (TTL: 5 minutes)
-  private static todaySummaryCache = new Map<string, { data: any; expiresAt: number }>();
-
-  static invalidateTodaySummaryCache(userId: string) {
-    for (const key of this.todaySummaryCache.keys()) {
-      if (key.startsWith(`${userId}:`)) {
-        this.todaySummaryCache.delete(key);
-      }
-    }
-  }
-
-  static async getCachedFoodCatalog(): Promise<NutritionFoodReference[]> {
-    if (this.cachedFoodCatalog && Date.now() < this.cachedFoodCatalog.expiresAt) {
-      return this.cachedFoodCatalog.data;
-    }
-    const supabase = createAdminClient();
-    const { data } = await supabase
-      .from('foods')
-      .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly')
-      .eq('is_active', true)
-      .limit(300);
-    const result = (data || []) as NutritionFoodReference[];
-    this.cachedFoodCatalog = { data: result, expiresAt: Date.now() + 15 * 60 * 1000 };
-    return result;
-  }
-
   /**
    * Retrieves the user's timezone from their profile, defaulting to UTC.
    */
   static async getUserTimezone(userId: string): Promise<string> {
-    const cached = this.userTimezoneCache.get(userId);
-    if (cached && Date.now() < cached.expiresAt) {
-      return cached.tz;
-    }
     const supabase = createAdminClient();
     const { data } = await supabase
       .from('profiles')
       .select('timezone')
       .eq('id', userId)
       .maybeSingle();
-    const tz = data?.timezone || 'UTC';
-    this.userTimezoneCache.set(userId, { tz, expiresAt: Date.now() + 10 * 60 * 1000 });
-    return tz;
+    return data?.timezone || 'UTC';
   }
 
   /**
@@ -3354,11 +3316,6 @@ function scaleServingSize(servingSize: string, scale: number): string {
     // Fetch timezone once to avoid 3 redundant DB calls
     const tz = await this.getUserTimezone(userId);
     const localDate = targetDateStr || await this.getLocalDateString(userId, tz);
-    const cacheKey = `${userId}:${localDate}`;
-    const cached = this.todaySummaryCache.get(cacheKey);
-    if (cached && Date.now() < cached.expiresAt) {
-      return cached.data;
-    }
     const { start, end } = await this.getLocalDateBoundaries(userId, tz, localDate);
 
     // Monthly spent calculation
@@ -3406,7 +3363,11 @@ function scaleServingSize(servingSize: string, scale: number): string {
         .eq('user_id', userId)
         .eq('status', 'active')
         .maybeSingle(),
-      this.getCachedFoodCatalog(),
+      supabase
+        .from('foods')
+        .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly')
+        .eq('is_active', true)
+        .limit(300),
       this.getWeeklyPlanEligibility(userId)
     ]);
 
@@ -3420,7 +3381,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
     const monthFoods = monthFoodsRes.data;
     const fitProfile = fitProfileRes.data;
     const activePlan = activePlanRes.data;
-    const foodCatalog = (Array.isArray(foodCatalogRes) ? foodCatalogRes : (foodCatalogRes?.data || [])) as NutritionFoodReference[];
+    const foodCatalog = (foodCatalogRes.data || []) as NutritionFoodReference[];
     const aiMeals = activePlan?.plan_data?.nutrition?.meals || [];
 
     // 3. Compute consumed
@@ -3702,7 +3663,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
 
     const score = this.computeNutritionScore(consumed, targets, mealsCompleted, totalMeals);
 
-    const result = {
+    return {
       date: localDate,
       day_of_week: dayOfWeek,
       targets,
@@ -3733,8 +3694,5 @@ function scaleServingSize(servingSize: string, scale: number): string {
         ? 'Non-Vegetarian'
         : (fitProfile?.food_type || fitProfile?.diet_preference || undefined)
     };
-
-    this.todaySummaryCache.set(cacheKey, { data: result, expiresAt: Date.now() + 5 * 60 * 1000 });
-    return result;
   }
 }
