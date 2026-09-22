@@ -66,15 +66,21 @@ export function TodaysGoalsCard({
       let dbCals = Math.round(Number(cached?.consumed?.calories ?? nutrition?.consumed?.calories) || 0);
       let dbPro = Math.round(Number(cached?.consumed?.protein ?? nutrition?.consumed?.protein) || 0);
 
-      // Attempt live fetch if initial values are 0
-      try {
-        const fresh = await nutritionApi.getToday(effectiveDate);
-        if (fresh?.consumed) {
-          dbCals = Math.max(dbCals, Math.round(Number(fresh.consumed.calories) || 0));
-          dbPro = Math.max(dbPro, Math.round(Number(fresh.consumed.protein) || 0));
+      // Only attempt live network fetch if neither server prop nor client cache has nutrition data
+      const hasNutritionData = (nutrition && (nutrition.consumed != null || nutrition.meals != null || nutrition.targets != null)) ||
+                               (cached && (cached.consumed != null || cached.meals != null || cached.targets != null));
+
+      if (!hasNutritionData) {
+        try {
+          const fresh = await nutritionApi.getToday(effectiveDate);
+          if (fresh?.consumed) {
+            dbCals = Math.max(dbCals, Math.round(Number(fresh.consumed.calories) || 0));
+            dbPro = Math.max(dbPro, Math.round(Number(fresh.consumed.protein) || 0));
+            nutritionClientCache.set(effectiveDate, fresh);
+          }
+        } catch {
+          // ignore network error
         }
-      } catch {
-        // ignore network error
       }
 
       const savedMeals = localStorage.getItem(mealsStorageKey);

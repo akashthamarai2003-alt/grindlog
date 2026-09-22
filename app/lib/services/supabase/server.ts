@@ -36,7 +36,19 @@ export async function createServerSupabase() {
 // Alias for convenience used in Fitness AI OS
 export const createClient = createServerSupabase;
 
+import { createAdminClient } from "./admin";
+
 export const getCachedUser = cache(async () => {
   const supabase = await createServerSupabase();
   return await supabase.auth.getUser();
+});
+
+export const getCachedFitnessProfile = cache(async (userId: string) => {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("fitness_os_profiles")
+    .select("id, user_id, onboarding_completed, name, weight, weight_trend_baseline, target_weight, goal, physical_problems, diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods, nutrition_budget, food_environment, meals_per_day")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data || null;
 });

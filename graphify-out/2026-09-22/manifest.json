@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/layout.tsx": {
-    "mtime": 1790054444.4598677,
-    "seen": 1790055063.9572833,
-    "ast_hash": "46fba6d0cfa63e9d3b1a8354343fbc82",
+    "mtime": 1790071326.718991,
+    "seen": 1790071490.4909809,
+    "ast_hash": "195eea240d1cc738497fc5522b310265",
     "semantic_hash": ""
   },
   "app/app/(fitness)/loading.tsx": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/page.tsx": {
-    "mtime": 1790061393.6401594,
-    "seen": 1790061639.858109,
-    "ast_hash": "b873b2883bcee940fd0a4d633e54b657",
+    "mtime": 1790071347.76173,
+    "seen": 1790071490.4937894,
+    "ast_hash": "e683e643a35010e5c119cf03fc6320d4",
     "semantic_hash": ""
   },
   "app/app/(fitness)/payment/page.tsx": {
@@ -858,15 +858,15 @@
     "semantic_hash": ""
   },
   "app/app/auth/signup/page.tsx": {
-    "mtime": 1788628089.195422,
-    "seen": 1789970487.5981028,
-    "ast_hash": "517e8423dc2304224739cc026959abe3",
+    "mtime": 1790070136.875309,
+    "seen": 1790070256.0778117,
+    "ast_hash": "bdf7a9d90e49718857f4ad11abd2b93f",
     "semantic_hash": ""
   },
   "app/app/layout.tsx": {
-    "mtime": 1789830472.1988728,
-    "seen": 1789970487.5981073,
-    "ast_hash": "44d827419add524711aabb0df2497e97",
+    "mtime": 1790071304.2806365,
+    "seen": 1790071490.5369396,
+    "ast_hash": "64a7c3591ae7226057986b63d14a10fb",
     "semantic_hash": ""
   },
   "app/app/privacy/page.tsx": {
@@ -1050,15 +1050,15 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-goals-card.tsx": {
-    "mtime": 1790058519.3229885,
-    "seen": 1790058885.4146485,
-    "ast_hash": "5c42ab59bba1a5a5198e24f8fb1b0551",
+    "mtime": 1790071378.3637834,
+    "seen": 1790071490.5473108,
+    "ast_hash": "5d41b63830b56b3dd109204bfc639a6d",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-nutrition-card.tsx": {
-    "mtime": 1790059722.9010053,
-    "seen": 1790059905.1496623,
-    "ast_hash": "7d2e8ad5f278244fb4c8928bae380888",
+    "mtime": 1790071361.861059,
+    "seen": 1790071490.5473137,
+    "ast_hash": "a3dd988a7dd106beb22feb0af312a008",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-workout-card.tsx": {
@@ -1644,9 +1644,9 @@
     "semantic_hash": ""
   },
   "app/hooks/use-auth.ts": {
-    "mtime": 1788619567.466871,
-    "seen": 1789970487.5986803,
-    "ast_hash": "8173f1d1fe5f216dfc26935407ac1ee9",
+    "mtime": 1790070105.4379473,
+    "seen": 1790070256.1372266,
+    "ast_hash": "e1a69ad2b6769c080ecf875771c91174",
     "semantic_hash": ""
   },
   "app/hooks/use-debounce.ts": {
@@ -1902,9 +1902,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/supabase/client.ts": {
-    "mtime": 1784133118.1871576,
-    "seen": 1789970487.5988665,
-    "ast_hash": "36b412d1c9bdb202ac515cbcd5e7e28b",
+    "mtime": 1790070079.6305206,
+    "seen": 1790070256.1566558,
+    "ast_hash": "affc09118c348a13247335ed90d490b2",
     "semantic_hash": ""
   },
   "app/lib/services/supabase/middleware.ts": {
@@ -1914,9 +1914,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/supabase/server.ts": {
-    "mtime": 1788948596.7885706,
-    "seen": 1789970487.5988753,
-    "ast_hash": "d8357e0b2a123a66a7c321bc5939b1ee",
+    "mtime": 1790071314.5228827,
+    "seen": 1790071490.604068,
+    "ast_hash": "4fdbc7c708fc898a14f84846805fb08f",
     "semantic_hash": ""
   },
   "app/lib/utils.ts": {
@@ -2124,9 +2124,9 @@
     "semantic_hash": ""
   },
   "app/store/auth-store.ts": {
-    "mtime": 315599400.0,
-    "seen": 1789970487.5990336,
-    "ast_hash": "304e1965e29a810fd514378dfdd6e97a",
+    "mtime": 1790070089.183316,
+    "seen": 1790070256.1770158,
+    "ast_hash": "a4e2b09d069ae228339fe7ccd6d3385a",
     "semantic_hash": ""
   },
   "app/tsconfig.json": {

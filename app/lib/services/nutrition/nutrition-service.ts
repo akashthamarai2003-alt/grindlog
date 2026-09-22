@@ -1,6 +1,7 @@
-import { createServerSupabase } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedFitnessProfile } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { calculateTargets } from "@/lib/fitness/nutrition/nutrition-engine";
+import { cache } from "react";
 
 interface NutritionServerCacheEntry {
   data: any;
@@ -14,16 +15,48 @@ export function getGlobalNutritionCache(): Map<string, NutritionServerCacheEntry
   return (globalThis as any).__grindlog_nutrition_server_cache;
 }
 
+interface TimezoneCacheEntry {
+  tz: string;
+  expiresAt: number;
+}
+
+export function getUserTimezoneCache(): Map<string, TimezoneCacheEntry> {
+  if (!(globalThis as any).__grindlog_user_timezone_cache) {
+    (globalThis as any).__grindlog_user_timezone_cache = new Map<string, TimezoneCacheEntry>();
+  }
+  return (globalThis as any).__grindlog_user_timezone_cache;
+}
+
+interface MonthlySpentCacheEntry {
+  pastSpent: number;
+  monthKey: string;
+  dateKey: string;
+  expiresAt: number;
+}
+
+export function getMonthlySpentCache(): Map<string, MonthlySpentCacheEntry> {
+  if (!(globalThis as any).__grindlog_monthly_spent_cache) {
+    (globalThis as any).__grindlog_monthly_spent_cache = new Map<string, MonthlySpentCacheEntry>();
+  }
+  return (globalThis as any).__grindlog_monthly_spent_cache;
+}
+
 export function invalidateNutritionServerCache(userId?: string) {
   const cache = getGlobalNutritionCache();
+  const monthlySpentCache = getMonthlySpentCache();
+  const tzCache = getUserTimezoneCache();
   if (userId) {
     for (const key of cache.keys()) {
       if (key.includes(userId)) {
         cache.delete(key);
       }
     }
+    monthlySpentCache.delete(userId);
+    tzCache.delete(userId);
   } else {
     cache.clear();
+    monthlySpentCache.clear();
+    tzCache.clear();
   }
 }
 
@@ -1297,16 +1330,26 @@ export class NutritionService {
 
   /**
    * Retrieves the user's timezone from their profile, defaulting to UTC.
+   * Cached in-process with a 10-minute TTL and wrapped in React cache() to prevent duplicate DB calls.
    */
-  static async getUserTimezone(userId: string): Promise<string> {
+  static getUserTimezone = cache(async (userId: string): Promise<string> => {
+    if (!userId) return 'UTC';
+    const tzCache = getUserTimezoneCache();
+    const now = Date.now();
+    const cached = tzCache.get(userId);
+    if (cached && cached.expiresAt > now) {
+      return cached.tz;
+    }
     const supabase = createAdminClient();
     const { data } = await supabase
       .from('profiles')
       .select('timezone')
       .eq('id', userId)
       .maybeSingle();
-    return data?.timezone || 'UTC';
-  }
+    const tz = data?.timezone || 'UTC';
+    tzCache.set(userId, { tz, expiresAt: now + 10 * 60 * 1000 });
+    return tz;
+  });
 
   /**
    * Returns a YYYY-MM-DD string for the current date in the user's timezone.
@@ -1346,7 +1389,13 @@ export class NutritionService {
     return { start, end };
   }
 
-  static async getEffectiveTargets(userId: string, preFetchedDate?: string, preFetchedTz?: string) {
+  static async getEffectiveTargets(
+    userId: string,
+    preFetchedDate?: string,
+    preFetchedTz?: string,
+    preFetchedProfile?: any,
+    preFetchedPlanData?: any
+  ) {
     const supabase = createAdminClient();
     const localDate = preFetchedDate || await this.getLocalDateString(userId, preFetchedTz);
     
@@ -1363,20 +1412,26 @@ export class NutritionService {
     if (data) return data;
 
     // Fallback: Check fitness_os_profiles or fitness_os_workout_plans
-    const { data: fitProfile } = await supabase
-      .from('fitness_os_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
+    let fitProfile = preFetchedProfile;
+    if (!fitProfile) {
+      const { data: resProfile } = await supabase
+        .from('fitness_os_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      fitProfile = resProfile;
+    }
 
-    const { data: activePlan } = await supabase
-      .from('fitness_os_workout_plans')
-      .select('plan_data')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .maybeSingle();
-
-    const planNut = activePlan?.plan_data?.nutrition;
+    let planNut = preFetchedPlanData?.nutrition;
+    if (!planNut && preFetchedPlanData === undefined) {
+      const { data: activePlan } = await supabase
+        .from('fitness_os_workout_plans')
+        .select('plan_data')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .maybeSingle();
+      planNut = activePlan?.plan_data?.nutrition;
+    }
 
     let calories = planNut?.daily_calories;
     let protein = planNut?.protein_grams;
@@ -3757,9 +3812,25 @@ function scaleServingSize(servingSize: string, scale: number): string {
    * Lightweight version of getTodaySummaryAndDetails for the dashboard.
    * Skips the 300-item food catalog, meal_plans table, and weekly plan eligibility
    * — none of which are needed for dashboard display.
-   * Reduces DB queries from 9 to 6, cutting ~1–1.5s off the dashboard cold start.
+   * Eliminates timezone waterfalls, reuses pre-fetched profile and plan data,
+   * and caches monthly spending to minimize database load.
    */
-  static async getDashboardSummary(userId: string, targetDateStr?: string) {
+  static async getDashboardSummary(
+    userId: string,
+    targetDateOrOptions?: string | {
+      targetDateStr?: string;
+      preFetchedTz?: string;
+      preFetchedProfile?: any;
+      preFetchedPlanData?: any;
+    }
+  ) {
+    const targetDateStr = typeof targetDateOrOptions === 'string'
+      ? targetDateOrOptions
+      : targetDateOrOptions?.targetDateStr;
+    const preFetchedTz = typeof targetDateOrOptions === 'object' ? targetDateOrOptions.preFetchedTz : undefined;
+    const preFetchedProfile = typeof targetDateOrOptions === 'object' ? targetDateOrOptions.preFetchedProfile : undefined;
+    const preFetchedPlanData = typeof targetDateOrOptions === 'object' ? targetDateOrOptions.preFetchedPlanData : undefined;
+
     const cache = getGlobalNutritionCache();
     const cacheKey = `dash_${userId}_${targetDateStr || 'today'}`;
     const cached = cache.get(cacheKey);
@@ -3772,21 +3843,82 @@ function scaleServingSize(servingSize: string, scale: number): string {
 
     const supabase = createAdminClient();
 
-    const tz = await this.getUserTimezone(userId);
+    // 1. Resolve timezone and date boundaries without blocking waterfalls (0ms on warm cache)
+    const tz = preFetchedTz || await this.getUserTimezone(userId);
     const localDate = targetDateStr || await this.getLocalDateString(userId, tz);
     const { start, end } = await this.getLocalDateBoundaries(userId, tz, localDate);
 
-    // Monthly spent calculation
+    // 2. Resolve Profile (reusing pre-fetched profile or request-memoized getCachedFitnessProfile)
+    const fitProfilePromise = preFetchedProfile
+      ? Promise.resolve(preFetchedProfile)
+      : getCachedFitnessProfile(userId).catch(() => null);
+
+    // 3. Resolve Plan data (reusing pre-fetched plan or querying only if needed)
+    const activePlanPromise = (preFetchedPlanData !== undefined)
+      ? Promise.resolve({ plan_data: preFetchedPlanData })
+      : supabase
+          .from('fitness_os_workout_plans')
+          .select('plan_data')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+          .then(res => res.data);
+
+    // 4. Monthly spent calculation:
     const firstDayOfMonth = localDate.substring(0, 8) + '01';
+    const isFirstDayOfMonth = localDate === firstDayOfMonth;
+    const monthKey = localDate.substring(0, 7);
+
     const mFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'longOffset', year: 'numeric' });
     let mOffsetStr = mFormatter.formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value;
     if (!mOffsetStr || mOffsetStr === 'GMT') mOffsetStr = 'GMT+00:00';
     mOffsetStr = mOffsetStr.replace('GMT', '');
     const monthStartISO = new Date(`${firstDayOfMonth}T00:00:00.000${mOffsetStr}`).toISOString();
 
-    // 6 parallel queries — food catalog (300 items), meal_plans, and weeklyPlanEligibility are intentionally skipped
-    const [targets, foodsRes, watersRes, monthFoodsRes, fitProfileRes, activePlanRes] = await Promise.all([
-      this.getEffectiveTargets(userId, localDate, tz),
+    const spentCache = getMonthlySpentCache();
+    const cachedSpent = spentCache.get(userId);
+
+    const pastSpentPromise = (async () => {
+      if (isFirstDayOfMonth) {
+        return 0;
+      }
+      if (cachedSpent && cachedSpent.monthKey === monthKey && cachedSpent.dateKey === localDate && cachedSpent.expiresAt > now) {
+        return cachedSpent.pastSpent;
+      }
+
+      const fitProfile = await fitProfilePromise;
+
+      const { data: pastMonthFoods } = await supabase
+        .from('food_logs')
+        .select('estimated_cost, meal_type, foods(name)')
+        .eq('user_id', userId)
+        .gte('logged_at', monthStartISO)
+        .lt('logged_at', start);
+
+      let pastSpent = 0;
+      if (pastMonthFoods) {
+        pastMonthFoods.forEach((f: any) => {
+          const isItemCore = isStapleCoreFood(f.foods?.name, fitProfile?.food_environment);
+          const cost = isItemCore ? 0 : (Number(f.estimated_cost) || getRealisticFoodCost(f.foods?.name));
+          pastSpent += cost;
+        });
+      }
+
+      spentCache.set(userId, {
+        pastSpent,
+        monthKey,
+        dateKey: localDate,
+        expiresAt: now + 5 * 60 * 1000,
+      });
+
+      return pastSpent;
+    })();
+
+    // 5. Parallel execution of independent queries
+    const [targets, foodsRes, watersRes, pastMonthSpent, fitProfile, activePlan] = await Promise.all([
+      this.getEffectiveTargets(userId, localDate, tz, preFetchedProfile, preFetchedPlanData),
       supabase
         .from('food_logs')
         .select('*, foods(name, category)')
@@ -3799,23 +3931,9 @@ function scaleServingSize(servingSize: string, scale: number): string {
         .eq('user_id', userId)
         .gte('logged_at', start)
         .lte('logged_at', end),
-      supabase
-        .from('food_logs')
-        .select('estimated_cost, meal_type, foods(name)')
-        .eq('user_id', userId)
-        .gte('logged_at', monthStartISO)
-        .lte('logged_at', end),
-      supabase
-        .from('fitness_os_profiles')
-        .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods, nutrition_budget, food_environment, meals_per_day')
-        .eq('user_id', userId)
-        .maybeSingle(),
-      supabase
-        .from('fitness_os_workout_plans')
-        .select('plan_data')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .maybeSingle(),
+      pastSpentPromise,
+      fitProfilePromise,
+      activePlanPromise,
     ]);
 
     if (!targets) {
@@ -3824,9 +3942,6 @@ function scaleServingSize(servingSize: string, scale: number): string {
 
     const foods = foodsRes.data;
     const waters = watersRes.data;
-    const monthFoods = monthFoodsRes.data;
-    const fitProfile = fitProfileRes.data;
-    const activePlan = activePlanRes.data;
     const aiMeals = activePlan?.plan_data?.nutrition?.meals || [];
 
     // Compute consumed macros
@@ -3850,14 +3965,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
       waters.forEach(w => consumed.water_ml += (Number(w.amount_ml) || 0));
     }
 
-    let monthSpent = 0;
-    if (monthFoods) {
-      monthFoods.forEach((f: any) => {
-        const isItemCore = isStapleCoreFood(f.foods?.name, fitProfile?.food_environment);
-        const cost = isItemCore ? 0 : (Number(f.estimated_cost) || getRealisticFoodCost(f.foods?.name));
-        monthSpent += cost;
-      });
-    }
+    const monthSpent = pastMonthSpent + consumed.spent;
 
     let monthlyLimit = 5000;
     if (fitProfile?.nutrition_budget) {

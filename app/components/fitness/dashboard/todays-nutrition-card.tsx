@@ -203,20 +203,28 @@ export function TodaysNutritionCard({
   }, [effectiveDate]);
 
   useEffect(() => {
-    refreshNutrition();
+    // Only fetch from network if neither server prop nor client cache has data
+    const cached = nutritionClientCache.get(effectiveDate);
+    const hasData = (nutrition && (nutrition.consumed != null || nutrition.meals != null || nutrition.targets != null)) ||
+                    (cached && (cached.consumed != null || cached.meals != null || cached.targets != null));
+
+    if (!hasData) {
+      refreshNutrition();
+    }
+
     const handleSync = () => {
       if (isInternalUpdateRef.current) {
         isInternalUpdateRef.current = false;
         return;
       }
-      const cached = nutritionClientCache.get(effectiveDate);
-      if (cached) {
+      const currentCached = nutritionClientCache.get(effectiveDate);
+      if (currentCached) {
         setActiveNutrition((prev: any) => ({
           ...prev,
-          ...cached,
-          consumed: cached.consumed || prev?.consumed,
-          logged_foods: cached.logged_foods || prev?.logged_foods,
-          meals: (cached.meals && cached.meals.length > 0) ? cached.meals : prev?.meals,
+          ...currentCached,
+          consumed: currentCached.consumed || prev?.consumed,
+          logged_foods: currentCached.logged_foods || prev?.logged_foods,
+          meals: (currentCached.meals && currentCached.meals.length > 0) ? currentCached.meals : prev?.meals,
         }));
       }
       refreshNutrition();
@@ -231,7 +239,7 @@ export function TodaysNutritionCard({
         window.removeEventListener("focus", handleSync);
       }
     };
-  }, [refreshNutrition, effectiveDate]);
+  }, [refreshNutrition, effectiveDate, nutrition]);
 
   const targetCalories = Number(activeNutrition?.daily_calories ?? nutrition?.daily_calories ?? activeNutrition?.targets?.calories ?? nutrition?.targets?.calories) > 0 
     ? Math.round(Number(activeNutrition?.daily_calories ?? nutrition?.daily_calories ?? activeNutrition?.targets?.calories ?? nutrition?.targets?.calories)) 

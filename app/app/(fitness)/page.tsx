@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
+import { createServerSupabase, getCachedUser, getCachedFitnessProfile } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
 import { FitnessDashboardBottom } from "@/components/fitness/dashboard/fitness-dashboard-bottom";
@@ -41,7 +41,7 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
 
   // Only fast queries here — no nutrition (moved to DashboardBelow)
   const [
-    { data: profile },
+    profile,
     { data: plan },
     { data: workoutsForDate },
     { data: weekWorkouts },
@@ -49,10 +49,15 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
     { data: sleepLog },
     subscriptionState,
   ] = await Promise.all([
-    admin.from("fitness_os_profiles").select("*").eq("user_id", user.id).maybeSingle(),
+    getCachedFitnessProfile(user.id),
     admin.from("fitness_os_workout_plans").select("id, name, description, goal, plan_data, created_at").eq("user_id", user.id).eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle(),
     admin.from("fitness_os_workouts").select(`
-      *,
+      id,
+      name,
+      workout_date,
+      duration_minutes,
+      status,
+      created_at,
       fitness_os_exercises (
         id,
         fitness_os_sets (completed)
@@ -130,6 +135,8 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
             subscriptionPlanId={subscriptionPlan?.id}
             activityLog={activityLog}
             sleepLog={sleepLog}
+            profile={profile}
+            preFetchedPlanData={effectivePlan?.plan_data}
           />
         </Suspense>
       }
@@ -187,6 +194,8 @@ async function DashboardBelow({
   subscriptionPlanId,
   activityLog,
   sleepLog,
+  profile,
+  preFetchedPlanData,
 }: {
   userId: string;
   targetDateStr: string;
@@ -197,8 +206,14 @@ async function DashboardBelow({
   subscriptionPlanId?: string;
   activityLog?: { steps: number } | null;
   sleepLog?: { duration_hours: number } | null;
+  profile?: any;
+  preFetchedPlanData?: any;
 }) {
-  const todayNutrition = await NutritionService.getDashboardSummary(userId, targetDateStr).catch((err) => {
+  const todayNutrition = await NutritionService.getDashboardSummary(userId, {
+    targetDateStr,
+    preFetchedProfile: profile,
+    preFetchedPlanData,
+  }).catch((err) => {
     console.warn("Failed to fetch dashboard nutrition summary:", err?.message || err);
     return null;
   });

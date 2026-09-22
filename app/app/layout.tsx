@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 import { Providers } from "./providers";
-import { createServerSupabase } from "@/lib/services/supabase/server";
 import { InstallModal } from "@/components/pwa/install-modal";
 import { InstallPopup } from "@/components/pwa/install-popup";
 
@@ -48,28 +47,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  let equippedTheme = "default";
-  
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("equipped_theme")
-      .eq("id", user.id)
-      .single();
-      
-    if (profile?.equipped_theme) {
-      equippedTheme = profile.equipped_theme;
-    }
-  }
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -105,7 +87,7 @@ export default async function RootLayout({
         />
       </head>
       <body>
-        <Providers initialTheme={equippedTheme}>{children}</Providers>
+        <Providers>{children}</Providers>
         <InstallModal />
         <InstallPopup />
       </body>

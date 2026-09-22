@@ -72,6 +72,7 @@ export async function POST(request: Request) {
       }));
 
       const logs = await NutritionService.logMultipleFoods(user.id, normalizedItems);
+      NutritionService.invalidateServerCache(user.id);
       try {
         revalidatePath("/");
         revalidatePath("/nutrition");
@@ -104,6 +105,8 @@ export async function POST(request: Request) {
       quantity, 
       custom_food 
     });
+
+    NutritionService.invalidateServerCache(user.id);
 
     try {
       revalidatePath("/");
@@ -167,6 +170,8 @@ export async function DELETE(request: Request) {
       .lte('logged_at', end);
 
     if (deleteError) throw deleteError;
+
+    NutritionService.invalidateServerCache(user.id);
 
     // Trigger background update of daily summary
     NutritionService.updateDailySummary(user.id).catch(err => {

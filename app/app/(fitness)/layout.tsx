@@ -1,5 +1,4 @@
-import { getCachedUser } from "@/lib/services/supabase/server";
-import { createAdminClient } from "@/lib/services/supabase/admin";
+import { getCachedUser, getCachedFitnessProfile } from "@/lib/services/supabase/server";
 import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
@@ -12,17 +11,12 @@ export default async function FitnessLayout({ children }: { children: React.Reac
     return <>{children}</>;
   }
 
-  // Fetch onboarding status and subscription plan in parallel
-  const admin = createAdminClient();
+  // Fetch onboarding status and subscription plan in parallel using request-memoized helpers
   const [
-    { data: profile },
+    profile,
     plan,
   ] = await Promise.all([
-    admin
-      .from("fitness_os_profiles")
-      .select("onboarding_completed")
-      .eq("user_id", user.id)
-      .maybeSingle(),
+    getCachedFitnessProfile(user.id),
     getFitnessPlan(user.id),
   ]);
 

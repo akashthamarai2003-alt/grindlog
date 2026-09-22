@@ -34,6 +34,8 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
 
     if (error) throw error;
 
+    NutritionService.invalidateServerCache(user.id);
+
     // Trigger recalculation of daily summary in background
     NutritionService.updateDailySummary(user.id).catch(err => {
       console.warn("Background updateDailySummary warning in deleteFood:", err);
