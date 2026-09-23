@@ -1,7 +1,7 @@
 import { getCachedUser } from "@/lib/services/supabase/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { WorkoutSkeleton } from "@/components/fitness/workout/workout-skeleton";
+import { WorkoutInstantFallback } from "@/components/fitness/workout/workout-instant-fallback";
 import { WorkoutView } from "@/components/fitness/workout/workout-view";
 import { getWorkoutPageData } from "@/lib/services/fitness/workout-page-service";
 
@@ -21,7 +21,7 @@ async function WorkoutContent() {
 
 export default function WorkoutIndexPage() {
   return (
-    <Suspense fallback={<WorkoutSkeleton />}>
+    <Suspense fallback={<WorkoutInstantFallback />}>
       <WorkoutContent />
     </Suspense>
   );
