@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { nutritionApi, nutritionClientCache } from "@/lib/api/nutrition";
 
 interface TodaysGoalsCardProps {
+  userId?: string;
   lifestyle?: any;
   activity?: any;
   nutrition?: any;
@@ -15,6 +16,7 @@ interface TodaysGoalsCardProps {
 }
 
 export function TodaysGoalsCard({
+  userId,
   lifestyle,
   activity,
   nutrition,
@@ -22,6 +24,8 @@ export function TodaysGoalsCard({
   premiumLevel = "core",
   targetDateStr,
 }: TodaysGoalsCardProps) {
+  const effectiveUserId = userId || nutrition?.user_id || "";
+
   // Determine effective date for persistent goal state keying
   const effectiveDate = useMemo(() => {
     if (targetDateStr && /^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) {
@@ -34,8 +38,12 @@ export function TodaysGoalsCard({
     }).format(new Date());
   }, [targetDateStr]);
 
-  const goalsStorageKey = `grindlog_goals_completed_${effectiveDate}`;
-  const mealsStorageKey = `grindlog_meals_completed_${effectiveDate}`;
+  const goalsStorageKey = effectiveUserId
+    ? `grindlog_goals_completed_${effectiveUserId}_${effectiveDate}`
+    : `grindlog_goals_completed_${effectiveDate}`;
+  const mealsStorageKey = effectiveUserId
+    ? `grindlog_meals_completed_${effectiveUserId}_${effectiveDate}`
+    : `grindlog_meals_completed_${effectiveDate}`;
 
   // Targets from plan
   const stepsTarget = Number(lifestyle?.daily_steps_target) > 0 ? Number(lifestyle.daily_steps_target) : null;
@@ -47,8 +55,10 @@ export function TodaysGoalsCard({
   // Track meal completion from Today's Nutrition card
   const [nutritionProgress, setNutritionProgress] = useState(() => {
     const cached = typeof window !== "undefined" ? nutritionClientCache.get(effectiveDate) : null;
-    const dbCals = Math.round(Number(cached?.consumed?.calories ?? nutrition?.consumed?.calories) || 0);
-    const dbPro = Math.round(Number(cached?.consumed?.protein ?? nutrition?.consumed?.protein) || 0);
+    const isDifferentUser = effectiveUserId && cached?.user_id && cached.user_id !== effectiveUserId;
+    const safeCached = isDifferentUser ? null : cached;
+    const dbCals = Math.round(Number(safeCached?.consumed?.calories ?? nutrition?.consumed?.calories) || 0);
+    const dbPro = Math.round(Number(safeCached?.consumed?.protein ?? nutrition?.consumed?.protein) || 0);
     const calsMet = targetCalories ? dbCals >= targetCalories * 0.9 : false;
     const proMet = proteinTarget ? dbPro >= proteinTarget * 0.9 : false;
     return {
@@ -95,7 +105,8 @@ export function TodaysGoalsCard({
         const checkedCount = Object.entries(parsed).filter(([_, v]) => Boolean(v)).length;
 
         currentMeals.forEach((m: any, idx: number) => {
-          if (parsed[idx]) {
+          const mKey = String(m.meal_type || m.id || idx);
+          if (parsed[mKey] ?? parsed[m.id] ?? parsed[idx]) {
             const cal = Number(m.total_calories ?? m.calories) || (targetCalories ? Math.round(targetCalories / totalMeals) : 0);
             const pro = Number(m.protein_grams ?? m.protein) || (proteinTarget ? Math.round(proteinTarget / totalMeals) : 0);
             localCals += cal;

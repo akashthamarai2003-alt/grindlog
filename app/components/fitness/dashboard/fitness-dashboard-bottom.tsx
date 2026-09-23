@@ -5,6 +5,7 @@ import { DailyActivityCard } from "./daily-activity-card";
 import { TodaysGoalsCard } from "./todays-goals-card";
 
 interface FitnessDashboardBottomProps {
+  userId?: string;
   nutrition?: any;
   lifestyle?: any;
   dailyActivity?: any;
@@ -14,6 +15,7 @@ interface FitnessDashboardBottomProps {
 }
 
 export function FitnessDashboardBottom({
+  userId,
   nutrition,
   lifestyle,
   dailyActivity,
@@ -24,7 +26,7 @@ export function FitnessDashboardBottom({
   return (
     <>
       {/* Today's Nutrition Card */}
-      <TodaysNutritionCard nutrition={nutrition} premiumLevel={premiumLevel} targetDateStr={targetDateStr} />
+      <TodaysNutritionCard userId={userId} nutrition={nutrition} premiumLevel={premiumLevel} targetDateStr={targetDateStr} />
 
       {/* Daily Activity Card */}
       <DailyActivityCard
@@ -37,6 +39,7 @@ export function FitnessDashboardBottom({
 
       {/* Today's Goals Card */}
       <TodaysGoalsCard
+        userId={userId}
         lifestyle={lifestyle}
         activity={dailyActivity}
         nutrition={nutrition}

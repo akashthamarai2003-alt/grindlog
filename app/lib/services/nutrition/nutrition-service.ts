@@ -4021,6 +4021,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
     const score = this.computeNutritionScore(consumed, targets, mealsCompleted, totalMeals);
 
     const result = {
+      user_id: userId,
       date: localDate,
       day_of_week: dayOfWeek,
       targets,
@@ -4291,6 +4292,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
     const score = this.computeNutritionScore(consumed, targets, mealsCompleted, totalMeals);
 
     const result = {
+      user_id: userId,
       date: localDate,
       targets,
       consumed,

@@ -8,7 +8,8 @@ import {
   isStapleCoreFood,
   getRealisticFoodCost,
   calibrateMealsToTargets,
-  NutritionFoodReference
+  NutritionFoodReference,
+  invalidateNutritionServerCache
 } from "@/lib/services/nutrition/nutrition-service";
 import { buildNutritionUserContext } from "@/lib/fitness/nutrition/user-context";
 import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
@@ -567,6 +568,61 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
     } catch (gErr: any) {
       console.warn("[Luna AI] Non-blocking grocery sync notice:", gErr?.message);
     }
+
+    // 8b. Synchronize Day 1 meals to fitness_os_workout_plans so Home Dashboard updates immediately
+    try {
+      const { data: activeWorkoutPlan } = await supabase
+        .from('fitness_os_workout_plans')
+        .select('id, plan_data')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activeWorkoutPlan?.plan_data) {
+        const day1 = daySchedules[0];
+        const day1Meals = day1.meals.map((m: any, idx: number) => ({
+          meal_name: m.name,
+          meal_type: m.meal_type,
+          time_of_day: idx === 0 ? "Morning" : idx === 1 ? "Midday" : idx === 2 ? "Evening" : "Night",
+          items: m.items.map((it: any) => `${it.quantity > 1 ? `${it.quantity}x ` : ""}${it.name}`),
+          total_calories: m.calories,
+          protein_grams: m.protein,
+          carbs_grams: m.carbs,
+          fat_grams: m.fat,
+          prep_instructions: m.prep_instructions || `Prepared fresh according to your ${profile?.diet_preference || 'diet'} targets.`,
+          meal_plan_items: m.items
+        }));
+
+        const currentPlanData = activeWorkoutPlan.plan_data as any;
+        const updatedPlanData = {
+          ...currentPlanData,
+          nutrition: {
+            ...(currentPlanData.nutrition || {}),
+            daily_calories: targets.calories,
+            protein_grams: targets.protein,
+            carbs_grams: targets.carbs,
+            fat_grams: targets.fat,
+            meals: day1Meals,
+          },
+          _nutritionUpgrade: {
+            status: "complete",
+            generated_at: new Date().toISOString(),
+          }
+        };
+
+        await supabase
+          .from('fitness_os_workout_plans')
+          .update({ plan_data: updatedPlanData })
+          .eq('id', activeWorkoutPlan.id);
+      }
+    } catch (wpErr) {
+      console.warn("[Luna AI] Notice updating workout plan nutrition meals:", wpErr);
+    }
+
+    // Invalidate server cache so Home Dashboard and Nutrition screens reload immediately
+    invalidateNutritionServerCache(userId);
 
     // 9. Update Daily Summary for Today & Log Success
     await this.logUsage(userId, 'success', 'groq');

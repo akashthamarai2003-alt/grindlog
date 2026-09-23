@@ -67,27 +67,25 @@ export const getFitnessSubscriptionState = cache(async (userId: string): Promise
 
   if (!candidatePlanKey) {
     const admin = createAdminClient();
-    const { data: fitnessProfile } = await admin
-      .from("fitness_os_profiles")
-      .select("fitness_is_premium, fitness_premium_level, fitness_premium_expires_at")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const [{ data: fitnessProfile }, { data: mainProfile }] = await Promise.all([
+      admin
+        .from("fitness_os_profiles")
+        .select("fitness_is_premium, fitness_premium_level, fitness_premium_expires_at")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      admin
+        .from("profiles")
+        .select("is_premium, premium_level, premium_expires_at")
+        .eq("id", userId)
+        .maybeSingle(),
+    ]);
 
     if (fitnessProfile?.fitness_is_premium) {
       candidatePlanKey = fitnessProfile.fitness_premium_level === "pro" ? "pro" : "core";
       expiresAt = fitnessProfile.fitness_premium_expires_at || null;
     }
-  }
 
-  if (!candidatePlanKey) {
-    const admin = createAdminClient();
-    const { data: mainProfile } = await admin
-      .from("profiles")
-      .select("is_premium, premium_level, premium_expires_at")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (mainProfile?.is_premium) {
+    if (!candidatePlanKey && mainProfile?.is_premium) {
       candidatePlanKey = mainProfile.premium_level === "pro" ? "pro" : "core";
       expiresAt = mainProfile.premium_expires_at || null;
     }

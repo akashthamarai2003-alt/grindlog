@@ -260,6 +260,7 @@ async function DashboardBelow({
 
   return (
     <FitnessDashboardBottom
+      userId={userId}
       nutrition={effectiveNutrition}
       lifestyle={lifestyle}
       dailyActivity={dailyActivity}

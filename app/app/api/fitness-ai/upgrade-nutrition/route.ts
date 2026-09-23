@@ -22,6 +22,12 @@ import {
 } from "@/lib/fitness/validation/fitness-plan-profile";
 import { enrichPlanWithFoodLibrary } from "@/lib/fitness/validation/fitness-food-library";
 import { runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
+import { generateAIResponseJSON as generateGroqResponseJSON } from "@/lib/services/groq/client";
+import {
+  NutritionService,
+  invalidateNutritionServerCache,
+  findFoodReference,
+} from "@/lib/services/nutrition/nutrition-service";
 
 export const maxDuration = 120;
 
@@ -194,7 +200,7 @@ export async function POST() {
 
     const { data: foodCatalog } = await supabase
       .from("foods")
-      .select("name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, allergens")
+      .select("id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, allergens")
       .eq("is_active", true)
       .eq("plan_eligible", true)
       .limit(250);
@@ -233,37 +239,84 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
 
     await recordGenerationAttempt(supabase, user.id, "plan_nutrition_upgrade_attempt", FITNESS_PLAN_MODEL);
 
-    const aiResponse = await generateOpenAIResponseJSON<unknown>({
-      systemPrompt: `You are Grindlog's cautious nutrition coach. Generate only a safe, practical nutrition object for an existing workout plan. Never change workouts. Follow the saved profile exactly. For vegan users, every meal and grocery item must be plant-based. Never include foods that conflict with allergies, restrictions, or the saved available-food list. Never provide medical advice or extreme calorie restriction. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise.`,
-      userPrompt: promptToSend,
-      model: FITNESS_PLAN_MODEL,
-      maxTokens: 5500,
-      minimumOutputTokens: 5500,
-      reasoningEffort: "medium",
-      promptCacheKey: "fitness-pro-nutrition-upgrade-v1",
-      temperature: 0.2,
-      jsonSchema: {
-        name: "fitness_pro_nutrition",
-        schema: NUTRITION_JSON_SCHEMA,
-        description: "The missing Pro nutrition layer for an existing fitness plan.",
-        strict: true,
-      },
-      verbosity: "low",
-    });
+    let rawAiResponse: any = null;
+    let usedProvider = "openai";
 
-    const parsedNutrition = GeneratedNutritionSchema.safeParse(aiResponse);
-    if (!parsedNutrition.success) {
-      return NextResponse.json({ success: false, error: "The Pro nutrition response could not be validated.", errorType: "SYSTEM" }, { status: 400 });
+    // 1. First Attempt: OpenAI with a strict 7-second race timeout (prevent mobile network hangs)
+    try {
+      const openAiPromise = generateOpenAIResponseJSON<unknown>({
+        systemPrompt: `You are Grindlog's cautious nutrition coach. Generate only a safe, practical nutrition object for an existing workout plan. Never change workouts. Follow the saved profile exactly. For vegan users, every meal and grocery item must be plant-based. Never include foods that conflict with allergies, restrictions, or the saved available-food list. Never provide medical advice or extreme calorie restriction. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise.`,
+        userPrompt: promptToSend,
+        model: FITNESS_PLAN_MODEL,
+        maxTokens: 2500,
+        reasoningEffort: "low",
+        promptCacheKey: "fitness-pro-nutrition-upgrade-v1",
+        temperature: 0.2,
+        jsonSchema: {
+          name: "fitness_pro_nutrition",
+          schema: NUTRITION_JSON_SCHEMA,
+          description: "The missing Pro nutrition layer for an existing fitness plan.",
+          strict: true,
+        },
+        verbosity: "low",
+      });
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("OPENAI_TIMEOUT")), 7000)
+      );
+
+      rawAiResponse = await Promise.race([openAiPromise, timeoutPromise]);
+    } catch (err: any) {
+      console.warn("OpenAI generation failed or timed out in upgrade-nutrition, attempting fast Groq fallback:", err?.message || err);
     }
 
-    // 60% Code Math + 40% AI Hybrid Nutrition Merge
-    const hybridNutrition = deterministicNutrition
-      ? mergeHybridNutrition(parsedNutrition.data, deterministicNutrition)
-      : parsedNutrition.data;
+    // 2. Second Attempt: Fast Groq fallback (~1.5s) if OpenAI timed out or failed
+    if (!rawAiResponse) {
+      try {
+        usedProvider = "groq";
+        rawAiResponse = await generateGroqResponseJSON<unknown>({
+          systemPrompt: `You are Grindlog's cautious nutrition coach. Generate only a safe, practical nutrition object for an existing workout plan. Never change workouts. Follow the saved profile exactly. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise. Output schema:
+{
+  "daily_calories": number,
+  "protein_grams": number,
+  "carbs_grams": number,
+  "fat_grams": number,
+  "meals_per_day": number,
+  "guidance": string,
+  "meals": [{ "meal_name": string, "time_of_day": string, "items": string[], "total_calories": number, "protein_grams": number, "prep_instructions": string }],
+  "grocery_list": [{ "name": string, "monthly_quantity": number, "unit": string, "estimated_price": number, "category": string, "is_optional": boolean, "reason": string }]
+}`,
+          userPrompt: promptToSend,
+          model: "primary",
+          maxTokens: 2500,
+          temperature: 0.2,
+        });
+      } catch (groqErr: any) {
+        console.warn("Groq fallback failed in upgrade-nutrition, will use deterministic nutrition:", groqErr?.message || groqErr);
+      }
+    }
+
+    let parsedNutritionResult = rawAiResponse ? GeneratedNutritionSchema.safeParse(rawAiResponse) : null;
+    let finalNutrition: any = null;
+
+    if (parsedNutritionResult && parsedNutritionResult.success) {
+      // 60% Code Math + 40% AI Hybrid Nutrition Merge
+      finalNutrition = deterministicNutrition
+        ? mergeHybridNutrition(parsedNutritionResult.data, deterministicNutrition)
+        : parsedNutritionResult.data;
+    } else if (deterministicNutrition) {
+      usedProvider = "deterministic";
+      console.log("Using deterministic nutrition plan as resilient fallback in upgrade-nutrition");
+      finalNutrition = deterministicNutrition;
+    }
+
+    if (!finalNutrition) {
+      return NextResponse.json({ success: false, error: "The Pro nutrition response could not be generated.", errorType: "SYSTEM" }, { status: 400 });
+    }
 
     const mergedPlan = {
       ...existingPlan.data,
-      nutrition: hybridNutrition,
+      nutrition: finalNutrition,
     };
     const safetyCheck = runFitnessAISafetyCheck(mergedPlan, profile);
     const profileCheck = validatePlanAgainstProfile(mergedPlan, profile, {
@@ -271,14 +324,18 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
       enforceBudgetUtilisation: false,
       allowCoreNutrition: false,
     });
-    if (!safetyCheck.safe || !profileCheck.valid) {
+    const effectivePlanData = (safetyCheck.safe && profileCheck.valid)
+      ? profileCheck.plan
+      : (deterministicNutrition ? { ...existingPlan.data, nutrition: deterministicNutrition } : null);
+
+    if (!effectivePlanData) {
       return NextResponse.json(
         { success: false, error: safetyCheck.reason || profileCheck.issues[0] || "The nutrition plan did not match your saved profile.", errorType: safetyCheck.safe ? "PROFILE" : "SAFETY" },
         { status: 400 },
       );
     }
 
-    const validatedPlan = enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []);
+    const validatedPlan = enrichPlanWithFoodLibrary(effectivePlanData, foodCatalog || []);
     const planToSave = {
       ...validatedPlan,
       _nutritionUpgrade: {
@@ -346,14 +403,80 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
           })));
         if (groceryInsertError) console.warn("Legacy grocery summary sync warning:", groceryInsertError);
       }
+
+      // Sync meals into meal_plans and meal_plan_items for the next 7 days
+      try {
+        const localDate = await NutritionService.getLocalDateString(user.id);
+        const startDate = new Date(`${localDate}T12:00:00.000Z`);
+        const allDates: string[] = [];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(startDate);
+          d.setDate(d.getDate() + i);
+          allDates.push(d.toISOString().slice(0, 10));
+        }
+
+        await supabase.from("meal_plans").delete().eq("user_id", user.id).in("date", allDates);
+
+        const mealPlansRows = allDates.map((dateStr) => ({
+          user_id: user.id,
+          date: dateStr,
+          meal_type: "daily",
+          name: "Daily Pro Nutrition Plan",
+          calories: Number(nutrition.daily_calories) || 2000,
+          protein: Number(nutrition.protein_grams) || 130,
+          carbs: Number(nutrition.carbs_grams) || 225,
+          fat: Number(nutrition.fat_grams) || 55,
+          estimated_cost: 0,
+          ai_generated: true,
+        }));
+
+        const { data: insertedMealPlans } = await supabase
+          .from("meal_plans")
+          .insert(mealPlansRows)
+          .select("id, date");
+
+        if (insertedMealPlans && insertedMealPlans.length > 0 && Array.isArray(nutrition.meals)) {
+          const mealPlanItemsRows: any[] = [];
+          insertedMealPlans.forEach((plan) => {
+            nutrition.meals.forEach((m: any) => {
+              const rawItems = Array.isArray(m.items) ? m.items : [m.meal_name || m.name];
+              rawItems.forEach((it: any) => {
+                const itName = typeof it === "string" ? it : (it.name || "Food");
+                const ref = findFoodReference(itName, foodCatalog || [], profile?.food_environment);
+                const resolvedFoodId = ref?.id || (foodCatalog && foodCatalog[0]?.id);
+                if (resolvedFoodId) {
+                  mealPlanItemsRows.push({
+                    meal_plan_id: plan.id,
+                    food_id: resolvedFoodId,
+                    quantity: 1,
+                    serving_size: `${m.meal_name}::${itName}::1 serving`,
+                  });
+                }
+              });
+            });
+          });
+
+          if (mealPlanItemsRows.length > 0) {
+            const chunkSize = 100;
+            for (let c = 0; c < mealPlanItemsRows.length; c += chunkSize) {
+              await supabase.from("meal_plan_items").insert(mealPlanItemsRows.slice(c, c + chunkSize));
+            }
+          }
+        }
+      } catch (mealPlanErr) {
+        console.warn("Non-blocking meal_plans sync warning in upgrade-nutrition:", mealPlanErr);
+      }
     }
+
+    // Invalidate server caches so next fetch immediately returns updated nutrition
+    invalidateNutritionServerCache(user.id);
 
     await logFitnessAIUsage(
       user.id,
       "plan_generation",
       userPrompt,
       JSON.stringify(planToSave.nutrition),
-      FITNESS_PLAN_MODEL,
+      usedProvider === "groq" ? "groq" : usedProvider === "deterministic" ? "deterministic" : FITNESS_PLAN_MODEL,
       0,
     );
 

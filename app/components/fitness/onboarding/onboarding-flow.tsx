@@ -229,6 +229,18 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
     try {
       localStorage.removeItem("grindlog_onboarding_step");
       localStorage.removeItem("grindlog_onboarding_draft");
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith("grindlog_meals_completed_") || k.startsWith("grindlog_goals_completed_"))) {
+          localStorage.removeItem(k);
+        }
+      }
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith("grindlog_nutrition_")) {
+          sessionStorage.removeItem(k);
+        }
+      }
     } catch {}
     window.location.replace("/report");
   };

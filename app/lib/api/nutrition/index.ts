@@ -41,12 +41,14 @@ export const nutritionClientCache = {
     if (!date || !data) return;
     const existing = memoryNutritionCache[date];
     let toStore = data;
-    if (existing) {
+    // Only consider merging if both belong to the exact same user
+    const sameUser = !data?.user_id || !existing?.user_id || data.user_id === existing.user_id;
+    if (existing && sameUser) {
       const existingCount = existing?.logged_foods?.length || 0;
       const newCount = data?.logged_foods?.length || 0;
       const existingCals = Number(existing?.consumed?.calories) || 0;
       const newCals = Number(data?.consumed?.calories) || 0;
-      if (((existingCount > 0 && newCount === 0) || (existingCals > 0 && newCals === 0)) && !data._isExplicitClear) {
+      if (((existingCount > 0 && newCount === 0) || (existingCals > 0 && newCals === 0)) && !data._isExplicitClear && !data._freshFromDb) {
         toStore = {
           ...existing,
           ...data,
@@ -74,6 +76,16 @@ export const nutritionClientCache = {
       }
     } else {
       Object.keys(memoryNutritionCache).forEach((k) => delete memoryNutritionCache[k]);
+      if (typeof window !== "undefined") {
+        try {
+          for (let i = sessionStorage.length - 1; i >= 0; i--) {
+            const k = sessionStorage.key(i);
+            if (k && k.startsWith("grindlog_nutrition_")) {
+              sessionStorage.removeItem(k);
+            }
+          }
+        } catch {}
+      }
     }
   },
 

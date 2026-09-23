@@ -9,6 +9,7 @@ import { nutritionApi, nutritionClientCache } from "@/lib/api/nutrition";
 import { toast } from "sonner";
 
 interface TodaysNutritionCardProps {
+  userId?: string;
   nutrition?: any; // The nutrition plan object from DB
   premiumLevel?: string;
   targetDateStr?: string;
@@ -99,12 +100,15 @@ function formatFoodItem(it: any): string {
 }
 
 export function TodaysNutritionCard({
+  userId,
   nutrition,
   premiumLevel = "core",
   targetDateStr,
 }: TodaysNutritionCardProps) {
   const router = useRouter();
   const isInternalUpdateRef = useRef(false);
+  const effectiveUserId = userId || nutrition?.user_id || "";
+
   // Determine effective date for persistent meal state keying
   const effectiveDate = useMemo(() => {
     if (targetDateStr && /^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) {
@@ -119,7 +123,9 @@ export function TodaysNutritionCard({
 
   const [activeNutrition, setActiveNutrition] = useState<any>(() => {
     const cached = nutritionClientCache.get(effectiveDate);
-    if (cached && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
+    const cachedUserId = cached?.user_id;
+    const isDifferentUser = effectiveUserId && cachedUserId && cachedUserId !== effectiveUserId;
+    if (cached && !isDifferentUser && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
       return {
         ...(nutrition || {}),
         ...cached,
@@ -131,17 +137,23 @@ export function TodaysNutritionCard({
     return nutrition;
   });
 
-  // Guard: Never downgrade active logged meals to an empty/stale server prop
+  // Guard: Never downgrade active logged meals to an empty/stale server prop, but reset if user changed
   useEffect(() => {
     if (!nutrition) return;
     setActiveNutrition((prev: any) => {
       if (!prev) return nutrition;
+      if (effectiveUserId && prev.user_id && prev.user_id !== effectiveUserId) {
+        return nutrition;
+      }
       const prevLogged = prev.logged_foods?.length || 0;
       const prevCals = Number(prev.consumed?.calories) || 0;
       const newLogged = nutrition.logged_foods?.length || 0;
       const newCals = Number(nutrition.consumed?.calories) || 0;
 
       if ((prevLogged > 0 && newLogged === 0) || (prevCals > 0 && newCals === 0)) {
+        if (nutrition._freshFromDb && newLogged === 0) {
+          return nutrition;
+        }
         return {
           ...nutrition,
           consumed: prev.consumed,
@@ -159,7 +171,7 @@ export function TodaysNutritionCard({
         meals: (nutrition.meals && nutrition.meals.length > 0) ? nutrition.meals : prev.meals,
       };
     });
-  }, [nutrition]);
+  }, [nutrition, effectiveUserId]);
 
   // Persist activeNutrition changes to client cache
   useEffect(() => {
@@ -357,7 +369,7 @@ export function TodaysNutritionCard({
       }
 
       return {
-        id: idx,
+        id: resolvedMealType || `meal_${idx}`,
         meal_type: resolvedMealType,
         name: mealName,
         time: timeStr,
@@ -401,11 +413,13 @@ export function TodaysNutritionCard({
     return set;
   }, [activeNutrition?.logged_foods, nutrition?.logged_foods]);
 
-  // Persistent storage key per effective date
-  const storageKey = `grindlog_meals_completed_${effectiveDate}`;
-  const [completedMeals, setCompletedMeals] = useState<Record<number, boolean>>({});
+  // Persistent storage key per user and effective date
+  const storageKey = effectiveUserId
+    ? `grindlog_meals_completed_${effectiveUserId}_${effectiveDate}`
+    : `grindlog_meals_completed_${effectiveDate}`;
+  const [completedMeals, setCompletedMeals] = useState<Record<string, boolean>>({});
 
-  // Sync state with localStorage on mount or date change
+  // Sync state with localStorage on mount or date/user change
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -437,9 +451,10 @@ export function TodaysNutritionCard({
 
   // Reconcile completedMeals with DB truth when fresh activeNutrition arrives
   useEffect(() => {
-    if (!activeNutrition?.logged_foods) return;
+    const logs = activeNutrition?.logged_foods || nutrition?.logged_foods;
+    if (!logs) return;
     const dbTypes = new Set<string>();
-    activeNutrition.logged_foods.forEach((f: any) => {
+    logs.forEach((f: any) => {
       const t = String(f.meal_type || "").toLowerCase().trim();
       if (t) dbTypes.add(t);
     });
@@ -447,18 +462,27 @@ export function TodaysNutritionCard({
     setCompletedMeals((prev) => {
       let changed = false;
       const next = { ...prev };
-      const currentMeals = activeNutrition.meals || nutrition?.meals || [];
-      currentMeals.forEach((m: any) => {
+
+      // If user has zero logs in DB for today, purge any phantom completed meal entries
+      if (logs.length === 0 && Object.keys(next).length > 0) {
+        try {
+          localStorage.removeItem(storageKey);
+        } catch {}
+        return {};
+      }
+
+      meals.forEach((m: any) => {
         const t = String(m.meal_type || "").toLowerCase().trim();
         const hasDbLogs = dbTypes.has(t);
+        const mKey = String(m.id);
         // If DB has no logs for this meal type, it is not completed:
-        if (!hasDbLogs && next[m.id] === true) {
-          delete next[m.id];
+        if (!hasDbLogs && next[mKey] === true) {
+          delete next[mKey];
           changed = true;
         }
         // If DB has logs for this meal type, it is completed:
-        if (hasDbLogs && next[m.id] === false) {
-          delete next[m.id];
+        if (hasDbLogs && next[mKey] === false) {
+          delete next[mKey];
           changed = true;
         }
       });
@@ -470,12 +494,13 @@ export function TodaysNutritionCard({
       }
       return prev;
     });
-  }, [activeNutrition?.logged_foods, activeNutrition?.meals, nutrition?.meals, storageKey]);
+  }, [activeNutrition?.logged_foods, nutrition?.logged_foods, meals, storageKey]);
 
   const isMealDone = useCallback((meal: any) => {
+    const mKey = String(meal.id);
     // 1. Explicit user override in state/localStorage for this date takes highest priority
-    if (completedMeals[meal.id] === false) return false;
-    if (completedMeals[meal.id] === true) return true;
+    if (completedMeals[mKey] === false) return false;
+    if (completedMeals[mKey] === true) return true;
 
     // 2. Otherwise check database completed types for this specific meal_type
     const typeKey = String(meal.meal_type || "").toLowerCase().trim();
@@ -496,10 +521,11 @@ export function TodaysNutritionCard({
     const alreadyDone = isMealDone(meal);
     const nextState = !alreadyDone;
     const typeKey = String(meal.meal_type || 'lunch').toLowerCase().trim();
+    const mKey = String(meal.id);
 
     // 1. Instant local persistence update
     setCompletedMeals((prev) => {
-      const next = { ...prev, [meal.id]: nextState };
+      const next = { ...prev, [mKey]: nextState };
       try {
         localStorage.setItem(storageKey, JSON.stringify(next));
       } catch (err) {
@@ -631,10 +657,11 @@ export function TodaysNutritionCard({
     const localDelta = meals.reduce((acc: number, m: any) => {
       const typeKey = String(m.meal_type || "").toLowerCase().trim();
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
-      if (completedMeals[m.id] === true && !inDb) {
+      const mKey = String(m.id);
+      if (completedMeals[mKey] === true && !inDb) {
         return acc + m.calories;
       }
-      if (completedMeals[m.id] === false && inDb) {
+      if (completedMeals[mKey] === false && inDb) {
         return acc - m.calories;
       }
       return acc;
@@ -648,10 +675,11 @@ export function TodaysNutritionCard({
     const localDelta = meals.reduce((acc: number, m: any) => {
       const typeKey = String(m.meal_type || "").toLowerCase().trim();
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
-      if (completedMeals[m.id] === true && !inDb) {
+      const mKey = String(m.id);
+      if (completedMeals[mKey] === true && !inDb) {
         return acc + m.protein;
       }
-      if (completedMeals[m.id] === false && inDb) {
+      if (completedMeals[mKey] === false && inDb) {
         return acc - m.protein;
       }
       return acc;
@@ -665,10 +693,11 @@ export function TodaysNutritionCard({
     const localDelta = meals.reduce((acc: number, m: any) => {
       const typeKey = String(m.meal_type || "").toLowerCase().trim();
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
-      if (completedMeals[m.id] === true && !inDb) {
+      const mKey = String(m.id);
+      if (completedMeals[mKey] === true && !inDb) {
         return acc + m.carbs;
       }
-      if (completedMeals[m.id] === false && inDb) {
+      if (completedMeals[mKey] === false && inDb) {
         return acc - m.carbs;
       }
       return acc;
@@ -682,10 +711,11 @@ export function TodaysNutritionCard({
     const localDelta = meals.reduce((acc: number, m: any) => {
       const typeKey = String(m.meal_type || "").toLowerCase().trim();
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
-      if (completedMeals[m.id] === true && !inDb) {
+      const mKey = String(m.id);
+      if (completedMeals[mKey] === true && !inDb) {
         return acc + m.fats;
       }
-      if (completedMeals[m.id] === false && inDb) {
+      if (completedMeals[mKey] === false && inDb) {
         return acc - m.fats;
       }
       return acc;
