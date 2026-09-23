@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { GeneratedGroceryItemSchema } from "@/lib/fitness/ai/schemas";
-import { generateOpenAIResponseJSON } from "@/lib/services/openai/client";
+import { generateAIResponseJSON as generateGroqResponseJSON } from "@/lib/services/groq/client";
 import {
   parseBudgetPlanningReference,
   validateGroceryListAgainstProfile,
@@ -97,9 +97,10 @@ Respond entirely in JSON format matching this schema:
 }
 CRITICAL: For eggs, NEVER use "dozen" or "dozens". If you want 36 eggs, use {"monthly_quantity": 36, "unit": "pieces"}. Every single item MUST have a realistic estimated_price > 0. Never output 0 for prices.`;
 
-    const aiResponse = await generateOpenAIResponseJSON<z.infer<typeof GenerateGroceryResponseSchema>>({
+    const aiResponse = await generateGroqResponseJSON<z.infer<typeof GenerateGroceryResponseSchema>>({
       systemPrompt,
       userPrompt,
+      model: "primary",
       temperature: 0.2,
     });
     const parsedData = GenerateGroceryResponseSchema.parse(aiResponse);

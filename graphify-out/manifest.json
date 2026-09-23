@@ -504,9 +504,9 @@
     "semantic_hash": ""
   },
   "app/app/api/fitness-ai/generate-grocery/route.ts": {
-    "mtime": 1788796194.7417812,
-    "seen": 1789970487.597854,
-    "ast_hash": "b2b03366b64d0a2061fc8279a498410f",
+    "mtime": 1790177246.6445649,
+    "seen": 1790177408.1565485,
+    "ast_hash": "ec7fe1d4fa208bd183e521acb3d0ccef",
     "semantic_hash": ""
   },
   "app/app/api/fitness-ai/generate-plan/route.ts": {
@@ -570,9 +570,9 @@
     "semantic_hash": ""
   },
   "app/app/api/fitness-ai/upgrade-nutrition/route.ts": {
-    "mtime": 1790176578.8333485,
-    "seen": 1790176715.1586816,
-    "ast_hash": "ca33277fabc772ad22901299c7cd7625",
+    "mtime": 1790177303.7678874,
+    "seen": 1790177408.1593926,
+    "ast_hash": "63618aa497e70d02ba277b15811bd4f9",
     "semantic_hash": ""
   },
   "app/app/api/fitness-ai/weekly-review/route.ts": {

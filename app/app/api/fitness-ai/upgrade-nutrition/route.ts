@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { generateDeterministicNutritionPlan, convertToAIPlanFormat } from "@/lib/fitness/nutrition/nutrition-engine";
 import { buildHybridNutritionPrompt, mergeHybridNutrition } from "@/lib/fitness/nutrition/hybrid-merger";
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import {
-  FITNESS_PLAN_MODEL,
-  generateOpenAIResponseJSON,
-} from "@/lib/services/openai/client";
+
 import {
   GeneratedNutritionSchema,
   GeneratedPlanSchema,
@@ -237,45 +234,15 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
     const hybridPrompt = deterministicNutrition ? buildHybridNutritionPrompt(deterministicNutrition) : "";
     const promptToSend = `${userPrompt}\n\n${hybridPrompt}`;
 
-    await recordGenerationAttempt(supabase, user.id, "plan_nutrition_upgrade_attempt", FITNESS_PLAN_MODEL);
+    await recordGenerationAttempt(supabase, user.id, "plan_nutrition_upgrade_attempt", "groq:qwen/qwen3.8-27b");
 
     let rawAiResponse: any = null;
-    let usedProvider = "openai";
+    let usedProvider = "groq";
 
-    // 1. First Attempt: OpenAI with a strict 7-second race timeout (prevent mobile network hangs)
+    // Primary AI: Groq AI (qwen/qwen3.8-27b) — ultra-fast ~1.5s execution, 0 OpenAI cost or timeouts
     try {
-      const openAiPromise = generateOpenAIResponseJSON<unknown>({
-        systemPrompt: `You are Grindlog's cautious nutrition coach. Generate only a safe, practical nutrition object for an existing workout plan. Never change workouts. Follow the saved profile exactly. For vegan users, every meal and grocery item must be plant-based. Never include foods that conflict with allergies, restrictions, or the saved available-food list. Never provide medical advice or extreme calorie restriction. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise.`,
-        userPrompt: promptToSend,
-        model: FITNESS_PLAN_MODEL,
-        maxTokens: 2500,
-        reasoningEffort: "low",
-        promptCacheKey: "fitness-pro-nutrition-upgrade-v1",
-        temperature: 0.2,
-        jsonSchema: {
-          name: "fitness_pro_nutrition",
-          schema: NUTRITION_JSON_SCHEMA,
-          description: "The missing Pro nutrition layer for an existing fitness plan.",
-          strict: true,
-        },
-        verbosity: "low",
-      });
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("OPENAI_TIMEOUT")), 7000)
-      );
-
-      rawAiResponse = await Promise.race([openAiPromise, timeoutPromise]);
-    } catch (err: any) {
-      console.warn("OpenAI generation failed or timed out in upgrade-nutrition, attempting fast Groq fallback:", err?.message || err);
-    }
-
-    // 2. Second Attempt: Fast Groq fallback (~1.5s) if OpenAI timed out or failed
-    if (!rawAiResponse) {
-      try {
-        usedProvider = "groq";
-        rawAiResponse = await generateGroqResponseJSON<unknown>({
-          systemPrompt: `You are Grindlog's cautious nutrition coach. Generate only a safe, practical nutrition object for an existing workout plan. Never change workouts. Follow the saved profile exactly. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise. Output schema:
+      rawAiResponse = await generateGroqResponseJSON<unknown>({
+        systemPrompt: `You are Grindlog's cautious nutrition coach. Generate only a safe, practical nutrition object for an existing workout plan. Never change workouts. Follow the saved profile exactly. For vegan users, every meal and grocery item must be plant-based. Never include foods that conflict with allergies, restrictions, or the saved available-food list. Never provide medical advice or extreme calorie restriction. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise. Output schema:
 {
   "daily_calories": number,
   "protein_grams": number,
@@ -286,14 +253,13 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
   "meals": [{ "meal_name": string, "time_of_day": string, "items": string[], "total_calories": number, "protein_grams": number, "prep_instructions": string }],
   "grocery_list": [{ "name": string, "monthly_quantity": number, "unit": string, "estimated_price": number, "category": string, "is_optional": boolean, "reason": string }]
 }`,
-          userPrompt: promptToSend,
-          model: "primary",
-          maxTokens: 2500,
-          temperature: 0.2,
-        });
-      } catch (groqErr: any) {
-        console.warn("Groq fallback failed in upgrade-nutrition, will use deterministic nutrition:", groqErr?.message || groqErr);
-      }
+        userPrompt: promptToSend,
+        model: "primary",
+        maxTokens: 2500,
+        temperature: 0.2,
+      });
+    } catch (groqErr: any) {
+      console.warn("Groq AI plan generation error in upgrade-nutrition, using deterministic nutrition fallback:", groqErr?.message || groqErr);
     }
 
     let parsedNutritionResult = rawAiResponse ? GeneratedNutritionSchema.safeParse(rawAiResponse) : null;
@@ -476,7 +442,7 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
       "plan_generation",
       userPrompt,
       JSON.stringify(planToSave.nutrition),
-      usedProvider === "groq" ? "groq" : usedProvider === "deterministic" ? "deterministic" : FITNESS_PLAN_MODEL,
+      usedProvider === "deterministic" ? "deterministic" : "groq:qwen/qwen3.8-27b",
       0,
     );
 
