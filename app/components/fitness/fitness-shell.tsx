@@ -38,7 +38,7 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
     } else if (navigatingTo === "/nutrition" || navigatingTo === "/diet") {
       activeSkeleton = <NutritionLoading />;
     } else if (navigatingTo === "/progress") {
-      activeSkeleton = <ProgressInstantFallback />;
+      activeSkeleton = <ProgressInstantFallback isPro={isPro} />;
     } else if (navigatingTo === "/") {
       activeSkeleton = (
         <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">

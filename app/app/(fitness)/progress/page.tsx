@@ -27,7 +27,7 @@ export default async function ProgressPage() {
 
   return (
     <FitnessGuard featureName="advanced progress analysis">
-      <Suspense fallback={<ProgressInstantFallback />}>
+      <Suspense fallback={<ProgressInstantFallback isPro={isPro} />}>
         <ProgressContent userId={user.id} isPro={isPro} />
       </Suspense>
     </FitnessGuard>

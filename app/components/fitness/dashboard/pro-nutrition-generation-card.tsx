@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { nutritionClientCache } from "@/lib/api/nutrition";
 
 export function ProNutritionGenerationCard() {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDone, setIsDone] = useState(false);
 
   const generateNutrition = async () => {
     if (isGenerating) return;
@@ -25,12 +27,17 @@ export function ProNutritionGenerationCard() {
       }
 
       toast.success(result.alreadyGenerated ? "Your Pro nutrition plan is already ready." : "Your Pro nutrition plan is ready.");
+      setIsDone(true);
+      nutritionClientCache.clear();
+      nutritionClientCache.notifyUpdated();
       router.refresh();
     } catch (error: any) {
       toast.error(error?.message || "We could not generate your Pro nutrition plan.");
       setIsGenerating(false);
     }
   };
+
+  if (isDone) return null;
 
   return (
     <section className="rounded-2xl border border-[#ADFF00]/35 bg-[linear-gradient(145deg,rgba(173,255,0,0.12),rgba(17,26,16,1)_58%)] p-5 shadow-xl">

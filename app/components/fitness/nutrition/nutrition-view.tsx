@@ -481,8 +481,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       } else {
         toast.success(res.message || "7-Day weekly meal plan generated successfully!");
       }
-      // Invalidate local client date cache so all days reload fresh meals
+      // Invalidate local client date cache and global client cache so all screens reload fresh meals
       dateCacheRef.current = {};
+      nutritionClientCache.clear();
+      nutritionClientCache.notifyUpdated();
       await fetchToday(selectedDateRef.current);
     } catch (err: any) {
       toast.error(err?.message || "Failed to generate plan");

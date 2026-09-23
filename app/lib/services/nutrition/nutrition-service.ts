@@ -1335,6 +1335,53 @@ export class NutritionService {
         .order('created_at', { ascending: false });
 
       if (error || !logs || logs.length === 0) {
+        // Fallback check: check if the user already has an active workout plan with upgraded nutrition or meal_plans
+        try {
+          const [{ data: wp }, { data: mp }] = await Promise.all([
+            supabase
+              .from('fitness_os_workout_plans')
+              .select('plan_data, updated_at')
+              .eq('user_id', userId)
+              .eq('status', 'active')
+              .maybeSingle(),
+            supabase
+              .from('meal_plans')
+              .select('id, created_at')
+              .eq('user_id', userId)
+              .limit(1)
+              .maybeSingle()
+          ]);
+
+          const hasNutrition = (wp?.plan_data as any)?._nutritionUpgrade?.status === 'complete' ||
+            (Array.isArray((wp?.plan_data as any)?.nutrition?.meals) && (wp?.plan_data as any)?.nutrition?.meals.length > 0) ||
+            Boolean(mp?.id);
+
+          if (hasNutrition) {
+            const planTime = wp?.updated_at ? new Date(wp.updated_at).getTime() : (mp?.created_at ? new Date(mp.created_at).getTime() : Date.now());
+            const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+            const nextWeeklyAvailTime = planTime + WEEK_MS;
+            const now = Date.now();
+            const isWeeklyCooldown = now < nextWeeklyAvailTime;
+            const daysRemaining = Math.max(1, Math.ceil((nextWeeklyAvailTime - now) / (24 * 60 * 60 * 1000)));
+            const nextAvailDate = new Date(nextWeeklyAvailTime);
+            const formattedDate = nextAvailDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+            return {
+              can_generate: !isWeeklyCooldown,
+              has_active_plan: true,
+              last_generated_at: new Date(planTime).toISOString(),
+              next_available_date: nextAvailDate.toISOString(),
+              next_available_formatted: formattedDate,
+              days_remaining: isWeeklyCooldown ? daysRemaining : 0,
+              plans_used_this_month: 1,
+              max_plans_per_month: 4,
+              reason: isWeeklyCooldown ? `You can generate a new weekly plan on ${formattedDate} (${daysRemaining} days remaining).` : null
+            };
+          }
+        } catch (fbErr) {
+          console.warn("[getWeeklyPlanEligibility] Non-blocking fallback check notice:", fbErr);
+        }
+
         return {
           can_generate: true,
           has_active_plan: false,

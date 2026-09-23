@@ -301,7 +301,29 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
       );
     }
 
+    function deriveMealSlotType(m: any, idx: number, total: number): string {
+      if (m.meal_type) return m.meal_type.toLowerCase().trim();
+      const ctx = `${m.meal_name || m.name || ""} ${m.time_of_day || ""}`.toLowerCase();
+      if (ctx.includes("breakfast") || ctx.includes("waking") || ctx.includes("morning")) return "breakfast";
+      if (ctx.includes("lunch") || ctx.includes("midday") || ctx.includes("noon")) return "lunch";
+      if (ctx.includes("dinner") || ctx.includes("night") || ctx.includes("supper") || ctx.includes("evening")) return "dinner";
+      if (ctx.includes("pre")) return "pre_workout";
+      if (ctx.includes("post")) return "post_workout";
+      if (ctx.includes("snack")) return "snack";
+      if (total === 3) return idx === 0 ? "breakfast" : idx === 1 ? "lunch" : "dinner";
+      if (total === 4) return idx === 0 ? "breakfast" : idx === 1 ? "lunch" : idx === 2 ? "snack" : "dinner";
+      return idx === 0 ? "breakfast" : idx === total - 1 ? "dinner" : "lunch";
+    }
+
     const validatedPlan = enrichPlanWithFoodLibrary(effectivePlanData, foodCatalog || []);
+    if (Array.isArray(validatedPlan.nutrition?.meals)) {
+      const totalCount = validatedPlan.nutrition.meals.length;
+      validatedPlan.nutrition.meals = validatedPlan.nutrition.meals.map((m: any, idx: number) => ({
+        ...m,
+        meal_type: deriveMealSlotType(m, idx, totalCount),
+      }));
+    }
+
     const planToSave = {
       ...validatedPlan,
       _nutritionUpgrade: {
@@ -403,9 +425,12 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
 
         if (insertedMealPlans && insertedMealPlans.length > 0 && Array.isArray(nutrition.meals)) {
           const mealPlanItemsRows: any[] = [];
+          const totalMeals = nutrition.meals.length;
           insertedMealPlans.forEach((plan) => {
-            nutrition.meals.forEach((m: any) => {
-              const rawItems = Array.isArray(m.items) ? m.items : [m.meal_name || m.name];
+            nutrition.meals.forEach((m: any, mIdx: number) => {
+              const mSlotType = deriveMealSlotType(m, mIdx, totalMeals);
+              const mTitle = m.meal_name || m.name || mSlotType;
+              const rawItems = Array.isArray(m.items) ? m.items : [mTitle];
               rawItems.forEach((it: any) => {
                 const itName = typeof it === "string" ? it : (it.name || "Food");
                 const ref = findFoodReference(itName, foodCatalog || [], profile?.food_environment);
@@ -415,7 +440,7 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
                     meal_plan_id: plan.id,
                     food_id: resolvedFoodId,
                     quantity: 1,
-                    serving_size: `${m.meal_name}::${itName}::1 serving`,
+                    serving_size: `${mSlotType}::${mTitle}::1 serving`,
                   });
                 }
               });
@@ -445,6 +470,28 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
       usedProvider === "deterministic" ? "deterministic" : "groq:qwen/qwen3.8-27b",
       0,
     );
+
+    // Also record to ai_usage_logs so weeklyPlanEligibility immediately flags plan active
+    try {
+      await supabase.from("ai_usage_logs").insert({
+        user_id: user.id,
+        feature: "meal_generation",
+        model: usedProvider === "deterministic" ? "deterministic" : "groq:qwen/qwen3.8-27b",
+        status: "success",
+        input_tokens: 0,
+        output_tokens: 0,
+        prompt_version: "v1.0",
+      });
+    } catch (logErr) {
+      console.warn("Non-blocking ai_usage_logs sync warning in upgrade-nutrition:", logErr);
+    }
+
+    // Synchronize daily summary for today
+    try {
+      await NutritionService.updateDailySummary(user.id);
+    } catch (summaryErr) {
+      console.warn("Non-blocking updateDailySummary warning in upgrade-nutrition:", summaryErr);
+    }
 
     return NextResponse.json({ success: true, data: { nutrition: planToSave.nutrition } });
   } catch (error: any) {

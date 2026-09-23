@@ -1,4 +1,4 @@
-export default function ProgressLoading() {
+export function ProgressSkeleton() {
   return (
     <div className="min-h-screen bg-[#0A1108] text-white">
       <div className="w-full max-w-md mx-auto px-3.5 sm:px-5 pt-6 sm:pt-8 pb-32 animate-pulse">
@@ -71,4 +71,8 @@ export default function ProgressLoading() {
       </div>
     </div>
   );
+}
+
+export default function ProgressLoading() {
+  return <ProgressSkeleton />;
 }

@@ -36,6 +36,7 @@ export const GeneratedWorkoutSchema = z.object({
 
 export const GeneratedMealSchema = z.object({
   meal_name: z.coerce.string().describe("e.g., Breakfast, Lunch, Snack").optional().default(""),
+  meal_type: z.coerce.string().optional(),
   time_of_day: z.coerce.string().describe("e.g., 08:00 AM").optional().default(""),
   items: safeArray(z.coerce.string()),
   total_calories: safeNumber.nullable().optional(),
