@@ -1,3 +1,9 @@
+"use client";
+
+import { useState } from "react";
+import { progressClientCache } from "@/lib/api/progress-cache";
+import { ProgressView } from "@/components/fitness/progress/progress-view";
+
 export function ProgressSkeleton() {
   return (
     <div className="min-h-screen bg-[#0A1108] text-white">
@@ -74,5 +80,6 @@ export function ProgressSkeleton() {
 }
 
 export default function ProgressLoading() {
-  return <ProgressSkeleton />;
+  const [cachedData] = useState(() => progressClientCache.get("30D"));
+  return cachedData ? <ProgressView initialData={cachedData} isPro={false} /> : <ProgressSkeleton />;
 }
