@@ -262,9 +262,9 @@ export async function generateStartingReport({
       systemPrompt,
       userPrompt: reportPrompt,
       model: FITNESS_REPORT_MODEL,
-      maxTokens: 3500,
+      maxTokens: 2000,
       reasoningEffort: "low",
-      minimumOutputTokens: 2500,
+      minimumOutputTokens: 1200,
       jsonSchema: {
         name: "starting_report",
         schema: STARTING_REPORT_JSON_SCHEMA,

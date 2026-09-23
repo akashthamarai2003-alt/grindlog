@@ -21,6 +21,8 @@ import {
 import { PhotoGuard } from "@/lib/security/photo-guard";
 import { enforceRateLimit } from "@/lib/security/rate-limiter";
 
+export const maxDuration = 60;
+
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
   if (value && typeof value === "object") {

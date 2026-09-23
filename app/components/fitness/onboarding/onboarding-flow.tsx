@@ -2731,12 +2731,12 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
       if (isMounted) setPhase(prev => Math.max(prev, 3));
     }, 3600);
 
-    // Safety timeout: Never hang indefinitely on mobile (12s max)
+    // Safety timeout: Never hang indefinitely on mobile (20s max)
     const safetyTimer = setTimeout(() => {
       if (isMounted && !isDone) {
         setIsDone(true);
       }
-    }, 12000);
+    }, 20000);
 
     // Use sessionId for deduping if provided, otherwise fallback to always fetching
     if (sessionId && lastSubmissionSessionId === sessionId && lastSubmissionPromise) {
