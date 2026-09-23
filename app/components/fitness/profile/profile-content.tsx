@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useFitnessTheme } from "../fitness-theme-provider";
+import { profileClientCache } from "@/lib/api/profile-cache";
 
 interface ProfileContentProps {
   user: {
@@ -82,6 +83,17 @@ export function ProfileContent({
     initialFitnessProfile?.reminders_enabled ?? true
   );
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
+
+  useEffect(() => {
+    profileClientCache.set({
+      user,
+      fitnessProfile,
+      mainProfile,
+      activePlan,
+      subscriptionPlan,
+      aiLimitInfo,
+    });
+  }, [user, fitnessProfile, mainProfile, activePlan, subscriptionPlan, aiLimitInfo]);
 
   useEffect(() => {
     setAiLimitInfo(initialAiLimitInfo);
@@ -232,6 +244,7 @@ export function ProfileContent({
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
+    profileClientCache.clear();
     try {
       await fetch("/api/auth/signout", { method: "POST" });
       await supabase.auth.signOut();

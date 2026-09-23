@@ -1,4 +1,16 @@
+"use client";
+
+import { useState } from "react";
+import { ProfileContent } from "@/components/fitness/profile/profile-content";
+import { profileClientCache } from "@/lib/api/profile-cache";
+
 export default function ProfileLoading() {
+  const [cachedData] = useState(() => profileClientCache.get());
+
+  if (cachedData) {
+    return <ProfileContent {...cachedData} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0A1108] text-white">
       <div className="w-full max-w-md mx-auto px-3.5 sm:px-5 pt-6 sm:pt-8 pb-32 animate-pulse">
