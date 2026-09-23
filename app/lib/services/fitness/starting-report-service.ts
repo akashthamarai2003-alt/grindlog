@@ -256,39 +256,48 @@ export async function generateStartingReport({
   Keep each string plain, concrete, and concise, but friendly.`;
 
   const reportPrompt = `ONBOARDING PROFILE:\n${JSON.stringify(profile)}\n\nBODY SCAN AVAILABLE: ${hasUsableBodyScan(visualObservations)}\n\nOPTIONAL BODY-SCAN OBSERVATIONS:\n${compactVisualObservations(visualObservations)}`;
-  // 1. Primary Attempt: OpenAI (or custom configured model)
+  // 1. Primary Attempt: OpenAI with fast 5.5s mobile timeout
   try {
-    const response = await generateOpenAIResponseJSON<unknown>({
-      systemPrompt,
-      userPrompt: reportPrompt,
-      model: FITNESS_REPORT_MODEL,
-      maxTokens: 2000,
-      reasoningEffort: "low",
-      minimumOutputTokens: 1200,
-      jsonSchema: {
-        name: "starting_report",
-        schema: STARTING_REPORT_JSON_SCHEMA,
-        description: "A complete Grindlog personalised starting report.",
-        strict: true,
-      },
-      verbosity: "low",
-    });
+    const openAiTimeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("OpenAI call exceeded 5.5s mobile limit")), 5500)
+    );
+    const response = await Promise.race([
+      generateOpenAIResponseJSON<unknown>({
+        systemPrompt,
+        userPrompt: reportPrompt,
+        model: FITNESS_REPORT_MODEL,
+        maxTokens: 2000,
+        reasoningEffort: "low",
+        minimumOutputTokens: 1200,
+        jsonSchema: {
+          name: "starting_report",
+          schema: STARTING_REPORT_JSON_SCHEMA,
+          description: "A complete Grindlog personalised starting report.",
+          strict: true,
+        },
+        verbosity: "low",
+      }),
+      openAiTimeout,
+    ]);
     const parsed = StartingReportSchema.safeParse(response);
     if (parsed.success) {
       return parsed.data;
     }
     console.warn("[StartingReport] OpenAI response did not match schema, trying Gemini fallback...");
   } catch (openAiErr: any) {
-    console.warn("[StartingReport] OpenAI call failed or quota exhausted, switching to Gemini:", openAiErr?.message);
+    console.warn("[StartingReport] OpenAI call skipped or timed out, switching to Gemini:", openAiErr?.message);
   }
 
-  // 2. High-Speed Secondary Attempt: Google Gemini (gemini-3.6-flash ~2s)
+  // 2. High-Speed Secondary Attempt: Google Gemini (gemini-3.6-flash ~1.5s with 4s timeout)
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (geminiApiKey) {
     try {
       const { GoogleGenAI } = await import("@google/genai");
       const gemini = new GoogleGenAI({ apiKey: geminiApiKey });
-      const geminiResponse = await gemini.models.generateContent({
+      const geminiTimeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Gemini call exceeded 4s limit")), 4000)
+      );
+      const geminiPromise = gemini.models.generateContent({
         model: "gemini-3.6-flash",
         contents: [
           {
@@ -303,6 +312,7 @@ export async function generateStartingReport({
           responseMimeType: "application/json",
         }
       });
+      const geminiResponse = await Promise.race([geminiPromise, geminiTimeout]);
       const rawText = geminiResponse?.text?.trim() || "";
       let parsedJson: any;
       try {

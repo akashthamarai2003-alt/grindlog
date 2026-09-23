@@ -5,7 +5,8 @@ import { Brain, Info } from "lucide-react";
 import Link from "next/link";
 import { RegenerateReportButton } from "@/components/fitness/report/regenerate-report-button";
 import { GeneratePlanButton } from "@/components/fitness/report/generate-plan-button";
-import { hasGeneratedStartingReport } from "@/lib/services/fitness/starting-report-service";
+import { hasGeneratedStartingReport, generateStartingReport } from "@/lib/services/fitness/starting-report-service";
+import { OnboardingSchema } from "@/types/fitness/onboarding";
 import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
 
 // A newly completed photo analysis must be visible immediately after the
@@ -76,7 +77,42 @@ export default async function AIStartingReportPage() {
     redirect("/onboarding");
   }
 
-  const aiStrategy = isRecord(profile.ai_strategy) ? profile.ai_strategy : {};
+  let aiStrategy = isRecord(profile.ai_strategy) ? profile.ai_strategy : {};
+
+  // Resilient in-flight generation for slow mobile connections:
+  // If the starting report was not generated during onboarding due to network latency,
+  // automatically create it right here on the server so the user NEVER sees an empty screen!
+  if (!hasGeneratedStartingReport(aiStrategy)) {
+    try {
+      const rawData = (profile.onboarding_data && typeof profile.onboarding_data === "object" && Object.keys(profile.onboarding_data).length > 0)
+        ? profile.onboarding_data
+        : profile;
+      const parsedOnboarding = OnboardingSchema.safeParse(rawData);
+      const validatedOnboarding = parsedOnboarding.success ? parsedOnboarding.data : (rawData as any);
+
+      let visualObservations = "No photos provided.";
+      if (typeof scan?.gemini_analysis === "string") {
+        visualObservations = scan.gemini_analysis;
+      }
+
+      const generated = await generateStartingReport({
+        onboarding: validatedOnboarding,
+        bmi: typeof profile.bmi === "number" ? profile.bmi : null,
+        estimatedBodyFat: null,
+        visualObservations,
+      });
+
+      const admin = createAdminClient();
+      await admin
+        .from("fitness_os_profiles")
+        .update({ ai_strategy: generated, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+
+      aiStrategy = generated;
+    } catch (autoGenErr) {
+      console.error("[ReportPage] In-flight report auto-generation error:", autoGenErr);
+    }
+  }
 
   if (!hasGeneratedStartingReport(aiStrategy)) {
     return (
