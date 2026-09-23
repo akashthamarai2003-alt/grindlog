@@ -588,9 +588,9 @@
     "semantic_hash": ""
   },
   "app/app/api/fitness/analyze/route.ts": {
-    "mtime": 1790141354.279477,
-    "seen": 1790142244.606081,
-    "ast_hash": "63ff5fb2ebb383ffb14c199c12b1f91e",
+    "mtime": 1790157554.8596032,
+    "seen": 1790157702.7970755,
+    "ast_hash": "253d0d2695428615a1003e79aac9a71c",
     "semantic_hash": ""
   },
   "app/app/api/fitness/exercises/custom/route.ts": {
@@ -1188,9 +1188,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/onboarding/onboarding-flow.tsx": {
-    "mtime": 1790142987.0893302,
-    "seen": 1790143221.5788906,
-    "ast_hash": "0452bcb934be12e26b52aaa8101e8207",
+    "mtime": 1790157438.2925272,
+    "seen": 1790157702.8214197,
+    "ast_hash": "5f1cf7c43e0d4abecd7410d18e1cb190",
     "semantic_hash": ""
   },
   "app/components/fitness/plan-animation/AICharacter.tsx": {
@@ -1848,9 +1848,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/fitness/starting-report-service.ts": {
-    "mtime": 1790077209.9623103,
-    "seen": 1790077462.779002,
-    "ast_hash": "77da77cd30d417a4a5d4d6b5cbf3f9a1",
+    "mtime": 1790157567.6880023,
+    "seen": 1790157702.8481596,
+    "ast_hash": "a2ecdc6585c4b7016e1c2a3f648b22e9",
     "semantic_hash": ""
   },
   "app/lib/services/fitness/workout-service.ts": {
@@ -2961,18 +2961,6 @@
     "mtime": 1790148321.9855301,
     "seen": 1790148642.5137403,
     "ast_hash": "988069ea081a7c71642bfc97973ac813",
-    "semantic_hash": ""
-  },
-  "app/scratch/audit_results.json": {
-    "mtime": 1790149492.7976348,
-    "seen": 1790151131.7771118,
-    "ast_hash": "d66905466c86d81b8ae961aaf588e273",
-    "semantic_hash": ""
-  },
-  "app/scratch/run_production_audit.mjs": {
-    "mtime": 1790149364.764751,
-    "seen": 1790151131.7771168,
-    "ast_hash": "2a961f521ff7b5b3eb4ae9281548a61f",
     "semantic_hash": ""
   },
   "app/scripts/enrich-food-catalog.mjs": {

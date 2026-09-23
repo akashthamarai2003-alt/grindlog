@@ -174,6 +174,43 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
   const totalSteps = 16;
   const showProgress = step > 1 && step < 16;
 
+  // Restore saved step and draft data from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedStep = localStorage.getItem("grindlog_onboarding_step");
+      const savedData = localStorage.getItem("grindlog_onboarding_draft");
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        if (parsed && typeof parsed === "object") {
+          setData(prev => ({ ...prev, ...parsed }));
+        }
+      }
+      if (savedStep) {
+        const s = parseInt(savedStep, 10);
+        if (!isNaN(s) && s > 1 && s <= totalSteps) {
+          setStep(s);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Save current step and form draft on every change
+  useEffect(() => {
+    try {
+      localStorage.setItem("grindlog_onboarding_step", String(step));
+      const {
+        body_scan_front,
+        body_scan_left,
+        body_scan_right,
+        body_scan_back,
+        goal_physique_image,
+        body_scan_inspiration,
+        ...safeDraft
+      } = data as any;
+      localStorage.setItem("grindlog_onboarding_draft", JSON.stringify(safeDraft));
+    } catch {}
+  }, [step, data]);
+
   const handleBack = () => {
     setDirection(-1);
     setStep(s => Math.max(s - 1, 1));
@@ -189,6 +226,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
   };
 
   const handleComplete = () => {
+    try {
+      localStorage.removeItem("grindlog_onboarding_step");
+      localStorage.removeItem("grindlog_onboarding_draft");
+    } catch {}
     window.location.replace("/report");
   };
 
@@ -412,6 +453,21 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
   const handleNext = () => {
     if (!canAdvanceFromStep(step)) return;
+    if (step === 15) {
+      // Immediately save the onboarding profile so closing the app on Step 16 never loses progress
+      const {
+        body_scan_front,
+        body_scan_left,
+        body_scan_right,
+        body_scan_back,
+        goal_physique_image,
+        body_scan_inspiration,
+        ...safeData
+      } = data as any;
+      saveFitnessOnboardingAction(safeData).catch(err => {
+        console.warn("Background onboarding save notice:", err);
+      });
+    }
     setDirection(1);
     setStep((currentStep) => Math.min(currentStep + 1, totalSteps));
   };
@@ -2660,71 +2716,6 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  // 1. Guaranteed 60fps Hyperspace Canvas Warp (instant visual from frame 0)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animId: number;
-    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-    const parent = canvas.parentElement;
-    const w = (canvas.width = (parent?.clientWidth || 480) * dpr);
-    const h = (canvas.height = (parent?.clientHeight || 800) * dpr);
-    const cx = w / 2;
-    const cy = h / 2;
-
-    const numStars = 85;
-    const stars = Array.from({ length: numStars }, () => ({
-      x: (Math.random() - 0.5) * w * 1.6,
-      y: (Math.random() - 0.5) * h * 1.6,
-      z: Math.random() * w,
-      prevZ: 0,
-    }));
-
-    const render = () => {
-      ctx.fillStyle = "rgba(10, 17, 8, 0.28)";
-      ctx.fillRect(0, 0, w, h);
-
-      for (let i = 0; i < numStars; i++) {
-        const s = stars[i];
-        s.prevZ = s.z;
-        s.z -= 16 * dpr;
-        if (s.z <= 0) {
-          s.x = (Math.random() - 0.5) * w * 1.6;
-          s.y = (Math.random() - 0.5) * h * 1.6;
-          s.z = w;
-          s.prevZ = w;
-        }
-
-        const k = 220 / s.z;
-        const px = s.x * k + cx;
-        const py = s.y * k + cy;
-
-        const prevK = 220 / s.prevZ;
-        const prevPx = s.x * prevK + cx;
-        const prevPy = s.y * prevK + cy;
-
-        const alpha = Math.min(1, (1 - s.z / w) * 1.3);
-        ctx.strokeStyle = `rgba(173, 255, 0, ${alpha})`;
-        ctx.lineWidth = Math.max(1, (1 - s.z / w) * 3 * dpr);
-        ctx.beginPath();
-        ctx.moveTo(prevPx, prevPy);
-        ctx.lineTo(px, py);
-        ctx.stroke();
-      }
-
-      animId = requestAnimationFrame(render);
-    };
-
-    animId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animId);
-  }, []);
-
-
 
   useEffect(() => {
     let isMounted = true;
@@ -2732,16 +2723,22 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
 
     const t1 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 1));
-    }, 1400);
+    }, 1200);
     const t2 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 2));
-    }, 2800);
+    }, 2400);
     const t3 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 3));
-    }, 4200);
+    }, 3600);
+
+    // Safety timeout: Never hang indefinitely on mobile (12s max)
+    const safetyTimer = setTimeout(() => {
+      if (isMounted && !isDone) {
+        setIsDone(true);
+      }
+    }, 12000);
 
     // Use sessionId for deduping if provided, otherwise fallback to always fetching
-    // Strict Mode / re-mounts with the same sessionId will reuse the promise.
     if (sessionId && lastSubmissionSessionId === sessionId && lastSubmissionPromise) {
       // Reuse existing promise
     } else {
@@ -2760,7 +2757,6 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
       if (isMounted) {
         if (res.success) {
           setIsDone(true);
-          // Ensure earlier phases are checked then immediately trigger Phase 4
           setPhase(prev => Math.max(prev, 3));
           fastForwardTimer = setTimeout(() => {
             if (isMounted) {
@@ -2786,7 +2782,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
 
     return () => { 
       isMounted = false;
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(safetyTimer);
       if (fastForwardTimer) clearTimeout(fastForwardTimer);
     };
   }, [data, router, sessionId]);
@@ -2801,23 +2797,14 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
 
   return (
     <div className="flex flex-col min-h-[100dvh] justify-center px-4 sm:px-6 relative overflow-hidden bg-[#0A1108]">
-      {/* 1. Warp Canvas Background */}
+      {/* Clean static ambient background (No moving video or canvas lines) */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Instant 60fps Hyperspace Canvas */}
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 w-full h-full object-cover z-0"
-        />
-
-        {/* Soft edge gradient to gently frame top/bottom without darkening the green warp rays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/35 pointer-events-none z-[2]" />
-        
-        {/* Subtle cyber grid scanline overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(173,255,0,0.08)_0%,transparent_60%)]" />
         <div 
-          className="absolute inset-0 opacity-[0.05] pointer-events-none z-[2]"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage: "linear-gradient(rgba(173,255,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(173,255,0,0.3) 1px, transparent 1px)",
-            backgroundSize: "28px 28px"
+            backgroundSize: "32px 32px"
           }}
         />
       </div>
@@ -2947,11 +2934,11 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
         {/* Bottom Actions with Shimmering Glow */}
         <div className="mt-6 sm:mt-8 h-16">
           <AnimatePresence>
-            {phase >= 4 && (
+            {phase >= 3 && (
               <motion.div
                 initial={{ opacity: 0, y: 14, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               >
                 {error ? (
                   <button 

@@ -189,12 +189,140 @@ export async function POST(req: Request) {
       }
     }
 
+    let baseline_calories = null;
+    if (data.weight && data.height && data.age && data.gender) {
+      let bmr = 0;
+      if (data.gender === "Male") {
+        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age + 5;
+      } else if (data.gender === "Female") {
+        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age - 161;
+      } else {
+        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age - 78;
+      }
+
+      const activityMultipliers: Record<string, number> = {
+        "Mostly sitting": 1.2,
+        "Mostly sedentary": 1.2,
+        "Lightly active": 1.375,
+        "Moderately active": 1.55,
+        "Very active": 1.725,
+      };
+      const multiplier = data.activity_level
+        ? activityMultipliers[data.activity_level] || 1.2
+        : 1.2;
+      baseline_calories = Math.round(bmr * multiplier);
+    }
+
+    let initial_protein_target = null;
+    if (data.weight) {
+      let proteinMultiplier = 1.6;
+      if (
+        data.goal === "Build Muscle" ||
+        data.goal === "Gain Weight" ||
+        data.goal === "Lose Fat + Build Muscle" ||
+        data.goal === "Cut"
+      ) {
+        proteinMultiplier = 2.0;
+      } else if (data.goal === "Build Strength") {
+        proteinMultiplier = 1.8;
+      }
+      initial_protein_target = Math.round(data.weight * proteinMultiplier);
+    }
+
+    const weight_trend_baseline = data.weight || null;
+    const safeData = stripImagePayload(data as Record<string, unknown>);
+
+    // Save profile IMMEDIATELY so closing the app or a network disconnect never drops the user back to Step 1
+    const admin = createAdminClient();
+    const initialProfilePayload = {
+      user_id: user.id,
+      name: data.name ? data.name.trim() : null,
+      country: data.country || null,
+      preferred_language: data.preferred_language || null,
+      goal: data.goal,
+      fitness_level: data.fitness_level,
+      age: data.age,
+      height: data.height,
+      weight: data.weight,
+      target_weight: data.target_weight,
+      gender: data.gender,
+      waist_cm: data.waist_cm || null,
+      chest_cm: data.chest_cm || null,
+      arm_cm: data.arm_cm || null,
+      thigh_cm: data.thigh_cm || null,
+      training_location: data.training_location,
+      equipment: data.equipment,
+      training_days_per_week: data.training_days_per_week,
+      workout_duration_minutes: data.workout_duration_minutes,
+      preferred_training_days: data.preferred_training_days,
+      preferred_training_time: data.preferred_training_time || data.workout_time,
+      diet_preference: data.food_type,
+      food_type: data.food_type,
+      food_environment: data.food_environment,
+      meals_per_day: data.meals_per_day,
+      available_foods: data.available_foods,
+      food_allergies: data.food_allergies,
+      foods_disliked: data.foods_disliked,
+      foods_avoided: data.foods_avoided,
+      nutrition_budget: data.nutrition_budget,
+      activity_level: data.activity_level,
+      daily_steps: data.daily_steps,
+      sleep_duration: data.sleep_duration,
+      wake_time: data.wake_time,
+      workout_time: data.workout_time,
+      work_time: data.work_time,
+      sleep_time: data.sleep_time,
+      lifestyle_description: data.lifestyle_description,
+      physical_problems: data.physical_problems,
+      current_pain_severity: data.current_pain_severity,
+      current_pain_triggers: data.current_pain_triggers,
+      previous_injuries: data.previous_injuries,
+      previous_injury_areas: data.previous_injury_areas,
+      previous_injury_timeline: data.previous_injury_timeline,
+      exercise_limitations: data.exercise_limitations,
+      medical_guidance: data.medical_guidance,
+      additional_health_notes: data.additional_health_notes,
+      safety_acknowledged: data.safety_acknowledged,
+      target_physique:
+        data.target_physique ||
+        (data.goal_physique_image ? "Custom Photo" : "Not specified"),
+      bmi,
+      baseline_calories,
+      initial_protein_target,
+      weight_trend_baseline,
+      onboarding_data: safeData,
+      onboarding_completed: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    await admin.from("fitness_os_profiles").upsert(initialProfilePayload, { onConflict: "user_id" });
+
+    // Instantly calculate and persist fresh nutrition targets for this user
+    try {
+      const { NutritionService } = await import("@/lib/services/nutrition/nutrition-service");
+      await NutritionService.recalculateTargetsForUser(user.id, {
+        ...data,
+        bmi,
+        baseline_calories,
+        initial_protein_target,
+      });
+    } catch (e) {
+      console.warn("[Analyze] Background target recalculation notice:", e);
+    }
+
     const retryAfterSeconds = await getGenerationRetryAfterSeconds(
       supabase,
       user.id,
       "starting_report_attempt",
     );
     if (retryAfterSeconds > 0) {
+      if (existingProfile?.onboarding_completed) {
+        return NextResponse.json({
+          success: true,
+          reused: true,
+          ai_strategy: existingProfile.ai_strategy || {},
+        });
+      }
       return NextResponse.json(
         {
           success: false,
@@ -275,51 +403,7 @@ export async function POST(req: Request) {
       };
     }
 
-    let baseline_calories = null;
-    if (data.weight && data.height && data.age && data.gender) {
-      let bmr = 0;
-      if (data.gender === "Male") {
-        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age + 5;
-      } else if (data.gender === "Female") {
-        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age - 161;
-      } else {
-        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age - 78;
-      }
-
-      const activityMultipliers: Record<string, number> = {
-        "Mostly sitting": 1.2,
-        "Lightly active": 1.375,
-        "Moderately active": 1.55,
-        "Very active": 1.725,
-      };
-      const multiplier = data.activity_level
-        ? activityMultipliers[data.activity_level] || 1.2
-        : 1.2;
-      baseline_calories = Math.round(bmr * multiplier);
-    }
-
-    let initial_protein_target = null;
-    if (data.weight) {
-      let proteinMultiplier = 1.6;
-      if (
-        data.goal === "Build Muscle" ||
-        data.goal === "Gain Weight" ||
-        data.goal === "Lose Fat + Build Muscle" ||
-        data.goal === "Cut"
-      ) {
-        proteinMultiplier = 2.0;
-      } else if (data.goal === "Build Strength") {
-        proteinMultiplier = 1.8;
-      }
-      initial_protein_target = Math.round(data.weight * proteinMultiplier);
-    }
-
-    const weight_trend_baseline = data.weight || null;
-
-    // Remove massive base64 images before saving
-    const safeData = stripImagePayload(data as Record<string, unknown>);
-
-    // Save to database
+    // Update profile in database with finalized strategy
     const profilePayload = {
       user_id: user.id,
 
@@ -394,7 +478,6 @@ export async function POST(req: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    const admin = createAdminClient();
     let { error: upsertError } = await supabase.from("fitness_os_profiles").upsert(
       profilePayload,
       { onConflict: "user_id" },

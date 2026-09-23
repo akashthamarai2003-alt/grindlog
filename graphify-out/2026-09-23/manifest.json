@@ -678,21 +678,21 @@
     "semantic_hash": ""
   },
   "app/app/api/nutrition/log-food/route.ts": {
-    "mtime": 1790072764.3182707,
-    "seen": 1790072884.0361507,
-    "ast_hash": "138e3a1ac8c5b9bb5275e3c69665a13a",
+    "mtime": 1790154827.2789085,
+    "seen": 1790155378.4599173,
+    "ast_hash": "3d22be7d582d20878038f55cd5ea72f8",
     "semantic_hash": ""
   },
   "app/app/api/nutrition/meals/route.ts": {
-    "mtime": 1786516357.363895,
-    "seen": 1789970487.5979824,
-    "ast_hash": "698854e05c9f876fd223555863c089eb",
+    "mtime": 1790155043.3402264,
+    "seen": 1790155378.4599214,
+    "ast_hash": "519442134dc86bf3223656ba12e6e491",
     "semantic_hash": ""
   },
   "app/app/api/nutrition/summary/route.ts": {
-    "mtime": 1786516386.678909,
-    "seen": 1789970487.5979867,
-    "ast_hash": "f097d7a745ae42fdcaf7913774b18c29",
+    "mtime": 1790155048.9809387,
+    "seen": 1790155378.4599237,
+    "ast_hash": "dcdea22c962c0399dd0e97272370d256",
     "semantic_hash": ""
   },
   "app/app/api/nutrition/swap-meal/route.ts": {
@@ -702,9 +702,9 @@
     "semantic_hash": ""
   },
   "app/app/api/nutrition/targets/route.ts": {
-    "mtime": 1788765611.1810637,
-    "seen": 1789970487.597995,
-    "ast_hash": "4f4a4f69327db8530d80e0b545d7f5d6",
+    "mtime": 1790154851.7554457,
+    "seen": 1790155378.4601421,
+    "ast_hash": "2ebd6f3418df23bd3d056501ed6ee4f3",
     "semantic_hash": ""
   },
   "app/app/api/nutrition/today/route.ts": {
@@ -714,15 +714,15 @@
     "semantic_hash": ""
   },
   "app/app/api/nutrition/water/history/route.ts": {
-    "mtime": 1788543862.7049606,
-    "seen": 1789970487.5980036,
-    "ast_hash": "14607124b218985cffb55f4d56591630",
+    "mtime": 1790155055.2582552,
+    "seen": 1790155378.4603472,
+    "ast_hash": "389d4b3d97f64c249b93c34b92e3e9ae",
     "semantic_hash": ""
   },
   "app/app/api/nutrition/water/route.ts": {
-    "mtime": 1790054444.5503888,
-    "seen": 1790055063.9846568,
-    "ast_hash": "f17536f6523c9d7fa64d3424d807a6fe",
+    "mtime": 1790155022.5821457,
+    "seen": 1790155378.4603503,
+    "ast_hash": "eb1c228c0d969fa5083259a899bf16df",
     "semantic_hash": ""
   },
   "app/app/api/payment/callback/route.ts": {
@@ -1734,9 +1734,9 @@
     "semantic_hash": ""
   },
   "app/lib/fitness/nutrition/food-selector.ts": {
-    "mtime": 1788942745.182835,
-    "seen": 1789970487.5987496,
-    "ast_hash": "b1c88fa504b7c67f4efc8dfa3608f903",
+    "mtime": 1790154944.249063,
+    "seen": 1790155378.509154,
+    "ast_hash": "92264fa14b2e3522f2d557b8f6df0bad",
     "semantic_hash": ""
   },
   "app/lib/fitness/nutrition/grocery-calculator.ts": {
@@ -1758,9 +1758,9 @@
     "semantic_hash": ""
   },
   "app/lib/fitness/nutrition/nutrition-engine.ts": {
-    "mtime": 1789977027.7878337,
-    "seen": 1789982418.3462946,
-    "ast_hash": "7eb31f4247cfeabc5f64c584bca06ccb",
+    "mtime": 1790155256.366155,
+    "seen": 1790155378.509767,
+    "ast_hash": "e19fd04cb5f3710e3cc996da0ba73aed",
     "semantic_hash": ""
   },
   "app/lib/fitness/nutrition/types.ts": {
@@ -1866,9 +1866,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/ai-nutrition-service.ts": {
-    "mtime": 1790148145.342935,
-    "seen": 1790148642.4821737,
-    "ast_hash": "013e80f87013daeef5301e1be924de1d",
+    "mtime": 1790154974.561257,
+    "seen": 1790155378.5152237,
+    "ast_hash": "e6c49a9cfd8df02708ce1b0e5dc6bc32",
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/external-nutrition-source.ts": {
@@ -1878,9 +1878,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/nutrition-service.ts": {
-    "mtime": 1790150577.4528887,
-    "seen": 1790151131.7535684,
-    "ast_hash": "a86d0780a9cbfebab6c1269f7da89b4c",
+    "mtime": 1790154799.4940448,
+    "seen": 1790155378.5154386,
+    "ast_hash": "6be975cfb0c22fafa28226ac2d3f2abf",
     "semantic_hash": ""
   },
   "app/lib/services/openai/client.ts": {
@@ -2952,9 +2952,9 @@
     "semantic_hash": ""
   },
   "app/lib/fitness/nutrition/validation-engine.ts": {
-    "mtime": 1790147234.4248016,
-    "seen": 1790148642.4664752,
-    "ast_hash": "bbc1e81d09d5970b05338a81956e692d",
+    "mtime": 1790154708.3685813,
+    "seen": 1790155378.5101876,
+    "ast_hash": "169eeb09bdcc67c1ea3798b4f59aacaf",
     "semantic_hash": ""
   },
   "app/scripts/test_nutrition_engine.mjs": {
@@ -2982,9 +2982,9 @@
     "semantic_hash": ""
   },
   "app/scripts/test_phase35_regression.mjs": {
-    "mtime": 1790150412.5115483,
-    "seen": 1790151131.7806525,
-    "ast_hash": "e493faa8144cb2fd89246f3a7bca03df",
+    "mtime": 1790155096.3720775,
+    "seen": 1790155378.541502,
+    "ast_hash": "c97a53c233e00523f81669ddaced75e2",
     "semantic_hash": ""
   }
 }
