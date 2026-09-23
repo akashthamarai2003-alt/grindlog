@@ -39,7 +39,7 @@ export default async function OnboardingPage({
 
   // Returning users who already completed onboarding belong on their report (if unviewed) or dashboard
   if (profile?.onboarding_completed && !isEditing) {
-    if (!profile?.ai_strategy?.starting_report_viewed && hasGeneratedStartingReport(profile?.ai_strategy)) {
+    if (!profile?.ai_strategy?.starting_report_viewed) {
       redirect("/report");
     }
     redirect("/");

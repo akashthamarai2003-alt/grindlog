@@ -74,7 +74,16 @@ export default async function AIStartingReportPage() {
   }
 
   if (!profile || !profile.onboarding_completed) {
-    redirect("/onboarding");
+    if (profile && (profile.goal || profile.height || profile.weight || profile.onboarding_data)) {
+      const admin = createAdminClient();
+      await admin
+        .from("fitness_os_profiles")
+        .update({ onboarding_completed: true, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+      profile.onboarding_completed = true;
+    } else {
+      redirect("/onboarding");
+    }
   }
 
   let aiStrategy = isRecord(profile.ai_strategy) ? profile.ai_strategy : {};

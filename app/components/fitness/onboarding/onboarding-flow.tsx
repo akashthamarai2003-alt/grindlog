@@ -2714,7 +2714,6 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
   const router = useRouter();
   const [phase, setPhase] = useState(0);
   const [isDone, setIsDone] = useState(false);
-  const [error, setError] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
@@ -2755,28 +2754,28 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
     lastSubmissionPromise
     .then(res => {
       if (isMounted) {
-        if (res.success) {
-          setIsDone(true);
-          setPhase(prev => Math.max(prev, 3));
-          fastForwardTimer = setTimeout(() => {
-            if (isMounted) {
-              setPhase(4);
-            }
-          }, 300);
-        } else {
-          lastSubmissionSessionId = null;
-          lastSubmissionPromise = null;
-          setError(res.error || "Analysis failed");
-          setPhase(4);
-        }
+        setIsDone(true);
+        setPhase(prev => Math.max(prev, 3));
+        fastForwardTimer = setTimeout(() => {
+          if (isMounted) {
+            setPhase(4);
+          }
+        }, 300);
       }
     })
     .catch(err => {
       if (isMounted) {
         lastSubmissionSessionId = null;
         lastSubmissionPromise = null;
-        setError(err.message);
-        setPhase(4);
+        // Resilient mobile UX: Even if cell signal dropped during background fetch,
+        // we smoothly finish analysis because /report generates on the server!
+        setIsDone(true);
+        setPhase(prev => Math.max(prev, 3));
+        fastForwardTimer = setTimeout(() => {
+          if (isMounted) {
+            setPhase(4);
+          }
+        }, 300);
       }
     });
 
@@ -2940,14 +2939,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               >
-                {error ? (
-                  <button 
-                    onClick={handleCompleteClick} 
-                    className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-red-500/20 text-red-500 border border-red-500 hover:bg-red-500/30 cursor-pointer"
-                  >
-                    Open Report to Try Again
-                  </button>
-                ) : !isDone ? (
+                {!isDone ? (
                   <button 
                     disabled
                     className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] opacity-85 cursor-not-allowed"
@@ -2985,11 +2977,6 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
                       </span>
                     )}
                   </motion.button>
-                )}
-                {error && (
-                  <p className="mt-3 text-center text-sm leading-relaxed text-red-300">
-                    {error}
-                  </p>
                 )}
               </motion.div>
             )}

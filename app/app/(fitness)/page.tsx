@@ -92,7 +92,7 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
   // 2. OR user explicitly clicked "Continue Free" (hasAcceptedFreePreview is true)
   // 3. OR user already has an active workout plan from a previous session
   if (!isPaidUser && !hasAcceptedFreePreview && !hasActivePlan) {
-    if (!hasSeenReport && hasGeneratedStartingReport(aiStrategy)) {
+    if (!hasSeenReport) {
       redirect("/report");
     }
     redirect("/payment?returnTo=/&intent=generate_plan");
