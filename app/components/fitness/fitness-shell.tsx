@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { BottomNav } from "./dashboard/bottom-nav";
 import { FitnessChatbot } from "./chatbot/fitness-chatbot";
 import { NavigationProvider, useInstantNav } from "./navigation-context";
-import { WorkoutSkeleton } from "./workout/workout-skeleton";
+import { WorkoutInstantFallback } from "./workout/workout-instant-fallback";
 import { DashboardSkeleton } from "./dashboard/dashboard-skeleton";
 import NutritionLoading from "@/app/(fitness)/nutrition/loading";
 import ProgressLoading from "@/app/(fitness)/progress/loading";
@@ -34,7 +34,7 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
   let activeSkeleton: React.ReactNode = null;
   if (isNavigatingAway) {
     if (navigatingTo === "/workout") {
-      activeSkeleton = <WorkoutSkeleton />;
+      activeSkeleton = <WorkoutInstantFallback />;
     } else if (navigatingTo === "/nutrition" || navigatingTo === "/diet") {
       activeSkeleton = <NutritionLoading />;
     } else if (navigatingTo === "/progress") {
