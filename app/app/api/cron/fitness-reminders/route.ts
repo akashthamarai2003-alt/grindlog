@@ -85,6 +85,17 @@ const getServiceSupabase = () => {
 };
 
 export async function GET(req: Request) {
+  // Production security: require Authorization: Bearer ${CRON_SECRET}
+  const authHeader = req.headers.get("authorization") || "";
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized: Missing or invalid CRON_SECRET" },
+      { status: 401 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type") || "fitness_dynamic";

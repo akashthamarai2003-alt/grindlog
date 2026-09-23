@@ -1,7 +1,19 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Production lockdown: /api/migrate must NOT be publicly executable
+  const authHeader = req.headers.get("authorization") || "";
+  const adminSecret = process.env.ADMIN_PASSWORD || process.env.CRON_SECRET;
+  
+  const isAuthorized = adminSecret && authHeader === `Bearer ${adminSecret}`;
+  if (!isAuthorized) {
+    return NextResponse.json(
+      { success: false, error: "Not found" },
+      { status: 404 }
+    );
+  }
+
   try {
     const supabase = await createServerSupabase();
     const sqlQuery = `

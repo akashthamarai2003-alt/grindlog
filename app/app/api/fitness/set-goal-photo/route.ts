@@ -20,7 +20,7 @@ const r2Client = isR2Configured
     })
   : null;
 
-const deleteR2File = async (url: string | null | undefined) => {
+const deleteR2File = async (url: string | null | undefined, expectedUserId?: string) => {
   if (!url || !isR2Configured || !r2Client || !process.env.R2_BUCKET_NAME) return;
   try {
     let key: string | null = null;
@@ -30,13 +30,22 @@ const deleteR2File = async (url: string | null | undefined) => {
       key = url.replace(`${process.env.R2_PUBLIC_URL}/`, '');
     }
 
-    if (key) {
-      await r2Client.send(new DeleteObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: key
-      }));
-      console.log(`[R2] Deleted old goal photo from storage: ${key}`);
+    if (!key) return;
+
+    // R2 Tenant Isolation: A user may only delete objects under grindlog/${user.id}/
+    if (expectedUserId) {
+      const allowedPrefix = `grindlog/${expectedUserId}/`;
+      if (!key.startsWith(allowedPrefix)) {
+        console.warn(`[Security][R2] Unauthorized deletion attempt: key '${key}' does not match prefix '${allowedPrefix}'`);
+        return;
+      }
     }
+
+    await r2Client.send(new DeleteObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: key
+    }));
+    console.log(`[R2] Deleted old goal photo from storage: ${key}`);
   } catch (err) {
     console.warn("Failed to delete old goal photo from R2:", err);
   }
@@ -94,7 +103,7 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (currentProfile?.goal_physique_image && currentProfile.goal_physique_image !== finalGoalUrl) {
-      await deleteR2File(currentProfile.goal_physique_image);
+      await deleteR2File(currentProfile.goal_physique_image, user.id);
     }
 
     // 1. Update fitness_os_profiles

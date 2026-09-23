@@ -6,6 +6,8 @@ import { CoachResponseSchema, CoachResponseData } from "@/lib/fitness/ai/schemas
 import { buildFitnessCoachContext } from "@/lib/fitness/ai/context";
 import { FITNESS_COACH_SYSTEM_PROMPT, buildFitnessCoachPrompt } from "@/lib/fitness/ai/prompts";
 import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
+import { AIUsageService } from "@/lib/services/ai/ai-usage-service";
+import { enforceRateLimit } from "@/lib/security/rate-limiter";
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,16 +23,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "AI coach support is available on the Pro plan." }, { status: 403 });
     }
 
-    // Check rate limit
-    const limitCheck = await checkFitnessAILimit(supabase, userId);
-    if (!limitCheck.allowed) {
+    // 1. Rate Limiting (10 req/min per user)
+    const rateLimitRes = enforceRateLimit(req, "ai", userId);
+    if (rateLimitRes) return rateLimitRes;
+
+    // 2. Atomic reservation check
+    const reservation = await AIUsageService.checkAndReserve(userId, "coach_message");
+    if (!reservation.allowed) {
       return NextResponse.json(
         {
-          error: `Daily AI limit reached (${limitCheck.limit}/${limitCheck.limit} used). Your daily quota resets tomorrow.`,
+          error: reservation.error || "Daily AI limit reached. Your daily quota resets tomorrow.",
           limitReached: true,
           remaining: 0,
-          limit: limitCheck.limit,
-          used: limitCheck.used,
+          limit: reservation.limit || 0,
+          used: reservation.used || 0,
         },
         { status: 429 },
       );
@@ -39,8 +45,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { message, sessionId } = body;
 
-    if (!message || typeof message !== "string") {
+    if (!message || typeof message !== "string" || !message.trim()) {
+      await AIUsageService.releaseReservation(reservation.reservationId!);
       return NextResponse.json({ error: "Invalid message format" }, { status: 400 });
+    }
+
+    if (message.length > 2000) {
+      await AIUsageService.releaseReservation(reservation.reservationId!);
+      return NextResponse.json({ error: "Message exceeds 2,000 character limit" }, { status: 400 });
     }
 
     // Determine or Create Session
@@ -52,6 +64,7 @@ export async function POST(req: NextRequest) {
         .select("id")
         .single();
       if (sessionError || !newSession) {
+        await AIUsageService.releaseReservation(reservation.reservationId!);
         throw new Error("Failed to create coach session");
       }
       activeSessionId = newSession.id;
@@ -65,6 +78,7 @@ export async function POST(req: NextRequest) {
         .single();
         
       if (sessionError || !existingSession) {
+        await AIUsageService.releaseReservation(reservation.reservationId!);
         return NextResponse.json({ error: "Session not found or access denied" }, { status: 403 });
       }
     }
@@ -81,29 +95,38 @@ export async function POST(req: NextRequest) {
     const context = await buildFitnessCoachContext(userId);
     const userPrompt = buildFitnessCoachPrompt(context, message);
 
-    // Call Groq AI
-    const aiResponse = await generateAIResponseJSON<CoachResponseData>({
-      systemPrompt: FITNESS_COACH_SYSTEM_PROMPT,
-      userPrompt,
-      model: "fast",
-      maxTokens: 500,
-    });
+    let validatedData: CoachResponseData;
+    try {
+      // Call Groq AI
+      const aiResponse = await generateAIResponseJSON<CoachResponseData>({
+        systemPrompt: FITNESS_COACH_SYSTEM_PROMPT,
+        userPrompt,
+        model: "fast",
+        maxTokens: 500,
+      });
 
-    // Validate Response
-    const validatedData = CoachResponseSchema.parse(aiResponse);
+      // Validate Response
+      validatedData = CoachResponseSchema.parse(aiResponse);
 
-    // Save AI Response
-    await supabase.from("fitness_os_coach_messages").insert({
-      session_id: activeSessionId,
-      user_id: userId,
-      role: "assistant",
-      content: JSON.stringify(validatedData)
-    });
+      // Save AI Response
+      await supabase.from("fitness_os_coach_messages").insert({
+        session_id: activeSessionId,
+        user_id: userId,
+        role: "assistant",
+        content: JSON.stringify(validatedData)
+      });
 
-    // Log Usage
-    await logFitnessAIUsage(userId, "coach_message", userPrompt, JSON.stringify(validatedData), "fast", 500);
-
-    const updatedCheck = await checkFitnessAILimit(supabase, userId);
+      // Commit reservation
+      await AIUsageService.completeReservation(reservation.reservationId!, {
+        prompt: userPrompt,
+        response: JSON.stringify(validatedData),
+        model: "fast",
+        tokens: 500,
+      });
+    } catch (aiErr) {
+      await AIUsageService.releaseReservation(reservation.reservationId!);
+      throw aiErr;
+    }
 
     return NextResponse.json({
       sessionId: activeSessionId,
@@ -111,9 +134,9 @@ export async function POST(req: NextRequest) {
       tone: validatedData.tone,
       recommendations: validatedData.recommendations,
       warnings: validatedData.warnings,
-      remaining: updatedCheck.remaining,
-      limit: updatedCheck.limit,
-      used: updatedCheck.used,
+      remaining: Math.max(0, (reservation.remaining ?? 1) - 1),
+      limit: reservation.limit,
+      used: reservation.used,
     });
 
   } catch (error: any) {

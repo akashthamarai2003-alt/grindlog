@@ -50309,7 +50309,7 @@
       "file_type": "code",
       "norm_label": "analysisblock()",
       "source_file": "app/components/fitness/onboarding/onboarding-flow.tsx",
-      "source_location": "L3017"
+      "source_location": "L3103"
     },
     {
       "id": "app_components_fitness_onboarding_onboarding_flow_chesticon",
@@ -50321,7 +50321,7 @@
       "file_type": "code",
       "norm_label": "chesticon()",
       "source_file": "app/components/fitness/onboarding/onboarding-flow.tsx",
-      "source_location": "L3085"
+      "source_location": "L3171"
     },
     {
       "id": "app_components_fitness_onboarding_onboarding_flow_compressimage",
@@ -50369,7 +50369,7 @@
       "file_type": "code",
       "norm_label": "thighicon()",
       "source_file": "app/components/fitness/onboarding/onboarding-flow.tsx",
-      "source_location": "L3095"
+      "source_location": "L3181"
     },
     {
       "id": "app_components_fitness_onboarding_onboarding_flow_toggleequipmentselection",
@@ -50393,7 +50393,7 @@
       "file_type": "code",
       "norm_label": "waisticon()",
       "source_file": "app/components/fitness/onboarding/onboarding-flow.tsx",
-      "source_location": "L3075"
+      "source_location": "L3161"
     },
     {
       "id": "app_app_layout_rootlayout",
@@ -257294,7 +257294,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/components/fitness/onboarding/onboarding-flow.tsx",
-      "source_location": "L3017",
+      "source_location": "L3103",
       "weight": 1.0
     },
     {
@@ -257305,7 +257305,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/components/fitness/onboarding/onboarding-flow.tsx",
-      "source_location": "L3075",
+      "source_location": "L3161",
       "weight": 1.0
     },
     {
@@ -257316,7 +257316,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/components/fitness/onboarding/onboarding-flow.tsx",
-      "source_location": "L3085",
+      "source_location": "L3171",
       "weight": 1.0
     },
     {
@@ -257327,7 +257327,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/components/fitness/onboarding/onboarding-flow.tsx",
-      "source_location": "L3095",
+      "source_location": "L3181",
       "weight": 1.0
     },
     {

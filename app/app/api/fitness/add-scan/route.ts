@@ -23,7 +23,7 @@ const r2Client = isR2Configured
   : null;
 
 // Helper to delete an object from Cloudflare R2 to enforce storage cap
-const deleteR2File = async (url: string | null | undefined) => {
+const deleteR2File = async (url: string | null | undefined, expectedUserId?: string) => {
   if (!url || !isR2Configured || !r2Client || !process.env.R2_BUCKET_NAME) return;
   try {
     let key: string | null = null;
@@ -33,19 +33,28 @@ const deleteR2File = async (url: string | null | undefined) => {
       key = url.replace(`${process.env.R2_PUBLIC_URL}/`, '');
     }
 
-    if (key) {
-      await r2Client.send(new DeleteObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: key
-      }));
-      console.log(`[R2] Deleted old photo from storage: ${key}`);
+    if (!key) return;
+
+    // R2 Tenant Isolation: User may only delete their own objects
+    if (expectedUserId) {
+      const allowedPrefix = `grindlog/${expectedUserId}/`;
+      if (!key.startsWith(allowedPrefix)) {
+        console.warn(`[Security][R2] Unauthorized deletion blocked for user ${expectedUserId} on key: ${key}`);
+        return;
+      }
     }
+
+    await r2Client.send(new DeleteObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: key
+    }));
+    console.log(`[R2] Deleted old photo from storage: ${key}`);
   } catch (err) {
     console.warn(`[R2] Failed to delete old photo (${url}):`, err);
   }
 };
 
-const deleteScanPhotosFromR2 = async (scan: any) => {
+const deleteScanPhotosFromR2 = async (scan: any, userId: string) => {
   if (!scan) return;
   const urls: (string | null | undefined)[] = [
     scan.front_image_url,
@@ -60,7 +69,7 @@ const deleteScanPhotosFromR2 = async (scan: any) => {
   }
 
   const uniqueUrls = Array.from(new Set(urls.filter(Boolean))) as string[];
-  await Promise.all(uniqueUrls.map(u => deleteR2File(u)));
+  await Promise.all(uniqueUrls.map(u => deleteR2File(u, userId)));
 };
 
 export async function POST(req: Request) {
@@ -157,7 +166,7 @@ export async function POST(req: Request) {
 
       // Delete old check-in photos from Cloudflare R2 storage
       for (const oldScan of scansToCleanup) {
-        await deleteScanPhotosFromR2(oldScan);
+        await deleteScanPhotosFromR2(oldScan, user.id);
       }
 
       // Remove previous check-in rows from database

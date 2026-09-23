@@ -1188,9 +1188,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/onboarding/onboarding-flow.tsx": {
-    "mtime": 1790142987.0893302,
-    "seen": 1790143221.5788906,
-    "ast_hash": "0452bcb934be12e26b52aaa8101e8207",
+    "mtime": 1790078309.9159238,
+    "seen": 1790078554.937692,
+    "ast_hash": "4067ba50569ef8fafc94ab8b7e372a65",
     "semantic_hash": ""
   },
   "app/components/fitness/plan-animation/AICharacter.tsx": {
@@ -2859,6 +2859,18 @@
     "mtime": 1784190400.5906408,
     "seen": 1789970487.5995755,
     "ast_hash": "a301d2c75d694928cdd3060d37a4cccd",
+    "semantic_hash": ""
+  },
+  "app/public/images/onboarding-warp.mp4": {
+    "mtime": 1788845890.5864263,
+    "seen": 1789970487.5995798,
+    "ast_hash": "afa0323ca224d7189ab54a89bd0f13bc",
+    "semantic_hash": ""
+  },
+  "app/public/images/video_4f85c2e9175d.mp4": {
+    "mtime": 1788845890.5864263,
+    "seen": 1789970487.5995843,
+    "ast_hash": "afa0323ca224d7189ab54a89bd0f13bc",
     "semantic_hash": ""
   },
   ".coderabbit.yaml": {

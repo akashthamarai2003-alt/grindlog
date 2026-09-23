@@ -18,6 +18,8 @@ import {
   analyzeBodyScanImages,
   BodyScanImageInput,
 } from "@/lib/fitness/body-scan";
+import { PhotoGuard } from "@/lib/security/photo-guard";
+import { enforceRateLimit } from "@/lib/security/rate-limiter";
 
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
@@ -57,6 +59,10 @@ export async function POST(req: Request) {
         { status: 401 },
       );
     }
+
+    // Rate Limiting (10 req/min per user)
+    const rateLimitRes = enforceRateLimit(req, "ai", user.id);
+    if (rateLimitRes) return rateLimitRes;
 
     const payload = await req.json();
     const result = OnboardingSchema.safeParse(payload);
@@ -109,28 +115,38 @@ export async function POST(req: Request) {
       });
     }
 
-    // Optional: Extract images for AI Vision
+    // Optional: Extract and validate images for AI Vision via PhotoGuard
+    const rawImageInputs = [
+      { label: "CURRENT BODY — FRONT VIEW", base64Str: data.body_scan_front },
+      { label: "CURRENT BODY — LEFT SIDE VIEW", base64Str: data.body_scan_left },
+      { label: "CURRENT BODY — RIGHT SIDE VIEW", base64Str: data.body_scan_right },
+      { label: "CURRENT BODY — BACK VIEW", base64Str: data.body_scan_back },
+      {
+        label: "GOAL PHYSIQUE — INSPIRATION ONLY, NOT THE USER'S CURRENT BODY",
+        base64Str: data.goal_physique_image || data.body_scan_inspiration,
+      },
+    ].filter((item) => Boolean(item.base64Str));
+
     const images: BodyScanImageInput[] = [];
-    const addImage = (label: string, base64Str?: string) => {
-      if (base64Str && base64Str.startsWith("data:image")) {
-        const [meta, rawData] = base64Str.split(",");
-        const mimeType = meta.split(";")[0].split(":")[1] || "image/jpeg";
+    let photoHash: string | undefined;
+
+    if (rawImageInputs.length > 0) {
+      const validation = PhotoGuard.validateImages(rawImageInputs);
+      if (!validation.valid || !validation.images || !validation.photoHash) {
+        return NextResponse.json(
+          { success: false, error: validation.error || "Invalid photo payload" },
+          { status: 400 }
+        );
+      }
+      photoHash = validation.photoHash;
+      for (const img of validation.images) {
         images.push({
-          label,
-          data: rawData,
-          mimeType,
+          label: img.label,
+          data: img.data,
+          mimeType: img.mimeType,
         });
       }
-    };
-
-    addImage("CURRENT BODY — FRONT VIEW", data.body_scan_front);
-    addImage("CURRENT BODY — LEFT SIDE VIEW", data.body_scan_left);
-    addImage("CURRENT BODY — RIGHT SIDE VIEW", data.body_scan_right);
-    addImage("CURRENT BODY — BACK VIEW", data.body_scan_back);
-    addImage(
-      "GOAL PHYSIQUE — INSPIRATION ONLY, NOT THE USER'S CURRENT BODY",
-      data.goal_physique_image || data.body_scan_inspiration,
-    );
+    }
 
     let visualObservations = "No photos provided.";
     let visionAnalysisSucceeded = false;
@@ -195,18 +211,30 @@ export async function POST(req: Request) {
       FITNESS_REPORT_MODEL,
     );
 
-    // 1. Task: AI Vision Analysis (Google Gemini with safety overrides + OpenAI Vision fallback)
+    // 1. Task: AI Vision Analysis (Google Gemini with safety overrides + Groq + OpenAI Vision fallback)
     let structuredBodyScan: BodyScanAnalysis | null = null;
     if (images.length > 0) {
-      console.log(`[Analyze] Analyzing ${images.length} body-scan images with AI vision...`);
-      const visionResult = await analyzeBodyScanImages(images);
-      if (visionResult.success && visionResult.analysis) {
-        structuredBodyScan = visionResult.analysis;
-        visualObservations = visionResult.rawText || JSON.stringify(visionResult.analysis);
+      // Check PhotoGuard idempotency cache first
+      const cached = photoHash ? await PhotoGuard.getCachedAnalysis(user.id, photoHash) : null;
+      if (cached) {
+        console.log(`[Analyze] Reusing cached photo analysis for user ${user.id} (hash: ${photoHash?.slice(0, 10)})`);
+        structuredBodyScan = cached;
+        visualObservations = JSON.stringify(cached);
         visionAnalysisSucceeded = true;
-        console.log(`[Analyze] Vision analysis succeeded via ${visionResult.provider}!`);
       } else {
-        console.warn("[Analyze] Vision analysis failed:", visionResult.error);
+        console.log(`[Analyze] Analyzing ${images.length} body-scan images with AI vision...`);
+        const visionResult = await analyzeBodyScanImages(images);
+        if (visionResult.success && visionResult.analysis) {
+          structuredBodyScan = visionResult.analysis;
+          visualObservations = visionResult.rawText || JSON.stringify(visionResult.analysis);
+          visionAnalysisSucceeded = true;
+          if (photoHash) {
+            PhotoGuard.setCachedAnalysis(user.id, photoHash, visionResult.analysis);
+          }
+          console.log(`[Analyze] Vision analysis succeeded via ${visionResult.provider}!`);
+        } else {
+          console.warn("[Analyze] Vision analysis failed:", visionResult.error);
+        }
       }
     }
 

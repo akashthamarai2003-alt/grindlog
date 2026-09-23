@@ -339,8 +339,40 @@ export async function verifyRazorpayPayment(
     return { success: false, error: "Unauthorized" };
   }
 
-  // If it's not a bypass (100% off), verify signature or check Razorpay API directly
-  if (!isBypass) {
+  // Server-side payment verification or authorized 100% discount bypass
+  if (isBypass) {
+    if (!couponId) {
+      console.warn(`[Security] Rejected payment bypass attempt by user ${user.id}: missing couponId`);
+      return { success: false, error: "Payment verification failed. Bypass requires a valid coupon." };
+    }
+    const adminCheckClient = createAdminClient();
+    const { data: coupon, error: couponErr } = await adminCheckClient
+      .from("coupons")
+      .select("id, discount_percentage, used_count, max_uses, is_active, allowed_plan, allowed_level")
+      .eq("id", couponId)
+      .maybeSingle();
+
+    if (couponErr || !coupon) {
+      console.warn(`[Security] Rejected payment bypass attempt by user ${user.id}: coupon ${couponId} not found`);
+      return { success: false, error: "Payment verification failed. Invalid coupon." };
+    }
+    if (!coupon.is_active) {
+      return { success: false, error: "Payment verification failed. Coupon is inactive." };
+    }
+    if (coupon.used_count >= coupon.max_uses) {
+      return { success: false, error: "Payment verification failed. Coupon usage limit reached." };
+    }
+    if (coupon.discount_percentage !== 100) {
+      console.warn(`[Security] Rejected payment bypass attempt by user ${user.id}: coupon discount is ${coupon.discount_percentage}%, not 100%`);
+      return { success: false, error: "Payment verification failed. Coupon does not grant a 100% discount." };
+    }
+    if (coupon.allowed_plan && coupon.allowed_plan !== tier) {
+      return { success: false, error: "Payment verification failed. Coupon not valid for this plan." };
+    }
+    if (coupon.allowed_level && coupon.allowed_level !== level) {
+      return { success: false, error: "Payment verification failed. Coupon not valid for this tier level." };
+    }
+  } else {
     const secret = process.env.RAZORPAY_KEY_SECRET || "";
     let isVerified = false;
 

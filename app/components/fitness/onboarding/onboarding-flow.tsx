@@ -2660,8 +2660,6 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
   const [isDone, setIsDone] = useState(false);
   const [error, setError] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // 1. Guaranteed 60fps Hyperspace Canvas Warp (instant visual from frame 0)
@@ -2726,74 +2724,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
     return () => cancelAnimationFrame(animId);
   }, []);
 
-  // 2. Seamless looping background video with mobile autoplay
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
 
-    // Critical attributes for iOS Safari, Chrome, and Android WebView
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
-    video.setAttribute("playsinline", "");
-    video.setAttribute("webkit-playsinline", "");
-
-    const playVideo = () => {
-      const promise = video.play();
-      if (promise !== undefined) {
-        promise
-          .then(() => setVideoReady(true))
-          .catch((err) => {
-            console.warn("Video autoplay deferred:", err);
-          });
-      }
-    };
-
-    video.load();
-    playVideo();
-
-    video.addEventListener("loadedmetadata", playVideo);
-    video.addEventListener("canplay", playVideo);
-    video.addEventListener("loadeddata", playVideo);
-    video.addEventListener("playing", () => setVideoReady(true));
-
-    // Prevent hitching/black frames when looping
-    const handleTimeUpdate = () => {
-      if (video.duration && video.currentTime >= video.duration - 0.08) {
-        video.currentTime = 0;
-        playVideo();
-      }
-    };
-
-    const handleEnded = () => {
-      video.currentTime = 0;
-      playVideo();
-    };
-
-    const unlockMedia = () => {
-      playVideo();
-    };
-
-    window.addEventListener("touchstart", unlockMedia, { passive: true, once: true });
-    window.addEventListener("click", unlockMedia, { once: true });
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) playVideo();
-    });
-
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    video.addEventListener("ended", handleEnded);
-
-    return () => {
-      video.removeEventListener("loadedmetadata", playVideo);
-      video.removeEventListener("canplay", playVideo);
-      video.removeEventListener("loadeddata", playVideo);
-      video.removeEventListener("playing", () => setVideoReady(true));
-      video.removeEventListener("timeupdate", handleTimeUpdate);
-      video.removeEventListener("ended", handleEnded);
-      window.removeEventListener("touchstart", unlockMedia);
-      window.removeEventListener("click", unlockMedia);
-    };
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -2870,30 +2801,13 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
 
   return (
     <div className="flex flex-col min-h-[100dvh] justify-center px-4 sm:px-6 relative overflow-hidden bg-[#0A1108]">
-      {/* 1. Seamless Looping Video + Warp Canvas Background */}
+      {/* 1. Warp Canvas Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Instant 60fps Hyperspace Canvas */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full object-cover z-0"
         />
-
-        {/* High-definition 3D Looping Video Layer */}
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          onLoadedData={() => setVideoReady(true)}
-          onPlaying={() => setVideoReady(true)}
-          className={`absolute inset-0 w-full h-full object-cover object-center scale-105 z-[1] transition-opacity duration-700 ${videoReady ? 'opacity-100' : 'opacity-80'}`}
-        >
-          <source src="/videos/onboarding-warp.mp4?v=3" type="video/mp4" />
-          <source src="/images/onboarding-warp.mp4?v=3" type="video/mp4" />
-          <source src="/images/video_4f85c2e9175d.mp4?v=3" type="video/mp4" />
-        </video>
 
         {/* Soft edge gradient to gently frame top/bottom without darkening the green warp rays */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/35 pointer-events-none z-[2]" />

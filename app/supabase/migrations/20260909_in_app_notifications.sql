@@ -54,6 +54,7 @@ CREATE POLICY "Users can insert own notifications"
 
 CREATE POLICY "Service role has full access to notifications"
   ON public.in_app_notifications FOR ALL
+  TO service_role
   USING (true)
   WITH CHECK (true);
 

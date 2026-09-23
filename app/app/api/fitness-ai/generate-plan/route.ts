@@ -7,6 +7,8 @@ import {
   generateOpenAIResponseJSON,
 } from "@/lib/services/openai/client";
 import { checkFitnessAILimit, logFitnessAIUsage } from "@/lib/services/fitness-ai-limit";
+import { AIUsageService } from "@/lib/services/ai/ai-usage-service";
+import { enforceRateLimit } from "@/lib/security/rate-limiter";
 import {
   buildFitnessPlanJsonSchema,
   GeneratedPlanSchema,
@@ -47,6 +49,10 @@ export async function POST(req: Request) {
         { status: 401 },
       );
     }
+
+    // Rate Limiting (10 req/min per user)
+    const rateLimitRes = enforceRateLimit(req, "ai", user.id);
+    if (rateLimitRes) return rateLimitRes;
 
     let isRetry = false;
     let reqBody: any = null;
@@ -132,14 +138,19 @@ export async function POST(req: Request) {
       Object.assign(profile, recalibrationUpdates);
     }
 
-    if (!limitCheck.allowed && !reqBody?.isRecalibrate) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Fitness AI limit reached for today. Please try again tomorrow.",
-        },
-        { status: 429 },
-      );
+    let reservationId: string | undefined;
+    if (!reqBody?.isRecalibrate) {
+      const reservation = await AIUsageService.checkAndReserve(user.id, "plan_generation");
+      if (!reservation.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: reservation.error || "Fitness AI limit reached for today. Please try again tomorrow.",
+          },
+          { status: 429 },
+        );
+      }
+      reservationId = reservation.reservationId;
     }
     if (profileError || !profile) {
       return NextResponse.json(
@@ -326,6 +337,7 @@ export async function POST(req: Request) {
     }
 
     if (!planData) {
+      if (reservationId) await AIUsageService.releaseReservation(reservationId);
       return NextResponse.json(
         { success: false, error: lastErrorMessage },
         { status: 400 },
@@ -358,21 +370,31 @@ export async function POST(req: Request) {
 
     if (rpcError || !planId) {
       console.error("Fitness AI Transaction failed:", rpcError);
+      if (reservationId) await AIUsageService.releaseReservation(reservationId);
       return NextResponse.json(
         { success: false, error: "Failed to save the generated plan." },
         { status: 500 },
       );
     }
 
-    // 9. Log Usage
-    await logFitnessAIUsage(
-      user.id,
-      "plan_generation",
-      userPrompt,
-      JSON.stringify(planData),
-      FITNESS_PLAN_MODEL,
-      0,
-    );
+    // 10. Commit Quota Reservation
+    if (reservationId) {
+      await AIUsageService.completeReservation(reservationId, {
+        prompt: userPrompt,
+        response: JSON.stringify(planData),
+        model: FITNESS_PLAN_MODEL,
+        tokens: 0,
+      });
+    } else {
+      await logFitnessAIUsage(
+        user.id,
+        "plan_generation",
+        userPrompt,
+        JSON.stringify(planData),
+        FITNESS_PLAN_MODEL,
+        0,
+      );
+    }
 
     return NextResponse.json({ success: true, data: { planId } });
   } catch (error: any) {

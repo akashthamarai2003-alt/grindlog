@@ -10,9 +10,14 @@ export async function createServerSupabase() {
     // Graceful fallback when called outside a Next.js request scope (e.g. scripts, background tests)
   }
 
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseAnonKey) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is not defined.");
+  }
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
