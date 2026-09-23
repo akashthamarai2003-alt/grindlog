@@ -27,14 +27,14 @@ export async function POST() {
 
     let { data: profile, error: profileError } = await supabase
       .from("fitness_os_profiles")
-      .select("onboarding_data, bmi, ai_strategy")
+      .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (!profile) {
       const adminProfile = await admin
         .from("fitness_os_profiles")
-        .select("onboarding_data, bmi, ai_strategy")
+        .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
       if (adminProfile.data) {
@@ -66,16 +66,11 @@ export async function POST() {
       );
     }
 
-    const parsedOnboarding = OnboardingSchema.safeParse(profile.onboarding_data);
-    if (!parsedOnboarding.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Saved onboarding data is incomplete. Please review it first.",
-        },
-        { status: 422 },
-      );
-    }
+    const rawData = (profile.onboarding_data && typeof profile.onboarding_data === "object" && Object.keys(profile.onboarding_data).length > 0)
+      ? profile.onboarding_data
+      : profile;
+    const parsedOnboarding = OnboardingSchema.safeParse(rawData);
+    const validatedOnboarding = parsedOnboarding.success ? parsedOnboarding.data : (rawData as any);
 
     let { data: scan } = await supabase
       .from("fitness_os_scans")
@@ -136,7 +131,7 @@ export async function POST() {
       FITNESS_REPORT_MODEL,
     );
     const aiStrategy = await generateStartingReport({
-      onboarding: parsedOnboarding.data,
+      onboarding: validatedOnboarding,
       bmi: typeof profile.bmi === "number" ? profile.bmi : null,
       estimatedBodyFat: null,
       visualObservations,
