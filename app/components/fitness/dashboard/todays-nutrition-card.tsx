@@ -200,12 +200,13 @@ export function TodaysNutritionCard({
         setActiveNutrition((prev: any) => {
           const prevCount = prev?.logged_foods?.length || 0;
           const freshCount = fresh?.logged_foods?.length || 0;
+          const isFreshZero = fresh._freshFromDb && freshCount === 0;
           return {
             ...prev,
             ...fresh,
-            consumed: (freshCount < prevCount && prev?.consumed) ? prev.consumed : (fresh.consumed || prev?.consumed),
-            logged_foods: (freshCount < prevCount && prev?.logged_foods) ? prev.logged_foods : (fresh.logged_foods || prev?.logged_foods),
-            meals: (fresh.meals && fresh.meals.length > 0) ? fresh.meals : prev?.meals,
+            consumed: isFreshZero ? fresh.consumed : (freshCount < prevCount && prev?.consumed && !fresh._freshFromDb) ? prev.consumed : (fresh.consumed || prev?.consumed),
+            logged_foods: isFreshZero ? [] : (freshCount < prevCount && prev?.logged_foods && !fresh._freshFromDb) ? prev.logged_foods : (fresh.logged_foods || prev?.logged_foods),
+            meals: (fresh._freshFromDb || fresh.meals !== undefined) ? (fresh.meals || []) : ((fresh.meals && fresh.meals.length > 0) ? fresh.meals : (prev?.meals || [])),
           };
         });
       }
@@ -464,10 +465,14 @@ export function TodaysNutritionCard({
       const next = { ...prev };
 
       // If user has zero logs in DB for today, purge any phantom completed meal entries
-      if (logs.length === 0 && Object.keys(next).length > 0) {
+      if (logs.length === 0) {
         try {
           localStorage.removeItem(storageKey);
         } catch {}
+        return {};
+      }
+
+      if (meals.length === 0) {
         return {};
       }
 
@@ -648,12 +653,14 @@ export function TodaysNutritionCard({
 
   // Real-world dynamic calculations: sum actual checked meal macros
   const completedCount = useMemo(() => {
+    if (meals.length === 0) return 0;
     return meals.filter((m: any) => isMealDone(m)).length;
   }, [meals, isMealDone]);
 
   const consumedCalories = useMemo(() => {
     const rawVal = activeNutrition?.consumed?.calories ?? nutrition?.consumed?.calories;
     const dbCals = rawVal !== undefined && rawVal !== null ? Math.round(Number(rawVal) || 0) : 0;
+    if (meals.length === 0) return dbCals;
     const localDelta = meals.reduce((acc: number, m: any) => {
       const typeKey = String(m.meal_type || "").toLowerCase().trim();
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
@@ -672,6 +679,7 @@ export function TodaysNutritionCard({
   const consumedProtein = useMemo(() => {
     const rawVal = activeNutrition?.consumed?.protein ?? nutrition?.consumed?.protein;
     const dbPro = rawVal !== undefined && rawVal !== null ? Math.round(Number(rawVal) || 0) : 0;
+    if (meals.length === 0) return dbPro;
     const localDelta = meals.reduce((acc: number, m: any) => {
       const typeKey = String(m.meal_type || "").toLowerCase().trim();
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
@@ -690,6 +698,7 @@ export function TodaysNutritionCard({
   const consumedCarbs = useMemo(() => {
     const rawVal = activeNutrition?.consumed?.carbs ?? nutrition?.consumed?.carbs;
     const dbCarbs = rawVal !== undefined && rawVal !== null ? Math.round(Number(rawVal) || 0) : 0;
+    if (meals.length === 0) return dbCarbs;
     const localDelta = meals.reduce((acc: number, m: any) => {
       const typeKey = String(m.meal_type || "").toLowerCase().trim();
       const inDb = typeKey && dbCompletedTypes.has(typeKey);
@@ -708,6 +717,7 @@ export function TodaysNutritionCard({
   const consumedFats = useMemo(() => {
     const rawVal = activeNutrition?.consumed?.fat ?? nutrition?.consumed?.fat;
     const dbFat = rawVal !== undefined && rawVal !== null ? Math.round(Number(rawVal) || 0) : 0;
+    if (meals.length === 0) return dbFat;
     const localDelta = meals.reduce((acc: number, m: any) => {
       const typeKey = String(m.meal_type || "").toLowerCase().trim();
       const inDb = typeKey && dbCompletedTypes.has(typeKey);

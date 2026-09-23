@@ -3931,6 +3931,14 @@ function scaleServingSize(servingSize: string, scale: number): string {
     const todayDateStr = await this.getLocalDateString(userId, tz);
     const hasExplicitPlanForDate = Boolean(plans && plans.length > 0);
     const isFutureDate = localDate > todayDateStr;
+    const hasAiMeals = Boolean(aiMeals && aiMeals.length > 0);
+    const hasNutritionUpgrade = (activePlan?.plan_data as any)?._nutritionUpgrade?.status === "complete";
+    const userHasAnyPlan = Boolean(
+      hasExplicitPlanForDate ||
+      hasAiMeals ||
+      hasNutritionUpgrade ||
+      weeklyPlanStatus?.has_active_plan
+    );
 
     let formattedMeals: any[] = [];
 
@@ -3975,9 +3983,30 @@ function scaleServingSize(servingSize: string, scale: number): string {
           has_7day_variety: true,
         } : null;
       }).filter(Boolean);
-    } else {
-      // Continuous rolling 7-day plan fallback: for today, tomorrow, past or future dates,
-      // seamlessly serve the rotating plan for this day of week so user never sees "Not planned yet"!
+    } else if (hasAiMeals) {
+      // Use AI plan meals from active plan
+      formattedMeals = aiMeals.map((m: any, idx: number, arr: any[]) => {
+        let derivedType = m.meal_type;
+        if (!derivedType) {
+          const ctx = `${m.meal_name || m.name || ''} ${m.time_of_day || ''} ${m.prep_instructions || ''}`.toLowerCase();
+          if (ctx.includes('breakfast') || ctx.includes('waking') || ctx.includes('morning')) derivedType = 'breakfast';
+          else if (ctx.includes('lunch') || ctx.includes('midday') || ctx.includes('noon')) derivedType = 'lunch';
+          else if (ctx.includes('dinner') || ctx.includes('night') || ctx.includes('supper') || ctx.includes('evening')) derivedType = 'dinner';
+          else if (ctx.includes('pre')) derivedType = 'pre_workout';
+          else if (ctx.includes('post')) derivedType = 'post_workout';
+          else if (arr.length === 3) derivedType = idx === 0 ? 'breakfast' : idx === 1 ? 'lunch' : 'dinner';
+          else derivedType = idx === 0 ? 'breakfast' : idx === arr.length - 1 ? 'dinner' : 'lunch';
+        }
+        return {
+          ...m,
+          meal_type: derivedType,
+          name: sanitizeMealTitle(m.meal_name || m.name || derivedType, isProfileVegan, isProfileVegetarian, isProfileEggetarian),
+          is_ai_generated: true,
+          ai_generated: true,
+        };
+      });
+    } else if (userHasAnyPlan) {
+      // Continuous rolling 7-day plan fallback ONLY when the user actually has an active generated plan
       formattedMeals = ALL_MEAL_TYPES.map((mType) => {
         const rotating = rotatingPlans.get(mType);
         return rotating ? {
@@ -3986,6 +4015,10 @@ function scaleServingSize(servingSize: string, scale: number): string {
           has_7day_variety: true,
         } : null;
       }).filter(Boolean);
+    } else {
+      // User has NOT generated a nutrition plan yet!
+      // Do NOT fabricate fake meals! Keep formattedMeals empty so user sees the "Generate Plan" state!
+      formattedMeals = [];
     }
 
     // Calibrate all meals to strictly match the user's calories, protein, carbs, fat, and budget
@@ -4038,9 +4071,10 @@ function scaleServingSize(servingSize: string, scale: number): string {
       },
       progress,
       nutrition_score: score,
-      has_ai_plan: formattedMeals.some((m: any) => Boolean(m.ai_generated || m.is_ai_generated)),
+      has_ai_plan: userHasAnyPlan,
       weekly_plan_status: weeklyPlanStatus,
       is_natural_whole_food: true,
+      _freshFromDb: true,
       food_environment: fitProfile?.food_environment || 'Home',
       food_type: isProfileVegan
         ? 'Vegan'
@@ -4311,6 +4345,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
       has_ai_plan: formattedMeals.some((m: any) => Boolean(m.ai_generated || m.is_ai_generated)),
       weekly_plan_status: null,
       is_natural_whole_food: true,
+      _freshFromDb: true,
       food_environment: fitProfile?.food_environment || 'Home',
       food_type: isProfileVegan
         ? 'Vegan'

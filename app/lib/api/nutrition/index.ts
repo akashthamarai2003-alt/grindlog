@@ -43,12 +43,14 @@ export const nutritionClientCache = {
     let toStore = data;
     // Only consider merging if both belong to the exact same user
     const sameUser = !data?.user_id || !existing?.user_id || data.user_id === existing.user_id;
-    if (existing && sameUser) {
+    if (data._freshFromDb) {
+      toStore = data;
+    } else if (existing && sameUser) {
       const existingCount = existing?.logged_foods?.length || 0;
       const newCount = data?.logged_foods?.length || 0;
       const existingCals = Number(existing?.consumed?.calories) || 0;
       const newCals = Number(data?.consumed?.calories) || 0;
-      if (((existingCount > 0 && newCount === 0) || (existingCals > 0 && newCals === 0)) && !data._isExplicitClear && !data._freshFromDb) {
+      if (((existingCount > 0 && newCount === 0) || (existingCals > 0 && newCals === 0)) && !data._isExplicitClear) {
         toStore = {
           ...existing,
           ...data,

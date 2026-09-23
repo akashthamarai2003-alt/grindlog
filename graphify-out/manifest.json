@@ -276,15 +276,15 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/loading.tsx": {
-    "mtime": 1790054444.485389,
-    "seen": 1790055063.9646173,
-    "ast_hash": "af7f68ed4090241a583d15098b70fbd5",
+    "mtime": 1790177893.7482505,
+    "seen": 1790178135.7549946,
+    "ast_hash": "9e14732d4a354ec3e6079b3f892c6cb7",
     "semantic_hash": ""
   },
   "app/app/(fitness)/workout/page.tsx": {
-    "mtime": 1790062555.7241096,
-    "seen": 1790065371.1741977,
-    "ast_hash": "c975e73dbe51583a3ce05a35939d999a",
+    "mtime": 1790177892.4325013,
+    "seen": 1790178135.7549977,
+    "ast_hash": "f75234aaa0b4869764d1df4f42a9919f",
     "semantic_hash": ""
   },
   "app/app/actions/admin-auth.ts": {
@@ -1044,15 +1044,15 @@
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-goals-card.tsx": {
-    "mtime": 1790176316.0268364,
-    "seen": 1790176715.1769748,
-    "ast_hash": "add442d157106c353216f4a03bb8570a",
+    "mtime": 1790178623.1332428,
+    "seen": 1790178914.2621863,
+    "ast_hash": "59229070a15438a8dcbef7fab9f0fd5b",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-nutrition-card.tsx": {
-    "mtime": 1790176263.3446944,
-    "seen": 1790176715.1769779,
-    "ast_hash": "f24d02961f68cc0a2a6ba5c9631dbb33",
+    "mtime": 1790178600.6807745,
+    "seen": 1790178914.2621977,
+    "ast_hash": "8fbcb00036297c5d4c45e8917e1b89d2",
     "semantic_hash": ""
   },
   "app/components/fitness/dashboard/todays-workout-card.tsx": {
@@ -1656,9 +1656,9 @@
     "semantic_hash": ""
   },
   "app/lib/api/nutrition/index.ts": {
-    "mtime": 1790176163.5701425,
-    "seen": 1790176715.2010415,
-    "ast_hash": "f58fa9e14bc9581c8e4672cb1d58f07e",
+    "mtime": 1790178541.0784483,
+    "seen": 1790178914.330504,
+    "ast_hash": "c9f65bea32a7b89417289bfeaed3c291",
     "semantic_hash": ""
   },
   "app/lib/constants/pricing.ts": {
@@ -1878,9 +1878,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/nutrition-service.ts": {
-    "mtime": 1790176152.5609152,
-    "seen": 1790176715.211831,
-    "ast_hash": "f4a4120c48ff7164141cdb9d7f5a0c32",
+    "mtime": 1790178503.493019,
+    "seen": 1790178914.3519711,
+    "ast_hash": "65c7686c9586662a12d3a4d6138869e0",
     "semantic_hash": ""
   },
   "app/lib/services/openai/client.ts": {
@@ -2973,6 +2973,132 @@
     "mtime": 1790155096.3720775,
     "seen": 1790155378.541502,
     "ast_hash": "c97a53c233e00523f81669ddaced75e2",
+    "semantic_hash": ""
+  },
+  "app/components/fitness/workout/workout-instant-fallback.tsx": {
+    "mtime": 1790177890.9690943,
+    "seen": 1790178135.7557547,
+    "ast_hash": "220eb57c26352f47733bcf2b1d4efd0e",
+    "semantic_hash": ""
+  },
+  "app/lib/db/add_fitness_premium.sql": {
+    "mtime": 1786532370.7786064,
+    "seen": 1790178135.7559235,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/add_missing_profile_columns.sql": {
+    "mtime": 1786520323.880433,
+    "seen": 1790178135.7559297,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/fitness_os_migration.sql": {
+    "mtime": 1786358263.3325074,
+    "seen": 1790178135.755935,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/fitness_os_phase5_migration.sql": {
+    "mtime": 1786361598.2947934,
+    "seen": 1790178135.7559402,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/fitness_os_phase6_grocery.sql": {
+    "mtime": 1786445587.128481,
+    "seen": 1790178135.7559454,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/fitness_os_phase6_migration.sql": {
+    "mtime": 1786364821.5559602,
+    "seen": 1790178135.7559507,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/fitness_os_phase7_migration.sql": {
+    "mtime": 1786368282.4478297,
+    "seen": 1790178135.7559564,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/fitness_os_phase8_migration.sql": {
+    "mtime": 1786785470.8575568,
+    "seen": 1790178135.7559624,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/fitness_os_phase9_indexes.sql": {
+    "mtime": 1790072475.4282584,
+    "seen": 1790178135.7559674,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/fitness_os_scanner_migration.sql": {
+    "mtime": 1786376267.437476,
+    "seen": 1790178135.7559726,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/fitness_os_workout_migration.sql": {
+    "mtime": 1786360493.7635202,
+    "seen": 1790178135.7559776,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/functions.sql": {
+    "mtime": 315599400.0,
+    "seen": 1790178135.7559829,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/lib/db/migration.sql": {
+    "mtime": 315599400.0,
+    "seen": 1790178135.7559881,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/supabase/migrations/20260812_nutrition_schema.sql": {
+    "mtime": 1786515970.5191958,
+    "seen": 1790178135.7566075,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/supabase/migrations/20260812_progress_analytics.sql": {
+    "mtime": 1786514441.3298948,
+    "seen": 1790178135.756614,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/supabase/migrations/20260812_workout_api_schema.sql": {
+    "mtime": 1786518956.2335813,
+    "seen": 1790178135.756619,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/supabase/migrations/20260902_verified_food_library.sql": {
+    "mtime": 1788352833.97133,
+    "seen": 1790178135.7566245,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/supabase/migrations/20260905_comprehensive_nutrition_database.sql": {
+    "mtime": 1789801774.219064,
+    "seen": 1790178135.75663,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/supabase/migrations/20260909_in_app_notifications.sql": {
+    "mtime": 1790140389.8710804,
+    "seen": 1790178135.7566357,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "app/supabase/migrations/20260923_phase4_security_hardening.sql": {
+    "mtime": 1790141585.8875806,
+    "seen": 1790178135.756641,
+    "ast_hash": "",
     "semantic_hash": ""
   }
 }

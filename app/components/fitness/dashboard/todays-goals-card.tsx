@@ -99,7 +99,15 @@ export function TodaysGoalsCard({
       let allMealsDone = false;
 
       const currentMeals = cached?.meals || nutrition?.meals;
-      if (savedMeals && currentMeals && Array.isArray(currentMeals) && currentMeals.length > 0) {
+      const currentLogs = cached?.logged_foods || nutrition?.logged_foods;
+
+      if ((!currentLogs || currentLogs.length === 0) && dbCals === 0 && savedMeals) {
+        try {
+          localStorage.removeItem(mealsStorageKey);
+        } catch {}
+      }
+
+      if (savedMeals && currentMeals && Array.isArray(currentMeals) && currentMeals.length > 0 && currentLogs && currentLogs.length > 0) {
         const parsed: Record<string, boolean> = JSON.parse(savedMeals);
         const totalMeals = currentMeals.length;
         const checkedCount = Object.entries(parsed).filter(([_, v]) => Boolean(v)).length;
