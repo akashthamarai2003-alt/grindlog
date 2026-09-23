@@ -5,9 +5,9 @@ import { BottomNav } from "./dashboard/bottom-nav";
 import { FitnessChatbot } from "./chatbot/fitness-chatbot";
 import { NavigationProvider, useInstantNav } from "./navigation-context";
 import { WorkoutInstantFallback } from "./workout/workout-instant-fallback";
+import { ProgressInstantFallback } from "./progress/progress-instant-fallback";
 import { DashboardSkeleton } from "./dashboard/dashboard-skeleton";
 import NutritionLoading from "@/app/(fitness)/nutrition/loading";
-import ProgressLoading from "@/app/(fitness)/progress/loading";
 import ProfileLoading from "@/app/(fitness)/profile/loading";
 
 // Only primary root tab pages show the bottom navigation bar and floating AI coach button
@@ -38,7 +38,7 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
     } else if (navigatingTo === "/nutrition" || navigatingTo === "/diet") {
       activeSkeleton = <NutritionLoading />;
     } else if (navigatingTo === "/progress") {
-      activeSkeleton = <ProgressLoading />;
+      activeSkeleton = <ProgressInstantFallback />;
     } else if (navigatingTo === "/") {
       activeSkeleton = (
         <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">

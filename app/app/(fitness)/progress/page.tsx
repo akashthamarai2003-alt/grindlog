@@ -3,9 +3,9 @@ import { Suspense } from "react";
 import { getCachedUser } from "@/lib/services/supabase/server";
 import { FitnessGuard } from "@/components/fitness/fitness-guard";
 import { ProgressView } from "@/components/fitness/progress/progress-view";
+import { ProgressInstantFallback } from "@/components/fitness/progress/progress-instant-fallback";
 import { ProgressAnalyticsService } from "@/lib/services/analytics/progress-service";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
-import ProgressLoading from "./loading";
 
 export const metadata: Metadata = {
   title: "Progress - Fitness AI OS",
@@ -27,7 +27,7 @@ export default async function ProgressPage() {
 
   return (
     <FitnessGuard featureName="advanced progress analysis">
-      <Suspense fallback={<ProgressLoading />}>
+      <Suspense fallback={<ProgressInstantFallback />}>
         <ProgressContent userId={user.id} isPro={isPro} />
       </Suspense>
     </FitnessGuard>
