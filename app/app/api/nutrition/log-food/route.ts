@@ -68,8 +68,8 @@ export async function POST(request: Request) {
       const normalizedItems = body.items.map((it: any) => ({
         ...it,
         meal_type: normalizeMealType(it.meal_type),
-        quantity: Number(it.quantity) || 1
-      }));
+        quantity: Math.max(0.1, Number(it.quantity) || 1)
+      })).filter((it: any) => it.quantity > 0);
 
       const logs = await NutritionService.logMultipleFoods(user.id, normalizedItems);
       NutritionService.invalidateServerCache(user.id);

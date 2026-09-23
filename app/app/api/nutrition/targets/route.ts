@@ -49,11 +49,31 @@ export async function POST(request: Request) {
     const body = await request.json();
     const localDate = await NutritionService.getLocalDateString(user.id);
 
-    const calories = Number(body.calories) || 2000;
-    const protein = Number(body.protein) || 130;
-    const carbs = Number(body.carbs) || Math.round((calories * 0.45) / 4);
-    const fat = Number(body.fat) || Math.round((calories * 0.25) / 9);
-    const water_ml = Number(body.water_ml) || 3000;
+    // Validate bounds (Fix #9: prevent negative, extreme, and falsy-zero values)
+    const rawCalories = Number(body.calories);
+    const rawProtein = Number(body.protein);
+    const rawCarbs = Number(body.carbs);
+    const rawFat = Number(body.fat);
+    const rawWater = Number(body.water_ml);
+
+    if (isNaN(rawCalories) || rawCalories < 800 || rawCalories > 8000) {
+      return NextResponse.json(
+        { success: false, error: { code: 'INVALID_INPUT', message: 'Calories must be between 800 and 8000.' } },
+        { status: 400 }
+      );
+    }
+    if (!isNaN(rawProtein) && (rawProtein < 0 || rawProtein > 500)) {
+      return NextResponse.json(
+        { success: false, error: { code: 'INVALID_INPUT', message: 'Protein must be between 0 and 500g.' } },
+        { status: 400 }
+      );
+    }
+
+    const calories = Math.round(rawCalories);
+    const protein = Math.round(rawProtein || 130);
+    const carbs = Math.round(rawCarbs || (calories * 0.45) / 4);
+    const fat = Math.round(rawFat || (calories * 0.25) / 9);
+    const water_ml = Math.round(rawWater || 3000);
 
     // 1. Check if a target record already exists for this user on this effective_date
     const { data: existing } = await supabase
@@ -123,6 +143,12 @@ export async function POST(request: Request) {
         updated_at: new Date().toISOString()
       })
       .eq('user_id', user.id);
+
+    // 3. Invalidate cache and update daily summary (Fix #10)
+    NutritionService.invalidateServerCache(user.id);
+    try {
+      await NutritionService.updateDailySummary(user.id);
+    } catch {}
 
     return NextResponse.json({ success: true, data: target });
   } catch (error: any) {

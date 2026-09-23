@@ -121,8 +121,23 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
       .eq("id", user.id);
   }
 
+  // Recalculate and persist fresh nutrition targets immediately upon onboarding
+  try {
+    const { NutritionService } = await import("@/lib/services/nutrition/nutrition-service");
+    await NutritionService.recalculateTargetsForUser(user.id, {
+      ...validData,
+      bmi,
+      baseline_calories,
+      initial_protein_target
+    });
+  } catch (targetErr) {
+    console.warn("Could not recalculate nutrition targets during onboarding:", targetErr);
+  }
+
   revalidatePath("/");
   revalidatePath("/profile");
+  revalidatePath("/nutrition");
+  revalidatePath("/grocery");
   return { success: true };
 }
 
@@ -179,10 +194,46 @@ export async function updateFitnessProfilePartialAction(payload: Record<string, 
       .eq("id", user.id);
   }
 
+  // Recalculate targets if any target-affecting fields were updated
+  const targetAffectingKeys = [
+    "weight",
+    "height",
+    "goal",
+    "activity_level",
+    "gender",
+    "sex",
+    "age",
+    "target_weight",
+    "diet_preference",
+    "food_type",
+    "nutrition_budget",
+    "meals_per_day",
+  ];
+  const hasTargetChanges = Object.keys(updates).some((key) => targetAffectingKeys.includes(key));
+
+  if (hasTargetChanges) {
+    try {
+      const { data: latestProfile } = await supabase
+        .from("fitness_os_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (latestProfile) {
+        const { NutritionService } = await import("@/lib/services/nutrition/nutrition-service");
+        await NutritionService.recalculateTargetsForUser(user.id, latestProfile);
+      }
+    } catch (recalcErr) {
+      console.warn("Could not recalculate nutrition targets after profile update:", recalcErr);
+    }
+  }
+
   revalidatePath("/");
   revalidatePath("/profile");
   revalidatePath("/profile/details");
   revalidatePath("/progress");
+  revalidatePath("/nutrition");
+  revalidatePath("/grocery");
   revalidatePath("/dashboard");
   invalidateProgressServerCache(user.id);
   return { success: true };

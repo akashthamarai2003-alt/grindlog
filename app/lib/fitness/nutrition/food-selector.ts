@@ -42,7 +42,7 @@ export async function selectFoodsForProfile(
   let foods = data as FoodItem[];
 
   // 1. Filter by diet compatibility
-  const allowedDietTypes = getCompatibleDietTypes(profile.food_type || "");
+  const allowedDietTypes = getCompatibleDietTypes(profile.food_type || profile.diet_preference || "");
   foods = foods.filter((f) =>
     allowedDietTypes.includes(f.diet_type.toLowerCase())
   );
@@ -94,8 +94,8 @@ export async function selectFoodsForProfile(
       if (!a.is_pg_friendly && b.is_pg_friendly) return 1;
     }
 
-    const aRatio = a.estimated_cost > 0 ? a.protein / a.estimated_cost : 0;
-    const bRatio = b.estimated_cost > 0 ? b.protein / b.estimated_cost : 0;
+    const aRatio = a.estimated_cost > 0 ? a.protein / a.estimated_cost : a.protein * 100;
+    const bRatio = b.estimated_cost > 0 ? b.protein / b.estimated_cost : b.protein * 100;
     return bRatio - aRatio;
   });
 
@@ -105,10 +105,14 @@ export async function selectFoodsForProfile(
 /**
  * Sorts foods by protein / estimated_cost ratio descending.
  */
-export function rankFoodsByProteinEfficiency(foods: FoodItem[]): FoodItem[] {
+export function rankFoodsByProteinEfficiency(foods: FoodItem[], isPgEnv: boolean = false): FoodItem[] {
   return [...foods].sort((a, b) => {
-    const aRatio = a.estimated_cost > 0 ? a.protein / a.estimated_cost : 0;
-    const bRatio = b.estimated_cost > 0 ? b.protein / b.estimated_cost : 0;
+    if (isPgEnv) {
+      if (a.is_pg_friendly && !b.is_pg_friendly) return -1;
+      if (!a.is_pg_friendly && b.is_pg_friendly) return 1;
+    }
+    const aRatio = a.estimated_cost > 0 ? a.protein / a.estimated_cost : a.protein * 100;
+    const bRatio = b.estimated_cost > 0 ? b.protein / b.estimated_cost : b.protein * 100;
     return bRatio - aRatio;
   });
 }

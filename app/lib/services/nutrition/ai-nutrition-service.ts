@@ -10,6 +10,8 @@ import {
   calibrateMealsToTargets,
   NutritionFoodReference
 } from "@/lib/services/nutrition/nutrition-service";
+import { buildNutritionUserContext } from "@/lib/fitness/nutrition/user-context";
+import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
 
 interface RawAIMealItem {
   name: string;
@@ -72,13 +74,13 @@ export class AINutritionService {
       throw new Error(eligibility.message || "Weekly limit reached. You can generate 1 meal plan per week (max 4 per month).");
     }
 
-    // 2. Gather User Context
+    // 2. Gather User Context & Catalog
     const targets = await NutritionService.getEffectiveTargets(userId);
     if (!targets) throw new Error("TARGET_NOT_FOUND");
 
     const { data: profile } = await supabase
       .from('fitness_os_profiles')
-      .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, nutrition_budget, food_environment, available_foods, meals_per_day')
+      .select('*')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -89,94 +91,85 @@ export class AINutritionService {
 
     const foodCatalog: NutritionFoodReference[] = allFoods || [];
 
-    // 3. Dietary & Environmental Classification
+    // 3. Normalized User Context & Classifications
+    const userContext = buildNutritionUserContext(profile, targets, userId);
     const combinedDiet = `${profile?.diet_preference || ''} ${profile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
-    const isVegan = combinedDiet.includes('vegan');
-    const isNonVeg = !isVegan && (combinedDiet.includes('non') || combinedDiet.includes('meat') || combinedDiet.includes('chicken') || combinedDiet.includes('fish'));
-    const isEggetarian = !isVegan && !isNonVeg && (combinedDiet.includes('egg') || combinedDiet.includes('eggetarian'));
-    const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
+    const isVegan = userContext.diet === 'vegan';
+    const isNonVeg = userContext.diet === 'non_vegetarian';
+    const isEggetarian = userContext.diet === 'eggetarian';
+    const isVegetarian = userContext.diet === 'vegetarian';
 
-    const dietLabel = isVegan
-      ? 'Vegan (100% Plant-Based: Zero dairy, Zero eggs, Zero meat/fish)'
-      : isVegetarian
-      ? 'Vegetarian (Lacto-Vegetarian: Plant foods + Paneer/Curd/Milk. Zero eggs, Zero meat/fish)'
-      : isEggetarian
-      ? 'Eggetarian (Plant foods + Farm Boiled Eggs/Egg Bhurji/Egg Curry + Paneer/Curd. Strictly ZERO chicken, fish, or meat)'
-      : 'Non-Vegetarian (Whole foods + Chicken, Fish, Eggs, Paneer, Curd, Grains, Legumes)';
+    const mealSlots = userContext.mealSlots;
+    const mealsPerDay = userContext.mealsPerDay;
+    const slotPercentages = userContext.slotRatios;
 
-    const rawEnv = (profile?.food_environment || 'PG').toLowerCase();
-    const isPG = rawEnv === 'pg' || rawEnv === 'hostel';
-    const isCoreProvided = isPG || rawEnv === 'home' || rawEnv === 'office/canteen';
-    const budgetStr = profile?.nutrition_budget || '₹1,000–2,000';
-
-    const mealsPerDay = profile?.meals_per_day || '3 meals';
-    let mealSlots: string[];
-    if (mealsPerDay === '2 meals') {
-      mealSlots = ['lunch', 'dinner'];
-    } else if (mealsPerDay === '3 meals') {
-      mealSlots = ['breakfast', 'lunch', 'dinner'];
-    } else if (mealsPerDay === '5+ meals') {
-      mealSlots = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner'];
-    } else {
-      mealSlots = ['breakfast', 'lunch', 'pre_workout', 'dinner'];
-    }
-
-    const slotPercentages: Record<string, number> = {
-      breakfast: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.20 : (mealsPerDay === '2 meals' ? 0.0 : 0.25)),
-      lunch: mealsPerDay === '3 meals' ? 0.40 : (mealsPerDay === '5+ meals' ? 0.30 : (mealsPerDay === '2 meals' ? 0.55 : 0.35)),
-      pre_workout: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
-      snack: mealsPerDay === '5+ meals' ? 0.12 : 0.15,
-      post_workout: 0.13,
-      dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.25 : (mealsPerDay === '2 meals' ? 0.45 : 0.25)),
-    };
+    const availableFoodsStr = userContext.availableFoods.length > 0
+      ? userContext.availableFoods.join(', ')
+      : 'Standard local Indian whole foods (Eggs, Paneer, Curd, Dals, Chana, Rajma, Tofu, Peanuts, Rice, Roti, Oats, Bananas)';
 
     // 4. Construct High-Precision Groq Prompt
     const systemPrompt = `You are Luna AI, an elite Indian sports and clinical dietitian.
-Your mission is to generate a comprehensive 7-Day Precision Weekly Meal Plan (Day 1 through Day 7) specifically tailored to the user's macros and lifestyle.
+Your mission is to generate a comprehensive 7-Day Precision Weekly Meal Plan (Day 1 through Day 7) specifically tailored to the user's macros, budget, and lifestyle.
 
 CRITICAL USER PROFILE & STRICT CONSTRAINTS:
-1. DIET CATEGORY: ${dietLabel}
+1. DIET CATEGORY: ${userContext.dietLabel}
    - You MUST STRICTLY respect this diet.
    ${isEggetarian ? '- For Eggetarian: Include Boiled Eggs, Egg Bhurji, Egg Curry, Curd, Paneer, Dals, Chana, Rajma. NEVER EVER include chicken, fish, mutton, or meat.' : ''}
-   ${isVegan ? '- For Vegan: 100% plant foods only (Soy Chunks, Rajma, Chana, Dal Tadka, Roasted Peanuts, Fruits, Phulkas, Rice). NEVER include curd, milk, paneer, butter, ghee, eggs, or meat.' : ''}
+   ${isVegan ? '- For Vegan: 100% plant foods only (Tofu, Rajma, Chana, Dal Tadka, Roasted Peanuts, Fruits, Phulkas, Rice, Soya Chunks). NEVER include curd, milk, paneer, butter, ghee, eggs, or meat.' : ''}
    ${isVegetarian ? '- For Vegetarian: Plant foods and dairy (Paneer, Curd, Milk, Dals, Chana, Rajma). NEVER include eggs, chicken, fish, or meat.' : ''}
    ${isNonVeg ? '- For Non-Vegetarian: Include Chicken Breast, Fish Curry, Chicken Curry, Eggs, Paneer, Curd, Dal, Rice.' : ''}
 
-2. LIVING ENVIRONMENT & REAL-WORLD FLOW: ${profile?.food_environment || 'PG'}
+2. LIVING ENVIRONMENT & REAL-WORLD FLOW: ${userContext.environment.toUpperCase()}
    ${
-     isPG
+     userContext.environment === 'pg' || userContext.environment === 'hostel'
        ? '- PG / HOSTEL LIVING: The mess provides core meals (Breakfast: Poha, Upma, Idli & Sambar, Dosa, Bread; Lunch & Dinner: White Rice, Dal Tadka, Seasonal Sabzi, Chapatis) for free (₹0).\n' +
          '- The user CANNOT cook elaborate curries from scratch. You MUST pair the standard mess meal with practical high-protein add-ons (e.g. 2–3 boiled eggs cooked in electric kettle, fresh curd, roasted peanuts, soy chunks boiled in kettle, paneer).\n' +
          '- Example Breakfast: "Poha (1 bowl, Mess Base) + 3 Boiled Eggs (Kettle Add-on)".\n' +
          '- Example Lunch: "White Rice (2 bowls) + Dal Tadka (1 bowl) + Mixed Veggies (1 bowl) + 2 Boiled Eggs or Paneer (Add-on)".'
-       : rawEnv === 'i cook' || rawEnv === 'self-cooked'
+       : userContext.environment === 'i_cook'
        ? '- SELF-COOKED / I COOK: The user personally buys groceries and cooks all meals from scratch in their kitchen.\n' +
          '- Plan complete, delicious, easy-to-cook whole-food recipes with simple ingredients and step-by-step cooking instructions (e.g., "10 min prep: Sauté onions, scramble 3 eggs, toast bread").'
        : '- HOME LIVING: Family kitchen prepares everyday meals (phulkas, dal, steamed rice, seasonal sabzi). Pair family meals with simple fitness protein boosters (e.g., 3 boiled eggs or egg scramble on stove, paneer bowl, fresh curd).'
    }
 
-3. MEALS PER DAY: Exactly these meal slots: ${mealSlots.join(', ')}.
+3. USER'S ACCESSIBLE FOODS:
+   - Foods available to user: ${availableFoodsStr}
+   - Prioritize these accessible foods when building meals.
 
-4. TARGET DAILY MACROS TO HIT:
+4. PROTEIN ROTATION & VARIETY (STRICT RULES):
+   - Soya Chunks MUST NEVER appear more than 1 time per day. NEVER include Soya Chunks in both lunch and dinner on the same day.
+   - Cycle diverse protein sources across meals and days:
+     * Vegetarians: Paneer, Curd/Dahi, Moong Dal, Chana/Chole, Rajma, Sprouts, Milk.
+     * Vegans: Tofu, Moong Sprouts, Kala Chana, Rajma, Soya Chunks (max 1 serving/day), Roasted Peanuts, Dal.
+     * Eggetarians: Farm Boiled Eggs, Egg Whites, Egg Bhurji, Egg Curry, Paneer, Curd, Dals, Sprouts.
+     * Non-Vegetarians: Chicken Breast, Fish, Eggs, Paneer, Curd, Dals.
+   - Every single day must feature protein variety, never repetitive meals.
+
+5. MEALS PER DAY: Exactly these meal slots: ${mealSlots.join(', ')}.
+
+6. TARGET DAILY MACROS TO HIT:
    - Daily Calories: ${targets.calories} kcal
    - Daily Protein: ${targets.protein} g
    - Daily Carbs: ${targets.carbs} g
    - Daily Fat: ${targets.fat} g
    (Distribute proportionally across the ${mealSlots.length} meals so each day totals approximately ${targets.calories} kcal and ${targets.protein}g protein).
 
-5. ALLERGIES & DISLIKES:
-   - Allergies: ${profile?.food_allergies || 'None'}
-   - Disliked / Avoided: ${[profile?.foods_disliked, profile?.foods_avoided].filter(Boolean).join(', ') || 'None'}
+7. ALLERGIES & DISLIKES:
+   - Allergies: ${userContext.allergies.join(', ') || 'None'}
+   - Disliked / Avoided: ${[...userContext.dislikedFoods, ...userContext.avoidedFoods].join(', ') || 'None'}
 
-6. STRICT SERVING QUANTITY & CALORIE RULES:
+8. BUDGET GUIDANCE:
+   - Daily out-of-pocket target: ~₹${userContext.dailyBudget}/day for fitness add-ons (Staples like mess rice/dal are ₹0).
+
+9. STRICT SERVING QUANTITY & CALORIE RULES:
    - "quantity" MUST be a small portion count (e.g. 1, 2, or 3). NEVER output grams, milliliters, or numbers >= 5 as "quantity"! (e.g. for 100g paneer, quantity is 1 and serving_size is "100g". For 250ml milk, quantity is 1 and serving_size is "1 glass (250ml)").
    - "serving_size": Describe the single unit cleanly (e.g. "large", "piece", "bowl (150g)", "cup (200ml)"). NEVER prefix with "1 " if quantity > 1 (e.g., for 3 eggs: quantity: 3, serving_size: "large (50g)" or "large eggs").
    - TARGET CALORIES PER MEAL: Distribute total daily calories (${targets.calories} kcal) realistically:
-     * Breakfast: ~${Math.round(targets.calories * (slotPercentages['breakfast'] || 0.30))} kcal, ~${Math.round(targets.protein * (slotPercentages['breakfast'] || 0.30))}g protein
-     * Lunch: ~${Math.round(targets.calories * (slotPercentages['lunch'] || 0.40))} kcal, ~${Math.round(targets.protein * (slotPercentages['lunch'] || 0.40))}g protein
-     * Dinner: ~${Math.round(targets.calories * (slotPercentages['dinner'] || 0.30))} kcal, ~${Math.round(targets.protein * (slotPercentages['dinner'] || 0.30))}g protein
+     * Breakfast: ~${Math.round(targets.calories * (slotPercentages['breakfast'] || 0.28))} kcal, ~${Math.round(targets.protein * (slotPercentages['breakfast'] || 0.28))}g protein
+     * Lunch: ~${Math.round(targets.calories * (slotPercentages['lunch'] || 0.38))} kcal, ~${Math.round(targets.protein * (slotPercentages['lunch'] || 0.38))}g protein
+     * Dinner: ~${Math.round(targets.calories * (slotPercentages['dinner'] || 0.34))} kcal, ~${Math.round(targets.protein * (slotPercentages['dinner'] || 0.34))}g protein
    - Items in each meal MUST sum up to approximately that meal's target calories. Do NOT over-pack meals.
-   - Do NOT repeat the exact same food item multiple times in one meal (e.g. never list milk twice in one meal).
+   - Do NOT repeat the exact same food item multiple times in one meal.
 
 Return ONLY valid JSON matching this schema:
 {
@@ -188,7 +181,7 @@ Return ONLY valid JSON matching this schema:
         {
           "meal_type": "breakfast",
           "name": "Title of the meal (e.g. Desi Egg Bhurji with Warm Phulkas)",
-          "prep_instruction": "Short, practical kitchen or kettle hack tip suited for ${profile?.food_environment || 'PG'}",
+          "prep_instruction": "Short, practical kitchen or kettle hack tip suited for ${userContext.environment}",
           "items": [
             { "name": "Exact whole food name", "quantity": 1, "serving_size": "portion e.g. 2 large, 2 medium, 1 bowl, 100g" }
           ]
@@ -199,13 +192,14 @@ Return ONLY valid JSON matching this schema:
 }`;
 
     const userPrompt = `Generate the 7-day personalized master plan for:
-Diet: ${profile?.diet_preference || profile?.food_type || 'Eggetarian'}
-Environment: ${profile?.food_environment || 'PG'}
-Budget: ${budgetStr}
+Diet: ${userContext.dietLabel}
+Environment: ${userContext.environment}
+Available Foods: ${availableFoodsStr}
+Budget: ${userContext.budgetStr} (~₹${userContext.dailyBudget}/day)
 Meals per day: ${mealsPerDay} (${mealSlots.join(', ')})
 Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}g carbs, ${targets.fat}g fat.`;
 
-    // 5. Execute AI Generation with Groq
+    // 5. Execute AI Generation with Groq (with graceful deterministic fallback)
     let aiPlan: LunaAIGenerationResult | null = null;
     try {
       aiPlan = await generateAIResponseJSON<LunaAIGenerationResult>({
@@ -226,14 +220,34 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           temperature: 0.3
         });
       } catch (fallbackErr: any) {
-        await this.logUsage(userId, 'failed_groq_generation', 'groq', undefined);
-        throw new Error(`Luna AI was unable to generate your plan: ${fallbackErr?.message || groqErr?.message}`);
+        console.warn("[Luna AI] Groq fallback also failed, activating deterministic 7-day plan fallback:", fallbackErr?.message);
+        await this.logUsage(userId, 'fallback_deterministic_generation', 'deterministic', undefined);
       }
     }
 
     if (!aiPlan || !Array.isArray(aiPlan.days) || aiPlan.days.length === 0) {
-      await this.logUsage(userId, 'failed_empty_days', 'groq');
-      throw new Error("Luna AI returned an incomplete plan format. Please try again.");
+      console.info("[Luna AI] Generating high-precision deterministic 7-day plan fallback for user:", userId);
+      aiPlan = {
+        plan_summary: "7-Day Precision Personalized Plan",
+        days: Array.from({ length: 7 }, (_, dIdx) => {
+          const fallbackStartDate = new Date(`${localDate}T12:00:00.000Z`);
+          const rotatingMap = NutritionService.getRotatingMealPlanForDay((fallbackStartDate.getDay() + dIdx) % 7, profile, targets, foodCatalog);
+          const dayMeals = mealSlots.map(slot => rotatingMap.get(slot) || rotatingMap.get('lunch')).filter(Boolean);
+          return {
+            day_number: dIdx + 1,
+            meals: dayMeals.map(m => ({
+              meal_type: m.meal_type || 'meal',
+              name: m.name || 'Personalized Meal',
+              prep_instruction: m.prep_instructions || '',
+              items: (m.items || m.meal_plan_items || []).map((it: any) => ({
+                name: it.foods?.name || it.name,
+                quantity: it.quantity || 1,
+                serving_size: it.foods?.serving_size || it.serving_size || '1 serving'
+              }))
+            }))
+          };
+        })
+      };
     }
 
     // Helper: Category-aware fallback food resolution
@@ -377,6 +391,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           dedupedItems.forEach(it => {
             const isDiscrete = /(?:egg|banana|apple)/i.test(it.name);
             if (!isDiscrete) {
+              it.quantity = Math.max(0.2, Number(((it.quantity || 1) * scaleFactor).toFixed(1)));
               it.calories = Math.round(it.calories * scaleFactor);
               it.protein = Number((it.protein * scaleFactor).toFixed(1));
               it.carbs = Number((it.carbs * scaleFactor).toFixed(1));
@@ -407,6 +422,25 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
 
       // Calibrate meals strictly against the user's targets and budget before saving
       const calibratedDayMeals = calibrateMealsToTargets(meals, targets, profile);
+
+      // Validate each meal item against diet, allergens, and dislikes (Fix #2: was imported but never called)
+      for (const meal of calibratedDayMeals) {
+        const itemsArr = meal.meal_plan_items || meal.items || [];
+        const validItems = itemsArr.filter((item: any) => {
+          const foodName = item.foods?.name || item.name || '';
+          // Diet check
+          const dietResult = NutritionValidationEngine.validateDiet(foodName, userContext.diet);
+          if (!dietResult.valid) return false;
+          // Allergen/dislike check
+          const allergyResult = NutritionValidationEngine.validateAllergiesAndDislikes(
+            foodName, userContext.allergies, userContext.dislikedFoods, userContext.avoidedFoods
+          );
+          if (!allergyResult.valid) return false;
+          return true;
+        });
+        meal.meal_plan_items = validItems;
+        meal.items = validItems;
+      }
 
       return {
         day_number: d.day_number || (dIdx + 1),
@@ -497,7 +531,11 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       const items = itemsByDate.get(plan.date) || [];
 
       items.forEach(it => {
-        const resolvedFoodId = it.food_id || it.foods?.id || findFallbackFood(it.name)?.id || foodCatalog[0]?.id;
+        const isValidUUID = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+        const rawId = it.food_id || it.foods?.id;
+        const resolvedFoodId = (rawId && isValidUUID(rawId))
+          ? rawId
+          : (findFallbackFood(it.name)?.id || foodCatalog.find(f => f.name.toLowerCase().includes((it.name || '').toLowerCase().split(' ')[0]))?.id || foodCatalog[0]?.id);
         if (resolvedFoodId) {
           mealPlanItemsRows.push({
             meal_plan_id: plan.id,
@@ -523,7 +561,14 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       }
     }
 
-    // 8. Update Daily Summary for Today & Log Success
+    // 8. Synchronize Smart Grocery List from Active Meal Plans
+    try {
+      await NutritionService.syncGroceryListFromMealPlans(userId);
+    } catch (gErr: any) {
+      console.warn("[Luna AI] Non-blocking grocery sync notice:", gErr?.message);
+    }
+
+    // 9. Update Daily Summary for Today & Log Success
     await this.logUsage(userId, 'success', 'groq');
     await NutritionService.updateDailySummary(userId);
 

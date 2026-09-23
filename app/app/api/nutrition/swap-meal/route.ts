@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
+import { buildNutritionUserContext } from "@/lib/fitness/nutrition/user-context";
+import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
 
 const ALLOWED_MEAL_TYPES = new Set([
   "breakfast",
@@ -268,6 +270,20 @@ export async function POST(request: Request) {
 
     const totals = totalsForFoods(selectedFoods);
 
+    // Validate swap selection against user diet and restrictions
+    const userContext = buildNutritionUserContext(profile, null, user.id);
+    const swapValidation = NutritionValidationEngine.validateSwap(
+      { calories: totals.calories, protein: totals.protein },
+      selectedFoods,
+      userContext
+    );
+    if (!swapValidation.valid) {
+      return NextResponse.json(
+        { success: false, error: { code: "VALIDATION_FAILED", message: swapValidation.issues[0] || "Selected food does not comply with your dietary preferences." } },
+        { status: 400 }
+      );
+    }
+
     let swapPlan = existingPlan;
     let createdPlan = false;
     if (!swapPlan) {
@@ -333,6 +349,12 @@ export async function POST(request: Request) {
     }
 
     await NutritionService.updateDailySummary(user.id);
+
+    try {
+      await NutritionService.syncGroceryListFromMealPlans(user.id);
+    } catch (syncErr: any) {
+      console.warn("Background grocery auto-sync notice:", syncErr?.message);
+    }
 
     try {
       revalidatePath("/");

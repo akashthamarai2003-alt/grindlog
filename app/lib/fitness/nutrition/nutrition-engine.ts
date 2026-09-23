@@ -35,7 +35,8 @@ export async function generateDeterministicNutritionPlan(
 
   // 2. Get compatible foods from database
   const allFoods = await selectFoodsForProfile(profile, customSupabase);
-  const rankedFoods = rankFoodsByProteinEfficiency(allFoods);
+  const isPgEnv = profile.food_environment === "PG" || profile.food_environment === "Hostel";
+  const rankedFoods = rankFoodsByProteinEfficiency(allFoods, isPgEnv);
 
   // 3. Parse budget and filter foods
   const budget = parseBudget(profile.nutrition_budget);

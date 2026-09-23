@@ -25,16 +25,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { amount_ml } = body;
 
-    if (amount_ml === undefined) {
+    const numericAmount = Number(amount_ml);
+    if (amount_ml === undefined || isNaN(numericAmount) || numericAmount <= 0 || numericAmount > 5000) {
       return NextResponse.json(
-        { success: false, error: { code: 'INVALID_INPUT', message: 'amount_ml is required.' } },
-        { status: 400 }
-      );
-    }
-
-    if (amount_ml <= 0) {
-      return NextResponse.json(
-        { success: false, error: { code: 'INVALID_INPUT', message: 'Water amount must be positive.' } },
+        { success: false, error: { code: 'INVALID_INPUT', message: 'Water amount must be a positive number up to 5000ml.' } },
         { status: 400 }
       );
     }
@@ -78,7 +72,15 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: true, data: { reset: true, total_water_ml: 0 } });
     }
 
-    const amount_ml = Number(searchParams.get('amount')) || 250;
+    const rawAmount = searchParams.get('amount');
+    const parsedAmount = rawAmount !== null ? Number(rawAmount) : 250;
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return NextResponse.json(
+        { success: false, error: { code: 'INVALID_INPUT', message: 'Removal amount must be a positive number.' } },
+        { status: 400 }
+      );
+    }
+    const amount_ml = Math.min(parsedAmount, 5000);
 
     const result = await NutritionService.removeWater(user.id, amount_ml);
 

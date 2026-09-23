@@ -5,6 +5,7 @@ import { getCachedUser, createServerSupabase } from "@/lib/services/supabase/ser
 import { parseBudget } from "@/lib/fitness/nutrition/constants";
 import { calculateGroceryList } from "@/lib/fitness/nutrition/grocery-calculator";
 import { generateDeterministicNutritionPlan } from "@/lib/fitness/nutrition/nutrition-engine";
+import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { GroceryView } from "@/components/fitness/grocery/grocery-view";
 import { GroceryItemData, GroceryBudgetSummary } from "@/components/fitness/grocery/types";
 
@@ -188,6 +189,31 @@ export default async function GroceryPage() {
       }
     } catch (calcError) {
       console.warn("Dynamic grocery list calculation fallback error:", calcError);
+    }
+  }
+
+  // Dynamic fallback: If itemsToRender is empty, sync directly from active 7-day meal plans
+  if (itemsToRender.length === 0) {
+    try {
+      const synced = await NutritionService.syncGroceryListFromMealPlans(user.id);
+      if (synced && synced.length > 0) {
+        itemsToRender = synced.map((item: any, idx: number) => ({
+          id: `synced-grocery-${idx}`,
+          name: item.name,
+          monthlyQuantity: Number(item.monthly_quantity) || 1,
+          unit: item.unit || "unit",
+          estimatedPrice: Number(item.estimated_price) || 0,
+          category: item.category || "General",
+          isOptional: Boolean(item.is_optional),
+          reason: item.reason || "",
+          purchased: false,
+          proteinGrams: item.protein_grams_per_serving,
+          calories: item.calories_per_serving,
+          usedInMeals: item.used_in_meals,
+        }));
+      }
+    } catch (syncErr: any) {
+      console.warn("Sync grocery list from meal plans fallback error:", syncErr?.message);
     }
   }
 

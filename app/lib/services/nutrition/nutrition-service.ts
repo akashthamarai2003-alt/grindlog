@@ -1,6 +1,7 @@
 import { createServerSupabase, getCachedFitnessProfile } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { calculateTargets } from "@/lib/fitness/nutrition/nutrition-engine";
+import { calculateDailyBudget, resolveMealSlots } from "@/lib/fitness/nutrition/user-context";
 import { cache } from "react";
 
 interface NutritionServerCacheEntry {
@@ -215,13 +216,9 @@ export function calibrateMealsToTargets(
   const targetCarbs = Math.round(Number((targets as any).carbs_g ?? targets.carbs ?? 200));
   const targetFat = Math.round(Number((targets as any).fat_g ?? targets.fat ?? 50));
 
-  // 1. Daily Budget Cap based on Onboarding Tier
-  const budgetStr = String(profile?.nutrition_budget || '₹1,000–2,000');
-  let dailyBudgetCap = 75;
-  if (budgetStr.includes('0–1,000') || budgetStr.includes('0-1,000')) dailyBudgetCap = 40;
-  else if (budgetStr.includes('1,000–2,000') || budgetStr.includes('1,000-2,000')) dailyBudgetCap = 75;
-  else if (budgetStr.includes('2,000–5,000') || budgetStr.includes('2,000-5,000')) dailyBudgetCap = 200;
-  else if (budgetStr.includes('5,000')) dailyBudgetCap = 300;
+  // 1. Dynamic Daily Budget Cap based on Onboarding Tier / Actual Monthly Budget
+  const budgetInfo = calculateDailyBudget(profile?.nutrition_budget, profile);
+  const dailyBudgetCap = budgetInfo.dailyBudget;
 
   // Diet preference flags
   const dietStr = `${profile?.diet_preference || ''} ${profile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
@@ -231,14 +228,8 @@ export function calibrateMealsToTargets(
   const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
 
   const mealsPerDay = profile?.meals_per_day || (meals.length === 3 ? '3 meals' : (meals.length === 2 ? '2 meals' : (meals.length >= 5 ? '5+ meals' : '4 meals')));
-  const slotRatios: Record<string, number> = {
-    breakfast: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.20 : (mealsPerDay === '2 meals' ? 0.0 : 0.25)),
-    lunch: mealsPerDay === '3 meals' ? 0.40 : (mealsPerDay === '5+ meals' ? 0.28 : (mealsPerDay === '2 meals' ? 0.50 : 0.35)),
-    pre_workout: 0.12,
-    snack: 0.12,
-    post_workout: 0.13,
-    dinner: mealsPerDay === '3 meals' ? 0.30 : (mealsPerDay === '5+ meals' ? 0.27 : (mealsPerDay === '2 meals' ? 0.50 : 0.28)),
-  };
+  const slotInfo = resolveMealSlots(mealsPerDay);
+  const slotRatios: Record<string, number> = slotInfo.slotRatios;
 
   const getItemInfo = (it: any) => {
     const fName = String(it.foods?.name || it.name || '').trim();
@@ -402,6 +393,13 @@ export function calibrateMealsToTargets(
     if (proGap > 8) {
       // Find candidate meals to inject protein (Lunch and Dinner)
       const candidateSlots = ['dinner', 'lunch'];
+      const hasSoyChunksInDay = calibratedMeals.some(m =>
+        (m.meal_plan_items || m.items || []).some((it: any) => {
+          const n = (it.foods?.name || it.name || '').toLowerCase();
+          return n.includes('soya chunk') || n.includes('soy chunk');
+        })
+      );
+
       for (const slot of candidateSlots) {
         if (proGap <= 6) break;
         const targetMealIdx = calibratedMeals.findIndex(m => (m.meal_type || '').toLowerCase() === slot);
@@ -439,21 +437,68 @@ export function calibrateMealsToTargets(
           };
           addOnQty = Math.max(2, Math.min(5, Math.round(proGap / 3.6)));
           proGap -= addOnQty * 3.6;
+        } else if (isVegetarian) {
+          // Vegetarian: Rotate between Paneer, Curd, and Soy Chunks (only if not already present today)
+          if (!hasSoyChunksInDay && slot === 'dinner') {
+            addOnFood = {
+              id: 'soya-chunks-addon',
+              name: 'Soy Chunks (Cooked)',
+              category: 'Protein',
+              serving_size: '1 bowl (100g)',
+              calories: 345,
+              protein: 52,
+              carbs: 33,
+              fat: 0.5,
+              estimated_cost: 20,
+            };
+            addOnQty = Number(Math.max(0.3, Math.min(0.6, proGap / 52)).toFixed(1));
+            proGap -= addOnQty * 52;
+          } else {
+            addOnFood = {
+              id: 'low-fat-paneer-addon',
+              name: 'Low Fat Paneer',
+              category: 'Protein',
+              serving_size: '100g',
+              calories: 160,
+              protein: 28,
+              carbs: 4,
+              fat: 4,
+              estimated_cost: 35,
+            };
+            addOnQty = Number(Math.max(0.4, Math.min(1.0, proGap / 28)).toFixed(1));
+            proGap -= addOnQty * 28;
+          }
         } else {
-          // Vegetarian & Vegan: Soy Chunks
-          addOnFood = {
-            id: 'soya-chunks-addon',
-            name: 'Soy Chunks (Cooked)',
-            category: 'Protein',
-            serving_size: '1 bowl (100g)',
-            calories: 345,
-            protein: 52,
-            carbs: 33,
-            fat: 0.5,
-            estimated_cost: 20,
-          };
-          addOnQty = Number(Math.max(0.4, Math.min(0.8, proGap / 52)).toFixed(1));
-          proGap -= addOnQty * 52;
+          // Vegan: Rotate between Tofu, Moong Sprouts, Chana, and Soy Chunks (only if not already present today)
+          if (!hasSoyChunksInDay && slot === 'dinner') {
+            addOnFood = {
+              id: 'soya-chunks-addon',
+              name: 'Soy Chunks (Cooked)',
+              category: 'Protein',
+              serving_size: '1 bowl (100g)',
+              calories: 345,
+              protein: 52,
+              carbs: 33,
+              fat: 0.5,
+              estimated_cost: 20,
+            };
+            addOnQty = Number(Math.max(0.3, Math.min(0.5, proGap / 52)).toFixed(1));
+            proGap -= addOnQty * 52;
+          } else {
+            addOnFood = {
+              id: 'tofu-addon',
+              name: 'Tofu (Firm / Cooked)',
+              category: 'Protein',
+              serving_size: '100g',
+              calories: 120,
+              protein: 15,
+              carbs: 3,
+              fat: 5,
+              estimated_cost: 30,
+            };
+            addOnQty = Number(Math.max(0.5, Math.min(1.2, proGap / 15)).toFixed(1));
+            proGap -= addOnQty * 15;
+          }
         }
 
         const isCore = isStapleCoreFood(addOnFood.name, profile?.food_environment);
@@ -713,18 +758,70 @@ export function calibrateMealsToTargets(
         };
         addOnQty = Math.max(2, Math.min(6, Math.round(finalProGap / 3.6)));
       } else {
-        addOnFood = {
-          id: '36afa603-8493-478b-a10e-11b5d5dc8be1',
-          name: 'Soy Chunks (Cooked)',
-          category: 'Protein',
-          serving_size: '1 bowl (100g)',
-          calories: 345,
-          protein: 52,
-          carbs: 33,
-          fat: 0.5,
-          estimated_cost: 20,
-        };
-        addOnQty = Number(Math.max(0.2, Math.min(0.5, finalProGap / 52)).toFixed(1));
+        const hasSoyInDay = calibratedMeals.some(m =>
+          (m.meal_plan_items || m.items || []).some((it: any) => {
+            const n = (it.foods?.name || it.name || '').toLowerCase();
+            return n.includes('soya chunk') || n.includes('soy chunk');
+          })
+        );
+        if (isVegetarian) {
+          if (!hasSoyInDay) {
+            addOnFood = {
+              id: '36afa603-8493-478b-a10e-11b5d5dc8be1',
+              name: 'Soy Chunks (Cooked)',
+              category: 'Protein',
+              serving_size: '1 bowl (100g)',
+              calories: 345,
+              protein: 52,
+              carbs: 33,
+              fat: 0.5,
+              estimated_cost: 20,
+            };
+            addOnQty = Number(Math.max(0.2, Math.min(0.4, finalProGap / 52)).toFixed(1));
+          } else {
+            addOnFood = {
+              id: 'low-fat-paneer-addon',
+              name: 'Low Fat Paneer',
+              category: 'Protein',
+              serving_size: '100g',
+              calories: 160,
+              protein: 28,
+              carbs: 4,
+              fat: 4,
+              estimated_cost: 35,
+            };
+            addOnQty = Number(Math.max(0.3, Math.min(0.8, finalProGap / 28)).toFixed(1));
+          }
+        } else {
+          // Vegan
+          if (!hasSoyInDay) {
+            addOnFood = {
+              id: '36afa603-8493-478b-a10e-11b5d5dc8be1',
+              name: 'Soy Chunks (Cooked)',
+              category: 'Protein',
+              serving_size: '1 bowl (100g)',
+              calories: 345,
+              protein: 52,
+              carbs: 33,
+              fat: 0.5,
+              estimated_cost: 20,
+            };
+            addOnQty = Number(Math.max(0.2, Math.min(0.4, finalProGap / 52)).toFixed(1));
+          } else {
+            addOnFood = {
+              id: 'tofu-addon',
+              name: 'Tofu (Firm / Cooked)',
+              category: 'Protein',
+              serving_size: '100g',
+              calories: 120,
+              protein: 15,
+              carbs: 3,
+              fat: 5,
+              estimated_cost: 30,
+            };
+            addOnQty = Number(Math.max(0.4, Math.min(1.0, finalProGap / 15)).toFixed(1));
+          }
+        }
       }
 
       const isCore = isStapleCoreFood(addOnFood.name, profile?.food_environment);
@@ -830,8 +927,18 @@ export function calibrateMealsToTargets(
       }
       if (!targetProItem && !isNonVeg && !isEggetarian) {
         for (const m of calibratedMeals) {
-          const it = (m.meal_plan_items || []).find((x: any) => (x.foods?.name || x.name || '').toLowerCase().includes('soya') || (x.foods?.name || x.name || '').toLowerCase().includes('soy chunk'));
-          if (it) { targetProItem = it; targetProUnit = 52; break; }
+          const it = (m.meal_plan_items || []).find((x: any) => {
+            const n = (x.foods?.name || x.name || '').toLowerCase();
+            return isVegan
+              ? (n.includes('tofu') || n.includes('sprout') || n.includes('soya') || n.includes('soy chunk'))
+              : (n.includes('paneer') || n.includes('curd') || n.includes('soya') || n.includes('soy chunk'));
+          });
+          if (it) {
+            targetProItem = it;
+            const n = (it.foods?.name || it.name || '').toLowerCase();
+            targetProUnit = (n.includes('soya') || n.includes('soy chunk')) ? 52 : (n.includes('paneer') ? 20 : (n.includes('tofu') ? 15 : 10));
+            break;
+          }
         }
       }
 
@@ -875,15 +982,20 @@ export function calibrateMealsToTargets(
     }
   }
 
-  // STAGE 5: STRICT BUDGET CAP ENFORCEMENT
+  // STAGE 5: STRICT BUDGET CAP ENFORCEMENT (iterative proportional scaling)
   totals = getTotals(calibratedMeals);
-  if (totals.cost > dailyBudgetCap + 10) {
+  let budgetIterations = 0;
+  const MAX_BUDGET_ITERATIONS = 10;
+  while (totals.cost > dailyBudgetCap && budgetIterations < MAX_BUDGET_ITERATIONS) {
+    budgetIterations++;
+    // Scale factor: ratio of cap to current cost, with a small margin to converge faster
+    const scaleFactor = Math.min(0.85, dailyBudgetCap / totals.cost);
     calibratedMeals = calibratedMeals.map((m: any) => {
       const items = (m.meal_plan_items || []).map((it: any) => {
         const info = getItemInfo(it);
         let q = Number(it.quantity) || 1;
-        if (!info.isCore && info.unitCost > 30) {
-          q = Math.max(0.2, Number((q * 0.85).toFixed(1)));
+        if (!info.isCore && info.unitCost > 0) {
+          q = Math.max(0.1, Number((q * scaleFactor).toFixed(1)));
         }
         return {
           ...it,
@@ -897,6 +1009,7 @@ export function calibrateMealsToTargets(
       });
       return { ...m, meal_plan_items: items, items };
     });
+    totals = getTotals(calibratedMeals);
   }
 
   // Final summary update per meal
@@ -1389,6 +1502,115 @@ export class NutritionService {
     return { start, end };
   }
 
+  /**
+   * Recalculates nutrition targets from current fitness profile data,
+   * invalidates stale target records, and upserts a fresh target record.
+   */
+  static async recalculateTargetsForUser(
+    userId: string,
+    fitProfile?: any,
+    localDate?: string
+  ): Promise<any> {
+    const supabase = createAdminClient();
+    const effectiveDate = localDate || await this.getLocalDateString(userId);
+
+    let profile = fitProfile;
+    if (!profile) {
+      const { data: fetchedProfile } = await supabase
+        .from('fitness_os_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      profile = fetchedProfile;
+    }
+
+    if (!profile) {
+      return {
+        user_id: userId,
+        calories: 2000,
+        protein: 130,
+        carbs: 225,
+        fat: 55,
+        water_ml: 3000,
+        effective_date: effectiveDate
+      };
+    }
+
+    const computed = calculateTargets(profile);
+    const calories = computed.calories;
+    const protein = computed.protein_g;
+    const carbs = computed.carbs_g || Math.round((calories * 0.45) / 4);
+    const fat = computed.fat_g || Math.round((calories * 0.25) / 9);
+    const water_ml = computed.water_ml || 3000;
+
+    const { data: existing } = await supabase
+      .from('nutrition_targets')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('effective_date', effectiveDate)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing?.id) {
+      const { data: updated } = await supabase
+        .from('nutrition_targets')
+        .update({
+          calories,
+          protein,
+          carbs,
+          fat,
+          water_ml,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      invalidateNutritionServerCache(userId);
+      if (updated) return updated;
+    } else {
+      const { data: inserted } = await supabase
+        .from('nutrition_targets')
+        .insert({
+          user_id: userId,
+          effective_date: effectiveDate,
+          calories,
+          protein,
+          carbs,
+          fat,
+          water_ml,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      invalidateNutritionServerCache(userId);
+      if (inserted) return inserted;
+    }
+
+    return {
+      user_id: userId,
+      effective_date: effectiveDate,
+      calories,
+      protein,
+      carbs,
+      fat,
+      water_ml
+    };
+  }
+
+  static async getTargets(
+    userId: string,
+    preFetchedDate?: string,
+    preFetchedTz?: string,
+    preFetchedProfile?: any,
+    preFetchedPlanData?: any
+  ) {
+    return this.getEffectiveTargets(userId, preFetchedDate, preFetchedTz, preFetchedProfile, preFetchedPlanData);
+  }
+
   static async getEffectiveTargets(
     userId: string,
     preFetchedDate?: string,
@@ -1399,6 +1621,17 @@ export class NutritionService {
     const supabase = createAdminClient();
     const localDate = preFetchedDate || await this.getLocalDateString(userId, preFetchedTz);
     
+    // Fetch profile to verify target freshness
+    let fitProfile = preFetchedProfile;
+    if (!fitProfile) {
+      const { data: resProfile } = await supabase
+        .from('fitness_os_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      fitProfile = resProfile;
+    }
+
     const { data, error } = await supabase
       .from('nutrition_targets')
       .select('*')
@@ -1409,17 +1642,27 @@ export class NutritionService {
       .maybeSingle();
 
     if (error) throw error;
+
+    // Freshness & Invalidation Check:
+    // If target exists and fitProfile exists, check if profile was updated after target was written
+    if (data && fitProfile) {
+      const profileUpdatedAt = fitProfile.updated_at ? new Date(fitProfile.updated_at).getTime() : 0;
+      const targetUpdatedAt = data.updated_at
+        ? new Date(data.updated_at).getTime()
+        : (data.created_at ? new Date(data.created_at).getTime() : 0);
+
+      // If profile was updated after this target was written (with 2-second grace period)
+      if (profileUpdatedAt > targetUpdatedAt + 2000) {
+        return await this.recalculateTargetsForUser(userId, fitProfile, localDate);
+      }
+      return data;
+    }
+
     if (data) return data;
 
-    // Fallback: Check fitness_os_profiles or fitness_os_workout_plans
-    let fitProfile = preFetchedProfile;
-    if (!fitProfile) {
-      const { data: resProfile } = await supabase
-        .from('fitness_os_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-      fitProfile = resProfile;
+    // If no target existed in table, calculate and persist immediately
+    if (fitProfile) {
+      return await this.recalculateTargetsForUser(userId, fitProfile, localDate);
     }
 
     let planNut = preFetchedPlanData?.nutrition;
@@ -2262,12 +2505,19 @@ export class NutritionService {
     if (waters) {
       waters.forEach(w => consumed.water_ml += (Number(w.amount_ml) || 0));
     }
-    const totalMeals = plans && plans.length > 0 ? plans.length : 0;
+    // For Luna AI plans (meal_type='daily'), count how many distinct meal slots the user has logged food for
+    const totalMeals = plans && plans.length > 0
+      ? (plans.some(p => p.meal_type === 'daily') ? completedMealTypes.size : plans.length)
+      : 0;
     
-    // We only consider a meal "completed" if it is in the meal plan AND we have logged something for it
     let mealsCompleted = 0;
     if (plans) {
-       mealsCompleted = plans.filter(p => completedMealTypes.has(p.meal_type)).length;
+      if (plans.some(p => p.meal_type === 'daily')) {
+        // For 'daily' type: count distinct logged meal_types (breakfast, lunch, dinner, etc.)
+        mealsCompleted = completedMealTypes.size;
+      } else {
+        mealsCompleted = plans.filter(p => completedMealTypes.has(p.meal_type)).length;
+      }
     }
 
     const score = this.computeNutritionScore(consumed, targets, mealsCompleted, totalMeals);
@@ -2537,7 +2787,7 @@ export class NutritionService {
     const isFoodSafe = (name: string): boolean => {
       if (blockedTerms.length === 0) return true;
       const fLower = name.toLowerCase();
-      return !blockedTerms.some(term => term && (fLower.includes(term) || term.includes(fLower)));
+      return !blockedTerms.some(term => term && fLower.includes(term));
     };
 
     const buildItems = (itemsDef: Array<{ name: string; quantity: number; servingSize?: string }>, isCore: boolean) => {
@@ -2654,26 +2904,26 @@ export class NutritionService {
     // 2. LUNCH TEMPLATES BY DAY
     const lunchDefs: Record<number, Array<{ name: string; quantity: number; servingSize?: string }>> = {
       0: isVegan // Sunday
-        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Tofu (Firm)', quantity: 1, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
         : isEggetarian
         ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
         : [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Fish Curry', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }],
       1: isVegan // Monday
-        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Moong Sprouts', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
         ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       2: isVegan // Tuesday
-        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Tofu (Firm)', quantity: 0.8, servingSize: '80g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }],
       3: isVegan // Wednesday
-        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 0.8, servingSize: '80g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
@@ -2687,14 +2937,14 @@ export class NutritionService {
         ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Fish Curry', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       5: isVegan // Friday
-        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Moong Sprouts', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
         : isEggetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
         : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       6: isVegan // Saturday
-        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Tofu (Firm)', quantity: 1, servingSize: '100g' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'White Rice', quantity: 2, servingSize: '2 bowls cooked' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Curd (Plain)', quantity: 1, servingSize: '1 bowl (100g)' }]
         : isEggetarian
@@ -2722,49 +2972,49 @@ export class NutritionService {
     // 4. DINNER TEMPLATES BY DAY
     const dinnerDefs: Record<number, Array<{ name: string; quantity: number; servingSize?: string }>> = {
       0: isVegan
-        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Tofu (Firm)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       1: isVegan
-        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 0.8, servingSize: '80g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Bhurji', quantity: 0.7, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       2: isVegan
-        ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Moong Sprouts', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Fish Curry', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       3: isVegan
-        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Aloo Sabzi (Potato)', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chickpeas (Chana Masala)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Aloo Sabzi (Potato)', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Bhurji', quantity: 0.7, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Aloo Sabzi (Potato)', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Aloo Sabzi (Potato)', quantity: 1, servingSize: '1 bowl (150g)' }]
         : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Aloo Sabzi (Potato)', quantity: 1, servingSize: '1 bowl (150g)' }],
       4: isVegan
-        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Tofu (Firm)', quantity: 1, servingSize: '100g' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Chicken Breast (Cooked)', quantity: 1, servingSize: '100g' }, { name: 'Sambar', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       5: isVegan
-        ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Moong Sprouts', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
         ? [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Boiled Egg', quantity: 2, servingSize: '2 large' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : [{ name: 'White Rice', quantity: 1.5, servingSize: '1.5 bowls cooked' }, { name: 'Fish Curry', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Rajma (Kidney Beans)', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }],
       6: isVegan
-        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Soy Chunks (Cooked)', quantity: 1, servingSize: '1 bowl (100g)' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
+        ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Tofu (Firm)', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isVegetarian
         ? [{ name: 'Chapati', quantity: 3, servingSize: '3 medium' }, { name: 'Paneer Tikka', quantity: 1, servingSize: '100g' }, { name: 'Dal Tadka', quantity: 1, servingSize: '1 bowl (150g)' }, { name: 'Mixed Vegetables', quantity: 1, servingSize: '1 bowl (150g)' }]
         : isEggetarian
@@ -3534,16 +3784,16 @@ function scaleServingSize(servingSize: string, scale: number): string {
       });
     }
 
-    let monthlyLimit = 5000;
+    let monthlyLimit = 4500;
     if (fitProfile?.nutrition_budget) {
       const bStr = fitProfile.nutrition_budget;
-      if (bStr === '₹5,000+') monthlyLimit = 7500;
-      else if (bStr === '₹2,000–5,000' || bStr === '₹2,000-5,000') monthlyLimit = 5000;
-      else if (bStr === '₹1,000–2,000' || bStr === '₹1,000-2,000') monthlyLimit = 2500;
-      else if (bStr === '₹0–1,000' || bStr === '₹0-1,000') monthlyLimit = 1500;
+      if (bStr.includes('5,000+') || bStr.includes('5000+')) monthlyLimit = 7500;
+      else if (bStr.includes('2,000–5,000') || bStr.includes('2,000-5,000')) monthlyLimit = 4500;
+      else if (bStr.includes('1,000–2,000') || bStr.includes('1,000-2,000')) monthlyLimit = 2000;
+      else if (bStr.includes('0–1,000') || bStr.includes('0-1,000')) monthlyLimit = 1000;
     }
-    const isHighProteinNonVeg = Boolean(targets.protein >= 140 && (fitProfile?.diet_preference?.toLowerCase().includes('non') || fitProfile?.food_type?.toLowerCase().includes('non')));
-    const dailyLimit = Math.max(Math.round(monthlyLimit / 30), isHighProteinNonVeg ? 200 : 150);
+    // Authentic daily out-of-pocket limit (No fake 150 floor!)
+    const dailyLimit = Math.max(25, Math.round(monthlyLimit / 30));
 
     // 7-day rotating menu calculation strictly adhering to user onboarding profile
     const targetDate = new Date(`${localDate}T12:00:00.000Z`);
@@ -3725,8 +3975,9 @@ function scaleServingSize(servingSize: string, scale: number): string {
           has_7day_variety: true,
         } : null;
       }).filter(Boolean);
-    } else if (!isFutureDate && localDate === todayDateStr && !weeklyPlanStatus?.has_active_plan) {
-      // Day 1 onboarded users who haven't generated their AI weekly plan yet get baseline rotating meals for today
+    } else {
+      // Continuous rolling 7-day plan fallback: for today, tomorrow, past or future dates,
+      // seamlessly serve the rotating plan for this day of week so user never sees "Not planned yet"!
       formattedMeals = ALL_MEAL_TYPES.map((mType) => {
         const rotating = rotatingPlans.get(mType);
         return rotating ? {
@@ -3735,9 +3986,6 @@ function scaleServingSize(servingSize: string, scale: number): string {
           has_7day_variety: true,
         } : null;
       }).filter(Boolean);
-    } else {
-      // Future dates outside of generated plans, or past dates without plans, have NO planned meals
-      formattedMeals = [];
     }
 
     // Calibrate all meals to strictly match the user's calories, protein, carbs, fat, and budget
@@ -3967,16 +4215,9 @@ function scaleServingSize(servingSize: string, scale: number): string {
 
     const monthSpent = pastMonthSpent + consumed.spent;
 
-    let monthlyLimit = 5000;
-    if (fitProfile?.nutrition_budget) {
-      const bStr = fitProfile.nutrition_budget;
-      if (bStr === '₹5,000+') monthlyLimit = 7500;
-      else if (bStr === '₹2,000–5,000' || bStr === '₹2,000-5,000') monthlyLimit = 5000;
-      else if (bStr === '₹1,000–2,000' || bStr === '₹1,000-2,000') monthlyLimit = 2500;
-      else if (bStr === '₹0–1,000' || bStr === '₹0-1,000') monthlyLimit = 1500;
-    }
-    const isHighProteinNonVeg = Boolean(targets.protein >= 140 && (fitProfile?.diet_preference?.toLowerCase().includes('non') || fitProfile?.food_type?.toLowerCase().includes('non')));
-    const dailyLimit = Math.max(Math.round(monthlyLimit / 30), isHighProteinNonVeg ? 200 : 150);
+    const userBudgetInfo = calculateDailyBudget(fitProfile?.nutrition_budget, fitProfile);
+    const monthlyLimit = userBudgetInfo.monthlyBudget;
+    const dailyLimit = userBudgetInfo.dailyBudget;
 
     const rawDietStr = `${fitProfile?.diet_preference || ''} ${fitProfile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
     const isProfileVegan = rawDietStr.includes('vegan');
@@ -4082,5 +4323,247 @@ function scaleServingSize(servingSize: string, scale: number): string {
 
     cache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;
+  }
+
+  /**
+   * Derives and synchronizes the smart grocery list from the user's active 7-day meal plan.
+   * Updates fitness_grocery_items and the active workout plan's plan_data.nutrition.grocery_list.
+   */
+  static async syncGroceryListFromMealPlans(userId: string): Promise<any[]> {
+    try {
+      const supabase = createAdminClient();
+      
+      const [{ data: profile }, { data: activePlan }, { data: mealPlans }] = await Promise.all([
+        supabase
+          .from('fitness_os_profiles')
+          .select('nutrition_budget, food_environment, diet_preference, food_type')
+          .eq('user_id', userId)
+          .maybeSingle(),
+        supabase
+          .from('fitness_os_workout_plans')
+          .select('id, plan_data')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('meal_plans')
+          .select('id, date, meal_plan_items(*, foods(*))')
+          .eq('user_id', userId)
+          .order('date', { ascending: true })
+          .limit(7)
+      ]);
+
+      if (!mealPlans || mealPlans.length === 0) return [];
+
+      const foodMap = new Map<string, {
+        food: any;
+        dailyOccurrences: number;
+        totalQuantity: number;
+        usedInMeals: Set<string>;
+      }>();
+
+      const env = profile?.food_environment || 'Home';
+
+      mealPlans.forEach(plan => {
+        (plan.meal_plan_items || []).forEach((it: any) => {
+          const foodName = it.foods?.name || it.name;
+          if (!foodName) return;
+
+          const isCore = it.is_core ?? isStapleCoreFood(foodName, env);
+          if (isCore) return;
+
+          let targetType = 'Meal';
+          const rawServing = String(it.serving_size || '');
+          if (rawServing.includes('::')) {
+            targetType = rawServing.split('::')[0] || 'Meal';
+          }
+
+          if (!foodMap.has(foodName)) {
+            foodMap.set(foodName, {
+              food: it.foods || it,
+              dailyOccurrences: 0,
+              totalQuantity: 0,
+              usedInMeals: new Set<string>()
+            });
+          }
+
+          const entry = foodMap.get(foodName)!;
+          entry.dailyOccurrences += 1;
+          entry.totalQuantity += Number(it.quantity) || 1;
+          entry.usedInMeals.add(targetType.charAt(0).toUpperCase() + targetType.slice(1));
+        });
+      });
+
+      const numDays = mealPlans.length;
+      const groceryList: any[] = [];
+
+      foodMap.forEach((entry, foodName) => {
+        const food = entry.food;
+        const avgDailyServings = entry.totalQuantity / numDays;
+
+        let unit = 'packs';
+        let monthlyQty = Math.ceil(avgDailyServings * 30);
+        let estimatedPrice = Math.round(Number(food.estimated_cost || 30) * avgDailyServings * 30);
+
+        const lower = foodName.toLowerCase();
+        if (lower.includes('egg')) {
+          unit = 'pieces';
+          monthlyQty = Math.ceil((avgDailyServings * 30) / 6) * 6;
+          estimatedPrice = monthlyQty * 7;
+        } else if (lower.includes('milk') || lower.includes('curd') || lower.includes('dahi')) {
+          unit = 'liters';
+          monthlyQty = Math.max(1, Math.round(avgDailyServings * 30 * 0.25 * 2) / 2);
+          estimatedPrice = monthlyQty * 65;
+        } else if (lower.includes('paneer') || lower.includes('tofu')) {
+          unit = 'kg';
+          monthlyQty = Math.max(0.5, Math.round(avgDailyServings * 30 * 0.1 * 2) / 2);
+          estimatedPrice = monthlyQty * 400;
+        } else if (lower.includes('peanut') || lower.includes('chana') || lower.includes('almond') || lower.includes('sprout')) {
+          unit = 'kg';
+          monthlyQty = Math.max(0.5, Math.round(avgDailyServings * 30 * 0.03 * 2) / 2);
+          estimatedPrice = monthlyQty * 250;
+        } else if (lower.includes('banana') || lower.includes('apple')) {
+          unit = 'pieces';
+          monthlyQty = Math.ceil(avgDailyServings * 30);
+          estimatedPrice = monthlyQty * (lower.includes('banana') ? 6 : 25);
+        } else if (lower.includes('chicken')) {
+          unit = 'kg';
+          monthlyQty = Math.max(1, Math.round(avgDailyServings * 30 * 0.15 * 2) / 2);
+          estimatedPrice = monthlyQty * 280;
+        } else if (lower.includes('soya chunk') || lower.includes('soy chunk')) {
+          unit = 'packs';
+          monthlyQty = Math.max(1, Math.ceil((avgDailyServings * 30 * 50) / 200));
+          estimatedPrice = monthlyQty * 50;
+        }
+
+        groceryList.push({
+          name: foodName,
+          monthly_quantity: monthlyQty,
+          unit,
+          estimated_price: estimatedPrice,
+          category: food.category || 'Protein',
+          is_optional: false,
+          reason: `Provides protein & nutrition — used in ${Array.from(entry.usedInMeals).join(', ')}`,
+          purchased: false,
+          food_serving_size: food.serving_size || '1 serving',
+          protein_grams_per_serving: Number(food.protein || 0),
+          calories_per_serving: Number(food.calories || 0),
+          used_in_meals: Array.from(entry.usedInMeals)
+        });
+      });
+
+      let planContainer: any = activePlan;
+      let planIdToUse = planContainer?.id;
+
+      if (!planIdToUse) {
+        // Fallback 1: check any existing plan record for this user
+        const { data: anyPlan } = await supabase
+          .from('fitness_os_workout_plans')
+          .select('id, plan_data')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (anyPlan?.id) {
+          planIdToUse = anyPlan.id;
+          planContainer = anyPlan;
+        } else {
+          // Fallback 2: create an active plan container so grocery items can be persisted to DB cleanly
+          const { data: createdPlan } = await supabase
+            .from('fitness_os_workout_plans')
+            .insert({
+              user_id: userId,
+              name: 'Personalized Nutrition & Diet Plan',
+              description: 'Active nutrition & grocery container',
+              goal: 'Healthy Living',
+              status: 'active',
+              plan_data: {
+                nutrition: {
+                  grocery_list: groceryList
+                }
+              }
+            })
+            .select('id, plan_data')
+            .single();
+
+          if (createdPlan?.id) {
+            planIdToUse = createdPlan.id;
+            planContainer = createdPlan;
+          }
+        }
+      }
+
+      // Also sync grocery list directly into fitness_os_nutrition_plans guidance
+      try {
+        const { data: existingNutrition } = await supabase
+          .from('fitness_os_nutrition_plans')
+          .select('id, guidance')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (existingNutrition?.id) {
+          const updatedGuidance = {
+            ...((existingNutrition.guidance as any) || {}),
+            grocery_list: groceryList
+          };
+          await supabase
+            .from('fitness_os_nutrition_plans')
+            .update({ guidance: updatedGuidance, updated_at: new Date().toISOString() })
+            .eq('id', existingNutrition.id);
+        }
+      } catch (nutrErr) {
+        console.warn('[NutritionService] Non-blocking fitness_os_nutrition_plans sync notice:', nutrErr);
+      }
+
+      if (planIdToUse) {
+        if (planContainer?.id) {
+          const existingPlanData = planContainer.plan_data || {};
+          const updatedPlanData = {
+            ...existingPlanData,
+            nutrition: {
+              ...(existingPlanData.nutrition || {}),
+              grocery_list: groceryList
+            }
+          };
+
+          await supabase
+            .from('fitness_os_workout_plans')
+            .update({ plan_data: updatedPlanData })
+            .eq('id', planIdToUse);
+        }
+
+        try {
+          await supabase.from('fitness_grocery_items').delete().eq('user_id', userId).eq('plan_id', planIdToUse);
+          if (groceryList.length > 0) {
+            await supabase.from('fitness_grocery_items').insert(
+              groceryList.map(item => ({
+                user_id: userId,
+                plan_id: planIdToUse,
+                name: item.name,
+                monthly_quantity: item.monthly_quantity,
+                unit: item.unit,
+                estimated_price: item.estimated_price,
+                category: item.category,
+                is_optional: item.is_optional,
+                reason: item.reason,
+                purchased: false
+              }))
+            );
+          }
+        } catch (groceryErr) {
+          console.warn('[NutritionService] Non-blocking grocery table sync notice:', groceryErr);
+        }
+      }
+
+      return groceryList;
+    } catch (err: any) {
+      console.warn('[NutritionService] syncGroceryListFromMealPlans error:', err?.message);
+      return [];
+    }
   }
 }

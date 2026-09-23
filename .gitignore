@@ -7,3 +7,7 @@ app/node_modules/
 graphify-out/cache/
 graphify-out/*.html
 app/graphify-out/
+
+# Scratch & temporary test artifacts
+scratch/
+app/scratch/
