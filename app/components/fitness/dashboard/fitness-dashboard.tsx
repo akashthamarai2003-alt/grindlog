@@ -16,7 +16,6 @@ import { RenewalBanner } from "@/components/fitness/subscription/renewal-banner"
 import { MonthCheckinModal } from "@/components/fitness/recalibration/month-checkin-modal";
 import { FitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { dashboardClientCache } from "@/lib/api/dashboard-cache";
-import styles from "./dashboard.module.css";
 
 interface FitnessDashboardProps {
   user: User;
@@ -95,9 +94,12 @@ export function FitnessDashboard({
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.content}>
-        <div>
+    <div className="flex flex-col min-h-screen bg-[#0A1108] text-white overflow-x-hidden">
+      {/* Background ambient glow matching the dark neon aesthetic */}
+      <div className="dark-ambient-glow absolute top-0 left-0 right-0 h-64 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-50 z-0" />
+
+      <main className="flex-1 flex flex-col w-full max-w-md mx-auto pt-6 pb-36 sm:pb-40 px-5 z-10 relative gap-6">
+        <div className="mb-6 relative z-10">
           <DashboardHeader
             name={profile.name || user.user_metadata?.full_name || "Athlete"}
             dayNumber={dayNumber}
@@ -196,7 +198,7 @@ export function FitnessDashboard({
         {/* Below-fold: Nutrition, Activity, Goals — streamed in separately for fast initial paint */}
         {bottomSlot}
 
-      </div>
+      </main>
 
       <ProUpgradeModal
         isOpen={showUpgradeModal}
