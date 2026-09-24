@@ -3,7 +3,7 @@ import { createServerSupabase, getCachedUser, getCachedFitnessProfile } from "@/
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
 import { FitnessDashboardBottom } from "@/components/fitness/dashboard/fitness-dashboard-bottom";
-import { DashboardSkeleton } from "@/components/fitness/dashboard/dashboard-skeleton";
+import { DashboardInstantFallback } from "@/components/fitness/dashboard/dashboard-instant-fallback";
 import { Suspense } from 'react';
 import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
 import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
@@ -289,9 +289,7 @@ export default async function FitnessHome({
   return (
     <div className="min-h-screen bg-[#0A1108]">
       <Suspense fallback={
-        <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">
-          <DashboardSkeleton />
-        </div>
+        <DashboardInstantFallback />
       }>
         <DashboardAboveFold searchParams={params} />
       </Suspense>

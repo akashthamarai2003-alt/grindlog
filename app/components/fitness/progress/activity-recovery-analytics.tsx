@@ -161,8 +161,9 @@ export function ActivityRecoveryAnalyticsCard({
       // Re-fetch parent aggregated data to update streak, consistency score, etc.
       if (onRefresh) {
         await onRefresh();
+      } else {
+        router.refresh();
       }
-      router.refresh();
     } catch (err: any) {
       console.error("Save activity/sleep error:", err);
       toast.error(err.message || "Failed to save log");

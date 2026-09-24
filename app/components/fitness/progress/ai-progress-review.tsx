@@ -100,8 +100,9 @@ export function AIProgressReviewCard({
 
       if (onRefresh) {
         await onRefresh();
+      } else {
+        router.refresh();
       }
-      router.refresh();
     } catch (err: any) {
       console.error("AI Review error:", err);
       toast.error(err.message || "Failed to generate review. Please try again.", { id: toastId });

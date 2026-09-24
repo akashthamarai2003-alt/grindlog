@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { OnboardingData } from "@/types/fitness/onboarding";
 import Link from "next/link";
@@ -15,6 +15,7 @@ import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
 import { RenewalBanner } from "@/components/fitness/subscription/renewal-banner";
 import { MonthCheckinModal } from "@/components/fitness/recalibration/month-checkin-modal";
 import { FitnessSubscriptionState } from "@/lib/fitness/subscription/access";
+import { dashboardClientCache } from "@/lib/api/dashboard-cache";
 
 interface FitnessDashboardProps {
   user: User;
@@ -54,6 +55,38 @@ export function FitnessDashboard({
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [modalFeature, setModalFeature] = useState("Workout Sessions");
   const isFree = premiumLevel === "free";
+
+  useEffect(() => {
+    dashboardClientCache.set({
+      user,
+      profile,
+      activePlan,
+      todayWorkout,
+      weekWorkouts,
+      hasPlan,
+      nutrition,
+      lifestyle,
+      dailyActivity,
+      dayNumber,
+      premiumLevel,
+      targetDateStr,
+      subscriptionState,
+    });
+  }, [
+    user,
+    profile,
+    activePlan,
+    todayWorkout,
+    weekWorkouts,
+    hasPlan,
+    nutrition,
+    lifestyle,
+    dailyActivity,
+    dayNumber,
+    premiumLevel,
+    targetDateStr,
+    subscriptionState,
+  ]);
 
   const openUpgradeModal = (feature: string) => {
     setModalFeature(feature);

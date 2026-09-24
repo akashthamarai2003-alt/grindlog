@@ -120,10 +120,14 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
 
   // Keep local state in sync whenever server component provides fresh initialData
   useEffect(() => {
-    cacheRef.current[initialData.period] = initialData;
-    progressClientCache.set(initialData.period, initialData);
-    setData(initialData);
-  }, [initialData]);
+    if (initialData?.period) {
+      cacheRef.current[initialData.period] = initialData;
+      progressClientCache.set(initialData.period, initialData);
+      if (period === initialData.period) {
+        setData(initialData);
+      }
+    }
+  }, [initialData, period]);
 
   // Direct client refresh without needing full page reload
   const refreshData = async () => {
@@ -222,7 +226,7 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
           </div>
         )}
         
-        <div key={period} className={`flex flex-col gap-8 pb-8 transition-opacity duration-200 ${isFetching ? 'opacity-85' : 'opacity-100'}`}>
+        <div className={`flex flex-col gap-8 pb-8 transition-opacity duration-200 ${isFetching ? 'opacity-85' : 'opacity-100'}`}>
             {data.scans.shouldPromptForScan && (
               <div className="w-full bg-gradient-to-br from-[#ADFF00]/20 to-[#ADFF00]/5 border border-[#ADFF00]/30 rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden">
                 <div className="absolute -right-10 -top-10 text-8xl opacity-10 blur-sm pointer-events-none">🔥</div>

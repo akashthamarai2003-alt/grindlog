@@ -1862,14 +1862,14 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                       <div className="space-y-3">
                         {!isICook && hasCoreAndAddon ? (
                           <>
-                            {/* Section 1: Mess / Home Kitchen Base (Included · ₹0) */}
+                            {/* Section 1: Mess / Home Kitchen Base (provided, with no extra grocery cost) */}
                             <div className="bg-white/[0.02] rounded-xl p-2.5 border border-white/5">
                               <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-white/70 flex items-center gap-1.5">
                                   {isPG ? '🍱 PG Mess Base' : isHostel ? '🎓 Hostel Mess Base' : isCanteen ? '🍱 Canteen Base' : '🍲 Family Kitchen Base'}
                                 </span>
                                 <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                                  Included (₹0)
+                                  Provided · No extra grocery cost
                                 </span>
                               </div>
                               <ul className="text-[13px] font-medium text-white/80 space-y-2">
@@ -1970,7 +1970,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                                 ⚡ {addonPlannedItems.length > 0 ? 'High-Protein Fuel' : 'Mess Meal'}
                               </span>
                               <span className="text-[9px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-md border border-[#ADFF00]/20">
-                                {addonPlannedItems.length > 0 ? `₹${addonCost}` : 'Included (₹0)'}
+                                {addonPlannedItems.length > 0 ? `₹${addonCost}` : 'No extra grocery cost'}
                               </span>
                             </div>
                             <ul className="text-[13px] font-medium text-white/80 space-y-2">

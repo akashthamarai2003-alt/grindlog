@@ -153,6 +153,7 @@ export function WeightChart({
             {/* Daily vs Weekly Toggle */}
             <div className="flex items-center bg-white/5 rounded-lg p-0.5 border border-white/5 text-[10px] font-bold uppercase tracking-wider">
               <button
+                type="button"
                 onClick={() => setViewMode("daily")}
                 className={`px-2 py-1 rounded-md transition-all ${
                   viewMode === "daily" ? "bg-[#ADFF00] text-black" : "text-white/50 hover:text-white"
@@ -161,6 +162,7 @@ export function WeightChart({
                 Daily
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode("weekly")}
                 className={`px-2 py-1 rounded-md transition-all ${
                   viewMode === "weekly" ? "bg-[#ADFF00] text-black" : "text-white/50 hover:text-white"
@@ -173,6 +175,7 @@ export function WeightChart({
             {/* Focus vs Target Toggle */}
             {targetWeight && (
               <button
+                type="button"
                 onClick={() => setScaleMode(scaleMode === "focus" ? "target" : "focus")}
                 className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${
                   scaleMode === "target"

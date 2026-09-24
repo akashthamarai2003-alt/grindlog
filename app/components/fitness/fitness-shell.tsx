@@ -6,7 +6,7 @@ import { FitnessChatbot } from "./chatbot/fitness-chatbot";
 import { NavigationProvider, useInstantNav } from "./navigation-context";
 import { WorkoutInstantFallback } from "./workout/workout-instant-fallback";
 import { ProgressInstantFallback } from "./progress/progress-instant-fallback";
-import { DashboardSkeleton } from "./dashboard/dashboard-skeleton";
+import { DashboardInstantFallback } from "./dashboard/dashboard-instant-fallback";
 import NutritionLoading from "@/app/(fitness)/nutrition/loading";
 import ProfileLoading from "@/app/(fitness)/profile/loading";
 
@@ -41,9 +41,7 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
       activeSkeleton = <ProgressInstantFallback isPro={isPro} />;
     } else if (navigatingTo === "/") {
       activeSkeleton = (
-        <div className="w-full max-w-md mx-auto px-5 pt-8 pb-28">
-          <DashboardSkeleton />
-        </div>
+        <DashboardInstantFallback />
       );
     } else if (navigatingTo === "/profile") {
       activeSkeleton = <ProfileLoading />;

@@ -1375,7 +1375,7 @@ export class NutritionService {
               days_remaining: isWeeklyCooldown ? daysRemaining : 0,
               plans_used_this_month: 1,
               max_plans_per_month: 4,
-              reason: isWeeklyCooldown ? `You can generate a new weekly plan on ${formattedDate} (${daysRemaining} days remaining).` : null
+              reason: isWeeklyCooldown ? "weekly_cooldown" : null
             };
           }
         } catch (fbErr) {
