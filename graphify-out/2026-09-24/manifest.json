@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "app/app/(fitness)/nutrition/loading.tsx": {
-    "mtime": 1790182611.7131875,
-    "seen": 1790183044.4429498,
-    "ast_hash": "6c523f7e32006c9db7024a477a32bb92",
+    "mtime": 1790227854.6292007,
+    "seen": 1790227990.1628597,
+    "ast_hash": "d40031cd2711d4407c4eeb3cba9cb799",
     "semantic_hash": ""
   },
   "app/app/(fitness)/nutrition/page.tsx": {
@@ -1098,9 +1098,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-shell.tsx": {
-    "mtime": 1790182709.7283156,
-    "seen": 1790183044.4442084,
-    "ast_hash": "9c5891f2f3426d347c3f3f68035d13ff",
+    "mtime": 1790227866.9263246,
+    "seen": 1790227990.2175605,
+    "ast_hash": "e55b948c27b330c9ed73b8edbc2fde42",
     "semantic_hash": ""
   },
   "app/components/fitness/fitness-theme-provider.tsx": {

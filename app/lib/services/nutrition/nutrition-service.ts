@@ -3878,19 +3878,31 @@ function scaleServingSize(servingSize: string, scale: number): string {
         
         const itemsByType: Record<string, any[]> = {};
         const titleByType: Record<string, string> = {};
-        ALL_MEAL_TYPES.forEach(mt => { itemsByType[mt] = []; });
+        const optBTitleByType: Record<string, string> = {};
+        const optBItemsByType: Record<string, any[]> = {};
+        ALL_MEAL_TYPES.forEach(mt => { 
+          itemsByType[mt] = []; 
+          optBItemsByType[mt] = [];
+        });
 
         allItems.forEach((item: any, idx: number) => {
           const rawServing = String(item.serving_size || '');
           let targetType = '';
           let mealTitle = '';
           let actualServing = rawServing;
+          let isOptB = false;
 
           if (rawServing.includes('::')) {
             const parts = rawServing.split('::');
             targetType = parts[0]?.toLowerCase().trim();
-            mealTitle = parts[1]?.trim() || '';
-            actualServing = parts.slice(2).join('::') || parts[1] || '1 serving';
+            if (parts[1]?.toLowerCase() === 'optb') {
+              isOptB = true;
+              mealTitle = parts[2]?.trim() || '';
+              actualServing = parts.slice(3).join('::') || parts[2] || '1 serving';
+            } else {
+              mealTitle = parts[1]?.trim() || '';
+              actualServing = parts.slice(2).join('::') || parts[1] || '1 serving';
+            }
           }
 
           const isItemCore = isStapleCoreFood(item.foods?.name, fitProfile?.food_environment);
@@ -3905,11 +3917,18 @@ function scaleServingSize(servingSize: string, scale: number): string {
             } : item.foods
           };
 
-          if (targetType && itemsByType[targetType]) {
-            if (mealTitle && !titleByType[targetType]) {
-              titleByType[targetType] = mealTitle;
+          if (targetType && (itemsByType[targetType] || optBItemsByType[targetType])) {
+            if (isOptB) {
+              if (mealTitle && !optBTitleByType[targetType]) {
+                optBTitleByType[targetType] = mealTitle;
+              }
+              optBItemsByType[targetType]?.push(normalizedItem);
+            } else {
+              if (mealTitle && !titleByType[targetType]) {
+                titleByType[targetType] = mealTitle;
+              }
+              itemsByType[targetType]?.push(normalizedItem);
             }
-            itemsByType[targetType].push(normalizedItem);
           } else {
             // Fallback: heuristic categorization
             const cat = (item.foods?.category || '').toLowerCase();
@@ -3933,6 +3952,35 @@ function scaleServingSize(servingSize: string, scale: number): string {
 
         ALL_MEAL_TYPES.forEach(mType => {
           const mItems = itemsByType[mType];
+          let optBItems = optBItemsByType[mType] || [];
+          let optBName = optBTitleByType[mType] || '';
+
+          // If no Option B was stored, synthesize an authentic Option B using swap alternatives
+          if (!optBItems || optBItems.length === 0) {
+            const swapAlternatives = NutritionService.getCuratedSwapOptions(mType, fitProfile, targets, foodCatalog);
+            const altOpt = swapAlternatives[1] || swapAlternatives[0];
+            if (altOpt) {
+              optBName = altOpt.name;
+              optBItems = (altOpt.items || []).map((it: any, optIdx: number) => ({
+                id: `optb-${dailyPlan.id}-${mType}-${optIdx}`,
+                food_id: it.food_id || it.id,
+                quantity: it.quantity || 1,
+                serving_size: it.serving_size,
+                foods: {
+                  id: it.food_id || it.id,
+                  name: it.name,
+                  category: it.category || 'General',
+                  serving_size: it.serving_size,
+                  calories: it.calories,
+                  protein: it.protein,
+                  carbs: it.carbs,
+                  fat: it.fat,
+                  estimated_cost: it.estimated_cost
+                }
+              }));
+            }
+          }
+
           const mCals = mItems.reduce((acc, it) => acc + Math.round((it.foods?.calories || 0) * it.quantity), 0);
           const mPro = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.protein || 0) * it.quantity), 0).toFixed(1));
           const mCarbs = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.carbs || 0) * it.quantity), 0).toFixed(1));
@@ -3947,12 +3995,14 @@ function scaleServingSize(servingSize: string, scale: number): string {
             id: `${dailyPlan.id}-${mType}`,
             meal_type: mType,
             name: sanitizeMealTitle(mName, isProfileVegan, isProfileVegetarian, isProfileEggetarian),
+            option_b_name: optBName ? sanitizeMealTitle(optBName, isProfileVegan, isProfileVegetarian, isProfileEggetarian) : undefined,
             calories: mCals,
             protein: mPro,
             carbs: mCarbs,
             fat: mFat,
             estimated_cost: mCost,
             meal_plan_items: mItems,
+            option_b_items: optBItems,
             is_ai_generated: Boolean(dailyPlan.ai_generated),
             ai_generated: Boolean(dailyPlan.ai_generated),
             prep_instructions: NutritionService.getPrepInstructionForSlot(mType, mName, dayOfWeek, fitProfile?.food_environment, rawDietStr)
@@ -4056,11 +4106,32 @@ function scaleServingSize(servingSize: string, scale: number): string {
       // Continuous rolling 7-day plan fallback ONLY when the user actually has an active generated plan
       formattedMeals = ALL_MEAL_TYPES.map((mType) => {
         const rotating = rotatingPlans.get(mType);
-        return rotating ? {
+        if (!rotating) return null;
+        const swapOpts = NutritionService.getCuratedSwapOptions(mType, fitProfile, targets, foodCatalog);
+        const altOpt = swapOpts[1] || swapOpts[0];
+        return {
           ...rotating,
+          option_b_name: altOpt?.name || `${rotating.name} Alternative`,
+          option_b_items: (altOpt?.items || []).map((it: any, optIdx: number) => ({
+            id: `optb-rot-${mType}-${optIdx}`,
+            food_id: it.food_id || it.id,
+            quantity: it.quantity || 1,
+            serving_size: it.serving_size,
+            foods: {
+              id: it.food_id || it.id,
+              name: it.name,
+              category: it.category || 'General',
+              serving_size: it.serving_size,
+              calories: it.calories,
+              protein: it.protein,
+              carbs: it.carbs,
+              fat: it.fat,
+              estimated_cost: it.estimated_cost
+            }
+          })),
           is_natural_whole_food: true,
           has_7day_variety: true,
-        } : null;
+        };
       }).filter(Boolean);
     } else {
       // User has NOT generated a nutrition plan yet!

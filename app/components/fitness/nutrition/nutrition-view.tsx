@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Edit3, X, Check, Trash2, Sparkles, Lock, Clock } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
+import { getMealHeroPhoto } from "@/lib/utils/food-images";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
 import { TodaySummaryCard } from "./today-summary-card";
@@ -53,6 +54,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const dateCacheRef = useRef<Record<string, any>>({});
   const isInternalUpdateRef = useRef(false);
   const [swapModalOpen, setSwapModalOpen] = useState(false);
+  const [selectedMealOptions, setSelectedMealOptions] = useState<Record<string, 'A' | 'B'>>({});
   const [swapMealType, setSwapMealType] = useState<string>("breakfast");
   
   // Water debouncing refs for instantaneous zero-lag tapping
@@ -1731,14 +1733,61 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {(data?.has_active_plan || meals.length > 0) && weeklyStatus?.can_generate && isPro && (
+              <div className="bg-gradient-to-r from-[#111A10] via-[#172714] to-[#111A10] border border-[#ADFF00]/40 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_0_25px_rgba(173,255,0,0.12)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#ADFF00]/20 flex items-center justify-center shrink-0 text-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.2)]">
+                    <Sparkles size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">7-Day Cycle Finished!</h4>
+                    <p className="text-xs text-white/60">Generate a fresh AI-optimized weekly plan with new natural whole-food meal varieties.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGeneratePlan}
+                  disabled={isGenerating}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-[#ADFF00] hover:bg-[#baff22] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-[0_0_15px_rgba(173,255,0,0.3)] cursor-pointer active:scale-95"
+                >
+                  {isGenerating ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
+                  {isGenerating ? "Generating..." : "Generate Next Week"}
+                </button>
+              </div>
+            )}
+
             {meals.map((meal: any) => {
               const completed = isMealCompleted(meal.meal_type);
               const loggedFoods = foodsByMeal[String(meal.meal_type || '').toLowerCase().trim()] || [];
-              const plannedFoods = Array.isArray(meal.meal_plan_items) ? meal.meal_plan_items : [];
+              
+              const mealKey = meal.id || meal.meal_type;
+              const currentChoice = selectedMealOptions[mealKey] || 'A';
+              const hasOptionB = Boolean(meal.option_b_name && Array.isArray(meal.option_b_items) && meal.option_b_items.length > 0);
+              const isOptB = hasOptionB && currentChoice === 'B';
+
+              const currentPlannedFoods = isOptB 
+                ? meal.option_b_items 
+                : (Array.isArray(meal.meal_plan_items) ? meal.meal_plan_items : []);
+
+              const currentMealName = isOptB && meal.option_b_name 
+                ? meal.option_b_name 
+                : (meal.name || formatMealType(meal.meal_type));
+
+              const heroPhotoUrl = getMealHeroPhoto(
+                meal.meal_type, 
+                currentMealName, 
+                data?.food_type || data?.profile?.diet_preference
+              );
+
+              const currentPrepInstruction = isOptB && meal.option_b_prep_instruction 
+                ? meal.option_b_prep_instruction 
+                : meal.prep_instructions;
+
               const mealCals = Math.round(loggedFoods.reduce((acc: number, f: any) => acc + (Number(f.calories) || 0), 0));
               const mealPro = Math.round(loggedFoods.reduce((acc: number, f: any) => acc + (Number(f.protein) || 0), 0));
-              const plannedTotals = plannedFoods.reduce((totals: any, item: any) => {
+              
+              const plannedTotals = currentPlannedFoods.reduce((totals: any, item: any) => {
                 const quantity = Number(item.quantity) || 1;
                 return {
                   calories: totals.calories + Number(item.foods?.calories || 0) * quantity,
@@ -1748,13 +1797,13 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 };
               }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-              const corePlannedItems = plannedFoods.filter((it: any) => isItemCoreCheck(it));
-              const addonPlannedItems = plannedFoods.filter((it: any) => !isItemCoreCheck(it));
+              const corePlannedItems = currentPlannedFoods.filter((it: any) => isItemCoreCheck(it));
+              const addonPlannedItems = currentPlannedFoods.filter((it: any) => !isItemCoreCheck(it));
               const addonCost = addonPlannedItems.reduce((acc: number, it: any) => {
                 const itemUnitCost = getRealisticItemCost(it.foods?.name, Number(it.foods?.estimated_cost));
                 return acc + Math.round(itemUnitCost * (Number(it.quantity) || 1));
               }, 0);
-              const totalMealCost = plannedFoods.reduce((acc: number, it: any) => {
+              const totalMealCost = currentPlannedFoods.reduce((acc: number, it: any) => {
                 const isCore = isItemCoreCheck(it);
                 if (isCore) return acc;
                 const itemUnitCost = getRealisticItemCost(it.foods?.name, Number(it.foods?.estimated_cost));
@@ -1767,7 +1816,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               return (
                 <div 
                   key={meal.id} 
-                  className={`bg-[#111A10] border rounded-[24px] p-5 transition-all ${
+                  className={`bg-[#111A10] border rounded-[24px] overflow-hidden transition-all ${
                     isActive 
                       ? 'border-[#ADFF00]/60 shadow-[0_0_25px_rgba(173,255,0,0.12)] ring-1 ring-[#ADFF00]/30' 
                       : completed 
@@ -1775,320 +1824,370 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                       : 'border-white/5 opacity-90'
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                        isActive 
-                          ? 'bg-[#ADFF00] text-black font-black' 
-                          : completed 
-                          ? 'bg-[#ADFF00]/10 text-[#ADFF00]' 
-                          : 'bg-white/5 text-white/60'
-                      }`}>
-                        {getMealIcon(meal.meal_type)}
+                  {/* NutriScan-style Hero Food Photo Banner */}
+                  <div className="relative w-full h-36 sm:h-44 overflow-hidden bg-black/40">
+                    <img 
+                      src={heroPhotoUrl} 
+                      alt={currentMealName} 
+                      className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#111A10] via-[#111A10]/50 to-black/40" />
+                    
+                    {/* Top Floating Badge Bar */}
+                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-md bg-black/70 text-white border border-white/15 flex items-center gap-1.5 shadow-md">
+                          <span>{getMealIcon(meal.meal_type)}</span>
+                          <span>{formatMealType(meal.meal_type)}</span>
+                        </span>
+                        {isActive && (
+                          <span className="text-[9px] font-black text-black bg-[#ADFF00] px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(173,255,0,0.5)] animate-pulse">
+                            NOW
+                          </span>
+                        )}
+                        <span className={`${getEnvBadge().className} text-[9px] backdrop-blur-md`}>
+                          {getEnvBadge().label}
+                        </span>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-sm font-bold text-white">{formatMealType(meal.meal_type)}</h3>
-                          {isActive && (
-                            <span className="text-[9px] font-black text-black bg-[#ADFF00] px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(173,255,0,0.4)] animate-pulse">
-                              NOW
-                            </span>
-                          )}
-                          <span className={getEnvBadge().className}>
-                            {getEnvBadge().label}
-                          </span>
-                          <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/20 hidden sm:inline-flex">
-                            {getMealTiming(meal.meal_type)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-white/50 font-medium shrink-0">
-                            {completed ? 'Logged' : (meal.meal_plan_items?.length > 0 ? 'Planned' : 'Not planned yet')}
-                          </p>
-                          {meal.name && meal.name.toLowerCase() !== formatMealType(meal.meal_type).toLowerCase() && (
-                            <span className="text-xs text-white/70 font-semibold truncate max-w-[240px] sm:max-w-md" title={meal.name}>
-                              • {meal.name}
-                            </span>
-                          )}
-                        </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black backdrop-blur-md bg-black/70 text-[#ADFF00] border border-[#ADFF00]/30 shadow-md">
+                          {completed ? `${mealCals} kcal · ${mealPro}g P` : `${Math.round(plannedTotals.calories)} kcal · ${Math.round(plannedTotals.protein)}g P`}
+                        </span>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      {completed ? (
-                        <>
-                          <p className="text-sm font-black text-white">{mealCals} <span className="text-[10px] text-white/50">kcal</span></p>
-                          <p className="text-xs font-bold text-[#ADFF00]">{mealPro}g Protein</p>
-                        </>
-                      ) : plannedFoods.length > 0 ? (
-                        <>
-                          <p className="text-sm font-bold text-white/90">{Math.round(plannedTotals.calories)} <span className="text-[10px] text-white/40 font-medium">kcal</span></p>
-                          <p className="text-xs font-bold text-[#ADFF00]">{Math.round(plannedTotals.protein)}g Protein</p>
-                        </>
-                      ) : null}
+
+                    {/* Bottom Title & Whole Food Tag */}
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 backdrop-blur-sm">
+                          🌱 100% Whole Food
+                        </span>
+                        <span className="text-[10px] font-bold text-white/70 backdrop-blur-sm">
+                          {getMealTiming(meal.meal_type)}
+                        </span>
+                      </div>
+                      <h3 className="text-base sm:text-lg font-black text-white leading-tight drop-shadow-md truncate" title={currentMealName}>
+                        {currentMealName}
+                      </h3>
                     </div>
                   </div>
-                  
-                  {/* Show planned or logged foods with real-world environment grouping */}
-                  <div className="bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
-                    {loggedFoods.length > 0 ? (
-                      <ul className="text-[13px] font-medium text-white/80 space-y-2.5">
-                        {loggedFoods.map((f: any) => (
-                          <li key={f.id} className="flex justify-between items-center group">
-                            <span className="flex items-center gap-2.5 text-white/90">
-                              <FoodAvatar 
-                                name={f.foods?.name || ''} 
-                                className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
-                              />
-                              <div>
-                                <span className="font-bold block text-white/90">{f.foods?.name || 'Logged food'}</span>
-                                <span className="text-[11px] text-white/40 font-medium">{formatItemServing(f.quantity, f.foods?.serving_size, f.foods?.name)}</span>
+
+                  {/* Dual-Option Switcher (Option A vs Option B) */}
+                  {hasOptionB && !completed && (
+                    <div className="px-5 pt-3 pb-1">
+                      <div className="flex items-center bg-black/50 p-1 rounded-xl border border-white/10 shadow-inner">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMealOptions(prev => ({ ...prev, [mealKey]: 'A' }))}
+                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            !isOptB 
+                              ? 'bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.3)]' 
+                              : 'text-white/60 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          <span>Option A</span>
+                          <span className="text-[10px] font-normal lowercase opacity-80 truncate max-w-[120px]">({meal.name || 'Quick / Mess'})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMealOptions(prev => ({ ...prev, [mealKey]: 'B' }))}
+                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            isOptB 
+                              ? 'bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.3)]' 
+                              : 'text-white/60 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          <span>Option B</span>
+                          <span className="text-[10px] font-normal lowercase opacity-80 truncate max-w-[120px]">({meal.option_b_name})</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-5">
+                    {/* Status Subtitle */}
+                    <div className="flex justify-between items-center mb-3">
+                      <p className="text-xs text-white/50 font-medium">
+                        {completed ? 'Logged Foods' : (currentPlannedFoods.length > 0 ? (isOptB ? 'Option B Planned Foods' : 'Option A Planned Foods') : 'Not planned yet')}
+                      </p>
+                      <div className="text-right">
+                        {completed ? (
+                          <span className="text-xs font-bold text-[#ADFF00]">✓ Consumed</span>
+                        ) : currentPlannedFoods.length > 0 ? (
+                          <span className="text-xs text-white/50">
+                            {isOptB ? 'Alternative Recipe' : 'Primary Plan'}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Show planned or logged foods with real-world environment grouping */}
+                    <div className="bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
+                      {loggedFoods.length > 0 ? (
+                        <ul className="text-[13px] font-medium text-white/80 space-y-2.5">
+                          {loggedFoods.map((f: any) => (
+                            <li key={f.id} className="flex justify-between items-center group">
+                              <span className="flex items-center gap-2.5 text-white/90">
+                                <FoodAvatar 
+                                  name={f.foods?.name || ''} 
+                                  className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0"
+                                />
+                                <div>
+                                  <span className="font-bold block text-white/90">{f.foods?.name || 'Logged food'}</span>
+                                  <span className="text-[11px] text-white/40 font-medium">{formatItemServing(f.quantity, f.foods?.serving_size, f.foods?.name)}</span>
+                                </div>
+                              </span>
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-xs font-black text-[#ADFF00]">{Math.round(Number(f.calories) || 0)} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteFood(f.id, f.foods?.name)}
+                                  className="w-6 h-6 rounded-md bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all cursor-pointer"
+                                  title="Remove food"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
                               </div>
-                            </span>
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-xs font-black text-[#ADFF00]">{Math.round(Number(f.calories) || 0)} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteFood(f.id, f.foods?.name)}
-                                className="w-6 h-6 rounded-md bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all cursor-pointer"
-                                title="Remove food"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (plannedFoods.length > 0) ? (
-                      <div className="space-y-3">
-                        {!isICook && hasCoreAndAddon ? (
-                          <>
-                            {/* Section 1: Mess / Home Kitchen Base (provided, with no extra grocery cost) */}
-                            <div className="bg-white/[0.02] rounded-xl p-2.5 border border-white/5">
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (currentPlannedFoods.length > 0) ? (
+                        <div className="space-y-3">
+                          {!isICook && hasCoreAndAddon ? (
+                            <>
+                              {/* Section 1: Mess / Home Kitchen Base (provided, with no extra grocery cost) */}
+                              <div className="bg-white/[0.02] rounded-xl p-2.5 border border-white/5">
+                                <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-white/70 flex items-center gap-1.5">
+                                    {isPG ? '🍱 PG Mess Base' : isHostel ? '🎓 Hostel Mess Base' : isCanteen ? '🍱 Canteen Base' : '🍲 Family Kitchen Base'}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                    Provided · No extra grocery cost
+                                  </span>
+                                </div>
+                                <ul className="text-[13px] font-medium text-white/80 space-y-2">
+                                  {corePlannedItems.map((item: any) => (
+                                    <li key={item.id} className="flex justify-between items-center">
+                                      <span className="flex items-center gap-2 text-white/80">
+                                        <FoodAvatar 
+                                          name={item.foods?.name || ''} 
+                                          className="w-7 h-7 rounded-lg object-cover border border-white/10 shrink-0"
+                                        />
+                                        <div>
+                                          <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Base staple'}</span>
+                                          <span className="text-[10px] text-white/40 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
+                                        </div>
+                                      </span>
+                                      <span className="text-xs font-bold text-white/60">
+                                        {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+
+                              {/* Section 2: High-Protein Add-ons */}
+                              <div className="bg-[#ADFF00]/[0.03] rounded-xl p-2.5 border border-[#ADFF00]/25 shadow-[0_0_15px_rgba(173,255,0,0.03)]">
+                                <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-[#ADFF00]/15">
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-[#ADFF00] flex items-center gap-1.5">
+                                    ⚡ {isPG ? 'PG Protein Add-ons' : isHostel ? 'Hostel Protein Hacks' : isHome ? 'Your Fitness Add-ons' : 'Protein Add-ons'}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-md border border-[#ADFF00]/20">
+                                    ₹{addonCost} {isPG || isHostel ? 'Out of Pocket' : 'Grocery'}
+                                  </span>
+                                </div>
+                                <ul className="text-[13px] font-medium text-white/90 space-y-2">
+                                  {addonPlannedItems.map((item: any) => (
+                                    <li key={item.id} className="flex justify-between items-center">
+                                      <span className="flex items-center gap-2 text-white/90">
+                                        <FoodAvatar 
+                                          name={item.foods?.name || ''} 
+                                          className="w-7 h-7 rounded-lg object-cover border border-[#ADFF00]/30 shrink-0 shadow-[0_0_6px_rgba(173,255,0,0.15)]"
+                                        />
+                                        <div>
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="font-bold block text-xs text-white">{item.foods?.name || 'Protein booster'}</span>
+                                            {item.foods?.protein ? (
+                                              <span className="text-[9px] font-extrabold text-[#ADFF00] bg-[#ADFF00]/15 px-1.5 py-0.5 rounded border border-[#ADFF00]/30 shadow-[0_0_8px_rgba(173,255,0,0.15)]">
+                                                +{Math.round(Number(item.foods.protein) * (Number(item.quantity) || 1))}g P
+                                              </span>
+                                            ) : null}
+                                          </div>
+                                          <span className="text-[10px] text-white/50 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
+                                        </div>
+                                      </span>
+                                      <span className="text-xs font-bold text-white/80">
+                                        {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </>
+                          ) : isICook ? (
+                            /* Self-Cooked Recipe view */
+                            <div className="bg-white/[0.02] rounded-xl p-2.5 border border-emerald-500/20">
                               <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-white/70 flex items-center gap-1.5">
-                                  {isPG ? '🍱 PG Mess Base' : isHostel ? '🎓 Hostel Mess Base' : isCanteen ? '🍱 Canteen Base' : '🍲 Family Kitchen Base'}
+                                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                                  🍳 Homemade Recipe Ingredients
                                 </span>
                                 <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                                  Provided · No extra grocery cost
+                                  ₹{totalMealCost} Grocery
                                 </span>
                               </div>
                               <ul className="text-[13px] font-medium text-white/80 space-y-2">
-                                {corePlannedItems.map((item: any) => (
+                                {currentPlannedFoods.map((item: any) => (
                                   <li key={item.id} className="flex justify-between items-center">
-                                    <span className="flex items-center gap-2 text-white/80">
+                                    <span className="flex items-center gap-2.5 text-white/80">
                                       <FoodAvatar 
                                         name={item.foods?.name || ''} 
                                         className="w-7 h-7 rounded-lg object-cover border border-white/10 shrink-0"
                                       />
                                       <div>
-                                        <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Base staple'}</span>
+                                        <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Food item'}</span>
                                         <span className="text-[10px] text-white/40 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
                                       </div>
                                     </span>
-                                    <span className="text-xs font-bold text-white/60">
+                                    <span className="text-xs font-black text-white/70">
                                       {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
                                     </span>
                                   </li>
                                 ))}
                               </ul>
                             </div>
-
-                            {/* Section 2: High-Protein Add-ons */}
-                            <div className="bg-[#ADFF00]/[0.03] rounded-xl p-2.5 border border-[#ADFF00]/25 shadow-[0_0_15px_rgba(173,255,0,0.03)]">
-                              <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-[#ADFF00]/15">
+                          ) : (
+                            /* Single category (Snack, or only add-ons, or only base) */
+                            <div className="bg-white/[0.02] rounded-xl p-2.5 border border-white/5">
+                              <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-[#ADFF00] flex items-center gap-1.5">
-                                  ⚡ {isPG ? 'PG Protein Add-ons' : isHostel ? 'Hostel Protein Hacks' : isHome ? 'Your Fitness Add-ons' : 'Protein Add-ons'}
+                                  ⚡ {addonPlannedItems.length > 0 ? 'High-Protein Fuel' : 'Mess Meal'}
                                 </span>
                                 <span className="text-[9px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-md border border-[#ADFF00]/20">
-                                  ₹{addonCost} {isPG || isHostel ? 'Out of Pocket' : 'Grocery'}
+                                  {addonPlannedItems.length > 0 ? `₹${addonCost}` : 'No extra grocery cost'}
                                 </span>
                               </div>
-                              <ul className="text-[13px] font-medium text-white/90 space-y-2">
-                                {addonPlannedItems.map((item: any) => (
+                              <ul className="text-[13px] font-medium text-white/80 space-y-2">
+                                {currentPlannedFoods.map((item: any) => (
                                   <li key={item.id} className="flex justify-between items-center">
-                                    <span className="flex items-center gap-2 text-white/90">
+                                    <span className="flex items-center gap-2.5 text-white/80">
                                       <FoodAvatar 
                                         name={item.foods?.name || ''} 
-                                        className="w-7 h-7 rounded-lg object-cover border border-[#ADFF00]/30 shrink-0 shadow-[0_0_6px_rgba(173,255,0,0.15)]"
+                                        className="w-7 h-7 rounded-lg object-cover border border-white/10 shrink-0"
                                       />
                                       <div>
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="font-bold block text-xs text-white">{item.foods?.name || 'Protein booster'}</span>
-                                          {item.foods?.protein ? (
-                                            <span className="text-[9px] font-extrabold text-[#ADFF00] bg-[#ADFF00]/15 px-1.5 py-0.5 rounded border border-[#ADFF00]/30 shadow-[0_0_8px_rgba(173,255,0,0.15)]">
-                                              +{Math.round(Number(item.foods.protein) * (Number(item.quantity) || 1))}g P
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                        <span className="text-[10px] text-white/50 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
+                                        <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Food item'}</span>
+                                        <span className="text-[10px] text-white/40 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
                                       </div>
                                     </span>
-                                    <span className="text-xs font-bold text-white/80">
+                                    <span className="text-xs font-black text-white/70">
                                       {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
                                     </span>
                                   </li>
                                 ))}
                               </ul>
                             </div>
-                          </>
-                        ) : isICook ? (
-                          /* Self-Cooked Recipe view */
-                          <div className="bg-white/[0.02] rounded-xl p-2.5 border border-emerald-500/20">
-                            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                                🍳 Homemade Recipe Ingredients
-                              </span>
-                              <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                                ₹{totalMealCost} Grocery
-                              </span>
-                            </div>
-                            <ul className="text-[13px] font-medium text-white/80 space-y-2">
-                              {plannedFoods.map((item: any) => (
-                                <li key={item.id} className="flex justify-between items-center">
-                                  <span className="flex items-center gap-2.5 text-white/80">
-                                    <FoodAvatar 
-                                      name={item.foods?.name || ''} 
-                                      className="w-7 h-7 rounded-lg object-cover border border-white/10 shrink-0"
-                                    />
-                                    <div>
-                                      <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Food item'}</span>
-                                      <span className="text-[10px] text-white/40 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
-                                    </div>
-                                  </span>
-                                  <span className="text-xs font-black text-white/70">
-                                    {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : (
-                          /* Single category (Snack, or only add-ons, or only base) */
-                          <div className="bg-white/[0.02] rounded-xl p-2.5 border border-white/5">
-                            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-[#ADFF00] flex items-center gap-1.5">
-                                ⚡ {addonPlannedItems.length > 0 ? 'High-Protein Fuel' : 'Mess Meal'}
-                              </span>
-                              <span className="text-[9px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-md border border-[#ADFF00]/20">
-                                {addonPlannedItems.length > 0 ? `₹${addonCost}` : 'No extra grocery cost'}
-                              </span>
-                            </div>
-                            <ul className="text-[13px] font-medium text-white/80 space-y-2">
-                              {plannedFoods.map((item: any) => (
-                                <li key={item.id} className="flex justify-between items-center">
-                                  <span className="flex items-center gap-2.5 text-white/80">
-                                    <FoodAvatar 
-                                      name={item.foods?.name || ''} 
-                                      className="w-7 h-7 rounded-lg object-cover border border-white/10 shrink-0"
-                                    />
-                                    <div>
-                                      <span className="font-semibold block text-xs text-white/90">{item.foods?.name || 'Food item'}</span>
-                                      <span className="text-[10px] text-white/40 font-medium">{formatItemServing(item.quantity, item.foods?.serving_size, item.foods?.name)}</span>
-                                    </div>
-                                  </span>
-                                  <span className="text-xs font-black text-white/70">
-                                    {Math.round(Number(item.foods?.calories || 0) * (Number(item.quantity) || 1))} <span className="text-[9px] text-white/40 uppercase">kcal</span>
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-2 text-white/40 text-xs">
-                        {isFuture
-                          ? "No foods scheduled for this meal."
-                          : <>No foods planned yet. Tap <span className="text-[#ADFF00] font-bold">Log Meal</span> to add foods!</>
-                        }
-                      </div>
-                    )}
-                    {meal.prep_instructions && !completed && (
-                      <div className="pt-2.5 mt-2.5 border-t border-white/5 text-[11px] text-white/70 leading-relaxed bg-white/[0.02] p-2.5 rounded-xl border border-white/5 flex items-start gap-2">
-                        <span className="text-sm shrink-0">💡</span>
-                        <span>{meal.prep_instructions}</span>
-                      </div>
-                    )}
-                  </div>
-                  {!completed && plannedFoods.length > 0 && (
-                    <div className="grid grid-cols-4 gap-2 bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
-                      {[
-                        { label: 'Calories', value: Math.round(plannedTotals.calories), suffix: 'kcal', className: 'text-white' },
-                        { label: 'Fat', value: Math.round(plannedTotals.fat), suffix: 'g', className: 'text-amber-400' },
-                        { label: 'Carbs', value: Math.round(plannedTotals.carbs), suffix: 'g', className: 'text-sky-400' },
-                        { label: 'Protein', value: Math.round(plannedTotals.protein), suffix: 'g', className: 'text-[#ADFF00]' },
-                      ].map((macro) => (
-                        <div key={macro.label} className="text-center">
-                          <p className={`text-xs font-black ${macro.className}`}>{macro.value}{macro.suffix}</p>
-                          <p className="text-[9px] text-white/40">{macro.label}</p>
+                          )}
                         </div>
-                      ))}
+                      ) : (
+                        <div className="text-center py-2 text-white/40 text-xs">
+                          {isFuture
+                            ? "No foods scheduled for this meal."
+                            : <>No foods planned yet. Tap <span className="text-[#ADFF00] font-bold">Log Meal</span> to add foods!</>
+                          }
+                        </div>
+                      )}
+                      {currentPrepInstruction && !completed && (
+                        <div className="pt-2.5 mt-2.5 border-t border-white/5 text-[11px] text-white/70 leading-relaxed bg-white/[0.02] p-2.5 rounded-xl border border-white/5 flex items-start gap-2">
+                          <span className="text-sm shrink-0">💡</span>
+                          <span>{currentPrepInstruction}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="flex gap-2">
-                    {isFuture ? (
-                      <>
-                        <button 
-                          type="button"
-                          onClick={() => handleOpenSwapModal(meal.meal_type)} 
-                          className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ADFF00]/40 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center gap-1.5 cursor-pointer"
-                          title="Swap this planned meal for another recipe"
-                        >
-                          {isPro ? <RefreshCw size={14} /> : <Lock size={13} className="text-amber-400" />} 
-                          Swap
-                        </button>
-                        <div 
-                          className="flex-1 py-2.5 px-4 bg-[#121E12] border border-white/5 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/40 flex justify-center items-center gap-2 cursor-not-allowed select-none opacity-70"
-                          title="Scheduled meal for this upcoming date"
-                        >
-                          <Clock size={14} className="text-white/40" />
-                          <span>Scheduled</span>
-                        </div>
-                      </>
-                    ) : !completed ? (
-                      <>
-                        <button 
-                          type="button"
-                          onClick={() => handleOpenSwapModal(meal.meal_type)} 
-                          className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ADFF00]/40 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center gap-1.5 cursor-pointer"
-                        >
-                          {isPro ? <RefreshCw size={14} /> : <Lock size={13} className="text-amber-400" />} 
-                          Swap
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => openLogModal(meal.meal_type, meal.meal_plan_items)} 
-                          className={`flex-1 py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2 cursor-pointer ${
-                            isPro 
-                              ? "bg-[#ADFF00] hover:bg-[#baff22] text-black shadow-[0_0_15px_rgba(173,255,0,0.15)]"
-                              : "bg-white/10 hover:bg-white/15 border border-white/10 text-white/90"
-                          }`}
-                        >
-                          {!isPro && <Lock size={13} className="text-amber-400" />}
-                          Log Meal {!isPro && <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>}
-                        </button>
+                    {!completed && currentPlannedFoods.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2 bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
+                        {[
+                          { label: 'Calories', value: Math.round(plannedTotals.calories), suffix: 'kcal', className: 'text-white' },
+                          { label: 'Fat', value: Math.round(plannedTotals.fat), suffix: 'g', className: 'text-amber-400' },
+                          { label: 'Carbs', value: Math.round(plannedTotals.carbs), suffix: 'g', className: 'text-sky-400' },
+                          { label: 'Protein', value: Math.round(plannedTotals.protein), suffix: 'g', className: 'text-[#ADFF00]' },
+                        ].map((macro) => (
+                          <div key={macro.label} className="text-center">
+                            <p className={`text-xs font-black ${macro.className}`}>{macro.value}{macro.suffix}</p>
+                            <p className="text-[9px] text-white/40">{macro.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      {isFuture ? (
+                        <>
+                          <button 
+                            type="button"
+                            onClick={() => handleOpenSwapModal(meal.meal_type)} 
+                            className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ADFF00]/40 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                            title="Swap this planned meal for another recipe"
+                          >
+                            {isPro ? <RefreshCw size={14} /> : <Lock size={13} className="text-amber-400" />} 
+                            Swap
+                          </button>
+                          <div 
+                            className="flex-1 py-2.5 px-4 bg-[#121E12] border border-white/5 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/40 flex justify-center items-center gap-2 cursor-not-allowed select-none opacity-70"
+                            title="Scheduled meal for this upcoming date"
+                          >
+                            <Clock size={14} className="text-white/40" />
+                            <span>Scheduled</span>
+                          </div>
+                        </>
+                      ) : !completed ? (
+                        <>
+                          <button 
+                            type="button"
+                            onClick={() => handleOpenSwapModal(meal.meal_type)} 
+                            className="py-2.5 px-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ADFF00]/40 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                          >
+                            {isPro ? <RefreshCw size={14} /> : <Lock size={13} className="text-amber-400" />} 
+                            Swap
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => openLogModal(meal.meal_type, currentPlannedFoods)} 
+                            className={`flex-1 py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-2 cursor-pointer ${
+                              isPro 
+                                ? "bg-[#ADFF00] hover:bg-[#baff22] text-black shadow-[0_0_15px_rgba(173,255,0,0.15)]"
+                                : "bg-white/10 hover:bg-white/15 border border-white/10 text-white/90"
+                            }`}
+                          >
+                            {!isPro && <Lock size={13} className="text-amber-400" />}
+                            Log Meal {!isPro && <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>}
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => openLogModal(meal.meal_type)} 
+                            className="py-2.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center cursor-pointer"
+                            title={isPro ? "Add extra food to this meal" : "Pro Feature: Add extra food"}
+                          >
+                            {isPro ? <Plus size={14} /> : <Lock size={13} className="text-amber-400" />}
+                          </button>
+                        </>
+                      ) : (
                         <button 
                           type="button"
                           onClick={() => openLogModal(meal.meal_type)} 
-                          className="py-2.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/70 hover:text-white transition-all flex justify-center items-center cursor-pointer"
-                          title={isPro ? "Add extra food to this meal" : "Pro Feature: Add extra food"}
+                          className={`w-full py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-1.5 cursor-pointer ${
+                            isPro
+                              ? "bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/30 text-[#ADFF00]"
+                              : "bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
+                          }`}
                         >
-                          {isPro ? <Plus size={14} /> : <Lock size={13} className="text-amber-400" />}
+                          {isPro ? <Plus size={14} /> : <Lock size={13} className="text-amber-400" />} Add Food {!isPro && <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>}
                         </button>
-                      </>
-                    ) : (
-                      <button 
-                        type="button"
-                        onClick={() => openLogModal(meal.meal_type)} 
-                        className={`w-full py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all flex justify-center items-center gap-1.5 cursor-pointer ${
-                          isPro
-                            ? "bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 border border-[#ADFF00]/30 text-[#ADFF00]"
-                            : "bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
-                        }`}
-                      >
-                        {isPro ? <Plus size={14} /> : <Lock size={13} className="text-amber-400" />} Add Food {!isPro && <span className="text-[9px] text-amber-400 uppercase font-black ml-0.5">PRO</span>}
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               );

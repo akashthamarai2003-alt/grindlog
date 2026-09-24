@@ -25,6 +25,9 @@ interface RawAIMeal {
   name: string;
   prep_instruction?: string;
   items: RawAIMealItem[];
+  option_b_name?: string;
+  option_b_prep_instruction?: string;
+  option_b_items?: RawAIMealItem[];
 }
 
 interface RawAIDay {
@@ -171,6 +174,8 @@ CRITICAL USER PROFILE & STRICT CONSTRAINTS:
      * Dinner: ~${Math.round(targets.calories * (slotPercentages['dinner'] || 0.34))} kcal, ~${Math.round(targets.protein * (slotPercentages['dinner'] || 0.34))}g protein
    - Items in each meal MUST sum up to approximately that meal's target calories. Do NOT over-pack meals.
    - Do NOT repeat the exact same food item multiple times in one meal.
+   - 100% NATURAL WHOLE FOODS ONLY: NEVER recommend or include whey protein, protein powders, mass gainers, creatine, BCAAs, or chemical pills. 100% of macros must come from real whole food (Farm Eggs, Paneer, Curd/Dahi, Dals, Chana, Rajma, Soya Chunks, Chicken, Fish, Tofu, Peanuts, Oats, Bananas).
+   - DUAL-CHOICE ARCHITECTURE (OPTION A & OPTION B): Every single meal slot must provide Option A (Quick / Mess Base) and Option B (Variety / Cooked Alternative), matched to the same target calories and protein.
 
 Return ONLY valid JSON matching this schema:
 {
@@ -181,10 +186,15 @@ Return ONLY valid JSON matching this schema:
       "meals": [
         {
           "meal_type": "breakfast",
-          "name": "Title of the meal (e.g. Desi Egg Bhurji with Warm Phulkas)",
+          "name": "Option A Title (e.g. Desi Egg Bhurji with Warm Phulkas)",
           "prep_instruction": "Short, practical kitchen or kettle hack tip suited for ${userContext.environment}",
           "items": [
             { "name": "Exact whole food name", "quantity": 1, "serving_size": "portion e.g. 2 large, 2 medium, 1 bowl, 100g" }
+          ],
+          "option_b_name": "Option B Title (e.g. Besan Paneer Chilla with Mint Chutney)",
+          "option_b_prep_instruction": "Short kitchen or kettle tip for Option B",
+          "option_b_items": [
+            { "name": "Exact whole food name", "quantity": 1, "serving_size": "portion e.g. 2 pieces, 1 bowl, 100g" }
           ]
         }
       ]
@@ -296,6 +306,157 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       return foodCatalog.find(f => f.name.toLowerCase().includes('chapati') || f.name.toLowerCase().includes('rice')) || foodCatalog[0];
     };
 
+    // Safe whole-food substitution helper to ensure allergens and dietary violations are replaced with nutritious equivalents
+    const getSafeSubstituteFood = (originalName: string, diet: string, allergies: string[]): string => {
+      const orig = (originalName || '').toLowerCase();
+      const isVeganDiet = diet === 'vegan';
+      const isVegDiet = diet === 'vegetarian';
+      const isEggDiet = diet === 'eggetarian';
+      const hasEggAllergy = (allergies || []).some(a => a.toLowerCase().includes('egg'));
+      const hasDairyAllergy = (allergies || []).some(a => a.toLowerCase().includes('dairy') || a.toLowerCase().includes('milk') || a.toLowerCase().includes('lactose'));
+
+      if (orig.includes('egg')) {
+        if (hasEggAllergy || isVeganDiet) return 'Soy Chunks (Cooked)';
+        if (isVegDiet) return hasDairyAllergy ? 'Soy Chunks (Cooked)' : 'Paneer Tikka';
+        return hasDairyAllergy ? 'Soy Chunks (Cooked)' : 'Paneer Tikka';
+      }
+      if (orig.includes('paneer') || orig.includes('curd') || orig.includes('milk') || orig.includes('dahi') || orig.includes('cheese')) {
+        if (hasDairyAllergy || isVeganDiet) return 'Soy Chunks (Cooked)';
+        if (isEggDiet && !hasEggAllergy) return 'Boiled Egg';
+        return 'Dal Tadka';
+      }
+      if (orig.includes('peanut')) {
+        return 'Roasted Chana';
+      }
+      if (orig.includes('banana')) {
+        return 'Apple';
+      }
+      if (orig.includes('chicken') || orig.includes('fish') || orig.includes('meat') || orig.includes('mutton') || orig.includes('prawn')) {
+        if (isEggDiet && !hasEggAllergy) return 'Boiled Egg';
+        if (!isVeganDiet && !hasDairyAllergy) return 'Paneer Tikka';
+        return 'Soy Chunks (Cooked)';
+      }
+      if (orig.includes('soy') || orig.includes('soya')) {
+        if (isEggDiet && !hasEggAllergy) return 'Boiled Egg';
+        if (!isVeganDiet && !hasDairyAllergy) return 'Paneer Tikka';
+        return 'Moong Dal';
+      }
+      return isVeganDiet ? 'Soy Chunks (Cooked)' : (isVegDiet ? 'Dal Tadka' : 'Boiled Egg');
+    };
+
+    // Reusable item mapper that validates, substitutes, and scales items
+    const processItems = (
+      rawItems: RawAIMealItem[],
+      fallbackTitle: string,
+      slotTargetCals: number
+    ) => {
+      const sourceItems = Array.isArray(rawItems) && rawItems.length > 0 
+        ? rawItems 
+        : [{ name: fallbackTitle, quantity: 1, serving_size: '1 serving' }];
+
+      const mapped = sourceItems.map(item => {
+        let fName = sanitizeAIItemName(item.name, isVegan, isVegetarian, isEggetarian);
+
+        // Pre-calibration safe dietary and allergen check
+        const allergyCheck = NutritionValidationEngine.validateAllergiesAndDislikes(
+          fName, userContext.allergies, userContext.dislikedFoods, userContext.avoidedFoods
+        );
+        const dietCheck = NutritionValidationEngine.validateDiet(fName, userContext.diet);
+
+        if (!allergyCheck.valid || !dietCheck.valid) {
+          fName = getSafeSubstituteFood(fName, userContext.diet, userContext.allergies);
+        }
+
+        let ref = findFoodReference(fName, foodCatalog, profile?.food_environment);
+        if (!ref) {
+          ref = findFallbackFood(fName);
+        }
+
+        let qty = Number(item.quantity) || 1;
+        const rawServing = String(item.serving_size || '').toLowerCase();
+        if (qty >= 10 || rawServing.includes('gram') || rawServing === 'g' || rawServing.includes('ml')) {
+          if (ref?.serving_size) {
+            const numInRef = Number(ref.serving_size.match(/(\d+(?:\.\d+)?)\s*(?:g|ml)/i)?.[1]);
+            if (numInRef && numInRef > 0 && qty >= 10) {
+              qty = Math.max(0.5, Math.min(3, Number((qty / numInRef).toFixed(1))));
+            } else {
+              qty = 1;
+            }
+          } else {
+            qty = 1;
+          }
+        }
+        qty = Math.min(4, Math.max(0.25, qty));
+
+        const sSize = (item.serving_size && !['grams', 'g', 'ml'].includes(rawServing))
+          ? item.serving_size
+          : (ref?.serving_size || '1 serving');
+
+        const defCals = fName.toLowerCase().includes('egg') ? 78 : (fName.toLowerCase().includes('banana') ? 105 : 150);
+        const defPro = fName.toLowerCase().includes('egg') ? 6.3 : 5;
+
+        const baseCals = Math.round(Number(ref?.calories || defCals) * qty);
+        const basePro = Number((Number(ref?.protein || defPro) * qty).toFixed(1));
+        const baseCarbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
+        const baseFat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
+        const isItemCore = isStapleCoreFood(fName, profile?.food_environment);
+        const unitCost = isItemCore ? 0 : getRealisticFoodCost(fName, Number(ref?.estimated_cost));
+        const baseCost = isItemCore ? 0 : Math.round(unitCost * qty);
+
+        return {
+          food_id: ref?.id,
+          name: ref?.name || fName,
+          serving_size: sSize,
+          quantity: qty,
+          calories: baseCals,
+          protein: basePro,
+          carbs: baseCarbs,
+          fat: baseFat,
+          estimated_cost: baseCost,
+          isItemCore
+        };
+      });
+
+      // Deduplicate
+      const deduped: typeof mapped = [];
+      const seenKeys = new Set<string>();
+      mapped.forEach(it => {
+        const key = it.food_id || it.name.toLowerCase();
+        if (seenKeys.has(key)) {
+          const existing = deduped.find(e => (e.food_id || e.name.toLowerCase()) === key);
+          if (existing) {
+            existing.quantity = Math.min(3, existing.quantity + it.quantity);
+            existing.calories += it.calories;
+            existing.protein = Number((existing.protein + it.protein).toFixed(1));
+            existing.carbs = Number((existing.carbs + it.carbs).toFixed(1));
+            existing.fat = Number((existing.fat + it.fat).toFixed(1));
+          }
+        } else {
+          seenKeys.add(key);
+          deduped.push({ ...it });
+        }
+      });
+
+      // Scale if deviating from target calories by > 15%
+      let mealCals = deduped.reduce((sum, it) => sum + it.calories, 0);
+      if (mealCals > 0 && Math.abs(mealCals - slotTargetCals) > (slotTargetCals * 0.15)) {
+        const scaleFactor = Math.max(0.4, Math.min(1.8, slotTargetCals / mealCals));
+        deduped.forEach(it => {
+          const isDiscrete = /(?:egg|banana|apple)/i.test(it.name);
+          if (!isDiscrete) {
+            it.quantity = Math.max(0.2, Number(((it.quantity || 1) * scaleFactor).toFixed(1)));
+            it.calories = Math.round(it.calories * scaleFactor);
+            it.protein = Number((it.protein * scaleFactor).toFixed(1));
+            it.carbs = Number((it.carbs * scaleFactor).toFixed(1));
+            it.fat = Number((it.fat * scaleFactor).toFixed(1));
+            it.estimated_cost = Math.round(it.estimated_cost * scaleFactor);
+          }
+        });
+      }
+
+      return deduped;
+    };
+
     // 6. Build Master Day Schedules with Verified Nutrition Math
     const daySchedules = aiPlan.days.map((d, dIdx) => {
       const meals = d.meals.map(m => {
@@ -304,144 +465,63 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         const slotTargetCals = Math.round(targets.calories * slotPct);
         const slotTargetPro = Number((targets.protein * slotPct).toFixed(1));
 
-        // Sanitize title
+        // Sanitize titles
         const cleanedTitle = sanitizeMealTitle(m.name, isVegan, isVegetarian, isEggetarian);
+        const cleanedOptBTitle = m.option_b_name ? sanitizeMealTitle(m.option_b_name, isVegan, isVegetarian, isEggetarian) : undefined;
 
-        // Map food items
-        const rawItems = Array.isArray(m.items) && m.items.length > 0 ? m.items : [{ name: cleanedTitle, quantity: 1, serving_size: '1 serving' }];
+        // Process Option A items
+        const processedItems = processItems(m.items, cleanedTitle, slotTargetCals);
 
-        const processedItems = rawItems.map(item => {
-          let fName = sanitizeAIItemName(item.name, isVegan, isVegetarian, isEggetarian);
-          let ref = findFoodReference(fName, foodCatalog, profile?.food_environment);
-          if (!ref) {
-            ref = findFallbackFood(fName);
+        // Process Option B items (if missing, generate from swap alternatives)
+        let processedOptBItems: typeof processedItems = [];
+        let finalOptBTitle = cleanedOptBTitle;
+
+        if (Array.isArray(m.option_b_items) && m.option_b_items.length > 0) {
+          processedOptBItems = processItems(m.option_b_items, finalOptBTitle || `${cleanedTitle} Alternative`, slotTargetCals);
+        } else {
+          const swapAlternatives = NutritionService.getCuratedSwapOptions(mType, profile, targets, foodCatalog);
+          const altOpt = swapAlternatives[1] || swapAlternatives[0];
+          if (altOpt) {
+            finalOptBTitle = altOpt.name;
+            processedOptBItems = (altOpt.items || []).map((it: any) => ({
+              food_id: it.food_id || it.id,
+              name: it.name,
+              serving_size: it.serving_size,
+              quantity: it.quantity || 1,
+              calories: it.calories,
+              protein: it.protein,
+              carbs: it.carbs,
+              fat: it.fat,
+              estimated_cost: it.estimated_cost,
+              isItemCore: it.is_core ?? isStapleCoreFood(it.name, profile?.food_environment)
+            }));
           }
-
-          let qty = Number(item.quantity) || 1;
-          const rawServing = String(item.serving_size || '').toLowerCase();
-          // Guard against AI returning grams/ml as quantity (e.g. quantity: 100, serving_size: "grams")
-          if (qty >= 10 || rawServing.includes('gram') || rawServing === 'g' || rawServing.includes('ml')) {
-            if (ref?.serving_size) {
-              const numInRef = Number(ref.serving_size.match(/(\d+(?:\.\d+)?)\s*(?:g|ml)/i)?.[1]);
-              if (numInRef && numInRef > 0 && qty >= 10) {
-                qty = Math.max(0.5, Math.min(3, Number((qty / numInRef).toFixed(1))));
-              } else {
-                qty = 1;
-              }
-            } else {
-              qty = 1;
-            }
-          }
-          qty = Math.min(4, Math.max(0.25, qty));
-
-          const sSize = (item.serving_size && !['grams', 'g', 'ml'].includes(rawServing))
-            ? item.serving_size
-            : (ref?.serving_size || '1 serving');
-
-          const defCals = fName.toLowerCase().includes('egg') ? 78 : (fName.toLowerCase().includes('banana') ? 105 : 150);
-          const defPro = fName.toLowerCase().includes('egg') ? 6.3 : 5;
-
-          const baseCals = Math.round(Number(ref?.calories || defCals) * qty);
-          const basePro = Number((Number(ref?.protein || defPro) * qty).toFixed(1));
-          const baseCarbs = Number((Number(ref?.carbs || 15) * qty).toFixed(1));
-          const baseFat = Number((Number(ref?.fat || 3) * qty).toFixed(1));
-          const isItemCore = isStapleCoreFood(fName, profile?.food_environment);
-          const unitCost = isItemCore ? 0 : getRealisticFoodCost(fName, Number(ref?.estimated_cost));
-          const baseCost = isItemCore ? 0 : Math.round(unitCost * qty);
-
-          return {
-            food_id: ref?.id,
-            name: ref?.name || fName,
-            serving_size: sSize,
-            quantity: qty,
-            calories: baseCals,
-            protein: basePro,
-            carbs: baseCarbs,
-            fat: baseFat,
-            estimated_cost: baseCost,
-            isItemCore
-          };
-        });
-
-        // Deduplicate any repeated food references in the same meal
-        const dedupedItems: typeof processedItems = [];
-        const seenFoodKeys = new Set<string>();
-        processedItems.forEach(it => {
-          const key = it.food_id || it.name.toLowerCase();
-          if (seenFoodKeys.has(key)) {
-            const existing = dedupedItems.find(e => (e.food_id || e.name.toLowerCase()) === key);
-            if (existing) {
-              existing.quantity = Math.min(3, existing.quantity + it.quantity);
-              existing.calories += it.calories;
-              existing.protein = Number((existing.protein + it.protein).toFixed(1));
-              existing.carbs = Number((existing.carbs + it.carbs).toFixed(1));
-              existing.fat = Number((existing.fat + it.fat).toFixed(1));
-            }
-          } else {
-            seenFoodKeys.add(key);
-            dedupedItems.push({ ...it });
-          }
-        });
-
-        // Compute total meal macros
-        let mealCals = dedupedItems.reduce((sum, it) => sum + it.calories, 0);
-
-        // Scale non-discrete items proportionally if meal calories deviate from slot target by > 15%
-        if (mealCals > 0 && Math.abs(mealCals - slotTargetCals) > (slotTargetCals * 0.15)) {
-          const scaleFactor = Math.max(0.4, Math.min(1.8, slotTargetCals / mealCals));
-          dedupedItems.forEach(it => {
-            const isDiscrete = /(?:egg|banana|apple)/i.test(it.name);
-            if (!isDiscrete) {
-              it.quantity = Math.max(0.2, Number(((it.quantity || 1) * scaleFactor).toFixed(1)));
-              it.calories = Math.round(it.calories * scaleFactor);
-              it.protein = Number((it.protein * scaleFactor).toFixed(1));
-              it.carbs = Number((it.carbs * scaleFactor).toFixed(1));
-              it.fat = Number((it.fat * scaleFactor).toFixed(1));
-              it.estimated_cost = Math.round(it.estimated_cost * scaleFactor);
-            }
-          });
         }
 
-        const finalMealCals = dedupedItems.reduce((sum, it) => sum + it.calories, 0);
-        const finalMealPro = Number(dedupedItems.reduce((sum, it) => sum + it.protein, 0).toFixed(1));
-        const finalMealCarbs = Number(dedupedItems.reduce((sum, it) => sum + it.carbs, 0).toFixed(1));
-        const finalMealFat = Number(dedupedItems.reduce((sum, it) => sum + it.fat, 0).toFixed(1));
-        const finalMealCost = dedupedItems.reduce((sum, it) => sum + it.estimated_cost, 0);
+        const finalMealCals = processedItems.reduce((sum, it) => sum + it.calories, 0);
+        const finalMealPro = Number(processedItems.reduce((sum, it) => sum + it.protein, 0).toFixed(1));
+        const finalMealCarbs = Number(processedItems.reduce((sum, it) => sum + it.carbs, 0).toFixed(1));
+        const finalMealFat = Number(processedItems.reduce((sum, it) => sum + it.fat, 0).toFixed(1));
+        const finalMealCost = processedItems.reduce((sum, it) => sum + it.estimated_cost, 0);
 
         return {
           meal_type: mType,
           name: cleanedTitle,
+          option_b_name: finalOptBTitle,
           prep_instructions: m.prep_instruction || NutritionService.getPrepInstructionForSlot(mType, cleanedTitle, dIdx, profile?.food_environment, combinedDiet),
+          option_b_prep_instruction: m.option_b_prep_instruction || '',
           calories: finalMealCals || slotTargetCals,
           protein: finalMealPro || slotTargetPro,
           carbs: finalMealCarbs,
           fat: finalMealFat,
           estimated_cost: finalMealCost,
-          items: dedupedItems
+          items: processedItems,
+          option_b_items: processedOptBItems
         };
       });
 
-      // Calibrate meals strictly against the user's targets and budget before saving
+      // Calibrate meals strictly against user's targets and budget (safe from allergen drops)
       const calibratedDayMeals = calibrateMealsToTargets(meals, targets, profile);
-
-      // Validate each meal item against diet, allergens, and dislikes (Fix #2: was imported but never called)
-      for (const meal of calibratedDayMeals) {
-        const itemsArr = meal.meal_plan_items || meal.items || [];
-        const validItems = itemsArr.filter((item: any) => {
-          const foodName = item.foods?.name || item.name || '';
-          // Diet check
-          const dietResult = NutritionValidationEngine.validateDiet(foodName, userContext.diet);
-          if (!dietResult.valid) return false;
-          // Allergen/dislike check
-          const allergyResult = NutritionValidationEngine.validateAllergiesAndDislikes(
-            foodName, userContext.allergies, userContext.dislikedFoods, userContext.avoidedFoods
-          );
-          if (!allergyResult.valid) return false;
-          return true;
-        });
-        meal.meal_plan_items = validItems;
-        meal.items = validItems;
-      }
 
       return {
         day_number: d.day_number || (dIdx + 1),
@@ -493,7 +573,19 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           allDayItems.push({
             ...it,
             meal_type: m.meal_type,
-            meal_name: m.name
+            meal_name: m.name,
+            is_option_b: false
+          });
+        });
+
+        const optBItems = m.option_b_items || [];
+        optBItems.forEach((it: any) => {
+          allDayItems.push({
+            ...it,
+            meal_type: m.meal_type,
+            meal_name: m.name,
+            is_option_b: true,
+            option_b_name: m.option_b_name || `${m.name} Alternative`
           });
         });
       });
@@ -538,11 +630,14 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           ? rawId
           : (findFallbackFood(it.name)?.id || foodCatalog.find(f => f.name.toLowerCase().includes((it.name || '').toLowerCase().split(' ')[0]))?.id || foodCatalog[0]?.id);
         if (resolvedFoodId) {
+          const servingStr = it.is_option_b
+            ? `${it.meal_type}::optb::${it.option_b_name}::${it.serving_size || '1 serving'}`
+            : `${it.meal_type}::${it.meal_name}::${it.serving_size || '1 serving'}`;
           mealPlanItemsRows.push({
             meal_plan_id: plan.id,
             food_id: resolvedFoodId,
             quantity: it.quantity || 1,
-            serving_size: `${it.meal_type}::${it.meal_name}::${it.serving_size || '1 serving'}`
+            serving_size: servingStr
           });
         }
       });
