@@ -2019,12 +2019,10 @@ export class NutritionService {
     }
 
     const execLog = async (): Promise<any[]> => {
-      const supabase = await createServerSupabase();
-      const { data: fitProfile } = await supabase
-        .from('fitness_os_profiles')
-        .select('food_environment')
-        .eq('user_id', userId)
-        .maybeSingle();
+      // This method is called by the authenticated Pro-only API route. Use the
+      // server client for all batch writes so plan items hidden by food RLS can
+      // still be resolved and logged as the verified user.
+      const adminClient = createAdminClient();
 
       const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -2033,18 +2031,24 @@ export class NutritionService {
         .map(it => it.food_id)
         .filter((id): id is string => Boolean(id && UUID_REGEX.test(id)));
 
-      let foodsById = new Map<string, any>();
-      if (validUuids.length > 0) {
-        const { data: dbFoods } = await supabase
-          .from('foods')
-          .select('*')
-          .in('id', validUuids);
-        if (dbFoods) {
-          dbFoods.forEach(f => foodsById.set(f.id, f));
-        }
-      }
+      // The meal plan can reference inactive custom foods, which the user's RLS
+      // catalog query hides. Resolve them in one admin lookup, parallel with
+      // timezone and profile, instead of falling back to a query per item.
+      const [profileResult, foodsResult, tz] = await Promise.all([
+        adminClient.from('fitness_os_profiles')
+          .select('food_environment')
+          .eq('user_id', userId)
+          .maybeSingle(),
+        validUuids.length > 0
+          ? adminClient.from('foods').select('*').in('id', validUuids)
+          : Promise.resolve({ data: [] as any[], error: null }),
+        NutritionService.getUserTimezone(userId),
+      ]);
+      if (foodsResult.error) throw foodsResult.error;
+      const fitProfile = profileResult.data;
+      const foodsById = new Map<string, any>();
+      (foodsResult.data || []).forEach((food: any) => foodsById.set(food.id, food));
 
-      let adminClient: any = null;
       const logsToInsert: any[] = [];
 
       for (const item of items) {
@@ -2068,9 +2072,6 @@ export class NutritionService {
         ).trim();
 
         if (!food && candidateName) {
-          if (!adminClient) {
-            adminClient = require('@/lib/services/supabase/admin').createAdminClient();
-          }
           const { data: existingByName } = await adminClient
             .from('foods')
             .select('*')
@@ -2085,61 +2086,42 @@ export class NutritionService {
         }
 
         if (!food && item.custom_food) {
-          if (!adminClient) {
-            adminClient = require('@/lib/services/supabase/admin').createAdminClient();
-          }
-
           const foodName = (item.custom_food.name || candidateName || 'Custom Food').trim();
-          const { data: existing } = await adminClient
+          const { data: newFood, error: newFoodErr } = await adminClient
             .from('foods')
-            .select('*')
-            .ilike('name', foodName)
-            .limit(1)
+            .insert({
+              name: foodName,
+              category: item.custom_food.category || item.meal_type || 'meal',
+              serving_size: (item.custom_food as any).serving_size || '1 serving',
+              calories: Number(item.custom_food.calories) || 0,
+              protein: Number(item.custom_food.protein) || 0,
+              carbs: Number(item.custom_food.carbs) || 0,
+              fat: Number(item.custom_food.fat) || 0,
+              estimated_cost: Number(item.custom_food.estimated_cost) || 0,
+              is_active: false
+            })
+            .select()
             .maybeSingle();
 
-          if (existing) {
-            food = existing;
-            finalFoodId = existing.id;
-          } else {
-            const { data: newFood, error: newFoodErr } = await adminClient
+          if (newFood) {
+            food = newFood;
+            finalFoodId = newFood.id;
+          } else if (newFoodErr?.code === '23505') {
+            const { data: dupFood } = await adminClient
               .from('foods')
-              .insert({
-                name: foodName,
-                category: item.custom_food.category || item.meal_type || 'meal',
-                serving_size: (item.custom_food as any).serving_size || '1 serving',
-                calories: Number(item.custom_food.calories) || 0,
-                protein: Number(item.custom_food.protein) || 0,
-                carbs: Number(item.custom_food.carbs) || 0,
-                fat: Number(item.custom_food.fat) || 0,
-                estimated_cost: Number(item.custom_food.estimated_cost) || 0,
-                is_active: false
-              })
-              .select()
+              .select('*')
+              .ilike('name', foodName)
+              .limit(1)
               .maybeSingle();
-
-            if (newFood) {
-              food = newFood;
-              finalFoodId = newFood.id;
-            } else if (newFoodErr?.code === '23505') {
-              const { data: dupFood } = await adminClient
-                .from('foods')
-                .select('*')
-                .ilike('name', foodName)
-                .limit(1)
-                .maybeSingle();
-              if (dupFood) {
-                food = dupFood;
-                finalFoodId = dupFood.id;
-              }
+            if (dupFood) {
+              food = dupFood;
+              finalFoodId = dupFood.id;
             }
           }
         }
 
         if (!food) {
           // Fallback food to guarantee foreign key validity while preserving macros
-          if (!adminClient) {
-            adminClient = require('@/lib/services/supabase/admin').createAdminClient();
-          }
           const foodName = (candidateName || (item as any).name || 'Meal Item').trim();
           const fbCals = item.custom_food?.calories ?? (item as any).calories ?? 0;
           const fbPro = item.custom_food?.protein ?? (item as any).protein ?? 0;
@@ -2224,15 +2206,15 @@ export class NutritionService {
       if (logsToInsert.length === 0) return [];
 
       // Idempotency & Deduplication: Check existing food_logs for this user on this local date
-      const tz = await NutritionService.getUserTimezone(userId);
       const { start, end } = await NutritionService.getLocalDateBoundaries(userId, tz);
 
-      const { data: existingLogs } = await supabase
+      const { data: existingLogs, error: existingLogsError } = await adminClient
         .from('food_logs')
         .select('*, foods(*)')
         .eq('user_id', userId)
         .gte('logged_at', start)
         .lte('logged_at', end);
+      if (existingLogsError) throw existingLogsError;
 
       const finalLogs: any[] = [];
       const newInserts: any[] = [];
@@ -2249,7 +2231,7 @@ export class NutritionService {
 
         if (existing) {
           // Update existing row in-place instead of creating a duplicate row!
-          const { data: updated } = await supabase
+          const { data: updated, error: updateError } = await adminClient
             .from('food_logs')
             .update({
               quantity: newLog.quantity,
@@ -2262,15 +2244,15 @@ export class NutritionService {
             .eq('id', existing.id)
             .select('*, foods(*)')
             .maybeSingle();
-
-          finalLogs.push(updated || existing);
+          if (updateError || !updated) throw updateError || new Error('Could not update the logged food.');
+          finalLogs.push(updated);
         } else {
           newInserts.push(newLog);
         }
       }
 
       if (newInserts.length > 0) {
-        const { data: insertedLogs, error: logErr } = await supabase
+        const { data: insertedLogs, error: logErr } = await adminClient
           .from('food_logs')
           .insert(newInserts)
           .select('*, foods(*)');
@@ -3699,14 +3681,14 @@ function scaleServingSize(servingSize: string, scale: number): string {
     });
   }
 
-  static async getTodaySummaryAndDetails(userId: string, targetDateStr?: string) {
+  static async getTodaySummaryAndDetails(userId: string, targetDateStr?: string, forceRefresh = false) {
     const cache = getGlobalNutritionCache();
     const cacheKey = `full_${userId}_${targetDateStr || 'today'}`;
     const cached = cache.get(cacheKey);
     const now = Date.now();
 
     // 30-second server cache: return in 0ms if visited recently
-    if (cached && (now - cached.timestamp < 30_000)) {
+    if (!forceRefresh && cached && (now - cached.timestamp < 30_000)) {
       return cached.data;
     }
 

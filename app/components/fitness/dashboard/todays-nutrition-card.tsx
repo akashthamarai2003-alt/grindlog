@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Utensils, ArrowRight, CheckCircle2, Circle, Flame, Sparkles } from "lucide-react";
+import { Utensils, ArrowRight, CheckCircle2, Circle, Flame, Sparkles, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { nutritionApi, nutritionClientCache } from "@/lib/api/nutrition";
@@ -106,6 +106,7 @@ export function TodaysNutritionCard({
 }: TodaysNutritionCardProps) {
   const pendingMealRef = useRef(false);
   const [pendingMealType, setPendingMealType] = useState<string | null>(null);
+  const [mealActionError, setMealActionError] = useState<{ mealType: string; message: string } | null>(null);
   const effectiveUserId = userId || nutrition?.user_id || "";
 
   // The dashboard and Nutrition page must address the same user's local date.
@@ -350,6 +351,7 @@ export function TodaysNutritionCard({
     const typeKey = String(meal.meal_type || 'lunch').toLowerCase().trim();
     pendingMealRef.current = true;
     setPendingMealType(typeKey);
+    setMealActionError(null);
 
     try {
       let confirmedLogs: any[] = [];
@@ -430,21 +432,28 @@ export function TodaysNutritionCard({
         };
       });
 
-      try {
-        const fresh = await nutritionApi.getToday(effectiveDate);
+      nutritionApi.getToday(effectiveDate, true).then((fresh) => {
         const freshHasMeal = Array.isArray(fresh?.logged_foods) && fresh.logged_foods.some(
           (entry: any) => String(entry.meal_type || "").toLowerCase().trim() === typeKey
         );
         if (fresh && freshHasMeal === !alreadyDone) setActiveNutrition(fresh);
-      } catch (refreshError) {
+      }).catch((refreshError) => {
         console.warn("Meal saved, but nutrition refresh failed:", refreshError);
-      }
+      });
       nutritionClientCache.notifyUpdated();
       toast.success(alreadyDone ? `Unlogged ${meal.name}` : `Logged ${meal.name}!`);
-    } catch (err) {
+    } catch (err: any) {
       console.warn("Could not update meal log:", err);
-      toast.error("Could not update this meal. Please try again.");
-      await refreshNutrition();
+      const message = err?.code === "PRO_REQUIRED"
+        ? "Meal logging requires an active Pro plan."
+        : err?.code === "UNAUTHORIZED"
+        ? "Your session expired. Please sign in again."
+        : err instanceof TypeError
+        ? "Connection problem. Please check your internet and retry."
+        : "Meal could not be saved. Please retry.";
+      setMealActionError({ mealType: typeKey, message });
+      toast.error(message);
+      void refreshNutrition();
     } finally {
       pendingMealRef.current = false;
       setPendingMealType(null);
@@ -645,6 +654,9 @@ export function TodaysNutritionCard({
             <div className="divide-y divide-white/5">
               {meals.map((meal: any) => {
                 const isCompleted = isMealDone(meal);
+                const mealTypeKey = String(meal.meal_type || "").toLowerCase().trim();
+                const isSaving = pendingMealType === mealTypeKey;
+                const actionError = mealActionError?.mealType === mealTypeKey ? mealActionError.message : null;
 
                 return (
                   <div
@@ -662,11 +674,13 @@ export function TodaysNutritionCard({
                     aria-pressed={isSelectedToday ? isCompleted : undefined}
                     className={`flex items-start gap-3 p-3.5 transition-all duration-200 select-none ${
                       isCompleted ? "bg-[#ADFF00]/[0.04]" : isSelectedToday ? "hover:bg-white/[0.03]" : ""
-                    } ${isSelectedToday ? "cursor-pointer" : "cursor-default"} ${pendingMealType === meal.meal_type ? "opacity-60" : ""}`}
+                    } ${isSelectedToday ? "cursor-pointer" : "cursor-default"} ${isSaving ? "opacity-70" : ""}`}
                   >
                     {/* Checkbox Icon */}
                     <div className="shrink-0 mt-0.5">
-                      {isCompleted ? (
+                      {isSaving ? (
+                        <Loader2 className="w-5 h-5 text-[#ADFF00] animate-spin" aria-label="Saving meal" />
+                      ) : isCompleted ? (
                         <CheckCircle2 className="w-5 h-5 text-[#ADFF00] drop-shadow-[0_0_8px_rgba(173,255,0,0.5)]" />
                       ) : (
                         <Circle className="w-5 h-5 text-white/20 hover:text-white/40 transition-colors" />
@@ -684,6 +698,11 @@ export function TodaysNutritionCard({
                           >
                             {meal.name}
                           </span>
+                          {isSaving && (
+                            <span className="text-[10px] font-bold text-[#ADFF00]" aria-live="polite">
+                              {isCompleted ? "Removing..." : "Saving..."}
+                            </span>
+                          )}
                           {meal.time && (
                             <span className="text-[10px] font-semibold text-white/40 bg-white/5 px-1.5 py-0.5 rounded border border-white/5 shrink-0">
                               {meal.time}
@@ -737,6 +756,11 @@ export function TodaysNutritionCard({
                         <p className="text-[10px] text-white/40 mt-1.5 italic flex items-center gap-1">
                           <Sparkles className="w-3 h-3 text-[#ADFF00]/70 shrink-0" />
                           <span className="truncate">{meal.instructions}</span>
+                        </p>
+                      )}
+                      {actionError && !isSaving && (
+                        <p className="mt-2 text-[11px] font-semibold text-red-400" role="alert">
+                          {actionError}
                         </p>
                       )}
                     </div>

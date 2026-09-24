@@ -18,8 +18,9 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date') || undefined;
+    const forceRefresh = searchParams.get('fresh') === '1';
 
-    const data = await NutritionService.getTodaySummaryAndDetails(user.id, dateParam);
+    const data = await NutritionService.getTodaySummaryAndDetails(user.id, dateParam, forceRefresh);
     
     return NextResponse.json(
       { success: true, data },

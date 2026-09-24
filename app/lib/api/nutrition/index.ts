@@ -103,8 +103,8 @@ export const nutritionClientCache = {
 };
 
 export const nutritionApi = {
-  async getToday(date?: string) {
-    const url = `/api/nutrition/today?t=${Date.now()}${date ? `&date=${encodeURIComponent(date)}` : ''}`;
+  async getToday(date?: string, forceRefresh = false) {
+    const url = `/api/nutrition/today?t=${Date.now()}${date ? `&date=${encodeURIComponent(date)}` : ''}${forceRefresh ? '&fresh=1' : ''}`;
     const res = await fetch(url);
     const json = await res.json();
     if (!res.ok) throw json.error;
