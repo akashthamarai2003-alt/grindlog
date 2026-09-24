@@ -1,7 +1,8 @@
 import { createServerSupabase, getCachedFitnessProfile } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { calculateTargets } from "@/lib/fitness/nutrition/nutrition-engine";
-import { calculateDailyBudget, resolveMealSlots } from "@/lib/fitness/nutrition/user-context";
+import { calculateDailyBudget, normalizeDietType, parseStringList, resolveMealSlots } from "@/lib/fitness/nutrition/user-context";
+import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
 import { cache } from "react";
 
 interface NutritionServerCacheEntry {
@@ -226,6 +227,13 @@ export function calibrateMealsToTargets(
   const isNonVeg = !isVegan && (dietStr.includes('non') || dietStr.includes('meat') || dietStr.includes('chicken') || dietStr.includes('fish'));
   const isEggetarian = !isVegan && !isNonVeg && (dietStr.includes('egg') || dietStr.includes('eggetarian'));
   const isVegetarian = !isVegan && !isNonVeg && !isEggetarian;
+  const normalizedDiet = normalizeDietType(profile?.diet_preference, profile?.food_type);
+  const allergies = parseStringList(profile?.food_allergies);
+  const disliked = parseStringList(profile?.foods_disliked);
+  const avoided = parseStringList(profile?.foods_avoided);
+  const isAllowedFoodName = (name: string) =>
+    NutritionValidationEngine.validateDiet(name, normalizedDiet).valid &&
+    NutritionValidationEngine.validateAllergiesAndDislikes(name, allergies, disliked, avoided).valid;
 
   const mealsPerDay = profile?.meals_per_day || (meals.length === 3 ? '3 meals' : (meals.length === 2 ? '2 meals' : (meals.length >= 5 ? '5+ meals' : '4 meals')));
   const slotInfo = resolveMealSlots(mealsPerDay);
@@ -501,6 +509,8 @@ export function calibrateMealsToTargets(
           }
         }
 
+        // Macro top-ups must never introduce a food excluded during onboarding.
+        if (!isAllowedFoodName(addOnFood.name)) continue;
         const isCore = isStapleCoreFood(addOnFood.name, profile?.food_environment);
         const unitCost = isCore ? 0 : getRealisticFoodCost(addOnFood.name, addOnFood.estimated_cost);
 
@@ -824,6 +834,7 @@ export function calibrateMealsToTargets(
         }
       }
 
+      if (!isAllowedFoodName(addOnFood.name)) continue;
       const isCore = isStapleCoreFood(addOnFood.name, profile?.food_environment);
       const unitCost = isCore ? 0 : getRealisticFoodCost(addOnFood.name, addOnFood.estimated_cost);
 
@@ -1311,7 +1322,6 @@ export interface WeeklyPlanEligibility {
 
 // Concurrency & debounce locks to prevent duplicate meal logging on rapid clicks
 const mealLogInFlight = new Map<string, Promise<any[]>>();
-const mealLogDebounce = new Map<string, { timestamp: number; result: any[] }>();
 
 export class NutritionService {
   
@@ -2008,11 +2018,6 @@ export class NutritionService {
       return inFlight;
     }
 
-    const debounced = mealLogDebounce.get(lockKey);
-    if (debounced && Date.now() - debounced.timestamp < 3500) {
-      return debounced.result;
-    }
-
     const execLog = async (): Promise<any[]> => {
       const supabase = await createServerSupabase();
       const { data: fitProfile } = await supabase
@@ -2292,7 +2297,6 @@ export class NutritionService {
     mealLogInFlight.set(lockKey, promise);
     try {
       const result = await promise;
-      mealLogDebounce.set(lockKey, { timestamp: Date.now(), result });
       return result;
     } finally {
       mealLogInFlight.delete(lockKey);

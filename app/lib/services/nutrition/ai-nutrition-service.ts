@@ -97,6 +97,15 @@ export class AINutritionService {
 
     // 3. Normalized User Context & Classifications
     const userContext = buildNutritionUserContext(profile, targets, userId);
+    const isAllowedFoodName = (name: string) =>
+      NutritionValidationEngine.validateDiet(name, userContext.diet).valid &&
+      NutritionValidationEngine.validateAllergiesAndDislikes(
+        name, userContext.allergies, userContext.dislikedFoods, userContext.avoidedFoods
+      ).valid;
+    const safeFoodCatalog = foodCatalog.filter(food => isAllowedFoodName(food.name));
+    if (safeFoodCatalog.length === 0) {
+      throw new Error("No catalog foods match your diet and allergy preferences. Please review your nutrition profile.");
+    }
     const combinedDiet = `${profile?.diet_preference || ''} ${profile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
     const isVegan = userContext.diet === 'vegan';
     const isNonVeg = userContext.diet === 'non_vegetarian';
@@ -367,9 +376,12 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           fName = getSafeSubstituteFood(fName, userContext.diet, userContext.allergies);
         }
 
-        let ref = findFoodReference(fName, foodCatalog, profile?.food_environment);
-        if (!ref) {
-          ref = findFallbackFood(fName);
+        let ref = findFoodReference(fName, safeFoodCatalog, profile?.food_environment);
+        if (!ref || !isAllowedFoodName(ref.name)) {
+          const fallback = findFallbackFood(fName);
+          ref = fallback && isAllowedFoodName(fallback.name)
+            ? fallback
+            : safeFoodCatalog.find(food => !/core meal|provided core|base meal/i.test(food.name)) || safeFoodCatalog[0];
         }
 
         let qty = Number(item.quantity) || 1;
@@ -388,7 +400,8 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         }
         qty = Math.min(4, Math.max(0.25, qty));
 
-        const sSize = (item.serving_size && !['grams', 'g', 'ml'].includes(rawServing))
+        const changedFood = ref.name.toLowerCase() !== String(item.name || '').toLowerCase();
+        const sSize = (!changedFood && item.serving_size && !['grams', 'g', 'ml'].includes(rawServing))
           ? item.serving_size
           : (ref?.serving_size || '1 serving');
 
@@ -457,8 +470,40 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       return deduped;
     };
 
+    // A model can return fewer days or omit a requested meal slot. Fill only
+    // those gaps with the profile-aware rotating menu before saving seven dates.
+    const startingWeekday = new Date(`${localDate}T12:00:00.000Z`).getUTCDay();
+    const normalizedDays: RawAIDay[] = Array.from({ length: 7 }, (_, dIdx) => {
+      const sourceDay = aiPlan!.days[dIdx];
+      const fallbackMap = NutritionService.getRotatingMealPlanForDay(
+        (startingWeekday + dIdx) % 7, profile, targets, safeFoodCatalog
+      );
+      const meals = mealSlots.map(slot => {
+        const supplied = sourceDay?.meals?.find(meal =>
+          String(meal.meal_type || "").toLowerCase().replace(/[\s-]+/g, "_") === slot &&
+          Array.isArray(meal.items) && meal.items.length > 0
+        );
+        if (supplied) return { ...supplied, meal_type: slot };
+        const fallback = fallbackMap.get(slot) || fallbackMap.get("lunch");
+        if (!fallback) {
+          throw new Error(`Could not create a ${slot} meal compatible with your nutrition profile.`);
+        }
+        return {
+          meal_type: slot,
+          name: fallback.name || `${slot.replace(/_/g, " ")} meal`,
+          prep_instruction: fallback.prep_instructions || "",
+          items: (fallback.items || fallback.meal_plan_items || []).map((item: any) => ({
+            name: String(item.foods?.name || item.name || ""),
+            quantity: item.quantity || 1,
+            serving_size: item.foods?.serving_size || item.serving_size || "1 serving",
+          })).filter((item: RawAIMealItem) => item.name),
+        };
+      });
+      return { day_number: dIdx + 1, meals };
+    });
+
     // 6. Build Master Day Schedules with Verified Nutrition Math
-    const daySchedules = aiPlan.days.map((d, dIdx) => {
+    const daySchedules = normalizedDays.map((d, dIdx) => {
       const meals = d.meals.map(m => {
         const mType = m.meal_type.toLowerCase();
         const slotPct = slotPercentages[mType] ?? (1 / mealSlots.length);
@@ -466,8 +511,10 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         const slotTargetPro = Number((targets.protein * slotPct).toFixed(1));
 
         // Sanitize titles
-        const cleanedTitle = sanitizeMealTitle(m.name, isVegan, isVegetarian, isEggetarian);
-        const cleanedOptBTitle = m.option_b_name ? sanitizeMealTitle(m.option_b_name, isVegan, isVegetarian, isEggetarian) : undefined;
+        const rawTitle = sanitizeMealTitle(m.name, isVegan, isVegetarian, isEggetarian);
+        const cleanedTitle = isAllowedFoodName(rawTitle) ? rawTitle : `${mType.replace(/_/g, ' ')} meal`;
+        const rawOptBTitle = m.option_b_name ? sanitizeMealTitle(m.option_b_name, isVegan, isVegetarian, isEggetarian) : undefined;
+        const cleanedOptBTitle = rawOptBTitle && isAllowedFoodName(rawOptBTitle) ? rawOptBTitle : undefined;
 
         // Process Option A items
         const processedItems = processItems(m.items, cleanedTitle, slotTargetCals);
@@ -482,19 +529,16 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           const swapAlternatives = NutritionService.getCuratedSwapOptions(mType, profile, targets, foodCatalog);
           const altOpt = swapAlternatives[1] || swapAlternatives[0];
           if (altOpt) {
-            finalOptBTitle = altOpt.name;
-            processedOptBItems = (altOpt.items || []).map((it: any) => ({
-              food_id: it.food_id || it.id,
-              name: it.name,
-              serving_size: it.serving_size,
-              quantity: it.quantity || 1,
-              calories: it.calories,
-              protein: it.protein,
-              carbs: it.carbs,
-              fat: it.fat,
-              estimated_cost: it.estimated_cost,
-              isItemCore: it.is_core ?? isStapleCoreFood(it.name, profile?.food_environment)
-            }));
+            finalOptBTitle = isAllowedFoodName(altOpt.name) ? altOpt.name : `${mType.replace(/_/g, ' ')} alternative`;
+            processedOptBItems = processItems(
+              (altOpt.items || []).map((it: any) => ({
+                name: String(it.foods?.name || it.name || ""),
+                serving_size: it.serving_size,
+                quantity: it.quantity || 1,
+              })).filter((it: RawAIMealItem) => it.name),
+              finalOptBTitle,
+              slotTargetCals
+            );
           }
         }
 
@@ -528,6 +572,19 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         meals: calibratedDayMeals
       };
     });
+
+    // Calibration can inject protein foods, so validate every final option before
+    // replacing any of the user's existing dated plans.
+    for (const day of daySchedules) {
+      for (const meal of day.meals) {
+        for (const item of [...(meal.items || meal.meal_plan_items || []), ...(meal.option_b_items || [])]) {
+          const name = String(item.foods?.name || item.name || "");
+          if (!name || !isAllowedFoodName(name)) {
+            throw new Error("Could not build a plan compatible with your diet or food restrictions. Please review your nutrition profile.");
+          }
+        }
+      }
+    }
 
     // 7. Populate 7 Days of Weekly Meal Plans in Supabase (Starting from localDate)
     const startDate = new Date(`${localDate}T12:00:00.000Z`);
@@ -626,9 +683,17 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       items.forEach(it => {
         const isValidUUID = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
         const rawId = it.food_id || it.foods?.id;
-        const resolvedFoodId = (rawId && isValidUUID(rawId))
-          ? rawId
-          : (findFallbackFood(it.name)?.id || foodCatalog.find(f => f.name.toLowerCase().includes((it.name || '').toLowerCase().split(' ')[0]))?.id || foodCatalog[0]?.id);
+        const itemName = String(it.foods?.name || it.name || "");
+        const matchingId = rawId && isValidUUID(rawId)
+          ? safeFoodCatalog.find(food => food.id === rawId)
+          : undefined;
+        const fallback = findFallbackFood(itemName);
+        const resolvedFoodId = (
+          matchingId ||
+          findFoodReference(itemName, safeFoodCatalog, profile?.food_environment) ||
+          (fallback && isAllowedFoodName(fallback.name) ? fallback : undefined) ||
+          safeFoodCatalog[0]
+        )?.id;
         if (resolvedFoodId) {
           const servingStr = it.is_option_b
             ? `${it.meal_type}::optb::${it.option_b_name}::${it.serving_size || '1 serving'}`

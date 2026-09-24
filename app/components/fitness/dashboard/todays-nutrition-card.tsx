@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { Utensils, ArrowRight, CheckCircle2, Circle, Flame, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { nutritionApi, nutritionClientCache } from "@/lib/api/nutrition";
 import { toast } from "sonner";
@@ -105,11 +104,11 @@ export function TodaysNutritionCard({
   premiumLevel = "core",
   targetDateStr,
 }: TodaysNutritionCardProps) {
-  const router = useRouter();
-  const isInternalUpdateRef = useRef(false);
+  const pendingMealRef = useRef(false);
+  const [pendingMealType, setPendingMealType] = useState<string | null>(null);
   const effectiveUserId = userId || nutrition?.user_id || "";
 
-  // Determine effective date for persistent meal state keying
+  // The dashboard and Nutrition page must address the same user's local date.
   const effectiveDate = useMemo(() => {
     if (targetDateStr && /^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) {
       return targetDateStr;
@@ -120,100 +119,36 @@ export function TodaysNutritionCard({
       day: "2-digit",
     }).format(new Date());
   }, [targetDateStr]);
+  const [activeNutrition, setActiveNutrition] = useState<any>(
+    () => nutrition ?? nutritionClientCache.get(effectiveDate, effectiveUserId)
+  );
+  const isSelectedToday = effectiveDate === new Intl.DateTimeFormat("en-CA", {
+    year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone: nutrition?.timezone || activeNutrition?.timezone || undefined,
+  }).format(new Date());
 
-  const [activeNutrition, setActiveNutrition] = useState<any>(() => {
-    const cached = nutritionClientCache.get(effectiveDate, effectiveUserId);
-    const cachedUserId = cached?.user_id;
-    const isDifferentUser = effectiveUserId && cachedUserId && cachedUserId !== effectiveUserId;
-    if (cached && !isDifferentUser && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
-      return {
-        ...(nutrition || {}),
-        ...cached,
-        consumed: cached.consumed || nutrition?.consumed,
-        logged_foods: cached.logged_foods || nutrition?.logged_foods,
-        meals: (cached.meals && cached.meals.length > 0) ? cached.meals : nutrition?.meals,
-      };
-    }
-    return nutrition;
-  });
-
-  // Guard: Never downgrade active logged meals to an empty/stale server prop, but reset if user changed
+  // Server data is authoritative, including an explicitly empty plan or food log.
   useEffect(() => {
-    if (!nutrition) return;
-    setActiveNutrition((prev: any) => {
-      if (!prev) return nutrition;
-      if (effectiveUserId && prev.user_id && prev.user_id !== effectiveUserId) {
-        return nutrition;
-      }
-      const prevLogged = prev.logged_foods?.length || 0;
-      const prevCals = Number(prev.consumed?.calories) || 0;
-      const newLogged = nutrition.logged_foods?.length || 0;
-      const newCals = Number(nutrition.consumed?.calories) || 0;
-
-      if ((prevLogged > 0 && newLogged === 0) || (prevCals > 0 && newCals === 0)) {
-        if (nutrition._freshFromDb && newLogged === 0) {
-          return nutrition;
-        }
-        return {
-          ...nutrition,
-          consumed: prev.consumed,
-          logged_foods: prev.logged_foods,
-          meals: (prev.meals && prev.meals.length > 0) ? prev.meals : nutrition.meals,
-          daily_calories: nutrition.daily_calories ?? prev.daily_calories,
-          protein_grams: nutrition.protein_grams ?? prev.protein_grams,
-        };
-      }
-      return {
-        ...prev,
-        ...nutrition,
-        consumed: nutrition.consumed || prev.consumed,
-        logged_foods: nutrition.logged_foods || prev.logged_foods,
-        meals: (nutrition.meals && nutrition.meals.length > 0) ? nutrition.meals : prev.meals,
-      };
-    });
-  }, [nutrition, effectiveUserId]);
+    setActiveNutrition(nutrition ?? nutritionClientCache.get(effectiveDate, effectiveUserId));
+  }, [nutrition, effectiveDate, effectiveUserId]);
 
   // Persist activeNutrition changes to client cache
   useEffect(() => {
-    if (activeNutrition && effectiveDate) {
+    if (activeNutrition?.date === effectiveDate && activeNutrition?.user_id === effectiveUserId) {
       nutritionClientCache.set(effectiveDate, activeNutrition);
     }
-  }, [activeNutrition, effectiveDate]);
+  }, [activeNutrition, effectiveDate, effectiveUserId]);
 
   const refreshNutrition = useCallback(async () => {
     try {
-      // 0ms instant check from cache
-      const cached = nutritionClientCache.get(effectiveDate, effectiveUserId);
-      if (cached && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
-        setActiveNutrition((prev: any) => ({
-          ...prev,
-          ...cached,
-          consumed: cached.consumed || prev?.consumed,
-          logged_foods: cached.logged_foods || prev?.logged_foods,
-          meals: (cached.meals && cached.meals.length > 0) ? cached.meals : prev?.meals,
-        }));
-      }
-
       const fresh = await nutritionApi.getToday(effectiveDate);
       if (fresh) {
-        nutritionClientCache.set(effectiveDate, fresh);
-        setActiveNutrition((prev: any) => {
-          const prevCount = prev?.logged_foods?.length || 0;
-          const freshCount = fresh?.logged_foods?.length || 0;
-          const isFreshZero = fresh._freshFromDb && freshCount === 0;
-          return {
-            ...prev,
-            ...fresh,
-            consumed: isFreshZero ? fresh.consumed : (freshCount < prevCount && prev?.consumed && !fresh._freshFromDb) ? prev.consumed : (fresh.consumed || prev?.consumed),
-            logged_foods: isFreshZero ? [] : (freshCount < prevCount && prev?.logged_foods && !fresh._freshFromDb) ? prev.logged_foods : (fresh.logged_foods || prev?.logged_foods),
-            meals: (fresh._freshFromDb || fresh.meals !== undefined) ? (fresh.meals || []) : ((fresh.meals && fresh.meals.length > 0) ? fresh.meals : (prev?.meals || [])),
-          };
-        });
+        setActiveNutrition(fresh);
       }
     } catch {
       // silently ignore network errors
     }
-  }, [effectiveDate, effectiveUserId]);
+  }, [effectiveDate]);
 
   useEffect(() => {
     // Only fetch from network if neither server prop nor client cache has data
@@ -226,20 +161,7 @@ export function TodaysNutritionCard({
     }
 
     const handleSync = () => {
-      if (isInternalUpdateRef.current) {
-        isInternalUpdateRef.current = false;
-        return;
-      }
-      const currentCached = nutritionClientCache.get(effectiveDate, effectiveUserId);
-      if (currentCached) {
-        setActiveNutrition((prev: any) => ({
-          ...prev,
-          ...currentCached,
-          consumed: currentCached.consumed || prev?.consumed,
-          logged_foods: currentCached.logged_foods || prev?.logged_foods,
-          meals: (currentCached.meals && currentCached.meals.length > 0) ? currentCached.meals : prev?.meals,
-        }));
-      }
+      if (pendingMealRef.current) return;
       refreshNutrition();
     };
     if (typeof window !== "undefined") {
@@ -278,9 +200,7 @@ export function TodaysNutritionCard({
     return null;
   }, [activeNutrition?.carbs_grams, nutrition?.carbs_grams, activeNutrition?.targets?.carbs, nutrition?.targets?.carbs, targetCalories, targetProtein, targetFats]);
 
-  const rawMeals = (Array.isArray(activeNutrition?.meals) && activeNutrition.meals.length > 0)
-    ? activeNutrition.meals
-    : (Array.isArray(nutrition?.meals) ? nutrition.meals : []);
+  const rawMeals = Array.isArray(activeNutrition?.meals) ? activeNutrition.meals : [];
   const totalMealsCount = rawMeals.length || 1;
 
   // Process meals and assign realistic macros based on meal data or intelligent goal split
@@ -405,157 +325,35 @@ export function TodaysNutritionCard({
   // Set of meal types that are already logged in the database for today
   const dbCompletedTypes = useMemo(() => {
     const set = new Set<string>();
-    const logs = activeNutrition?.logged_foods || nutrition?.logged_foods;
+    const logs = activeNutrition?.logged_foods;
     if (Array.isArray(logs)) {
       logs.forEach((f: any) => {
         if (f.meal_type) set.add(String(f.meal_type).toLowerCase().trim());
       });
     }
     return set;
-  }, [activeNutrition?.logged_foods, nutrition?.logged_foods]);
-
-  // Persistent storage key per user and effective date
-  const storageKey = effectiveUserId
-    ? `grindlog_meals_completed_${effectiveUserId}_${effectiveDate}`
-    : `grindlog_meals_completed_${effectiveDate}`;
-  const [completedMeals, setCompletedMeals] = useState<Record<string, boolean>>({});
-
-  // Sync state with localStorage on mount or date/user change
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        setCompletedMeals(JSON.parse(saved));
-      } else {
-        setCompletedMeals({});
-      }
-    } catch {
-      setCompletedMeals({});
-    }
-
-    const handleSync = () => {
-      try {
-        const saved = localStorage.getItem(storageKey);
-        if (saved) setCompletedMeals(JSON.parse(saved));
-      } catch {}
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("grindlog_meals_updated", handleSync);
-    }
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener("grindlog_meals_updated", handleSync);
-      }
-    };
-  }, [storageKey]);
-
-  // Reconcile completedMeals with DB truth when fresh activeNutrition arrives
-  useEffect(() => {
-    const logs = activeNutrition?.logged_foods || nutrition?.logged_foods;
-    if (!logs) return;
-    const dbTypes = new Set<string>();
-    logs.forEach((f: any) => {
-      const t = String(f.meal_type || "").toLowerCase().trim();
-      if (t) dbTypes.add(t);
-    });
-
-    setCompletedMeals((prev) => {
-      let changed = false;
-      const next = { ...prev };
-
-      // If user has zero logs in DB for today, purge any phantom completed meal entries
-      if (logs.length === 0) {
-        try {
-          localStorage.removeItem(storageKey);
-        } catch {}
-        return {};
-      }
-
-      if (meals.length === 0) {
-        return {};
-      }
-
-      meals.forEach((m: any) => {
-        const t = String(m.meal_type || "").toLowerCase().trim();
-        const hasDbLogs = dbTypes.has(t);
-        const mKey = String(m.id);
-        // If DB has no logs for this meal type, it is not completed:
-        if (!hasDbLogs && next[mKey] === true) {
-          delete next[mKey];
-          changed = true;
-        }
-        // If DB has logs for this meal type, it is completed:
-        if (hasDbLogs && next[mKey] === false) {
-          delete next[mKey];
-          changed = true;
-        }
-      });
-      if (changed) {
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(next));
-        } catch {}
-        return next;
-      }
-      return prev;
-    });
-  }, [activeNutrition?.logged_foods, nutrition?.logged_foods, meals, storageKey]);
+  }, [activeNutrition?.logged_foods]);
 
   const isMealDone = useCallback((meal: any) => {
-    const mKey = String(meal.id);
-    // 1. Explicit user override in state/localStorage for this date takes highest priority
-    if (completedMeals[mKey] === false) return false;
-    if (completedMeals[mKey] === true) return true;
-
-    // 2. Otherwise check database completed types for this specific meal_type
     const typeKey = String(meal.meal_type || "").toLowerCase().trim();
-    if (typeKey && dbCompletedTypes.has(typeKey)) return true;
+    return Boolean(typeKey && dbCompletedTypes.has(typeKey));
+  }, [dbCompletedTypes]);
 
-    // 3. Fallback: check if activeNutrition.logged_foods has foods for this meal_type
-    const logs = activeNutrition?.logged_foods || nutrition?.logged_foods;
-    if (typeKey && Array.isArray(logs) && logs.length > 0) {
-      if (logs.some((f: any) => String(f.meal_type || "").toLowerCase().trim() === typeKey)) {
-        return true;
-      }
+  const toggleMeal = async (meal: any) => {
+    if (pendingMealRef.current) return;
+    if (!isSelectedToday) {
+      toast.info("Meals can only be logged for today.");
+      return;
     }
 
-    return false;
-  }, [completedMeals, dbCompletedTypes, activeNutrition?.logged_foods, nutrition?.logged_foods]);
-
-  const toggleMeal = (meal: any) => {
     const alreadyDone = isMealDone(meal);
-    const nextState = !alreadyDone;
     const typeKey = String(meal.meal_type || 'lunch').toLowerCase().trim();
-    const mKey = String(meal.id);
+    pendingMealRef.current = true;
+    setPendingMealType(typeKey);
 
-    // 1. Instant local persistence update
-    setCompletedMeals((prev) => {
-      const next = { ...prev, [mKey]: nextState };
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(next));
-      } catch (err) {
-        console.warn("Failed to persist completed meals:", err);
-      }
-      return next;
-    });
-
-    if (nextState) {
-      // Optimistically update activeNutrition consumed
-      setActiveNutrition((prev: any) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          consumed: {
-            ...prev.consumed,
-            calories: (Number(prev.consumed?.calories) || 0) + (meal.calories || 0),
-            protein: Number(((Number(prev.consumed?.protein) || 0) + (meal.protein || 0)).toFixed(1)),
-            carbs: Number(((Number(prev.consumed?.carbs) || 0) + (meal.carbs || 0)).toFixed(1)),
-            fat: Number(((Number(prev.consumed?.fat) || 0) + (meal.fats || 0)).toFixed(1)),
-          }
-        };
-      });
-
-      // Background log to database
+    try {
+      let confirmedLogs: any[] = [];
+      if (!alreadyDone) {
       const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const itemsToLog = (meal.meal_plan_items && meal.meal_plan_items.length > 0)
         ? meal.meal_plan_items.map((it: any) => {
@@ -598,140 +396,70 @@ export function TodaysNutritionCard({
             }
           }];
 
-      nutritionApi.logFoods(itemsToLog).then(() => {
-        toast.success(`Logged ${meal.name}!`);
-        isInternalUpdateRef.current = true;
-        nutritionClientCache.notifyUpdated();
-      }).catch((err) => {
-        console.warn("Could not sync logged meal to DB:", err);
-        toast.success(`Logged ${meal.name}!`);
-      });
-    } else {
-      // Optimistically remove meal from activeNutrition consumed and logged_foods
-      setActiveNutrition((prev: any) => {
-        if (!prev) return prev;
-        const remainingLogs = (prev.logged_foods || []).filter(
-          (f: any) => String(f.meal_type || "").toLowerCase().trim() !== typeKey
+        const logged = await nutritionApi.logFoods(itemsToLog);
+        if (!Array.isArray(logged) || !logged.some((entry: any) => String(entry.meal_type).toLowerCase() === typeKey)) {
+          throw new Error("Meal was not confirmed in the food log.");
+        }
+        confirmedLogs = logged;
+      } else {
+        await nutritionApi.deleteMeal(typeKey, effectiveDate);
+      }
+
+      // The API confirmed the write. Update from returned DB rows so the card
+      // remains truthful even if the follow-up summary request is delayed.
+      setActiveNutrition((previous: any) => {
+        const before = Array.isArray(previous?.logged_foods) ? previous.logged_foods : [];
+        const confirmedIds = new Set(confirmedLogs.map((entry: any) => entry.id));
+        const remaining = before.filter((entry: any) =>
+          alreadyDone
+            ? String(entry.meal_type || "").toLowerCase().trim() !== typeKey
+            : !confirmedIds.has(entry.id)
         );
+        const logs = alreadyDone ? remaining : [...remaining, ...confirmedLogs];
+        const sum = (key: string) => logs.reduce((total: number, entry: any) => total + (Number(entry[key]) || 0), 0);
         return {
-          ...prev,
-          logged_foods: remainingLogs,
+          ...previous,
+          logged_foods: logs,
           consumed: {
-            ...prev.consumed,
-            calories: Math.max(0, (Number(prev.consumed?.calories) || 0) - (meal.calories || 0)),
-            protein: Math.max(0, Number(((Number(prev.consumed?.protein) || 0) - (meal.protein || 0)).toFixed(1))),
-            carbs: Math.max(0, Number(((Number(prev.consumed?.carbs) || 0) - (meal.carbs || 0)).toFixed(1))),
-            fat: Math.max(0, Number(((Number(prev.consumed?.fat) || 0) - (meal.fats || 0)).toFixed(1))),
-          }
+            ...previous?.consumed,
+            calories: Math.round(sum("calories")),
+            protein: Number(sum("protein").toFixed(1)),
+            carbs: Number(sum("carbs").toFixed(1)),
+            fat: Number(sum("fat").toFixed(1)),
+          },
         };
       });
 
-      // Background unlog: atomic deleteMeal API
-      nutritionApi.deleteMeal(typeKey, effectiveDate).then(() => {
-        refreshNutrition();
-        isInternalUpdateRef.current = true;
-        nutritionClientCache.notifyUpdated();
-      }).catch((err) => {
-        console.warn("deleteMeal failed, trying fallback deleteFood by ID:", err);
-        const currentLogs = activeNutrition?.logged_foods || nutrition?.logged_foods || [];
-        const foodsToRemove = currentLogs.filter((f: any) => String(f.meal_type || "").toLowerCase().trim() === typeKey);
-        if (foodsToRemove.length > 0) {
-          Promise.all(foodsToRemove.map((f: any) => nutritionApi.deleteFood(f.id))).then(() => {
-            refreshNutrition();
-            isInternalUpdateRef.current = true;
-            nutritionClientCache.notifyUpdated();
-          }).catch(() => {});
-        }
-      });
-
-      toast.info(`Unlogged ${meal.name}`);
+      try {
+        const fresh = await nutritionApi.getToday(effectiveDate);
+        const freshHasMeal = Array.isArray(fresh?.logged_foods) && fresh.logged_foods.some(
+          (entry: any) => String(entry.meal_type || "").toLowerCase().trim() === typeKey
+        );
+        if (fresh && freshHasMeal === !alreadyDone) setActiveNutrition(fresh);
+      } catch (refreshError) {
+        console.warn("Meal saved, but nutrition refresh failed:", refreshError);
+      }
+      nutritionClientCache.notifyUpdated();
+      toast.success(alreadyDone ? `Unlogged ${meal.name}` : `Logged ${meal.name}!`);
+    } catch (err) {
+      console.warn("Could not update meal log:", err);
+      toast.error("Could not update this meal. Please try again.");
+      await refreshNutrition();
+    } finally {
+      pendingMealRef.current = false;
+      setPendingMealType(null);
     }
-
-    isInternalUpdateRef.current = true;
-    nutritionClientCache.notifyUpdated();
   };
 
-  // Real-world dynamic calculations: sum actual checked meal macros
   const completedCount = useMemo(() => {
     if (meals.length === 0) return 0;
     return meals.filter((m: any) => isMealDone(m)).length;
   }, [meals, isMealDone]);
 
-  const consumedCalories = useMemo(() => {
-    const rawVal = activeNutrition?.consumed?.calories ?? nutrition?.consumed?.calories;
-    const dbCals = rawVal !== undefined && rawVal !== null ? Math.round(Number(rawVal) || 0) : 0;
-    if (meals.length === 0) return dbCals;
-    const localDelta = meals.reduce((acc: number, m: any) => {
-      const typeKey = String(m.meal_type || "").toLowerCase().trim();
-      const inDb = typeKey && dbCompletedTypes.has(typeKey);
-      const mKey = String(m.id);
-      if (completedMeals[mKey] === true && !inDb) {
-        return acc + m.calories;
-      }
-      if (completedMeals[mKey] === false && inDb) {
-        return acc - m.calories;
-      }
-      return acc;
-    }, 0);
-    return Math.max(0, dbCals + localDelta);
-  }, [activeNutrition?.consumed?.calories, nutrition?.consumed?.calories, dbCompletedTypes, meals, completedMeals]);
-
-  const consumedProtein = useMemo(() => {
-    const rawVal = activeNutrition?.consumed?.protein ?? nutrition?.consumed?.protein;
-    const dbPro = rawVal !== undefined && rawVal !== null ? Math.round(Number(rawVal) || 0) : 0;
-    if (meals.length === 0) return dbPro;
-    const localDelta = meals.reduce((acc: number, m: any) => {
-      const typeKey = String(m.meal_type || "").toLowerCase().trim();
-      const inDb = typeKey && dbCompletedTypes.has(typeKey);
-      const mKey = String(m.id);
-      if (completedMeals[mKey] === true && !inDb) {
-        return acc + m.protein;
-      }
-      if (completedMeals[mKey] === false && inDb) {
-        return acc - m.protein;
-      }
-      return acc;
-    }, 0);
-    return Math.max(0, Math.round(dbPro + localDelta));
-  }, [activeNutrition?.consumed?.protein, nutrition?.consumed?.protein, dbCompletedTypes, meals, completedMeals]);
-
-  const consumedCarbs = useMemo(() => {
-    const rawVal = activeNutrition?.consumed?.carbs ?? nutrition?.consumed?.carbs;
-    const dbCarbs = rawVal !== undefined && rawVal !== null ? Math.round(Number(rawVal) || 0) : 0;
-    if (meals.length === 0) return dbCarbs;
-    const localDelta = meals.reduce((acc: number, m: any) => {
-      const typeKey = String(m.meal_type || "").toLowerCase().trim();
-      const inDb = typeKey && dbCompletedTypes.has(typeKey);
-      const mKey = String(m.id);
-      if (completedMeals[mKey] === true && !inDb) {
-        return acc + m.carbs;
-      }
-      if (completedMeals[mKey] === false && inDb) {
-        return acc - m.carbs;
-      }
-      return acc;
-    }, 0);
-    return Math.max(0, Math.round(dbCarbs + localDelta));
-  }, [activeNutrition?.consumed?.carbs, nutrition?.consumed?.carbs, dbCompletedTypes, meals, completedMeals]);
-
-  const consumedFats = useMemo(() => {
-    const rawVal = activeNutrition?.consumed?.fat ?? nutrition?.consumed?.fat;
-    const dbFat = rawVal !== undefined && rawVal !== null ? Math.round(Number(rawVal) || 0) : 0;
-    if (meals.length === 0) return dbFat;
-    const localDelta = meals.reduce((acc: number, m: any) => {
-      const typeKey = String(m.meal_type || "").toLowerCase().trim();
-      const inDb = typeKey && dbCompletedTypes.has(typeKey);
-      const mKey = String(m.id);
-      if (completedMeals[mKey] === true && !inDb) {
-        return acc + m.fats;
-      }
-      if (completedMeals[mKey] === false && inDb) {
-        return acc - m.fats;
-      }
-      return acc;
-    }, 0);
-    return Math.max(0, Math.round(dbFat + localDelta));
-  }, [activeNutrition?.consumed?.fat, nutrition?.consumed?.fat, dbCompletedTypes, meals, completedMeals]);
+  const consumedCalories = Math.round(Number(activeNutrition?.consumed?.calories) || 0);
+  const consumedProtein = Math.round(Number(activeNutrition?.consumed?.protein) || 0);
+  const consumedCarbs = Math.round(Number(activeNutrition?.consumed?.carbs) || 0);
+  const consumedFats = Math.round(Number(activeNutrition?.consumed?.fat) || 0);
 
   const caloriesPercent = targetCalories ? Math.min(Math.round((consumedCalories / targetCalories) * 100), 100) : 0;
   const proteinPercent = targetProtein ? Math.min(Math.round((consumedProtein / targetProtein) * 100), 100) : 0;
@@ -759,7 +487,7 @@ export function TodaysNutritionCard({
             </div>
             <div>
               <h3 className="text-sm font-black tracking-wider text-white uppercase leading-none">
-                Today&apos;s Nutrition
+                {isSelectedToday ? "Today's Nutrition" : "Daily Nutrition"}
               </h3>
             </div>
           </div>
@@ -921,12 +649,20 @@ export function TodaysNutritionCard({
                 return (
                   <div
                     key={meal.id}
-                    onClick={() => toggleMeal(meal)}
-                    role="button"
-                    tabIndex={0}
-                    className={`flex items-start gap-3 p-3.5 cursor-pointer transition-all duration-200 select-none ${
-                      isCompleted ? "bg-[#ADFF00]/[0.04]" : "hover:bg-white/[0.03]"
-                    }`}
+                    onClick={isSelectedToday ? () => toggleMeal(meal) : undefined}
+                    onKeyDown={(event) => {
+                      if (isSelectedToday && (event.key === "Enter" || event.key === " ")) {
+                        event.preventDefault();
+                        toggleMeal(meal);
+                      }
+                    }}
+                    role={isSelectedToday ? "button" : undefined}
+                    tabIndex={isSelectedToday ? 0 : -1}
+                    aria-disabled={isSelectedToday ? pendingMealType !== null : undefined}
+                    aria-pressed={isSelectedToday ? isCompleted : undefined}
+                    className={`flex items-start gap-3 p-3.5 transition-all duration-200 select-none ${
+                      isCompleted ? "bg-[#ADFF00]/[0.04]" : isSelectedToday ? "hover:bg-white/[0.03]" : ""
+                    } ${isSelectedToday ? "cursor-pointer" : "cursor-default"} ${pendingMealType === meal.meal_type ? "opacity-60" : ""}`}
                   >
                     {/* Checkbox Icon */}
                     <div className="shrink-0 mt-0.5">

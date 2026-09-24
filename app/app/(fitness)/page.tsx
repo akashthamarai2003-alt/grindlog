@@ -24,7 +24,7 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
     return <FitnessLandingPage />;
   }
 
-  const todayDateStr = new Date().toISOString().split('T')[0];
+  const todayDateStr = await NutritionService.getLocalDateString(user.id);
   const requestedDateStr = searchParams?.date;
   const targetDateStr = requestedDateStr
     && /^\d{4}-\d{2}-\d{2}$/.test(requestedDateStr)
@@ -159,8 +159,6 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
             subscriptionPlanId={subscriptionPlan?.id}
             activityLog={activityLog}
             sleepLog={sleepLog}
-            profile={profile}
-            preFetchedPlanData={effectivePlan?.plan_data}
           />
         </Suspense>
       }
@@ -205,8 +203,7 @@ function NutritionSkeleton() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Below-fold: nutrition data only — uses lightweight getDashboardSummary
-// Streams in ~600-1200ms after the above-fold is already visible
+// Below-fold: use the same date-specific meal plan and food logs as /nutrition.
 // ─────────────────────────────────────────────────────────────────────────────
 async function DashboardBelow({
   userId,
@@ -218,8 +215,6 @@ async function DashboardBelow({
   subscriptionPlanId,
   activityLog,
   sleepLog,
-  profile,
-  preFetchedPlanData,
 }: {
   userId: string;
   targetDateStr: string;
@@ -230,14 +225,8 @@ async function DashboardBelow({
   subscriptionPlanId?: string;
   activityLog?: { steps: number } | null;
   sleepLog?: { duration_hours: number } | null;
-  profile?: any;
-  preFetchedPlanData?: any;
 }) {
-  const todayNutrition = await NutritionService.getDashboardSummary(userId, {
-    targetDateStr,
-    preFetchedProfile: profile,
-    preFetchedPlanData,
-  }).catch((err) => {
+  const todayNutrition = await NutritionService.getTodaySummaryAndDetails(userId, targetDateStr).catch((err) => {
     console.warn("Failed to fetch dashboard nutrition summary:", err?.message || err);
     return null;
   });

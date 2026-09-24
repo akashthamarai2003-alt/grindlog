@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { AINutritionService } from "@/lib/services/nutrition/ai-nutrition-service";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+import { isFitnessPro } from "@/lib/fitness/subscription/access";
 
 export async function GET() {
   try {
@@ -38,8 +39,14 @@ export async function POST() {
       );
     }
 
-    // Luna AI Meal Plan generation is powered by Groq (Free Tier)
-    // Authenticated users can generate their personalized weekly 7-day plan (1/week, max 4/month)
+    if (!(await isFitnessPro(user.id))) {
+      return NextResponse.json(
+        { success: false, error: { code: 'PRO_REQUIRED', message: 'The 7-day diet plan is available on the Pro plan.' } },
+        { status: 403 }
+      );
+    }
+
+    // Pro users can generate a personalized weekly 7-day plan (1/week, max 4/month).
     const result = await AINutritionService.generateMealPlan(user.id);
     NutritionService.invalidateServerCache(user.id);
     try {

@@ -48,7 +48,7 @@ export class NutritionValidationEngine {
   ];
 
   // Words containing "egg" that are NOT animal eggs (Fix #4: eggplant false positive)
-  private static readonly EGG_SAFE_WORDS = ['eggplant', 'eggless', 'egg noodle'];
+  private static readonly EGG_SAFE_WORDS = ['eggplant', 'eggless'];
 
   // Plant-based alternatives that contain dairy token substrings (Fix #5: vegan false positives)
   private static readonly PLANT_BASED_SAFE = [
@@ -123,13 +123,40 @@ export class NutritionValidationEngine {
   ): { valid: boolean; reason?: string } {
     const lower = (foodName || "").toLowerCase().trim();
     const blockedList = [...allergies, ...disliked, ...avoided].filter(Boolean);
+    const allergenAliases: Record<string, string[]> = {
+      dairy: ["milk", "paneer", "curd", "dahi", "yogurt", "cheese", "butter", "ghee", "whey", "cream", "lassi", "chaas"],
+      milk: ["milk", "paneer", "curd", "dahi", "yogurt", "cheese", "butter", "ghee", "whey", "cream", "lassi", "chaas"],
+      lactose: ["milk", "paneer", "curd", "dahi", "yogurt", "cheese", "butter", "ghee", "whey", "cream", "lassi", "chaas"],
+      egg: ["egg", "omelette", "omelet", "egg bhurji"],
+      soy: ["soy", "soya", "tofu", "tempeh"],
+      soya: ["soy", "soya", "tofu", "tempeh"],
+      nuts: ["peanut", "almond", "cashew", "walnut", "pistachio", "hazelnut", "pecan"],
+      "tree nuts": ["almond", "cashew", "walnut", "pistachio", "hazelnut", "pecan"],
+      shellfish: ["prawn", "shrimp", "crab", "lobster", "shellfish"],
+      fish: ["fish", "salmon", "tuna", "cod", "sardine"],
+      sesame: ["sesame", "tahini", "til seed"],
+      wheat: ["wheat", "atta", "chapati", "roti", "phulka", "bread"],
+      gluten: ["wheat", "atta", "chapati", "roti", "phulka", "bread", "semolina", "suji", "rava"],
+    };
 
     for (const term of blockedList) {
       const cleanTerm = term.toLowerCase().trim();
       if (!cleanTerm || ["none", "nil", "na", "no"].includes(cleanTerm)) continue;
+      const aliasKey = Object.keys(allergenAliases).find(key =>
+        cleanTerm === key || cleanTerm.startsWith(`${key} `) || cleanTerm.endsWith(` ${key}`)
+      );
+      const comparisonName = aliasKey === "egg" || cleanTerm === "egg"
+        ? lower.replace(/\b(?:eggplant|eggless)\b/g, "")
+        : lower;
 
-      if (lower.includes(cleanTerm)) {
+      if (comparisonName.includes(cleanTerm)) {
         return { valid: false, reason: `Food matches avoided/allergic term: "${term}"` };
+      }
+      if (allergies.includes(term)) {
+        const aliases = aliasKey ? allergenAliases[aliasKey] : undefined;
+        if (aliases?.some(alias => comparisonName.includes(alias))) {
+          return { valid: false, reason: `Food may contain an allergen: "${term}"` };
+        }
       }
     }
 
