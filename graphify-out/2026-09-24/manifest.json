@@ -1152,9 +1152,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/nutrition-view.tsx": {
-    "mtime": 1790183342.19708,
-    "seen": 1790226894.2189655,
-    "ast_hash": "120a0d7690778233137befcf42693fbb",
+    "mtime": 1790236616.0431707,
+    "seen": 1790238175.9490554,
+    "ast_hash": "fffb9ad890344118c8d5005c99bbb7ec",
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/swap-meal-modal.tsx": {
@@ -1866,9 +1866,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/ai-nutrition-service.ts": {
-    "mtime": 1790176512.1115255,
-    "seen": 1790176715.2116258,
-    "ast_hash": "cec422043cc7783ced20993686489040",
+    "mtime": 1790236580.3070288,
+    "seen": 1790238175.9967446,
+    "ast_hash": "802ceee2383487d0230e665f23f3d581",
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/external-nutrition-source.ts": {
@@ -1878,9 +1878,9 @@
     "semantic_hash": ""
   },
   "app/lib/services/nutrition/nutrition-service.ts": {
-    "mtime": 1790226792.7072797,
-    "seen": 1790226894.2502925,
-    "ast_hash": "b97811be1f638b1bf8b21f4d7e3ab9b1",
+    "mtime": 1790236603.7695718,
+    "seen": 1790238175.9971182,
+    "ast_hash": "6f461dbb7a94911ca0230518d2274937",
     "semantic_hash": ""
   },
   "app/lib/services/openai/client.ts": {
@@ -1920,9 +1920,9 @@
     "semantic_hash": ""
   },
   "app/lib/utils/food-images.ts": {
-    "mtime": 1789801095.6277075,
-    "seen": 1789970487.598884,
-    "ast_hash": "30099b57b810fa0230902662e51ac307",
+    "mtime": 1790236476.7697833,
+    "seen": 1790238175.9992044,
+    "ast_hash": "d67ee476ae2f1cc21a04556a8bf6413d",
     "semantic_hash": ""
   },
   "app/lib/utils/redirect.ts": {

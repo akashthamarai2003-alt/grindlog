@@ -133,6 +133,8 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "chana": { emoji: "🍲", colors: ["#D97706", "#78350F"] },
   "rajma": { emoji: "🍛", colors: ["#991B1B", "#450A0A"] },
   "lobia": { emoji: "🍛", colors: ["#991B1B", "#450A0A"] },
+  "black gram": { emoji: "🫘", colors: ["#374151", "#111827"] },
+  "urad dal": { emoji: "🍲", colors: ["#374151", "#111827"] },
   "black beans": { emoji: "🫘", colors: ["#4B5563", "#111827"] },
   "kidney beans": { emoji: "🫘", colors: ["#991B1B", "#450A0A"] },
   "beans": { emoji: "🫘", colors: ["#991B1B", "#450A0A"] },
@@ -179,6 +181,13 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "idli": { emoji: "⚪", colors: ["#4B5563", "#111827"] },
   "medu vada": { emoji: "🥯", colors: ["#D97706", "#78350F"] },
   "vada": { emoji: "🥯", colors: ["#D97706", "#78350F"] },
+  "uttapam": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
+  "appam": { emoji: "🥞", colors: ["#4B5563", "#111827"] },
+  "millet": { emoji: "🌾", colors: ["#D97706", "#78350F"] },
+  "ragi": { emoji: "🌾", colors: ["#78350F", "#451A03"] },
+  "jowar": { emoji: "🌾", colors: ["#D97706", "#78350F"] },
+  "bajra": { emoji: "🌾", colors: ["#78350F", "#451A03"] },
+  "sattu": { emoji: "🥤", colors: ["#D97706", "#78350F"] },
   "masala dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
   "plain dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
   "dosa": { emoji: "🥞", colors: ["#D97706", "#78350F"] },
@@ -364,27 +373,62 @@ export function getFoodSvgAvatar(name?: string, category?: string): string {
     }
   }
 
+  const bgGradId = `bg_${config.colors[0].replace("#", "")}_${config.colors[1].replace("#", "")}`;
+  const specGradId = `spec_${config.colors[0].replace("#", "")}`;
+
   // Generate crisp, dark glassmorphic SVG with subtle specular reflection & border
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
     <defs>
-      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <linearGradient id="${bgGradId}" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="${config.colors[0]}"/>
         <stop offset="100%" stop-color="${config.colors[1]}"/>
       </linearGradient>
-      <radialGradient id="spec" cx="50%" cy="25%" r="60%">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.22)"/>
+      <radialGradient id="${specGradId}" cx="50%" cy="25%" r="60%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
         <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
       </radialGradient>
     </defs>
     <!-- Dark Glass Container -->
-    <rect width="96" height="96" x="2" y="2" rx="26" fill="url(#bg)" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+    <rect width="94" height="94" x="3" y="3" rx="26" fill="url(#${bgGradId})" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
     <!-- Specular Highlight -->
-    <rect width="96" height="48" x="2" y="2" rx="26" fill="url(#spec)"/>
+    <rect width="94" height="47" x="3" y="3" rx="26" fill="url(#${specGradId})"/>
     <!-- Centered High-Res Emoji Glyph -->
-    <text x="50" y="56" font-size="44" text-anchor="middle" dominant-baseline="central" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.45));">${config.emoji}</text>
+    <text x="50" y="55" font-size="44" text-anchor="middle" dominant-baseline="central" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));">${config.emoji}</text>
   </svg>`;
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * Returns a high-definition food emoji for a given dish or ingredient name.
+ * Used for meal titles and option selectors (NutriScan style: 🥔 Black Gram Millet Uttapam).
+ */
+export function getFoodEmoji(name?: string, category?: string): string {
+  const cleanName = (name || "").toLowerCase().trim();
+
+  // 1. Direct match from sorted keys
+  for (const key of SORTED_BADGE_KEYS) {
+    if (cleanName.includes(key)) {
+      return FOOD_BADGE_MAP[key].emoji;
+    }
+  }
+
+  // 2. Category-based fallback
+  if (category) {
+    const catLower = category.toLowerCase().trim();
+    if (catLower.includes("protein") || catLower.includes("meat") || catLower.includes("chicken") || catLower.includes("poultry")) return "🍗";
+    if (catLower.includes("fish") || catLower.includes("seafood")) return "🐟";
+    if (catLower.includes("curry") || catLower.includes("dal") || catLower.includes("soup") || catLower.includes("gravy")) return "🍲";
+    if (catLower.includes("bread") || catLower.includes("roti") || catLower.includes("grain") || catLower.includes("cereal") || catLower.includes("bakery")) return "🫓";
+    if (catLower.includes("dairy") || catLower.includes("curd") || catLower.includes("milk") || catLower.includes("cheese")) return "🥣";
+    if (catLower.includes("breakfast") || catLower.includes("tiffin")) return "🥞";
+    if (catLower.includes("fruit") || catLower.includes("berry")) return "🍎";
+    if (catLower.includes("vegetable") || catLower.includes("sabzi") || catLower.includes("produce") || catLower.includes("salad")) return "🥗";
+    if (catLower.includes("snack") || catLower.includes("nut") || catLower.includes("seed")) return "🥜";
+    if (catLower.includes("supplement") || catLower.includes("drink") || catLower.includes("beverage")) return "🥤";
+  }
+
+  return "🍽️";
 }
 
 // --- Curated High-Definition Food & Dish Photography (WebP / CDN) ---
@@ -433,64 +477,64 @@ export const FOOD_PHOTO_MAP: Record<string, string> = {
   "buttermilk": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&auto=format&fit=crop&q=80",
 
   // Dals, Legumes & Curries
-  "dal tadka": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80",
-  "yellow dal": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80",
-  "moong dal": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80",
-  "dal": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80",
-  "rajma": "https://images.unsplash.com/photo-1588877261965-966964c7d0d0?w=600&auto=format&fit=crop&q=80",
-  "chana masala": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&auto=format&fit=crop&q=80",
-  "chole": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&auto=format&fit=crop&q=80",
-  "chana": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&auto=format&fit=crop&q=80",
-  "chickpeas": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&auto=format&fit=crop&q=80",
-  "sambar": "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600&auto=format&fit=crop&q=80",
-  "curry": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80",
+  "dal tadka": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80",
+  "yellow dal": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80",
+  "moong dal": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80",
+  "dal": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80",
+  "rajma": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80",
+  "chana masala": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&auto=format&fit=crop&q=80",
+  "chole": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&auto=format&fit=crop&q=80",
+  "chana": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&auto=format&fit=crop&q=80",
+  "chickpeas": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&auto=format&fit=crop&q=80",
+  "sambar": "https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=800&auto=format&fit=crop&q=80",
+  "curry": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80",
 
   // Poultry & Fish
-  "chicken breast": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=600&auto=format&fit=crop&q=80",
-  "grilled chicken": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=600&auto=format&fit=crop&q=80",
-  "chicken curry": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&auto=format&fit=crop&q=80",
-  "chicken tikka": "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=600&auto=format&fit=crop&q=80",
-  "chicken": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=600&auto=format&fit=crop&q=80",
-  "fish curry": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&auto=format&fit=crop&q=80",
-  "grilled fish": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&auto=format&fit=crop&q=80",
-  "fish": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&auto=format&fit=crop&q=80",
+  "chicken breast": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=800&auto=format&fit=crop&q=80",
+  "grilled chicken": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=800&auto=format&fit=crop&q=80",
+  "chicken curry": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&auto=format&fit=crop&q=80",
+  "chicken tikka": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&auto=format&fit=crop&q=80",
+  "chicken": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&auto=format&fit=crop&q=80",
+  "fish curry": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&auto=format&fit=crop&q=80",
+  "grilled fish": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&auto=format&fit=crop&q=80",
+  "fish": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&auto=format&fit=crop&q=80",
 
   // Plant Proteins & Soya
-  "soya chunks": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80",
-  "soy chunks": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80",
-  "tofu": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80",
+  "soya chunks": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80",
+  "soy chunks": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80",
+  "tofu": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80",
 
   // Grains & Breads
-  "roti": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&auto=format&fit=crop&q=80",
-  "chapati": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&auto=format&fit=crop&q=80",
-  "phulka": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&auto=format&fit=crop&q=80",
-  "paratha": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&auto=format&fit=crop&q=80",
-  "white rice": "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=600&auto=format&fit=crop&q=80",
-  "steamed rice": "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=600&auto=format&fit=crop&q=80",
-  "rice": "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=600&auto=format&fit=crop&q=80",
-  "bread": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80",
-  "toast": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80",
+  "roti": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&auto=format&fit=crop&q=80",
+  "chapati": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&auto=format&fit=crop&q=80",
+  "phulka": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&auto=format&fit=crop&q=80",
+  "paratha": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&auto=format&fit=crop&q=80",
+  "white rice": "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=800&auto=format&fit=crop&q=80",
+  "steamed rice": "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=800&auto=format&fit=crop&q=80",
+  "rice": "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=800&auto=format&fit=crop&q=80",
+  "bread": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80",
+  "toast": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80",
 
   // Vegetables & Salads
-  "mixed vegetables": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80",
-  "sabzi": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80",
-  "salad": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80",
-  "cucumber": "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=600&auto=format&fit=crop&q=80",
+  "mixed vegetables": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&auto=format&fit=crop&q=80",
+  "sabzi": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&auto=format&fit=crop&q=80",
+  "salad": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&auto=format&fit=crop&q=80",
+  "cucumber": "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=800&auto=format&fit=crop&q=80",
 
   // Nuts, Seeds & Dry Snacks
-  "roasted peanuts": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&auto=format&fit=crop&q=80",
-  "peanuts": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&auto=format&fit=crop&q=80",
-  "roasted chana": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&auto=format&fit=crop&q=80",
-  "roasted makhana": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80",
-  "makhana": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80",
-  "almonds": "https://images.unsplash.com/photo-1508061252445-564bb2bc2265?w=600&auto=format&fit=crop&q=80",
-  "almond": "https://images.unsplash.com/photo-1508061252445-564bb2bc2265?w=600&auto=format&fit=crop&q=80",
-  "walnuts": "https://images.unsplash.com/photo-1508061252445-564bb2bc2265?w=600&auto=format&fit=crop&q=80",
+  "roasted peanuts": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80",
+  "peanuts": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80",
+  "roasted chana": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&auto=format&fit=crop&q=80",
+  "roasted makhana": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80",
+  "makhana": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80",
+  "almonds": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80",
+  "almond": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80",
+  "walnuts": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80",
 
   // Fruits
-  "banana": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=600&auto=format&fit=crop&q=80",
-  "apple": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&auto=format&fit=crop&q=80",
-  "orange": "https://images.unsplash.com/photo-1547514701-42782101795e?w=600&auto=format&fit=crop&q=80"
+  "banana": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=800&auto=format&fit=crop&q=80",
+  "apple": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=800&auto=format&fit=crop&q=80",
+  "orange": "https://images.unsplash.com/photo-1547514701-42782101795e?w=800&auto=format&fit=crop&q=80"
 };
 
 const SORTED_PHOTO_KEYS = Object.keys(FOOD_PHOTO_MAP).sort((a, b) => b.length - a.length);
@@ -525,8 +569,8 @@ export function getMealHeroPhoto(mealType: string, mealName?: string, diet?: str
   }
 
   if (cleanType.includes("dinner")) {
-    if (isVeg) return "https://images.unsplash.com/photo-1588877261965-966964c7d0d0?w=800&auto=format&fit=crop&q=80"; // Rajma Chawal
-    return "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80"; // Homestyle Curry
+    if (isVeg) return "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80"; // Homestyle Rajma / Dal Thali
+    return "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&auto=format&fit=crop&q=80"; // Homestyle Curry
   }
 
   // Pre-workout / Snack
@@ -536,8 +580,9 @@ export function getMealHeroPhoto(mealType: string, mealName?: string, diet?: str
 export const DEFAULT_FOOD_IMAGE = FOOD_PHOTO_MAP["dal tadka"];
 
 /**
- * Returns a high-definition food photograph if available, or falls back to
- * the clean glassmorphic SVG badge for 100% reliability and zero broken links.
+ * Returns a high-definition food avatar: uses custom product image URL if provided,
+ * or the ultra-crisp, dark glassmorphic 3D food badge matching NutriScan's item design.
+ * 100% reliable, zero broken images, 0ms load time, offline PWA safe.
  */
 export function getFoodImage(name?: string, category?: string, customImageUrl?: string): string {
   // 1. If an explicit valid user or catalog image URL is provided, use it
@@ -545,15 +590,7 @@ export function getFoodImage(name?: string, category?: string, customImageUrl?: 
     return customImageUrl;
   }
 
-  // 2. Match against curated high-definition food photo dictionary
-  const cleanName = (name || "").toLowerCase().trim();
-  for (const key of SORTED_PHOTO_KEYS) {
-    if (cleanName.includes(key)) {
-      return FOOD_PHOTO_MAP[key];
-    }
-  }
-
-  // 3. Fallback to resilient glassmorphic SVG badge (0ms load, offline safe)
+  // 2. Return clean, high-contrast glassmorphic 3D food badge (NutriScan style)
   return getFoodSvgAvatar(name, category);
 }
 

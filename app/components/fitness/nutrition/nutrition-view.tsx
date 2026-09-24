@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, RefreshCw, Plus, Zap, Dumbbell, Apple, Salad, Coffee, Beef, Loader2, Edit3, X, Check, Trash2, Sparkles, Lock, Clock } from "lucide-react";
 import { FoodAvatar } from "./food-avatar";
-import { getMealHeroPhoto } from "@/lib/utils/food-images";
+import { getMealHeroPhoto, getFoodEmoji } from "@/lib/utils/food-images";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
 import { TodaySummaryCard } from "./today-summary-card";
@@ -1872,6 +1872,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                         </span>
                       </div>
                       <h3 className="text-base sm:text-lg font-black text-white leading-tight drop-shadow-md truncate" title={currentMealName}>
+                        <span className="mr-1.5">{getFoodEmoji(currentMealName)}</span>
                         {currentMealName}
                       </h3>
                     </div>
@@ -1891,7 +1892,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           }`}
                         >
                           <span>Option A</span>
-                          <span className="text-[10px] font-normal lowercase opacity-80 truncate max-w-[120px]">({meal.name || 'Quick / Mess'})</span>
+                          <span className="text-[10px] font-normal lowercase opacity-80 truncate max-w-[120px]">
+                            ({getFoodEmoji(meal.name)} {meal.name || 'Quick / Mess'})
+                          </span>
                         </button>
                         <button
                           type="button"
@@ -1903,7 +1906,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           }`}
                         >
                           <span>Option B</span>
-                          <span className="text-[10px] font-normal lowercase opacity-80 truncate max-w-[120px]">({meal.option_b_name})</span>
+                          <span className="text-[10px] font-normal lowercase opacity-80 truncate max-w-[120px]">
+                            ({getFoodEmoji(meal.option_b_name)} {meal.option_b_name})
+                          </span>
                         </button>
                       </div>
                     </div>

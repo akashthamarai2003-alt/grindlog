@@ -1152,9 +1152,9 @@
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/nutrition-view.tsx": {
-    "mtime": 1790236616.0431707,
-    "seen": 1790238175.9490554,
-    "ast_hash": "fffb9ad890344118c8d5005c99bbb7ec",
+    "mtime": 1790242583.5838177,
+    "seen": 1790242947.6448553,
+    "ast_hash": "22cfd6a197dfd7ce54f3f7a735da43cf",
     "semantic_hash": ""
   },
   "app/components/fitness/nutrition/swap-meal-modal.tsx": {
@@ -1920,9 +1920,9 @@
     "semantic_hash": ""
   },
   "app/lib/utils/food-images.ts": {
-    "mtime": 1790236476.7697833,
-    "seen": 1790238175.9992044,
-    "ast_hash": "d67ee476ae2f1cc21a04556a8bf6413d",
+    "mtime": 1790242515.65373,
+    "seen": 1790242947.6785436,
+    "ast_hash": "62c11774d4992b19d86e684bc183d0cd",
     "semantic_hash": ""
   },
   "app/lib/utils/redirect.ts": {
