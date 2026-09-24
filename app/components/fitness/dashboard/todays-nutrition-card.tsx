@@ -122,7 +122,7 @@ export function TodaysNutritionCard({
   }, [targetDateStr]);
 
   const [activeNutrition, setActiveNutrition] = useState<any>(() => {
-    const cached = nutritionClientCache.get(effectiveDate);
+    const cached = nutritionClientCache.get(effectiveDate, effectiveUserId);
     const cachedUserId = cached?.user_id;
     const isDifferentUser = effectiveUserId && cachedUserId && cachedUserId !== effectiveUserId;
     if (cached && !isDifferentUser && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
@@ -183,7 +183,7 @@ export function TodaysNutritionCard({
   const refreshNutrition = useCallback(async () => {
     try {
       // 0ms instant check from cache
-      const cached = nutritionClientCache.get(effectiveDate);
+      const cached = nutritionClientCache.get(effectiveDate, effectiveUserId);
       if (cached && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
         setActiveNutrition((prev: any) => ({
           ...prev,
@@ -213,11 +213,11 @@ export function TodaysNutritionCard({
     } catch {
       // silently ignore network errors
     }
-  }, [effectiveDate]);
+  }, [effectiveDate, effectiveUserId]);
 
   useEffect(() => {
     // Only fetch from network if neither server prop nor client cache has data
-    const cached = nutritionClientCache.get(effectiveDate);
+    const cached = nutritionClientCache.get(effectiveDate, effectiveUserId);
     const hasData = (nutrition && (nutrition.consumed != null || nutrition.meals != null || nutrition.targets != null)) ||
                     (cached && (cached.consumed != null || cached.meals != null || cached.targets != null));
 
@@ -230,7 +230,7 @@ export function TodaysNutritionCard({
         isInternalUpdateRef.current = false;
         return;
       }
-      const currentCached = nutritionClientCache.get(effectiveDate);
+      const currentCached = nutritionClientCache.get(effectiveDate, effectiveUserId);
       if (currentCached) {
         setActiveNutrition((prev: any) => ({
           ...prev,
@@ -252,7 +252,7 @@ export function TodaysNutritionCard({
         window.removeEventListener("focus", handleSync);
       }
     };
-  }, [refreshNutrition, effectiveDate, nutrition]);
+  }, [refreshNutrition, effectiveDate, effectiveUserId, nutrition]);
 
   const targetCalories = Number(activeNutrition?.daily_calories ?? nutrition?.daily_calories ?? activeNutrition?.targets?.calories ?? nutrition?.targets?.calories) > 0 
     ? Math.round(Number(activeNutrition?.daily_calories ?? nutrition?.daily_calories ?? activeNutrition?.targets?.calories ?? nutrition?.targets?.calories)) 

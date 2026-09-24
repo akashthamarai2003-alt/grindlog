@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { AINutritionService } from "@/lib/services/nutrition/ai-nutrition-service";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
@@ -40,6 +41,11 @@ export async function POST() {
     // Luna AI Meal Plan generation is powered by Groq (Free Tier)
     // Authenticated users can generate their personalized weekly 7-day plan (1/week, max 4/month)
     const result = await AINutritionService.generateMealPlan(user.id);
+    NutritionService.invalidateServerCache(user.id);
+    try {
+      revalidatePath("/nutrition");
+      revalidatePath("/");
+    } catch {}
 
     return NextResponse.json({ 
       success: true, 

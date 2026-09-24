@@ -236,48 +236,13 @@ export function LogFoodModal({
         }
       });
 
-      // Prepare optimistic items so modal closes in 0ms and dashboard updates instantly
-      const optimisticLogs = itemsToLog.map((item, idx) => {
-        const foodObj = item.rawItem?.foods || item.rawItem;
-        return {
-          id: `opt-${Date.now()}-${idx}`,
-          food_id: foodObj?.id,
-          meal_type: mealType,
-          quantity: item.quantity,
-          calories: Math.round(item.calories * item.quantity),
-          protein: Math.round(item.protein * item.quantity * 10) / 10,
-          carbs: Math.round(item.carbs * item.quantity * 10) / 10,
-          fat: Math.round(item.fat * item.quantity * 10) / 10,
-          estimated_cost: Math.round((item.estimated_cost || 0) * item.quantity),
-          foods: {
-            id: foodObj?.id,
-            name: item.name,
-            serving_size: item.serving_size,
-            category: foodObj?.category || mealType,
-            calories: item.calories,
-            protein: item.protein,
-            carbs: item.carbs,
-            fat: item.fat,
-            estimated_cost: item.estimated_cost || 0
-          }
-        };
-      });
-
-      // 0ms Instant UI feedback: notify parent to show meal as completed and close modal immediately
-      toast.success(`Logged ${itemsToLog.length} foods for ${formatMealType(mealType)}!`);
-      onSuccess(optimisticLogs);
-      onClose();
-
-      // Persist to server in background
-      try {
-        const serverData = await nutritionApi.logFoods(payloadItems);
-        if (serverData && serverData.length > 0) {
-          onSuccess(serverData);
-        }
-      } catch (err: any) {
-        console.error("Background sync error in logFoods:", err);
-        toast.error("Failed to sync logged meal with server");
+      const serverData = await nutritionApi.logFoods(payloadItems);
+      if (!Array.isArray(serverData) || serverData.length === 0) {
+        throw new Error("No foods were saved. Please try again.");
       }
+      onSuccess(serverData);
+      onClose();
+      toast.success(`Logged ${itemsToLog.length} foods for ${formatMealType(mealType)}!`);
     } catch (err: any) {
       console.error("Failed to log planned meal:", err);
       toast.error(err?.message || "Failed to log meal");
@@ -312,32 +277,13 @@ export function LogFoodModal({
         };
       }
 
-      const optimisticLog = {
-        id: `opt-${Date.now()}-single`,
-        food_id: selectedFood.id,
-        meal_type: mealType,
-        quantity,
-        calories: Math.round((Number(selectedFood.calories) || 0) * quantity),
-        protein: Math.round((Number(selectedFood.protein) || 0) * quantity * 10) / 10,
-        carbs: Math.round((Number(selectedFood.carbs) || 0) * quantity * 10) / 10,
-        fat: Math.round((Number(selectedFood.fat) || 0) * quantity * 10) / 10,
-        estimated_cost: Math.round((Number(selectedFood.estimated_cost) || 0) * quantity),
-        foods: { ...selectedFood }
-      };
-
-      toast.success(`Logged ${quantity}x ${selectedFood.name}`);
-      onSuccess(optimisticLog);
-      onClose();
-
-      try {
-        const loggedData = await nutritionApi.logFood(payload);
-        if (loggedData) {
-          onSuccess(loggedData);
-        }
-      } catch (err: any) {
-        console.error("Background sync error in logFood:", err);
-        toast.error(err?.message || `Failed to save ${selectedFood.name} to server`);
+      const loggedData = await nutritionApi.logFood(payload);
+      if (!loggedData?.id) {
+        throw new Error(`Could not save ${selectedFood.name}. Please try again.`);
       }
+      onSuccess(loggedData);
+      onClose();
+      toast.success(`Logged ${quantity}x ${selectedFood.name}`);
     } catch (err: any) {
       console.error("Failed to log single food:", err);
       toast.error(err?.message || `Failed to save ${selectedFood.name}`);

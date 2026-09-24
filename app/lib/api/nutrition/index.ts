@@ -8,7 +8,7 @@ export interface LogFoodRequest {
 const memoryNutritionCache: Record<string, any> = {};
 
 export const nutritionClientCache = {
-  get(date?: string): any {
+  get(date?: string, userId?: string): any {
     if (!date && typeof window !== "undefined") {
       date = new Intl.DateTimeFormat("en-CA", {
         year: "numeric",
@@ -16,10 +16,11 @@ export const nutritionClientCache = {
         day: "2-digit",
       }).format(new Date());
     }
-    if (!date) return null;
+    // Never expose a date-only cache entry without verifying its owner.
+    if (!date || !userId) return null;
 
     if (memoryNutritionCache[date]) {
-      return memoryNutritionCache[date];
+      return memoryNutritionCache[date]?.user_id === userId ? memoryNutritionCache[date] : null;
     }
 
     if (typeof window !== "undefined") {
@@ -27,7 +28,7 @@ export const nutritionClientCache = {
         const stored = sessionStorage.getItem(`grindlog_nutrition_${date}`);
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (parsed) {
+          if (parsed?.user_id === userId) {
             memoryNutritionCache[date] = parsed;
             return parsed;
           }
@@ -38,11 +39,11 @@ export const nutritionClientCache = {
   },
 
   set(date: string, data: any) {
-    if (!date || !data) return;
+    if (!date || !data?.user_id) return;
     const existing = memoryNutritionCache[date];
     let toStore = data;
     // Only consider merging if both belong to the exact same user
-    const sameUser = !data?.user_id || !existing?.user_id || data.user_id === existing.user_id;
+    const sameUser = !existing || data.user_id === existing.user_id;
     if (data._freshFromDb) {
       toStore = data;
     } else if (existing && sameUser) {

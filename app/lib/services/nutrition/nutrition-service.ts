@@ -4025,16 +4025,23 @@ function scaleServingSize(servingSize: string, scale: number): string {
       }
     }
 
-    const todayDateStr = await this.getLocalDateString(userId, tz);
     const hasExplicitPlanForDate = Boolean(plans && plans.length > 0);
-    const isFutureDate = localDate > todayDateStr;
-    const hasAiMeals = Boolean(aiMeals && aiMeals.length > 0);
-    const hasNutritionUpgrade = (activePlan?.plan_data as any)?._nutritionUpgrade?.status === "complete";
+    // Dated meal_plans are the source of truth for a generated 7-day plan.
+    // Legacy workout-plan meals are only used when this user has no dated plan at all.
+    let hasSavedMealPlans = hasExplicitPlanForDate;
+    if (!hasSavedMealPlans && aiMeals.length > 0) {
+      const anyPlanRes = await supabase
+        .from('meal_plans')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1);
+      // If the lookup fails, do not risk showing legacy meals outside a saved plan.
+      hasSavedMealPlans = Boolean(anyPlanRes.error || anyPlanRes.data?.length);
+    }
+    const hasAiMeals = !hasSavedMealPlans && Boolean(aiMeals && aiMeals.length > 0);
     const userHasAnyPlan = Boolean(
       hasExplicitPlanForDate ||
-      hasAiMeals ||
-      hasNutritionUpgrade ||
-      weeklyPlanStatus?.has_active_plan
+      hasAiMeals
     );
 
     let formattedMeals: any[] = [];
@@ -4102,40 +4109,8 @@ function scaleServingSize(servingSize: string, scale: number): string {
           ai_generated: true,
         };
       });
-    } else if (userHasAnyPlan) {
-      // Continuous rolling 7-day plan fallback ONLY when the user actually has an active generated plan
-      formattedMeals = ALL_MEAL_TYPES.map((mType) => {
-        const rotating = rotatingPlans.get(mType);
-        if (!rotating) return null;
-        const swapOpts = NutritionService.getCuratedSwapOptions(mType, fitProfile, targets, foodCatalog);
-        const altOpt = swapOpts[1] || swapOpts[0];
-        return {
-          ...rotating,
-          option_b_name: altOpt?.name || `${rotating.name} Alternative`,
-          option_b_items: (altOpt?.items || []).map((it: any, optIdx: number) => ({
-            id: `optb-rot-${mType}-${optIdx}`,
-            food_id: it.food_id || it.id,
-            quantity: it.quantity || 1,
-            serving_size: it.serving_size,
-            foods: {
-              id: it.food_id || it.id,
-              name: it.name,
-              category: it.category || 'General',
-              serving_size: it.serving_size,
-              calories: it.calories,
-              protein: it.protein,
-              carbs: it.carbs,
-              fat: it.fat,
-              estimated_cost: it.estimated_cost
-            }
-          })),
-          is_natural_whole_food: true,
-          has_7day_variety: true,
-        };
-      }).filter(Boolean);
     } else {
-      // User has NOT generated a nutrition plan yet!
-      // Do NOT fabricate fake meals! Keep formattedMeals empty so user sees the "Generate Plan" state!
+      // No saved plan for this date. Do not fabricate meals beyond the seven dated days.
       formattedMeals = [];
     }
 
@@ -4174,6 +4149,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
     const result = {
       user_id: userId,
       date: localDate,
+      timezone: tz,
       day_of_week: dayOfWeek,
       targets,
       consumed,

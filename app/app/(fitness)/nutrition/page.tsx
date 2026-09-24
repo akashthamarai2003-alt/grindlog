@@ -45,14 +45,6 @@ async function NutritionContent() {
 
   const isPro = plan?.id === "pro";
 
-  const today = initialData?.date
-    ? new Date(initialData.date + "T12:00:00").toLocaleDateString("en-US", { 
-        weekday: 'short', month: 'short', day: 'numeric' 
-      })
-    : new Date().toLocaleDateString("en-US", { 
-        weekday: 'short', month: 'short', day: 'numeric' 
-      });
-
   return (
     <div className="min-h-screen bg-[#0A1108] text-white">
       <div className="w-full max-w-md mx-auto px-3.5 sm:px-5 pt-6 sm:pt-8 pb-32">
@@ -63,9 +55,7 @@ async function NutritionContent() {
           </h1>
           
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <p suppressHydrationWarning className="text-sm font-bold text-white/60">
-              {today}
-            </p>
+            <p className="text-sm font-bold text-white/60">Seven consecutive days, starting when you generate</p>
             <div className="flex items-center gap-2">
               <Link
                 href="/grocery"

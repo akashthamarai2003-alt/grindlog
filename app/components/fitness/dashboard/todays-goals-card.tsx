@@ -54,7 +54,7 @@ export function TodaysGoalsCard({
 
   // Track meal completion from Today's Nutrition card
   const [nutritionProgress, setNutritionProgress] = useState(() => {
-    const cached = typeof window !== "undefined" ? nutritionClientCache.get(effectiveDate) : null;
+    const cached = typeof window !== "undefined" ? nutritionClientCache.get(effectiveDate, effectiveUserId) : null;
     const isDifferentUser = effectiveUserId && cached?.user_id && cached.user_id !== effectiveUserId;
     const safeCached = isDifferentUser ? null : cached;
     const dbCals = Math.round(Number(safeCached?.consumed?.calories ?? nutrition?.consumed?.calories) || 0);
@@ -72,7 +72,7 @@ export function TodaysGoalsCard({
   const checkNutritionStorage = useCallback(async () => {
     try {
       // 1. Direct DB consumed or client cache check if present
-      const cached = nutritionClientCache.get(effectiveDate);
+      const cached = nutritionClientCache.get(effectiveDate, effectiveUserId);
       let dbCals = Math.round(Number(cached?.consumed?.calories ?? nutrition?.consumed?.calories) || 0);
       let dbPro = Math.round(Number(cached?.consumed?.protein ?? nutrition?.consumed?.protein) || 0);
 
@@ -140,7 +140,7 @@ export function TodaysGoalsCard({
     } catch {
       // ignore
     }
-  }, [mealsStorageKey, nutrition?.meals, nutrition?.consumed, targetCalories, proteinTarget, effectiveDate]);
+  }, [mealsStorageKey, nutrition?.meals, nutrition?.consumed, targetCalories, proteinTarget, effectiveDate, effectiveUserId]);
 
   // Initial check and live event listener for instant reactivity across cards
   useEffect(() => {

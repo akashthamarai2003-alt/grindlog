@@ -15,18 +15,30 @@ import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
+function formatDateInTimeZone(timeZone?: string, date = new Date()): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(date);
+    const getPart = (type: string) => parts.find((part) => part.type === type)?.value || '';
+    return `${getPart('year')}-${getPart('month')}-${getPart('day')}`;
+  } catch {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+}
+
 export function NutritionView({ initialData, isPro = true }: { initialData?: any; isPro?: boolean } = {}) {
   const router = useRouter();
   const initialDateStr = initialData?.date;
-  const todayDateStr = useMemo(() => {
-    if (initialDateStr) return initialDateStr;
-    return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-  }, [initialDateStr]);
+  const userTimeZoneRef = useRef<string | undefined>(initialData?.timezone);
+  const [todayDateStr, setTodayDateStr] = useState<string>(() => initialDateStr || formatDateInTimeZone(initialData?.timezone));
+  const todayDateRef = useRef(todayDateStr);
 
   const [data, setData] = useState<any>(() => {
-    const dateKey = initialDateStr || (typeof window !== "undefined" ? new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) : "");
+    const dateKey = initialDateStr || (typeof window !== "undefined" ? formatDateInTimeZone(initialData?.timezone) : "");
     if (dateKey) {
-      const cached = nutritionClientCache.get(dateKey);
+      const cached = nutritionClientCache.get(dateKey, initialData?.user_id);
       if (cached && ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0)) {
         return {
           ...(initialData || {}),
@@ -40,6 +52,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     return initialData || null;
   });
   const [isLoading, setIsLoading] = useState(!initialData && !data);
+  const [isDateLoading, setIsDateLoading] = useState(false);
+  const [dateLoadError, setDateLoadError] = useState<string | null>(null);
   const [error, setError] = useState<any>(null);
 
   // Week navigation offset (0 = current week, +1 = next week, -1 = previous week)
@@ -51,6 +65,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
   const isFuture = Boolean(selectedDate && selectedDate > todayDateStr);
   const isToday = !selectedDate || selectedDate === todayDateStr;
+  const isPast = Boolean(selectedDate && selectedDate < todayDateStr);
   const dateCacheRef = useRef<Record<string, any>>({});
   const isInternalUpdateRef = useRef(false);
   const [swapModalOpen, setSwapModalOpen] = useState(false);
@@ -87,7 +102,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   });
 
   const weekDates = useMemo(() => {
-    const baseDate = initialDateStr ? new Date(initialDateStr + 'T12:00:00') : new Date();
+    const baseDate = new Date(todayDateStr + 'T12:00:00');
     const currentDay = baseDate.getDay();
     const distanceToMonday = (currentDay + 6) % 7;
     const monday = new Date(baseDate);
@@ -98,7 +113,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
-      const iso = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+      const iso = formatDateInTimeZone(undefined, d);
       dates.push({
         dateStr: iso,
         dayName: dayNames[d.getDay()],
@@ -107,7 +122,40 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       });
     }
     return dates;
-  }, [initialDateStr, todayDateStr, weekOffset]);
+  }, [todayDateStr, weekOffset]);
+
+  useEffect(() => {
+    const syncDay = () => {
+      const currentDate = formatDateInTimeZone(userTimeZoneRef.current);
+      const previousDate = todayDateRef.current;
+      if (currentDate === previousDate) return;
+      todayDateRef.current = currentDate;
+      setTodayDateStr(currentDate);
+      if (selectedDateRef.current === previousDate) {
+        selectedDateRef.current = currentDate;
+        setSelectedDate(currentDate);
+        setWeekOffset(0);
+        nutritionApi.getToday(currentDate).then((fresh) => {
+          if (fresh?.date === selectedDateRef.current) setData(fresh);
+        }).catch(() => {});
+      } else {
+        const selected = new Date(`${selectedDateRef.current}T12:00:00`);
+        const current = new Date(`${currentDate}T12:00:00`);
+        selected.setDate(selected.getDate() - (selected.getDay() + 6) % 7);
+        current.setDate(current.getDate() - (current.getDay() + 6) % 7);
+        setWeekOffset(Math.round((selected.getTime() - current.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+      }
+    };
+    const interval = window.setInterval(syncDay, 60_000);
+    syncDay();
+    window.addEventListener('focus', syncDay);
+    document.addEventListener('visibilitychange', syncDay);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', syncDay);
+      document.removeEventListener('visibilitychange', syncDay);
+    };
+  }, []);
 
   const getActiveMealType = () => {
     const hour = new Date().getHours();
@@ -120,7 +168,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
   // Sync cache whenever data changes
   useEffect(() => {
-    if (data?.date) {
+    if (data?.date && !data._isDatePlaceholder) {
       dateCacheRef.current[data.date] = data;
       nutritionClientCache.set(data.date, data);
     }
@@ -130,7 +178,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   useEffect(() => {
     if (!data) return;
 
-    if (data.date) {
+    if (data.date && !data._isDatePlaceholder) {
       dateCacheRef.current[data.date] = data;
       nutritionClientCache.set(data.date, data);
     }
@@ -144,6 +192,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             nutritionClientCache.set(res.date, res);
             if (selectedDateRef.current === res.date) {
               setData(res);
+              setIsDateLoading(false);
+              setDateLoadError(null);
             }
           }
         }).catch(() => {});
@@ -154,7 +204,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const fetchToday = async (dateParam?: string, isInitial: boolean = false) => {
     try {
       const targetDate = dateParam || selectedDateRef.current || selectedDate;
-      const cached = nutritionClientCache.get(targetDate);
+      const loadUserToday = isInitial && !initialData && !dateParam;
+      const cached = nutritionClientCache.get(targetDate, initialData?.user_id || data?.user_id);
       if (cached && (!data || ((cached.logged_foods?.length || 0) > 0 || (cached.consumed?.calories || 0) > 0))) {
         setData((prev: any) => {
           if (!prev) return cached;
@@ -169,16 +220,21 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       if ((isInitial && !data && !cached) || (!data && !cached)) {
         setIsLoading(true);
       }
-      const res = await nutritionApi.getToday(targetDate);
+      const res = await nutritionApi.getToday(loadUserToday ? undefined : targetDate);
+      if (res?.timezone) userTimeZoneRef.current = res.timezone;
       if (res?.date) {
         dateCacheRef.current[res.date] = res;
         nutritionClientCache.set(res.date, res);
       }
-      if (!selectedDateRef.current || selectedDateRef.current === (res?.date || targetDate)) {
+      if (loadUserToday || !selectedDateRef.current || selectedDateRef.current === (res?.date || targetDate)) {
         setData(res);
         if (res?.date) {
           setSelectedDate(res.date);
           selectedDateRef.current = res.date;
+          if (loadUserToday) {
+            todayDateRef.current = res.date;
+            setTodayDateStr(res.date);
+          }
         }
       }
       if (res?.targets) {
@@ -238,7 +294,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         return;
       }
       const targetDate = selectedDateRef.current || todayDateStr;
-      const cached = nutritionClientCache.get(targetDate);
+      const cached = nutritionClientCache.get(targetDate, initialData?.user_id || data?.user_id);
       if (cached) {
         setData(cached);
         dateCacheRef.current[targetDate] = cached;
@@ -277,8 +333,9 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     };
   }, []);
 
-  const handleSelectDate = (dateStr: string) => {
-    if (selectedDate === dateStr) return;
+  const handleSelectDate = (dateStr: string, forceReload = false) => {
+    if (selectedDate === dateStr && !forceReload) return;
+    setDateLoadError(null);
 
     // Flush any pending water updates before switching dates
     if (waterDebounceTimerRef.current) {
@@ -291,6 +348,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
     // 1. Instant Cache HIT (0ms switch)
     if (dateCacheRef.current[dateStr]) {
+      setIsDateLoading(false);
       setData(dateCacheRef.current[dateStr]);
       // Quiet background revalidation
       nutritionApi.getToday(dateStr).then((res) => {
@@ -305,6 +363,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }
 
     // 2. Cache MISS: Optimistic instant switch in 0ms without skeleton/unmount
+    setIsDateLoading(true);
     const clickedDateObj = new Date(dateStr + 'T00:00:00');
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dayName = dayNames[clickedDateObj.getDay()] || 'Day';
@@ -315,12 +374,15 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       return {
         ...prev,
         date: dateStr,
+        _isDatePlaceholder: true,
         day_of_week: dayName,
+        meals: [],
         logged_foods: [],
         water_logs: [],
         water_consumed_ml: 0,
         consumed: { calories: 0, protein: 0, carbs: 0, fat: 0, water_ml: 0 },
-        remaining: { calories: t.calories, protein: t.protein, carbs: t.carbs, fat: t.fat },
+        remaining: { calories: t.calories, protein: t.protein, carbs: t.carbs, fat: t.fat, water_ml: t.water_ml },
+        budget: { ...prev.budget, spent: 0, monthly_spent: 0 },
         progress: { calories_percent: 0, protein_percent: 0, water_percent: 0 },
         nutrition_score: 0
       };
@@ -332,14 +394,23 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         dateCacheRef.current[res.date] = res;
         if (selectedDateRef.current === res.date) {
           setData(res);
+          setIsDateLoading(false);
         }
       }
     }).catch((err) => {
       console.error("Failed to load date details:", err);
+      if (selectedDateRef.current === dateStr) {
+        setDateLoadError(err?.message || "Could not load meals for this date.");
+        setIsDateLoading(false);
+      }
     });
   };
 
   const openTargetsModal = () => {
+    if (!isToday) {
+      toast.info("Targets can only be changed for today and upcoming days.");
+      return;
+    }
     if (!isPro) {
       triggerProModal("Custom Macro Targets");
       return;
@@ -478,16 +549,30 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     setIsGenerating(true);
     try {
       const res = await nutritionApi.generatePlan();
-      if (res.existing) {
-        toast.info(res.message);
-      } else {
-        toast.success(res.message || "7-Day weekly meal plan generated successfully!");
-      }
       // Invalidate local client date cache and global client cache so all screens reload fresh meals
       dateCacheRef.current = {};
       nutritionClientCache.clear();
       nutritionClientCache.notifyUpdated();
-      await fetchToday(selectedDateRef.current);
+      // Generation always starts today, never at the future week being browsed.
+      setWeekOffset(0);
+      try {
+        const fresh = await nutritionApi.getToday();
+        if (!fresh?.date) throw new Error("Could not load the new plan.");
+        if (fresh.timezone) userTimeZoneRef.current = fresh.timezone;
+        todayDateRef.current = fresh.date;
+        setTodayDateStr(fresh.date);
+        setSelectedDate(fresh.date);
+        selectedDateRef.current = fresh.date;
+        setData(fresh);
+        setDateLoadError(null);
+        setIsDateLoading(false);
+      } catch {
+        toast.warning("Plan saved, but the page could not refresh. Please reload to see it.");
+        router.refresh();
+        return;
+      }
+      if (res.existing) toast.info(res.message);
+      else toast.success(res.message || "7-Day meal plan generated successfully!");
     } catch (err: any) {
       toast.error(err?.message || "Failed to generate plan");
     } finally {
@@ -566,6 +651,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   }, []);
 
   const handleDeleteFood = async (id: string, foodName?: string) => {
+    if (!isToday) {
+      toast.info("Past meal history is read-only.");
+      return;
+    }
     if (!isPro) {
       triggerProModal("Food Logging");
       return;
@@ -640,8 +729,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const handleAddWater = (amount: number) => {
-    if (isFuture) {
-      toast.info("Cannot log water for a future date.");
+    if (!isToday) {
+      toast.info("Water can only be logged for today.");
       return;
     }
     if (!isPro) {
@@ -707,8 +796,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const handleRemoveWater = (amount: number = 250) => {
-    if (isFuture) {
-      toast.info("Cannot log water for a future date.");
+    if (!isToday) {
+      toast.info("Water can only be changed for today.");
       return;
     }
     if (!isPro) {
@@ -754,8 +843,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const handleResetWater = async () => {
-    if (isFuture) {
-      toast.info("Cannot modify water for a future date.");
+    if (!isToday) {
+      toast.info("Water can only be changed for today.");
       return;
     }
     if (!isPro) {
@@ -913,8 +1002,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const openLogModal = (mealType: string, preselected?: any[]) => {
-    if (isFuture) {
-      toast.info("Cannot log meals for a future date.");
+    if (!isToday) {
+      toast.info("Meals can only be logged for today.");
       return;
     }
     if (!isPro) {
@@ -927,6 +1016,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const handleOpenSwapModal = (mealType: string) => {
+    if (isPast) {
+      toast.info("Past meal plans are read-only.");
+      return;
+    }
     if (!isPro) {
       triggerProModal("Meal Swapping");
       return;
@@ -999,10 +1092,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const meals = Array.isArray(data.meals) ? data.meals : [];
   const loggedFoods = Array.isArray(data.logged_foods) ? data.logged_foods : [];
   const nutrition_score = data.nutrition_score || 0;
-  const hasPlannedMeals = meals.some((meal: any) => (
-    Array.isArray(meal?.meal_plan_items) && meal.meal_plan_items.length > 0
-  ));
-  const hasLoggedFoods = loggedFoods.length > 0;
+  const hasPlannedMeals = meals.length > 0;
   const weeklyStatus = data?.weekly_plan_status;
   const canGeneratePlan = weeklyStatus ? Boolean(weeklyStatus.can_generate) : true;
 
@@ -1318,6 +1408,10 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   return (
     <>
       <div className="space-y-4">
+        <p className="text-sm font-bold text-white/70" aria-live="polite">
+          Viewing {new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          {isToday ? ' · Today' : isFuture ? ' · Scheduled' : ' · Past day'}
+        </p>
         {!isPro && (
           <div className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-[#ADFF00]/15 via-[#ADFF00]/5 to-transparent border border-[#ADFF00]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
             <div>
@@ -1501,7 +1595,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             <button
               type="button"
               onClick={() => {
+                const selectedIndex = weekDates.findIndex((day) => day.dateStr === selectedDate);
+                const target = new Date(`${weekDates[selectedIndex >= 0 ? selectedIndex : 0].dateStr}T12:00:00`);
+                target.setDate(target.getDate() - 7);
                 setWeekOffset(prev => prev - 1);
+                handleSelectDate(formatDateInTimeZone(undefined, target));
               }}
               className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold active:scale-95 select-none"
               title="Previous Week"
@@ -1537,7 +1635,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             <button
               type="button"
               onClick={() => {
+                const selectedIndex = weekDates.findIndex((day) => day.dateStr === selectedDate);
+                const target = new Date(`${weekDates[selectedIndex >= 0 ? selectedIndex : 0].dateStr}T12:00:00`);
+                target.setDate(target.getDate() + 7);
                 setWeekOffset(prev => prev + 1);
+                handleSelectDate(formatDateInTimeZone(undefined, target));
               }}
               className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold active:scale-95 select-none"
               title="Next Week"
@@ -1596,22 +1698,31 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
             {/* Status Badge or Action Button */}
             <div className="shrink-0">
-              {weekOffset > 0 && !hasPlannedMeals ? (
+              {isDateLoading || dateLoadError ? (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold text-white/60">
+                  {isDateLoading ? <Loader2 size={12} className="animate-spin" /> : <Clock size={12} />}
+                  {isDateLoading ? "Loading Date" : "Date Unavailable"}
+                </div>
+              ) : isPast ? (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold text-white/50">
+                  Past Day
+                </div>
+              ) : isFuture && !hasPlannedMeals ? (
                 canGeneratePlan ? (
                   <button
                     type="button"
                     disabled={isGenerating}
                     onClick={handleGeneratePlan}
                     className="text-[10px] sm:text-xs font-black text-black bg-[#ADFF00] hover:bg-[#c4ff33] px-3.5 py-1.5 rounded-full uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-[0_0_14px_rgba(173,255,0,0.3)] disabled:opacity-50 cursor-pointer active:scale-95 whitespace-nowrap"
-                    title="Generate next week's personalized diet plan with Luna AI"
+                    title="Generate a seven-day diet plan starting today"
                   >
                     {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
-                    {isGenerating ? "Planning..." : "Plan Next Week"}
+                    {isGenerating ? "Planning..." : "Plan From Today"}
                   </button>
                 ) : (
                   <div 
                     className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full whitespace-nowrap select-none"
-                    title={`Next week plan generation unlocks on ${weeklyStatus?.next_available_formatted || 'next week'}.`}
+                    title={`Plan generation unlocks on ${weeklyStatus?.next_available_formatted || 'the next cycle date'}.`}
                   >
                     <Lock size={11} className="shrink-0 text-amber-400" />
                     <span className="font-extrabold tracking-wide">Not Created</span>
@@ -1619,12 +1730,6 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     <span className="text-white/70 font-medium">Unlocks {weeklyStatus?.next_available_formatted || `in ${weeklyStatus?.days_remaining || 7}d`}</span>
                   </div>
                 )
-              ) : weekOffset < 0 && !hasPlannedMeals ? (
-                <div 
-                  className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-white/50 bg-white/5 border border-white/10 px-3 py-1 rounded-full whitespace-nowrap select-none"
-                >
-                  <span className="font-medium tracking-wide">Past Week</span>
-                </div>
               ) : canGeneratePlan ? (
                 <button
                   type="button"
@@ -1634,7 +1739,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   title="Generate your weekly personalized diet plan with Luna AI (1 per week, max 4 per month)"
                 >
                   {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
-                  {isGenerating ? "Planning..." : (data?.has_ai_plan ? "New Week Plan" : "Generate Plan")}
+                  {isGenerating ? "Planning..." : "Generate 7-Day Plan"}
                 </button>
               ) : (
                 <div 
@@ -1642,7 +1747,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   title={`Active Weekly Plan (${weeklyStatus?.plans_used_this_month || 1}/4 this month). Next plan generation available on ${weeklyStatus?.next_available_formatted || 'next week'}.`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF00] animate-pulse shrink-0" />
-                  <span className="font-extrabold tracking-wide">Week Active</span>
+                  <span className="font-extrabold tracking-wide">{hasPlannedMeals ? "Plan Active" : "Not Planned"}</span>
                   <span className="text-white/30">•</span>
                   <span className="text-white/70 font-medium">Next: {weeklyStatus?.next_available_formatted || `in ${weeklyStatus?.days_remaining || 7}d`}</span>
                 </div>
@@ -1651,35 +1756,47 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           </div>
         </div>
         
-        {!hasPlannedMeals && !hasLoggedFoods ? (
+        {isDateLoading ? (
+          <div className="rounded-[24px] border border-white/10 bg-[#111A10] p-8 text-center text-sm font-medium text-white/60" role="status">
+            <Loader2 size={20} className="mx-auto mb-3 animate-spin text-[#ADFF00]" />
+            Loading meals for this date...
+          </div>
+        ) : dateLoadError ? (
+          <div className="rounded-[24px] border border-rose-500/20 bg-[#111A10] p-8 text-center text-sm text-white/70" role="alert">
+            <p>{dateLoadError}</p>
+            <button type="button" onClick={() => handleSelectDate(selectedDate, true)} className="mt-4 rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/15">
+              Try Again
+            </button>
+          </div>
+        ) : !hasPlannedMeals ? (
           <div className="bg-[#111A10] border border-[#ADFF00]/20 rounded-[24px] p-6 sm:p-8 text-center relative overflow-hidden">
             <div className="w-12 h-12 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center mx-auto mb-3 text-[#ADFF00]">
               <Sparkles size={24} />
             </div>
             <h3 className="text-base font-black text-white uppercase tracking-wider mb-2">
-              {weekOffset > 0 
-                ? "No Diet Plan for Next Week" 
-                : weekOffset < 0 
-                ? "No Plan Logged for This Week" 
-                : isPro 
-                ? "Generate Today's Meals" 
+              {isFuture
+                ? "No Plan for This Date"
+                : isPast
+                ? "No Plan for This Date"
+                : isPro
+                ? "Generate Your 7-Day Plan"
                 : "Unlock 7-Day AI Meal Plan"}
             </h3>
             <p className="text-white/60 text-xs sm:text-sm max-w-sm mx-auto mb-5 leading-relaxed">
-              {weekOffset > 0
+              {isFuture
                 ? (isPro
                     ? (!canGeneratePlan
-                        ? `Your current week's diet plan is active. Next week's AI meal plan generation unlocks on ${weeklyStatus?.next_available_formatted || 'your next cycle date'} (1 plan per 7-day cycle).`
-                        : `You're eligible to create next week's diet plan! Generate 7 days of whole-food recipes calibrated to your targets.`)
+                        ? `This date is outside your saved plan. You can generate another 7-day plan on ${weeklyStatus?.next_available_formatted || 'your next cycle date'}.`
+                        : "A new 7-day plan starts on the day you generate it, not on the selected calendar week.")
                     : `Personalized recipes and grocery lists calibrated to your target of ${targetCals} kcal and ${targetPro}g protein.`)
-                : weekOffset < 0
-                ? "No meal plan or food history was recorded for this past week."
+                : isPast
+                ? "No meal plan was saved for this date. Past days are read-only."
                 : (isPro
-                    ? "Your baseline strategy is active. Generate your personalized 7-day whole-food meal plan now."
+                    ? (canGeneratePlan ? "Create seven consecutive days of meals starting today." : `No meal plan is saved for today. Your next plan unlocks on ${weeklyStatus?.next_available_formatted || 'your next cycle date'}.`)
                     : `Personalized recipes and grocery lists calibrated to your target of ${targetCals} kcal and ${targetPro}g protein.`)}
             </p>
             {isPro ? (
-              weekOffset > 0 ? (
+              isFuture ? (
                 canGeneratePlan ? (
                   <button 
                     disabled={isGenerating}
@@ -1687,7 +1804,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     className="px-5 py-3 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black font-black uppercase tracking-wider rounded-xl text-xs disabled:opacity-50 flex items-center justify-center gap-2 mx-auto transition-all shadow-[0_0_15px_rgba(173,255,0,0.3)] cursor-pointer active:scale-95"
                   >
                     {isGenerating ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
-                    {isGenerating ? "Generating Weekly Plan..." : "Generate Next Week's Plan"}
+                    {isGenerating ? "Generating 7-Day Plan..." : "Generate Plan From Today"}
                   </button>
                 ) : (
                   <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-400/10 border border-amber-400/20 rounded-xl text-xs font-bold text-amber-400 mx-auto">
@@ -1695,7 +1812,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     <span>Plan Creation Unlocks on {weeklyStatus?.next_available_formatted || 'next week'}</span>
                   </div>
                 )
-              ) : weekOffset < 0 ? (
+              ) : isPast ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -1713,12 +1830,12 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   className="px-5 py-3 bg-[#ADFF00] hover:bg-[#ADFF00]/90 text-black font-black uppercase tracking-wider rounded-xl text-xs disabled:opacity-50 flex items-center justify-center gap-2 mx-auto transition-all shadow-[0_0_15px_rgba(173,255,0,0.3)] cursor-pointer active:scale-95"
                 >
                   {isGenerating ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
-                  {isGenerating ? "Generating Weekly Plan..." : "Generate AI Weekly Plan"}
+                  {isGenerating ? "Generating 7-Day Plan..." : "Generate 7-Day Plan"}
                 </button>
               ) : (
                 <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#ADFF00]/10 border border-[#ADFF00]/20 rounded-xl text-xs font-bold text-[#ADFF00] mx-auto">
                   <span className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse shrink-0" />
-                  <span>Week Plan Active</span>
+                  <span>No Plan for Today</span>
                   <span className="text-white/40">•</span>
                   <span className="text-white/80">Next generation on {weeklyStatus?.next_available_formatted || 'next week'}</span>
                 </div>
@@ -1731,6 +1848,15 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 Upgrade to Pro to Generate Plan ⚡
               </a>
             )}
+            {isToday && isPro && (
+              <button
+                type="button"
+                onClick={() => openLogModal(getActiveMealType())}
+                className="mt-3 mx-auto flex items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-2.5 text-xs font-bold text-white hover:bg-white/10"
+              >
+                <Plus size={14} /> Log Food Without a Plan
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -1741,8 +1867,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     <Sparkles size={20} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">7-Day Cycle Finished!</h4>
-                    <p className="text-xs text-white/60">Generate a fresh AI-optimized weekly plan with new natural whole-food meal varieties.</p>
+                    <h4 className="text-sm font-bold text-white">Ready for a New 7-Day Plan</h4>
+                    <p className="text-xs text-white/60">A new plan will start today and cover the next seven consecutive days.</p>
                   </div>
                 </div>
                 <button
@@ -1752,7 +1878,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   className="w-full sm:w-auto px-5 py-2.5 bg-[#ADFF00] hover:bg-[#baff22] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all shadow-[0_0_15px_rgba(173,255,0,0.3)] cursor-pointer active:scale-95"
                 >
                   {isGenerating ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
-                  {isGenerating ? "Generating..." : "Generate Next Week"}
+                  {isGenerating ? "Generating..." : "Generate From Today"}
                 </button>
               </div>
             )}
@@ -1949,14 +2075,16 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                               </span>
                               <div className="flex items-center gap-2.5">
                                 <span className="text-xs font-black text-[#ADFF00]">{Math.round(Number(f.calories) || 0)} <span className="text-[9px] text-[#ADFF00]/70 uppercase">kcal</span></span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteFood(f.id, f.foods?.name)}
-                                  className="w-6 h-6 rounded-md bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all cursor-pointer"
-                                  title="Remove food"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
+                                {isToday && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteFood(f.id, f.foods?.name)}
+                                    className="w-6 h-6 rounded-md bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all cursor-pointer"
+                                    title="Remove food"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
                               </div>
                             </li>
                           ))}
@@ -2129,7 +2257,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                       </div>
                     )}
                     <div className="flex gap-2">
-                      {isFuture ? (
+                      {isPast ? (
+                        <div className="flex-1 py-2.5 px-4 bg-[#121E12] border border-white/5 rounded-xl text-[11px] font-black tracking-widest uppercase text-white/40 flex justify-center items-center gap-2 select-none">
+                          <Clock size={14} /> Past Day
+                        </div>
+                      ) : isFuture ? (
                         <>
                           <button 
                             type="button"
@@ -2247,7 +2379,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         {/* Animated Water Intake Bottle Card */}
         <WaterBottleCard
           isPro={isPro}
-          disabled={isFuture}
+          disabled={!isToday}
           consumedMl={Number(consumed.water_ml) || 0}
           targetMl={Number(targets.water_ml) || 2500}
           onAddWater={handleAddWater}
@@ -2258,7 +2390,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
         {/* Water Intake History & Heatmap Card */}
         <WaterHistoryCard
-          todayConsumedMl={Number(consumed.water_ml) || 0}
+          todayConsumedMl={isToday ? Number(consumed.water_ml) || 0 : 0}
           targetMl={Number(targets.water_ml) || 2500}
         />
 
