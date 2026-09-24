@@ -1,12 +1,23 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Dumbbell, Clock, Activity, Play, CalendarX, Lock } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  CalendarDays,
+  Clock,
+  Dumbbell,
+  Footprints,
+  Lock,
+  Play,
+  Wind,
+} from "lucide-react";
+import { format } from "date-fns";
 import Link from "next/link";
 import { useInstantNav } from "../navigation-context";
+import styles from "./dashboard.module.css";
 
 interface TodaysWorkoutCardProps {
-  workout?: any; // To receive today's workout plan
+  workout?: any;
   targetDateStr?: string;
   isFree?: boolean;
   onFreeClick?: () => void;
@@ -19,157 +30,159 @@ export function TodaysWorkoutCard({
   onFreeClick,
 }: TodaysWorkoutCardProps) {
   const { setNavigatingTo } = useInstantNav();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = format(new Date(), "yyyy-MM-dd");
   const cardDateStr = workout?.workout_date || targetDateStr || todayStr;
   const isFuture = cardDateStr > todayStr;
+  const isPast = cardDateStr < todayStr;
+  const title = workout?.name || "Workout";
+  const isRestDay = title.toLowerCase().includes("rest");
 
-  if (!workout) {
+  if (!workout || isRestDay) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full rounded-2xl border border-white/5 bg-[#111A10] p-6 text-center"
+      <section
+        className={`${styles.card} ${styles.recovery}`}
+        aria-labelledby="recovery-title"
       >
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#ADFF00]/10">
-          <CalendarX className="h-6 w-6 text-[#ADFF00]" />
+        <div className={styles.recoveryArt} aria-hidden="true">
+          {isFuture && !isRestDay ? (
+            <CalendarDays size={27} strokeWidth={1.5} />
+          ) : (
+            <Wind size={29} strokeWidth={1.5} />
+          )}
         </div>
-        <h3 className="text-lg font-black text-white">{isFuture ? "No workout scheduled" : "Rest & recovery day"}</h3>
-        <p className="mt-2 text-sm text-white/50">
-          {isFuture ? "Your saved AI plan has no training session on this date." : "No workout is scheduled in your saved plan today."}
+        <p className={styles.eyebrow}>
+          {isFuture
+            ? "Plan ahead"
+            : isPast
+              ? "Your schedule"
+              : "A little room to recharge"}
         </p>
-      </motion.div>
+        <h2 id="recovery-title" className={styles.recoveryTitle}>
+          {isFuture && !isRestDay ? "No workout scheduled" : "Recovery builds strength"}
+        </h2>
+        <p className={styles.description}>
+          {isFuture && !isRestDay
+            ? "There’s no training session planned for this date."
+            : isPast
+              ? "No training session was scheduled for this date."
+              : "Take a breath. Give yourself a little time to rest, reset, and come back ready."}
+        </p>
+        {(!isFuture || isRestDay) && (
+          <>
+            <div className={styles.recoveryHints}>
+              <span>
+                <Clock size={13} aria-hidden="true" />
+                10 minutes
+              </span>
+              <span>
+                <Footprints size={13} aria-hidden="true" />
+                Easy movement
+              </span>
+            </div>
+            <details className={styles.routine}>
+              <summary>
+                View recovery routine <ArrowRight size={14} aria-hidden="true" />
+              </summary>
+              <ol>
+                <li>
+                  <strong>2 minutes:</strong> Settle into a comfortable position and
+                  breathe slowly.
+                </li>
+                <li>
+                  <strong>5 minutes:</strong> Take an easy walk at a comfortable pace.
+                </li>
+                <li>
+                  <strong>3 minutes:</strong> Gently stretch your shoulders and legs
+                  within a comfortable range.
+                </li>
+              </ol>
+            </details>
+          </>
+        )}
+      </section>
     );
   }
 
-  const title = workout.name || "Workout";
-  const exercises = workout?.fitness_os_exercises || [];
-  const numExercises = exercises.length;
-  const totalDuration = workout?.duration_minutes ? `${workout.duration_minutes} min` : null;
-  
-  const completedCount = exercises.filter((ex: any) => 
-    ex.fitness_os_sets && 
-    ex.fitness_os_sets.length > 0 && 
-    ex.fitness_os_sets.every((set: any) => set.completed)
+  const exercises = workout.fitness_os_exercises || [];
+  const completedCount = exercises.filter(
+    (exercise: any) =>
+      exercise.fitness_os_sets?.length > 0 &&
+      exercise.fitness_os_sets.every((set: any) => set.completed),
   ).length;
+  const isCompleted = workout.status === "completed";
+  const completion = (completedCount / Math.max(1, exercises.length)) * 100;
 
-  const isCompleted = workout?.status === "completed";
-  
-  const isRestDay = title.toLowerCase().includes("rest");
-  
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.5 }}
-      className="w-full relative p-[1px] rounded-2xl overflow-hidden group mt-2"
-    >
-      {/* Animated Gradient Border */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#ADFF00]/40 via-transparent to-[#ADFF00]/10 opacity-70 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" />
-      
-      <div className="relative bg-[#111A10] rounded-2xl p-5 flex flex-col gap-5 shadow-xl border border-white/5 backdrop-blur-md">
-        
-        {/* Top Header */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center">
-            <Dumbbell className="w-4 h-4 text-[#ADFF00]" />
-          </div>
-          <h3 className="text-sm font-semibold tracking-wide text-white/90 uppercase">Today's Workout</h3>
-        </div>
-
-        {/* Main Content */}
-        <div>
-          <h2 className="text-3xl font-black text-white tracking-tight uppercase leading-none mb-3">
-            {title}
-          </h2>
-          
-          {!isRestDay && (
-            <div className="flex items-center gap-4 text-white/60">
-              <div className="flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-[#ADFF00]" />
-                <span className="text-sm font-medium">{numExercises} Exercises</span>
-              </div>
-              {totalDuration && <div className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-[#ADFF00]" />
-                <span className="text-sm font-medium">{totalDuration}</span>
-              </div>}
-            </div>
-          )}
-        </div>
-
-        {/* Progress Tracker */}
-        {!isRestDay && (
-          <div className="flex flex-col gap-1.5 pt-2">
-            <div className="flex justify-between text-[10px] font-medium text-white/40 uppercase tracking-wider px-1">
-              <span>Progress</span>
-              <span className="text-[#ADFF00]">{completedCount} / {numExercises}</span>
-            </div>
-            <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(completedCount / Math.max(1, numExercises)) * 100}%` }}
-                transition={{ duration: 1.5, ease: "easeOut", delay: 0.6 }}
-                className="h-full bg-gradient-to-r from-[#ADFF00]/50 to-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.5)] rounded-full relative"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Start Button */}
-        {isFree ? (
-          <div className="w-full mt-2">
-            <button
-              onClick={onFreeClick}
-              className="w-full py-4 px-4 bg-[#1A2619] border border-[#ADFF00]/40 hover:bg-[#ADFF00]/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 cursor-pointer group/btn"
-            >
-              <Lock className="w-5 h-5 text-[#ADFF00]" />
-              <span className="text-base font-black text-[#ADFF00] uppercase tracking-wide">
-                Start Workout
-              </span>
-              <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00] text-black px-2 py-0.5 rounded-full ml-1">
-                Unlock
-              </span>
-            </button>
-          </div>
-        ) : isCompleted ? (
-          <Link href={`/workout/${workout.id}/summary`} prefetch={true} className="w-full mt-2">
-            <button className="w-full py-4 px-4 bg-[#1A2619] border border-[#ADFF00]/30 hover:bg-[#ADFF00]/10 active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2">
-              <Dumbbell className="w-5 h-5 text-[#ADFF00]" />
-              <span className="text-base font-black text-[#ADFF00] uppercase tracking-wide">View Summary</span>
-            </button>
-          </Link>
-        ) : isFuture ? (
-          <div className="w-full mt-2">
-            <button disabled className="w-full py-4 px-4 bg-[#121E12] border border-white/5 opacity-50 cursor-not-allowed rounded-xl flex items-center justify-center gap-2">
-              <Clock className="w-5 h-5 text-white/40" />
-              <span className="text-base font-black text-white/40 uppercase tracking-wide">Scheduled</span>
-            </button>
-          </div>
-        ) : isRestDay ? (
-          <div className="w-full mt-2">
-            <button disabled className="w-full py-4 px-4 bg-[#121E12] border border-white/5 opacity-50 cursor-not-allowed rounded-xl flex items-center justify-center gap-2">
-              <span className="text-base font-black text-white/40 uppercase tracking-wide">Rest Day</span>
-            </button>
-          </div>
-        ) : (
-          <Link 
-            href={workout ? `/workout` : "#"} 
-            prefetch={true} 
-            onClick={() => {
-              if (workout) {
-                window.scrollTo({ top: 0, behavior: "instant" });
-                setNavigatingTo("/workout");
-              }
-            }}
-            className="w-full mt-2"
-          >
-            <button className="w-full py-4 px-4 bg-[#ADFF00] hover:bg-[#bfff33] active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)]">
-              <Play className="w-5 h-5 text-black fill-black" />
-              <span className="text-base font-black text-black uppercase tracking-wide">Start Workout</span>
-            </button>
-          </Link>
-        )}
-        
+    <section className={styles.card} aria-labelledby="workout-title">
+      <div className={styles.headingLabel}>
+        <span className={styles.headingIcon}>
+          <Dumbbell size={16} aria-hidden="true" />
+        </span>
+        <h2 id="workout-title" className={styles.eyebrow}>
+          {isFuture ? "Upcoming workout" : isPast ? "Your workout" : "Today's workout"}
+        </h2>
       </div>
-    </motion.div>
+      <h3 className={styles.workoutTitle}>{title}</h3>
+      <div className={styles.workoutMeta}>
+        <span>
+          <Activity size={14} aria-hidden="true" />
+          {exercises.length} exercises
+        </span>
+        {workout.duration_minutes && (
+          <span>
+            <Clock size={14} aria-hidden="true" />
+            {workout.duration_minutes} min
+          </span>
+        )}
+      </div>
+      <div
+        className={styles.progressTrack}
+        role="progressbar"
+        aria-label="Workout completion"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(completion)}
+      >
+        <div className={styles.progressFill} style={{ width: `${completion}%` }} />
+      </div>
+      <div className={styles.progressCopy}>
+        <span>Session progress</span>
+        <strong>
+          {completedCount} / {exercises.length}
+        </strong>
+      </div>
+      {isFree ? (
+        <button type="button" onClick={onFreeClick} className={styles.primaryAction}>
+          <Lock size={16} aria-hidden="true" />
+          Unlock your workout
+        </button>
+      ) : isCompleted ? (
+        <Link
+          href={`/workout/${workout.id}/summary`}
+          prefetch
+          className={styles.primaryAction}
+        >
+          View summary <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      ) : isFuture ? (
+        <button type="button" disabled className={styles.primaryAction}>
+          <Clock size={16} aria-hidden="true" />
+          Scheduled
+        </button>
+      ) : (
+        <Link
+          href="/workout"
+          prefetch
+          className={styles.primaryAction}
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: "instant" });
+            setNavigatingTo("/workout");
+          }}
+        >
+          <Play size={16} aria-hidden="true" />
+          Start workout
+        </Link>
+      )}
+    </section>
   );
 }

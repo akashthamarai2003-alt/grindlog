@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useInstantNav } from "../navigation-context";
+import styles from "./dashboard.module.css";
 
 export function BottomNav({ isPro = false }: { isPro?: boolean }) {
   const pathname = usePathname();
@@ -16,7 +17,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
     { icon: Dumbbell, label: "Workout", href: "/workout" },
     { icon: Utensils, label: "Meals", href: "/nutrition", proOnly: true },
     { icon: TrendingUp, label: "Progress", href: "/progress", proOnly: true },
-    { icon: User, label: "Profile", href: "/profile" }
+    { icon: User, label: "Profile", href: "/profile" },
   ];
 
   // Eagerly prefetch static routes into router cache on mount
@@ -31,16 +32,18 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
   }, [router]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/90 to-transparent pointer-events-none">
-      <div className="max-w-sm mx-auto bg-[#121E12] border border-[#1A2619] rounded-full px-5 py-3 flex items-center justify-between shadow-2xl backdrop-blur-xl pointer-events-auto">
+    <div className={styles.navBackdrop}>
+      <nav className={styles.nav} aria-label="Main navigation">
         {navItems.map((item) => {
-          const isCurrentRoute = pathname === item.href || (item.href === "/nutrition" && pathname === "/grocery");
+          const isCurrentRoute =
+            pathname === item.href ||
+            (item.href === "/nutrition" && pathname === "/grocery");
           const isActive = navigatingTo ? navigatingTo === item.href : isCurrentRoute;
           const Icon = item.icon;
 
           return (
-            <Link 
-              key={item.href} 
+            <Link
+              key={item.href}
               href={item.href}
               prefetch={true}
               onClick={(e) => {
@@ -63,34 +66,19 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
                   router.prefetch(item.href);
                 } catch {}
               }}
-              className="flex flex-col items-center gap-1 group relative active:scale-90 transition-transform duration-100 touch-manipulation select-none"
+              className={`${styles.navItem} ${isActive ? styles.navActive : ""}`}
+              aria-current={isCurrentRoute ? "page" : undefined}
             >
-              {isActive && (
-                <div className="absolute -inset-2 bg-[#ADFF00]/15 rounded-full blur-md" />
-              )}
-              
-              <div className={`relative w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                isActive 
-                  ? 'bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.4)]' 
-                  : 'text-gray-400 group-hover:text-white'
-              }`}>
-                <Icon size={isActive ? 18 : 20} strokeWidth={isActive ? 2.5 : 2} />
-                {item.proOnly && !isPro && (
-                  <span className="absolute -top-1 -right-1 bg-[#ADFF00] text-black text-[7px] font-black px-1 rounded-full uppercase tracking-tight shadow-sm">
-                    PRO
-                  </span>
-                )}
+              <div className={styles.navIcon}>
+                <Icon size={19} strokeWidth={isActive ? 2.3 : 1.8} aria-hidden="true" />
+                {item.proOnly && !isPro && <span className={styles.proBadge}>PRO</span>}
               </div>
-              
-              <span className={`text-[9px] font-bold uppercase tracking-wider transition-colors ${
-                isActive ? 'text-[#ADFF00]' : 'text-gray-500'
-              }`}>
-                {item.label}
-              </span>
+
+              <span className={styles.navLabel}>{item.label}</span>
             </Link>
           );
         })}
-      </div>
+      </nav>
     </div>
   );
 }
