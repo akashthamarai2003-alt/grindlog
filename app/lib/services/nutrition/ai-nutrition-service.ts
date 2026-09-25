@@ -653,7 +653,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       };
     });
 
-    const validateDayChoices = (day: RawAIDay, optionBMealIndexes: Set<number>) => {
+    const checkDayChoices = (day: RawAIDay, optionBMealIndexes: Set<number>) => {
       const totals = day.meals.reduce((sum: any, meal: any, mealIndex: number) => {
         const useOptionB = optionBMealIndexes.has(mealIndex);
         const items = useOptionB ? meal.option_b_items || [] : meal.items || meal.meal_plan_items || [];
@@ -666,7 +666,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         }), sum);
       }, { calories: 0, protein: 0, carbs: 0, fat: 0, cost: 0 });
 
-      const macrosValid = NutritionValidationEngine.validateMacros(
+      const macroCheck = NutritionValidationEngine.validateMacros(
         totals,
         {
           caloriesTarget: userContext.caloriesTarget,
@@ -674,17 +674,27 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           carbsTarget: userContext.carbsTarget,
           fatTarget: userContext.fatTarget,
         }
-      ).valid;
+      );
 
       // Use reasonable budget tolerance (+40% buffer or +₹60) so natural market fluctuations never crash meal generation
-      const budgetValid = totals.cost <= Math.max(userContext.dailyBudget * 1.4, userContext.dailyBudget + 60);
+      const budgetLimit = Math.max(userContext.dailyBudget * 1.4, userContext.dailyBudget + 60);
+      const budgetValid = totals.cost <= budgetLimit;
 
-      return macrosValid && budgetValid;
+      return {
+        valid: macroCheck.valid && budgetValid,
+        issues: [
+          ...macroCheck.issues,
+          ...(budgetValid ? [] : [`Estimated food cost ₹${Math.round(totals.cost)} exceeds ₹${Math.round(budgetLimit)}.`]),
+        ],
+      };
     };
 
     for (const day of daySchedules) {
-      if (!validateDayChoices(day, new Set())) {
-        console.warn(`[AINutritionService] Day ${day.day_number} choices slightly deviated from strict macro/budget envelope. Proceeding with best-calibrated plan.`);
+      const primaryCheck = checkDayChoices(day, new Set());
+      if (!primaryCheck.valid) {
+        await this.logUsage(userId, 'failed_validation', 'groq');
+        console.warn(`[AINutritionService] Day ${day.day_number} failed final plan validation: ${primaryCheck.issues.join(' ')}`);
+        throw new Error(`PLAN_VALIDATION_FAILED: Day ${day.day_number} did not pass plan checks: ${primaryCheck.issues.slice(0, 3).join(' ')} Your saved plan was left unchanged. Please try again later.`);
       }
 
       // Keep alternative meals only when every combination of the available
@@ -704,7 +714,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           optionIndexes.forEach((optionIndex, bit) => {
             if (mask & (1 << bit)) combination.add(optionIndex);
           });
-          if (!validateDayChoices(day, combination)) {
+          if (!checkDayChoices(day, combination).valid) {
             allCombinationsValid = false;
             break;
           }

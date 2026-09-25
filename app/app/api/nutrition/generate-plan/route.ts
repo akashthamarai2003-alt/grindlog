@@ -84,7 +84,7 @@ export async function POST() {
       );
     }
 
-    if (message.startsWith('PROFILE_INCOMPLETE:') || message.startsWith('CLINICAL_REVIEW_REQUIRED:')) {
+    if (message.startsWith('PROFILE_INCOMPLETE:') || message.startsWith('CLINICAL_REVIEW_REQUIRED:') || message.startsWith('PLAN_VALIDATION_FAILED:')) {
       const [code, ...details] = message.split(':');
       return NextResponse.json(
         { success: false, error: { code, message: details.join(':').trim() } },

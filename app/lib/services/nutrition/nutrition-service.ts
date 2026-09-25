@@ -83,6 +83,35 @@ export type NutritionFoodReference = {
   dietary_classification_verified?: boolean | null;
 };
 
+// Calibration can add a food that is already in a meal. Keep one visible row
+// per catalog food while preserving the combined portions and nutrition.
+export function consolidateMealItems<T extends Record<string, any>>(items: T[]): T[] {
+  const combined = new Map<string, T>();
+  for (const item of items) {
+    const foodId = item.food_id || item.foods?.id;
+    const key = foodId ? `id:${foodId}` : `name:${String(item.foods?.name || item.name || '').toLowerCase().trim()}`;
+    if (key === 'name:') {
+      combined.set(`item:${combined.size}`, { ...item });
+      continue;
+    }
+    const previous = combined.get(key);
+    if (!previous) {
+      combined.set(key, { ...item });
+      continue;
+    }
+    combined.set(key, {
+      ...previous,
+      quantity: Number(previous.quantity || 0) + Number(item.quantity || 0),
+      calories: Number(previous.calories || 0) + Number(item.calories || 0),
+      protein: Number(previous.protein || 0) + Number(item.protein || 0),
+      carbs: Number(previous.carbs || 0) + Number(item.carbs || 0),
+      fat: Number(previous.fat || 0) + Number(item.fat || 0),
+      estimated_cost: Number(previous.estimated_cost || 0) + Number(item.estimated_cost || 0),
+    } as T);
+  }
+  return Array.from(combined.values());
+}
+
 export function normalizeFoodName(value: unknown): string {
   return String(value || "")
     .toLowerCase()
@@ -1064,7 +1093,7 @@ export function calibrateMealsToTargets(
 
   // Final summary update per meal
   return calibratedMeals.map((m: any) => {
-    const items = m.meal_plan_items || m.items || [];
+    const items = consolidateMealItems(m.meal_plan_items || m.items || []);
     const publicItems = items.map(({ unit_food_nutrition, ...item }: any) => item);
     const finalCals = Math.round(items.reduce((s: number, it: any) => s + (Number(it.calories) || 0), 0));
     const finalPro = Number(items.reduce((s: number, it: any) => s + (Number(it.protein) || 0), 0).toFixed(1));
@@ -3996,7 +4025,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
         });
 
         ALL_MEAL_TYPES.forEach(mType => {
-          const mItems = itemsByType[mType];
+          const mItems = consolidateMealItems(itemsByType[mType]);
           let optBItems = optBItemsByType[mType] || [];
           let optBName = optBTitleByType[mType] || '';
 
@@ -4036,6 +4065,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
             return acc + Math.round(itemUnitCost * it.quantity);
           }, 0);
           const mName = titleByType[mType] || (mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan");
+          optBItems = consolidateMealItems(optBItems);
           plansByMealType.set(mType, {
             id: `${dailyPlan.id}-${mType}`,
             meal_type: mType,
@@ -4050,7 +4080,9 @@ function scaleServingSize(servingSize: string, scale: number): string {
             option_b_items: optBItems,
             is_ai_generated: Boolean(dailyPlan.ai_generated),
             ai_generated: Boolean(dailyPlan.ai_generated),
-            prep_instructions: NutritionService.getPrepInstructionForSlot(mType, mName, dayOfWeek, fitProfile?.food_environment, rawDietStr)
+            // The dated-plan schema stores foods and portions, but no recipe.
+            // Do not invent directions that may contradict the saved foods.
+            prep_instructions: ''
           });
         });
       } else {
@@ -4112,7 +4144,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
             return {
               ...existing,
               is_ai_generated: Boolean(existing.ai_generated),
-              prep_instructions: existing.prep_instructions || NutritionService.getPrepInstructionForSlot(mType, existing.name, dayOfWeek, fitProfile?.food_environment, rawDietStr),
+              prep_instructions: existing.prep_instructions,
               name: sanitizeMealTitle(existing.name || '', isProfileVegan, isProfileVegetarian, isProfileEggetarian),
               meal_plan_items: sanitizedItems
             };
@@ -4120,7 +4152,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
           return {
             ...existing,
             is_ai_generated: Boolean(existing.ai_generated),
-            prep_instructions: existing.prep_instructions || NutritionService.getPrepInstructionForSlot(mType, existing.name, dayOfWeek, fitProfile?.food_environment, rawDietStr)
+            prep_instructions: existing.prep_instructions
           };
         }
 
@@ -4159,8 +4191,11 @@ function scaleServingSize(servingSize: string, scale: number): string {
       formattedMeals = [];
     }
 
-    // Calibrate all meals to strictly match the user's calories, protein, carbs, fat, and budget
-    formattedMeals = calibrateMealsToTargets(formattedMeals, targets, fitProfile);
+    // Saved dated plans were calibrated before persistence. Recalibrating on
+    // every read changes their portions and can inject duplicate add-ons.
+    if (!hasExplicitPlanForDate) {
+      formattedMeals = calibrateMealsToTargets(formattedMeals, targets, fitProfile);
+    }
 
     // Round consumed values
     consumed.calories = Math.round(consumed.calories);
