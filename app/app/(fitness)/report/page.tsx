@@ -8,6 +8,10 @@ import { GeneratePlanButton } from "@/components/fitness/report/generate-plan-bu
 import { hasGeneratedStartingReport, generateStartingReport } from "@/lib/services/fitness/starting-report-service";
 import { OnboardingSchema } from "@/types/fitness/onboarding";
 import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
+import {
+  BodyScanInsightsCard,
+  type BodyScanInsightsData,
+} from "@/components/fitness/report/body-scan-insights-card";
 
 // A newly completed photo analysis must be visible immediately after the
 // onboarding flow redirects here. Never serve a cached server-rendered report.
@@ -200,6 +204,24 @@ export default async function AIStartingReportPage() {
     Boolean((bodyScanInsights as Record<string, unknown>).goal_gap)
       ? String((bodyScanInsights as Record<string, unknown>).goal_gap).trim()
       : null;
+
+  const isScanAnalyzing =
+    !hasBodyScan &&
+    (scan?.gemini_analysis === "ANALYZING" ||
+      Boolean(onboardingData.has_uploaded_photos) ||
+      profile.target_physique === "Custom Photo" ||
+      Boolean(scan && !scan.gemini_analysis));
+
+  const initialInsightsData: BodyScanInsightsData | null =
+    hasBodyScan && bodyScanInsights
+      ? {
+          overall_summary: String(bodyScanInsights.overall_summary || ""),
+          observed_strengths: bodyScanStrengths,
+          priority_improvements: bodyScanPriorities,
+          posture_or_movement_note: bodyScanInsights.posture_or_movement_note || null,
+          goal_gap: goalGap,
+        }
+      : null;
   const personalNumbers = [
     ["Protein starting target", displayValue(profile.initial_protein_target, " g/day")],
     ["Maintenance estimate", displayValue(profile.baseline_calories, " kcal/day")],
@@ -283,89 +305,12 @@ export default async function AIStartingReportPage() {
         </div>
 
         {/* Insight generated from the optional uploaded body scan */}
-        <section className="space-y-4 rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">
-          <div>
-            <p className="mb-1 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-              Your body scan insights
-            </p>
-            <h2 className="text-lg font-black tracking-tight">
-              What the uploaded photos show
-            </h2>
-          </div>
-          {hasBodyScan ? (
-            <>
-              <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-                <p className="mb-3 text-xs font-bold tracking-wider text-emerald-400 uppercase">
-                  What I notice
-                </p>
-                <p className="text-sm leading-relaxed text-gray-300">
-                  {String(bodyScanInsights?.overall_summary || "Your photos provide a useful starting point for coaching.")}
-                </p>
-                {bodyScanStrengths.length > 0 && (
-                  <ul className="mt-3 space-y-2">
-                    {bodyScanStrengths.map((item, index) => (
-                      <li key={`${item}-${index}`} className="flex gap-2 text-sm leading-relaxed text-gray-300">
-                        <span className="text-[#ADFF00]">•</span><span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              {bodyScanPriorities.length > 0 && (
-                <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-                  <p className="mb-2 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-                    Your first priorities
-                  </p>
-                  <ul className="space-y-2">
-                    {bodyScanPriorities.map((item, index) => (
-                      <li key={`${item}-${index}`} className="flex gap-2 text-sm leading-relaxed text-gray-300">
-                        <span className="text-[#ADFF00]">•</span><span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {bodyScanInsights?.posture_or_movement_note && (
-                <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-                  <p className="mb-1 text-xs font-bold tracking-wider text-gray-400 uppercase">
-                    Posture & alignment observation
-                  </p>
-                  <p className="text-sm leading-relaxed text-gray-300">
-                    {String(bodyScanInsights.posture_or_movement_note)}
-                  </p>
-                </div>
-              )}
-              {goalGap && (
-                <div className="rounded-2xl border border-[#ADFF00]/15 bg-[#ADFF00]/5 p-4">
-                  <p className="mb-1 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-                    Goal direction & gap
-                  </p>
-                  <p className="text-sm leading-relaxed text-gray-300">
-                    {goalGap}
-                  </p>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-              <p className="text-sm font-bold text-white">Add photos for visual coaching feedback</p>
-              <p className="mt-1 text-xs leading-relaxed text-gray-400">
-                Upload fresh front, side, and back photos in onboarding. We keep the
-                generated coaching observations, not your raw onboarding photos.
-              </p>
-              <Link
-                href="/onboarding?mode=edit"
-                className="mt-3 inline-flex text-xs font-bold text-[#ADFF00] hover:underline"
-              >
-                Add body-scan photos
-              </Link>
-            </div>
-          )}
-          <p className="text-[11px] text-gray-500">
-            Photo observations are coaching guidance only, not a medical diagnosis or
-            body-fat measurement.
-          </p>
-        </section>
+        <BodyScanInsightsCard
+          initialInsights={initialInsightsData}
+          initialHasBodyScan={hasBodyScan}
+          initialIsAnalyzing={isScanAnalyzing}
+          goalGap={goalGap}
+        />
 
         {/* Profile Configuration */}
         <div className="space-y-4 rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">

@@ -45,7 +45,19 @@ function stripImagePayload(value: Record<string, unknown>): Record<string, unkno
     ...safeData
   } = value;
 
-  return safeData;
+  const hasPhotos = Boolean(
+    body_scan_front ||
+      body_scan_left ||
+      body_scan_right ||
+      body_scan_back ||
+      body_scan_inspiration ||
+      goal_physique_image,
+  );
+
+  return {
+    ...safeData,
+    has_uploaded_photos: hasPhotos,
+  };
 }
 
 export async function POST(req: Request) {
@@ -299,6 +311,18 @@ export async function POST(req: Request) {
     };
 
     await admin.from("fitness_os_profiles").upsert(initialProfilePayload, { onConflict: "user_id" });
+
+    // Mark scan as analyzing in fitness_os_scans so scan-status and report page immediately know
+    if (images.length > 0) {
+      await admin.from("fitness_os_scans").upsert(
+        {
+          user_id: user.id,
+          gemini_analysis: "ANALYZING",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
+    }
 
     // Instantly calculate and persist fresh nutrition targets for this user
     try {
