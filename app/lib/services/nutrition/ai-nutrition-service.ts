@@ -223,6 +223,7 @@ CRITICAL USER PROFILE & STRICT CONSTRAINTS:
    - Do NOT repeat the exact same food item multiple times in one meal.
    - 100% NATURAL WHOLE FOODS ONLY: NEVER recommend or include whey protein, protein powders, mass gainers, creatine, BCAAs, or chemical pills. 100% of macros must come from real whole food (Farm Eggs, Paneer, Curd/Dahi, Dals, Chana, Rajma, Soya Chunks, Chicken, Fish, Tofu, Peanuts, Oats, Bananas).
    - DUAL-CHOICE ARCHITECTURE (OPTION A & OPTION B): Every single meal slot must provide Option A (Quick / Mess Base) and Option B (Variety / Cooked Alternative), matched to the same target calories and protein.
+   - Every item name in "items" and "option_b_items" MUST match one of these reviewed catalog food names exactly: ${safeFoodCatalog.map(food => food.name).join(' | ')}. Put unlisted cooking ingredients such as onion in prep instructions only; do not list them as separate food items.
 
 Return ONLY valid JSON matching this schema:
 {
@@ -391,6 +392,18 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       return isVeganDiet ? 'Soy Chunks (Cooked)' : (isVegDiet ? 'Dal Tadka' : 'Boiled Egg');
     };
 
+    const hasReviewedFoodReference = (item: RawAIMealItem): boolean => {
+      let name = sanitizeAIItemName(item.name, isVegan, isVegetarian, isEggetarian);
+      if (!isAllowedFoodName(name)) {
+        name = getSafeSubstituteFood(name, userContext.diet, userContext.allergies);
+      }
+      let reference = findFoodReference(name, safeFoodCatalog, profile?.food_environment);
+      if (!reference || !isAllowedFoodReference(reference)) {
+        reference = findFallbackFood(name);
+      }
+      return Boolean(reference && isAllowedFoodReference(reference));
+    };
+
     // Reusable item mapper that validates, substitutes, and scales items
     const processItems = (
       rawItems: RawAIMealItem[],
@@ -530,7 +543,9 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       const meals = mealSlots.map(slot => {
         const supplied = sourceDay?.meals?.find(meal =>
           String(meal.meal_type || "").toLowerCase().replace(/[\s-]+/g, "_") === slot &&
-          Array.isArray(meal.items) && meal.items.length > 0
+          Array.isArray(meal.items) && meal.items.length > 0 &&
+          meal.items.every(hasReviewedFoodReference) &&
+          (!Array.isArray(meal.option_b_items) || meal.option_b_items.every(hasReviewedFoodReference))
         );
         if (supplied) return { ...supplied, meal_type: slot };
         const fallback = fallbackMap.get(slot) || fallbackMap.get("lunch");

@@ -1693,30 +1693,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold text-white/50">
                   Past Day
                 </div>
-              ) : isFuture && !hasPlannedMeals ? (
-                canGeneratePlan ? (
-                  <button
-                    type="button"
-                    disabled={isGenerating}
-                    onClick={handleGeneratePlan}
-                    className="text-[10px] sm:text-xs font-black text-black bg-[#ADFF00] hover:bg-[#c4ff33] px-3.5 py-1.5 rounded-full uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-[0_0_14px_rgba(173,255,0,0.3)] disabled:opacity-50 cursor-pointer active:scale-95 whitespace-nowrap"
-                    title="Generate a seven-day diet plan starting today"
-                  >
-                    {isGenerating ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
-                    {isGenerating ? "Planning..." : "Plan From Today"}
-                  </button>
-                ) : (
-                  <div 
-                    className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full whitespace-nowrap select-none"
-                    title={`Plan generation unlocks on ${weeklyStatus?.next_available_formatted || 'the next cycle date'}.`}
-                  >
-                    <Lock size={11} className="shrink-0 text-amber-400" />
-                    <span className="font-extrabold tracking-wide">Not Created</span>
-                    <span className="text-white/30">•</span>
-                    <span className="text-white/70 font-medium">Unlocks {weeklyStatus?.next_available_formatted || `in ${weeklyStatus?.days_remaining || 7}d`}</span>
-                  </div>
-                )
-              ) : canGeneratePlan ? (
+              ) : !hasPlannedMeals || !isPro ? null : canGeneratePlan ? (
                 <button
                   type="button"
                   disabled={isGenerating}
