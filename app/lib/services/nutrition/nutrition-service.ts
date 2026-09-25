@@ -89,8 +89,8 @@ export function normalizeFoodName(value: unknown): string {
     .replace(/\([^)]*\)/g, " ")
     .replace(/\beggs\b/g, "egg")
     .replace(/\bpieces\b/g, "piece")
+    .replace(/[^a-z0-9 ]/g, " ")
     .replace(/\s+/g, " ")
-    .replace(/[^a-z0-9 ]/g, "")
     .trim();
 }
 
@@ -1140,6 +1140,18 @@ function parseAIItemText(value: unknown): Array<{ name: string; servingSize: str
 export function findFoodReference(name: string, catalog: NutritionFoodReference[], foodEnv?: string): NutritionFoodReference | undefined {
   const normalizedName = normalizeFoodName(name);
   if (!normalizedName) return undefined;
+
+  // Rotating menus use short names for these reviewed cooked servings.
+  const reviewedAliases: Record<string, string> = {
+    "mixed vegetables": "mixed vegetable sabzi",
+    "soy chunks": "soya chunks curry",
+    "chickpeas": "chole chana masala",
+  };
+  const reviewedAlias = reviewedAliases[normalizedName];
+  if (reviewedAlias) {
+    const match = catalog.find((food) => normalizeFoodName(food.name) === reviewedAlias);
+    if (match) return match;
+  }
 
   // 1. Check if it's a provided core meal (PG, Hostel, Mess, Home Core)
   if (/\b(?:pg|hostel|mess|provided core|provided meal|core meal|base meal|standard base)\b/i.test(name)) {

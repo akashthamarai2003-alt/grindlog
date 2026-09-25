@@ -10,3 +10,4 @@ app/graphify-out/
 # Scratch & temporary test artifacts
 scratch/
 app/scratch/
+.claude-flow/

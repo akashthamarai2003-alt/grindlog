@@ -552,15 +552,25 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         if (!fallback) {
           throw new Error(`Could not create a ${slot} meal compatible with your nutrition profile.`);
         }
+        const reviewedItems = (fallback.items || fallback.meal_plan_items || []).flatMap((item: any) => {
+          const name = String(item.foods?.name || item.name || "");
+          if (!name) return [];
+          const reference = findFoodReference(name, safeFoodCatalog, profile?.food_environment);
+          if (!reference || !isAllowedFoodReference(reference)) return [];
+          return [{
+            name: reference.name,
+            quantity: item.quantity || 1,
+            serving_size: reference.serving_size || "1 serving",
+          }];
+        });
+        if (reviewedItems.length === 0) {
+          throw new Error(`No reviewed catalog foods are available for a ${slot} meal. Your saved plan was left unchanged.`);
+        }
         return {
           meal_type: slot,
           name: fallback.name || `${slot.replace(/_/g, " ")} meal`,
           prep_instruction: fallback.prep_instructions || "",
-          items: (fallback.items || fallback.meal_plan_items || []).map((item: any) => ({
-            name: String(item.foods?.name || item.name || ""),
-            quantity: item.quantity || 1,
-            serving_size: item.foods?.serving_size || item.serving_size || "1 serving",
-          })).filter((item: RawAIMealItem) => item.name),
+          items: reviewedItems,
         };
       });
       return { day_number: dIdx + 1, meals };
