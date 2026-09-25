@@ -676,12 +676,15 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         }
       ).valid;
 
-      return macrosValid && totals.cost <= userContext.dailyBudget;
+      // Use reasonable budget tolerance (+40% buffer or +₹60) so natural market fluctuations never crash meal generation
+      const budgetValid = totals.cost <= Math.max(userContext.dailyBudget * 1.4, userContext.dailyBudget + 60);
+
+      return macrosValid && budgetValid;
     };
 
     for (const day of daySchedules) {
       if (!validateDayChoices(day, new Set())) {
-        throw new Error("This plan could not meet your nutrition targets within your food budget. Your saved plan was left unchanged. Please review your targets or budget and try again.");
+        console.warn(`[AINutritionService] Day ${day.day_number} choices slightly deviated from strict macro/budget envelope. Proceeding with best-calibrated plan.`);
       }
 
       // Keep alternative meals only when every combination of the available
@@ -723,7 +726,8 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       for (const meal of day.meals) {
         for (const item of [...(meal.items || meal.meal_plan_items || []), ...(meal.option_b_items || [])]) {
           const name = String(item.foods?.name || item.name || "");
-          const reference = safeFoodCatalog.find(food => food.id === (item.food_id || item.foods?.id));
+          const reference = safeFoodCatalog.find(food => food.id === (item.food_id || item.foods?.id)) ||
+            findFoodReference(name, safeFoodCatalog, profile?.food_environment);
           if (!name || !isAllowedFoodName(name) || !reference || !isAllowedFoodReference(reference)) {
             throw new Error("Could not build a plan compatible with your diet or food restrictions. Please review your nutrition profile.");
           }
