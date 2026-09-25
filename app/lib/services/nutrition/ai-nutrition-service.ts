@@ -116,12 +116,6 @@ export class AINutritionService {
 
     // 3. Normalized User Context & Classifications
     const userContext = buildNutritionUserContext(profile, targets, userId);
-    if (userContext.medicalDietConditions.length === 0) {
-      throw new Error('PROFILE_INCOMPLETE: Complete the medical diet question in Profile before generating your weekly plan.');
-    }
-    if (userContext.medicalDietConditions.some(condition => condition.toLowerCase() !== 'none')) {
-      throw new Error('CLINICAL_REVIEW_REQUIRED: This diet needs a clinician or dietitian to review your targets and food choices before an automatic plan can be used.');
-    }
     if (![targets.calories, targets.protein, targets.carbs, targets.fat].every(value => Number.isFinite(Number(value)) && Number(value) > 0)) {
       throw new Error('PROFILE_INCOMPLETE: Your daily nutrition targets are missing or invalid. Update your profile and targets before generating a plan.');
     }

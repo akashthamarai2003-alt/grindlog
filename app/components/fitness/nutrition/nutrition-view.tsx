@@ -1095,8 +1095,6 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const hasPlannedMeals = meals.length > 0;
   const weeklyStatus = data?.weekly_plan_status;
   const canGeneratePlan = weeklyStatus ? Boolean(weeklyStatus.can_generate) : true;
-  const medicalDietConditions = Array.isArray(data?.nutrition_medical_conditions) ? data.nutrition_medical_conditions : null;
-  const needsClinicalDietReview = medicalDietConditions?.some((condition: string) => condition.toLowerCase() !== 'none') || false;
 
   // Safe numerical calculations resistant to overflow/wrapping
   const targetCals = Number(targets.calories) || 2000;
@@ -1395,14 +1393,6 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           Viewing {new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
           {isToday ? ' · Today' : isFuture ? ' · Scheduled' : ' · Past day'}
         </p>
-        {isPro && (!medicalDietConditions?.length || needsClinicalDietReview) && (
-          <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-xs text-amber-100" role="status">
-            {needsClinicalDietReview
-              ? 'Your profile lists a medical diet need. Have a clinician or dietitian review your nutrition targets and foods before using an automatic plan.'
-              : 'Complete the medical diet question in your profile before generating a weekly plan.'}
-            <a href="/onboarding?mode=edit" className="ml-2 font-bold underline underline-offset-2">Update profile</a>
-          </div>
-        )}
         {isPro && data?.food_allergies && (
           <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-white/70">
             Allergy reminder: check the actual ingredients and preparation of every food before eating it.

@@ -146,7 +146,11 @@ export interface FitnessPaymentClientProps {
 export default function FitnessPaymentClient({ initialPricing, initialPremiumDetails }: FitnessPaymentClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = getSafeRedirect(searchParams.get("returnTo"));
+  const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
+  // Plan purchases go straight to setup, including older links with returnTo=/.
+  const returnTo = isPlanGenerationIntent
+    ? "/plan-setup"
+    : getSafeRedirect(searchParams.get("returnTo"));
   
   // In Fitness OS, the duration is always monthly, but we let them choose the tier
   const selectedPlan = "monthly";
@@ -160,7 +164,6 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   const [isLoadingPrices, setIsLoadingPrices] = useState(!initialPricing);
   const [currentPremiumInfo, setCurrentPremiumInfo] = useState<{ premium_tier?: string; premium_level?: string; is_premium?: boolean } | null>(initialPremiumDetails || null);
   const [premiumStatusLoaded, setPremiumStatusLoaded] = useState(Boolean(initialPremiumDetails));
-  const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
   const isUpgradeIntent = searchParams.get("intent") === "upgrade_pro";
   const [isContinuingFree, setIsContinuingFree] = useState(false);
 

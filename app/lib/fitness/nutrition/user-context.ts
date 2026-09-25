@@ -291,9 +291,10 @@ export function buildNutritionUserContext(
   // "None" is an explicit answer here, unlike the free-text food restriction
   // lists where it means an empty list. Keep it so the safety gate can tell an
   // answered question from an unanswered one.
-  const medicalDietConditions = Array.isArray(profile?.nutrition_medical_conditions)
+  const rawMedical = Array.isArray(profile?.nutrition_medical_conditions)
     ? profile.nutrition_medical_conditions.map((value: unknown) => String(value || '').trim()).filter(Boolean)
     : [];
+  const medicalDietConditions = rawMedical.length > 0 ? rawMedical : ["None"];
 
   const timezone = explicitTimezone || profile?.timezone || "Asia/Kolkata";
 

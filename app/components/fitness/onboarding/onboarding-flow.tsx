@@ -445,7 +445,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
       case 6: return Boolean(data.training_location && hasMeaningfulChoice(data.equipment));
       case 7: return Boolean(data.plan_start_preference && typeof data.workout_duration_minutes === "number" && data.workout_duration_minutes >= 10 && data.workout_duration_minutes <= 90 && data.preferred_training_time);
       case 8: return Boolean(data.food_type && data.meals_per_day && data.food_environment);
-      case 9: return Boolean(data.nutrition_budget && data.nutrition_medical_conditions?.length);
+      case 9: return Boolean(data.nutrition_budget);
       case 10: return Boolean(data.activity_level && data.daily_steps && data.sleep_duration);
       case 12: {
         const physicalProblems = Array.isArray(data.physical_problems)
@@ -1682,34 +1682,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-3">Do you have a condition that changes what you should eat?</label>
-                <div className="flex flex-wrap gap-2">
-                  {(["None", "Diabetes", "Kidney disease", "Pregnancy or breastfeeding", "Other medical diet"] as const).map(option => {
-                    const current = data.nutrition_medical_conditions || [];
-                    const selected = current.includes(option);
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => handleUpdate({
-                          nutrition_medical_conditions: option === "None"
-                            ? (selected ? [] : ["None"])
-                            : (selected
-                              ? current.filter(value => value !== option)
-                              : [...current.filter(value => value !== "None"), option]),
-                        })}
-                        className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${selected
-                          ? "border-[#ADFF00] bg-[#ADFF00]/10 text-[#ADFF00]"
-                          : "border-white/10 bg-black/40 text-gray-300 hover:border-white/30"}`}
-                      >
-                        {option}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="mt-2 text-xs text-gray-400">Medical diets need a clinician or dietitian to review your targets and food choices.</p>
-              </div>
+
 
               <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-3">Available foods <span className="text-xs text-gray-500 font-normal ml-2">Select all you eat</span></label>

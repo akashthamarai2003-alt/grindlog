@@ -10,7 +10,6 @@ import { HorizontalCalendar } from "./horizontal-calendar";
 import { TodaysWorkoutCard } from "./todays-workout-card";
 import { TransformationCard } from "./transformation-card";
 import { ExerciseLibraryCard } from "./exercise-library-card";
-import { ProNutritionGenerationCard } from "./pro-nutrition-generation-card";
 import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
 import { RenewalBanner } from "@/components/fitness/subscription/renewal-banner";
 import { MonthCheckinModal } from "@/components/fitness/recalibration/month-checkin-modal";
@@ -136,13 +135,6 @@ export function FitnessDashboard({
               Choose Plan ⚡
             </Link>
           </div>
-        )}
-
-        {premiumLevel === "pro" && hasPlan && activePlan &&
-          (activePlan?.plan_data as any)?._nutritionUpgrade?.status !== "complete" &&
-          (!Array.isArray(nutrition?.meals) || nutrition.meals.length === 0) &&
-          (!Array.isArray((activePlan?.plan_data as any)?.nutrition?.meals) || (activePlan?.plan_data as any)?.nutrition?.meals.length === 0) && (
-          <ProNutritionGenerationCard />
         )}
 
         {!hasPlan && !isFree && (

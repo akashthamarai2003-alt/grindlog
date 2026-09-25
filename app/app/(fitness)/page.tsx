@@ -95,7 +95,7 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
     if (!hasSeenReport) {
       redirect("/report");
     }
-    redirect("/payment?returnTo=/&intent=generate_plan");
+    redirect("/payment?returnTo=/plan-setup&intent=generate_plan");
   }
 
   const isFreeUser = !isPaidUser;
