@@ -4,8 +4,7 @@ app/node_modules/
 !app/public/**/*.mp4
 
 # Graphify
-graphify-out/cache/
-graphify-out/*.html
+graphify-out/
 app/graphify-out/
 
 # Scratch & temporary test artifacts

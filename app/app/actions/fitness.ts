@@ -14,7 +14,6 @@ import {
 } from "@/types/fitness/workout";
 import { WorkoutService } from "@/lib/services/fitness/workout-service";
 import { revalidatePath } from "next/cache";
-import { invalidateWorkoutServerCache } from "@/lib/services/fitness/workout-page-service";
 import { invalidateProgressServerCache } from "@/lib/services/analytics/progress-service";
 
 export async function saveFitnessOnboardingAction(payload: Partial<OnboardingData>) {
@@ -304,7 +303,6 @@ export async function startWorkoutSessionAction(payload: { workoutId: string }) 
 
       revalidatePath(`/workout/${workoutId}`);
       revalidatePath(`/workout`);
-      invalidateWorkoutServerCache(user.id);
       return { success: true, data: { sessionId: existingSession.id } };
     }
   }
@@ -336,7 +334,6 @@ export async function startWorkoutSessionAction(payload: { workoutId: string }) 
 
   revalidatePath(`/workout/${workoutId}`);
   revalidatePath(`/workout`);
-  invalidateWorkoutServerCache(user.id);
   return { success: true, data: { sessionId: newSession.id } };
 }
 
@@ -574,7 +571,6 @@ export async function finishWorkoutSessionAction(payload: { sessionId: string })
   revalidatePath(`/workout`);
   revalidatePath(`/workout/${session.workout_id}`);
   revalidatePath(`/workout/history`);
-  invalidateWorkoutServerCache(user.id);
   invalidateProgressServerCache(user.id);
   
   return { success: true };
@@ -587,7 +583,7 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
 
   const parsed = DiscardWorkoutSchema.safeParse(payload);
   if (!parsed.success) return { success: false, error: "Invalid parameters" };
-  const { workoutId, sessionId } = parsed.data;
+  const { workoutId } = parsed.data;
 
   const admin = createAdminClient();
 
@@ -603,48 +599,24 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
 
   const now = new Date().toISOString();
 
-  // 2. Cancel sessions for this workout
-  if (sessionId) {
-    await admin
-      .from("fitness_os_workout_sessions")
-      .update({
-        status: "cancelled",
-        completed_at: now
-      })
-      .eq("id", sessionId)
-      .eq("user_id", user.id);
-  } else {
-    await admin
-      .from("fitness_os_workout_sessions")
-      .update({
-        status: "cancelled",
-        completed_at: now
-      })
-      .eq("workout_id", workoutId)
-      .eq("user_id", user.id)
-      .in("status", ["active", "paused"]);
+  if (workout.status === "completed") {
+    return { success: false, error: "This workout has already been completed" };
   }
 
-  // 3. Reset workout status back to scheduled and clear started_at
-  await admin
-    .from("fitness_os_workouts")
-    .update({
-      status: "scheduled",
-      started_at: null,
-      completed_at: null,
-      duration_minutes: null
-    })
-    .eq("id", workoutId);
-
-  // 4. Reset completed sets for this workout so user can train cleanly later
-  const { data: exercises } = await admin
+  // Reset the sets before changing the parent status, so a failed reset never
+  // leaves a scheduled workout with its previous completed sets still attached.
+  const { data: exercises, error: exercisesError } = await admin
     .from("fitness_os_exercises")
     .select("id")
     .eq("workout_id", workoutId);
+  if (exercisesError) {
+    console.error("Failed to load exercises while discarding workout:", exercisesError);
+    return { success: false, error: "Could not discard workout. Please try again." };
+  }
 
   if (exercises && exercises.length > 0) {
     const exerciseIds = exercises.map(e => e.id);
-    await admin
+    const { error: setsError } = await admin
       .from("fitness_os_sets")
       .update({
         completed: false,
@@ -653,13 +625,46 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
         completed_at: null
       })
       .in("exercise_id", exerciseIds);
+    if (setsError) {
+      console.error("Failed to reset sets while discarding workout:", setsError);
+      return { success: false, error: "Could not discard workout. Please try again." };
+    }
+  }
+
+  // A workout may have more than one active session. Cancel them all, even when
+  // the caller knows only one session ID.
+  const { error: sessionsError } = await admin
+    .from("fitness_os_workout_sessions")
+    .update({ status: "cancelled", completed_at: now })
+    .eq("workout_id", workoutId)
+    .eq("user_id", user.id)
+    .in("status", ["active", "paused"]);
+  if (sessionsError) {
+    console.error("Failed to cancel sessions while discarding workout:", sessionsError);
+    return { success: false, error: "Could not discard workout. Please try again." };
+  }
+
+  const { data: resetWorkout, error: workoutUpdateError } = await admin
+    .from("fitness_os_workouts")
+    .update({
+      status: "scheduled",
+      started_at: null,
+      completed_at: null,
+      duration_minutes: null
+    })
+    .eq("id", workoutId)
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (workoutUpdateError || !resetWorkout) {
+    console.error("Failed to reset workout while discarding:", workoutUpdateError);
+    return { success: false, error: "Could not discard workout. Please try again." };
   }
 
   revalidatePath("/workout");
   revalidatePath(`/workout/${workoutId}`);
   revalidatePath("/dashboard");
   revalidatePath("/progress");
-  invalidateWorkoutServerCache(user.id);
   invalidateProgressServerCache(user.id);
 
   return { success: true };
@@ -711,7 +716,6 @@ export async function reopenWorkoutAction(payload: { workoutId: string }) {
   revalidatePath(`/workout/${workoutId}`);
   revalidatePath("/dashboard");
   revalidatePath("/progress");
-  invalidateWorkoutServerCache(user.id);
   invalidateProgressServerCache(user.id);
 
   return { success: true };

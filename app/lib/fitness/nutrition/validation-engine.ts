@@ -163,6 +163,46 @@ export class NutritionValidationEngine {
     return { valid: true };
   }
 
+  /** A catalog entry must have reviewed allergen tags before it can be used for an allergic user. */
+  static validateFoodAllergenTags(
+    foodName: string,
+    foodAllergens: string[] | null | undefined,
+    allergies: string[]
+  ): { valid: boolean; reason?: string } {
+    if (allergies.length === 0) return { valid: true };
+    if (!Array.isArray(foodAllergens)) {
+      return { valid: false, reason: `Allergens have not been recorded for "${foodName}".` };
+    }
+
+    const category = (value: string): string | null => {
+      const term = value.toLowerCase().replace(/[_-]/g, " ").trim();
+      if (/\b(tree nuts?|almond|cashew|walnut|pistachio|hazelnut|pecan)\b/.test(term)) return "tree_nuts";
+      if (/\b(peanuts?|groundnuts?)\b/.test(term)) return "peanuts";
+      if (/\bnuts?\b/.test(term)) return "nuts";
+      if (/\b(milk|dairy|lactose|paneer|curd|whey|cheese)\b/.test(term)) return "dairy";
+      if (/\b(eggs?|omelette)\b/.test(term)) return "egg";
+      if (/\b(soy|soya|tofu|tempeh)\b/.test(term)) return "soy";
+      if (/\b(shellfish|shrimp|prawn|crab|lobster)\b/.test(term)) return "shellfish";
+      if (/\b(fish|salmon|tuna|cod|sardine)\b/.test(term)) return "fish";
+      if (/\b(sesame|tahini|til)\b/.test(term)) return "sesame";
+      if (/\b(wheat|gluten|atta|semolina|suji|rava)\b/.test(term)) return "gluten";
+      return null;
+    };
+
+    const foodCategories = foodAllergens.map(category);
+    for (const allergy of allergies) {
+      const allergyCategory = category(allergy);
+      if (!allergyCategory) {
+        return { valid: false, reason: `The allergy "${allergy}" needs a reviewed food list before planning.` };
+      }
+      if (foodCategories.includes(allergyCategory) ||
+          (allergyCategory === "nuts" && foodCategories.some(tag => tag === "peanuts" || tag === "tree_nuts"))) {
+        return { valid: false, reason: `"${foodName}" contains a listed ${allergy} allergen.` };
+      }
+    }
+    return { valid: true };
+  }
+
   /**
    * Enforces protein diversity across all meals in a single day.
    * INVARIANT: Soya chunks must appear at most 1 time per day.

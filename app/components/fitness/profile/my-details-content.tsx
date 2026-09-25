@@ -392,6 +392,12 @@ export function MyDetailsContent({
               <span className="text-xs font-bold text-red-400 truncate max-w-[150px] text-right">{fitnessProfile?.food_allergies || "None"}</span>
             </div>
             <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
+              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Medical diet needs</span>
+              <span className="text-xs font-bold text-white/80 text-right">{Array.isArray(fitnessProfile?.nutrition_medical_conditions)
+                ? fitnessProfile.nutrition_medical_conditions.join(', ') || 'Not specified'
+                : 'Not specified'}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Foods Disliked</span>
               <span className="text-xs font-medium text-gray-300 truncate max-w-[150px] text-right">{fitnessProfile?.foods_disliked || "None"}</span>
             </div>

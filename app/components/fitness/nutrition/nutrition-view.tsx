@@ -1095,6 +1095,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const hasPlannedMeals = meals.length > 0;
   const weeklyStatus = data?.weekly_plan_status;
   const canGeneratePlan = weeklyStatus ? Boolean(weeklyStatus.can_generate) : true;
+  const medicalDietConditions = Array.isArray(data?.nutrition_medical_conditions) ? data.nutrition_medical_conditions : null;
+  const needsClinicalDietReview = medicalDietConditions?.some((condition: string) => condition.toLowerCase() !== 'none') || false;
 
   // Safe numerical calculations resistant to overflow/wrapping
   const targetCals = Number(targets.calories) || 2000;
@@ -1107,16 +1109,20 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   const consumedCarbs = Math.round(Number(consumed.carbs) || 0);
   const consumedFat = Math.round(Number(consumed.fat) || 0);
 
-  // Real-world athletic nutrition adherence: within ±6% or ±130 kcal of target is "Target Hit" / "On Track"
-  const isTargetHit = consumedCals > 0 && Math.abs(consumedCals - targetCals) <= Math.max(130, Math.round(targetCals * 0.06));
-  const isCalorieSurplus = !isTargetHit && consumedCals > targetCals;
+  // Show a near-target state without implying that a partial intake completed the goal.
+  const isCaloriesNearTarget = consumedCals > 0 && Math.abs(consumedCals - targetCals) <= Math.max(130, Math.round(targetCals * 0.06));
+  const isCalorieSurplus = !isCaloriesNearTarget && consumedCals > targetCals;
   const surplusCals = consumedCals - targetCals;
   const calsRemaining = Math.max(0, targetCals - consumedCals);
 
-  const proPercent = Math.min(100, Math.round((consumedPro / (targetPro || 1)) * 100));
-  const carbsPercent = Math.min(100, Math.round((consumedCarbs / (targetCarbs || 1)) * 100));
-  const fatPercent = Math.min(100, Math.round((consumedFat / (targetFat || 1)) * 100));
-  const calsPercent = Math.min(100, Math.round((consumedCals / (targetCals || 1)) * 100));
+  // Keep the labels truthful when a user exceeds a target. Only the visual bar
+  // is capped because its width cannot exceed the card.
+  const proPercent = Math.round((consumedPro / (targetPro || 1)) * 100);
+  const carbsPercent = Math.round((consumedCarbs / (targetCarbs || 1)) * 100);
+  const fatPercent = Math.round((consumedFat / (targetFat || 1)) * 100);
+  const calsPercent = Math.round((consumedCals / (targetCals || 1)) * 100);
+  const formatProgressLabel = (percent: number) => percent > 999 ? "999%+" : `${Math.max(0, percent)}%`;
+  const progressBarWidth = (percent: number) => `${Math.max(0, Math.min(100, percent))}%`;
 
   const getMealIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -1130,31 +1136,14 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
     }
   };
 
-  const isMealCompleted = (type: string) => {
-    const normalizedType = String(type || "").toLowerCase().trim();
-    return data?.logged_foods?.some((f: any) => String(f.meal_type || "").toLowerCase().trim() === normalizedType);
-  };
-
   const foodsByMeal = useMemo(() => {
     const acc: Record<string, any[]> = {};
     for (const log of loggedFoods) {
       const t = String(log.meal_type || 'snack').toLowerCase().trim();
       if (!acc[t]) acc[t] = [];
-
-      // Defensive deduplication safeguard: merge duplicate rows by food_id or name
-      const logFoodId = log.food_id || log.foods?.id;
-      const logName = (log.foods?.name || log.name || '').toLowerCase().trim();
-
-      const isDuplicate = acc[t].some((existing: any) => {
-        const existingFoodId = existing.food_id || existing.foods?.id;
-        if (logFoodId && existingFoodId && logFoodId === existingFoodId) return true;
-        const existingName = (existing.foods?.name || existing.name || '').toLowerCase().trim();
-        return Boolean(logName && existingName && logName === existingName);
-      });
-
-      if (!isDuplicate) {
-        acc[t].push(log);
-      }
+      // Repeated entries can be intentional (for example, two servings logged
+      // at different times). Keep each row so the list agrees with daily totals.
+      acc[t].push(log);
     }
     return acc;
   }, [loggedFoods]);
@@ -1291,118 +1280,112 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
   };
 
   const formatItemServing = (qty: number, rawServing?: string, foodName?: string) => {
-    let q = Number(qty) || 1;
+    let q = Number(qty);
+    if (!Number.isFinite(q) || q <= 0) q = 1;
+
     let serving = (rawServing || '1 serving').trim();
     const nameLower = (foodName || '').toLowerCase();
+    const formatAmount = (value: number) => {
+      const rounded = Number(value.toFixed(2));
+      return String(rounded);
+    };
+    const weightMatch = serving.match(/(\d+(?:\.\d+)?)\s*g\b/i);
+    const baseGrams = weightMatch ? Number(weightMatch[1]) : null;
+    const displayCount = (count: number) => count < 1 ? `${formatAmount(count)} of a` : formatAmount(count);
 
-    // Clean any existing embedded multiplier from the serving string (e.g. "1.4× bowl", "2.8× pieces", "1.4× g")
-    const embeddedMatch = serving.match(/^(\d+(?:\.\d+)?)\s*[xX×*]\s*(.*)$/);
+    const embeddedMatch = serving.match(/^(\d+(?:\.\d+)?)\s*(?:x|\*|\u00D7)\s*(.*)$/i);
     if (embeddedMatch) {
-      const embeddedMult = parseFloat(embeddedMatch[1]);
-      serving = embeddedMatch[2].trim();
-      if (!Number.isNaN(embeddedMult) && embeddedMult > 0) {
-        // If q is already scaled (> 1), we combine; otherwise use embeddedMult
-        q = q === 1 ? embeddedMult : Number((q * embeddedMult).toFixed(2));
+      const embeddedAmount = Number(embeddedMatch[1]);
+      if (Number.isFinite(embeddedAmount) && embeddedAmount > 0) {
+        q = q === 1 ? embeddedAmount : Number((q * embeddedAmount).toFixed(2));
       }
+      serving = embeddedMatch[2].trim();
     }
 
-    // 1. Whole Meats & Proteins (Chicken Breast, Fish Fillet, Paneer, Tofu) - excluding curries
+    const currentCount = () => {
+      const match = serving.match(/^(\d+(?:\.\d+)?)\s*(?:large|medium|small|whole|egg whites?|eggs?|whites?|pieces?|idlis?|bowls?|cups?|plates?)\b/i);
+      const baseCount = match ? Number(match[1]) : 1;
+      const value = q * baseCount;
+      return Number.isFinite(value) && value > 0 ? value : q;
+    };
+
+    // Use the saved base serving to scale weights; never round a fractional
+    // serving up to a whole egg, fruit, or other discrete item.
     if ((nameLower.includes('chicken') || nameLower.includes('fish') || nameLower.includes('paneer') || nameLower.includes('tofu')) && !nameLower.includes('curry')) {
-      const weightMatch = serving.match(/(\d+)\s*g/i);
-      const baseGrams = weightMatch ? parseInt(weightMatch[1], 10) : 100;
-      const totalGrams = Math.round(baseGrams * (q > 0 ? q : 1));
-      return `${totalGrams}g (cooked)`;
+      const grams = Math.round((baseGrams || 100) * q);
+      return `${formatAmount(grams)}g (cooked)`;
     }
 
-    // 2. Egg Whites
-    if (nameLower.includes('egg white') || (nameLower.includes('egg') && serving.includes('white'))) {
-      const match = serving.match(/(\d+)/);
-      const base = match ? parseInt(match[1], 10) : 2;
-      const count = Math.max(1, Math.round(q * (q === 1 && base > 1 ? base : 1)));
-      return `${count} egg white${count > 1 ? 's' : ''} (${count * 33}g)`;
+    if (nameLower.includes('egg white') || (nameLower.includes('egg') && serving.toLowerCase().includes('white'))) {
+      const count = currentCount();
+      const grams = Math.round(baseGrams !== null ? baseGrams * q : 33 * count);
+      return `${displayCount(count)} egg white${count > 1 ? 's' : ''} (${grams}g)`;
     }
 
-    // 3. Whole Eggs
     if (nameLower.includes('egg') && !nameLower.includes('bhurji') && !nameLower.includes('curry')) {
-      const match = serving.match(/(\d+)/);
-      const base = match ? parseInt(match[1], 10) : 1;
-      const count = Math.max(1, Math.round(q * (q === 1 && base > 1 ? base : 1)));
-      return `${count} large egg${count > 1 ? 's' : ''} (${count * 50}g)`;
+      const count = currentCount();
+      const grams = Math.round(baseGrams !== null ? baseGrams * q : 50 * count);
+      return `${displayCount(count)} large egg${count > 1 ? 's' : ''} (${grams}g)`;
     }
 
-    // 4. Chapatis / Rotis / Phulkas
     if (nameLower.includes('roti') || nameLower.includes('chapati') || nameLower.includes('phulka')) {
-      const match = serving.match(/(\d+)/);
-      const base = match ? parseInt(match[1], 10) : 1;
-      const count = Math.max(1, Math.round(q * (q === 1 && base > 1 ? base : 1)));
-      return `${count} chapati${count > 1 ? 's' : ''} (${count * 40}g)`;
+      const count = currentCount();
+      const grams = Math.round(baseGrams !== null ? baseGrams * q : 40 * count);
+      return `${displayCount(count)} chapati${count > 1 ? 's' : ''} (${grams}g)`;
     }
 
-    // 5. Whole Fruits (Banana, Apple, Orange)
     if (nameLower.includes('banana') || nameLower.includes('apple') || nameLower.includes('orange')) {
-      const count = Math.max(1, Math.round(q));
+      const count = currentCount();
       const fruitName = nameLower.includes('banana') ? 'banana' : nameLower.includes('apple') ? 'apple' : 'orange';
-      const weight = fruitName === 'banana' ? 118 : 180;
-      return `${count} medium ${fruitName}${count > 1 ? 's' : ''} (${count * weight}g)`;
+      const weight = baseGrams || (fruitName === 'banana' ? 118 : 180);
+      const grams = baseGrams !== null ? Math.round(baseGrams * q) : Math.round(weight * count);
+      return `${displayCount(count)} medium ${fruitName}${count > 1 ? 's' : ''} (${grams}g)`;
     }
 
-    // 6. Idlis / Dosas
     if (nameLower.includes('idli')) {
-      const pieceMatch = serving.match(/(\d+)\s*piece/i);
-      const basePieces = pieceMatch ? parseInt(pieceMatch[1], 10) : 2;
-      const totalPieces = Math.max(2, Math.round(basePieces * (q === 1 ? 1 : q)));
-      return `${totalPieces} pieces (${totalPieces * 40}g)`;
+      const pieceMatch = serving.match(/^(\d+(?:\.\d+)?)\s*pieces?\b/i);
+      const piecesPerServing = pieceMatch ? Number(pieceMatch[1]) : 1;
+      const totalPieces = q * piecesPerServing;
+      const grams = baseGrams !== null ? Math.round(baseGrams * q) : Math.round(40 * totalPieces);
+      return `${formatAmount(totalPieces)} idli piece${totalPieces === 1 ? '' : 's'} (${grams}g)`;
     }
 
-    // 7. Cooked Rice / Chawal
     if (nameLower.includes('rice') || nameLower.includes('chawal')) {
-      const match = serving.match(/(\d+(?:\.\d+)?)\s*bowl/i);
-      const baseBowls = match ? parseFloat(match[1]) : 1;
-      const totalBowls = Number((q * (q === 1 && baseBowls > 1 ? baseBowls : 1)).toFixed(1));
-      const totalGrams = Math.round(150 * totalBowls);
-      return `${totalBowls} bowl${totalBowls > 1 ? 's' : ''} cooked (${totalGrams}g)`;
+      const count = currentCount();
+      const totalGrams = Math.round(baseGrams !== null ? baseGrams * q : 150 * count);
+      return `${formatAmount(count)} bowl${count === 1 ? '' : 's'} cooked (${totalGrams}g)`;
     }
 
-    // 8. Bowls or Cups with gram weights: e.g. "bowl (150g)", "cup (100g)", "1 bowl (150g)", "1.5 bowls (150g)"
-    const bowlCupMatch = serving.match(/^(?:(\d+(?:\.\d+)?)\s*)?(bowl|cup|plate)s?\s*\(([0-9]+)\s*([a-zA-Z]+)\)$/i);
+    const bowlCupMatch = serving.match(/^(?:(\d+(?:\.\d+)?)\s*)?(bowl|cup|plate)s?\s*\(([0-9]+(?:\.[0-9]+)?)\s*([a-zA-Z]+)\)$/i);
     if (bowlCupMatch) {
-      const baseCount = bowlCupMatch[1] ? parseFloat(bowlCupMatch[1]) : 1;
+      const baseCount = bowlCupMatch[1] ? Number(bowlCupMatch[1]) : 1;
       const vessel = bowlCupMatch[2].toLowerCase();
-      const baseGrams = parseInt(bowlCupMatch[3], 10);
+      const grams = Number(bowlCupMatch[3]);
       const unit = bowlCupMatch[4];
-      const effectiveQ = q * (q === 1 && baseCount > 1 ? baseCount : 1);
-      const totalGrams = Math.round(baseGrams * effectiveQ);
-      const roundedQ = Number(effectiveQ.toFixed(1));
-      return `${roundedQ} ${roundedQ === 1 ? vessel : vessel + 's'} (${totalGrams}${unit})`;
+      const amount = q * baseCount;
+      return `${formatAmount(amount)} ${vessel}${amount === 1 ? '' : 's'} (${Math.round(grams * q)}${unit})`;
     }
 
-    // 9. Simple weight servings: e.g. "100g", "50g (dry weight)"
-    const simpleWeightMatch = serving.match(/^(\d+)\s*g(\s*\(.*?\))?$/i);
+    const simpleWeightMatch = serving.match(/^(\d+(?:\.\d+)?)\s*g(\s*\(.*?\))?$/i);
     if (simpleWeightMatch) {
-      const baseWeight = parseInt(simpleWeightMatch[1], 10);
-      const suffix = simpleWeightMatch[2] || '';
-      const totalWeight = Math.round(baseWeight * q);
-      return `${totalWeight}g${suffix}`;
+      const grams = Math.round(Number(simpleWeightMatch[1]) * q);
+      return `${grams}g${simpleWeightMatch[2] || ''}`;
     }
 
-    // 10. Curd, Dahi, Yogurt fallback if serving is generic "1 serving"
     if (nameLower.includes('curd') || nameLower.includes('dahi') || nameLower.includes('yogurt')) {
-      const totalGrams = Math.round(100 * q);
-      const roundedQ = Number(q.toFixed(1));
-      return `${roundedQ} bowl${roundedQ > 1 ? 's' : ''} (${totalGrams}g)`;
+      const count = currentCount();
+      const grams = Math.round(baseGrams !== null ? baseGrams * q : 100 * count);
+      return `${formatAmount(count)} bowl${count === 1 ? '' : 's'} (${grams}g)`;
     }
 
-    // 11. Dal, Sambars, Curries, Sabzis fallback if serving is generic "1 serving"
     if (nameLower.includes('dal') || nameLower.includes('curry') || nameLower.includes('sambar') || nameLower.includes('chole') || nameLower.includes('rajma') || nameLower.includes('sabzi') || nameLower.includes('gravy')) {
-      const totalGrams = Math.round(150 * q);
-      const roundedQ = Number(q.toFixed(1));
-      return `${roundedQ} bowl${roundedQ > 1 ? 's' : ''} (${totalGrams}g)`;
+      const count = currentCount();
+      const grams = Math.round(baseGrams !== null ? baseGrams * q : 150 * count);
+      return `${formatAmount(count)} bowl${count === 1 ? '' : 's'} (${grams}g)`;
     }
 
-    // 12. Fallback
     if (q === 1) return serving;
-    if (Math.abs(q - Math.round(q)) < 0.05) return `${Math.round(q)}× ${serving}`;
-    return `${Number(q.toFixed(1))}× ${serving}`;
+    return `${formatAmount(q)} x ${serving}`;
   };
 
   return (
@@ -1412,6 +1395,19 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           Viewing {new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
           {isToday ? ' · Today' : isFuture ? ' · Scheduled' : ' · Past day'}
         </p>
+        {isPro && (!medicalDietConditions?.length || needsClinicalDietReview) && (
+          <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-xs text-amber-100" role="status">
+            {needsClinicalDietReview
+              ? 'Your profile lists a medical diet need. Have a clinician or dietitian review your nutrition targets and foods before using an automatic plan.'
+              : 'Complete the medical diet question in your profile before generating a weekly plan.'}
+            <a href="/onboarding?mode=edit" className="ml-2 font-bold underline underline-offset-2">Update profile</a>
+          </div>
+        )}
+        {isPro && data?.food_allergies && (
+          <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-white/70">
+            Allergy reminder: check the actual ingredients and preparation of every food before eating it.
+          </p>
+        )}
         {!isPro && (
           <div className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-[#ADFF00]/15 via-[#ADFF00]/5 to-transparent border border-[#ADFF00]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
             <div>
@@ -1466,29 +1462,29 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
           <div className="flex flex-wrap justify-between items-end gap-2 mb-4 relative z-10">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider mb-1 text-white/50">
-                {isTargetHit 
-                  ? "🎯 Daily Target Hit" 
+                {isCaloriesNearTarget
+                  ? "Calories Near Target"
                   : isCalorieSurplus 
                   ? "Calorie Surplus" 
                   : "Calories Remaining"}
               </p>
               <div className="flex items-baseline gap-1.5">
                 <span className={`text-4xl font-black tracking-tighter ${
-                  isTargetHit 
+                  isCaloriesNearTarget
                     ? "text-[#ADFF00]" 
                     : isCalorieSurplus 
                     ? "text-amber-400" 
                     : "text-white"
                 }`}>
-                  {isTargetHit 
+                  {isCaloriesNearTarget
                     ? `${consumedCals}` 
                     : isCalorieSurplus 
                     ? `+${surplusCals}` 
                     : calsRemaining}
                 </span>
-                <span className={`text-sm font-bold ${isTargetHit ? "text-[#ADFF00]/80" : "text-white/50"}`}>
-                  {isTargetHit 
-                    ? "kcal (On Track)" 
+                <span className={`text-sm font-bold ${isCaloriesNearTarget ? "text-[#ADFF00]/80" : "text-white/50"}`}>
+                  {isCaloriesNearTarget
+                    ? "kcal consumed"
                     : isCalorieSurplus 
                     ? "kcal over" 
                     : "kcal left"}
@@ -1498,7 +1494,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
             <div className="text-right">
               <span className={`inline-block text-[11px] font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${
-                isTargetHit 
+                isCaloriesNearTarget
                   ? "text-[#ADFF00] bg-[#ADFF00]/10 border-[#ADFF00]/20" 
                   : "text-white/70 bg-black/40 border-white/5"
               }`}>
@@ -1515,7 +1511,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   ? "bg-gradient-to-r from-amber-400 to-rose-500" 
                   : "bg-gradient-to-r from-[#ADFF00] to-[#88cc00]"
               }`} 
-              style={{ width: `${Math.min(100, calsPercent)}%` }}
+              style={{ width: progressBarWidth(calsPercent) }}
             >
               <div className="absolute inset-0 bg-white/20 w-full rounded-full" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
             </div>
@@ -1527,8 +1523,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             <div className="bg-[#0A1108] rounded-2xl p-3 border border-white/5 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">Protein</span>
-                <span className="text-[9px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-1.5 py-0.5 rounded-md">
-                  {proPercent}%
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${proPercent > 100 ? "text-rose-400 bg-rose-400/10" : "text-[#ADFF00] bg-[#ADFF00]/10"}`}>
+                  {formatProgressLabel(proPercent)}
                 </span>
               </div>
               <div className="flex items-baseline gap-0.5 mb-2">
@@ -1540,7 +1536,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 </span>
               </div>
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-[#ADFF00] rounded-full transition-all duration-300" style={{ width: `${proPercent}%` }} />
+                <div className="h-full bg-[#ADFF00] rounded-full transition-all duration-300" style={{ width: progressBarWidth(proPercent) }} />
               </div>
             </div>
 
@@ -1548,8 +1544,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             <div className="bg-[#0A1108] rounded-2xl p-3 border border-white/5 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">Carbs</span>
-                <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded-md">
-                  {carbsPercent}%
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${carbsPercent > 100 ? "text-rose-400 bg-rose-400/10" : "text-blue-400 bg-blue-400/10"}`}>
+                  {formatProgressLabel(carbsPercent)}
                 </span>
               </div>
               <div className="flex items-baseline gap-0.5 mb-2">
@@ -1561,7 +1557,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 </span>
               </div>
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-400 rounded-full transition-all duration-300" style={{ width: `${carbsPercent}%` }} />
+                <div className={`h-full rounded-full transition-all duration-300 ${carbsPercent > 100 ? "bg-rose-400" : "bg-blue-400"}`} style={{ width: progressBarWidth(carbsPercent) }} />
               </div>
             </div>
 
@@ -1569,8 +1565,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             <div className="bg-[#0A1108] rounded-2xl p-3 border border-white/5 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-black text-white/60 uppercase tracking-wider">Fat</span>
-                <span className="text-[9px] font-bold text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded-md">
-                  {fatPercent}%
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${fatPercent > 100 ? "text-rose-400 bg-rose-400/10" : "text-orange-400 bg-orange-400/10"}`}>
+                  {formatProgressLabel(fatPercent)}
                 </span>
               </div>
               <div className="flex items-baseline gap-0.5 mb-2">
@@ -1582,7 +1578,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                 </span>
               </div>
               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-400 rounded-full transition-all duration-300" style={{ width: `${fatPercent}%` }} />
+                <div className={`h-full rounded-full transition-all duration-300 ${fatPercent > 100 ? "bg-rose-400" : "bg-orange-400"}`} style={{ width: progressBarWidth(fatPercent) }} />
               </div>
             </div>
           </div>
@@ -1884,8 +1880,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
             )}
 
             {meals.map((meal: any) => {
-              const completed = isMealCompleted(meal.meal_type);
               const loggedFoods = foodsByMeal[String(meal.meal_type || '').toLowerCase().trim()] || [];
+              const hasLoggedFoods = loggedFoods.length > 0;
               
               const mealKey = meal.id || meal.meal_type;
               const currentChoice = selectedMealOptions[mealKey] || 'A';
@@ -1937,7 +1933,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               }, 0);
               const hasCoreAndAddon = corePlannedItems.length > 0 && addonPlannedItems.length > 0;
               
-              const isActive = !completed && isToday && getActiveMealType() === meal.meal_type;
+              const isActive = !hasLoggedFoods && isToday && getActiveMealType() === meal.meal_type;
 
               return (
                 <div 
@@ -1945,7 +1941,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   className={`bg-[#111A10] border rounded-[24px] overflow-hidden transition-all ${
                     isActive 
                       ? 'border-[#ADFF00]/60 shadow-[0_0_25px_rgba(173,255,0,0.12)] ring-1 ring-[#ADFF00]/30' 
-                      : completed 
+                      : hasLoggedFoods
                       ? 'border-[#ADFF00]/20 shadow-[0_0_15px_rgba(173,255,0,0.03)]' 
                       : 'border-white/5 opacity-90'
                   }`}
@@ -1982,7 +1978,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
                       <div className="flex items-center gap-1.5">
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-black backdrop-blur-md bg-black/70 text-[#ADFF00] border border-[#ADFF00]/30 shadow-md">
-                          {completed ? `${mealCals} kcal · ${mealPro}g P` : `${Math.round(plannedTotals.calories)} kcal · ${Math.round(plannedTotals.protein)}g P`}
+                          {hasLoggedFoods ? `${mealCals} kcal · ${mealPro}g P logged` : `${Math.round(plannedTotals.calories)} kcal · ${Math.round(plannedTotals.protein)}g P`}
                         </span>
                       </div>
                     </div>
@@ -2005,7 +2001,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   </div>
 
                   {/* Dual-Option Switcher (Option A vs Option B) */}
-                  {hasOptionB && !completed && (
+                  {hasOptionB && !hasLoggedFoods && (
                     <div className="px-5 pt-3 pb-1">
                       <div className="flex items-center bg-black/50 p-1 rounded-xl border border-white/10 shadow-inner">
                         <button
@@ -2044,11 +2040,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     {/* Status Subtitle */}
                     <div className="flex justify-between items-center mb-3">
                       <p className="text-xs text-white/50 font-medium">
-                        {completed ? 'Logged Foods' : (currentPlannedFoods.length > 0 ? (isOptB ? 'Option B Planned Foods' : 'Option A Planned Foods') : 'Not planned yet')}
+                        {hasLoggedFoods ? `${loggedFoods.length} item${loggedFoods.length === 1 ? '' : 's'} logged` : (currentPlannedFoods.length > 0 ? (isOptB ? 'Option B Planned Foods' : 'Option A Planned Foods') : 'Not planned yet')}
                       </p>
                       <div className="text-right">
-                        {completed ? (
-                          <span className="text-xs font-bold text-[#ADFF00]">✓ Consumed</span>
+                        {hasLoggedFoods ? (
+                          <span className="text-xs font-bold text-[#ADFF00]">✓ Logged</span>
                         ) : currentPlannedFoods.length > 0 ? (
                           <span className="text-xs text-white/50">
                             {isOptB ? 'Alternative Recipe' : 'Primary Plan'}
@@ -2234,14 +2230,14 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           }
                         </div>
                       )}
-                      {currentPrepInstruction && !completed && (
+                      {currentPrepInstruction && !hasLoggedFoods && (
                         <div className="pt-2.5 mt-2.5 border-t border-white/5 text-[11px] text-white/70 leading-relaxed bg-white/[0.02] p-2.5 rounded-xl border border-white/5 flex items-start gap-2">
                           <span className="text-sm shrink-0">💡</span>
                           <span>{currentPrepInstruction}</span>
                         </div>
                       )}
                     </div>
-                    {!completed && currentPlannedFoods.length > 0 && (
+                    {!hasLoggedFoods && currentPlannedFoods.length > 0 && (
                       <div className="grid grid-cols-4 gap-2 bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
                         {[
                           { label: 'Calories', value: Math.round(plannedTotals.calories), suffix: 'kcal', className: 'text-white' },
@@ -2280,7 +2276,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                             <span>Scheduled</span>
                           </div>
                         </>
-                      ) : !completed ? (
+                      ) : !hasLoggedFoods ? (
                         <>
                           <button 
                             type="button"

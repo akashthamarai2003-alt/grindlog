@@ -30,11 +30,14 @@ export function ActiveWorkoutResumeCard({
     if (isDiscarding) return;
     setIsDiscarding(true);
     try {
+      const res = await discardWorkoutSessionAction({ workoutId });
+      if (!res.success) throw new Error(res.error || "Failed to discard workout");
+
       clearWorkoutTimer(workoutId);
 
-      // Optimistic instant UI update: mark workout as scheduled so card swaps in 0ms
+      // Update the visible card only after the server confirms the reset.
       const cached = workoutClientCache.get();
-      if (cached && cached.effectiveWorkout) {
+      if (cached?.effectiveWorkout?.id === workoutId) {
         const updated = {
           ...cached,
           effectiveWorkout: {
@@ -50,8 +53,6 @@ export function ActiveWorkoutResumeCard({
         workoutClientCache.notifyUpdated();
       }
 
-      const res = await discardWorkoutSessionAction({ workoutId });
-      if (!res.success) throw new Error(res.error || "Failed to discard workout");
       toast.success("Workout session discarded.");
       router.refresh();
     } catch (e: any) {
@@ -161,6 +162,7 @@ export function ActiveWorkoutResumeCard({
             </button>
 
             <button
+              type="button"
               onClick={handleDiscard}
               disabled={isDiscarding || isEnding}
               className="px-4 py-3.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 active:scale-[0.98] transition-all duration-200 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"

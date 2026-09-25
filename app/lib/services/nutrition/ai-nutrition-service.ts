@@ -88,23 +88,67 @@ export class AINutritionService {
       .eq('user_id', userId)
       .maybeSingle();
 
-    const { data: allFoods } = await supabase
+    if (!profile || !Number.isFinite(Number(profile.age)) || Number(profile.age) < 1 || Number(profile.age) > 120 ||
+        !Number.isFinite(Number(profile.height)) || Number(profile.height) < 50 || Number(profile.height) > 300 ||
+        !Number.isFinite(Number(profile.weight)) || Number(profile.weight) < 20 || Number(profile.weight) > 500 ||
+        !profile.nutrition_budget ||
+        !profile.meals_per_day || !(profile.food_type || profile.diet_preference)) {
+      throw new Error('PROFILE_INCOMPLETE: Complete your age, height, weight, diet, meal count, and food budget in Profile before generating a plan.');
+    }
+    if (Number(profile.age) < 18) {
+      throw new Error('CLINICAL_REVIEW_REQUIRED: Automatic adult diet plans are not available for users under 18. Ask a qualified clinician or dietitian to review your nutrition needs.');
+    }
+
+    const { data: allFoods, error: catalogError } = await supabase
       .from('foods')
-      .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly')
-      .eq('is_active', true);
+      .select('id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, allergens, plan_eligible, verification_status, nutrition_verified, dietary_classification_verified')
+      .eq('is_active', true)
+      .eq('plan_eligible', true)
+      .eq('verification_status', 'approved_for_plans')
+      .eq('nutrition_verified', true)
+      .eq('dietary_classification_verified', true);
+
+    if (catalogError) {
+      throw new Error('Could not load the reviewed food catalog. Your saved plan was left unchanged.');
+    }
 
     const foodCatalog: NutritionFoodReference[] = allFoods || [];
 
     // 3. Normalized User Context & Classifications
     const userContext = buildNutritionUserContext(profile, targets, userId);
+    if (userContext.medicalDietConditions.length === 0) {
+      throw new Error('PROFILE_INCOMPLETE: Complete the medical diet question in Profile before generating your weekly plan.');
+    }
+    if (userContext.medicalDietConditions.some(condition => condition.toLowerCase() !== 'none')) {
+      throw new Error('CLINICAL_REVIEW_REQUIRED: This diet needs a clinician or dietitian to review your targets and food choices before an automatic plan can be used.');
+    }
+    if (![targets.calories, targets.protein, targets.carbs, targets.fat].every(value => Number.isFinite(Number(value)) && Number(value) > 0)) {
+      throw new Error('PROFILE_INCOMPLETE: Your daily nutrition targets are missing or invalid. Update your profile and targets before generating a plan.');
+    }
+    const unsupportedAllergy = userContext.allergies.find(allergy =>
+      !NutritionValidationEngine.validateFoodAllergenTags('catalog food', [], [allergy]).valid
+    );
+    if (unsupportedAllergy) {
+      throw new Error(`The allergy "${unsupportedAllergy}" needs a reviewed food list before a plan can be generated. Your saved plan was left unchanged.`);
+    }
     const isAllowedFoodName = (name: string) =>
       NutritionValidationEngine.validateDiet(name, userContext.diet).valid &&
       NutritionValidationEngine.validateAllergiesAndDislikes(
         name, userContext.allergies, userContext.dislikedFoods, userContext.avoidedFoods
       ).valid;
-    const safeFoodCatalog = foodCatalog.filter(food => isAllowedFoodName(food.name));
+    const isAllowedFoodReference = (food: NutritionFoodReference) => {
+      const dietType = String(food.diet_type || '').toLowerCase().trim();
+      const knownDietType = ['vegan', 'veg', 'vegetarian', 'eggetarian', 'non-veg', 'non_vegetarian', 'non vegetarian'].includes(dietType);
+      const dietCompatible = (userContext.diet === 'non_vegetarian' && knownDietType) ||
+        dietType === 'vegan' ||
+        (userContext.diet === 'vegetarian' && ['veg', 'vegetarian'].includes(dietType)) ||
+        (userContext.diet === 'eggetarian' && ['veg', 'vegetarian', 'eggetarian'].includes(dietType));
+      return dietCompatible && isAllowedFoodName(food.name) &&
+        NutritionValidationEngine.validateFoodAllergenTags(food.name, food.allergens, userContext.allergies).valid;
+    };
+    const safeFoodCatalog = foodCatalog.filter(isAllowedFoodReference);
     if (safeFoodCatalog.length === 0) {
-      throw new Error("No catalog foods match your diet and allergy preferences. Please review your nutrition profile.");
+      throw new Error("No reviewed catalog foods match your diet and allergy preferences. Your saved plan was left unchanged. Please review your nutrition profile or ask for a reviewed food list.");
     }
     const combinedDiet = `${profile?.diet_preference || ''} ${profile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
     const isVegan = userContext.diet === 'vegan';
@@ -121,7 +165,7 @@ export class AINutritionService {
       : 'Standard local Indian whole foods (Eggs, Paneer, Curd, Dals, Chana, Rajma, Tofu, Peanuts, Rice, Roti, Oats, Bananas)';
 
     // 4. Construct High-Precision Groq Prompt
-    const systemPrompt = `You are Luna AI, an elite Indian sports and clinical dietitian.
+const systemPrompt = `You are Luna AI, a meal-planning assistant for general adult nutrition. Do not present yourself as a clinician or provide medical diet advice.
 Your mission is to generate a comprehensive 7-Day Precision Weekly Meal Plan (Day 1 through Day 7) specifically tailored to the user's macros, budget, and lifestyle.
 
 CRITICAL USER PROFILE & STRICT CONSTRAINTS:
@@ -251,7 +295,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         plan_summary: "7-Day Precision Personalized Plan",
         days: Array.from({ length: 7 }, (_, dIdx) => {
           const fallbackStartDate = new Date(`${localDate}T12:00:00.000Z`);
-          const rotatingMap = NutritionService.getRotatingMealPlanForDay((fallbackStartDate.getDay() + dIdx) % 7, profile, targets, foodCatalog);
+          const rotatingMap = NutritionService.getRotatingMealPlanForDay((fallbackStartDate.getUTCDay() + dIdx) % 7, profile, targets, safeFoodCatalog);
           const dayMeals = mealSlots.map(slot => rotatingMap.get(slot) || rotatingMap.get('lunch')).filter(Boolean);
           return {
             day_number: dIdx + 1,
@@ -312,7 +356,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       if (lower.includes('fish')) {
         return foodCatalog.find(f => f.name.toLowerCase().includes('fish'));
       }
-      return foodCatalog.find(f => f.name.toLowerCase().includes('chapati') || f.name.toLowerCase().includes('rice')) || foodCatalog[0];
+      return undefined;
     };
 
     // Safe whole-food substitution helper to ensure allergens and dietary violations are replaced with nutritious equivalents
@@ -377,11 +421,14 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         }
 
         let ref = findFoodReference(fName, safeFoodCatalog, profile?.food_environment);
-        if (!ref || !isAllowedFoodName(ref.name)) {
+        if (!ref || !isAllowedFoodReference(ref)) {
           const fallback = findFallbackFood(fName);
-          ref = fallback && isAllowedFoodName(fallback.name)
+          ref = fallback && isAllowedFoodReference(fallback)
             ? fallback
-            : safeFoodCatalog.find(food => !/core meal|provided core|base meal/i.test(food.name)) || safeFoodCatalog[0];
+            : undefined;
+        }
+        if (!ref) {
+          throw new Error(`No reviewed catalog match was found for "${fName}". Your saved plan was left unchanged.`);
         }
 
         let qty = Number(item.quantity) || 1;
@@ -421,6 +468,13 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
           name: ref?.name || fName,
           serving_size: sSize,
           quantity: qty,
+          unit_food_nutrition: {
+            calories: Number(ref?.calories || defCals),
+            protein: Number(ref?.protein || defPro),
+            carbs: Number(ref?.carbs || 15),
+            fat: Number(ref?.fat || 3),
+            estimated_cost: unitCost,
+          },
           calories: baseCals,
           protein: basePro,
           carbs: baseCarbs,
@@ -438,11 +492,12 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         if (seenKeys.has(key)) {
           const existing = deduped.find(e => (e.food_id || e.name.toLowerCase()) === key);
           if (existing) {
-            existing.quantity = Math.min(3, existing.quantity + it.quantity);
+            existing.quantity = Number((existing.quantity + it.quantity).toFixed(2));
             existing.calories += it.calories;
             existing.protein = Number((existing.protein + it.protein).toFixed(1));
             existing.carbs = Number((existing.carbs + it.carbs).toFixed(1));
             existing.fat = Number((existing.fat + it.fat).toFixed(1));
+            existing.estimated_cost = Number((existing.estimated_cost + it.estimated_cost).toFixed(2));
           }
         } else {
           seenKeys.add(key);
@@ -547,13 +602,19 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
         const finalMealCarbs = Number(processedItems.reduce((sum, it) => sum + it.carbs, 0).toFixed(1));
         const finalMealFat = Number(processedItems.reduce((sum, it) => sum + it.fat, 0).toFixed(1));
         const finalMealCost = processedItems.reduce((sum, it) => sum + it.estimated_cost, 0);
+        const listedMealName = processedItems.slice(0, 3).map(item => item.name).filter(Boolean).join(' + ') || `${mType.replace(/_/g, ' ')} meal`;
+        const listedOptionBName = processedOptBItems.slice(0, 3).map(item => item.name).filter(Boolean).join(' + ');
+        const allergyPrep = 'Prepare only the listed foods. Check ingredient labels and avoid allergen cross-contact; stop if an ingredient cannot be verified.';
+        const standardPrep = 'Prepare the listed foods using your usual cooking method and portions.';
 
         return {
           meal_type: mType,
-          name: cleanedTitle,
-          option_b_name: finalOptBTitle,
-          prep_instructions: m.prep_instruction || NutritionService.getPrepInstructionForSlot(mType, cleanedTitle, dIdx, profile?.food_environment, combinedDiet),
-          option_b_prep_instruction: m.option_b_prep_instruction || '',
+          name: userContext.allergies.length ? listedMealName : cleanedTitle,
+          option_b_name: userContext.allergies.length ? (listedOptionBName || undefined) : finalOptBTitle,
+          prep_instructions: userContext.allergies.length ? allergyPrep :
+            (m.prep_instruction && isAllowedFoodName(m.prep_instruction) ? m.prep_instruction : standardPrep),
+          option_b_prep_instruction: userContext.allergies.length ? allergyPrep :
+            (m.option_b_prep_instruction && isAllowedFoodName(m.option_b_prep_instruction) ? m.option_b_prep_instruction : standardPrep),
           calories: finalMealCals || slotTargetCals,
           protein: finalMealPro || slotTargetPro,
           carbs: finalMealCarbs,
@@ -565,7 +626,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       });
 
       // Calibrate meals strictly against user's targets and budget (safe from allergen drops)
-      const calibratedDayMeals = calibrateMealsToTargets(meals, targets, profile);
+      const calibratedDayMeals = calibrateMealsToTargets(meals, targets, profile, safeFoodCatalog);
 
       return {
         day_number: d.day_number || (dIdx + 1),
@@ -573,13 +634,78 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       };
     });
 
+    const validateDayChoices = (day: RawAIDay, optionBMealIndexes: Set<number>) => {
+      const totals = day.meals.reduce((sum: any, meal: any, mealIndex: number) => {
+        const useOptionB = optionBMealIndexes.has(mealIndex);
+        const items = useOptionB ? meal.option_b_items || [] : meal.items || meal.meal_plan_items || [];
+        return items.reduce((mealSum: any, item: any) => ({
+          calories: mealSum.calories + (Number(item.calories) || 0),
+          protein: mealSum.protein + (Number(item.protein) || 0),
+          carbs: mealSum.carbs + (Number(item.carbs) || 0),
+          fat: mealSum.fat + (Number(item.fat) || 0),
+          cost: mealSum.cost + (Number(item.estimated_cost) || 0),
+        }), sum);
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0, cost: 0 });
+
+      const macrosValid = NutritionValidationEngine.validateMacros(
+        totals,
+        {
+          caloriesTarget: userContext.caloriesTarget,
+          proteinTarget: userContext.proteinTarget,
+          carbsTarget: userContext.carbsTarget,
+          fatTarget: userContext.fatTarget,
+        }
+      ).valid;
+
+      return macrosValid && totals.cost <= userContext.dailyBudget;
+    };
+
+    for (const day of daySchedules) {
+      if (!validateDayChoices(day, new Set())) {
+        throw new Error("This plan could not meet your nutrition targets within your food budget. Your saved plan was left unchanged. Please review your targets or budget and try again.");
+      }
+
+      // Keep alternative meals only when every combination of the available
+      // alternatives still fits the user's daily macro and budget targets.
+      const usableOptions = new Set<number>();
+      for (let mealIndex = 0; mealIndex < day.meals.length; mealIndex++) {
+        const meal = day.meals[mealIndex];
+        if (!Array.isArray(meal.option_b_items) || meal.option_b_items.length === 0) continue;
+
+        const candidateOptions = new Set(usableOptions);
+        candidateOptions.add(mealIndex);
+        const optionIndexes = Array.from(candidateOptions);
+        let allCombinationsValid = true;
+
+        for (let mask = 0; mask < (1 << optionIndexes.length); mask++) {
+          const combination = new Set<number>();
+          optionIndexes.forEach((optionIndex, bit) => {
+            if (mask & (1 << bit)) combination.add(optionIndex);
+          });
+          if (!validateDayChoices(day, combination)) {
+            allCombinationsValid = false;
+            break;
+          }
+        }
+
+        if (allCombinationsValid) {
+          usableOptions.add(mealIndex);
+        } else {
+          meal.option_b_items = [];
+          meal.option_b_name = undefined;
+          meal.option_b_prep_instruction = "";
+        }
+      }
+    }
+
     // Calibration can inject protein foods, so validate every final option before
     // replacing any of the user's existing dated plans.
     for (const day of daySchedules) {
       for (const meal of day.meals) {
         for (const item of [...(meal.items || meal.meal_plan_items || []), ...(meal.option_b_items || [])]) {
           const name = String(item.foods?.name || item.name || "");
-          if (!name || !isAllowedFoodName(name)) {
+          const reference = safeFoodCatalog.find(food => food.id === (item.food_id || item.foods?.id));
+          if (!name || !isAllowedFoodName(name) || !reference || !isAllowedFoodReference(reference)) {
             throw new Error("Could not build a plan compatible with your diet or food restrictions. Please review your nutrition profile.");
           }
         }
@@ -593,18 +719,11 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
     const allDates: string[] = [];
     for (let i = 0; i < numDaysToGenerate; i++) {
       const d = new Date(startDate);
-      d.setDate(d.getDate() + i);
+      d.setUTCDate(d.getUTCDate() + i);
       allDates.push(d.toISOString().slice(0, 10));
     }
 
-    // Clean up existing meal plans in this 7-day window
-    await supabase
-      .from('meal_plans')
-      .delete()
-      .eq('user_id', userId)
-      .in('date', allDates);
-
-    // Prepare batch rows for meal_plans (1 row per date to respect UNIQUE(user_id, date))
+    // Build every date and food before replacing the saved week.
     const mealPlansRows: any[] = [];
     const itemsByDate = new Map<string, any[]>();
 
@@ -619,14 +738,15 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       const allDayItems: any[] = [];
 
       daySchedule.meals.forEach((m) => {
-        dayCals += m.calories;
-        dayPro += m.protein;
-        dayCarbs += m.carbs;
-        dayFat += m.fat;
-        dayCost += m.estimated_cost;
-
         const mItems = m.items || m.meal_plan_items || [];
         mItems.forEach((it: any) => {
+          // Calibration changes item quantities; the saved day summary must
+          // reflect those final Option A items, not pre-calibration meal totals.
+          dayCals += Number(it.calories) || 0;
+          dayPro += Number(it.protein) || 0;
+          dayCarbs += Number(it.carbs) || 0;
+          dayFat += Number(it.fat) || 0;
+          dayCost += Number(it.estimated_cost) || 0;
           allDayItems.push({
             ...it,
             meal_type: m.meal_type,
@@ -663,63 +783,48 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
       itemsByDate.set(dateStr, allDayItems);
     });
 
-    // Batch insert meal_plans (exactly 1 row per date = 30 rows total, 0 unique constraint collisions)
-    const { data: insertedMealPlans, error: insertPlansError } = await supabase
-      .from('meal_plans')
-      .insert(mealPlansRows)
-      .select('id, date, meal_type');
+    // The replacement is saved in one database transaction after item validation.
 
-    if (insertPlansError || !insertedMealPlans) {
-      console.error("[Luna AI] Error inserting meal_plans:", insertPlansError);
-      await this.logUsage(userId, 'failed_db_insert', 'groq');
-      throw new Error(`Failed to save your meal plans to database: ${insertPlansError?.message || 'Database write error'}`);
-    }
-
-    // Prepare meal_plan_items linking to the inserted meal plan IDs
-    const mealPlanItemsRows: any[] = [];
-    insertedMealPlans.forEach(plan => {
+    const planDaysPayload = mealPlansRows.map(plan => {
       const items = itemsByDate.get(plan.date) || [];
+      if (items.length === 0) {
+        throw new Error(`The generated plan for ${plan.date} has no foods. Your saved plan was left unchanged.`);
+      }
 
-      items.forEach(it => {
-        const isValidUUID = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+      const itemPayload = items.map(it => {
         const rawId = it.food_id || it.foods?.id;
-        const itemName = String(it.foods?.name || it.name || "");
-        const matchingId = rawId && isValidUUID(rawId)
-          ? safeFoodCatalog.find(food => food.id === rawId)
-          : undefined;
-        const fallback = findFallbackFood(itemName);
-        const resolvedFoodId = (
-          matchingId ||
-          findFoodReference(itemName, safeFoodCatalog, profile?.food_environment) ||
-          (fallback && isAllowedFoodName(fallback.name) ? fallback : undefined) ||
-          safeFoodCatalog[0]
-        )?.id;
-        if (resolvedFoodId) {
-          const servingStr = it.is_option_b
-            ? `${it.meal_type}::optb::${it.option_b_name}::${it.serving_size || '1 serving'}`
-            : `${it.meal_type}::${it.meal_name}::${it.serving_size || '1 serving'}`;
-          mealPlanItemsRows.push({
-            meal_plan_id: plan.id,
-            food_id: resolvedFoodId,
-            quantity: it.quantity || 1,
-            serving_size: servingStr
-          });
+        const food = safeFoodCatalog.find(ref => ref.id === rawId);
+        const quantity = Number(it.quantity);
+        if (!food || !isAllowedFoodReference(food) || !Number.isFinite(quantity) || quantity <= 0) {
+          throw new Error('The generated plan contains an unverified food or serving. Your saved plan was left unchanged.');
         }
+        return {
+          food_id: food.id,
+          quantity,
+          serving_size: it.is_option_b
+            ? `${it.meal_type}::optb::${it.option_b_name}::${it.serving_size || food.serving_size || '1 serving'}`
+            : `${it.meal_type}::${it.meal_name}::${it.serving_size || food.serving_size || '1 serving'}`,
+        };
       });
+      return {
+        date: plan.date,
+        plan: {
+          name: plan.name,
+          calories: plan.calories,
+          protein: plan.protein,
+          carbs: plan.carbs,
+          fat: plan.fat,
+          estimated_cost: plan.estimated_cost,
+        },
+        items: itemPayload,
+      };
     });
 
-    if (mealPlanItemsRows.length > 0) {
-      const chunkSize = 100;
-      for (let c = 0; c < mealPlanItemsRows.length; c += chunkSize) {
-        const chunk = mealPlanItemsRows.slice(c, c + chunkSize);
-        const { error: chunkErr } = await supabase
-          .from('meal_plan_items')
-          .insert(chunk);
-
-        if (chunkErr) {
-          console.warn("[Luna AI] Warning inserting meal_plan_items chunk:", chunkErr.message);
-        }
-      }
+    const { error: saveError } = await supabase.rpc('replace_weekly_meal_plans', { p_days: planDaysPayload });
+    if (saveError) {
+      console.error('[Luna AI] Error saving weekly meal plan:', saveError);
+      await this.logUsage(userId, 'failed_db_insert', 'groq');
+      throw new Error(`Failed to save your meal plan. Your previous plan was left unchanged: ${saveError.message}`);
     }
 
     // 8. Synchronize Smart Grocery List from Active Meal Plans
@@ -742,18 +847,27 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
 
       if (activeWorkoutPlan?.plan_data) {
         const day1 = daySchedules[0];
-        const day1Meals = day1.meals.map((m: any, idx: number) => ({
-          meal_name: m.name,
-          meal_type: m.meal_type,
-          time_of_day: idx === 0 ? "Morning" : idx === 1 ? "Midday" : idx === 2 ? "Evening" : "Night",
-          items: m.items.map((it: any) => `${it.quantity > 1 ? `${it.quantity}x ` : ""}${it.name}`),
-          total_calories: m.calories,
-          protein_grams: m.protein,
-          carbs_grams: m.carbs,
-          fat_grams: m.fat,
-          prep_instructions: m.prep_instructions || `Prepared fresh according to your ${profile?.diet_preference || 'diet'} targets.`,
-          meal_plan_items: m.items
-        }));
+        const day1Meals = day1.meals.map((m: any, idx: number) => {
+          const items = m.items || m.meal_plan_items || [];
+          const totals = items.reduce((sum: any, item: any) => ({
+            calories: sum.calories + (Number(item.calories) || 0),
+            protein: sum.protein + (Number(item.protein) || 0),
+            carbs: sum.carbs + (Number(item.carbs) || 0),
+            fat: sum.fat + (Number(item.fat) || 0),
+          }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+          return {
+            meal_name: m.name,
+            meal_type: m.meal_type,
+            time_of_day: idx === 0 ? "Morning" : idx === 1 ? "Midday" : idx === 2 ? "Evening" : "Night",
+            items: items.map((it: any) => `${it.quantity > 1 ? `${it.quantity}x ` : ""}${it.name}`),
+            total_calories: Math.round(totals.calories),
+            protein_grams: Number(totals.protein.toFixed(1)),
+            carbs_grams: Number(totals.carbs.toFixed(1)),
+            fat_grams: Number(totals.fat.toFixed(1)),
+            prep_instructions: m.prep_instructions || `Prepare only the listed foods.`,
+            meal_plan_items: items
+          };
+        });
 
         const currentPlanData = activeWorkoutPlan.plan_data as any;
         const updatedPlanData = {

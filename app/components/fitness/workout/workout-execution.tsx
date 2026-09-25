@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { discardWorkoutSessionAction } from "@/app/actions/fitness";
 import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
+import { workoutClientCache } from "@/lib/api/workout-cache";
 
 interface WorkoutExecutionProps {
   workout: FitnessWorkout & {
@@ -114,11 +115,13 @@ export function WorkoutExecution({
     }
 
     try {
-      clearWorkoutTimer(workout.id);
       const res = await discardWorkoutSessionAction({ workoutId: workout.id, sessionId });
       if (!res.success) {
         throw new Error(res.error || "Failed to discard workout");
       }
+      clearWorkoutTimer(workout.id);
+      workoutClientCache.clear();
+      workoutClientCache.notifyUpdated();
       toast.success("Workout session discarded.");
       router.push("/workout");
     } catch (e: any) {

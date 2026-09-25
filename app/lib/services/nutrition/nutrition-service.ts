@@ -76,6 +76,11 @@ export type NutritionFoodReference = {
   estimated_cost?: number | null;
   diet_type?: string | null;
   is_pg_friendly?: boolean | null;
+  allergens?: string[] | null;
+  plan_eligible?: boolean | null;
+  verification_status?: string | null;
+  nutrition_verified?: boolean | null;
+  dietary_classification_verified?: boolean | null;
 };
 
 export function normalizeFoodName(value: unknown): string {
@@ -208,7 +213,8 @@ export function getRealisticFoodCost(foodName?: string, defaultCost?: number): n
 export function calibrateMealsToTargets(
   meals: any[],
   targets: { calories: number; protein?: number; carbs?: number; fat?: number; protein_g?: number; carbs_g?: number; fat_g?: number },
-  profile: any
+  profile: any,
+  vettedFoodCatalog?: NutritionFoodReference[]
 ): any[] {
   if (!meals || !Array.isArray(meals) || meals.length === 0 || !targets) return meals;
 
@@ -235,6 +241,27 @@ export function calibrateMealsToTargets(
     NutritionValidationEngine.validateDiet(name, normalizedDiet).valid &&
     NutritionValidationEngine.validateAllergiesAndDislikes(name, allergies, disliked, avoided).valid;
 
+  // The weekly AI path passes only reviewed, profile-compatible foods. In that
+  // path every calibration add-on must use a real catalog ID and its real macros.
+  const resolveAddOn = (food: any): any | null => {
+    if (!isAllowedFoodName(food.name)) return null;
+    if (!vettedFoodCatalog) return food;
+    const aliases: Record<string, string[]> = {
+      'chicken-breast-addon': ['Chicken Breast (Cooked)', 'Chicken Breast (Grilled / Cooked)', 'Boiled Chicken Breast'],
+      'soya-chunks-addon': ['Soy Chunks (Cooked)', 'Soya Chunks Curry (Cooked)'],
+      'egg-white-addon': ['Boiled Egg White'],
+      'low-fat-paneer-addon': ['Low Fat Paneer'],
+      'tofu-addon': ['Tofu (Firm / Cooked)', 'Tofu (Firm)'],
+    };
+    const names = aliases[String(food.id)] || [food.name];
+    const reference = names.map(name => vettedFoodCatalog.find(candidate => candidate.name.toLowerCase() === name.toLowerCase())).find(Boolean);
+    if (!reference?.id || !isAllowedFoodName(reference.name) ||
+        ![reference.calories, reference.protein, reference.carbs, reference.fat].every(value => Number.isFinite(Number(value)))) {
+      return null;
+    }
+    return { ...reference, id: reference.id };
+  };
+
   const mealsPerDay = profile?.meals_per_day || (meals.length === 3 ? '3 meals' : (meals.length === 2 ? '2 meals' : (meals.length >= 5 ? '5+ meals' : '4 meals')));
   const slotInfo = resolveMealSlots(mealsPerDay);
   const slotRatios: Record<string, number> = slotInfo.slotRatios;
@@ -242,14 +269,16 @@ export function calibrateMealsToTargets(
   const getItemInfo = (it: any) => {
     const fName = String(it.foods?.name || it.name || '').trim();
     let q = Number(it.quantity) || 1;
-    let unitCals = Number(it.foods?.calories ?? it.calories ?? 0);
-    let unitPro = Number(it.foods?.protein ?? it.protein ?? 0);
-    let unitCarbs = Number(it.foods?.carbs ?? it.carbs ?? 0);
-    let unitFat = Number(it.foods?.fat ?? it.fat ?? 0);
-    let unitCost = Number(it.foods?.estimated_cost ?? it.estimated_cost ?? 0);
+    const unitNutrition = it.unit_food_nutrition || it.foods || {};
+    let unitCals = Number(unitNutrition.calories ?? it.calories ?? 0);
+    let unitPro = Number(unitNutrition.protein ?? it.protein ?? 0);
+    let unitCarbs = Number(unitNutrition.carbs ?? it.carbs ?? 0);
+    let unitFat = Number(unitNutrition.fat ?? it.fat ?? 0);
+    let unitCost = Number(unitNutrition.estimated_cost ?? it.estimated_cost ?? 0);
 
-    // If unitCals was already multiplied by quantity in raw items:
-    if (!it.foods && q > 1 && unitCals > 0) {
+    // Flattened plan items store macros for the selected quantity. Recover the
+    // per-serving values before changing that quantity during calibration.
+    if (!it.foods && !it.unit_food_nutrition && q !== 1 && unitCals > 0) {
       unitCals = Math.round(unitCals / q);
       unitPro = Number((unitPro / q).toFixed(1));
       unitCarbs = Number((unitCarbs / q).toFixed(1));
@@ -430,7 +459,6 @@ export function calibrateMealsToTargets(
             estimated_cost: 45,
           };
           addOnQty = Number(Math.max(0.5, Math.min(1.2, proGap / 31)).toFixed(1));
-          proGap -= addOnQty * 31;
         } else if (isEggetarian) {
           addOnFood = {
             id: 'egg-white-addon',
@@ -444,7 +472,6 @@ export function calibrateMealsToTargets(
             estimated_cost: 6,
           };
           addOnQty = Math.max(2, Math.min(5, Math.round(proGap / 3.6)));
-          proGap -= addOnQty * 3.6;
         } else if (isVegetarian) {
           // Vegetarian: Rotate between Paneer, Curd, and Soy Chunks (only if not already present today)
           if (!hasSoyChunksInDay && slot === 'dinner') {
@@ -460,7 +487,6 @@ export function calibrateMealsToTargets(
               estimated_cost: 20,
             };
             addOnQty = Number(Math.max(0.3, Math.min(0.6, proGap / 52)).toFixed(1));
-            proGap -= addOnQty * 52;
           } else {
             addOnFood = {
               id: 'low-fat-paneer-addon',
@@ -474,7 +500,6 @@ export function calibrateMealsToTargets(
               estimated_cost: 35,
             };
             addOnQty = Number(Math.max(0.4, Math.min(1.0, proGap / 28)).toFixed(1));
-            proGap -= addOnQty * 28;
           }
         } else {
           // Vegan: Rotate between Tofu, Moong Sprouts, Chana, and Soy Chunks (only if not already present today)
@@ -491,7 +516,6 @@ export function calibrateMealsToTargets(
               estimated_cost: 20,
             };
             addOnQty = Number(Math.max(0.3, Math.min(0.5, proGap / 52)).toFixed(1));
-            proGap -= addOnQty * 52;
           } else {
             addOnFood = {
               id: 'tofu-addon',
@@ -505,12 +529,13 @@ export function calibrateMealsToTargets(
               estimated_cost: 30,
             };
             addOnQty = Number(Math.max(0.5, Math.min(1.2, proGap / 15)).toFixed(1));
-            proGap -= addOnQty * 15;
           }
         }
 
         // Macro top-ups must never introduce a food excluded during onboarding.
-        if (!isAllowedFoodName(addOnFood.name)) continue;
+        addOnFood = resolveAddOn(addOnFood);
+        if (!addOnFood) continue;
+        proGap -= addOnQty * Number(addOnFood.protein);
         const isCore = isStapleCoreFood(addOnFood.name, profile?.food_environment);
         const unitCost = isCore ? 0 : getRealisticFoodCost(addOnFood.name, addOnFood.estimated_cost);
 
@@ -597,7 +622,18 @@ export function calibrateMealsToTargets(
 
   if (fatOverage > 2) {
     // 3A. Check whole eggs: if fat overage > 4, convert 1 whole egg to 2 egg whites
-    if (fatOverage > 4) {
+    const eggWhite = resolveAddOn({
+      id: 'd6e9d38d-5c35-4dbb-8d20-2c03e32f3a8a',
+      name: 'Boiled Egg White',
+      category: 'Protein',
+      serving_size: '1 large (33g)',
+      calories: 17,
+      protein: 3.6,
+      carbs: 0.2,
+      fat: 0.1,
+      estimated_cost: 6,
+    });
+    if (fatOverage > 4 && eggWhite) {
       let convertedEgg = false;
       calibratedMeals = calibratedMeals.map(m => {
         if (convertedEgg) return m;
@@ -622,26 +658,15 @@ export function calibrateMealsToTargets(
 
         if (convertedEgg) {
           // Add 2 egg whites to preserve/increase protein with 0 fat
-          const eggWhite = {
-            id: 'd6e9d38d-5c35-4dbb-8d20-2c03e32f3a8a',
-            name: 'Boiled Egg White',
-            category: 'Protein',
-            serving_size: '1 large (33g)',
-            calories: 17,
-            protein: 3.6,
-            carbs: 0.2,
-            fat: 0.1,
-            estimated_cost: 6,
-          };
           items.push({
             food_id: eggWhite.id,
             quantity: 2,
             is_core: isStapleCoreFood(eggWhite.name, profile?.food_environment),
-            calories: 34,
-            protein: 7.2,
-            carbs: 0.4,
-            fat: 0.2,
-            estimated_cost: 12,
+            calories: Math.round(Number(eggWhite.calories) * 2),
+            protein: Number((Number(eggWhite.protein) * 2).toFixed(1)),
+            carbs: Number((Number(eggWhite.carbs) * 2).toFixed(1)),
+            fat: Number((Number(eggWhite.fat) * 2).toFixed(1)),
+            estimated_cost: Math.round(Number(eggWhite.estimated_cost) * 2),
             foods: eggWhite,
           });
         }
@@ -834,7 +859,8 @@ export function calibrateMealsToTargets(
         }
       }
 
-      if (!isAllowedFoodName(addOnFood.name)) continue;
+      addOnFood = resolveAddOn(addOnFood);
+      if (!addOnFood) continue;
       const isCore = isStapleCoreFood(addOnFood.name, profile?.food_environment);
       const unitCost = isCore ? 0 : getRealisticFoodCost(addOnFood.name, addOnFood.estimated_cost);
 
@@ -997,11 +1023,15 @@ export function calibrateMealsToTargets(
   totals = getTotals(calibratedMeals);
   let budgetIterations = 0;
   const MAX_BUDGET_ITERATIONS = 10;
+  const areMacrosWithinTolerance = (value: typeof totals) => NutritionValidationEngine.validateMacros(
+    { calories: value.cal, protein: value.pro, carbs: value.carb, fat: value.fat },
+    { caloriesTarget: targetCals, proteinTarget: targetPro, carbsTarget: targetCarbs, fatTarget: targetFat }
+  ).valid;
   while (totals.cost > dailyBudgetCap && budgetIterations < MAX_BUDGET_ITERATIONS) {
     budgetIterations++;
     // Scale factor: ratio of cap to current cost, with a small margin to converge faster
     const scaleFactor = Math.min(0.85, dailyBudgetCap / totals.cost);
-    calibratedMeals = calibratedMeals.map((m: any) => {
+    const budgetAdjustedMeals = calibratedMeals.map((m: any) => {
       const items = (m.meal_plan_items || []).map((it: any) => {
         const info = getItemInfo(it);
         let q = Number(it.quantity) || 1;
@@ -1020,12 +1050,22 @@ export function calibrateMealsToTargets(
       });
       return { ...m, meal_plan_items: items, items };
     });
-    totals = getTotals(calibratedMeals);
+
+    const adjustedTotals = getTotals(budgetAdjustedMeals);
+    // Keep the last set of quantities that still meets the macro targets. The
+    // caller will reject the plan if the budget cannot be met at that point.
+    if (areMacrosWithinTolerance(adjustedTotals) || !areMacrosWithinTolerance(totals)) {
+      calibratedMeals = budgetAdjustedMeals;
+      totals = adjustedTotals;
+    } else {
+      break;
+    }
   }
 
   // Final summary update per meal
   return calibratedMeals.map((m: any) => {
     const items = m.meal_plan_items || m.items || [];
+    const publicItems = items.map(({ unit_food_nutrition, ...item }: any) => item);
     const finalCals = Math.round(items.reduce((s: number, it: any) => s + (Number(it.calories) || 0), 0));
     const finalPro = Number(items.reduce((s: number, it: any) => s + (Number(it.protein) || 0), 0).toFixed(1));
     const finalCarbs = Number(items.reduce((s: number, it: any) => s + (Number(it.carbs) || 0), 0).toFixed(1));
@@ -1039,8 +1079,8 @@ export function calibrateMealsToTargets(
       carbs: finalCarbs,
       fat: finalFat,
       estimated_cost: Math.round(finalCost),
-      meal_plan_items: items,
-      items: items
+      meal_plan_items: publicItems,
+      items: publicItems
     };
   });
 }
@@ -1316,7 +1356,7 @@ export interface WeeklyPlanEligibility {
   days_remaining: number;
   plans_used_this_month: number;
   max_plans_per_month: number;
-  reason?: 'weekly_cooldown' | 'monthly_limit_reached' | null;
+  reason?: 'weekly_cooldown' | 'monthly_limit_reached' | 'eligibility_unavailable' | null;
   message?: string;
 }
 
@@ -1344,10 +1384,13 @@ export class NutritionService {
         .eq('status', 'success')
         .order('created_at', { ascending: false });
 
-      if (error || !logs || logs.length === 0) {
+      if (error) {
+        throw error;
+      }
+      if (!logs || logs.length === 0) {
         // Fallback check: check if the user already has an active workout plan with upgraded nutrition or meal_plans
         try {
-          const [{ data: wp }, { data: mp }] = await Promise.all([
+          const [{ data: wp, error: wpError }, { data: mp, error: mpError }] = await Promise.all([
             supabase
               .from('fitness_os_workout_plans')
               .select('plan_data, updated_at')
@@ -1361,6 +1404,7 @@ export class NutritionService {
               .limit(1)
               .maybeSingle()
           ]);
+          if (wpError || mpError) throw wpError || mpError;
 
           const hasNutrition = (wp?.plan_data as any)?._nutritionUpgrade?.status === 'complete' ||
             (Array.isArray((wp?.plan_data as any)?.nutrition?.meals) && (wp?.plan_data as any)?.nutrition?.meals.length > 0) ||
@@ -1389,7 +1433,8 @@ export class NutritionService {
             };
           }
         } catch (fbErr) {
-          console.warn("[getWeeklyPlanEligibility] Non-blocking fallback check notice:", fbErr);
+          console.warn("[getWeeklyPlanEligibility] Fallback eligibility check failed:", fbErr);
+          throw fbErr;
         }
 
         return {
@@ -1483,9 +1528,10 @@ export class NutritionService {
         max_plans_per_month: 4,
         reason: null
       };
-    } catch {
+    } catch (eligibilityError) {
+      console.error("[getWeeklyPlanEligibility] Could not verify plan quota:", eligibilityError);
       return {
-        can_generate: true,
+        can_generate: false,
         has_active_plan: false,
         last_generated_at: null,
         next_available_date: null,
@@ -1493,7 +1539,8 @@ export class NutritionService {
         days_remaining: 0,
         plans_used_this_month: 0,
         max_plans_per_month: 4,
-        reason: null
+        reason: 'eligibility_unavailable',
+        message: 'Could not verify your weekly plan allowance right now. Your saved plan is unchanged. Please try again later.'
       };
     }
   }
@@ -3750,7 +3797,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
         .lte('logged_at', end),
       supabase
         .from('fitness_os_profiles')
-        .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods, nutrition_budget, food_environment, meals_per_day')
+        .select('diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods, nutrition_budget, food_environment, meals_per_day, nutrition_medical_conditions')
         .eq('user_id', userId)
         .maybeSingle(),
       supabase
@@ -4156,6 +4203,8 @@ function scaleServingSize(servingSize: string, scale: number): string {
       is_natural_whole_food: true,
       _freshFromDb: true,
       food_environment: fitProfile?.food_environment || 'Home',
+      food_allergies: fitProfile?.food_allergies || '',
+      nutrition_medical_conditions: fitProfile?.nutrition_medical_conditions ?? null,
       food_type: isProfileVegan
         ? 'Vegan'
         : isProfileVegetarian

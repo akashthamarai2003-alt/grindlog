@@ -44,6 +44,7 @@ export interface NutritionUserContext {
   dislikedFoods: string[];
   avoidedFoods: string[];
   allergies: string[];
+  medicalDietConditions: string[];
 
   // Schedule & Timezone
   wakeTime: string | null;
@@ -232,6 +233,7 @@ export function generateContextFingerprint(context: {
   monthlyBudget: number;
   mealsPerDay: string;
   allergies: string[];
+  medicalDietConditions: string[];
   dislikedFoods: string[];
   avoidedFoods: string[];
   availableFoods: string[];
@@ -247,6 +249,7 @@ export function generateContextFingerprint(context: {
     context.monthlyBudget,
     context.mealsPerDay,
     context.allergies.sort().join(","),
+    context.medicalDietConditions.sort().join(","),
     context.dislikedFoods.sort().join(","),
     context.avoidedFoods.sort().join(","),
     context.availableFoods.sort().join(","),
@@ -285,6 +288,12 @@ export function buildNutritionUserContext(
   const dislikedFoods = parseStringList(profile?.foods_disliked);
   const avoidedFoods = parseStringList(profile?.foods_avoided);
   const allergies = parseStringList(profile?.food_allergies);
+  // "None" is an explicit answer here, unlike the free-text food restriction
+  // lists where it means an empty list. Keep it so the safety gate can tell an
+  // answered question from an unanswered one.
+  const medicalDietConditions = Array.isArray(profile?.nutrition_medical_conditions)
+    ? profile.nutrition_medical_conditions.map((value: unknown) => String(value || '').trim()).filter(Boolean)
+    : [];
 
   const timezone = explicitTimezone || profile?.timezone || "Asia/Kolkata";
 
@@ -299,6 +308,7 @@ export function buildNutritionUserContext(
     monthlyBudget: budgetInfo.monthlyBudget,
     mealsPerDay: slotInfo.mealsPerDay,
     allergies,
+    medicalDietConditions,
     dislikedFoods,
     avoidedFoods,
     availableFoods,
@@ -333,6 +343,7 @@ export function buildNutritionUserContext(
     dislikedFoods,
     avoidedFoods,
     allergies,
+    medicalDietConditions,
     wakeTime: profile?.wake_time || null,
     workoutTime: profile?.workout_time || null,
     sleepTime: profile?.sleep_time || null,

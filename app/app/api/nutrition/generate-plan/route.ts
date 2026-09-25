@@ -84,6 +84,14 @@ export async function POST() {
       );
     }
 
+    if (message.startsWith('PROFILE_INCOMPLETE:') || message.startsWith('CLINICAL_REVIEW_REQUIRED:')) {
+      const [code, ...details] = message.split(':');
+      return NextResponse.json(
+        { success: false, error: { code, message: details.join(':').trim() } },
+        { status: 422 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: { code: 'SERVER_ERROR', message: message } },
       { status: 500 }

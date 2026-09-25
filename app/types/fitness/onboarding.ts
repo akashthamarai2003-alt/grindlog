@@ -57,6 +57,9 @@ export const OnboardingSchema = z.object({
   food_allergies: z.string().optional(),
   foods_disliked: z.string().optional(),
   foods_avoided: z.string().optional(),
+  nutrition_medical_conditions: z.array(z.enum([
+    "None", "Diabetes", "Kidney disease", "Pregnancy or breastfeeding", "Other medical diet"
+  ])).optional(),
   
   activity_level: z.enum(["Mostly sitting", "Lightly active", "Moderately active", "Very active"]).optional(),
   daily_steps: z.enum(["<3k", "3–5k", "5–10k", "10k+"]).optional(),

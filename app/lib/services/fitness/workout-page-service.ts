@@ -3,38 +3,7 @@ import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import { SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
 import { WorkoutPageData } from "@/types/fitness/workout-page";
 
-interface CachedEntry {
-  data: WorkoutPageData;
-  timestamp: number;
-}
-
-// Use globalThis to ensure cache is shared across all Next.js server actions and RSC bundles in the process
-const getGlobalWorkoutCache = (): Map<string, CachedEntry> => {
-  if (!(globalThis as any).__grindlog_workout_server_cache) {
-    (globalThis as any).__grindlog_workout_server_cache = new Map<string, CachedEntry>();
-  }
-  return (globalThis as any).__grindlog_workout_server_cache;
-};
-
-export function invalidateWorkoutServerCache(userId?: string) {
-  const cache = getGlobalWorkoutCache();
-  if (userId) {
-    cache.delete(userId);
-  } else {
-    cache.clear();
-  }
-}
-
 export async function getWorkoutPageData(userId: string): Promise<WorkoutPageData> {
-  const cache = getGlobalWorkoutCache();
-  const cached = cache.get(userId);
-  const now = Date.now();
-
-  // 30-second server cache: return in 0ms if visited recently
-  if (cached && (now - cached.timestamp < 30_000)) {
-    return cached.data;
-  }
-
   const admin = createAdminClient();
   const nowDate = new Date();
 
@@ -274,9 +243,6 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
     isPro: subscriptionPlan?.id === "pro",
     initialCoachNote,
   };
-
-  // Cache result for 30s
-  cache.set(userId, { data: result, timestamp: Date.now() });
 
   return result;
 }
