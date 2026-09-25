@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Play, Square, Loader2, Check, Trash2 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { discardWorkoutSessionAction, endWorkoutAction } from "@/app/actions/fitness";
@@ -14,28 +13,64 @@ interface ActiveWorkoutResumeCardProps {
   workoutId: string;
   completedExercises: number;
   totalExercises: number;
+  onDiscard?: () => void;
 }
 
 export function ActiveWorkoutResumeCard({ 
   workoutId, 
   completedExercises, 
-  totalExercises 
+  totalExercises,
+  onDiscard,
 }: ActiveWorkoutResumeCardProps) {
   const router = useRouter();
   const [isResuming, setIsResuming] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
+  const isBusy = isResuming || isEnding || isDiscarding;
+  const isAllDone = totalExercises > 0 && completedExercises >= totalExercises;
+
+  const handleContinue = async () => {
+    if (isBusy) return;
+    setIsResuming(true);
+    try {
+      if (!isAllDone && workoutId !== "mock") {
+        const response = await fetch("/api/workouts/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ workoutId }),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.session?.id) {
+          throw new Error(result.error || "Could not resume workout. Please try again.");
+        }
+      }
+      router.push(isAllDone ? `/workout/${workoutId}/summary` : `/workout/${workoutId}`);
+    } catch (e: any) {
+      toast.error(e.message || "Could not resume workout. Please try again.");
+      setIsResuming(false);
+    }
+  };
 
   const handleDiscard = async () => {
-    if (isDiscarding) return;
+    if (isBusy) return;
     setIsDiscarding(true);
     try {
+      if (workoutId === "mock") {
+        clearWorkoutTimer("mock");
+        onDiscard?.();
+        toast.success("Workout session discarded.");
+        return;
+      }
+
       const res = await discardWorkoutSessionAction({ workoutId });
       if (!res.success) throw new Error(res.error || "Failed to discard workout");
 
       clearWorkoutTimer(workoutId);
 
-      // Update the visible card only after the server confirms the reset.
+      // Trigger immediate local state reset
+      onDiscard?.();
+
+      // Update client cache so any listeners or reloads receive the scheduled status
       const cached = workoutClientCache.get();
       if (cached?.effectiveWorkout?.id === workoutId) {
         const updated = {
@@ -43,15 +78,26 @@ export function ActiveWorkoutResumeCard({
           effectiveWorkout: {
             ...cached.effectiveWorkout,
             status: "scheduled",
+            started_at: null,
+            completed_at: null,
+            duration_minutes: null,
             completedExercises: 0,
+            fitness_os_exercises: cached.effectiveWorkout.fitness_os_exercises?.map((exercise: any) => ({
+              ...exercise,
+              fitness_os_sets: exercise.fitness_os_sets?.map((set: any) => ({
+                ...set,
+                completed: false,
+                actual_reps: null,
+                weight_kg: null,
+                duration_seconds: null,
+                completed_at: null,
+              })),
+            })),
           }
         };
         workoutClientCache.set(updated);
-        workoutClientCache.notifyUpdated();
-      } else {
-        workoutClientCache.clear();
-        workoutClientCache.notifyUpdated();
       }
+      workoutClientCache.notifyUpdated();
 
       toast.success("Workout session discarded.");
       router.refresh();
@@ -63,7 +109,7 @@ export function ActiveWorkoutResumeCard({
   };
 
   const handleEndWorkout = async () => {
-    if (isEnding) return;
+    if (isBusy) return;
     setIsEnding(true);
     try {
       clearWorkoutTimer(workoutId);
@@ -79,15 +125,10 @@ export function ActiveWorkoutResumeCard({
     }
   };
 
-  const isAllDone = totalExercises > 0 && completedExercises >= totalExercises;
-
-  // Only prefetch summary route if workout is genuinely complete
+  // Execution is opened only after the user explicitly continues.
   useEffect(() => {
-    if (workoutId && workoutId !== "mock") {
-      router.prefetch(`/workout/${workoutId}`);
-      if (isAllDone) {
-        router.prefetch(`/workout/${workoutId}/summary`);
-      }
+    if (workoutId && workoutId !== "mock" && isAllDone) {
+      router.prefetch(`/workout/${workoutId}/summary`);
     }
   }, [workoutId, isAllDone, router]);
 
@@ -112,14 +153,12 @@ export function ActiveWorkoutResumeCard({
       </p>
 
       <div className="flex flex-col gap-3">
-        <Link
-          href={isAllDone ? `/workout/${workoutId}/summary` : `/workout/${workoutId}`}
-          prefetch={true}
-          onClick={() => setIsResuming(true)}
-          onMouseEnter={() => router.prefetch(isAllDone ? `/workout/${workoutId}/summary` : `/workout/${workoutId}`)}
-          onTouchStart={() => router.prefetch(isAllDone ? `/workout/${workoutId}/summary` : `/workout/${workoutId}`)}
+        <button
+          type="button"
+          onClick={handleContinue}
+          disabled={isBusy}
           className={`w-full py-4 bg-[#ADFF00] text-black active:scale-[0.98] transition-all duration-200 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] font-black ${
-            isResuming ? "opacity-80 pointer-events-none" : "hover:bg-[#bfff33]"
+            isBusy ? "opacity-80 pointer-events-none" : "hover:bg-[#bfff33]"
           }`}
         >
           {isResuming ? (
@@ -137,15 +176,16 @@ export function ActiveWorkoutResumeCard({
               </span>
             </>
           )}
-        </Link>
+        </button>
 
         {!isAllDone && (
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={handleEndWorkout}
-              disabled={isEnding || isDiscarding}
+              disabled={isBusy}
               className={`flex-1 py-3.5 bg-[#111A10] border border-white/10 hover:bg-white/5 active:scale-[0.98] transition-all duration-200 rounded-xl flex items-center justify-center gap-2 cursor-pointer ${
-                isEnding || isDiscarding ? "opacity-80 pointer-events-none" : ""
+                isBusy ? "opacity-80 pointer-events-none" : ""
               }`}
             >
               {isEnding ? (
@@ -164,7 +204,7 @@ export function ActiveWorkoutResumeCard({
             <button
               type="button"
               onClick={handleDiscard}
-              disabled={isDiscarding || isEnding}
+              disabled={isBusy}
               className="px-4 py-3.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 active:scale-[0.98] transition-all duration-200 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               title="Discard Workout"
             >

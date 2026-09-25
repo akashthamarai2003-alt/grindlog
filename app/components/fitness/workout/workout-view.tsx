@@ -47,6 +47,39 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
     return () => window.removeEventListener("grindlog_workout_updated", handleUpdate);
   }, []);
 
+  const handleWorkoutDiscard = () => {
+    setData(prev => {
+      if (!prev?.effectiveWorkout) return prev;
+      const updatedEffectiveWorkout = {
+        ...prev.effectiveWorkout,
+        status: "scheduled",
+        started_at: null,
+        completed_at: null,
+        duration_minutes: null,
+        completedExercises: 0,
+        fitness_os_exercises: prev.effectiveWorkout.fitness_os_exercises?.map((exercise: any) => ({
+          ...exercise,
+          fitness_os_sets: exercise.fitness_os_sets?.map((set: any) => ({
+            ...set,
+            completed: false,
+            actual_reps: null,
+            weight_kg: null,
+            duration_seconds: null,
+            completed_at: null,
+          })),
+        })),
+      };
+
+      const nextData: WorkoutPageData = {
+        ...prev,
+        effectiveWorkout: updatedEffectiveWorkout,
+      };
+
+      workoutClientCache.set(nextData);
+      return nextData;
+    });
+  };
+
   const {
     dateStr,
     isFree,
@@ -109,6 +142,7 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
                   workoutId={effectiveWorkout.id} 
                   completedExercises={effectiveWorkout.completedExercises || 0} 
                   totalExercises={effectiveWorkout.exerciseCount || (effectiveWorkout.fitness_os_exercises?.length || 0)} 
+                  onDiscard={handleWorkoutDiscard}
                 />
               ) : (
                 <WorkoutSummaryCard 

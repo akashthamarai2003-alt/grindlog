@@ -79,7 +79,7 @@ export function WorkoutSummaryCard({
     clearWorkoutTimer(workout.id);
 
     try {
-      await fetch("/api/workouts/sessions", {
+      const response = await fetch("/api/workouts/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -88,8 +88,14 @@ export function WorkoutSummaryCard({
           forceFreshStart: true 
         })
       });
+      const result = await response.json();
+      if (!response.ok || !result.session?.id) {
+        throw new Error(result.error || "Could not start workout. Please try again.");
+      }
     } catch (e: any) {
-      console.warn("Session initiation background notice:", e);
+      toast.error(e.message || "Could not start workout. Please try again.");
+      setIsStarting(false);
+      return;
     }
 
     // Bust client router cache so fresh server session timestamp is used

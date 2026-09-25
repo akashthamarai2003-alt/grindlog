@@ -585,6 +585,10 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
   if (!parsed.success) return { success: false, error: "Invalid parameters" };
   const { workoutId } = parsed.data;
 
+  if (workoutId === "mock") {
+    return { success: true };
+  }
+
   const admin = createAdminClient();
 
   // 1. Verify workout ownership
@@ -592,7 +596,7 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
     .from("fitness_os_workouts")
     .select("id, user_id, status")
     .eq("id", workoutId)
-    .single();
+    .maybeSingle();
 
   if (workoutErr || !workout) return { success: false, error: "Workout not found" };
   if (workout.user_id !== user.id) return { success: false, error: "Unauthorized" };
@@ -622,6 +626,7 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
         completed: false,
         actual_reps: null,
         weight_kg: null,
+        duration_seconds: null,
         completed_at: null
       })
       .in("exercise_id", exerciseIds);
@@ -644,7 +649,15 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
     return { success: false, error: "Could not discard workout. Please try again." };
   }
 
-  const { data: resetWorkout, error: workoutUpdateError } = await admin
+  if (parsed.data.sessionId && parsed.data.sessionId !== "mock-session") {
+    await admin
+      .from("fitness_os_workout_sessions")
+      .update({ status: "cancelled", completed_at: now })
+      .eq("id", parsed.data.sessionId)
+      .eq("user_id", user.id);
+  }
+
+  const { error: workoutUpdateError } = await admin
     .from("fitness_os_workouts")
     .update({
       status: "scheduled",
@@ -653,16 +666,15 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
       duration_minutes: null
     })
     .eq("id", workoutId)
-    .eq("user_id", user.id)
-    .select("id")
-    .maybeSingle();
-  if (workoutUpdateError || !resetWorkout) {
+    .eq("user_id", user.id);
+  if (workoutUpdateError) {
     console.error("Failed to reset workout while discarding:", workoutUpdateError);
     return { success: false, error: "Could not discard workout. Please try again." };
   }
 
   revalidatePath("/workout");
   revalidatePath(`/workout/${workoutId}`);
+  revalidatePath("/");
   revalidatePath("/dashboard");
   revalidatePath("/progress");
   invalidateProgressServerCache(user.id);

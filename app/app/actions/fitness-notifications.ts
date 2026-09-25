@@ -236,7 +236,7 @@ export async function getOrSyncFitnessNotifications(): Promise<{
           id: `sub-active-${user.id}-${todayDateStr.slice(0, 7)}`,
           user_id: user.id,
           title: `⚡ GrindLog ${subscriptionState.plan?.name || "Pro"} Active`,
-          body: `Your monthly membership is active until ${formatDateReadable(subscriptionState.expiresAt)}. All AI workouts, nutrition plans, and coach check-ins unlocked.`,
+          body: `Your monthly membership is active until ${formatDateReadable(subscriptionState.expiresAt)}. AI workouts, nutrition plans, and coach features are unlocked.`,
           type: "subscription",
           link: "/profile/billing",
           read: false,
@@ -256,24 +256,7 @@ export async function getOrSyncFitnessNotifications(): Promise<{
       }
     }
 
-    // 4. MESOCYCLE PROGRESSION & MONTH 2 CHECK-IN
-    if (profile?.created_at) {
-      const planAgeDays = Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24));
-      if (planAgeDays >= 25 || onboarding.needs_monthly_checkin) {
-        candidates.push({
-          id: `milestone-month2-${user.id}-${todayDateStr.slice(0, 7)}`,
-          user_id: user.id,
-          title: "🏆 Month 1 Recalibration Ready",
-          body: "You've conquered your initial mesocycle! Complete your Month 2 check-in to adjust your working weights and volume.",
-          type: "milestone",
-          link: "/",
-          read: false,
-          created_at: nowIso,
-        });
-      }
-    }
-
-    // 5. SUPPORT DESK UPDATES
+    // 4. SUPPORT DESK UPDATES
     if (supportMessages && supportMessages.length > 0) {
       for (const msg of supportMessages) {
         if (msg.status === "resolved") {
@@ -302,7 +285,7 @@ export async function getOrSyncFitnessNotifications(): Promise<{
       }
     }
 
-    // 6. WELCOME & PROTOCOL INITIALIZATION
+    // 5. WELCOME & PROTOCOL INITIALIZATION
     candidates.push({
       id: `welcome-${user.id}`,
       user_id: user.id,
@@ -349,16 +332,18 @@ export async function getOrSyncFitnessNotifications(): Promise<{
           .limit(50);
 
         if (latestRows && latestRows.length > 0) {
-          const mapped: FitnessNotificationItem[] = latestRows.map((r: any) => ({
-            id: r.id,
-            user_id: r.user_id,
-            title: r.title,
-            body: r.body || "",
-            type: (r.type as any) || "system",
-            link: r.link || deriveLinkFromType(r.type),
-            read: Boolean(r.read),
-            created_at: r.created_at,
-          }));
+          const mapped: FitnessNotificationItem[] = latestRows
+            .filter((row: any) => !String(row.title || "").includes("Month 1 Recalibration Ready"))
+            .map((r: any) => ({
+              id: r.id,
+              user_id: r.user_id,
+              title: r.title,
+              body: r.body || "",
+              type: (r.type as any) || "system",
+              link: r.link || deriveLinkFromType(r.type),
+              read: Boolean(r.read),
+              created_at: r.created_at,
+            }));
 
           const unreadCount = mapped.filter((n) => !n.read).length;
           return { success: true, notifications: mapped, unreadCount };

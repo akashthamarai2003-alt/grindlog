@@ -1914,7 +1914,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   }`}
                 >
                   {/* NutriScan-style Hero Food Photo Banner */}
-                  <div className="relative w-full h-36 sm:h-44 overflow-hidden bg-black/40">
+                  <div className="relative w-full h-44 overflow-hidden bg-black/40">
                     <img 
                       src={heroPhotoUrl} 
                       alt={currentMealName} 
@@ -1960,7 +1960,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           {getMealTiming(meal.meal_type)}
                         </span>
                       </div>
-                      <h3 className="text-base sm:text-lg font-black text-white leading-tight drop-shadow-md truncate" title={currentMealName}>
+                      <h3 className="text-base sm:text-lg font-black text-white leading-tight drop-shadow-md break-words line-clamp-3" title={currentMealName}>
                         <span className="mr-1.5">{getFoodEmoji(currentMealName)}</span>
                         {currentMealName}
                       </h3>
@@ -1970,33 +1970,37 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   {/* Dual-Option Switcher (Option A vs Option B) */}
                   {hasOptionB && !hasLoggedFoods && (
                     <div className="px-5 pt-3 pb-1">
-                      <div className="flex items-center bg-black/50 p-1 rounded-xl border border-white/10 shadow-inner">
+                      <div className="grid grid-cols-2 gap-1 bg-black/50 p-1 rounded-xl border border-white/10 shadow-inner">
                         <button
                           type="button"
                           onClick={() => setSelectedMealOptions(prev => ({ ...prev, [mealKey]: 'A' }))}
-                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          aria-pressed={!isOptB}
+                          aria-label={`Select Option A: ${meal.name || 'Quick / Mess'}`}
+                          className={`min-w-0 min-h-16 py-2 px-2.5 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center ${
                             !isOptB 
                               ? 'bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.3)]' 
                               : 'text-white/60 hover:text-white hover:bg-white/5'
                           }`}
                         >
-                          <span>Option A</span>
-                          <span className="text-[10px] font-normal lowercase opacity-80 truncate max-w-[120px]">
-                            ({getFoodEmoji(meal.name)} {meal.name || 'Quick / Mess'})
+                          <span className="text-[11px] font-black uppercase tracking-wide">Option A</span>
+                          <span className="w-full text-[11px] font-medium normal-case leading-tight break-words whitespace-normal opacity-80">
+                            {getFoodEmoji(meal.name)} {meal.name || 'Quick / Mess'}
                           </span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setSelectedMealOptions(prev => ({ ...prev, [mealKey]: 'B' }))}
-                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          aria-pressed={isOptB}
+                          aria-label={`Select Option B: ${meal.option_b_name}`}
+                          className={`min-w-0 min-h-16 py-2 px-2.5 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center ${
                             isOptB 
                               ? 'bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.3)]' 
                               : 'text-white/60 hover:text-white hover:bg-white/5'
                           }`}
                         >
-                          <span>Option B</span>
-                          <span className="text-[10px] font-normal lowercase opacity-80 truncate max-w-[120px]">
-                            ({getFoodEmoji(meal.option_b_name)} {meal.option_b_name})
+                          <span className="text-[11px] font-black uppercase tracking-wide">Option B</span>
+                          <span className="w-full text-[11px] font-medium normal-case leading-tight break-words whitespace-normal opacity-80">
+                            {getFoodEmoji(meal.option_b_name)} {meal.option_b_name}
                           </span>
                         </button>
                       </div>

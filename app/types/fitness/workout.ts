@@ -15,24 +15,24 @@ export const CompleteSetSchema = z.object({
 });
 
 export const SessionActionSchema = z.object({
-  sessionId: z.string().uuid("Invalid session ID"),
+  sessionId: z.string().min(1, "Invalid session ID"),
 });
 
 export const DiscardWorkoutSchema = z.object({
-  workoutId: z.string().uuid("Invalid workout ID"),
-  sessionId: z.string().uuid("Invalid session ID").optional(),
+  workoutId: z.string().min(1, "Invalid workout ID"),
+  sessionId: z.string().optional().nullable().or(z.literal("")),
 });
 
 export const ReopenWorkoutSchema = z.object({
-  workoutId: z.string().uuid("Invalid workout ID"),
+  workoutId: z.string().min(1, "Invalid workout ID"),
 });
 
 export const EndWorkoutSchema = z.object({
-  workoutId: z.string().uuid("Invalid workout ID"),
+  workoutId: z.string().min(1, "Invalid workout ID"),
 });
 
 export const QuickCompleteWorkoutSchema = z.object({
-  workoutId: z.string().uuid("Invalid workout ID"),
+  workoutId: z.string().min(1, "Invalid workout ID"),
 });
 
 export type WorkoutStatus = z.infer<typeof WorkoutStatusSchema>;

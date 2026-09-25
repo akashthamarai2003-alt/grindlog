@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Play, Loader2, Check, Pause, CheckCircle2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { completeExerciseSetsAction } from "@/app/actions/fitness";
 import { ExerciseAnimationPlayer } from "./exercise-animation-player";
@@ -42,12 +42,6 @@ export function TodaysExercisesList({
   const [navigatingExerciseId, setNavigatingExerciseId] = useState<string | null>(null);
   const [finishingExerciseId, setFinishingExerciseId] = useState<string | null>(null);
   const [confirmExercise, setConfirmExercise] = useState<Exercise | null>(null);
-
-  useEffect(() => {
-    if (workoutId && workoutId !== "mock") {
-      router.prefetch(`/workout/${workoutId}`);
-    }
-  }, [workoutId, router]);
 
   // Mock exercises if none provided
   const displayExercises = exercises && exercises.length > 0 ? exercises : [

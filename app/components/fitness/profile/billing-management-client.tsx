@@ -377,7 +377,6 @@ export function BillingManagementClient({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {[
                 { title: "20 Daily AI Generations", desc: "Full daily meal & workout adjustments", active: isPro },
-                { title: "Progressive Overload Mesocycle", desc: "Phase recalibration every 4 weeks", active: true },
                 { title: "PG/Home Grocery Shopping Haul", desc: "Tailored natural high-protein add-ons", active: isPro },
                 { title: "Injury & Recovery Swaps", desc: "Real-time alternative movements", active: true },
               ].map((feat, idx) => (

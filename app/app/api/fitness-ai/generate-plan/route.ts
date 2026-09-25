@@ -112,46 +112,25 @@ export async function POST(req: Request) {
         { status: 402 },
       );
     }
-    if (existingPlan && (!reqBody || reqBody.isRecalibrate !== true)) {
+    if (existingPlan) {
       return NextResponse.json(
         { success: false, error: "An active plan already exists. Return to dashboard." },
         { status: 400 },
       );
     }
 
-    // In-memory profile adjustment for recalibration prompt generation
-    const recalibrationUpdates: Record<string, any> = {};
-    if (reqBody && reqBody.isRecalibrate === true && profile) {
-      if (reqBody.newWeight && Number(reqBody.newWeight) > 0) {
-        recalibrationUpdates.weight = Number(reqBody.newWeight);
-      }
-      if (reqBody.newGoal && typeof reqBody.newGoal === "string") {
-        recalibrationUpdates.goal = reqBody.newGoal;
-      }
-      if (reqBody.painStatus === "healed") {
-        recalibrationUpdates.current_pain_severity = 0;
-        recalibrationUpdates.physical_problems = [];
-        recalibrationUpdates.exercise_limitations = [];
-      } else if (reqBody.painStatus === "better") {
-        recalibrationUpdates.current_pain_severity = Math.max(1, (Number(profile.current_pain_severity) || 4) - 2);
-      }
-      Object.assign(profile, recalibrationUpdates);
-    }
-
     let reservationId: string | undefined;
-    if (!reqBody?.isRecalibrate) {
-      const reservation = await AIUsageService.checkAndReserve(user.id, "plan_generation");
-      if (!reservation.allowed) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: reservation.error || "Fitness AI limit reached for today. Please try again tomorrow.",
-          },
-          { status: 429 },
-        );
-      }
-      reservationId = reservation.reservationId;
+    const reservation = await AIUsageService.checkAndReserve(user.id, "plan_generation");
+    if (!reservation.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: reservation.error || "Fitness AI limit reached for today. Please try again tomorrow.",
+        },
+        { status: 429 },
+      );
     }
+    reservationId = reservation.reservationId;
     if (profileError || !profile) {
       return NextResponse.json(
         { success: false, error: "Profile not found" },
@@ -344,28 +323,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // 8. If recalibrating, archive previous active plan(s) to 'completed' and persist profile updates
-    if (reqBody && reqBody.isRecalibrate === true) {
-      await supabase
-        .from("fitness_os_workout_plans")
-        .update({ status: "completed" })
-        .eq("user_id", user.id)
-        .eq("status", "active");
-
-      if (Object.keys(recalibrationUpdates).length > 0) {
-        await supabase
-          .from("fitness_os_profiles")
-          .update(recalibrationUpdates)
-          .eq("user_id", user.id);
-      }
-    }
-
-    // 9. Atomic Database Transaction via RPC
+    // 8. Save the generated plan in one database transaction.
     const { data: planId, error: rpcError } = await supabase.rpc(
       "create_fitness_os_plan_transaction",
-      {
-        payload: planData,
-      },
+      { payload: planData },
     );
 
     if (rpcError || !planId) {
