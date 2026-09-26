@@ -42,6 +42,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
             <Link 
               key={item.href} 
               href={item.href}
+              aria-current={isCurrentRoute ? "page" : undefined}
               prefetch={true}
               onClick={(e) => {
                 if (pathname === item.href) {
@@ -63,7 +64,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
                   router.prefetch(item.href);
                 } catch {}
               }}
-              className="flex flex-col items-center gap-1 group relative active:scale-90 transition-transform duration-100 touch-manipulation select-none"
+              className="fitness-nav-link flex flex-col items-center gap-1 group relative active:scale-90 transition-transform duration-100 touch-manipulation select-none"
             >
               {isActive && (
                 <div className="absolute -inset-2 bg-[#ADFF00]/15 rounded-full blur-md" />
@@ -71,12 +72,12 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
               
               <div className={`relative w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                 isActive 
-                  ? 'bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.4)]' 
+                  ? 'fitness-nav-active bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.4)]' 
                   : 'text-gray-400 group-hover:text-white'
               }`}>
                 <Icon size={isActive ? 18 : 20} strokeWidth={isActive ? 2.5 : 2} />
                 {item.proOnly && !isPro && (
-                  <span className="absolute -top-1 -right-1 bg-[#ADFF00] text-black text-[7px] font-black px-1 rounded-full uppercase tracking-tight shadow-sm">
+                  <span className="fitness-pro-badge absolute -top-1 -right-1 bg-[#ADFF00] text-black text-[7px] font-black px-1 rounded-full uppercase tracking-tight shadow-sm">
                     PRO
                   </span>
                 )}

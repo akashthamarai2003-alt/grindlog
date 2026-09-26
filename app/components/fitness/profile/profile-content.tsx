@@ -358,7 +358,7 @@ export function ProfileContent({
             <div className="flex items-center gap-2 mt-4">
               <div className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 border ${
                 isPro 
-                  ? "bg-[#ADFF00]/15 border-[#ADFF00] text-[#ADFF00] shadow-[0_0_12px_rgba(173,255,0,0.2)]" 
+                  ? "fitness-pro-badge bg-[#ADFF00]/15 border-[#ADFF00] text-[#ADFF00] shadow-[0_0_12px_rgba(173,255,0,0.2)]" 
                   : isPremium 
                   ? "bg-cyan-500/15 border-cyan-400 text-cyan-400" 
                   : "bg-amber-500/15 border-amber-400 text-amber-400"

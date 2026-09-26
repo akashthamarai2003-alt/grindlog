@@ -489,7 +489,9 @@ html.theme-white {
   --fitness-primary: #16A34A;
   --fitness-primary-dark: #15803D;
   --fitness-primary-light: #DCFCE7;
-  --fitness-canvas: #F8FAFC;
+  --fitness-canvas: #F9FAFB;
+  --fitness-active-background: #F0FDF4;
+  --fitness-pro: #A855F7;
   --fitness-card: #FFFFFF;
   --fitness-text: #111827;
   --fitness-secondary: #6B7280;
@@ -524,7 +526,7 @@ html.theme-white .bg-\[\#0A1108\]\/95,
 html.theme-white .bg-\[\#070C07\]\/85,
 html.theme-white .bg-\[\#111A10\]\/90,
 html.theme-white .bg-\[\#121E12\]\/90 {
-  background-color: rgba(248, 250, 252, 0.95) !important;
+  background-color: rgba(249, 250, 251, 0.95) !important;
 }
 
 /* Primary cards & dialogs — pure white with soft shadow */
@@ -813,7 +815,7 @@ html.theme-white [class*="drop-shadow-\[0_0_12px_rgba(173\,255\,0"] {
 
 /* ─── Bottom Navigation Dock ─── */
 html.theme-white .fixed.bottom-0.bg-gradient-to-t {
-  background-image: linear-gradient(to top, var(--fitness-canvas), rgba(248, 250, 252, 0.95), transparent) !important;
+  background-image: linear-gradient(to top, var(--fitness-canvas), rgba(249, 250, 251, 0.95), transparent) !important;
 }
 html.theme-white .fixed.bottom-0 .bg-\[\#121E12\] {
   background-color: var(--fitness-card) !important;
@@ -1096,4 +1098,26 @@ html.theme-white .hover\:bg-\[\#A8FF00\]:hover {
 html.theme-white .workout-summary-surface {
   background-color: var(--fitness-card) !important;
   border-color: var(--fitness-border) !important;
+}
+
+/* White-theme navigation and membership states. */
+html.theme-white .fitness-nav-active {
+  background-color: var(--fitness-active-background) !important;
+  color: var(--fitness-primary-dark) !important;
+  box-shadow: none !important;
+}
+html.theme-white .fitness-nav-active > svg {
+  color: var(--fitness-primary-dark) !important;
+}
+html.theme-white .fitness-pro-badge,
+html.theme-white .fitness-nav-active .fitness-pro-badge {
+  background-color: var(--fitness-pro) !important;
+  border-color: var(--fitness-pro) !important;
+  color: var(--fitness-text) !important;
+  box-shadow: none !important;
+}
+html.theme-white .fitness-pro-badge * { color: var(--fitness-text) !important; }
+html.theme-white [aria-current="page"]:not(.fitness-nav-link) {
+  background-color: var(--fitness-active-background) !important;
+  color: var(--fitness-primary-dark) !important;
 }
