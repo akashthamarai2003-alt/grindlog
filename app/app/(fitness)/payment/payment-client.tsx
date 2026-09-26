@@ -142,10 +142,11 @@ export interface FitnessPaymentClientProps {
   initialPricing?: PlanPricingConfig;
   renewalPlan?: string;
   renewalExpiresAt?: string | null;
+  lockedRatePaise?: number | null;
   initialPremiumDetails?: { premium_tier?: string; premium_level?: string; is_premium?: boolean } | null;
 }
 
-export default function FitnessPaymentClient({ initialPricing, initialPremiumDetails, renewalPlan, renewalExpiresAt }: FitnessPaymentClientProps) {
+export default function FitnessPaymentClient({ initialPricing, initialPremiumDetails, renewalPlan, renewalExpiresAt, lockedRatePaise }: FitnessPaymentClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isRenewal = searchParams.get("intent") === "renew_monthly";
@@ -266,7 +267,9 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 5;
   const corePrice = pricingConfig?.monthly?.core?.price ?? Math.max(1, Math.round(coreOriginalPrice * (1 - discountPercent / 100)));
   const proPrice = pricingConfig?.monthly?.pro?.price ?? Math.max(1, Math.round(proOriginalPrice * (1 - discountPercent / 100)));
-  const currentPrice = level === "pro" 
+  const currentPrice = isRenewal && lockedRatePaise != null
+    ? lockedRatePaise / 100
+    : level === "pro"
     ? ((isCurrentCore || isDiscountActive) ? proPrice : (proOriginalPrice || proPrice))
     : (isDiscountActive ? corePrice : (coreOriginalPrice || corePrice));
 
@@ -699,6 +702,12 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                   <div className="flex items-baseline gap-2">
                     {isCurrentCore ? (
                       <span className="text-xs text-gray-400 font-medium">Active Subscription</span>
+                    ) : isRenewal ? (
+                      <>
+                        <span className="text-2xl font-black text-[#ADFF00]">₹{currentPrice}</span>
+                        <span className="text-xs text-gray-500 font-medium">/month</span>
+                        {lockedRatePaise != null && <span className="text-[10px] font-bold text-[#ADFF00]">Your locked rate</span>}
+                      </>
                     ) : isDiscountActive ? (
                       <>
                         {coreOriginalPrice && coreOriginalPrice > corePrice && (
@@ -749,7 +758,13 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                 
                 <div className="flex flex-col">
                   <div className="flex items-baseline gap-2">
-                    {isCurrentCore || isDiscountActive ? (
+                    {isRenewal ? (
+                      <>
+                        <span className="text-2xl font-black text-[#ADFF00]">₹{currentPrice}</span>
+                        <span className="text-xs text-gray-500 font-medium">/month</span>
+                        {lockedRatePaise != null && <span className="text-[10px] font-bold text-[#ADFF00]">Your locked rate</span>}
+                      </>
+                    ) : isCurrentCore || isDiscountActive ? (
                       <>
                         {proOriginalPrice && proOriginalPrice > proPrice && (
                           <span className="text-sm text-gray-500 line-through font-semibold">₹{proOriginalPrice}</span>

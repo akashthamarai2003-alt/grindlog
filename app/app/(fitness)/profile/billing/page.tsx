@@ -7,6 +7,7 @@ import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { BillingManagementClient } from "@/components/fitness/profile/billing-management-client";
 import { DEFAULT_PRICING } from "@/lib/constants/pricing";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
+import { getLockedFitnessRate } from "@/lib/fitness/subscription/locked-rate";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -45,8 +46,15 @@ export default async function FitnessBillingPage({ searchParams }: { searchParam
     getPlanPricesAction("fitness").catch(() => null),
   ]);
 
-  const proPrice = pricingConfig?.monthly?.pro?.price ?? DEFAULT_PRICING.monthly.pro.price ?? 99;
-  const corePrice = pricingConfig?.monthly?.core?.price ?? DEFAULT_PRICING.monthly.core.price ?? 10;
+  const proPrice = pricingConfig?.monthly?.pro?.originalPrice ?? DEFAULT_PRICING.monthly.pro.originalPrice ?? 5;
+  const corePrice = pricingConfig?.monthly?.core?.originalPrice ?? DEFAULT_PRICING.monthly.core.originalPrice ?? 10;
+  const proUpgradePrice = pricingConfig?.monthly?.pro?.price ?? DEFAULT_PRICING.monthly.pro.price ?? 2;
+  const membershipLevel = fitnessProfile?.fitness_premium_level === "pro" || subscriptionState.plan.id === "pro"
+    ? "pro"
+    : fitnessProfile?.fitness_premium_level === "core" || subscriptionState.plan.id === "starter"
+    ? "core"
+    : undefined;
+  const lockedRatePaise = membershipLevel ? await getLockedFitnessRate(user.id, membershipLevel) : null;
 
   const paymentHistory = (subscriptionsData || []).map((sub: any) => ({
     id: sub.id,
@@ -64,7 +72,10 @@ export default async function FitnessBillingPage({ searchParams }: { searchParam
       subscriptionState={subscriptionState}
       paymentHistory={paymentHistory}
       proPrice={proPrice}
+      proUpgradePrice={proUpgradePrice}
       corePrice={corePrice}
+      lockedRatePaise={lockedRatePaise}
+      membershipLevel={membershipLevel}
       userEmail={user.email}
       userName={fitnessProfile?.name || user.user_metadata?.full_name || "Athlete"}
     />

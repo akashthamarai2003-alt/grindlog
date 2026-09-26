@@ -1,5 +1,6 @@
 import { getCachedUser } from "@/lib/services/supabase/server";
 import { getFitnessSubscription } from "@/lib/fitness/subscription/access";
+import { getLockedFitnessRate } from "@/lib/fitness/subscription/locked-rate";
 import { Suspense } from "react";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { getUserPremiumDetailsAction } from "@/app/actions/payment";
@@ -23,12 +24,17 @@ export default async function FitnessPaymentPage() {
 
   const { data: { user } } = await getCachedUser();
   const subscription = user ? await getFitnessSubscription(user.id) : null;
+  const renewalLevel = subscription ? (subscription.plan === "pro" ? "pro" : "core") : premiumDetails?.premium_level;
+  const lockedRatePaise = user && (renewalLevel === "core" || renewalLevel === "pro")
+    ? await getLockedFitnessRate(user.id, renewalLevel)
+    : null;
 
   return (
     <Suspense fallback={<PaymentLoadingFallback />}>
       <FitnessPaymentClient
         initialPricing={pricingConfig || undefined}
-        renewalPlan={subscription ? (subscription.plan === "pro" ? "pro" : "core") : premiumDetails?.premium_level}
+        renewalPlan={renewalLevel}
+        lockedRatePaise={lockedRatePaise}
         renewalExpiresAt={subscription?.current_period_end || premiumDetails?.premium_expires_at || null}
         initialPremiumDetails={premiumDetails || undefined}
       />

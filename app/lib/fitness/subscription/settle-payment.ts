@@ -15,7 +15,7 @@ export async function settleFitnessPayment(paymentId: string, expected?: { userI
   const level = String(notes.level || "");
   if (notes.source !== "fitness_ai_os" || !userId || !["monthly", "six_months", "lifetime"].includes(tier) || !["core", "pro"].includes(level) || payment.currency !== "INR" || order.currency !== "INR" || Number(payment.amount) !== Number(order.amount) || Number(payment.amount) <= 0) throw new Error("Payment does not match the purchase order.");
   if (expected && (expected.userId !== userId || expected.orderId !== order.id || expected.tier !== tier || expected.level !== level)) throw new Error("Payment does not belong to this account or plan.");
-  const { error } = await createAdminClient().rpc("settle_fitness_payment", { p_user: userId, p_order: order.id, p_payment: payment.id, p_tier: tier, p_level: level, p_amount: Number(payment.amount), p_currency: payment.currency });
+  const { error } = await createAdminClient().rpc("settle_fitness_payment", { p_user: userId, p_order: order.id, p_payment: payment.id, p_tier: tier, p_level: level, p_amount: Number(payment.amount), p_currency: payment.currency, p_lock: notes.isLifetimeLock === "true" });
   if (error) throw new Error("Payment received, but membership activation is pending. Please contact support with your payment ID.");
   invalidateFitnessSubscriptionCache(userId);
   return { success: true as const };

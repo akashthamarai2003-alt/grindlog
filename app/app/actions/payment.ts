@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { settleFitnessPayment } from "@/lib/fitness/subscription/settle-payment";
+import { getLockedFitnessRate } from "@/lib/fitness/subscription/locked-rate";
 import { calculateExpiryDate } from "@/lib/utils";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 
@@ -211,7 +212,12 @@ export async function createRazorpayOrder(
     const adminCoreOriginal = livePricing?.monthly?.core?.originalPrice ?? 59;
     const adminProPrice = livePricing?.monthly?.pro?.price ?? 99;
     const adminProOriginal = livePricing?.monthly?.pro?.originalPrice ?? 199;
-    if (isCoreUpgrade) {
+    const lockedRatePaise = tier === "monthly" ? await getLockedFitnessRate(user.id, level) : null;
+    if (lockedRatePaise !== null) {
+      // The captured wheel payment, not today's admin offer, controls renewals.
+      finalPrice = lockedRatePaise / 100;
+      isSpinDiscountApplied = true;
+    } else if (isCoreUpgrade) {
       // Automatic locked upgrade pricing: Pro offer price configured in Admin
       finalPrice = adminProPrice;
       isSpinDiscountApplied = true;

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
-import { format, addDays } from "date-fns";
+import { format } from "date-fns";
+import { calculateExpiryDate } from "@/lib/utils";
 import {
   ChevronLeft,
   ShieldCheck,
@@ -38,9 +39,12 @@ interface PaymentRecord {
 
 interface BillingManagementClientProps {
   paymentConfirmed?: boolean;
+  lockedRatePaise?: number | null;
+  membershipLevel?: "core" | "pro";
   subscriptionState: FitnessSubscriptionState;
   paymentHistory: PaymentRecord[];
   proPrice: number;
+  proUpgradePrice: number;
   corePrice: number;
   userEmail?: string;
   userName?: string;
@@ -48,9 +52,12 @@ interface BillingManagementClientProps {
 
 export function BillingManagementClient({
   paymentConfirmed = false,
+  lockedRatePaise = null,
+  membershipLevel,
   subscriptionState,
   paymentHistory = [],
   proPrice = 99,
+  proUpgradePrice = 99,
   corePrice = 10,
   userEmail,
   userName,
@@ -86,8 +93,8 @@ export function BillingManagementClient({
     expiresAt,
   } = subscriptionState;
 
-  const isPro = plan?.id === "pro";
-  const isCore = plan?.id === "starter" || plan?.id === "core";
+  const isPro = membershipLevel === "pro" || plan?.id === "pro";
+  const isCore = !isPro && (membershipLevel === "core" || plan?.id === "starter" || plan?.id === "core");
   const isActive = status === "active" || isGracePeriod;
 
   // Formatted dates
@@ -95,11 +102,11 @@ export function BillingManagementClient({
     ? format(new Date(expiresAt), "dd MMMM yyyy")
     : null;
 
-  // Calculate prospective new expiry date if user extends today (+30 days)
+  // Match the server's calendar-month extension.
   const prospectiveBaseDate = expiresAt && new Date(expiresAt).getTime() > Date.now()
     ? new Date(expiresAt)
     : new Date();
-  const prospectiveNewExpiry = format(addDays(prospectiveBaseDate, 30), "dd MMMM yyyy");
+  const prospectiveNewExpiry = format(new Date(calculateExpiryDate("monthly", prospectiveBaseDate)!), "dd MMMM yyyy");
 
   const handleExtendOrUpgrade = async (targetLevel: "core" | "pro") => {
     setIsProcessing(true);
@@ -128,8 +135,8 @@ export function BillingManagementClient({
         currency: orderResponse.currency || "INR",
         name: "Fitness AI OS",
         description: targetLevel === "pro" 
-          ? `Fitness OS Pro (+30 Days)` 
-          : `Fitness OS Core (+30 Days)`,
+          ? `Fitness OS Pro (1 month)`
+          : `Fitness OS Core (1 month)`,
         order_id: orderResponse.orderId,
         handler: async function (response: any) {
           try {
@@ -256,9 +263,9 @@ export function BillingManagementClient({
               </div>
 
               <div className="text-right shrink-0">
-                <div className="text-xs text-gray-400 font-medium">Locked Rate</div>
+                <div className="text-xs text-gray-400 font-medium">{lockedRatePaise != null ? "Locked Rate" : "Current Price"}</div>
                 <div className="text-xl font-black text-[#ADFF00]">
-                  ₹{isPro ? proPrice : corePrice}
+                  ₹{lockedRatePaise != null ? lockedRatePaise / 100 : isPro ? proPrice : corePrice}
                   <span className="text-xs text-gray-400 font-normal">/mo</span>
                 </div>
               </div>
@@ -290,12 +297,12 @@ export function BillingManagementClient({
             </div>
 
             {/* Price Lock Guarantee Pill */}
-            <div className="flex items-center gap-2 text-xs text-gray-300 bg-white/5 px-3.5 py-2 rounded-xl border border-white/5">
+            {lockedRatePaise != null && <div className="flex items-center gap-2 text-xs text-gray-300 bg-white/5 px-3.5 py-2 rounded-xl border border-white/5">
               <Lock className="w-3.5 h-3.5 text-[#ADFF00] shrink-0" />
               <span className="text-[11px] leading-tight">
-                <strong>Lifetime Price Lock Active:</strong> Your ₹{isPro ? proPrice : corePrice}/mo rate is guaranteed on every renewal.
+                <strong>Lifetime Price Lock Active:</strong> Your ₹{lockedRatePaise / 100}/mo rate is guaranteed on every renewal of this plan.
               </span>
-            </div>
+            </div>}
           </div>
 
           {/* 2. Self-Serve Renewal / Extension Action */}
@@ -304,10 +311,10 @@ export function BillingManagementClient({
               <div>
                 <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#ADFF00]" />
-                  <span>Extend Subscription (+30 Days)</span>
+                  <span>Extend Subscription (1 Month)</span>
                 </h3>
                 <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                  Renew ahead of time to maintain your streak. 30 days are automatically stacked onto your remaining days (new expiry: <strong className="text-white">{prospectiveNewExpiry}</strong>).
+                  Renew ahead of time to maintain your streak. One calendar month is added after your current expiry (new expiry: <strong className="text-white">{prospectiveNewExpiry}</strong>).
                 </p>
               </div>
             </div>
@@ -324,7 +331,7 @@ export function BillingManagementClient({
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
                     <>
-                      <span>Upgrade to Pro — ₹{proPrice}/mo 🚀</span>
+                      <span>Upgrade to Pro — ₹{proUpgradePrice}/mo 🚀</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -336,7 +343,7 @@ export function BillingManagementClient({
                   disabled={isProcessing}
                   className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-bold text-xs rounded-xl transition-colors"
                 >
-                  Renew Core Only (+30 Days) for ₹{corePrice}
+                  Renew Core (1 month) for ₹{lockedRatePaise != null ? lockedRatePaise / 100 : corePrice}
                 </button>
               </div>
             ) : (
@@ -352,7 +359,7 @@ export function BillingManagementClient({
                   </span>
                 ) : (
                   <>
-                    <span>⚡ 1-Tap Renew Next Month (+30 Days) — ₹{proPrice}</span>
+                    <span>⚡ Renew Pro (1 month) — ₹{lockedRatePaise != null ? lockedRatePaise / 100 : proPrice}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
