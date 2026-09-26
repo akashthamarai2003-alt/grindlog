@@ -743,7 +743,9 @@ html.theme-white .text-\[\#ADFF00\],
 html.theme-white .text-\[\#ADFF00\]\/90,
 html.theme-white .text-\[\#ADFF00\]\/80,
 html.theme-white .text-\[\#ADFF00\]\/70,
-html.theme-white .text-\[\#ADFF00\]\/60 {
+html.theme-white .text-\[\#ADFF00\]\/60,
+html.theme-white .text-\[\#ADFF00\]\/50,
+html.theme-white .text-\[\#ADFF00\]\/40 {
   color: var(--fitness-primary-dark) !important;
 }
 html.theme-white .bg-\[\#ADFF00\]\/\[0\.02\],
@@ -1130,4 +1132,42 @@ html.theme-white .fitness-pro-badge * { color: var(--fitness-text) !important; }
 html.theme-white [aria-current="page"]:not(.fitness-nav-link) {
   background-color: var(--fitness-active-background) !important;
   color: var(--fitness-primary-dark) !important;
+}
+
+/* Renewal notices need light surfaces as well as light-theme text. */
+html.theme-white .fitness-renewal-banner {
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html.theme-white .fitness-renewal-grace {
+  background-color: #FFFBEB !important;
+  border-color: var(--fitness-achievement) !important;
+}
+html.theme-white .fitness-renewal-expired {
+  background-color: #FAF5FF !important;
+  border-color: var(--fitness-pro) !important;
+}
+html.theme-white .fitness-renewal-upcoming {
+  background-color: var(--fitness-active-background) !important;
+  border-color: var(--fitness-primary-light) !important;
+}
+html.theme-white .fitness-renewal-banner .fitness-renewal-description {
+  color: var(--fitness-text) !important;
+}
+html.theme-white .fitness-renewal-banner .fitness-renewal-action {
+  background-image: none !important;
+  color: var(--fitness-text) !important;
+  box-shadow: none !important;
+}
+html.theme-white .fitness-renewal-grace .fitness-renewal-action {
+  background-color: var(--fitness-achievement) !important;
+}
+html.theme-white .fitness-renewal-expired .fitness-renewal-action {
+  background-color: var(--fitness-pro) !important;
+}
+html.theme-white .fitness-renewal-expired .text-purple-300 {
+  color: #7E22CE !important;
+}
+html.theme-white .fitness-renewal-banner .fitness-renewal-action:hover {
+  filter: brightness(0.95);
 }
