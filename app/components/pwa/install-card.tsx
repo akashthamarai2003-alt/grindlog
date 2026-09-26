@@ -2,11 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { Download, Smartphone } from "lucide-react";
+import { isNativePlatform } from "@/lib/capacitor/bridge";
 
 export function InstallAppCard() {
   const [isStandalone, setIsStandalone] = useState(true); // Default true to avoid hydration mismatch flash
 
   useEffect(() => {
+    if (isNativePlatform()) {
+      setIsStandalone(true);
+      return;
+    }
+
     // Only show if NOT standalone
     if (
       !window.matchMedia("(display-mode: standalone)").matches &&

@@ -7,10 +7,14 @@ import { Capacitor } from "@capacitor/core";
 export function isNativePlatform(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return Capacitor.isNativePlatform();
-  } catch {
-    return false;
-  }
+    if (Capacitor.isNativePlatform()) return true;
+  } catch {}
+  try {
+    if ((window as any).Capacitor?.isNativePlatform?.()) return true;
+    const ua = window.navigator?.userAgent || "";
+    if (ua.includes("GrindLogApp") || ua.includes("CapacitorApp")) return true;
+  } catch {}
+  return false;
 }
 
 /**
@@ -19,10 +23,13 @@ export function isNativePlatform(): boolean {
 export function isAndroidNative(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return Capacitor.getPlatform() === "android";
-  } catch {
-    return false;
-  }
+    if (Capacitor.getPlatform() === "android") return true;
+  } catch {}
+  try {
+    const ua = window.navigator?.userAgent || "";
+    if ((ua.includes("GrindLogApp") || ua.includes("CapacitorApp")) && /Android/i.test(ua)) return true;
+  } catch {}
+  return false;
 }
 
 /**

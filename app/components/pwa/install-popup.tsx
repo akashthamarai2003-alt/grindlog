@@ -3,20 +3,29 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Download, X } from "lucide-react";
+import { isNativePlatform } from "@/lib/capacitor/bridge";
 
 export function InstallPopup() {
   const [isVisible, setIsVisible] = useState(false);
   const [isStandalone, setIsStandalone] = useState(true);
 
   useEffect(() => {
-    // Only show if NOT standalone
+    // Never show inside native APK (Capacitor / Android wrapper)
+    if (isNativePlatform()) {
+      setIsStandalone(true);
+      return;
+    }
+
+    // Only show if NOT standalone PWA
     const isPwa = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
     setIsStandalone(!!isPwa);
 
     if (!isPwa) {
       // Delay showing the popup by 3 seconds so it's not too aggressive
       const timer = setTimeout(() => {
-        setIsVisible(true);
+        if (!isNativePlatform()) {
+          setIsVisible(true);
+        }
       }, 3000);
       return () => clearTimeout(timer);
     }
