@@ -46,14 +46,10 @@ export function invalidateFitnessSubscriptionCache(userId?: string) {
 }
 
 /**
- * Gets full subscription state including 48-hour grace period calculations (memoized per request and cached for 60s).
+ * Gets full subscription state including 48-hour grace period calculations (memoized per request).
  */
 export const getFitnessSubscriptionState = cache(async (userId: string): Promise<FitnessSubscriptionState> => {
-  const cached = subscriptionStateCache.get(userId);
-  if (cached && (Date.now() - cached.timestamp < 60_000)) {
-    return cached.state;
-  }
-
+  // Request memoization keeps reads efficient without stale access across server instances.
   const sub = await getFitnessSubscription(userId);
   const now = Date.now();
 
@@ -163,7 +159,6 @@ export const getFitnessSubscriptionState = cache(async (userId: string): Promise
     }
   }
 
-  subscriptionStateCache.set(userId, { state: result, timestamp: Date.now() });
   return result;
 });
 

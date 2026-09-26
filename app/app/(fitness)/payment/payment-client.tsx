@@ -28,7 +28,6 @@ import { getSafeRedirect } from "@/lib/utils/redirect";
 import { 
   createRazorpayOrder, 
   verifyRazorpayPayment, 
-  checkUserPremiumStatusAction, 
   getUserPremiumDetailsAction,
   acceptFreePreviewAction
 } from "@/app/actions/payment";
@@ -292,6 +291,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   // Reliable redirect effect
   useEffect(() => {
     if (isSuccess) {
+      sessionStorage.removeItem("fitness_pending_order");
       const separator = returnTo.includes("?") ? "&" : "?";
       window.location.href = `${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`;
     }
@@ -301,10 +301,13 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     let attempts = 0;
+    let cancelled = false;
 
     const pollPremiumStatus = () => {
+      if (cancelled) return;
       attempts++;
       if (attempts > 20) {
+        alert("Payment confirmation is still pending. If money was debited, do not pay again. Check Billing or contact support with your order ID: " + paymentOrderId);
         setIsPolling(false);
         setIsProcessing(false);
         sessionStorage.removeItem("payment_in_progress");
@@ -312,6 +315,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
       }
       
       (paymentOrderId ? isFitnessOrderSettled(paymentOrderId) : Promise.resolve(false)).then((isPremium) => {
+        if (cancelled) return;
         if (isPremium) {
           setIsSuccess(true);
           setIsPolling(false);
@@ -330,7 +334,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
       pollPremiumStatus();
     }
 
-    return () => clearTimeout(timeoutId);
+    return () => { cancelled = true; clearTimeout(timeoutId); };
   }, [isPolling, paymentOrderId]);
 
   // Fetch dynamic pricing on mount only if not already provided by server
@@ -343,21 +347,40 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
     }
   }, [initialPricing]);
 
-  // Check if user is already premium on mount ONLY IF they initiated a payment in this session (e.g., returning from UPI)
+  // Restore only this checkout's order; an existing membership is not proof of payment.
   useEffect(() => {
-    if (isRenewal) {
-      // Do not reuse another checkout's generic premium-status marker.
-      return;
-    }
-    if (sessionStorage.getItem("payment_in_progress") === "true") {
-      checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((isPremium) => {
-        if (isPremium) {
-          setIsSuccess(true);
-          sessionStorage.removeItem("payment_in_progress");
-        }
-      });
+    const orderId = sessionStorage.getItem("fitness_pending_order");
+    if (orderId) {
+      setPaymentOrderId(orderId);
+      setIsPolling(true);
     }
   }, []);
+
+  // Check payment status when returning to the app from an external UPI payment flow (e.g., Google Pay / PhonePe)
+  useEffect(() => {
+    const handleReturnFromUPI = () => {
+      if (document.visibilityState === "visible" && sessionStorage.getItem("payment_in_progress") === "true") {
+        if (paymentOrderId) {
+          isFitnessOrderSettled(paymentOrderId).then((isSettled) => {
+            if (isSettled) {
+              setIsSuccess(true);
+              setIsProcessing(false);
+              setIsPolling(false);
+              sessionStorage.removeItem("payment_in_progress");
+            }
+          }).catch(() => {});
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleReturnFromUPI);
+    window.addEventListener("focus", handleReturnFromUPI);
+    return () => {
+      document.removeEventListener("visibilitychange", handleReturnFromUPI);
+      window.removeEventListener("focus", handleReturnFromUPI);
+    };
+  }, [paymentOrderId, isRenewal]);
+
 
   const handlePayment = async () => {
     if (isProcessing || isPolling || isLoadingPrices || !premiumStatusLoaded) return;
@@ -382,7 +405,10 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         throw new Error(orderResponse.error || "Failed to create order");
       }
 
-      if (orderResponse.orderId) setPaymentOrderId(orderResponse.orderId);
+      if (orderResponse.orderId) {
+        setPaymentOrderId(orderResponse.orderId);
+        sessionStorage.setItem("fitness_pending_order", orderResponse.orderId);
+      }
       if (orderResponse.bypassRazorpay) {
         const verifyRes = await verifyRazorpayPayment(
           "bypass",
@@ -416,6 +442,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         description: `${isRenewal ? "Renew" : "Upgrade to"} ${level.toUpperCase()} - ${selectedPlan.replace('_', ' ').toUpperCase()}`,
         image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAACXBIWXMAAAsTAAALEwEAmpwYAAAEeklEQVR4nO2dz8sVVRjHj29oFmUulLBFaUFZWZIS1wyXWu3SMIoWUYL7MogrGhaVC1f1TwTJu6mlP9biSkuooCLblBZ5M1B4+/GRU2dgut73zDl3zrznzsz3s77nuTPf7/kx55mZZ4wRQgghhBBCCCFyAywD7gY2AduA9cBtuY+r0wB3Aq8B88AfTOY88CGwJffxdgZgBbAf+Jk4TsiImgAbgW+Ynr+Bw3bKqnssvQN4FhiRhk+1RkQA7AEWSItdOzQSMolfcKjyAPoMsLtB8Ys14fHc59kV8f8ELgBngcsR7T7Lfa4zB/B8hPi/AweA1WMbs+3A6cAY/dgnELDoAeuAa4HC/Qg84ok1B3wcEOd903WA291maF/Ab18C/goQ//6AWHMBI+Gc6YH4p0oLX10TgsQvxXqqwoB/gJWmB+KTwIQo8UtrQlXqYr3pifh1TIgWvxTnDH4GpkfiT2PC99OK72J8iZ9Npmfil014MiDmv3M08DCwPPJ4Vgdc1q4xPRTfcjQi9sAl5OZjTHD7hKq9RPvzQiyN+AVBJrgUthXYx3HTEfFPRoh/LCL2VuC3CTG8JgD3urWjildNmyGP+F4TIsT/BVhl2gp5xZ9oQoT4ljdMm+G/Xeb1JZjzfYyKnJB7IuKHwHZfd2IHDOwMSKA10fML8QdT9PyrvkRe6wB2eUZCkz2/EP9W4NvAdnZP8JzpGkweCY33/FL7ve7GjA+b1njZdBX+b8KSiR9oQnvFB26JnI7ea3raicyi2mnnBdPyS81hA7GT9PyKkdDqnj9+nT+cdfHHTLjedvEn5XbeTBA76bTj+Z97TEd3uMNZ7fmtJyK9MJwitsRPnFLeMWvTTmuZkcSaReIHcEziq+e3H007GZH4mQGecHnxEI5GxNXVToRY2wOeGtCCm9EEiZ/RBImf0QSJnwPgaeBIxO8HSi9kAqUX8oHETyLiuinbDTTtpHkD3d6ueyWy3VZlNdOIv1C6YR1kAhK/sdoLlSZI/OYLXyxqgsRfuqojN5kg8dMVOwqtvfCdfdDVtdPVTl2Ah4ArgeLb93AfcO10tVMXW5YrosbaRWCDa6een4KA1zNvEt+1OxjYbtS7R0dCAe4ALsVMO2Ptj0j8GgCvTyt+gAkj9fxqA+YDpo+NAXHelfiRuCJFV1O9nlkyYaSeHybY2grx7Z7grkhTh+UX4mLa9g7gsQoDvqgRe4PbrL2Y9qg7hLuO93GmhvgXXQz7+o9M8Ajl46fY8ixj4hfIBM8OuIptNcUvkAmLiGY/XuDDvgcwV1P8ApkwQbgPqOYjnwmuPFiV+AXXpr3H3ElcNjOEU67iybKxGmtvBTwzWr6s3ZP3jGcQ4HPCueRKO14IqLdQRuJ7DNjsqhI2xYJ6fvUoeKdB8XenHrWdw5Xt/UTi538VyX64JgVXgGdynk+bR8LhmmvCV8CDuc+l1QCPutFgS7aH8ivwtj79lNaILW6zdm4R0e0e4Lgtampvb6b8bzGGLd0I3Oc+hGk/iLlWIgkhhBBCCCGEMLPADQSR7/UMayFBAAAAAElFTkSuQmCC",
         order_id: orderResponse.orderId,
+        webview_intent: true,
         handler: async function (response: any) {
           try {
             setIsProcessing(true);
@@ -457,14 +484,11 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
             setIsPolling(false);
             sessionStorage.removeItem("payment_in_progress");
 
-            // Renewal cancellation must not count an existing membership as payment.
-            if (isRenewal) return;
-            // Quick check in case webhook or external UPI completed in background
-            checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((isPremium) => {
-              if (isPremium) {
-                setIsSuccess(true);
-              }
-            }).catch(() => {});
+            if (orderResponse.orderId) {
+              isFitnessOrderSettled(orderResponse.orderId).then((settled) => {
+                if (settled) setIsSuccess(true);
+              }).catch(() => {});
+            }
           },
         },
       };

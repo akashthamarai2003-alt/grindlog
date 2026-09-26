@@ -1,4 +1,5 @@
 -- Apply before deploying the payment settlement code. One transaction per user/payment.
+begin;
 alter table public.subscriptions add column if not exists amount_paise bigint;
 alter table public.subscriptions add column if not exists currency text;
 create table if not exists public.fitness_payment_receipts (
@@ -35,3 +36,5 @@ end;
 $$;
 revoke all on function public.settle_fitness_payment(uuid,text,text,text,text,bigint,text) from public,anon,authenticated;
 grant execute on function public.settle_fitness_payment(uuid,text,text,text,text,bigint,text) to service_role;
+
+commit;
