@@ -1,4 +1,5 @@
 "use client";
+import { isFitnessOrderSettled } from "@/app/actions/payment";
 
 import { useState, useEffect, memo, useCallback } from "react";
 import { motion } from "framer-motion";
@@ -140,24 +141,28 @@ const DiscountStickyBanner = memo(function DiscountStickyBanner({
 
 export interface FitnessPaymentClientProps {
   initialPricing?: PlanPricingConfig;
+  renewalPlan?: string;
+  renewalExpiresAt?: string | null;
   initialPremiumDetails?: { premium_tier?: string; premium_level?: string; is_premium?: boolean } | null;
 }
 
-export default function FitnessPaymentClient({ initialPricing, initialPremiumDetails }: FitnessPaymentClientProps) {
+export default function FitnessPaymentClient({ initialPricing, initialPremiumDetails, renewalPlan, renewalExpiresAt }: FitnessPaymentClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isRenewal = searchParams.get("intent") === "renew_monthly";
   const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
   // Plan purchases go straight to setup, including older links with returnTo=/.
   const returnTo = isPlanGenerationIntent
     ? "/plan-setup"
-    : getSafeRedirect(searchParams.get("returnTo"));
+    : isRenewal ? "/profile/billing" : getSafeRedirect(searchParams.get("returnTo"));
   
   // In Fitness OS, the duration is always monthly, but we let them choose the tier
   const selectedPlan = "monthly";
-  const requestedPlan = searchParams.get("plan") || (searchParams.get("intent") === "upgrade_core" ? "core" : null);
+  const requestedPlan = (isRenewal ? renewalPlan : null) || searchParams.get("plan") || searchParams.get("level") || (searchParams.get("intent") === "upgrade_core" ? "core" : null);
   const [level, setLevel] = useState<"core" | "pro">(requestedPlan === "core" ? "core" : "pro");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
+  const [paymentOrderId, setPaymentOrderId] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   // Pre-seed pricing directly from server props so there is ZERO flash of wrong amounts
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(initialPricing || DEFAULT_PRICING);
@@ -191,7 +196,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
 
   // Current membership checks
   const isCurrentCore = Boolean(
-    currentPremiumInfo?.premium_level === "core" && 
+    !isRenewal && currentPremiumInfo?.premium_level === "core" && 
     (currentPremiumInfo as any)?.is_premium
   );
 
@@ -206,7 +211,6 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
     if (!premiumStatusLoaded) return;
     
     // Core subscribers and users on monthly renewal never see the wheel
-    const isRenewal = searchParams.get("intent") === "renew_monthly";
     if (isCurrentCore || isRenewal) {
       setShowSpinModal(false);
       if (isCurrentCore) setLevel("pro");
@@ -233,7 +237,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, [premiumStatusLoaded, isCurrentCore, handleDiscountExpire, searchParams]);
+  }, [premiumStatusLoaded, isCurrentCore, isRenewal, handleDiscountExpire, searchParams]);
 
   const handleClaimDiscount = useCallback((data: {
     token: string;
@@ -254,7 +258,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
     sessionStorage.setItem("fitness_spin_completed_or_dismissed", "true");
   }, []);
 
-  const isDiscountActive = isCurrentCore || (Boolean(discountToken) && !isDiscountExpired && (discountExpiresAt ? Date.now() < discountExpiresAt : false));
+  const isDiscountActive = !isRenewal && (isCurrentCore || (Boolean(discountToken) && !isDiscountExpired && (discountExpiresAt ? Date.now() < discountExpiresAt : false)));
 
   const discountPercent = pricingConfig?.spinDiscountPercentage ?? 70;
 
@@ -289,9 +293,9 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   useEffect(() => {
     if (isSuccess) {
       const separator = returnTo.includes("?") ? "&" : "?";
-      window.location.href = `${returnTo}${separator}success=true&t=${Date.now()}`;
+      window.location.href = `${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`;
     }
-  }, [isSuccess, returnTo]);
+  }, [isSuccess, returnTo, paymentOrderId]);
 
   // Robust polling that survives modal dismissal or external redirect
   useEffect(() => {
@@ -307,7 +311,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         return;
       }
       
-      checkUserPremiumStatusAction(selectedPlan, level, "fitness_os").then((isPremium) => {
+      (paymentOrderId ? isFitnessOrderSettled(paymentOrderId) : Promise.resolve(false)).then((isPremium) => {
         if (isPremium) {
           setIsSuccess(true);
           setIsPolling(false);
@@ -327,7 +331,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
     }
 
     return () => clearTimeout(timeoutId);
-  }, [isPolling, selectedPlan, level]);
+  }, [isPolling, paymentOrderId]);
 
   // Fetch dynamic pricing on mount only if not already provided by server
   useEffect(() => {
@@ -341,6 +345,10 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
 
   // Check if user is already premium on mount ONLY IF they initiated a payment in this session (e.g., returning from UPI)
   useEffect(() => {
+    if (isRenewal) {
+      // Do not reuse another checkout's generic premium-status marker.
+      return;
+    }
     if (sessionStorage.getItem("payment_in_progress") === "true") {
       checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((isPremium) => {
         if (isPremium) {
@@ -352,6 +360,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   }, []);
 
   const handlePayment = async () => {
+    if (isProcessing || isPolling || isLoadingPrices || !premiumStatusLoaded) return;
     try {
       setIsProcessing(true);
       sessionStorage.setItem("payment_in_progress", "true");
@@ -361,7 +370,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         level, 
         undefined, 
         "fitness_os",
-        discountToken || undefined
+        isRenewal ? undefined : discountToken || undefined
       );
 
       if (!orderResponse.success) {
@@ -373,6 +382,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         throw new Error(orderResponse.error || "Failed to create order");
       }
 
+      if (orderResponse.orderId) setPaymentOrderId(orderResponse.orderId);
       if (orderResponse.bypassRazorpay) {
         const verifyRes = await verifyRazorpayPayment(
           "bypass",
@@ -403,7 +413,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         amount: orderResponse.amount,
         currency: orderResponse.currency,
         name: "Fitness OS",
-        description: `Upgrade to ${level.toUpperCase()} - ${selectedPlan.replace('_', ' ').toUpperCase()}`,
+        description: `${isRenewal ? "Renew" : "Upgrade to"} ${level.toUpperCase()} - ${selectedPlan.replace('_', ' ').toUpperCase()}`,
         image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAACXBIWXMAAAsTAAALEwEAmpwYAAAEeklEQVR4nO2dz8sVVRjHj29oFmUulLBFaUFZWZIS1wyXWu3SMIoWUYL7MogrGhaVC1f1TwTJu6mlP9biSkuooCLblBZ5M1B4+/GRU2dgut73zDl3zrznzsz3s77nuTPf7/kx55mZZ4wRQgghhBBCCCFyAywD7gY2AduA9cBtuY+r0wB3Aq8B88AfTOY88CGwJffxdgZgBbAf+Jk4TsiImgAbgW+Ynr+Bw3bKqnssvQN4FhiRhk+1RkQA7AEWSItdOzQSMolfcKjyAPoMsLtB8Ys14fHc59kV8f8ELgBngcsR7T7Lfa4zB/B8hPi/AweA1WMbs+3A6cAY/dgnELDoAeuAa4HC/Qg84ok1B3wcEOd903WA291maF/Ab18C/goQ//6AWHMBI+Gc6YH4p0oLX10TgsQvxXqqwoB/gJWmB+KTwIQo8UtrQlXqYr3pifh1TIgWvxTnDH4GpkfiT2PC99OK72J8iZ9Npmfil014MiDmv3M08DCwPPJ4Vgdc1q4xPRTfcjQi9sAl5OZjTHD7hKq9RPvzQiyN+AVBJrgUthXYx3HTEfFPRoh/LCL2VuC3CTG8JgD3urWjildNmyGP+F4TIsT/BVhl2gp5xZ9oQoT4ljdMm+G/Xeb1JZjzfYyKnJB7IuKHwHZfd2IHDOwMSKA10fML8QdT9PyrvkRe6wB2eUZCkz2/EP9W4NvAdnZP8JzpGkweCY33/FL7ve7GjA+b1njZdBX+b8KSiR9oQnvFB26JnI7ea3raicyi2mnnBdPyS81hA7GT9PyKkdDqnj9+nT+cdfHHTLjedvEn5XbeTBA76bTj+Z97TEd3uMNZ7fmtJyK9MJwitsRPnFLeMWvTTmuZkcSaReIHcEziq+e3H007GZH4mQGecHnxEI5GxNXVToRY2wOeGtCCm9EEiZ/RBImf0QSJnwPgaeBIxO8HSi9kAqUX8oHETyLiuinbDTTtpHkD3d6ueyWy3VZlNdOIv1C6YR1kAhK/sdoLlSZI/OYLXyxqgsRfuqojN5kg8dMVOwqtvfCdfdDVtdPVTl2Ah4ArgeLb93AfcO10tVMXW5YrosbaRWCDa6een4KA1zNvEt+1OxjYbtS7R0dCAe4ALsVMO2Ptj0j8GgCvTyt+gAkj9fxqA+YDpo+NAXHelfiRuCJFV1O9nlkyYaSeHybY2grx7Z7grkhTh+UX4mLa9g7gsQoDvqgRe4PbrL2Y9qg7hLuO93GmhvgXXQz7+o9M8Ajl46fY8ixj4hfIBM8OuIptNcUvkAmLiGY/XuDDvgcwV1P8ApkwQbgPqOYjnwmuPFiV+AXXpr3H3ElcNjOEU67iybKxGmtvBTwzWr6s3ZP3jGcQ4HPCueRKO14IqLdQRuJ7DNjsqhI2xYJ6fvUoeKdB8XenHrWdw5Xt/UTi538VyX64JgVXgGdynk+bR8LhmmvCV8CDuc+l1QCPutFgS7aH8ivwtj79lNaILW6zdm4R0e0e4Lgtampvb6b8bzGGLd0I3Oc+hGk/iLlWIgkhhBBCCCGEMLPADQSR7/UMayFBAAAAAElFTkSuQmCC",
         order_id: orderResponse.orderId,
         handler: async function (response: any) {
@@ -447,6 +457,8 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
             setIsPolling(false);
             sessionStorage.removeItem("payment_in_progress");
 
+            // Renewal cancellation must not count an existing membership as payment.
+            if (isRenewal) return;
             // Quick check in case webhook or external UPI completed in background
             checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((isPremium) => {
               if (isPremium) {
@@ -476,7 +488,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
     }
   };
 
-  const isCurrentPlan = currentPremiumInfo?.premium_tier === selectedPlan && currentPremiumInfo?.premium_level === level;
+  const isCurrentPlan = !isRenewal && Boolean(currentPremiumInfo?.is_premium) && currentPremiumInfo?.premium_tier === selectedPlan && currentPremiumInfo?.premium_level === level;
 
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col relative overflow-hidden pb-[180px]">
@@ -484,7 +496,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
 
       {/* Lucky Wheel Modal */}
       <LuckyWheelModal
-        isOpen={showSpinModal}
+        isOpen={!isRenewal && showSpinModal}
         onClose={handleCloseSpinModal}
         onClaimDiscount={handleClaimDiscount}
         pricingConfig={pricingConfig}
@@ -544,7 +556,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
 
       <div className="px-6 pt-6 pb-12 z-10 max-w-lg mx-auto w-full">
         {/* Active Subscriber Alert */}
-        {(currentPremiumInfo as any)?.is_premium && !isUpgradeIntent && (
+        {(currentPremiumInfo as any)?.is_premium && !isUpgradeIntent && !isRenewal && (
           <div className="mb-6 p-4 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/30 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <ShieldCheck className="w-5 h-5 text-[#ADFF00] shrink-0" />
@@ -572,21 +584,21 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
           >
             <Dumbbell className="text-black" size={32} />
           </motion.div>
-          <h1 className="text-3xl font-black mb-2 tracking-tight">Unlock Fitness OS</h1>
+          <h1 className="text-3xl font-black mb-2 tracking-tight">{isRenewal ? `Renew ${level === "core" ? "Core" : "Pro"} Membership` : "Unlock Fitness OS"}</h1>
           <p className="text-gray-400 text-sm max-w-sm mx-auto">
-            Get the ultimate AI transformation protocol. Includes full access to GrindLog Premium.
+            {isRenewal ? "Review your plan and monthly price below. Your saved workouts and progress stay with your account." : "Get the ultimate AI transformation protocol. Includes full access to GrindLog Premium."}
           </p>
         </div>
 
         {/* Features Comparison (Memoized Component) */}
-        <FeaturesComparisonTable />
+        {!isRenewal && <FeaturesComparisonTable />}
 
         {/* Prominent On-Page Lucky Wheel Banner (Visible before claiming discount) */}
-        {!isDiscountActive && !isCurrentCore && (
+        {!isRenewal && !isDiscountActive && !isCurrentCore && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-5 rounded-3xl bg-gradient-to-br from-[#122413] via-[#0E1A0F] to-[#142615] border-2 border-[#ADFF00]/40 shadow-[0_0_25px_rgba(173,255,0,0.15)] relative overflow-hidden transform-gpu"
+            className="fitness-payment-reward mb-8 p-5 rounded-3xl bg-gradient-to-br from-[#122413] via-[#0E1A0F] to-[#142615] border-2 border-[#ADFF00]/40 shadow-[0_0_25px_rgba(173,255,0,0.15)] relative overflow-hidden transform-gpu"
           >
             <div className="absolute top-0 right-0 w-36 h-36 bg-[radial-gradient(circle,rgba(173,255,0,0.15)_0%,transparent_70%)] pointer-events-none" />
             <div className="flex items-center gap-3 mb-2">
@@ -621,9 +633,10 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
           {/* Core Plan */}
           <button
             onClick={() => {
-              if (!isCurrentCore) setLevel("core");
+              if (!isCurrentCore && !isRenewal) setLevel("core");
             }}
-            disabled={isCurrentCore}
+            hidden={isRenewal && level !== "core"}
+            disabled={isCurrentCore || isRenewal || isProcessing || isPolling}
             className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden touch-manipulation ${
               isCurrentCore
                 ? "border-gray-700/50 bg-[#121E12]/50 opacity-80 cursor-default"
@@ -684,6 +697,8 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
 
           {/* Pro Plan */}
           <button
+            hidden={isRenewal && level !== "pro"}
+            disabled={isRenewal || isProcessing || isPolling}
             onClick={() => setLevel("pro")}
             className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden touch-manipulation ${
               level === "pro" 
@@ -692,7 +707,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
             } cursor-pointer`}
           >
             <div className="absolute top-0 right-0 bg-[#ADFF00] text-black text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-wider uppercase">
-              {isCurrentCore ? "⭐ Upgrade Here" : "⭐ Recommended"}
+              {isRenewal ? "Your Plan" : isCurrentCore ? "⭐ Upgrade Here" : "⭐ Recommended"}
             </div>
             
             <div className="flex items-center gap-4">
@@ -756,7 +771,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
       <div className="fixed bottom-0 left-0 right-0 p-4 pb-[max(env(safe-area-inset-bottom),16px)] bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pt-8 z-50 pointer-events-none transform-gpu">
         <div className="max-w-lg mx-auto pointer-events-auto flex flex-col">
           {/* Spin & Win Quick Trigger Badge (Cleanly positioned above the button, zero overlap) */}
-          {!isDiscountActive && !isCurrentCore && !showSpinModal && (
+          {!isRenewal && !isDiscountActive && !isCurrentCore && !showSpinModal && (
             <div className="flex justify-end mb-2.5">
               <motion.button
                 initial={{ opacity: 0, y: 8, scale: 0.95 }}
@@ -780,7 +795,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
           ) : (
             <button
               onClick={handlePayment}
-              disabled={isProcessing || isPolling}
+              disabled={isProcessing || isPolling || isLoadingPrices || !premiumStatusLoaded}
               className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] disabled:opacity-70 disabled:shadow-none transition-all cursor-pointer touch-manipulation"
             >
               {isProcessing || isPolling ? (
@@ -793,14 +808,16 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  Get Fitness OS {level === "pro" ? "Pro" : "Core"} (₹{currentPrice}/mo) <ChevronLeft className="w-5 h-5 rotate-180" />
+                  {isRenewal ? "Renew" : "Get Fitness OS"} {level === "pro" ? "Pro" : "Core"} (₹{currentPrice}/mo) <ChevronLeft className="w-5 h-5 rotate-180" />
                 </span>
               )}
             </button>
           )}
 
           <div className="mt-3 text-center">
-            {isCurrentPlan ? (
+            {isRenewal ? (
+              <Link href="/profile/billing" className="text-xs font-bold text-white/60 py-1">Back to membership</Link>
+            ) : isCurrentPlan ? (
               <Link
                 href="/profile"
                 className="text-xs font-bold text-white/60 hover:text-[#ADFF00] transition-colors inline-flex items-center gap-1 py-1 cursor-pointer touch-manipulation"

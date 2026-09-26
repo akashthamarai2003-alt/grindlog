@@ -29,7 +29,7 @@ import { createRazorpayOrder, verifyRazorpayPayment } from "@/app/actions/paymen
 interface PaymentRecord {
   id: string;
   plan: string;
-  amount: number;
+  amount: number | null;
   status: string;
   paymentId: string;
   date: string;
@@ -37,6 +37,7 @@ interface PaymentRecord {
 }
 
 interface BillingManagementClientProps {
+  paymentConfirmed?: boolean;
   subscriptionState: FitnessSubscriptionState;
   paymentHistory: PaymentRecord[];
   proPrice: number;
@@ -46,6 +47,7 @@ interface BillingManagementClientProps {
 }
 
 export function BillingManagementClient({
+  paymentConfirmed = false,
   subscriptionState,
   paymentHistory = [],
   proPrice = 99,
@@ -57,7 +59,7 @@ export function BillingManagementClient({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isNavigatingBack, setIsNavigatingBack] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(paymentConfirmed ? "Payment confirmed. Your membership has been renewed." : null);
 
   useEffect(() => {
     router.prefetch("/profile");
@@ -144,7 +146,7 @@ export function BillingManagementClient({
             );
 
             if (verifyRes.success) {
-              setSuccessMessage("Payment successful! 30 days added onto your subscription.");
+              setSuccessMessage("Payment successful! One month added to your subscription.");
               setTimeout(() => {
                 window.location.reload();
               }, 1200);
@@ -433,7 +435,7 @@ export function BillingManagementClient({
 
                     <div className="text-right shrink-0">
                       <div className="text-xs font-black text-white">
-                        ₹{item.amount || (item.plan.includes("pro") ? proPrice : corePrice)}
+                        {item.amount == null ? "Amount unavailable" : `₹${item.amount}`}
                       </div>
                       <span className="text-[9px] font-black uppercase text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-md">
                         {item.status || "Paid"}

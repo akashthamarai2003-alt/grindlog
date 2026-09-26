@@ -5,9 +5,11 @@ import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath } from "next/cache";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import { settleFitnessPayment } from "@/lib/fitness/subscription/settle-payment";
 import { calculateExpiryDate } from "@/lib/utils";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
-const razorpay = new Razorpay({
+
+const razorpay = new Razorpay({
   key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
   key_secret: process.env.RAZORPAY_KEY_SECRET || "",
 });
@@ -289,27 +291,6 @@ export async function createRazorpayOrder(
     
     const order = await razorpay.orders.create(options);
 
-    if (source === "fitness_os") {
-      const adminClient = createAdminClient();
-      const { error: pendingSubscriptionError } = await adminClient
-        .from("fitness_os_subscriptions")
-        .upsert(
-          {
-            user_id: user.id,
-            plan: level === "pro" ? "pro" : "starter",
-            status: "created",
-            provider: "razorpay",
-            provider_order_id: order.id,
-          },
-          { onConflict: "user_id" },
-        );
-
-      if (pendingSubscriptionError) {
-        console.error("Failed to save pending Fitness subscription:", pendingSubscriptionError);
-        return { success: false, error: "Could not prepare secure payment access." };
-      }
-    }
-    
     return {
       success: true,
       orderId: order.id,
@@ -337,6 +318,17 @@ export async function verifyRazorpayPayment(
   
   if (!user) {
     return { success: false, error: "Unauthorized" };
+  }
+
+  if (appName === "fitness_os") {
+    if (isBypass) return { success: false, error: "Fitness renewal requires a captured payment." };
+    try {
+      const result = await settleFitnessPayment(razorpayPaymentId, { userId: user.id, orderId: razorpayOrderId, tier, level });
+      revalidatePath("/", "layout");
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message || "Payment verification pending." };
+    }
   }
 
   // Server-side payment verification or authorized 100% discount bypass
@@ -426,67 +418,7 @@ export async function verifyRazorpayPayment(
 
   let finalExpiresAt: string | null = null;
 
-  if (appName === "fitness_os") {
-      // 1. Fetch current subscription to check existing period end for stacking
-      const { data: existingSub } = await adminClient
-        .from("fitness_os_subscriptions")
-        .select("current_period_end, provider_payment_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      // Idempotency: if this exact transaction was already processed, do not stack again
-      if (razorpayPaymentId && existingSub?.provider_payment_id === razorpayPaymentId) {
-        return { success: true, message: "Payment already processed." };
-      }
-
-      const { data: existingProfile } = await adminClient
-        .from("fitness_os_profiles")
-        .select("fitness_premium_expires_at")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const baseExpiry = existingSub?.current_period_end || existingProfile?.fitness_premium_expires_at;
-      finalExpiresAt = calculateExpiryDate(tier, baseExpiry);
-
-      const { error } = await adminClient
-        .from("fitness_os_profiles")
-        .update({ 
-          fitness_is_premium: true,
-          fitness_premium_tier: tier,
-          fitness_premium_level: level,
-          fitness_premium_expires_at: finalExpiresAt
-        })
-        .eq("user_id", user.id);
-
-      if (error) {
-        console.error("Error updating fitness premium status: ", error);
-        return { success: false, error: error.message };
-      }
-
-      // Fitness plan generation is authorized from the canonical subscription
-      // table. Keep it in sync with the legacy premium fields used by the
-      // existing payment screen so a verified payment is the only unlock path.
-      const { error: fitnessSubscriptionError } = await adminClient
-        .from("fitness_os_subscriptions")
-        .upsert(
-          {
-            user_id: user.id,
-            plan: level === "pro" ? "pro" : "starter",
-            status: "active",
-            provider: "razorpay",
-            provider_order_id: isBypass ? null : razorpayOrderId,
-            provider_payment_id: isBypass ? "bypass" : razorpayPaymentId,
-            current_period_start: new Date().toISOString(),
-            current_period_end: finalExpiresAt,
-          },
-          { onConflict: "user_id" },
-        );
-
-      if (fitnessSubscriptionError) {
-        console.error("Error creating Fitness subscription: ", fitnessSubscriptionError);
-        return { success: false, error: "Payment was verified, but Fitness access could not be activated." };
-      }
-    } else {
+  {
       const { data: existingMainProfile } = await adminClient
         .from("profiles")
         .select("premium_expires_at")
@@ -515,7 +447,7 @@ export async function verifyRazorpayPayment(
   try {
     await adminClient.from("subscriptions").insert({
       user_id: user.id,
-      plan: appName === "fitness_os" ? `fitness_${tier}_${level}` : `${tier}_${level}`,
+      plan: `${tier}_${level}`,
       status: "active",
       razorpay_order_id: razorpayOrderId,
       razorpay_payment_id: razorpayPaymentId,
@@ -841,4 +773,12 @@ export async function markStartingReportViewedAction(): Promise<{ success: boole
     console.error("markStartingReportViewedAction error:", err);
     return { success: false, error: err?.message || "Internal server error" };
   }
+}
+
+export async function isFitnessOrderSettled(orderId: string): Promise<boolean> {
+ const supabase = await createServerSupabase();
+ const { data: { user } } = await supabase.auth.getUser();
+ if (!user || !orderId) return false;
+ const { data } = await createAdminClient().from("fitness_payment_receipts").select("payment_id").eq("user_id", user.id).eq("order_id", orderId).maybeSingle();
+ return Boolean(data);
 }

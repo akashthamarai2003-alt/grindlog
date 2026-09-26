@@ -1,3 +1,5 @@
+import { getCachedUser } from "@/lib/services/supabase/server";
+import { getFitnessSubscription } from "@/lib/fitness/subscription/access";
 import { Suspense } from "react";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { getUserPremiumDetailsAction } from "@/app/actions/payment";
@@ -19,10 +21,15 @@ export default async function FitnessPaymentPage() {
     getUserPremiumDetailsAction("fitness_os").catch(() => null),
   ]);
 
+  const { data: { user } } = await getCachedUser();
+  const subscription = user ? await getFitnessSubscription(user.id) : null;
+
   return (
     <Suspense fallback={<PaymentLoadingFallback />}>
       <FitnessPaymentClient
         initialPricing={pricingConfig || undefined}
+        renewalPlan={subscription ? (subscription.plan === "pro" ? "pro" : "core") : premiumDetails?.premium_level}
+        renewalExpiresAt={subscription?.current_period_end || premiumDetails?.premium_expires_at || null}
         initialPremiumDetails={premiumDetails || undefined}
       />
     </Suspense>

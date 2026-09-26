@@ -1,3 +1,5 @@
+import { isFitnessOrderSettled } from "@/app/actions/payment";
+import { invalidateFitnessSubscriptionCache } from "@/lib/fitness/subscription/access";
 import { redirect } from "next/navigation";
 import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
@@ -9,7 +11,7 @@ import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function FitnessBillingPage() {
+export default async function FitnessBillingPage({ searchParams }: { searchParams: Promise<{ order?: string }> }) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await getCachedUser();
 
@@ -17,6 +19,9 @@ export default async function FitnessBillingPage() {
     redirect("/auth/signin?redirect=/profile/billing");
   }
 
+  const { order } = await searchParams;
+  const paymentConfirmed = order ? await isFitnessOrderSettled(order) : false;
+  if (paymentConfirmed) invalidateFitnessSubscriptionCache(user.id);
   const adminClient = createAdminClient();
 
   const [
@@ -33,7 +38,7 @@ export default async function FitnessBillingPage() {
       .maybeSingle(),
     adminClient
       .from("subscriptions")
-      .select("id, plan, status, razorpay_payment_id, started_at, expires_at")
+      .select("id, plan, status, razorpay_payment_id, started_at, expires_at, amount_paise, currency")
       .eq("user_id", user.id)
       .order("started_at", { ascending: false })
       .limit(10),
@@ -46,7 +51,7 @@ export default async function FitnessBillingPage() {
   const paymentHistory = (subscriptionsData || []).map((sub: any) => ({
     id: sub.id,
     plan: sub.plan,
-    amount: sub.plan?.includes("pro") ? proPrice : corePrice,
+    amount: sub.amount_paise == null ? null : Number(sub.amount_paise) / 100,
     status: sub.status === "active" ? "Paid ✓" : sub.status,
     paymentId: sub.razorpay_payment_id || "",
     date: sub.started_at || new Date().toISOString(),
@@ -55,6 +60,7 @@ export default async function FitnessBillingPage() {
 
   return (
     <BillingManagementClient
+      paymentConfirmed={paymentConfirmed}
       subscriptionState={subscriptionState}
       paymentHistory={paymentHistory}
       proPrice={proPrice}
