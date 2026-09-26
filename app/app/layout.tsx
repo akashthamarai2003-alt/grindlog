@@ -3,6 +3,8 @@ import "@/styles/globals.css";
 import { Providers } from "./providers";
 import { InstallModal } from "@/components/pwa/install-modal";
 import { InstallPopup } from "@/components/pwa/install-popup";
+import { AndroidBackButtonHandler } from "@/components/capacitor/android-back-button-handler";
+import { AndroidAuthHandler } from "@/components/capacitor/android-auth-handler";
 
 
 
@@ -90,7 +92,10 @@ export default function RootLayout({
         <Providers>{children}</Providers>
         <InstallModal />
         <InstallPopup />
+        <AndroidBackButtonHandler />
+        <AndroidAuthHandler />
       </body>
+
     </html>
   );
 }

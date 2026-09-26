@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GrindLog</string>
+    <string name="title_activity_main">GrindLog</string>
+    <string name="package_name">com.grindlog.app</string>
+    <string name="custom_url_scheme">com.grindlog.app</string>
+</resources>

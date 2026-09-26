@@ -201,12 +201,17 @@ html {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
   min-height: 100dvh;
   overflow-x: hidden;
   background-color: var(--color-bg-primary);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* --- Scrollbar --- */

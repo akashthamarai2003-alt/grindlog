@@ -85,6 +85,14 @@ export async function updateSession(request: NextRequest) {
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
 
+  // In the native mobile APK, unauthenticated users should land directly on /auth/signin instead of the marketing landing page
+  const isApp = request.headers.get("user-agent")?.includes("GrindLogApp");
+  if (!user && pathname === "/" && isApp) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/signin";
+    return NextResponse.redirect(url);
+  }
+
   if (!user && !isPublicPath) {
     // HARDCODED EXCEPTION FOR /app just in case publicPaths fails on Vercel Edge
     if (pathname === "/app" || pathname.startsWith("/app/")) {

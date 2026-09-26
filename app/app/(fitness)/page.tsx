@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createServerSupabase, getCachedUser, getCachedFitnessProfile } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { FitnessDashboard } from "@/components/fitness/dashboard/fitness-dashboard";
@@ -21,6 +22,11 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
   const { data: { user } } = await getCachedUser();
 
   if (!user) {
+    const headersList = await headers();
+    const userAgent = headersList.get("user-agent") || "";
+    if (userAgent.includes("GrindLogApp")) {
+      redirect("/auth/signin");
+    }
     return <FitnessLandingPage />;
   }
 

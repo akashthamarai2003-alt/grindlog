@@ -44,6 +44,14 @@ import {
 import { toast } from "sonner";
 
 export function FitnessLandingPage() {
+  React.useEffect(() => {
+    import("@/lib/capacitor/bridge").then(({ isNativePlatform }) => {
+      if (isNativePlatform()) {
+        window.location.replace("/auth/signin");
+      }
+    });
+  }, []);
+
   const [activeTab, setActiveTab] = useState<"workout" | "nutrition" | "grocery" | "scanner" | "comparison" | "coach">("workout");
   const [groceryMode, setGroceryMode] = useState<"weekly" | "monthly">("weekly");
   const [checkedGrocery, setCheckedGrocery] = useState<Record<string, boolean>>({ "item-1": true, "item-3": true });
