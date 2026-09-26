@@ -10,14 +10,24 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import androidx.core.splashscreen.SplashScreen;
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
 
 public class MainActivity extends BridgeActivity {
 
+    private long splashStartTime = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        splashStartTime = System.currentTimeMillis();
+        // 1. Install AndroidX Splash Screen and keep on screen for 2.5 seconds
+        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
+        splashScreen.setKeepOnScreenCondition(() -> {
+            return (System.currentTimeMillis() - splashStartTime) < 2500;
+        });
+
         super.onCreate(savedInstanceState);
 
         Bridge bridge = this.getBridge();
@@ -58,18 +68,12 @@ public class MainActivity extends BridgeActivity {
             settings.setUseWideViewPort(true);
             settings.setLoadWithOverviewMode(true);
 
-            // 5. Native APK check: if user is not authenticated, never load landing page (/)
-            // Directly load the Sign In page!
+            // 5. Native APK check: if user is not authenticated, load Sign In page immediately while splash screen is showing
             android.webkit.CookieManager cm = android.webkit.CookieManager.getInstance();
             String cookies = cm.getCookie("https://www.grindlog.in");
             boolean hasAuth = cookies != null && (cookies.contains("sb-") || cookies.contains("supabase-auth-token"));
             if (!hasAuth) {
-                webView.post(() -> {
-                    String currentUrl = webView.getUrl();
-                    if (currentUrl == null || currentUrl.equals("https://www.grindlog.in/") || currentUrl.equals("https://www.grindlog.in")) {
-                        webView.loadUrl("https://www.grindlog.in/auth/signin");
-                    }
-                });
+                webView.loadUrl("https://www.grindlog.in/auth/signin");
             }
 
             // 6. Attach specialized BridgeWebViewClient to intercept UPI, OAuth, and Landing Page bypass
