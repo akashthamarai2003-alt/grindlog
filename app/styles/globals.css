@@ -1106,8 +1106,18 @@ html.theme-white .fitness-nav-active {
   color: var(--fitness-primary-dark) !important;
   box-shadow: none !important;
 }
-html.theme-white .fitness-nav-active > svg {
+/* Hide the separate decorative glow, which otherwise paints over the label. */
+html.theme-white .fitness-nav-link .fitness-nav-glow {
+  display: none;
+}
+html.theme-white .fitness-nav-link[data-active="true"] .fitness-nav-label,
+html.theme-white .fitness-nav-link[data-active="true"] .fitness-nav-icon > svg,
+html.theme-white .fitness-nav-link[data-active="true"] .fitness-nav-icon > svg * {
   color: var(--fitness-primary-dark) !important;
+}
+html.theme-white .fitness-nav-link[data-active="false"] .fitness-nav-label,
+html.theme-white .fitness-nav-link[data-active="false"] .fitness-nav-icon > svg {
+  color: var(--fitness-secondary) !important;
 }
 html.theme-white .fitness-pro-badge,
 html.theme-white .fitness-nav-active .fitness-pro-badge {
