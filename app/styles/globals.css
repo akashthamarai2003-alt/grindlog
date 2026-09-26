@@ -485,20 +485,36 @@ body {
   }
 }
 
+html.theme-white {
+  --fitness-primary: #16A34A;
+  --fitness-primary-dark: #15803D;
+  --fitness-primary-light: #DCFCE7;
+  --fitness-canvas: #F8FAFC;
+  --fitness-card: #FFFFFF;
+  --fitness-text: #111827;
+  --fitness-secondary: #6B7280;
+  --fitness-success: #22C55E;
+  --fitness-achievement: #F59E0B;
+  --fitness-error: #EF4444;
+  --fitness-info: #3B82F6;
+  --fitness-track: #E5F5E9;
+  --fitness-border: #E5E7EB;
+}
+
 /* ============================================
    WHITE THEME (Clean Light Athletic Mode)
    ============================================ */
 html.theme-white,
 html.theme-white body {
-  background-color: #F6FAF6 !important;
-  color: #0F172A !important;
+  background-color: var(--fitness-canvas) !important;
+  color: var(--fitness-text) !important;
 }
 
 /* Surface backgrounds — base page canvas */
 html.theme-white .bg-\[\#0A1108\],
 html.theme-white .bg-\[\#060D06\],
 html.theme-white .bg-\[\#050905\] {
-  background-color: #F6FAF6 !important;
+  background-color: var(--fitness-canvas) !important;
 }
 
 /* Frosted glass sticky headers */
@@ -508,7 +524,7 @@ html.theme-white .bg-\[\#0A1108\]\/95,
 html.theme-white .bg-\[\#070C07\]\/85,
 html.theme-white .bg-\[\#111A10\]\/90,
 html.theme-white .bg-\[\#121E12\]\/90 {
-  background-color: rgba(246, 250, 246, 0.95) !important;
+  background-color: rgba(248, 250, 252, 0.95) !important;
 }
 
 /* Primary cards & dialogs — pure white with soft shadow */
@@ -518,7 +534,7 @@ html.theme-white .bg-\[\#0E160E\],
 html.theme-white [class*="from-\[\#121E12\]"],
 html.theme-white [class*="from-\[\#1A2619\]"] {
   background-image: none !important;
-  background-color: #FFFFFF !important;
+  background-color: var(--fitness-card) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 2px 12px -2px rgba(0, 0, 0, 0.04) !important;
 }
 
@@ -529,14 +545,14 @@ html.theme-white .bg-\[\#152014\],
 html.theme-white .bg-\[\#1E261D\],
 html.theme-white .bg-\[\#0D150D\],
 html.theme-white .bg-\[\#081008\] {
-  background-color: #F8FAF8 !important;
+  background-color: var(--fitness-canvas) !important;
 }
 
 /* Tertiary dark surfaces — water history stats, heatmap empty cells, future cells */
 html.theme-white .bg-\[\#182216\],
 html.theme-white .bg-\[\#141C12\],
 html.theme-white .bg-\[\#121811\] {
-  background-color: #E8EFE8 !important;
+  background-color: var(--fitness-track) !important;
 }
 
 /* Water heatmap level colors — keep vibrant on white */
@@ -557,8 +573,8 @@ html.theme-white .bg-\[\#00D2FF\] {
 html.theme-white .bg-white\/5,
 html.theme-white .bg-white\/\[0\.03\],
 html.theme-white .bg-white\/\[0\.04\] {
-  background-color: #FFFFFF !important;
-  border-color: #DFE6DF !important;
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-border) !important;
 }
 html.theme-white .bg-white\/\[0\.02\] {
   background-color: rgba(0, 0, 0, 0.02) !important;
@@ -592,19 +608,19 @@ html.theme-white .bg-black\/30,
 html.theme-white .bg-black\/35,
 html.theme-white .bg-black\/40,
 html.theme-white .bg-black\/45 {
-  background-color: #F8FAF8 !important;
+  background-color: var(--fitness-canvas) !important;
 }
 /* Progress bar tracks inside rounded-full */
 html.theme-white .rounded-full.bg-black\/30,
 html.theme-white .rounded-full.bg-black\/40,
 html.theme-white .rounded-full.bg-black\/50,
 html.theme-white .rounded-full.bg-black\/60 {
-  background-color: #E2E8E2 !important;
+  background-color: var(--fitness-track) !important;
 }
 html.theme-white .bg-black\/50,
 html.theme-white .bg-black\/60,
 html.theme-white .bg-black\/70 {
-  background-color: #EEF4EE !important;
+  background-color: var(--fitness-canvas) !important;
 }
 
 /* Border overrides — unified subtle light borders */
@@ -616,14 +632,14 @@ html.theme-white .border-white\/10,
 html.theme-white .border-white\/15,
 html.theme-white .border-white\/20,
 html.theme-white .border-white\/\[0\.06\] {
-  border-color: #DFE6DF !important;
+  border-color: var(--fitness-border) !important;
 }
 
 /* Dividers (divide-white/10 etc.) */
 html.theme-white .divide-white\/5 > * + *,
 html.theme-white .divide-white\/10 > * + *,
 html.theme-white .divide-white\/20 > * + * {
-  border-color: #DFE6DF !important;
+  border-color: var(--fitness-border) !important;
 }
 
 /* Water heatmap cyan borders */
@@ -636,20 +652,20 @@ html.theme-white .border-cyan-300 {
 
 /* ─── Typography ─── */
 html.theme-white .text-white {
-  color: #0F172A !important;
+  color: var(--fitness-text) !important;
 }
 html.theme-white .text-white\/95,
 html.theme-white .text-white\/90,
 html.theme-white .text-white\/85,
 html.theme-white .text-white\/80 {
-  color: #1E293B !important;
+  color: var(--fitness-text) !important;
 }
 html.theme-white .text-white\/75,
 html.theme-white .text-white\/70,
 html.theme-white .text-white\/65,
 html.theme-white .text-gray-200,
 html.theme-white .text-gray-300 {
-  color: #334155 !important;
+  color: var(--fitness-secondary) !important;
 }
 html.theme-white .text-white\/60,
 html.theme-white .text-white\/55,
@@ -658,7 +674,7 @@ html.theme-white .text-white\/45,
 html.theme-white .text-white\/40,
 html.theme-white .text-gray-400,
 html.theme-white .text-gray-500 {
-  color: #64748B !important;
+  color: var(--fitness-secondary) !important;
 }
 html.theme-white .text-white\/35,
 html.theme-white .text-white\/30,
@@ -666,7 +682,7 @@ html.theme-white .text-white\/25,
 html.theme-white .text-white\/20,
 html.theme-white .text-white\/15,
 html.theme-white .text-white\/10 {
-  color: #94A3B8 !important;
+  color: var(--fitness-secondary) !important;
 }
 
 /* Water history cyan text — darken for white bg readability */
@@ -726,21 +742,21 @@ html.theme-white .text-\[\#ADFF00\]\/90,
 html.theme-white .text-\[\#ADFF00\]\/80,
 html.theme-white .text-\[\#ADFF00\]\/70,
 html.theme-white .text-\[\#ADFF00\]\/60 {
-  color: #15803D !important;
+  color: var(--fitness-primary-dark) !important;
 }
 html.theme-white .bg-\[\#ADFF00\]\/\[0\.02\],
 html.theme-white .bg-\[\#ADFF00\]\/\[0\.03\],
 html.theme-white .bg-\[\#ADFF00\]\/\[0\.04\],
 html.theme-white .bg-\[\#ADFF00\]\/\[0\.05\],
 html.theme-white .bg-\[\#ADFF00\]\/5 {
-  background-color: #F0FDF4 !important;
+  background-color: var(--fitness-primary-light) !important;
 }
 html.theme-white .bg-\[\#ADFF00\]\/10 {
-  background-color: rgba(22, 163, 74, 0.12) !important;
+  background-color: var(--fitness-primary-light) !important;
 }
 html.theme-white .bg-\[\#ADFF00\]\/15,
 html.theme-white .bg-\[\#ADFF00\]\/20 {
-  background-color: rgba(22, 163, 74, 0.18) !important;
+  background-color: var(--fitness-primary-light) !important;
 }
 html.theme-white .border-\[\#ADFF00\]\/15,
 html.theme-white .border-\[\#ADFF00\]\/20,
@@ -749,19 +765,19 @@ html.theme-white .border-\[\#ADFF00\]\/30,
 html.theme-white .border-\[\#ADFF00\]\/40,
 html.theme-white .border-\[\#ADFF00\]\/50,
 html.theme-white .border-\[\#ADFF00\]\/60 {
-  border-color: #86EFAC !important;
+  border-color: var(--fitness-primary-light) !important;
 }
 html.theme-white .decoration-\[\#ADFF00\]\/40 {
   text-decoration-color: rgba(21, 128, 61, 0.45) !important;
 }
 
-/* Keep primary action CTA buttons vibrant with black text */
+/* Primary controls use emerald with a readable navy foreground. */
 html.theme-white .bg-\[\#ADFF00\] {
-  background-color: #ADFF00 !important;
-  color: #000000 !important;
+  background-color: var(--fitness-primary) !important;
+  color: var(--fitness-text) !important;
 }
 html.theme-white .bg-\[\#ADFF00\] * {
-  color: #000000 !important;
+  color: var(--fitness-text) !important;
 }
 
 /* Water cyan accent backgrounds — keep vibrant on white */
@@ -797,11 +813,11 @@ html.theme-white [class*="drop-shadow-\[0_0_12px_rgba(173\,255\,0"] {
 
 /* ─── Bottom Navigation Dock ─── */
 html.theme-white .fixed.bottom-0.bg-gradient-to-t {
-  background-image: linear-gradient(to top, #F6FAF6, rgba(246, 250, 246, 0.95), transparent) !important;
+  background-image: linear-gradient(to top, var(--fitness-canvas), rgba(248, 250, 252, 0.95), transparent) !important;
 }
 html.theme-white .fixed.bottom-0 .bg-\[\#121E12\] {
-  background-color: #FFFFFF !important;
-  border-color: #DFE6DF !important;
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-border) !important;
   box-shadow: 0 -2px 20px -4px rgba(0, 0, 0, 0.08), 0 -1px 6px -1px rgba(0, 0, 0, 0.04) !important;
 }
 
@@ -822,11 +838,11 @@ html.theme-white [class*="blur-\["] {
 html.theme-white input,
 html.theme-white select,
 html.theme-white textarea {
-  color: #0F172A !important;
+  color: var(--fitness-text) !important;
 }
 html.theme-white input::placeholder,
 html.theme-white textarea::placeholder {
-  color: #94A3B8 !important;
+  color: var(--fitness-secondary) !important;
 }
 
 /* ─── Ring colors ─── */
@@ -847,27 +863,27 @@ html.theme-white [class*="radial-gradient"][class*="1A2619"] {
 html.theme-white .w-1\.5.h-1\.5.bg-\[\#ADFF00\],
 html.theme-white .w-2.h-2.bg-\[\#ADFF00\],
 html.theme-white .w-2\.5.h-2\.5.bg-\[\#ADFF00\] {
-  background-color: #16A34A !important;
+  background-color: var(--fitness-primary) !important;
 }
 
 /* ─── AI Chatbot Trigger Button & Drawer (White Theme) ─── */
 html.theme-white .fitness-chatbot-trigger {
-  background-color: #FFFFFF !important;
-  border-color: #86EFAC !important;
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-primary-light) !important;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04) !important;
-  color: #15803D !important;
+  color: var(--fitness-primary-dark) !important;
 }
 html.theme-white .fitness-chatbot-trigger .fitness-chatbot-icon {
-  color: #15803D !important;
+  color: var(--fitness-primary-dark) !important;
 }
 html.theme-white .fitness-chatbot-trigger .fitness-chatbot-dot {
-  background-color: #16A34A !important;
+  background-color: var(--fitness-primary) !important;
 }
 html.theme-white .fitness-chatbot-trigger .fitness-chatbot-label {
-  color: #0F172A !important;
+  color: var(--fitness-text) !important;
 }
 html.theme-white .fitness-chatbot-trigger:hover .fitness-chatbot-label {
-  color: #15803D !important;
+  color: var(--fitness-primary-dark) !important;
 }
 
 html.theme-white .fitness-chatbot-backdrop {
@@ -875,66 +891,204 @@ html.theme-white .fitness-chatbot-backdrop {
 }
 
 html.theme-white .fitness-chatbot-drawer {
-  background-color: #F6FAF6 !important;
+  background-color: var(--fitness-canvas) !important;
   box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.08) !important;
 }
 html.theme-white .fitness-chatbot-drawer .fitness-chatbot-header {
-  background-color: #FFFFFF !important;
-  border-color: #DFE6DF !important;
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-border) !important;
 }
 html.theme-white .fitness-chatbot-drawer .fitness-chatbot-footer {
-  background-color: #FFFFFF !important;
-  border-color: #DFE6DF !important;
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-border) !important;
 }
 html.theme-white .fitness-chatbot-drawer .fitness-chatbot-input {
-  background-color: #F8FAF8 !important;
-  border-color: #DFE6DF !important;
-  color: #0F172A !important;
+  background-color: var(--fitness-canvas) !important;
+  border-color: var(--fitness-border) !important;
+  color: var(--fitness-text) !important;
 }
 html.theme-white .fitness-chatbot-drawer .fitness-chatbot-input::placeholder {
-  color: #94A3B8 !important;
+  color: var(--fitness-secondary) !important;
 }
 html.theme-white .fitness-chatbot-drawer .fitness-chatbot-bubble-bot {
-  background-color: #FFFFFF !important;
-  border-color: #DFE6DF !important;
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-border) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
-  color: #1E293B !important;
+  color: var(--fitness-text) !important;
 }
 html.theme-white .fitness-chatbot-drawer .fitness-chatbot-pro-card {
   background-image: none !important;
-  background-color: #FFFFFF !important;
-  border-color: #86EFAC !important;
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-primary-light) !important;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* Typography prose inversion reset for markdown inside white theme */
 html.theme-white .prose-invert {
-  --tw-prose-body: #1E293B !important;
-  --tw-prose-headings: #0F172A !important;
-  --tw-prose-lead: #334155 !important;
-  --tw-prose-links: #15803D !important;
-  --tw-prose-bold: #0F172A !important;
-  --tw-prose-counters: #64748B !important;
-  --tw-prose-bullets: #94A3B8 !important;
+  --tw-prose-body: var(--fitness-text) !important;
+  --tw-prose-headings: var(--fitness-text) !important;
+  --tw-prose-lead: var(--fitness-secondary) !important;
+  --tw-prose-links: var(--fitness-primary-dark) !important;
+  --tw-prose-bold: var(--fitness-text) !important;
+  --tw-prose-counters: var(--fitness-secondary) !important;
+  --tw-prose-bullets: var(--fitness-secondary) !important;
   --tw-prose-hr: #E2E8F0 !important;
-  --tw-prose-quotes: #0F172A !important;
+  --tw-prose-quotes: var(--fitness-text) !important;
   --tw-prose-quote-borders: #CBD5E1 !important;
-  --tw-prose-captions: #64748B !important;
-  --tw-prose-code: #0F172A !important;
+  --tw-prose-captions: var(--fitness-secondary) !important;
+  --tw-prose-code: var(--fitness-text) !important;
   --tw-prose-pre-code: #E2E8F0 !important;
-  --tw-prose-pre-bg: #1E293B !important;
+  --tw-prose-pre-bg: var(--fitness-text) !important;
   --tw-prose-th-borders: #CBD5E1 !important;
   --tw-prose-td-borders: #E2E8F0 !important;
-  color: #1E293B !important;
+  color: var(--fitness-text) !important;
 }
 html.theme-white .prose-invert p,
 html.theme-white .prose-invert li,
 html.theme-white .prose-invert span {
-  color: #1E293B !important;
+  color: var(--fitness-text) !important;
 }
 html.theme-white .prose-invert strong {
-  color: #15803D !important;
+  color: var(--fitness-primary-dark) !important;
 }
 
 
 
+
+/* Complete light-theme state and semantic treatments. */
+html.theme-white .divide-\[\#1A2619\] > *,
+html.theme-white .divide-white\/5 > *,
+html.theme-white .divide-white\/10 > *,
+html.theme-white .divide-white\/20 > * {
+  border-color: var(--fitness-border) !important;
+}
+html.theme-white .hover\:bg-\[\#ADFF00\]:hover,
+html.theme-white .hover\:bg-\[\#9BE600\]:hover,
+html.theme-white .hover\:bg-\[\#ADFF00\]\/90:hover {
+  background-color: var(--fitness-primary-dark) !important;
+  color: var(--fitness-card) !important;
+}
+html.theme-white button:focus-visible,
+html.theme-white a:focus-visible,
+html.theme-white input:focus-visible,
+html.theme-white select:focus-visible,
+html.theme-white textarea:focus-visible {
+  outline: 2px solid var(--fitness-primary-dark);
+  outline-offset: 3px;
+}
+html.theme-white .rounded-full.bg-white\/5,
+html.theme-white .rounded-full.bg-white\/10 {
+  background-color: var(--fitness-track) !important;
+}
+html.theme-white .text-red-400,
+html.theme-white .text-red-500 { color: var(--fitness-error) !important; }
+html.theme-white .bg-red-500 { background-color: var(--fitness-error) !important; }
+html.theme-white .bg-green-500,
+html.theme-white .bg-emerald-500 { background-color: var(--fitness-success) !important; }
+html.theme-white .text-green-400,
+html.theme-white .text-emerald-400,
+html.theme-white .text-emerald-600 { color: var(--fitness-primary-dark) !important; }
+html.theme-white .bg-blue-500,
+html.theme-white .bg-\[\#00D2FF\] { background-color: var(--fitness-info) !important; }
+html.theme-white .text-blue-400,
+html.theme-white .text-sky-400,
+html.theme-white .text-\[\#00D2FF\] { color: var(--fitness-info) !important; }
+html.theme-white .bg-amber-500 { background-color: var(--fitness-achievement) !important; }
+html.theme-white .fitness-streak-badge {
+  background-color: #FFFBEB !important;
+  border-color: var(--fitness-achievement) !important;
+}
+html.theme-white .fitness-streak-badge svg { color: var(--fitness-achievement) !important; }
+html.theme-white .fitness-streak-badge span { color: #92400E !important; }
+/* Captions remain light on the dark food-photo overlay. */
+html.theme-white .nutrition-meal-hero-caption .text-white,
+html.theme-white .nutrition-meal-hero-caption .text-white\/70 { color: #FFFFFF !important; }
+html.theme-white .recharts-cartesian-axis-tick-value { fill: var(--fitness-secondary) !important; }
+html.theme-white .recharts-wrapper [stroke="#ADFF00"] { stroke: var(--fitness-primary) !important; }
+html.theme-white .recharts-wrapper [fill="#ADFF00"] { fill: var(--fitness-primary) !important; }
+html.theme-white .recharts-default-tooltip {
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-border) !important;
+  color: var(--fitness-text) !important;
+}
+html.theme-white .recharts-tooltip-label,
+html.theme-white .recharts-tooltip-item { color: var(--fitness-text) !important; }
+
+/* Legacy card surfaces share the same White theme tokens. */
+html.theme-white .bg-\[\#070D07\],
+html.theme-white .bg-\[\#080D08\],
+html.theme-white .bg-\[\#0B120B\],
+html.theme-white .bg-\[\#0D140C\],
+html.theme-white .bg-\[\#0D160E\],
+html.theme-white .bg-\[\#0E170C\],
+html.theme-white .bg-\[\#0E170E\],
+html.theme-white .bg-\[\#0F170F\],
+html.theme-white .bg-\[\#101910\],
+html.theme-white .bg-\[\#121915\],
+html.theme-white .bg-\[\#121A12\],
+html.theme-white .bg-\[\#121F12\],
+html.theme-white .bg-\[\#142013\],
+html.theme-white .bg-\[\#142314\],
+html.theme-white .bg-\[\#142415\],
+html.theme-white .bg-\[\#152315\],
+html.theme-white .bg-\[\#152616\],
+html.theme-white .bg-\[\#162215\],
+html.theme-white .bg-\[\#162616\],
+html.theme-white .bg-\[\#172318\],
+html.theme-white .bg-\[\#182313\],
+html.theme-white .bg-\[\#182417\],
+html.theme-white .bg-\[\#1A251E\],
+html.theme-white .bg-\[\#1A261A\],
+html.theme-white .bg-\[\#1A2A19\],
+html.theme-white .bg-\[\#1A2B1A\],
+html.theme-white .bg-\[\#1C201A\],
+html.theme-white .bg-\[\#1C2920\],
+html.theme-white .bg-\[\#1D2620\],
+html.theme-white .bg-\[\#202E25\],
+html.theme-white .bg-\[\#223321\],
+html.theme-white .bg-\[\#233522\],
+html.theme-white .bg-\[\#26332A\] {
+  background-color: var(--fitness-card) !important;
+}
+html.theme-white .border-\[\#162316\],
+html.theme-white .border-\[\#182417\],
+html.theme-white .border-\[\#182617\],
+html.theme-white .border-\[\#182718\],
+html.theme-white .border-\[\#192718\],
+html.theme-white .border-\[\#1C2C1B\],
+html.theme-white .border-\[\#1E2E1D\],
+html.theme-white .border-\[\#1F301E\],
+html.theme-white .border-\[\#1F331F\],
+html.theme-white .border-\[\#213520\],
+html.theme-white .border-\[\#223A23\],
+html.theme-white .border-\[\#233522\],
+html.theme-white .border-\[\#233822\],
+html.theme-white .border-\[\#254223\],
+html.theme-white .border-\[\#273B25\],
+html.theme-white .border-\[\#283D26\],
+html.theme-white .border-\[\#2A3F29\],
+html.theme-white .border-\[\#2B472A\] {
+  border-color: var(--fitness-border) !important;
+}
+html.theme-white .bg-\[\#39FF14\],
+html.theme-white .bg-\[\#9BE600\],
+html.theme-white .bg-\[\#A8FF00\],
+html.theme-white .bg-\[\#b8ff1a\],
+html.theme-white .bg-\[\#b8ff1f\],
+html.theme-white .bg-\[\#baff22\],
+html.theme-white .bg-\[\#bbfb2e\],
+html.theme-white .bg-\[\#bfff33\],
+html.theme-white .bg-\[\#c4ff33\],
+html.theme-white .bg-\[\#c6ff47\] {
+  background-color: var(--fitness-primary) !important;
+  color: var(--fitness-text) !important;
+}
+
+html.theme-white .hover\:bg-\[\#c4ff33\]:hover,
+html.theme-white .hover\:bg-\[\#bfff33\]:hover,
+html.theme-white .hover\:bg-\[\#b8ff1a\]:hover,
+html.theme-white .hover\:bg-\[\#b8ff1f\]:hover,
+html.theme-white .hover\:bg-\[\#A8FF00\]:hover {
+  background-color: var(--fitness-primary-dark) !important;
+  color: var(--fitness-card) !important;
+}

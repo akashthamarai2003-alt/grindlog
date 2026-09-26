@@ -1951,7 +1951,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     </div>
 
                     {/* Bottom Title & Whole Food Tag */}
-                    <div className="absolute bottom-3 left-4 right-4">
+                    <div className="nutrition-meal-hero-caption absolute bottom-3 left-4 right-4">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 backdrop-blur-sm">
                           🌱 100% Whole Food

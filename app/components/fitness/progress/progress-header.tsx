@@ -63,7 +63,7 @@ export function ProgressHeader({ transformation, period, onPeriodChange, isFetch
         <p className="text-sm font-bold text-white/60">
           Day <span className="text-[#ADFF00]">{transformation.transformationDay}</span> of your transformation
         </p>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ADFF00]/10 rounded-full border border-[#ADFF00]/20">
+        <div className="fitness-streak-badge flex items-center gap-1.5 px-3 py-1.5 bg-[#ADFF00]/10 rounded-full border border-[#ADFF00]/20">
           <Flame className="w-3.5 h-3.5 text-[#ADFF00]" />
           <span className="text-xs font-black text-[#ADFF00] tracking-widest">{transformation.streak} Day Streak</span>
         </div>
