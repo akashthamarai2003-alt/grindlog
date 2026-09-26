@@ -17,14 +17,8 @@ interface WorkoutViewProps {
 }
 
 export function WorkoutView({ initialData }: WorkoutViewProps) {
-  // 0ms instant display from client memory/sessionStorage cache if available
-  const [data, setData] = useState<WorkoutPageData>(() => {
-    const cached = workoutClientCache.get();
-    if (cached && cached.dateStr) {
-      return cached;
-    }
-    return initialData;
-  });
+  // Server data includes the current local date and complete exercise details.
+  const [data, setData] = useState<WorkoutPageData>(initialData);
 
   // Reconcile with fresh server data when it arrives
   useEffect(() => {

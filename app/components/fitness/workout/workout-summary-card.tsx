@@ -12,7 +12,7 @@ import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
 
 interface WorkoutSummaryCardProps {
   workout: any;
-  exerciseCount: number;
+  exerciseCount?: number;
   hideStartButton?: boolean;
   eyebrow?: string;
   scheduledLabel?: string;
@@ -23,7 +23,7 @@ interface WorkoutSummaryCardProps {
 
 export function WorkoutSummaryCard({
   workout,
-  exerciseCount,
+  exerciseCount: providedExerciseCount,
   hideStartButton = false,
   eyebrow,
   scheduledLabel,
@@ -37,7 +37,13 @@ export function WorkoutSummaryCard({
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const isCompleted = workout?.status === "completed";
-  const exercises = workout?.fitness_os_exercises || [];
+  const exercises = Array.isArray(workout?.fitness_os_exercises) ? workout.fitness_os_exercises : [];
+  const exerciseCount = exercises.length || (Number.isFinite(providedExerciseCount) && Number(providedExerciseCount) > 0
+    ? Math.floor(Number(providedExerciseCount)) : 0);
+  const totalSets = exercises.reduce((sum: number, ex: any) => {
+    const count = Number(ex.fitness_os_sets?.length || ex.target_sets);
+    return sum + (Number.isFinite(count) && count > 0 ? count : 3);
+  }, 0);
   const completedCount = exercises.filter((ex: any) => 
     ex.fitness_os_sets && 
     ex.fitness_os_sets.length > 0 && 
@@ -160,18 +166,14 @@ export function WorkoutSummaryCard({
   const muscleString = targetMuscles.join(" • ");
 
   // Smart TIME estimation from exercise data when duration_minutes is not set
-  const rawDuration = workout?.duration_minutes;
+  const rawDuration = Number(workout?.duration_minutes);
   let displayDuration: string | number;
   if (rawDuration && rawDuration >= 2 && rawDuration <= 180) {
     displayDuration = rawDuration;
   } else {
     // Estimate from exercises: ~3.5 min per set (including rest)
-    const totalSets = exercises.reduce((sum: number, ex: any) => {
-      const sets = ex.fitness_os_sets?.length || ex.target_sets || 3;
-      return sum + sets;
-    }, 0);
     const estimatedMinutes = totalSets > 0 ? Math.round(totalSets * 3.5) : Math.round(exerciseCount * 10);
-    displayDuration = Math.max(15, Math.min(estimatedMinutes, 120));
+    displayDuration = exerciseCount > 0 ? Math.max(15, Math.min(estimatedMinutes, 120)) : "—";
   }
 
   // Smart INTENSITY inference when difficulty_level is not set
@@ -180,9 +182,6 @@ export function WorkoutSummaryCard({
   if (rawIntensity) {
     displayIntensity = rawIntensity;
   } else {
-    const totalSets = exercises.reduce((sum: number, ex: any) => {
-      return sum + (ex.fitness_os_sets?.length || ex.target_sets || 3);
-    }, 0);
     const workoutName = (workout?.name || "").toLowerCase();
     
     // Infer from workout name or volume
@@ -193,7 +192,7 @@ export function WorkoutSummaryCard({
     } else if (totalSets >= 12 || exerciseCount >= 4) {
       displayIntensity = "Moderate";
     } else {
-      displayIntensity = "Light";
+      displayIntensity = exerciseCount > 0 ? "Light" : "—";
     }
   }
 
@@ -207,7 +206,7 @@ export function WorkoutSummaryCard({
       >
         <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
         
-        <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col gap-6">
+        <div className="workout-summary-surface relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col gap-6">
           
           {/* Title & Muscle Groups */}
           <div>
@@ -240,7 +239,7 @@ export function WorkoutSummaryCard({
                 <span className="text-sm">⏱</span>
                 <span className="text-xs font-bold uppercase tracking-wider">Time</span>
               </div>
-              <span className="text-lg font-black text-white">{displayDuration} min</span>
+              <span className="text-lg font-black text-white">{displayDuration}{typeof displayDuration === "number" ? " min" : ""}</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -297,7 +296,7 @@ export function WorkoutSummaryCard({
               <div className="flex flex-col gap-2">
                 <button
                   onClick={handleStart}
-                  disabled={isStarting}
+                  disabled={isStarting || exerciseCount === 0}
                   className="w-full font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-70 cursor-pointer bg-[#ADFF00] text-black hover:bg-[#bfff33] shadow-[0_0_20px_rgba(173,255,0,0.2)]"
                 >
                   {isStarting ? (
@@ -322,6 +321,12 @@ export function WorkoutSummaryCard({
                     </>
                   )}
                 </button>
+
+                {exerciseCount === 0 && (
+                  <p className="text-sm text-white/60" role="status">
+                    No exercises are available for this workout yet.
+                  </p>
+                )}
 
                 {isTrulyCompleted && completedCount < exerciseCount && (
                   <Link

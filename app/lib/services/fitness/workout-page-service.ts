@@ -96,35 +96,35 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
   const scheduledToday = rawList.find((w: any) => w.workout_date === userLocalDate);
   const targetWorkout = inProgress || scheduledToday || null;
 
-  // 3. Query exercises ONLY for targetWorkout (direct indexed lookup by workout_id, fast ~10-20ms)
-  let fullTargetWorkout: any = targetWorkout;
-  if (targetWorkout?.id) {
+  // Load exercise details for whichever workout is displayed.
+  async function withExercises(workout: any) {
     const { data: exercises } = await admin
       .from("fitness_os_exercises")
       .select(`
         id, name, target_sets, target_reps, rest_seconds,
         fitness_os_sets (completed)
       `)
-      .eq("workout_id", targetWorkout.id);
+      .eq("workout_id", workout.id);
 
     const exerciseList = exercises || [];
     const completedExercises = exerciseList.filter((e: any) =>
       e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
     ).length;
 
-    fullTargetWorkout = {
-      ...targetWorkout,
+    return {
+      ...workout,
       fitness_os_exercises: exerciseList,
       exerciseCount: exerciseList.length,
       completedExercises,
     };
   }
 
+  const fullTargetWorkout = targetWorkout ? await withExercises(targetWorkout) : null;
+
   // Find next upcoming workout if no workout scheduled today
   let nextWorkout: any = null;
   if (!fullTargetWorkout) {
-    const upcoming = rawList.find((w: any) => w.workout_date >= userLocalDate && w.status === "scheduled")
-      || rawList.find((w: any) => w.status === "scheduled");
+    const upcoming = rawList.find((w: any) => w.workout_date > userLocalDate && w.status === "scheduled");
     if (upcoming) {
       nextWorkout = upcoming;
     } else {
@@ -133,7 +133,7 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
         .from("fitness_os_workouts")
         .select("id, name, workout_date, status, duration_minutes, plan_id")
         .eq("user_id", userId)
-        .gte("workout_date", userLocalDate)
+        .gt("workout_date", userLocalDate)
         .eq("status", "scheduled")
         .order("workout_date", { ascending: true })
         .limit(1)
@@ -141,6 +141,8 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
       nextWorkout = nextScheduled || null;
     }
   }
+
+  if (nextWorkout) nextWorkout = await withExercises(nextWorkout);
 
   // Build weekly calendar (Monday to Sunday)
   const dayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -210,7 +212,7 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
 
   const nextWorkoutLabel = nextWorkout?.workout_date
     ? new Intl.DateTimeFormat("en-US", {
-        timeZone: tz,
+        timeZone: "UTC",
         weekday: "long",
         month: "short",
         day: "numeric",

@@ -1092,3 +1092,8 @@ html.theme-white .hover\:bg-\[\#A8FF00\]:hover {
   background-color: var(--fitness-primary-dark) !important;
   color: var(--fitness-card) !important;
 }
+
+html.theme-white .workout-summary-surface {
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-border) !important;
+}
