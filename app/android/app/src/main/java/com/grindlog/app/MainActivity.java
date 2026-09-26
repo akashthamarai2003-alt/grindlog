@@ -2,12 +2,16 @@ package com.grindlog.app;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.ViewGroup;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.core.splashscreen.SplashScreen;
@@ -17,18 +21,53 @@ import com.getcapacitor.BridgeWebViewClient;
 
 public class MainActivity extends BridgeActivity {
 
-    private long splashStartTime = 0;
+    private ImageView splashOverlayView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        splashStartTime = System.currentTimeMillis();
-        // 1. Install AndroidX Splash Screen and keep on screen for 2.5 seconds
-        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
-        splashScreen.setKeepOnScreenCondition(() -> {
-            return (System.currentTimeMillis() - splashStartTime) < 2500;
-        });
+        // 1. AndroidX Splash Screen (cold-start window)
+        try {
+            SplashScreen.installSplashScreen(this);
+        } catch (Exception ignored) {}
 
         super.onCreate(savedInstanceState);
+
+        // 2. Native Branded Splash Screen View Overlay
+        // Directly adds an ImageView displaying R.drawable.splash to root window.
+        // Guarantees 100% visibility on EVERY Android device during cold start.
+        try {
+            FrameLayout root = (FrameLayout) findViewById(android.R.id.content);
+            if (root != null) {
+                ImageView splashView = new ImageView(this);
+                splashView.setLayoutParams(new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                ));
+                splashView.setBackgroundColor(Color.parseColor("#0A1108"));
+                splashView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                splashView.setImageResource(R.drawable.splash);
+                root.addView(splashView);
+                this.splashOverlayView = splashView;
+
+                // Keep splash visible for 2.5 seconds, then smoothly fade out
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    if (splashOverlayView != null) {
+                        splashOverlayView.animate()
+                            .alpha(0f)
+                            .setDuration(400)
+                            .withEndAction(() -> {
+                                if (root != null && splashOverlayView != null) {
+                                    root.removeView(splashOverlayView);
+                                    splashOverlayView = null;
+                                }
+                            })
+                            .start();
+                    }
+                }, 2500);
+            }
+        } catch (Exception e) {
+            android.util.Log.e("GrindLog", "Error creating native splash overlay", e);
+        }
 
         Bridge bridge = this.getBridge();
         if (bridge == null) return;

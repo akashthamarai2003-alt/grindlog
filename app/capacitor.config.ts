@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: "GrindLog",
   webDir: "public",
   server: {
-    url: "https://www.grindlog.in",
+    url: "https://www.grindlog.in/auth/signin",
     cleartext: false,
     allowNavigation: [
       "www.grindlog.in",
