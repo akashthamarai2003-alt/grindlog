@@ -40,6 +40,7 @@ interface PaymentRecord {
 interface BillingManagementClientProps {
   paymentConfirmed?: boolean;
   lockedRatePaise?: number | null;
+  rateCheckFailed?: boolean;
   membershipLevel?: "core" | "pro";
   subscriptionState: FitnessSubscriptionState;
   paymentHistory: PaymentRecord[];
@@ -53,6 +54,7 @@ interface BillingManagementClientProps {
 export function BillingManagementClient({
   paymentConfirmed = false,
   lockedRatePaise = null,
+  rateCheckFailed = false,
   membershipLevel,
   subscriptionState,
   paymentHistory = [],
@@ -109,6 +111,7 @@ export function BillingManagementClient({
   const prospectiveNewExpiry = format(new Date(calculateExpiryDate("monthly", prospectiveBaseDate)!), "dd MMMM yyyy");
 
   const handleExtendOrUpgrade = async (targetLevel: "core" | "pro") => {
+    if (rateCheckFailed) return;
     setIsProcessing(true);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -263,10 +266,10 @@ export function BillingManagementClient({
               </div>
 
               <div className="text-right shrink-0">
-                <div className="text-xs text-gray-400 font-medium">{lockedRatePaise != null ? "Locked Rate" : "Current Price"}</div>
+                <div className="text-xs text-gray-400 font-medium">{rateCheckFailed ? "Rate Unavailable" : lockedRatePaise != null ? "Locked Rate" : "Current Price"}</div>
                 <div className="text-xl font-black text-[#ADFF00]">
-                  ₹{lockedRatePaise != null ? lockedRatePaise / 100 : isPro ? proPrice : corePrice}
-                  <span className="text-xs text-gray-400 font-normal">/mo</span>
+                  {rateCheckFailed ? "Contact support" : `₹${lockedRatePaise != null ? lockedRatePaise / 100 : isPro ? proPrice : corePrice}`}
+                  {!rateCheckFailed && <span className="text-xs text-gray-400 font-normal">/mo</span>}
                 </div>
               </div>
             </div>
@@ -306,6 +309,7 @@ export function BillingManagementClient({
           </div>
 
           {/* 2. Self-Serve Renewal / Extension Action */}
+          {rateCheckFailed && <p role="alert" className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-700">We could not confirm your saved renewal price. Please contact support before renewing.</p>}
           <div className="p-5 rounded-3xl bg-[#111A10] border border-white/10 space-y-4 shadow-lg">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -324,7 +328,7 @@ export function BillingManagementClient({
                 <button
                   type="button"
                   onClick={() => handleExtendOrUpgrade("pro")}
-                  disabled={isProcessing}
+                  disabled={isProcessing || rateCheckFailed}
                   className="w-full py-3.5 bg-[#ADFF00] hover:bg-[#bbfb2e] text-black font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.25)] transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                   {isProcessing ? (
@@ -340,7 +344,7 @@ export function BillingManagementClient({
                 <button
                   type="button"
                   onClick={() => handleExtendOrUpgrade("core")}
-                  disabled={isProcessing}
+                  disabled={isProcessing || rateCheckFailed}
                   className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-bold text-xs rounded-xl transition-colors"
                 >
                   Renew Core (1 month) for ₹{lockedRatePaise != null ? lockedRatePaise / 100 : corePrice}
@@ -350,7 +354,7 @@ export function BillingManagementClient({
               <button
                 type="button"
                 onClick={() => handleExtendOrUpgrade("pro")}
-                disabled={isProcessing}
+                disabled={isProcessing || rateCheckFailed}
                 className="w-full py-4 bg-[#ADFF00] hover:bg-[#bbfb2e] text-black font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(173,255,0,0.3)] transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 {isProcessing ? (

@@ -143,10 +143,11 @@ export interface FitnessPaymentClientProps {
   renewalPlan?: string;
   renewalExpiresAt?: string | null;
   lockedRatePaise?: number | null;
+  rateCheckFailed?: boolean;
   initialPremiumDetails?: { premium_tier?: string; premium_level?: string; is_premium?: boolean } | null;
 }
 
-export default function FitnessPaymentClient({ initialPricing, initialPremiumDetails, renewalPlan, renewalExpiresAt, lockedRatePaise }: FitnessPaymentClientProps) {
+export default function FitnessPaymentClient({ initialPricing, initialPremiumDetails, renewalPlan, renewalExpiresAt, lockedRatePaise, rateCheckFailed = false }: FitnessPaymentClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isRenewal = searchParams.get("intent") === "renew_monthly";
@@ -386,7 +387,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
 
 
   const handlePayment = async () => {
-    if (isProcessing || isPolling || isLoadingPrices || !premiumStatusLoaded) return;
+    if (isProcessing || isPolling || isLoadingPrices || !premiumStatusLoaded || (isRenewal && rateCheckFailed)) return;
     try {
       setIsProcessing(true);
       sessionStorage.setItem("payment_in_progress", "true");
@@ -620,6 +621,12 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         {/* Features Comparison (Memoized Component) */}
         {!isRenewal && <FeaturesComparisonTable />}
 
+        {isRenewal && rateCheckFailed && (
+          <p role="alert" className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-700">
+            We could not confirm your saved renewal price. No payment will be started. Please contact support before renewing.
+          </p>
+        )}
+
         {/* Prominent On-Page Lucky Wheel Banner (Visible before claiming discount) */}
         {!isRenewal && !isDiscountActive && !isCurrentCore && (
           <motion.div
@@ -704,7 +711,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                       <span className="text-xs text-gray-400 font-medium">Active Subscription</span>
                     ) : isRenewal ? (
                       <>
-                        <span className="text-2xl font-black text-[#ADFF00]">₹{currentPrice}</span>
+                        <span className="text-2xl font-black text-[#ADFF00]">{rateCheckFailed ? "Rate unavailable" : `₹${currentPrice}`}</span>
                         <span className="text-xs text-gray-500 font-medium">/month</span>
                         {lockedRatePaise != null && <span className="text-[10px] font-bold text-[#ADFF00]">Your locked rate</span>}
                       </>
@@ -760,7 +767,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                   <div className="flex items-baseline gap-2">
                     {isRenewal ? (
                       <>
-                        <span className="text-2xl font-black text-[#ADFF00]">₹{currentPrice}</span>
+                        <span className="text-2xl font-black text-[#ADFF00]">{rateCheckFailed ? "Rate unavailable" : `₹${currentPrice}`}</span>
                         <span className="text-xs text-gray-500 font-medium">/month</span>
                         {lockedRatePaise != null && <span className="text-[10px] font-bold text-[#ADFF00]">Your locked rate</span>}
                       </>
@@ -834,7 +841,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
           ) : (
             <button
               onClick={handlePayment}
-              disabled={isProcessing || isPolling || isLoadingPrices || !premiumStatusLoaded}
+              disabled={isProcessing || isPolling || isLoadingPrices || !premiumStatusLoaded || (isRenewal && rateCheckFailed)}
               className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#9BE600] disabled:opacity-70 disabled:shadow-none transition-all cursor-pointer touch-manipulation"
             >
               {isProcessing || isPolling ? (
@@ -847,7 +854,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  {isRenewal ? "Renew" : "Get Fitness OS"} {level === "pro" ? "Pro" : "Core"} (₹{currentPrice}/mo) <ChevronLeft className="w-5 h-5 rotate-180" />
+                  {isRenewal && rateCheckFailed ? "Renewal rate needs verification" : `${isRenewal ? "Renew" : "Get Fitness OS"} ${level === "pro" ? "Pro" : "Core"} (₹${currentPrice}/mo)`} <ChevronLeft className="w-5 h-5 rotate-180" />
                 </span>
               )}
             </button>

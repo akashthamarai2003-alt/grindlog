@@ -54,7 +54,15 @@ export default async function FitnessBillingPage({ searchParams }: { searchParam
     : fitnessProfile?.fitness_premium_level === "core" || subscriptionState.plan.id === "starter"
     ? "core"
     : undefined;
-  const lockedRatePaise = membershipLevel ? await getLockedFitnessRate(user.id, membershipLevel) : null;
+  let lockedRatePaise: number | null = null;
+  let rateCheckFailed = false;
+  if (membershipLevel) {
+    try {
+      lockedRatePaise = await getLockedFitnessRate(user.id, membershipLevel);
+    } catch {
+      rateCheckFailed = true;
+    }
+  }
 
   const paymentHistory = (subscriptionsData || []).map((sub: any) => ({
     id: sub.id,
@@ -75,6 +83,7 @@ export default async function FitnessBillingPage({ searchParams }: { searchParam
       proUpgradePrice={proUpgradePrice}
       corePrice={corePrice}
       lockedRatePaise={lockedRatePaise}
+      rateCheckFailed={rateCheckFailed}
       membershipLevel={membershipLevel}
       userEmail={user.email}
       userName={fitnessProfile?.name || user.user_metadata?.full_name || "Athlete"}

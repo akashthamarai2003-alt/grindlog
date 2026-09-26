@@ -25,9 +25,15 @@ export default async function FitnessPaymentPage() {
   const { data: { user } } = await getCachedUser();
   const subscription = user ? await getFitnessSubscription(user.id) : null;
   const renewalLevel = subscription ? (subscription.plan === "pro" ? "pro" : "core") : premiumDetails?.premium_level;
-  const lockedRatePaise = user && (renewalLevel === "core" || renewalLevel === "pro")
-    ? await getLockedFitnessRate(user.id, renewalLevel)
-    : null;
+  let lockedRatePaise: number | null = null;
+  let rateCheckFailed = false;
+  if (user && (renewalLevel === "core" || renewalLevel === "pro")) {
+    try {
+      lockedRatePaise = await getLockedFitnessRate(user.id, renewalLevel);
+    } catch {
+      rateCheckFailed = true;
+    }
+  }
 
   return (
     <Suspense fallback={<PaymentLoadingFallback />}>
@@ -35,6 +41,7 @@ export default async function FitnessPaymentPage() {
         initialPricing={pricingConfig || undefined}
         renewalPlan={renewalLevel}
         lockedRatePaise={lockedRatePaise}
+        rateCheckFailed={rateCheckFailed}
         renewalExpiresAt={subscription?.current_period_end || premiumDetails?.premium_expires_at || null}
         initialPremiumDetails={premiumDetails || undefined}
       />
