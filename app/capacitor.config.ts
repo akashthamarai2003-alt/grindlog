@@ -24,14 +24,8 @@ const config: CapacitorConfig = {
       backgroundColor: "#0A1108",
     },
     SplashScreen: {
-      launchShowDuration: 2500,
+      launchShowDuration: 0,
       launchAutoHide: true,
-      launchFadeOutDuration: 400,
-      backgroundColor: "#0A1108",
-      androidScaleType: "CENTER_INSIDE",
-      showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
     },
     Keyboard: {
       resize: "none",

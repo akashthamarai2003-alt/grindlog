@@ -14,7 +14,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import androidx.core.splashscreen.SplashScreen;
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
@@ -25,16 +24,15 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // 1. AndroidX Splash Screen (cold-start window)
-        try {
-            SplashScreen.installSplashScreen(this);
-        } catch (Exception ignored) {}
+        // Do NOT call SplashScreen.installSplashScreen() here.
+        // It conflicts with Capacitor's internal SplashScreen plugin.
+        // Instead we use a simple native ImageView overlay approach below.
 
         super.onCreate(savedInstanceState);
 
-        // 2. Native Branded Splash Screen View Overlay
-        // Directly adds an ImageView displaying R.drawable.splash to root window.
-        // Guarantees 100% visibility on EVERY Android device during cold start.
+        // ── NATIVE SPLASH OVERLAY ──
+        // Add an ImageView showing R.drawable.splash on top of everything.
+        // This is 100% reliable on all Android devices.
         try {
             FrameLayout root = (FrameLayout) findViewById(android.R.id.content);
             if (root != null) {
@@ -44,22 +42,32 @@ public class MainActivity extends BridgeActivity {
                     ViewGroup.LayoutParams.MATCH_PARENT
                 ));
                 splashView.setBackgroundColor(Color.parseColor("#0A1108"));
-                splashView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                splashView.setImageResource(R.drawable.splash);
+                splashView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                try {
+                    splashView.setImageResource(R.drawable.splash);
+                } catch (Exception e) {
+                    // If splash drawable not found, just show dark background
+                    android.util.Log.w("GrindLog", "splash drawable not found");
+                }
+                // Ensure it's on top of the WebView
+                splashView.setElevation(999f);
                 root.addView(splashView);
+                splashView.bringToFront();
                 this.splashOverlayView = splashView;
 
-                // Keep splash visible for 2.5 seconds, then smoothly fade out
+                // Auto-dismiss after 2.5 seconds with smooth fade
                 new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                    if (splashOverlayView != null) {
+                    if (splashOverlayView != null && splashOverlayView.getParent() != null) {
                         splashOverlayView.animate()
                             .alpha(0f)
                             .setDuration(400)
                             .withEndAction(() -> {
-                                if (root != null && splashOverlayView != null) {
-                                    root.removeView(splashOverlayView);
-                                    splashOverlayView = null;
-                                }
+                                try {
+                                    if (root != null && splashOverlayView != null && splashOverlayView.getParent() != null) {
+                                        root.removeView(splashOverlayView);
+                                    }
+                                } catch (Exception ignored) {}
+                                splashOverlayView = null;
                             })
                             .start();
                     }
@@ -69,12 +77,13 @@ public class MainActivity extends BridgeActivity {
             android.util.Log.e("GrindLog", "Error creating native splash overlay", e);
         }
 
+        // ── BRIDGE & WEBVIEW SETUP ──
         Bridge bridge = this.getBridge();
         if (bridge == null) return;
 
         WebView webView = bridge.getWebView();
         if (webView != null) {
-            // Ensure cookie persistence across app closures and restarts
+            // Cookie persistence
             android.webkit.CookieManager cookieManager = android.webkit.CookieManager.getInstance();
             cookieManager.setAcceptCookie(true);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -83,31 +92,29 @@ public class MainActivity extends BridgeActivity {
 
             WebSettings settings = webView.getSettings();
 
-            // 1. Sanitize User-Agent: Remove '; wv' and 'Version/4.0 '
-            // In Android WebView, Razorpay checkout.js checks the User-Agent string.
-            // If it detects '; wv', it assumes WebView cannot launch UPI intent apps
-            // and hides UPI apps (GPay, PhonePe, Paytm).
-            // Removing '; wv' causes Razorpay to treat the WebView as standard mobile Chrome.
-            // Append 'GrindLogApp' so the server can detect native app requests.
+            // Sanitize User-Agent: Remove '; wv' for Razorpay UPI compatibility
+            // Append 'GrindLogApp' so the server can detect native app requests
             String ua = settings.getUserAgentString();
             if (ua != null) {
                 String sanitizedUa = ua.replace("; wv", "").replace("Version/4.0 ", "");
                 settings.setUserAgentString(sanitizedUa + " GrindLogApp");
             }
 
-            // 2. Lock text zoom to 100% to prevent phone's system font / display size from inflating UI
+            // Lock text zoom to 100%
             settings.setTextZoom(100);
 
-            // 3. Disable accidental pinch-to-zoom and double-tap zoom
+            // Disable pinch-to-zoom
             settings.setSupportZoom(false);
             settings.setBuiltInZoomControls(false);
             settings.setDisplayZoomControls(false);
 
-            // 4. Ensure viewport matches standard mobile device dimensions
+            // Viewport settings
             settings.setUseWideViewPort(true);
             settings.setLoadWithOverviewMode(true);
 
-            // 5. Native APK check: if user is not authenticated, load Sign In page immediately while splash screen is showing
+            // ── SIGN-IN REDIRECT ──
+            // If user has no auth cookies, load sign-in page immediately
+            // This works alongside server.url being set to /auth/signin in capacitor.config
             android.webkit.CookieManager cm = android.webkit.CookieManager.getInstance();
             String cookies = cm.getCookie("https://www.grindlog.in");
             boolean hasAuth = cookies != null && (cookies.contains("sb-") || cookies.contains("supabase-auth-token"));
@@ -115,7 +122,7 @@ public class MainActivity extends BridgeActivity {
                 webView.loadUrl("https://www.grindlog.in/auth/signin");
             }
 
-            // 6. Attach specialized BridgeWebViewClient to intercept UPI, OAuth, and Landing Page bypass
+            // ── WEBVIEW CLIENT ──
             bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
                 @Override
                 public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
@@ -130,13 +137,37 @@ public class MainActivity extends BridgeActivity {
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                     Uri uri = request.getUrl();
-                    if (uri != null && isUnauthenticatedLanding(uri.toString())) {
+                    if (uri == null) return super.shouldOverrideUrlLoading(view, request);
+
+                    String urlStr = uri.toString();
+
+                    // Redirect unauthenticated landing page
+                    if (isUnauthenticatedLanding(urlStr)) {
                         view.loadUrl("https://www.grindlog.in/auth/signin");
                         return true;
                     }
+
+                    // Handle payment URIs
                     if (handlePaymentUri(view, uri)) {
                         return true;
                     }
+
+                    // Handle OAuth callback custom schemes
+                    String scheme = uri.getScheme();
+                    if (scheme != null) {
+                        String schemeLower = scheme.toLowerCase();
+                        if (schemeLower.equals("com.grindlog.app") || schemeLower.equals("grindlog")) {
+                            // This is an OAuth deep link - forward to onNewIntent
+                            try {
+                                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                                MainActivity.this.onNewIntent(intent);
+                            } catch (Exception e) {
+                                android.util.Log.e("GrindLog", "Deep link error: " + e.getMessage());
+                            }
+                            return true;
+                        }
+                    }
+
                     return super.shouldOverrideUrlLoading(view, request);
                 }
 
@@ -171,63 +202,38 @@ public class MainActivity extends BridgeActivity {
 
                     String schemeLower = scheme.toLowerCase();
 
-                    // Direct UPI and known payment schemes
-                    if (schemeLower.equals("upi") ||
-                        schemeLower.equals("tez") ||
-                        schemeLower.equals("phonepe") ||
-                        schemeLower.equals("paytmmp") ||
-                        schemeLower.equals("cred") ||
-                        schemeLower.equals("bhim")) {
+                    // UPI and payment schemes
+                    if (schemeLower.equals("upi") || schemeLower.equals("tez") ||
+                        schemeLower.equals("phonepe") || schemeLower.equals("paytmmp") ||
+                        schemeLower.equals("cred") || schemeLower.equals("bhim")) {
                         try {
                             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             MainActivity.this.startActivity(intent);
                             return true;
                         } catch (ActivityNotFoundException e) {
-                            Toast.makeText(MainActivity.this, "No UPI app found to process this payment", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "No UPI app found", Toast.LENGTH_SHORT).show();
                             return true;
                         }
                     }
 
-                    // OAuth callback custom schemes
-                    if (schemeLower.equals("com.grindlog.app") || schemeLower.equals("grindlog")) {
-                        try {
-                            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                            MainActivity.this.onNewIntent(intent);
-                            return true;
-                        } catch (Exception e) {
-                            return true;
-                        }
-                    }
-
-
-                    // Android intent:// scheme URLs
+                    // Android intent:// scheme
                     if (schemeLower.equals("intent")) {
                         try {
                             Intent intent = Intent.parseUri(uri.toString(), Intent.URI_INTENT_SCHEME);
                             if (intent != null) {
                                 intent.addCategory(Intent.CATEGORY_BROWSABLE);
                                 intent.setComponent(null);
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-                                    Intent selector = intent.getSelector();
-                                    if (selector != null) {
-                                        selector.addCategory(Intent.CATEGORY_BROWSABLE);
-                                        selector.setComponent(null);
-                                    }
-                                }
                                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
                                 try {
                                     MainActivity.this.startActivity(intent);
                                     return true;
                                 } catch (ActivityNotFoundException notFound) {
-                                    // Fallback: check if browser_fallback_url exists in intent
                                     String fallbackUrl = intent.getStringExtra("browser_fallback_url");
                                     if (fallbackUrl != null && !fallbackUrl.isEmpty()) {
                                         view.loadUrl(fallbackUrl);
                                         return true;
                                     }
-                                    // Check package name to open Play Store
                                     String pkg = intent.getPackage();
                                     if (pkg != null && !pkg.isEmpty()) {
                                         try {
@@ -237,16 +243,16 @@ public class MainActivity extends BridgeActivity {
                                             return true;
                                         } catch (ActivityNotFoundException ignored) {}
                                     }
-                                    Toast.makeText(MainActivity.this, "App not installed for this payment method", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(MainActivity.this, "App not installed", Toast.LENGTH_SHORT).show();
                                     return true;
                                 }
                             }
                         } catch (Exception ex) {
-                            android.util.Log.e("GrindLog", "Error parsing intent URI: " + uri, ex);
+                            android.util.Log.e("GrindLog", "Error parsing intent URI", ex);
                         }
                     }
 
-                    // Market scheme (e.g. app store link)
+                    // Market scheme
                     if (schemeLower.equals("market")) {
                         try {
                             Intent marketIntent = new Intent(Intent.ACTION_VIEW, uri);
@@ -277,12 +283,8 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onPause() {
         super.onPause();
-        // Immediately persist in-memory session cookies to disk
-        // ensuring user sessions survive app kills and restarts
         try {
             android.webkit.CookieManager.getInstance().flush();
         } catch (Exception ignored) {}
     }
 }
-
-

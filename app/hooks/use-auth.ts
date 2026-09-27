@@ -255,7 +255,7 @@ export function useAuth() {
       isNativeOAuthInProgress = true;
 
       try {
-        const callbackUrl = "com.grindlog.app://auth/callback";
+        const callbackUrl = `https://www.grindlog.in/auth/callback?app=true`;
 
         const { data, error: oauthErr } = await supabase.auth.signInWithOAuth({
           provider: "google",
