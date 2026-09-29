@@ -85,6 +85,7 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
     hasActivePlan,
     isPro,
     initialCoachNote,
+    cycleSummary,
   } = data;
 
   return (
@@ -99,6 +100,43 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
         
         <div className="mt-2">
           <WeeklyWorkoutView weekDays={effectiveWeekDays} planDays={effectivePlanDays} />
+
+          {/* Month-End 4-Week Milestone Banner */}
+          {cycleSummary?.isMonthEnd && isPro && (
+            <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-4 mb-2">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#ADFF00]/20 via-[#ADFF00]/10 to-transparent rounded-[24px]" />
+              <div className="relative bg-[#111A10] border border-[#ADFF00]/30 rounded-[24px] p-5 shadow-2xl flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-[#ADFF00] text-black">
+                    4-Week Meso-Cycle Complete
+                  </span>
+                  <span className="text-xs font-bold text-white/50">Day {cycleSummary.daysOnPlan}</span>
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white uppercase tracking-tight">
+                    Month-End Transformation Check-In
+                  </h3>
+                  <p className="text-xs text-white/70 leading-relaxed mt-1">
+                    You have trained through 4 weeks of your split! Capture an updated body scan or review your progress to adapt your plan for Month 2.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5 mt-1">
+                  <Link
+                    href="/scanner"
+                    className="py-2.5 px-3 bg-[#ADFF00] text-black text-center font-black uppercase tracking-wider text-xs rounded-xl hover:bg-[#bfff33] transition-colors"
+                  >
+                    Photo Body Scan
+                  </Link>
+                  <Link
+                    href="/report"
+                    className="py-2.5 px-3 bg-white/10 hover:bg-white/15 text-white text-center font-black uppercase tracking-wider text-xs rounded-xl transition-colors border border-white/10"
+                  >
+                    Month 2 Plan Setup
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
 
           {!effectiveWorkout ? (
             <>

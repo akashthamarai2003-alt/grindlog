@@ -10,4 +10,10 @@ export interface WorkoutPageData {
   hasActivePlan: boolean;
   isPro: boolean;
   initialCoachNote: string | null;
+  cycleSummary?: {
+    currentWeek: number;
+    totalWeeks: number;
+    isMonthEnd: boolean;
+    daysOnPlan: number;
+  };
 }
