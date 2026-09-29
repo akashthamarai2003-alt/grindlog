@@ -1846,11 +1846,11 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               </div>
             )}
 
-            {meals.map((meal: any) => {
+            {meals.map((meal: any, mIdx: number) => {
               const loggedFoods = foodsByMeal[String(meal.meal_type || '').toLowerCase().trim()] || [];
               const hasLoggedFoods = loggedFoods.length > 0;
               
-              const mealKey = meal.id || meal.meal_type;
+              const mealKey = meal.id || meal.meal_type || `meal-${mIdx}`;
               const currentChoice = selectedMealOptions[mealKey] || 'A';
               const hasOptionB = Boolean(meal.option_b_name && Array.isArray(meal.option_b_items) && meal.option_b_items.length > 0);
               const isOptB = hasOptionB && currentChoice === 'B';
@@ -1904,7 +1904,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
               return (
                 <div 
-                  key={meal.id} 
+                  key={meal.id || meal.meal_type || `meal-${mIdx}`} 
                   className={`bg-[#111A10] border rounded-[24px] overflow-hidden transition-all ${
                     isActive 
                       ? 'border-[#ADFF00]/60 shadow-[0_0_25px_rgba(173,255,0,0.12)] ring-1 ring-[#ADFF00]/30' 
@@ -2028,8 +2028,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     <div className="bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
                       {loggedFoods.length > 0 ? (
                         <ul className="text-[13px] font-medium text-white/80 space-y-2.5">
-                          {loggedFoods.map((f: any) => (
-                            <li key={f.id} className="flex justify-between items-center group">
+                          {loggedFoods.map((f: any, idx: number) => (
+                            <li key={f.id || f.food_id || `logged-${idx}`} className="flex justify-between items-center group">
                               <span className="flex items-center gap-2.5 text-white/90">
                                 <FoodAvatar 
                                   name={f.foods?.name || ''} 
@@ -2071,8 +2071,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                                   </span>
                                 </div>
                                 <ul className="text-[13px] font-medium text-white/80 space-y-2">
-                                  {corePlannedItems.map((item: any) => (
-                                    <li key={item.id} className="flex justify-between items-center">
+                                  {corePlannedItems.map((item: any, idx: number) => (
+                                    <li key={item.id || item.food_id || `core-${idx}`} className="flex justify-between items-center">
                                       <span className="flex items-center gap-2 text-white/80">
                                         <FoodAvatar 
                                           name={item.foods?.name || ''} 
@@ -2102,8 +2102,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                                   </span>
                                 </div>
                                 <ul className="text-[13px] font-medium text-white/90 space-y-2">
-                                  {addonPlannedItems.map((item: any) => (
-                                    <li key={item.id} className="flex justify-between items-center">
+                                  {addonPlannedItems.map((item: any, idx: number) => (
+                                    <li key={item.id || item.food_id || `addon-${idx}`} className="flex justify-between items-center">
                                       <span className="flex items-center gap-2 text-white/90">
                                         <FoodAvatar 
                                           name={item.foods?.name || ''} 
@@ -2141,8 +2141,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                                 </span>
                               </div>
                               <ul className="text-[13px] font-medium text-white/80 space-y-2">
-                                {currentPlannedFoods.map((item: any) => (
-                                  <li key={item.id} className="flex justify-between items-center">
+                                {currentPlannedFoods.map((item: any, idx: number) => (
+                                  <li key={item.id || item.food_id || `cook-${idx}`} className="flex justify-between items-center">
                                     <span className="flex items-center gap-2.5 text-white/80">
                                       <FoodAvatar 
                                         name={item.foods?.name || ''} 
@@ -2172,8 +2172,8 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                                 </span>
                               </div>
                               <ul className="text-[13px] font-medium text-white/80 space-y-2">
-                                {currentPlannedFoods.map((item: any) => (
-                                  <li key={item.id} className="flex justify-between items-center">
+                                {currentPlannedFoods.map((item: any, idx: number) => (
+                                  <li key={item.id || item.food_id || `plan-${idx}`} className="flex justify-between items-center">
                                     <span className="flex items-center gap-2.5 text-white/80">
                                       <FoodAvatar 
                                         name={item.foods?.name || ''} 
