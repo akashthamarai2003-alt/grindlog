@@ -1,11 +1,18 @@
 import { NutritionView } from "@/components/fitness/nutrition/nutrition-view";
-import { mockLiveUserNutritionData } from "./mock-data";
+import { mockLiveUserNutritionData, userPersonasData } from "./mock-data";
 import Link from "next/link";
 import { Utensils, ShoppingCart } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default function TestNutritionPage() {
+export default async function TestNutritionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ user?: string }>;
+}) {
+  const { user } = await searchParams;
+  const initialData = (user && userPersonasData[user]) ? userPersonasData[user] : mockLiveUserNutritionData;
+
   return (
     <div className="min-h-screen bg-[#0A1108] text-white" data-testid="nutrition-root">
       <div className="w-full max-w-md mx-auto px-3.5 sm:px-5 pt-6 sm:pt-8 pb-32">
@@ -36,7 +43,7 @@ export default function TestNutritionPage() {
           </div>
         </div>
 
-        <NutritionView initialData={mockLiveUserNutritionData} isPro={true} />
+        <NutritionView key={user || "default"} initialData={initialData} isPro={true} />
       </div>
     </div>
   );

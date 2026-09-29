@@ -1130,6 +1130,8 @@ export function calibrateMealsToTargets(
         q = Math.min(2.0, q);
       } else if (fName.includes('roti') || fName.includes('chapati') || fName.includes('phulka')) {
         q = Math.min(3.0, q);
+      } else if (fName.includes('chicken') || fName.includes('fish')) {
+        q = Math.min(2.0, q);
       }
 
       if (q !== Number(it.quantity)) {

@@ -140,7 +140,21 @@ export function calculateDailyBudget(
     return { tier, monthlyBudget: explicitMonthly, dailyBudget: daily };
   }
 
-  // 2. Parse numbers from string (e.g. "500", "₹500", "750", "₹0–1,000")
+  // 2. Handle standard tier ranges first
+  if (s.includes("0–1,000") || s.includes("0-1,000") || s.includes("0 - 1000") || s.includes("0–1000")) {
+    return { tier: "low", monthlyBudget: 1000, dailyBudget: 33.33 };
+  }
+  if (s.includes("1,000–2,000") || s.includes("1,000-2,000") || s.includes("1000-2000")) {
+    return { tier: "mid", monthlyBudget: 2000, dailyBudget: 66.67 };
+  }
+  if (s.includes("2,000–5,000") || s.includes("2,000-5,000") || s.includes("2000-5000")) {
+    return { tier: "high", monthlyBudget: 4500, dailyBudget: 150 };
+  }
+  if (s.includes("5,000+") || s.includes("5000+")) {
+    return { tier: "premium", monthlyBudget: 7500, dailyBudget: 250 };
+  }
+
+  // 3. Parse numbers from custom string (e.g. "500", "₹500", "750", "3500")
   const cleaned = s.replace(/[₹,]/g, "").trim();
   const nums = cleaned.match(/\d+/g)?.map(Number).filter((n) => Number.isFinite(n) && n > 0) ?? [];
 
@@ -154,20 +168,6 @@ export function calculateDailyBudget(
     else if (monthly <= 5000) tier = "high";
     else tier = "premium";
     return { tier, monthlyBudget: monthly, dailyBudget: daily };
-  }
-
-  // 3. Handle standard tier ranges
-  if (s.includes("0–1,000") || s.includes("0-1,000") || s.includes("0 - 1000") || s.includes("0–1000")) {
-    return { tier: "low", monthlyBudget: 1000, dailyBudget: 33.33 };
-  }
-  if (s.includes("1,000–2,000") || s.includes("1,000-2,000") || s.includes("1000-2000")) {
-    return { tier: "mid", monthlyBudget: 2000, dailyBudget: 66.67 };
-  }
-  if (s.includes("2,000–5,000") || s.includes("2,000-5,000") || s.includes("2000-5000")) {
-    return { tier: "high", monthlyBudget: 4500, dailyBudget: 150 };
-  }
-  if (s.includes("5,000+") || s.includes("5000+")) {
-    return { tier: "premium", monthlyBudget: 7500, dailyBudget: 250 };
   }
 
   if (nums.length > 0) {
