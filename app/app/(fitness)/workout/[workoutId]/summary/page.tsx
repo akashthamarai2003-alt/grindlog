@@ -111,22 +111,11 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
     (a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
   )[0];
 
-  if (!latestSession) {
-    const { data: createdSession } = await supabase
-      .from("fitness_os_workout_sessions")
-      .insert({
-        user_id: user.id,
-        workout_id: workoutId,
-        started_at: workout.started_at || new Date().toISOString(),
-        completed_at: workout.completed_at || new Date().toISOString(),
-        duration_seconds: durationMin * 60,
-        status: "completed"
-      })
-      .select()
-      .single();
-    latestSession = createdSession;
-  }
   const sessionId = latestSession?.id;
+
+  const completedExercises = workout.fitness_os_exercises?.filter((ex: any) =>
+    ex.fitness_os_sets && ex.fitness_os_sets.length > 0 && ex.fitness_os_sets.every((s: any) => s.completed)
+  ).length || 0;
 
   let initialFeedback: { difficulty?: string | null; feel?: string | null; pain?: string | null; painLocation?: string | null } | undefined;
   if (latestSession?.notes) {
@@ -163,12 +152,13 @@ export default async function WorkoutSummaryPage({ params }: { params: Promise<{
         <WorkoutComplete 
           workout={workout as any}
           exerciseCount={exerciseCount}
+          completedExercises={completedExercises}
           completedSets={completedSets}
           totalSets={totalSets}
           actualVolume={totalVolumeKg}
           actualCalories={caloriesBurned}
           actualDuration={durationMin}
-          recordsBroken={recordsCount > 0 ? recordsCount : 1}
+          recordsBroken={recordsCount}
           exerciseNames={exerciseNames}
           sessionId={sessionId}
           userName={userName}

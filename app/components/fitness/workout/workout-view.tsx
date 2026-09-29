@@ -57,7 +57,6 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
             ...set,
             completed: false,
             actual_reps: null,
-            weight_kg: null,
             duration_seconds: null,
             completed_at: null,
           })),
@@ -101,34 +100,38 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
         <div className="mt-2">
           <WeeklyWorkoutView weekDays={effectiveWeekDays} planDays={effectivePlanDays} />
 
-          {!effectiveWorkout && !nextWorkout ? (
-            <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6 mb-6">
-              <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
-              <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col items-center justify-center gap-6 text-center py-12">
-                <h3 className="text-xl font-black text-white uppercase tracking-tight">Rest & Recovery Day</h3>
-                <p className="text-sm font-medium text-white/60">
-                  {hasActivePlan ? "Your saved AI plan has no workout scheduled for this day." : "Your saved workout plan is not available yet."}
-                </p>
-                {!hasActivePlan && <Link href="/report" className="rounded-xl bg-[#ADFF00] px-6 py-3 font-black uppercase tracking-wider text-black">View Plan Setup</Link>}
+          {!effectiveWorkout ? (
+            <>
+              <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-6 mb-6">
+                <div className="absolute inset-0 bg-gradient-to-b from-[#1A2619] to-transparent rounded-[24px]" />
+                <div className="relative bg-[#0A1108] border border-white/10 rounded-[24px] p-6 shadow-2xl flex flex-col items-center justify-center gap-4 text-center py-10">
+                  <h3 className="text-xl font-black text-white uppercase tracking-tight">Rest & Recovery Day</h3>
+                  <p className="text-sm font-medium text-white/60">
+                    {hasActivePlan ? "Your saved AI plan has no workout scheduled for this day." : "Your saved workout plan is not available yet."}
+                  </p>
+                  {!hasActivePlan && <Link href="/report" className="rounded-xl bg-[#ADFF00] px-6 py-3 font-black uppercase tracking-wider text-black">View Plan Setup</Link>}
+                </div>
               </div>
-            </div>
-          ) : !effectiveWorkout && nextWorkout ? (
-            <div className="mt-6 mb-6">
-              <div className="mb-3 flex items-center gap-2 px-2 text-[#ADFF00]">
-                <CalendarClock className="h-4 w-4" />
-                <span className="text-[11px] font-black uppercase tracking-widest">Next saved workout</span>
-              </div>
-              <WorkoutSummaryCard
-                workout={nextWorkout}
-                exerciseCount={nextWorkout.exerciseCount}
-                eyebrow="Next Workout"
-                scheduledLabel={nextWorkoutLabel}
-                isUpcoming
-              />
-              {isPro && (
-                <AiCoachNote workoutId={nextWorkout.id} isEarlyStart initialNote={initialCoachNote} />
+
+              {nextWorkout && (
+                <div className="mt-4 mb-6">
+                  <div className="mb-3 flex items-center gap-2 px-2 text-[#ADFF00]">
+                    <CalendarClock className="h-4 w-4" />
+                    <span className="text-[11px] font-black uppercase tracking-widest">Next saved workout</span>
+                  </div>
+                  <WorkoutSummaryCard
+                    workout={nextWorkout}
+                    exerciseCount={nextWorkout.exerciseCount}
+                    eyebrow="Next Workout"
+                    scheduledLabel={nextWorkoutLabel}
+                    isUpcoming
+                  />
+                  {isPro && (
+                    <AiCoachNote workoutId={nextWorkout.id} isEarlyStart initialNote={initialCoachNote} />
+                  )}
+                </div>
               )}
-            </div>
+            </>
           ) : (
             <>
               {effectiveWorkout.status === "in_progress" && !isFree ? (

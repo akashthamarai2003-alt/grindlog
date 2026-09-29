@@ -228,7 +228,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
   };
 
   const [setInputs, setSetInputs] = useState<Record<string, { weight: string; reps: string }>>(
-    sortedSets.reduce((acc, set) => ({
+    () => sortedSets.reduce((acc, set) => ({
       ...acc,
       [set.id]: {
         weight: set.weight_kg?.toString() || (isBW ? "0" : ""),
@@ -236,6 +236,19 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       }
     }), {})
   );
+
+  // Sync set inputs when active exercise changes
+  useEffect(() => {
+    setSetInputs(
+      sortedSets.reduce((acc, set) => ({
+        ...acc,
+        [set.id]: {
+          weight: set.weight_kg?.toString() || (isBW ? "0" : ""),
+          reps: set.actual_reps?.toString() || set.target_reps?.toString() || ""
+        }
+      }), {})
+    );
+  }, [exercise.id]);
 
   useEffect(() => {
     if (activeRestSeconds === null || activeRestSeconds <= 0 || isRestTimerPaused) return;
@@ -262,7 +275,10 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       return;
     }
     if (setRecord.completed) return;
-    const input = setInputs[setRecord.id];
+    const input = setInputs[setRecord.id] || {
+      weight: setRecord.weight_kg?.toString() || (isBW ? "0" : ""),
+      reps: setRecord.actual_reps?.toString() || setRecord.target_reps?.toString() || ""
+    };
     
     if (!input.reps || input.reps.trim() === "") {
       toast.error("Please enter the number of reps.");
@@ -278,8 +294,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
     const reps = parseInt(input.reps, 10);
     const weight = parseFloat(weightRaw || "0");
 
-    // Instant optimistic update (0ms delay)
-    setRecord.completed = true;
+    // Instant optimistic update
     setActiveRestSeconds(restSeconds);
     setIsRestTimerPaused(false);
     if (onSetCompleted) {
@@ -298,8 +313,6 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to complete set");
     } catch (e: any) {
-      // Revert if network error
-      setRecord.completed = false;
       toast.error(e.message || "Failed to sync set. Please try again.");
     }
   };
@@ -312,7 +325,7 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
     <div className="w-full h-full flex flex-col pb-32">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button 
             onClick={() => {
               if (onBack) {
@@ -322,15 +335,16 @@ export function ExerciseDetail({ exercise, workoutId, sessionId, startedAt, isPa
                 router.push(`/workout/${workoutId}`);
               }
             }}
+            aria-label="Back"
             disabled={isNavigatingBack}
-            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 p-2 -ml-2 rounded-xl hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer text-white/80 hover:text-white"
           >
             {isNavigatingBack
               ? <Loader2 className="w-5 h-5 text-white/70 animate-spin" />
               : <ArrowLeft className="w-5 h-5 text-white/70 hover:text-white" />
             }
+            <span className="text-xl font-black text-white tracking-tight uppercase">BACK</span>
           </button>
-          <h1 className="text-xl font-black text-white tracking-tight uppercase">BACK</h1>
         </div>
         {startedAt && (
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl shrink-0 ${

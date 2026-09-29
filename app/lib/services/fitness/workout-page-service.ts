@@ -224,10 +224,11 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
     ? aiNotes?.find((n: any) => n.workout_id === targetWorkoutId)?.note || null
     : null;
 
+  const workoutDaysCount = planDays ? planDays.filter((d: any) => d.status !== "rest").length : 0;
   const planBadge = isFree 
     ? "Preview Split" 
-    : planDays && planDays.length > 0 
-    ? `${planDays.length}-Day Split` 
+    : workoutDaysCount > 0 
+    ? `${workoutDaysCount}-Day Split` 
     : activePlan 
     ? "Active Plan" 
     : undefined;

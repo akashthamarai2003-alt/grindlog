@@ -154,16 +154,8 @@ export function WorkoutSessionManager({
     }
   };
 
-  // Automatically finish ONLY when ALL exercises are completed
-  useEffect(() => {
-    if (allExercisesCompleted && !isFinishing) {
-      const delay = activeExerciseId ? 900 : 400;
-      const timer = setTimeout(() => {
-        handleFinish();
-      }, delay);
-      return () => clearTimeout(timer);
-    }
-  }, [allExercisesCompleted, isFinishing, activeExerciseId]);
+  // Completion is confirmed via user action in the finish modal or detail screen
+  // to avoid preempting review or flashing modals.
 
   const handleTogglePause = async () => {
     const nextState = !isPaused;
@@ -256,7 +248,7 @@ export function WorkoutSessionManager({
         if (!ex?.fitness_os_sets) return ex;
         const updatedSets = ex.fitness_os_sets.map((s: any) => {
           if (s.id === setId) {
-            return { ...s, reps, weight_kg: weightKg, completed: true };
+            return { ...s, actual_reps: reps, reps, weight_kg: weightKg, completed: true, completed_at: new Date().toISOString() };
           }
           return s;
         });
@@ -332,6 +324,7 @@ export function WorkoutSessionManager({
 
       {activeExercise ? (
         <ExerciseDetail
+          key={activeExercise.id}
           exercise={activeExercise as any}
           workoutId={workout.id}
           sessionId={sessionId}

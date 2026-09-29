@@ -21,7 +21,7 @@ async function handleStatusUpdate(
   // Verify ownership
   const { data: session, error: sessErr } = await supabase
     .from("fitness_os_workout_sessions")
-    .select("user_id, status")
+    .select("user_id, status, started_at, paused_at")
     .eq("id", sessionId)
     .single();
 
@@ -41,6 +41,12 @@ async function handleStatusUpdate(
   const updatePayload: any = { status };
   if (status === "paused") {
     updatePayload.paused_at = new Date().toISOString();
+  } else if (status === "active" && session.status === "paused" && session.paused_at) {
+    const pausedAtMs = new Date(session.paused_at).getTime();
+    const pauseDurationMs = Math.max(0, Date.now() - pausedAtMs);
+    const originalStartedMs = new Date(session.started_at).getTime();
+    updatePayload.started_at = new Date(originalStartedMs + pauseDurationMs).toISOString();
+    updatePayload.paused_at = null;
   }
 
   const { error: updateErr } = await supabase

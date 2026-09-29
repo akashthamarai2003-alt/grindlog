@@ -44,7 +44,7 @@ export function WeeklyWorkoutView({
 
         <div className="flex justify-between items-center bg-[#111A10] border border-white/5 rounded-2xl p-4">
           {weekDays.map((d, i) => (
-            <div key={i} className="flex flex-col items-center gap-2">
+            <div key={d?.date || `${d?.day || 'day'}-${i}`} className="flex flex-col items-center gap-2">
               <span className={`text-[10px] font-black tracking-widest ${d?.isToday || d?.status === 'today' ? 'text-[#ADFF00]' : 'text-white/40'}`}>
                 {(d?.day || 'D').charAt(0)}
               </span>
@@ -96,7 +96,7 @@ export function WeeklyWorkoutView({
                 {modalDays.map((day: any, idx: number) => {
                   const isCurrentDay = day.isToday || day.status === 'today';
                   return (
-                    <div key={idx} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isCurrentDay ? 'bg-[#ADFF00]/10 border-[#ADFF00]/50' : 'bg-[#111A10] border-white/5'}`}>
+                    <div key={day.date || `${day.day}-${day.name}-${idx}`} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isCurrentDay ? 'bg-[#ADFF00]/10 border-[#ADFF00]/50' : 'bg-[#111A10] border-white/5'}`}>
                       
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">

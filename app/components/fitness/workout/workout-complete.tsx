@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Trophy, Activity, Save, Bot, ChevronRight, AlertCircle, Loader2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { FitnessWorkout } from "@/types/fitness/workout";
 import { MuscleMap } from "@/components/fitness/workout/muscle-map";
@@ -13,6 +14,7 @@ import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
 interface WorkoutCompleteProps {
   workout: FitnessWorkout;
   exerciseCount: number;
+  completedExercises?: number;
   completedSets: number;
   totalSets: number;
   actualDuration?: number;
@@ -33,6 +35,7 @@ interface WorkoutCompleteProps {
 export function WorkoutComplete({ 
   workout, 
   exerciseCount, 
+  completedExercises,
   completedSets, 
   totalSets,
   actualDuration,
@@ -54,7 +57,7 @@ export function WorkoutComplete({
   // Real math or fallback
   const volume = actualVolume !== undefined ? actualVolume.toLocaleString() : (totalSets * 10 * 25).toLocaleString();
   const calories = actualCalories !== undefined ? actualCalories : Math.min(850, Math.max(120, Math.round(duration * 6.2)));
-  const records = recordsBroken !== undefined ? recordsBroken : 1;
+  const records = recordsBroken !== undefined ? recordsBroken : 0;
 
   // Feedback State (pre-populate if already submitted)
   const [difficulty, setDifficulty] = useState<string | null>(initialFeedback?.difficulty || null);
@@ -187,7 +190,7 @@ export function WorkoutComplete({
             <span className="text-[11px] font-bold text-[#ADFF00] tracking-widest uppercase mt-1">{duration} min</span>
           </div>
           <div className="flex flex-col text-right">
-            <span className="text-xl font-black text-white">{exerciseCount} / {exerciseCount}</span>
+            <span className="text-xl font-black text-white">{completedExercises !== undefined ? completedExercises : exerciseCount} / {exerciseCount}</span>
             <span className="text-[10px] font-bold text-white/50 tracking-widest uppercase mt-1">Exercises</span>
           </div>
         </div>
@@ -398,21 +401,28 @@ export function WorkoutComplete({
           <>
             <button 
               onClick={handleSaveWorkout}
-              disabled={!isFeedbackComplete || isSaving}
-              className="w-full bg-[#ADFF00] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale cursor-pointer"
+              disabled={isSaving}
+              className="w-full bg-[#ADFF00] hover:bg-[#bfff33] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(173,255,0,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer"
             >
               {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin text-black" />
               ) : (
-                <Save className="w-4 h-4" />
+                <Save className="w-4 h-4 text-black" />
               )}
-              {isSaving ? "Saving..." : initialFeedback?.difficulty ? "Update Workout" : "Save Workout"}
+              {isSaving ? "Saving..." : isFeedbackComplete ? (initialFeedback?.difficulty ? "Update Workout" : "Save Workout") : "Save & Finish (Optional Feedback)"}
             </button>
+
+            <Link
+              href="/workout"
+              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 font-bold uppercase tracking-widest text-xs py-3.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
+            >
+              Back to Workouts
+            </Link>
 
             <button
               onClick={handleReopenWorkout}
               disabled={isReopening}
-              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 font-bold uppercase tracking-widest text-xs py-3.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full text-white/40 hover:text-white font-bold uppercase tracking-widest text-[11px] py-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               {isReopening ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />

@@ -369,7 +369,6 @@ export async function completeSetAction(payload: { setId: string; actualReps?: n
 
   if (workout?.user_id !== user.id) return { success: false, error: "Unauthorized" };
   if (workout?.status === "completed") return { success: false, error: "Workout is already completed" };
-  if (setRecord.completed) return { success: false, error: "Set already completed." };
 
   const now = new Date().toISOString();
 
@@ -625,7 +624,6 @@ export async function discardWorkoutSessionAction(payload: { workoutId: string; 
       .update({
         completed: false,
         actual_reps: null,
-        weight_kg: null,
         duration_seconds: null,
         completed_at: null
       })
@@ -915,16 +913,17 @@ export async function completeExerciseSetsAction(payload: { exerciseId: string }
 
     await supabase.from("fitness_os_sets").insert(newSets);
   } else {
-    // Mark all existing uncompleted sets as completed
-    const uncompletedIds = sets.filter(s => !s.completed).map(s => s.id);
-    if (uncompletedIds.length > 0) {
+    // Mark all existing uncompleted sets as completed with accurate default actual_reps
+    const uncompletedSets = sets.filter(s => !s.completed);
+    for (const s of uncompletedSets) {
       await supabase
         .from("fitness_os_sets")
         .update({
           completed: true,
-          completed_at: now
+          completed_at: now,
+          actual_reps: s.actual_reps || s.target_reps || 10,
         })
-        .in("id", uncompletedIds);
+        .eq("id", s.id);
     }
   }
 

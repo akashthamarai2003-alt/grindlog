@@ -55,15 +55,11 @@ export class WorkoutService {
 
     if (inProgressWorkout) {
       if (inProgressWorkout.workout_date > today) {
-        const origDate = inProgressWorkout.workout_date;
         await supabase
           .from("fitness_os_workouts")
           .update({ workout_date: today })
           .eq("id", inProgressWorkout.id);
         inProgressWorkout.workout_date = today;
-        if (inProgressWorkout.plan_id) {
-          await this.compactUpcomingPlanSchedule(supabase, inProgressWorkout.plan_id, origDate);
-        }
       }
 
       const exerciseCount = inProgressWorkout.fitness_os_exercises?.length || 0;
@@ -500,6 +496,7 @@ export class WorkoutService {
       .select(`
         id,
         completed,
+        completed_at,
         fitness_os_exercises!inner (workout_id)
       `)
       .eq("id", setId)
@@ -513,19 +510,14 @@ export class WorkoutService {
       throw new Error("UNAUTHORIZED_SET");
     }
 
-    if (setRecord.completed) {
-      // Idempotent
-      return true;
-    }
-
-    // 3. Update the set
+    // 3. Update the set (allowing corrections to reps and weight)
     const { error: updateErr } = await supabase
       .from("fitness_os_sets")
       .update({
         weight_kg: weightKg,
         actual_reps: reps,
         completed: true,
-        completed_at: new Date().toISOString()
+        completed_at: setRecord.completed_at || new Date().toISOString()
       })
       .eq("id", setId);
 
@@ -641,10 +633,6 @@ export class WorkoutService {
       .eq("id", session.workout_id);
       
     if (wErr) throw wErr;
-
-    if (isEarlyCompletion && workoutRecord?.plan_id && originalDate) {
-      await this.compactUpcomingPlanSchedule(supabase, workoutRecord.plan_id, originalDate);
-    }
 
     return {
       duration_seconds: durationSec,

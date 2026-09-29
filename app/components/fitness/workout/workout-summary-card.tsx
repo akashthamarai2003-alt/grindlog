@@ -66,7 +66,7 @@ export function WorkoutSummaryCard({
     }
   }, [workout?.id, isTrulyCompleted, completedCount, exerciseCount, router]);
 
-  const startWorkout = async () => {
+  const startWorkout = async (isResume = false) => {
     if (isStarting) return;
     setIsStarting(true);
 
@@ -81,8 +81,10 @@ export function WorkoutSummaryCard({
       return;
     }
 
-    // Always clear stale client timer so it begins clean at 00:00
-    clearWorkoutTimer(workout.id);
+    // Always clear stale client timer on fresh start so it begins clean at 00:00
+    if (!isResume) {
+      clearWorkoutTimer(workout.id);
+    }
 
     try {
       const response = await fetch("/api/workouts/sessions", {
@@ -91,7 +93,7 @@ export function WorkoutSummaryCard({
         body: JSON.stringify({ 
           workoutId: workout.id, 
           allowEarlyStart: isUpcoming,
-          forceFreshStart: true 
+          forceFreshStart: !isResume 
         })
       });
       const result = await response.json();
@@ -132,8 +134,7 @@ export function WorkoutSummaryCard({
 
     // Only resume without resetting timer if there are already completed exercises
     if (isInProgress && completedCount > 0) {
-      setIsStarting(true);
-      router.push(`/workout/${workout.id}`);
+      void startWorkout(true);
       return;
     }
 

@@ -43,13 +43,17 @@ export function TodaysExercisesList({
   const [finishingExerciseId, setFinishingExerciseId] = useState<string | null>(null);
   const [confirmExercise, setConfirmExercise] = useState<Exercise | null>(null);
 
-  // Mock exercises if none provided
-  const displayExercises = exercises && exercises.length > 0 ? exercises : [
-    { id: "1", name: "Bench Press", muscle: "Chest", sets: 3, reps: "8–10 reps", targetWeight: "60 kg" },
-    { id: "2", name: "Incline Dumbbell Press", muscle: "Upper Chest", sets: 3, reps: "10–12 reps", targetWeight: "16 kg" },
-    { id: "3", name: "Cable Fly", muscle: "Chest", sets: 3, reps: "12–15 reps" },
-    { id: "4", name: "Lat Pulldown", muscle: "Back", sets: 3, reps: "10–12 reps" },
-  ];
+  // Mock exercises only if mock workout and none provided
+  const displayExercises = exercises && exercises.length > 0
+    ? exercises
+    : workoutId === "mock"
+    ? [
+        { id: "1", name: "Bench Press", muscle: "Chest", sets: 3, reps: "8–10 reps", targetWeight: "60 kg" },
+        { id: "2", name: "Incline Dumbbell Press", muscle: "Upper Chest", sets: 3, reps: "10–12 reps", targetWeight: "16 kg" },
+        { id: "3", name: "Cable Fly", muscle: "Chest", sets: 3, reps: "12–15 reps" },
+        { id: "4", name: "Lat Pulldown", muscle: "Back", sets: 3, reps: "10–12 reps" },
+      ]
+    : [];
 
   const handleStartExercise = (exerciseId: string) => {
     if (isPaused) {
@@ -102,7 +106,12 @@ export function TodaysExercisesList({
       </div>
 
       <div className="flex flex-col gap-3">
-        {displayExercises.map((exercise, index) => {
+        {displayExercises.length === 0 ? (
+          <div className="bg-[#111A10] border border-white/5 rounded-2xl p-6 text-center text-xs font-semibold text-white/50">
+            No exercises scheduled for this workout.
+          </div>
+        ) : (
+          displayExercises.map((exercise, index) => {
           const numStr = (index + 1).toString().padStart(2, "0");
           const isCompleted =
             exercise.fitness_os_sets &&
@@ -121,7 +130,10 @@ export function TodaysExercisesList({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
+              onClick={() => !readonly && handleStartExercise(exercise.id)}
               className={`bg-[#111A10] border border-white/5 rounded-2xl p-4 relative overflow-hidden group ${
+                !readonly ? "cursor-pointer hover:border-white/20 active:scale-[0.99] transition-all" : ""
+              } ${
                 isCompleted ? "opacity-70" : isPaused ? "opacity-60" : ""
               }`}
             >
@@ -201,7 +213,10 @@ export function TodaysExercisesList({
                     <div className="flex flex-col gap-1.5 shrink-0">
                       {/* START button */}
                       <button
-                        onClick={() => handleStartExercise(exercise.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartExercise(exercise.id);
+                        }}
                         disabled={navigatingExerciseId !== null || isPaused || finishingExerciseId === exercise.id}
                         className={`h-9 px-4 transition-all duration-200 rounded-xl flex items-center justify-center gap-1.5 border group/btn disabled:opacity-50 ${
                           isPaused
@@ -235,7 +250,8 @@ export function TodaysExercisesList({
 
                       {/* FINISH button directly below Start button */}
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (isPaused) {
                             toast.info("Workout is paused. Tap 'Resume Workout' below to continue.");
                             return;
@@ -265,7 +281,8 @@ export function TodaysExercisesList({
               </div>
             </motion.div>
           );
-        })}
+        })
+      )}
       </div>
 
       {/* Confirmation Modal */}
