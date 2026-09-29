@@ -61,6 +61,7 @@ export function SwapMealModal({
   }, [isOpen, mealType]);
 
   const handleSelect = async (opt: any) => {
+    if (selectingId) return;
     try {
       setSelectingId(opt.id);
       await onSelectOption(opt);

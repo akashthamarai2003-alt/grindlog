@@ -2,6 +2,7 @@ import { createServerSupabase, getCachedFitnessProfile } from "@/lib/services/su
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { calculateTargets } from "@/lib/fitness/nutrition/nutrition-engine";
 import { calculateDailyBudget, normalizeDietType, parseStringList, resolveMealSlots } from "@/lib/fitness/nutrition/user-context";
+import { getFoodServingLimit } from "@/lib/fitness/nutrition/constants";
 import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
 import { cache } from "react";
 
@@ -392,6 +393,8 @@ export function calibrateMealsToTargets(
         else q = 0.7;
       } else if (lowerName.includes('chicken breast') || lowerName.includes('chicken')) {
         q = Number(Math.min(2.0, Math.max(0.8, q * mealScale)).toFixed(1));
+      } else if (lowerName.includes('curd') || lowerName.includes('dahi') || lowerName.includes('yogurt')) {
+        q = Math.min(1.0, Math.max(0.5, Number((q * mealScale).toFixed(1))));
       } else {
         const rawScaled = q * mealScale;
         q = Math.max(0.4, Math.min(2.0, Number(rawScaled.toFixed(1))));
@@ -992,17 +995,19 @@ export function calibrateMealsToTargets(
         }
       }
       if (!targetProItem && !isNonVeg && !isEggetarian) {
+        // Prioritize pure lean protein sources (Soya Chunks first, then Low Fat Paneer, then Tofu)
+        // NEVER prioritize Curd / Dahi here because curd is high-fat/low-protein density and blows up calorie/portion math
         for (const m of calibratedMeals) {
           const it = (m.meal_plan_items || []).find((x: any) => {
             const n = (x.foods?.name || x.name || '').toLowerCase();
             return isVegan
-              ? (n.includes('tofu') || n.includes('sprout') || n.includes('soya') || n.includes('soy chunk'))
-              : (n.includes('paneer') || n.includes('curd') || n.includes('soya') || n.includes('soy chunk'));
+              ? (n.includes('soya') || n.includes('soy chunk') || n.includes('tofu') || n.includes('sprout'))
+              : (n.includes('soya') || n.includes('soy chunk') || n.includes('low fat paneer') || n.includes('paneer'));
           });
           if (it) {
             targetProItem = it;
             const n = (it.foods?.name || it.name || '').toLowerCase();
-            targetProUnit = (n.includes('soya') || n.includes('soy chunk')) ? 52 : (n.includes('paneer') ? 20 : (n.includes('tofu') ? 15 : 10));
+            targetProUnit = (n.includes('soya') || n.includes('soy chunk')) ? 52 : (n.includes('paneer') ? 25 : 15);
             break;
           }
         }
@@ -1010,14 +1015,22 @@ export function calibrateMealsToTargets(
 
       if (targetProItem) {
         const info = getItemInfo(targetProItem);
+        const limit = getFoodServingLimit(info.fName);
+        const currentQ = Number(targetProItem.quantity) || 1;
+        const maxMealAllowed = limit.maxMealServings || 1.5;
+
         if (isWhite) {
-          const extraWhites = Math.max(1, Math.round(currentProGap / (info.unitPro || 3.6)));
-          targetProItem.quantity = targetProItem.quantity + extraWhites;
-          targetProItem.calories = Math.round(info.unitCals * targetProItem.quantity);
-          targetProItem.protein = Number((info.unitPro * targetProItem.quantity).toFixed(1));
-          targetProItem.fat = Number((info.unitFat * targetProItem.quantity).toFixed(1));
+          const maxWhitesToAdd = Math.max(0, Math.min(4, 6 - currentQ));
+          const extraWhites = Math.min(maxWhitesToAdd, Math.max(1, Math.round(currentProGap / (info.unitPro || 3.6))));
+          if (extraWhites > 0) {
+            targetProItem.quantity = targetProItem.quantity + extraWhites;
+            targetProItem.calories = Math.round(info.unitCals * targetProItem.quantity);
+            targetProItem.protein = Number((info.unitPro * targetProItem.quantity).toFixed(1));
+            targetProItem.fat = Number((info.unitFat * targetProItem.quantity).toFixed(1));
+          }
         } else {
-          const extraQ = Number((currentProGap / (info.unitPro || targetProUnit)).toFixed(1));
+          const maxQToAdd = Math.max(0, maxMealAllowed - currentQ);
+          const extraQ = Number(Math.min(maxQToAdd, Math.max(0, currentProGap / (info.unitPro || targetProUnit))).toFixed(1));
           if (extraQ >= 0.1) {
             targetProItem.quantity = Number((targetProItem.quantity + extraQ).toFixed(1));
             targetProItem.calories = Math.round(info.unitCals * targetProItem.quantity);
@@ -1090,6 +1103,46 @@ export function calibrateMealsToTargets(
       break;
     }
   }
+
+  // STAGE 6: UNIVERSAL HEALTH & PORTION SANITY PASS
+  // Strictly prevent any food item from having unrealistic or un-human portion sizes (e.g. 6.5 bowls of curd)
+  calibratedMeals.forEach((m: any) => {
+    (m.meal_plan_items || []).forEach((it: any) => {
+      const fName = String(it.foods?.name || it.name || '').toLowerCase();
+      let q = Number(it.quantity) || 1;
+
+      // Absolute sensible caps per single meal
+      if (fName.includes('curd') || fName.includes('dahi') || fName.includes('yogurt')) {
+        q = Math.min(1.0, q);
+      } else if (fName.includes('soya chunk') || fName.includes('soy chunk')) {
+        q = Math.min(1.0, q);
+      } else if (fName.includes('egg') && !fName.includes('white') && !fName.includes('curry')) {
+        q = Math.min(2.0, q);
+      } else if (fName.includes('egg white')) {
+        q = Math.min(5.0, q);
+      } else if (fName.includes('paneer')) {
+        q = Math.min(1.0, q);
+      } else if (fName.includes('milk')) {
+        q = Math.min(1.5, q);
+      } else if (fName.includes('peanut')) {
+        q = Math.min(1.0, q);
+      } else if (fName.includes('rice') || fName.includes('chawal')) {
+        q = Math.min(2.0, q);
+      } else if (fName.includes('roti') || fName.includes('chapati') || fName.includes('phulka')) {
+        q = Math.min(3.0, q);
+      }
+
+      if (q !== Number(it.quantity)) {
+        const info = getItemInfo(it);
+        it.quantity = q;
+        it.calories = Math.round(info.unitCals * q);
+        it.protein = Number((info.unitPro * q).toFixed(1));
+        it.carbs = Number((info.unitCarbs * q).toFixed(1));
+        it.fat = Number((info.unitFat * q).toFixed(1));
+        it.estimated_cost = info.isCore ? 0 : Math.round(info.unitCost * q);
+      }
+    });
+  });
 
   // Final summary update per meal
   return calibratedMeals.map((m: any) => {

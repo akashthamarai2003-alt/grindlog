@@ -85,16 +85,25 @@ export function normalizeFoodEnvironment(rawEnv?: string | null): NormalizedEnvi
 }
 
 export function parseStringList(raw: unknown): string[] {
+  const sanitizeItem = (s: string) => {
+    // Strip control characters, quotes, brackets, and limit to safe food name characters
+    const cleaned = s.replace(/[^a-zA-Z0-9\s\-_/()]/g, "").trim();
+    if (cleaned.length < 2 || cleaned.length > 40) return "";
+    const lower = cleaned.toLowerCase();
+    if (["none", "nil", "n/a", "na", "no", "nothing", "system", "ignore"].includes(lower)) return "";
+    return cleaned;
+  };
+
   if (Array.isArray(raw)) {
     return raw
-      .map((item) => String(item || "").trim())
-      .filter((s) => s.length > 0 && !["none", "nil", "n/a", "na", "no"].includes(s.toLowerCase()));
+      .map((item) => sanitizeItem(String(item || "")))
+      .filter((s) => s.length > 0);
   }
   if (typeof raw === "string") {
     return raw
       .split(/[,;\n|]+/)
-      .map((item) => item.trim())
-      .filter((s) => s.length > 0 && !["none", "nil", "n/a", "na", "no"].includes(s.toLowerCase()));
+      .map((item) => sanitizeItem(item))
+      .filter((s) => s.length > 0);
   }
   return [];
 }

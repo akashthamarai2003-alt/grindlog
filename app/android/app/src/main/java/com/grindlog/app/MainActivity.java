@@ -43,35 +43,41 @@ public class MainActivity extends BridgeActivity {
                 ));
                 splashView.setBackgroundColor(Color.parseColor("#0A1108"));
                 splashView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                boolean hasSplashDrawable = true;
                 try {
                     splashView.setImageResource(R.drawable.splash);
                 } catch (Exception e) {
-                    // If splash drawable not found, just show dark background
                     android.util.Log.w("GrindLog", "splash drawable not found");
+                    hasSplashDrawable = false;
                 }
-                // Ensure it's on top of the WebView
-                splashView.setElevation(999f);
-                root.addView(splashView);
-                splashView.bringToFront();
-                this.splashOverlayView = splashView;
 
-                // Auto-dismiss after 2.5 seconds with smooth fade
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                    if (splashOverlayView != null && splashOverlayView.getParent() != null) {
-                        splashOverlayView.animate()
-                            .alpha(0f)
-                            .setDuration(400)
-                            .withEndAction(() -> {
-                                try {
-                                    if (root != null && splashOverlayView != null && splashOverlayView.getParent() != null) {
-                                        root.removeView(splashOverlayView);
-                                    }
-                                } catch (Exception ignored) {}
-                                splashOverlayView = null;
-                            })
-                            .start();
+                if (hasSplashDrawable) {
+                    // Ensure it's on top of the WebView
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        splashView.setElevation(10f);
                     }
-                }, 2500);
+                    root.addView(splashView);
+                    splashView.bringToFront();
+                    this.splashOverlayView = splashView;
+
+                    // Auto-dismiss after 2.5 seconds with smooth fade
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        if (splashOverlayView != null && splashOverlayView.getParent() != null) {
+                            splashOverlayView.animate()
+                                .alpha(0f)
+                                .setDuration(400)
+                                .withEndAction(() -> {
+                                    try {
+                                        if (root != null && splashOverlayView != null && splashOverlayView.getParent() != null) {
+                                            root.removeView(splashOverlayView);
+                                        }
+                                    } catch (Exception ignored) {}
+                                    splashOverlayView = null;
+                                })
+                                .start();
+                        }
+                    }, 2500);
+                }
             }
         } catch (Exception e) {
             android.util.Log.e("GrindLog", "Error creating native splash overlay", e);

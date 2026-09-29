@@ -135,7 +135,10 @@ export function AndroidAuthHandler() {
             console.error("OAuth exchange code error:", exchangeError);
             setIsAuthenticating(false);
             isHandlingRef.current = false;
-            window.location.href = `/auth/signin?error=${encodeURIComponent(exchangeError.message || "auth_callback_error")}`;
+            const errMsg = exchangeError.message?.toLowerCase().includes("verifier") || exchangeError.message?.toLowerCase().includes("expired")
+              ? "Session expired during sign-in. Please try again."
+              : (exchangeError.message || "Sign-in could not be completed. Please try again.");
+            window.location.href = `/auth/signin?error=${encodeURIComponent(errMsg)}`;
             return;
           }
         }
