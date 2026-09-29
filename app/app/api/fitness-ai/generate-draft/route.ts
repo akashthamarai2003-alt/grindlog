@@ -54,16 +54,21 @@ export async function POST(req: Request) {
     }
 
     let isRetry = false;
+    let isRenew = false;
     try {
       const body = await req.json().catch(() => null);
-      if (body && typeof body === "object" && body.retry === true) {
-        isRetry = true;
+      if (body && typeof body === "object") {
+        if (body.retry === true) isRetry = true;
+        if (body.renew === true || body.next_cycle === true) isRenew = true;
       }
     } catch {
       // Body may not be JSON or may be empty
     }
     if (req.headers.get("x-retry") === "true") {
       isRetry = true;
+    }
+    if (req.headers.get("x-renew") === "true") {
+      isRenew = true;
     }
 
     if (isRetry) {
@@ -86,9 +91,11 @@ export async function POST(req: Request) {
       getFitnessPlan(user.id),
       supabase
         .from("fitness_os_workout_plans")
-        .select("id")
+        .select("id, created_at")
         .eq("user_id", user.id)
         .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle(),
       supabase
         .from("fitness_os_profiles")
@@ -110,7 +117,14 @@ export async function POST(req: Request) {
         { status: 402 },
       );
     }
-    if (activePlan) {
+    const planCreatedAt = activePlan?.created_at ? new Date(activePlan.created_at) : null;
+    const daysOnPlan = planCreatedAt
+      ? Math.max(1, Math.floor((Date.now() - planCreatedAt.getTime()) / (1000 * 60 * 60 * 24)))
+      : 0;
+    const isCycleComplete = daysOnPlan >= 28;
+    const allowRenewal = isCycleComplete || isRenew;
+
+    if (activePlan && !allowRenewal) {
       return NextResponse.json(
         { success: false, error: "Your plan is already locked in. Open your dashboard to view it.", errorType: "PLAN_ACTIVE" },
         { status: 409 },
@@ -181,7 +195,7 @@ export async function POST(req: Request) {
     // Workout plan generation for plan-setup: meals and grocery are empty arrays
     const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount, "starter");
 
-    if (cachedDraft?.response) {
+    if (!allowRenewal && cachedDraft?.response) {
       try {
         const cachedPlan = GeneratedPlanSchema.safeParse(
           JSON.parse(cachedDraft.response),

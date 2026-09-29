@@ -126,7 +126,7 @@ export class ProgressAnalyticsService {
       supabase.from('fitness_os_ai_insights').select('*').eq('user_id', userId).order('generated_at', { ascending: false }).limit(5),
       supabase.from('fitness_os_user_achievements').select('*, achievement:achievement_id(title, description, icon)').eq('user_id', userId),
       supabase.from('fitness_os_body_metrics').select('weight, recorded_at').eq('user_id', userId).not('weight', 'is', null).gte('recorded_at', startDateStr).order('recorded_at', { ascending: true }),
-      supabase.from('fitness_os_workout_plans').select('plan_data').eq('user_id', userId).eq('status', 'active').maybeSingle()
+      supabase.from('fitness_os_workout_plans').select('plan_data').eq('user_id', userId).eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle()
     ]);
 
     const workouts = workoutsData || [];

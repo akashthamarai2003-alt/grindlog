@@ -122,13 +122,13 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
                 </div>
                 <div className="grid grid-cols-2 gap-2.5 mt-1">
                   <Link
-                    href="/scanner"
+                    href="/scanner?mode=checkin"
                     className="py-2.5 px-3 bg-[#ADFF00] text-black text-center font-black uppercase tracking-wider text-xs rounded-xl hover:bg-[#bfff33] transition-colors"
                   >
                     Photo Body Scan
                   </Link>
                   <Link
-                    href="/report"
+                    href="/report?renew=true"
                     className="py-2.5 px-3 bg-white/10 hover:bg-white/15 text-white text-center font-black uppercase tracking-wider text-xs rounded-xl transition-colors border border-white/10"
                   >
                     Month 2 Plan Setup

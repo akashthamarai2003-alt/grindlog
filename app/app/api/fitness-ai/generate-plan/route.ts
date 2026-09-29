@@ -86,7 +86,7 @@ export async function POST(req: Request) {
       getFitnessPlan(user.id),
       supabase
         .from("fitness_os_workout_plans")
-        .select("id")
+        .select("id, created_at")
         .eq("user_id", user.id)
         .eq("status", "active")
         .order("created_at", { ascending: false })
@@ -112,7 +112,15 @@ export async function POST(req: Request) {
         { status: 402 },
       );
     }
-    if (existingPlan) {
+    const planCreatedAt = existingPlan?.created_at ? new Date(existingPlan.created_at) : null;
+    const daysOnPlan = planCreatedAt
+      ? Math.max(1, Math.floor((Date.now() - planCreatedAt.getTime()) / (1000 * 60 * 60 * 24)))
+      : 0;
+    const isCycleComplete = daysOnPlan >= 28;
+    const isRenew = Boolean(reqBody?.renew || reqBody?.next_cycle || req.headers.get("x-renew") === "true");
+    const allowRenewal = isCycleComplete || isRenew;
+
+    if (existingPlan && !allowRenewal) {
       return NextResponse.json(
         { success: false, error: "An active plan already exists. Return to dashboard." },
         { status: 400 },
@@ -321,6 +329,15 @@ export async function POST(req: Request) {
         { success: false, error: lastErrorMessage },
         { status: 400 },
       );
+    }
+
+    // Archive previous active plan so only the new meso-cycle is active
+    if (existingPlan) {
+      await supabase
+        .from("fitness_os_workout_plans")
+        .update({ status: "completed", updated_at: new Date().toISOString() })
+        .eq("user_id", user.id)
+        .eq("status", "active");
     }
 
     // 8. Save the generated plan in one database transaction.

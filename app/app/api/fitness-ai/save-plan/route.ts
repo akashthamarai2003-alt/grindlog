@@ -20,20 +20,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Please complete payment before saving your Fitness plan.", errorType: "PAYMENT_REQUIRED" }, { status: 402 });
     }
 
+    const body = await req.json();
+    const isRenew = Boolean(body?.renew || body?.next_cycle);
+
     const { data: activePlan } = await supabase
       .from("fitness_os_workout_plans")
-      .select("id")
+      .select("id, created_at")
       .eq("user_id", user.id)
       .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
-    if (activePlan) {
+
+    const planCreatedAt = activePlan?.created_at ? new Date(activePlan.created_at) : null;
+    const daysOnPlan = planCreatedAt
+      ? Math.max(1, Math.floor((Date.now() - planCreatedAt.getTime()) / (1000 * 60 * 60 * 24)))
+      : 0;
+    const isCycleComplete = daysOnPlan >= 28;
+    const allowRenewal = isCycleComplete || isRenew;
+
+    if (activePlan && !allowRenewal) {
       return NextResponse.json(
         { success: false, error: "Your plan is already locked in. Open your dashboard to view it." },
         { status: 409 },
       );
     }
 
-    const body = await req.json();
     const parsed = GeneratedPlanSchema.safeParse(body.plan);
     
     if (!parsed.success) {
@@ -81,6 +93,15 @@ export async function POST(req: Request) {
       enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []),
       subscriptionPlan.id,
     );
+
+    // Archive previous active plan so only the new meso-cycle is active
+    if (activePlan) {
+      await supabase
+        .from("fitness_os_workout_plans")
+        .update({ status: "completed", updated_at: new Date().toISOString() })
+        .eq("user_id", user.id)
+        .eq("status", "active");
+    }
 
     // Atomic Database Transaction via RPC
     const { data: planId, error: rpcError } = await supabase.rpc("create_fitness_os_plan_transaction", {

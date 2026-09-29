@@ -6,18 +6,20 @@ import { useRouter } from "next/navigation";
 import { AIPlanAnimation } from "@/components/fitness/plan-animation";
 import { checkUserPremiumStatusAction, markStartingReportViewedAction } from "@/app/actions/payment";
 
-export function GeneratePlanButton() {
+export function GeneratePlanButton({ isRenew }: { isRenew?: boolean }) {
   const router = useRouter();
   const [isPreparing, setIsPreparing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
-    router.prefetch("/payment?returnTo=/plan-setup&intent=generate_plan");
-    router.prefetch("/plan-setup");
+    const renewSuffix = isRenew ? "&renew=true" : "";
+    const renewQuery = isRenew ? "?renew=true" : "";
+    router.prefetch(`/payment?returnTo=/plan-setup${renewSuffix}&intent=generate_plan`);
+    router.prefetch(`/plan-setup${renewQuery}`);
     checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((res) => {
       setIsSubscribed(Boolean(res));
     });
-  }, [router]);
+  }, [router, isRenew]);
 
   const handleClick = () => {
     if (isPreparing) return;
@@ -28,9 +30,11 @@ export function GeneratePlanButton() {
   };
 
   const handleAnimationComplete = () => {
+    const renewSuffix = isRenew ? "&renew=true" : "";
+    const renewQuery = isRenew ? "?renew=true" : "";
     const targetUrl = isSubscribed
-      ? "/plan-setup"
-      : "/payment?returnTo=/plan-setup&intent=generate_plan";
+      ? `/plan-setup${renewQuery}`
+      : `/payment?returnTo=/plan-setup${renewSuffix}&intent=generate_plan`;
     router.push(targetUrl);
   };
 
@@ -50,7 +54,7 @@ export function GeneratePlanButton() {
             </>
           ) : (
             <>
-              Generate My Plan
+              {isRenew ? "Generate Month 2 Plan" : "Generate My Plan"}
               <ArrowRight size={20} />
             </>
           )}

@@ -18,13 +18,13 @@ type PlanGenerationError = Error & {
 
 let activePlanDraftRequest: Promise<any> | null = null;
 
-async function requestPlanDraft(options?: { retry?: boolean }) {
-  if (activePlanDraftRequest && !options?.retry) return activePlanDraftRequest;
+async function requestPlanDraft(options?: { retry?: boolean; renew?: boolean }) {
+  if (activePlanDraftRequest && !options?.retry && !options?.renew) return activePlanDraftRequest;
 
   activePlanDraftRequest = fetch('/api/fitness-ai/generate-draft', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ retry: Boolean(options?.retry) }),
+    body: JSON.stringify({ retry: Boolean(options?.retry), renew: Boolean(options?.renew) }),
   })
     .then(async (response) => {
       const body = await response.json().catch(() => null);
@@ -288,8 +288,9 @@ export default function PlanSetupPage() {
       window.location.search.includes("intent=upgrade_pro") ||
       window.location.search.includes("success=true")
     );
+    const isRenew = typeof window !== "undefined" && window.location.search.includes("renew=true");
     
-    requestPlanDraft({ retry: isReturningFromUpgrade })
+    requestPlanDraft({ retry: isReturningFromUpgrade, renew: isRenew })
       .then((res) => {
         if (!isMounted) return;
         setPlanData(res.data);
@@ -351,15 +352,16 @@ export default function PlanSetupPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    const isRenew = typeof window !== "undefined" && window.location.search.includes("renew=true");
     try {
       const res = await fetch('/api/fitness-ai/save-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: planData })
+        body: JSON.stringify({ plan: planData, renew: isRenew })
       });
       const data = await res.json();
       if (data.success) {
-        toast.success("Plan activated!");
+        toast.success(isRenew ? "Month 2 plan activated!" : "Plan activated!");
         router.push("/roadmap");
         router.refresh();
       } else {
@@ -398,9 +400,10 @@ export default function PlanSetupPage() {
             setLoading(true);
             setGenerationError(null);
             setGenerationErrorType(null);
+            const isRenew = typeof window !== "undefined" && window.location.search.includes("renew=true");
             // Retry only after a failed generation. The server reuses any
             // valid saved draft and never bypasses safety or duplicate guards.
-            requestPlanDraft({ retry: true })
+            requestPlanDraft({ retry: true, renew: isRenew })
               .then(res => {
                 setPlanData(res.data);
               })

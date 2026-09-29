@@ -3901,6 +3901,8 @@ function scaleServingSize(servingSize: string, scale: number): string {
         .select('plan_data')
         .eq('user_id', userId)
         .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle(),
       foodCatalogPromise,
       this.getWeeklyPlanEligibility(userId)

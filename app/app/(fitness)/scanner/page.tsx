@@ -5,7 +5,11 @@ import { ScannerFlow } from "@/components/fitness/scanner/scanner-flow";
 
 export const dynamic = "force-dynamic";
 
-export default async function ScannerPage() {
+export default async function ScannerPage({
+  searchParams,
+}: {
+  searchParams?: { mode?: string; refresh?: string };
+}) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -13,15 +17,24 @@ export default async function ScannerPage() {
     redirect("/auth/signin?redirect=/scanner");
   }
 
-  // Prevent users who already have an active plan from re-scanning unless regenerating
+  // Prevent users who already have an active plan from re-scanning unless regenerating or at month-end check-in
   const { data: plan } = await supabase
     .from("fitness_os_workout_plans")
-    .select("id")
+    .select("id, created_at")
     .eq("user_id", user.id)
     .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
-  if (plan) {
+  const isCheckin = searchParams?.mode === "checkin" || searchParams?.mode === "renew" || searchParams?.mode === "update";
+  const planCreatedAt = plan?.created_at ? new Date(plan.created_at) : null;
+  const daysOnPlan = planCreatedAt
+    ? Math.max(1, Math.floor((Date.now() - planCreatedAt.getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const isMonthEnd = daysOnPlan >= 28;
+
+  if (plan && !isCheckin && !isMonthEnd) {
     redirect("/");
   }
 

@@ -26,7 +26,12 @@ function displayValue(value: unknown, suffix = ""): string {
   return `${String(value)}${suffix}`;
 }
 
-export default async function AIStartingReportPage() {
+export default async function AIStartingReportPage({
+  searchParams,
+}: {
+  searchParams?: { renew?: string };
+}) {
+  const isRenew = searchParams?.renew === "true";
   const supabase = await createServerSupabase();
   const {
     data: { user },
@@ -555,7 +560,7 @@ export default async function AIStartingReportPage() {
 
         {/* Continue Button */}
         <div className="pt-4">
-          <GeneratePlanButton />
+          <GeneratePlanButton isRenew={isRenew} />
         </div>
       </div>
     </div>
