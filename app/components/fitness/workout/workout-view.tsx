@@ -101,7 +101,7 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
         <div className="mt-2">
           <WeeklyWorkoutView weekDays={effectiveWeekDays} planDays={effectivePlanDays} />
 
-          {/* Month-End 4-Week Milestone Banner */}
+          {/* Month-End 4-Week Milestone Banner (Paid Active User) */}
           {cycleSummary?.isMonthEnd && isPro && (
             <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-4 mb-2">
               <div className="absolute inset-0 bg-gradient-to-r from-[#ADFF00]/20 via-[#ADFF00]/10 to-transparent rounded-[24px]" />
@@ -134,6 +134,35 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
                     Month 2 Plan Setup
                   </Link>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Month-End Renewal Banner (Unpaid / Expired Subscription) */}
+          {cycleSummary?.isMonthEnd && !isPro && (
+            <div className="w-full relative p-[1px] rounded-[24px] overflow-hidden mt-4 mb-2">
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent rounded-[24px]" />
+              <div className="relative bg-[#1a1205] border border-amber-500/40 rounded-[24px] p-5 shadow-2xl flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-amber-500 text-black">
+                    4-Week Cycle Complete
+                  </span>
+                  <span className="text-xs font-bold text-amber-300">Renewal Required</span>
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white uppercase tracking-tight">
+                    Renew to Unlock Month 2
+                  </h3>
+                  <p className="text-xs text-white/80 leading-relaxed mt-1">
+                    Your previous month's subscription has concluded. Renew your membership to recalibrate your weights, body scan, and generate your Month 2 meso-cycle.
+                  </p>
+                </div>
+                <Link
+                  href="/payment?intent=renew_monthly&plan=pro"
+                  className="py-3 px-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-center font-black uppercase tracking-wider text-xs rounded-xl transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+                >
+                  Renew Subscription to Continue ⚡
+                </Link>
               </div>
             </div>
           )}
