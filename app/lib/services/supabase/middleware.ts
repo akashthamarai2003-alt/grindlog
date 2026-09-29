@@ -81,6 +81,10 @@ export async function updateSession(request: NextRequest) {
     "/refund",
   ];
 
+  if (process.env.NODE_ENV !== "production" || process.env.PLAYWRIGHT_TEST === "1") {
+    publicPaths.push("/test-nutrition");
+  }
+
   const isPublicPath = publicPaths.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
@@ -106,7 +110,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath && !["/", "/auth/reset-password", "/terms", "/privacy", "/refund", "/admin-login"].includes(pathname)) {
+  if (user && isPublicPath && !["/", "/auth/reset-password", "/terms", "/privacy", "/refund", "/admin-login", "/test-nutrition"].includes(pathname)) {
     const url = request.nextUrl.clone();
     
     // Determine safe redirect

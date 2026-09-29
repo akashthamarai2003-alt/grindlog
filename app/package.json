@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
+    "test:e2e": "playwright test",
     "import:usda": "node scripts/import-usda-foundation-foods.mjs"
   },
   "dependencies": {
@@ -64,6 +65,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.6.9",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/typography": "^0.5.20",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.0.0",
