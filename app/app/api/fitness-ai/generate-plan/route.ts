@@ -22,6 +22,7 @@ import {
 import { autoRepairPlanSafety, runFitnessAISafetyCheck } from "@/lib/fitness/safety/fitness-ai-safety";
 import { validatePlanAgainstProfile } from "@/lib/fitness/validation/fitness-plan-profile";
 import { enrichPlanWithFoodLibrary, filterFoodCatalogForProfile } from "@/lib/fitness/validation/fitness-food-library";
+import { generateProNutritionLayer } from "@/lib/fitness/ai/nutrition-generator";
 import {
   clearGenerationAttempt,
   clearUserGenerationAttempts,
@@ -222,26 +223,15 @@ export async function POST(req: Request) {
           console.log(`Fitness AI Generation Attempt ${attempt}...`);
           const isPro = subscriptionPlan.id === "pro";
 
-          // Step A: Generate deterministic nutrition plan (60% Math Ground Truth)
-          let deterministicNutrition = null;
-          if (isPro) {
-            try {
-              const nutritionPlan = await generateDeterministicNutritionPlan(profile);
-              deterministicNutrition = convertToAIPlanFormat(nutritionPlan);
-            } catch (nutritionErr) {
-              console.warn("Deterministic nutrition generation failed, AI will handle nutrition:", nutritionErr);
-            }
-          }
-
-          // Step B: AI generates workouts + 40% culinary & coaching nutrition layer
+          // Step A: Luna AI generates workouts & coaching intelligence
           const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-            systemPrompt: `${buildFitnessPlanSystemPrompt(subscriptionPlan.id)}${deterministicNutrition ? `\n\n${buildHybridNutritionPrompt(deterministicNutrition)}` : `\n\n${isPro ? FITNESS_PLAN_PRESENTATION_RULE : "CORE PRESENTATION RULE: Return calorie and protein targets only; keep carbs_grams and fat_grams null, with empty meals and grocery_list arrays."}`}`,
+            systemPrompt: `${buildFitnessPlanSystemPrompt("starter")}\n\nWORKOUT PLAN FOCUS RULE: Focus 100% of your coaching intelligence on generating the 7-day workout split, exercise selection, sets, reps, and coaching cues based on the user's profile. For nutrition, return calorie and protein targets; keep meals and grocery_list arrays strictly empty, as complete nutrition and grocery plans are dynamically handled by Groq AI in their dedicated hubs.`,
             userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
             model: FITNESS_PLAN_MODEL,
-            maxTokens: deterministicNutrition ? (isPro ? 8500 : 3500) : (isPro ? 10000 : 4500),
-            minimumOutputTokens: deterministicNutrition ? (isPro ? 6000 : 3500) : (isPro ? 10000 : 4500),
-            reasoningEffort: deterministicNutrition ? "low" : (isPro ? "medium" : "low"),
-            promptCacheKey: deterministicNutrition ? "fitness-plan-hybrid-v1" : (isPro ? "fitness-plan-pro-v3" : "fitness-plan-core-v2"),
+            maxTokens: 3500,
+            minimumOutputTokens: 1800,
+            reasoningEffort: "low",
+            promptCacheKey: "fitness-plan-workout-v2",
             temperature: 0.2,
             jsonSchema: {
               name: "fitness_plan",
@@ -286,6 +276,24 @@ export async function POST(req: Request) {
             }
           }
 
+          // Step B: Groq AI generates the Pro diet plan and monthly grocery plan
+          if (isPro && candidatePlan.workouts.length > 0) {
+            try {
+              console.log("Generating Pro diet and monthly grocery plan via Groq AI...");
+              const groqNutrition = await generateProNutritionLayer({
+                profile,
+                existingWorkouts: candidatePlan.workouts,
+                foodCatalog,
+              });
+              candidatePlan = {
+                ...candidatePlan,
+                nutrition: groqNutrition,
+              };
+            } catch (groqErr) {
+              console.warn("Groq nutrition generation failed, keeping base nutrition:", groqErr);
+            }
+          }
+
           const profileCheck = validatePlanAgainstProfile(candidatePlan, profile, {
             enforceProfileRules: true,
             enforceBudgetUtilisation: false,
@@ -298,17 +306,8 @@ export async function POST(req: Request) {
             continue;
           }
 
-          // 60% Code Math + 40% AI Hybrid Nutrition Merge
-          let mergedPlan = profileCheck.plan;
-          if (deterministicNutrition && mergedPlan.nutrition) {
-            mergedPlan = {
-              ...mergedPlan,
-              nutrition: mergeHybridNutrition(candidatePlan.nutrition, deterministicNutrition),
-            };
-          }
-
           planData = applyFitnessPlanEntitlements(
-            enrichPlanWithFoodLibrary(mergedPlan, foodCatalog || []),
+            enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []),
             subscriptionPlan.id,
           );
           break; // Success!

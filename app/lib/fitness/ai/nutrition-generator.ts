@@ -1,10 +1,11 @@
-import { generateOpenAIResponseJSON, FITNESS_PLAN_MODEL } from "@/lib/services/openai/client";
+import { generateAIResponseJSON as generateGroqResponseJSON } from "@/lib/services/groq/client";
 import {
-  NUTRITION_JSON_SCHEMA,
   GeneratedNutritionSchema,
   GeneratedNutritionData,
 } from "./schemas";
 import { getPlanNutritionTargets } from "../validation/fitness-plan-profile";
+import { generateDeterministicNutritionPlan, convertToAIPlanFormat } from "../nutrition/nutrition-engine";
+import { buildHybridNutritionPrompt, mergeHybridNutrition } from "../nutrition/hybrid-merger";
 
 export function getProfileNutritionContext(profile: any, targets: ReturnType<typeof getPlanNutritionTargets>) {
   return {
@@ -53,7 +54,7 @@ export async function generateProNutritionLayer({
     duration_minutes: workout.duration_minutes,
   }));
 
-  const userPrompt = `Create the missing Pro nutrition layer for this user's already-saved workout plan.
+  const userPrompt = `Create the Pro nutrition and monthly grocery layer for this user's workout plan using Groq AI.
 
 Saved profile (source of truth):
 ${JSON.stringify(profileContext, null, 2)}
@@ -80,28 +81,48 @@ Return only the nutrition object. Keep the deterministic daily calorie and prote
 - For Lose Fat or Cut, mention limiting added sugar, sugary drinks, deep-fried foods, and frequent fast food; never demand zero sugar or zero oil.
 - Use realistic INR prices and concise instructions.`;
 
-  const aiResponse = await generateOpenAIResponseJSON<unknown>({
-    systemPrompt: `You are Grindlog's elite nutrition coach. Generate a safe, practical, 100% natural whole-food nutrition object that hits the user's protein target using realistic natural grocery add-ons and core meals with ZERO artificial protein powders or supplements. Strictly respect vegan/vegetarian/eggetarian boundaries and allergies. Pair PG/Hostel meals with budget-funded natural protein add-ons. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise.`,
-    userPrompt,
-    model: FITNESS_PLAN_MODEL,
-    maxTokens: 5500,
-    minimumOutputTokens: 5500,
-    reasoningEffort: "medium",
-    promptCacheKey: "fitness-pro-nutrition-upgrade-v1",
+  // Step A: Generate deterministic nutrition plan (60% Math Ground Truth)
+  let deterministicNutrition = null;
+  try {
+    const nutritionPlan = await generateDeterministicNutritionPlan(profile);
+    deterministicNutrition = convertToAIPlanFormat(nutritionPlan);
+  } catch (nutritionErr) {
+    console.warn("Deterministic nutrition generation failed in generateProNutritionLayer:", nutritionErr);
+  }
+
+  const hybridPrompt = deterministicNutrition ? buildHybridNutritionPrompt(deterministicNutrition) : "";
+  const promptToSend = hybridPrompt ? `${userPrompt}\n\n${hybridPrompt}` : userPrompt;
+
+  const systemPrompt = `You are Grindlog's elite Groq nutrition coach. Generate a safe, practical, 100% natural whole-food nutrition object that hits the user's protein target using realistic natural grocery add-ons and core meals with ZERO artificial protein powders or supplements. Strictly respect vegan/vegetarian/eggetarian boundaries and allergies. Pair PG/Hostel meals with budget-funded natural protein add-ons. Return JSON only with daily_calories, protein_grams, carbs_grams, fat_grams, meals_per_day, guidance, meals, and grocery_list. Keep all text concise. Output schema:
+{
+  "daily_calories": number,
+  "protein_grams": number,
+  "carbs_grams": number,
+  "fat_grams": number,
+  "meals_per_day": number,
+  "guidance": string,
+  "meals": [{ "meal_name": string, "time_of_day": string, "items": string[], "total_calories": number, "protein_grams": number, "prep_instructions": string }],
+  "grocery_list": [{ "name": string, "monthly_quantity": number, "unit": string, "estimated_price": number, "category": string, "is_optional": boolean, "reason": string }]
+}`;
+
+  // Execute on Groq AI (qwen/qwen3.8-27b) — sub-second response, zero Luna AI tokens
+  const aiResponse = await generateGroqResponseJSON<unknown>({
+    systemPrompt,
+    userPrompt: promptToSend,
+    model: "primary",
+    maxTokens: 3500,
     temperature: 0.2,
-    jsonSchema: {
-      name: "fitness_pro_nutrition",
-      schema: NUTRITION_JSON_SCHEMA,
-      description: "The missing Pro nutrition layer for an existing fitness plan.",
-      strict: true,
-    },
-    verbosity: "low",
   });
 
   const parsedNutrition = GeneratedNutritionSchema.safeParse(aiResponse);
   if (!parsedNutrition.success) {
-    throw new Error("Failed to parse the generated Pro nutrition plan.");
+    throw new Error("Failed to parse the generated Groq nutrition plan.");
   }
 
-  return parsedNutrition.data;
+  let finalNutrition = parsedNutrition.data;
+  if (deterministicNutrition) {
+    finalNutrition = mergeHybridNutrition(finalNutrition, deterministicNutrition);
+  }
+
+  return finalNutrition;
 }
