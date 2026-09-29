@@ -15,24 +15,37 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
   const currentWeight = profile.weight || null;
   const targetWeight = profile.target_weight || null;
 
+  const startNum = startWeight != null ? Number(startWeight) : null;
+  const currentNum = currentWeight != null ? Number(currentWeight) : null;
+  const targetNum = targetWeight != null ? Number(targetWeight) : null;
+
   // Calculate Progress Percentage and Deltas
   let progressPercentage = 0;
   let weightChange = 0;
   let remainingKg = 0;
-  const hasWeights = typeof startWeight === "number" && typeof currentWeight === "number" && typeof targetWeight === "number";
-  const totalGoal = hasWeights ? Math.abs(startWeight - targetWeight) : 0;
-  const isBulking = hasWeights && targetWeight > startWeight;
+  const hasWeights =
+    startNum !== null &&
+    currentNum !== null &&
+    targetNum !== null &&
+    Number.isFinite(startNum) &&
+    Number.isFinite(currentNum) &&
+    Number.isFinite(targetNum) &&
+    startNum > 0 &&
+    targetNum > 0;
+
+  const totalGoal = hasWeights ? Math.abs(startNum - targetNum) : 0;
+  const isBulking = hasWeights && targetNum > startNum;
 
   if (hasWeights && totalGoal > 0) {
-    const progressMade = isBulking ? (currentWeight - startWeight) : (startWeight - currentWeight);
+    const progressMade = isBulking ? (currentNum - startNum) : (startNum - currentNum);
     weightChange = Math.round(progressMade * 10) / 10;
     progressPercentage = Math.round(Math.min(100, Math.max(0, (Math.max(0, progressMade) / totalGoal) * 100)));
-    remainingKg = Math.max(0, Math.round(Math.abs(targetWeight - currentWeight) * 10) / 10);
+    remainingKg = Math.max(0, Math.round(Math.abs(targetNum - currentNum) * 10) / 10);
   } else if (hasWeights && totalGoal === 0) {
     progressPercentage = 100;
   }
 
-  const deltaKg = hasWeights ? Math.round((currentWeight - startWeight) * 10) / 10 : 0;
+  const deltaKg = hasWeights ? Math.round((currentNum - startNum) * 10) / 10 : 0;
 
   return (
     <motion.div
@@ -70,7 +83,7 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
           <div className="flex flex-col items-center p-2.5 rounded-xl bg-black/25 border border-white/5">
             <span className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">Start</span>
             <div className="flex items-baseline gap-0.5">
-              <span className="text-base sm:text-xl font-black text-white">{startWeight ?? "--"}</span>
+              <span className="text-base sm:text-xl font-black text-white">{startNum ?? "--"}</span>
               <span className="text-[10px] font-bold text-white/40">kg</span>
             </div>
             <span className="text-[9px] text-white/30 font-medium mt-0.5">Baseline</span>
@@ -80,15 +93,15 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
           <div className="flex flex-col items-center p-2.5 rounded-xl bg-[#ADFF00]/10 border border-[#ADFF00]/30 shadow-[0_0_15px_rgba(173,255,0,0.15)] relative">
             <span className="text-[9px] sm:text-[10px] font-black text-[#ADFF00] uppercase tracking-wider mb-1">Current</span>
             <div className="flex items-baseline gap-0.5">
-              <span className="text-lg sm:text-2xl font-black text-white">{currentWeight ?? "--"}</span>
+              <span className="text-lg sm:text-2xl font-black text-white">{currentNum ?? "--"}</span>
               <span className="text-[10px] font-bold text-[#ADFF00]/70">kg</span>
             </div>
             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full mt-0.5 ${
-              deltaKg < 0
+              deltaKg === 0
+                ? 'text-white/40 bg-white/5'
+                : (isBulking ? deltaKg > 0 : deltaKg < 0)
                 ? 'text-emerald-400 bg-emerald-400/10 border border-emerald-400/20'
-                : deltaKg > 0
-                ? 'text-amber-400 bg-amber-400/10 border border-amber-400/20'
-                : 'text-white/40 bg-white/5'
+                : 'text-amber-400 bg-amber-400/10 border border-amber-400/20'
             }`}>
               {deltaKg !== 0 ? `${deltaKg > 0 ? '+' : ''}${deltaKg} kg` : 'Active'}
             </span>
@@ -98,7 +111,7 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
           <div className="flex flex-col items-center p-2.5 rounded-xl bg-black/25 border border-white/5">
             <span className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">Target</span>
             <div className="flex items-baseline gap-0.5">
-              <span className="text-base sm:text-xl font-black text-[#ADFF00] drop-shadow-[0_0_8px_rgba(173,255,0,0.3)]">{targetWeight ?? "--"}</span>
+              <span className="text-base sm:text-xl font-black text-[#ADFF00] drop-shadow-[0_0_8px_rgba(173,255,0,0.3)]">{targetNum ?? "--"}</span>
               <span className="text-[10px] font-bold text-[#ADFF00]/50">kg</span>
             </div>
             <span className="text-[9px] text-[#ADFF00]/40 font-medium mt-0.5">Goal</span>
@@ -130,7 +143,14 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
         </div>
 
         {/* Action Button */}
-        {premiumLevel === "core" ? (
+        {premiumLevel === "pro" ? (
+          <Link href="/progress" prefetch={true} className="w-full mt-1">
+            <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 active:bg-white/5 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-white/5 cursor-pointer">
+              <span className="text-xs sm:text-sm font-bold text-white/90 group-hover/btn:text-white transition-colors">View Full Progress & Weight History</span>
+              <ArrowRight className="w-4 h-4 text-[#ADFF00] group-hover/btn:translate-x-1 transition-transform duration-300" />
+            </button>
+          </Link>
+        ) : premiumLevel === "core" ? (
           <Link href="/payment?returnTo=/&intent=upgrade_pro" prefetch={true} className="w-full mt-1">
             <button className="w-full py-3 px-4 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-[#ADFF00]/20 cursor-pointer">
               <span className="text-xs sm:text-sm font-bold text-[#ADFF00]">Upgrade to unlock Automated AI Tracking</span>
@@ -138,10 +158,10 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
             </button>
           </Link>
         ) : (
-          <Link href="/progress" prefetch={true} className="w-full mt-1">
-            <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 active:bg-white/5 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-white/5 cursor-pointer">
-              <span className="text-xs sm:text-sm font-bold text-white/90 group-hover/btn:text-white transition-colors">View Full Progress & Weight History</span>
-              <ArrowRight className="w-4 h-4 text-[#ADFF00] group-hover/btn:translate-x-1 transition-transform duration-300" />
+          <Link href="/payment" prefetch={true} className="w-full mt-1">
+            <button className="w-full py-3 px-4 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-[#ADFF00]/20 cursor-pointer">
+              <span className="text-xs sm:text-sm font-bold text-[#ADFF00]">Choose Plan to unlock Weight & Milestone Tracking</span>
+              <div className="bg-[#ADFF00] text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Upgrade</div>
             </button>
           </Link>
         )}

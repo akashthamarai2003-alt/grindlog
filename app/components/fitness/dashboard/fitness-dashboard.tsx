@@ -98,7 +98,7 @@ export function FitnessDashboard({
       <main className="flex-1 flex flex-col w-full max-w-md mx-auto pt-6 pb-36 sm:pb-40 px-5 z-10 relative gap-6">
         <div className="mb-6 relative z-10">
           <DashboardHeader
-            name={profile.name || user.user_metadata?.full_name || "Athlete"}
+            name={profile?.name || user.user_metadata?.full_name || "Athlete"}
             dayNumber={dayNumber}
             avatarUrl={user.user_metadata?.avatar_url || user.user_metadata?.picture}
           />

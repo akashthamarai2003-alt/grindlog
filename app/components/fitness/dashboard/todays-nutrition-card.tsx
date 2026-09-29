@@ -232,13 +232,13 @@ export function TodaysNutritionCard({
       const explicitFats = Number(m.fat_grams ?? m.fats ?? m.fat);
 
       // Intelligent proportion based on meal type if explicit values are missing
-      let ratio = 1 / totalMealsCount;
-      if (totalMealsCount >= 3) {
-        if (idx === 0) ratio = 0.25;
-        else if (idx === 1) ratio = 0.35;
-        else if (idx === 2) ratio = 0.30;
-        else ratio = 0.10;
-      }
+      const defaultRatios: Record<number, number[]> = {
+        2: [0.5, 0.5],
+        3: [0.30, 0.40, 0.30],
+        4: [0.25, 0.35, 0.25, 0.15],
+        5: [0.20, 0.30, 0.25, 0.15, 0.10],
+      };
+      const ratio = (defaultRatios[totalMealsCount] || [])[idx] ?? (1 / totalMealsCount);
 
       const mealCalories = explicitCalories > 0
         ? Math.round(explicitCalories)
@@ -645,8 +645,23 @@ export function TodaysNutritionCard({
                 You currently have access to Macros Only. Upgrade to Pro for a hyper-personalized daily meal plan.
               </p>
               <Link href="/payment?returnTo=/&intent=upgrade_pro" prefetch={true} className="mt-1">
-                <button className="bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 text-[#ADFF00] text-[10px] font-black uppercase px-4 py-2 rounded-full border border-[#ADFF00]/20 transition-all flex items-center gap-1.5 active:scale-95">
+                <button className="bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 text-[#ADFF00] text-[10px] font-black uppercase px-4 py-2 rounded-full border border-[#ADFF00]/20 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer">
                   Unlock Pro <ArrowRight size={12} />
+                </button>
+              </Link>
+            </div>
+          ) : premiumLevel === "free" ? (
+            <div className="p-5 flex flex-col items-center justify-center text-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center mb-1">
+                <Utensils className="w-5 h-5 text-[#ADFF00]" />
+              </div>
+              <h4 className="text-sm font-bold text-white">Meal Plan in Preview Mode</h4>
+              <p className="text-[11px] text-white/50 max-w-[240px] leading-relaxed">
+                Choose a plan to generate your personalized 100% natural Indian diet plan and enable live daily meal tracking.
+              </p>
+              <Link href="/payment" prefetch={true} className="mt-1">
+                <button className="bg-[#ADFF00] hover:bg-[#c4ff33] text-black text-[10px] font-black uppercase px-4 py-2 rounded-full transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer">
+                  Choose Plan ⚡ <ArrowRight size={12} />
                 </button>
               </Link>
             </div>

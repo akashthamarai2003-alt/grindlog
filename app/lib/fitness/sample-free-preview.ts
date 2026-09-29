@@ -1,3 +1,5 @@
+import { format, addDays, startOfWeek } from "date-fns";
+
 export const SAMPLE_FREE_PLAN = {
   id: "free-preview-plan",
   name: "Upper / Lower Strength & Hypertrophy",
@@ -69,7 +71,9 @@ export const SAMPLE_FREE_PLAN = {
       ]
     },
     lifestyle: {
+      daily_steps_target: 8500,
       steps_target: 8500,
+      water_target_liters: 3.0,
       sleep_target_hours: 8,
     }
   }
@@ -151,12 +155,28 @@ export const SAMPLE_FREE_WORKOUT = {
   ]
 };
 
-export const SAMPLE_FREE_WEEK_DAYS = [
-  { day: "Monday", status: "today", isToday: true, name: "Upper Body Strength" },
-  { day: "Tuesday", status: "upcoming", isToday: false, name: "Lower Body Hypertrophy" },
-  { day: "Wednesday", status: "rest", isToday: false, name: "Rest & Active Recovery" },
-  { day: "Thursday", status: "upcoming", isToday: false, name: "Upper Body Hypertrophy" },
-  { day: "Friday", status: "upcoming", isToday: false, name: "Lower Body Power" },
-  { day: "Saturday", status: "upcoming", isToday: false, name: "Cardio & Core Endurance" },
-  { day: "Sunday", status: "rest", isToday: false, name: "Rest & Full Recovery" },
-];
+export function getSampleFreeWeekDays(referenceDate: Date = new Date()) {
+  const weekStart = startOfWeek(referenceDate, { weekStartsOn: 1 });
+  const dayNames = [
+    "Upper Body Strength",
+    "Lower Body Hypertrophy",
+    "Rest & Recovery",
+    "Upper Body Hypertrophy",
+    "Lower Body Power",
+    "Cardio & Core",
+    "Rest & Full Recovery",
+  ];
+  return Array.from({ length: 7 }).map((_, i) => {
+    const d = addDays(weekStart, i);
+    const dateStr = format(d, "yyyy-MM-dd");
+    const isRest = dayNames[i].toLowerCase().includes("rest");
+    return {
+      id: `free-sample-day-${i + 1}`,
+      workout_date: dateStr,
+      status: isRest ? "rest" : "scheduled",
+      name: dayNames[i],
+    };
+  });
+}
+
+export const SAMPLE_FREE_WEEK_DAYS = getSampleFreeWeekDays();

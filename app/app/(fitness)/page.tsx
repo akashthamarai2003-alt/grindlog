@@ -9,7 +9,7 @@ import { Suspense } from 'react';
 import { differenceInCalendarDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
 import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing-page";
-import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS } from "@/lib/fitness/sample-free-preview";
+import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS, getSampleFreeWeekDays } from "@/lib/fitness/sample-free-preview";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { hasGeneratedStartingReport } from "@/lib/services/fitness/starting-report-service";
 export const dynamic = "force-dynamic";
@@ -118,11 +118,11 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
   const effectiveTodayWorkout = workout || (isFreeUser ? SAMPLE_FREE_WORKOUT : null);
   const effectiveWeekWorkouts = (weekWorkouts && weekWorkouts.length > 0)
     ? weekWorkouts
-    : (isFreeUser ? SAMPLE_FREE_WEEK_DAYS : []);
+    : (isFreeUser ? getSampleFreeWeekDays(activeDate) : []);
 
   let dayNumber = 1;
   if (effectivePlan?.created_at) {
-    dayNumber = Math.max(1, differenceInCalendarDays(new Date(), new Date(effectivePlan.created_at)) + 1);
+    dayNumber = Math.max(1, differenceInCalendarDays(activeDate, new Date(effectivePlan.created_at)) + 1);
   }
 
   const premiumLevel = isFreeUser ? "free" : subscriptionPlan?.id === "pro" ? "pro" : "core";

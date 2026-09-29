@@ -23,10 +23,19 @@ export function DailyActivityCard({
   const router = useRouter();
   const isPro = premiumLevel === "pro";
 
-  // Pull saved targets from the AI plan
-  const stepsTarget = Number(lifestyle?.daily_steps_target) > 0 ? Number(lifestyle.daily_steps_target) : null;
+  // Pull saved targets from the AI plan (support both field names)
+  const stepsTarget = Number(lifestyle?.daily_steps_target ?? lifestyle?.steps_target) > 0
+    ? Number(lifestyle?.daily_steps_target ?? lifestyle?.steps_target)
+    : null;
   const waterTarget = Number(lifestyle?.water_target_liters) > 0 ? Number(lifestyle.water_target_liters) : null;
   const sleepTarget = Number(lifestyle?.sleep_target_hours) > 0 ? Number(lifestyle.sleep_target_hours) : null;
+
+  const todayStr = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const isToday = !activityDate || activityDate === todayStr;
 
   // Active values
   const stepsVal = Number(activity?.steps) > 0 ? Number(activity.steps) : null;
@@ -74,7 +83,7 @@ export function DailyActivityCard({
               <Activity className="w-4 h-4 text-[#ADFF00]" />
             </div>
             <h3 className="text-sm font-black tracking-wider text-white uppercase leading-none">
-              Today&apos;s Activity
+              {isToday ? "Today's Activity" : "Activity"}
             </h3>
           </div>
           {isPro && (

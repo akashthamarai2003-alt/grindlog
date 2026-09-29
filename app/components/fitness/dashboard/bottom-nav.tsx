@@ -47,6 +47,12 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
               prefetch={true}
               onClick={(e) => {
                 if (pathname === item.href) {
+                  // If query parameters are present (e.g. ?date=2026-09-25), allow navigation to reset to today
+                  if (typeof window !== "undefined" && window.location.search) {
+                    window.scrollTo({ top: 0, behavior: "instant" });
+                    setNavigatingTo(item.href);
+                    return;
+                  }
                   e.preventDefault();
                   window.scrollTo({ top: 0, behavior: "smooth" });
                   return;

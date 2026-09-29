@@ -84,6 +84,7 @@ export async function updateSession(request: NextRequest) {
   if (process.env.NODE_ENV !== "production" || process.env.PLAYWRIGHT_TEST === "1") {
     publicPaths.push("/test-nutrition");
     publicPaths.push("/test-workout");
+    publicPaths.push("/test-home");
   }
 
   const isPublicPath = publicPaths.some(

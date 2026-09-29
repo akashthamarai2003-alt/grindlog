@@ -99,8 +99,9 @@ export function HorizontalCalendar({ weekWorkouts = [], targetDateStr }: Horizon
 
           return (
             <Link
-              key={idx}
+              key={dateString}
               href={`/?date=${dateString}`}
+              aria-current={isActive ? "date" : undefined}
               scroll={false}
               prefetch={true}
               onClick={() => {

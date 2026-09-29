@@ -19,8 +19,14 @@ export function TodaysWorkoutCard({
   onFreeClick,
 }: TodaysWorkoutCardProps) {
   const { setNavigatingTo } = useInstantNav();
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Get user local calendar date in YYYY-MM-DD format (prevents UTC mismatch in non-GMT zones)
+  const todayStr = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
   const cardDateStr = workout?.workout_date || targetDateStr || todayStr;
+  const isToday = cardDateStr === todayStr;
   const isFuture = cardDateStr > todayStr;
 
   if (!workout) {
@@ -73,7 +79,7 @@ export function TodaysWorkoutCard({
           <div className="w-8 h-8 rounded-full bg-[#ADFF00]/10 flex items-center justify-center">
             <Dumbbell className="w-4 h-4 text-[#ADFF00]" />
           </div>
-          <h3 className="text-sm font-semibold tracking-wide text-white/90 uppercase">Today's Workout</h3>
+          <h3 className="text-sm font-semibold tracking-wide text-white/90 uppercase">{isToday ? "Today's Workout" : "Workout"}</h3>
         </div>
 
         {/* Main Content */}

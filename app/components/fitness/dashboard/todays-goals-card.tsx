@@ -38,6 +38,12 @@ export function TodaysGoalsCard({
     }).format(new Date());
   }, [targetDateStr]);
 
+  const isToday = effectiveDate === new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
   const goalsStorageKey = effectiveUserId
     ? `grindlog_goals_completed_${effectiveUserId}_${effectiveDate}`
     : `grindlog_goals_completed_${effectiveDate}`;
@@ -52,13 +58,10 @@ export function TodaysGoalsCard({
   const targetCalories = Number(nutrition?.daily_calories) > 0 ? Number(nutrition.daily_calories) : null;
   const proteinTarget = Number(nutrition?.protein_grams) > 0 ? Number(nutrition.protein_grams) : null;
 
-  // Track meal completion from Today's Nutrition card
+  // Track meal completion from Today's Nutrition card (initialized cleanly for SSR)
   const [nutritionProgress, setNutritionProgress] = useState(() => {
-    const cached = typeof window !== "undefined" ? nutritionClientCache.get(effectiveDate, effectiveUserId) : null;
-    const isDifferentUser = effectiveUserId && cached?.user_id && cached.user_id !== effectiveUserId;
-    const safeCached = isDifferentUser ? null : cached;
-    const dbCals = Math.round(Number(safeCached?.consumed?.calories ?? nutrition?.consumed?.calories) || 0);
-    const dbPro = Math.round(Number(safeCached?.consumed?.protein ?? nutrition?.consumed?.protein) || 0);
+    const dbCals = Math.round(Number(nutrition?.consumed?.calories) || 0);
+    const dbPro = Math.round(Number(nutrition?.consumed?.protein) || 0);
     const calsMet = targetCalories ? dbCals >= targetCalories * 0.9 : false;
     const proMet = proteinTarget ? dbPro >= proteinTarget * 0.9 : false;
     return {
@@ -318,7 +321,7 @@ export function TodaysGoalsCard({
             </div>
             <div>
               <h3 className="text-sm font-black tracking-wider text-white uppercase leading-none">
-                Today&apos;s Goals
+                {isToday ? "Today's Goals" : "Goals"}
               </h3>
             </div>
           </div>

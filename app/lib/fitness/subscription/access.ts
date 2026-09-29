@@ -11,6 +11,7 @@ export type FitnessSubscriptionStatus = "active" | "grace_period" | "expired" | 
 export interface FitnessSubscriptionState {
   status: FitnessSubscriptionStatus;
   plan: FitnessPlanConfig;
+  previousPlan?: FitnessPlanConfig;
   daysRemaining: number;
   hoursRemaining: number;
   graceHoursRemaining: number;
@@ -56,7 +57,8 @@ export const getFitnessSubscriptionState = cache(async (userId: string): Promise
   let candidatePlanKey: string | null = null;
   let expiresAt: string | null = null;
 
-  if (sub && sub.status === "active") {
+  // Inspect subscription record regardless of status to determine plan & expiry
+  if (sub && sub.plan) {
     candidatePlanKey = sub.plan;
     expiresAt = sub.current_period_end || null;
   }
@@ -76,12 +78,12 @@ export const getFitnessSubscriptionState = cache(async (userId: string): Promise
         .maybeSingle(),
     ]);
 
-    if (fitnessProfile?.fitness_is_premium) {
+    if (fitnessProfile?.fitness_is_premium || fitnessProfile?.fitness_premium_expires_at) {
       candidatePlanKey = fitnessProfile.fitness_premium_level === "pro" ? "pro" : "core";
       expiresAt = fitnessProfile.fitness_premium_expires_at || null;
     }
 
-    if (!candidatePlanKey && mainProfile?.is_premium) {
+    if (!candidatePlanKey && (mainProfile?.is_premium || mainProfile?.premium_expires_at)) {
       candidatePlanKey = mainProfile.premium_level === "pro" ? "pro" : "core";
       expiresAt = mainProfile.premium_expires_at || null;
     }
@@ -145,10 +147,11 @@ export const getFitnessSubscriptionState = cache(async (userId: string): Promise
         expiresAt,
       };
     } else {
-      // Expired beyond 48-hour grace period
+      // Expired beyond 48-hour grace period: access set to free, previous plan saved for renewal
       result = {
         status: "expired",
         plan: FITNESS_PLANS.free,
+        previousPlan: planConfig,
         daysRemaining: 0,
         hoursRemaining: 0,
         graceHoursRemaining: 0,

@@ -7,6 +7,8 @@ import { FitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 export function RenewalBanner({ state }: { state: FitnessSubscriptionState }) {
   if (!state) return null;
 
+  const targetPlanId = state.previousPlan?.id === "core" || state.plan?.id === "core" ? "core" : "pro";
+
   // 1. Grace Period (0-48h after expiry)
   if (state.isGracePeriod) {
     return (
@@ -31,7 +33,7 @@ export function RenewalBanner({ state }: { state: FitnessSubscriptionState }) {
             </div>
           </div>
           <Link
-            href={`/payment?intent=renew_monthly&plan=${state.plan.id === "core" ? "core" : "pro"}`}
+            href={`/payment?intent=renew_monthly&plan=${targetPlanId}`}
             className="fitness-renewal-action px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black uppercase tracking-wider text-xs rounded-xl text-center shadow-[0_0_15px_rgba(245,158,11,0.4)] shrink-0 active:scale-95 transition-all flex items-center justify-center gap-1.5"
           >
             <span>Renew Month ⚡</span>
@@ -64,7 +66,7 @@ export function RenewalBanner({ state }: { state: FitnessSubscriptionState }) {
             </div>
           </div>
           <Link
-            href={`/payment?intent=renew_monthly&plan=${state.plan.id === "core" ? "core" : "pro"}`}
+            href={`/payment?intent=renew_monthly&plan=${targetPlanId}`}
             className="fitness-renewal-action px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-400 hover:from-purple-400 hover:to-purple-300 text-white font-black uppercase tracking-wider text-xs rounded-xl text-center shadow-[0_0_15px_rgba(168,85,247,0.4)] shrink-0 active:scale-95 transition-all flex items-center justify-center gap-1.5"
           >
             <span>Unlock Next Month ⚡</span>
@@ -97,7 +99,7 @@ export function RenewalBanner({ state }: { state: FitnessSubscriptionState }) {
             </div>
           </div>
           <Link
-            href={`/payment?intent=renew_monthly&plan=${state.plan.id === "core" ? "core" : "pro"}`}
+            href={`/payment?intent=renew_monthly&plan=${targetPlanId}`}
             className="fitness-renewal-action px-4 py-2.5 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl text-center shadow-[0_0_15px_rgba(173,255,0,0.3)] shrink-0 active:scale-95 transition-all flex items-center justify-center gap-1.5"
           >
             <span>Renew Early ⚡</span>
