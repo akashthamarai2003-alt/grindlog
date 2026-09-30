@@ -70,6 +70,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- Package visibility for UPI payment apps and intent schemes (Android 11+ / API 30+) -->
     <queries>
