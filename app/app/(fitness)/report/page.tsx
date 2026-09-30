@@ -8,6 +8,7 @@ import { GeneratePlanButton } from "@/components/fitness/report/generate-plan-bu
 import { hasGeneratedStartingReport, generateStartingReport } from "@/lib/services/fitness/starting-report-service";
 import { OnboardingSchema } from "@/types/fitness/onboarding";
 import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
+import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import {
   BodyScanInsightsCard,
   type BodyScanInsightsData,
@@ -41,7 +42,7 @@ export default async function AIStartingReportPage({
     redirect("/");
   }
 
-  let [{ data: profile }, { data: scan }] = await Promise.all([
+  const [profileResult, scanResult, subscriptionState] = await Promise.all([
     supabase
       .from("fitness_os_profiles")
       .select("*")
@@ -52,7 +53,15 @@ export default async function AIStartingReportPage({
       .select("gemini_analysis")
       .eq("user_id", user.id)
       .maybeSingle(),
+    getFitnessSubscriptionState(user.id),
   ]);
+
+  let profile = profileResult.data;
+  let scan = scanResult.data;
+  const isPaidUser =
+    subscriptionState.status === "active" ||
+    subscriptionState.status === "grace_period" ||
+    (subscriptionState.plan && subscriptionState.plan.id !== "free");
 
   // Fallback to admin client if user client did not find completed profile or scan record
   // (guards against any cookie/session replication latency after onboarding completion)
@@ -116,7 +125,7 @@ export default async function AIStartingReportPage({
       const generated = await generateStartingReport({
         onboarding: validatedOnboarding,
         bmi: typeof profile.bmi === "number" ? profile.bmi : null,
-        estimatedBodyFat: null,
+        estimatedBodyFat: typeof profile.estimated_body_fat === "number" ? profile.estimated_body_fat : null,
         visualObservations,
       });
 
@@ -560,7 +569,7 @@ export default async function AIStartingReportPage({
 
         {/* Continue Button */}
         <div className="pt-4">
-          <GeneratePlanButton isRenew={isRenew} />
+          <GeneratePlanButton isRenew={isRenew} isSubscribed={isPaidUser} />
         </div>
       </div>
     </div>

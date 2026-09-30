@@ -6,20 +6,31 @@ import { useRouter } from "next/navigation";
 import { AIPlanAnimation } from "@/components/fitness/plan-animation";
 import { checkUserPremiumStatusAction, markStartingReportViewedAction } from "@/app/actions/payment";
 
-export function GeneratePlanButton({ isRenew }: { isRenew?: boolean }) {
+export function GeneratePlanButton({
+  isRenew,
+  isSubscribed: initialSubscribed,
+}: {
+  isRenew?: boolean;
+  isSubscribed?: boolean;
+}) {
   const router = useRouter();
   const [isPreparing, setIsPreparing] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(initialSubscribed ?? false);
 
   useEffect(() => {
+    if (initialSubscribed !== undefined) {
+      setIsSubscribed(initialSubscribed);
+    }
     const renewSuffix = isRenew ? "&renew=true" : "";
     const renewQuery = isRenew ? "?renew=true" : "";
     router.prefetch(`/payment?returnTo=/plan-setup${renewSuffix}&intent=generate_plan`);
     router.prefetch(`/plan-setup${renewQuery}`);
-    checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((res) => {
-      setIsSubscribed(Boolean(res));
-    });
-  }, [router, isRenew]);
+    if (initialSubscribed === undefined) {
+      checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((res) => {
+        setIsSubscribed(Boolean(res));
+      });
+    }
+  }, [router, isRenew, initialSubscribed]);
 
   const handleClick = () => {
     if (isPreparing) return;

@@ -312,12 +312,17 @@ export default function PlanSetupPage() {
         setGenerationError(message);
         setGenerationErrorType(getPlanGenerationErrorType(err));
         toast.error(message);
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
       });
+
+    // Safety timeout: ensure loading state is released if the animation callback doesn't fire
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) setLoading(false);
+    }, 12000);
       
-    return () => { isMounted = false; };
+    return () => { 
+      isMounted = false; 
+      clearTimeout(safetyTimer);
+    };
   }, [router]);
 
   const handleModulate = async (e: React.FormEvent) => {
