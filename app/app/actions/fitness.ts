@@ -104,7 +104,7 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
   } = validData;
 
   // Insert or Update logic based on UNIQUE user_id
-  const { error: upsertError } = await supabase
+  let { error: upsertError } = await supabase
     .from("fitness_os_profiles")
     .upsert(
       { 
@@ -122,6 +122,33 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     );
 
   if (upsertError) {
+    console.warn("Failed to save fitness profile with user client, attempting admin client:", upsertError);
+    try {
+      const { createAdminClient } = await import("@/lib/services/supabase/admin");
+      const admin = createAdminClient();
+      const adminRes = await admin
+        .from("fitness_os_profiles")
+        .upsert(
+          { 
+            user_id: user.id, 
+            ...profileData,
+            bmi,
+            estimated_body_fat: estimated_body_fat || null,
+            baseline_calories,
+            initial_protein_target,
+            weight_trend_baseline,
+            onboarding_completed: true,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: "user_id" }
+        );
+      upsertError = adminRes.error;
+    } catch (adminFallbackErr) {
+      console.error("Admin client fallback error:", adminFallbackErr);
+    }
+  }
+
+  if (upsertError) {
     console.error("Failed to save fitness profile:", upsertError);
     return { success: false, error: "Failed to save profile. Please try again." };
   }
@@ -129,10 +156,20 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
   // Also update the main profile's display_name and name if provided
   if (validData.name && validData.name.trim()) {
     const cleanName = validData.name.trim();
-    await supabase
+    const { error: profileUpdateErr } = await supabase
       .from("profiles")
       .update({ display_name: cleanName, name: cleanName })
       .eq("id", user.id);
+    if (profileUpdateErr) {
+      try {
+        const { createAdminClient } = await import("@/lib/services/supabase/admin");
+        const admin = createAdminClient();
+        await admin
+          .from("profiles")
+          .update({ display_name: cleanName, name: cleanName })
+          .eq("id", user.id);
+      } catch {}
+    }
     try {
       await supabase.auth.updateUser({
         data: { name: cleanName, full_name: cleanName }

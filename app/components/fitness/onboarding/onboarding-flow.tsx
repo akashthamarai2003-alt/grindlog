@@ -161,12 +161,14 @@ export function OnboardingFlow({
   initialData = {}, 
   sessionId, 
   isEditing = false,
-  initialStep
+  initialStep,
+  redirectTo = "/report"
 }: { 
   initialData?: Partial<OnboardingData>, 
   sessionId?: string,
   isEditing?: boolean,
-  initialStep?: number
+  initialStep?: number,
+  redirectTo?: string
 }) {
   const [step, setStep] = useState(initialStep ?? (isEditing ? 15 : 1));
   const [direction, setDirection] = useState(1);
@@ -189,6 +191,11 @@ export function OnboardingFlow({
   useEffect(() => {
     if (isEditing || initialStep !== undefined) return;
     try {
+      const isCompleted = localStorage.getItem("grindlog_onboarding_completed");
+      if (isCompleted === "true") {
+        window.location.href = redirectTo || "/report";
+        return;
+      }
       const savedStep = localStorage.getItem("grindlog_onboarding_step");
       const savedData = localStorage.getItem("grindlog_onboarding_draft");
       if (savedData) {
@@ -204,7 +211,7 @@ export function OnboardingFlow({
         }
       }
     } catch {}
-  }, [isEditing]);
+  }, [isEditing, initialStep, redirectTo]);
 
   // Save current step and form draft on every change
   useEffect(() => {
@@ -239,9 +246,10 @@ export function OnboardingFlow({
   };
 
   const handleComplete = () => {
+    const targetUrl = redirectTo || "/report";
     try {
+      localStorage.setItem("grindlog_onboarding_completed", "true");
       localStorage.removeItem("grindlog_onboarding_step");
-      localStorage.removeItem("grindlog_onboarding_draft");
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
         if (k && (k.startsWith("grindlog_meals_completed_") || k.startsWith("grindlog_goals_completed_"))) {
@@ -255,7 +263,7 @@ export function OnboardingFlow({
         }
       }
     } catch {}
-    window.location.replace("/report");
+    window.location.href = targetUrl;
   };
 
   const variants = {
@@ -494,6 +502,12 @@ export function OnboardingFlow({
       setDirection(1);
       setStep(15);
       return;
+    }
+    if (step === 15) {
+      // Step 15 -> Step 16 transition: persist profile immediately in the background
+      void saveFitnessOnboardingAction(data).catch((err) => {
+        console.warn("[OnboardingFlow] Background save on step 15 error:", err);
+      });
     }
     setDirection(1);
     setStep((currentStep) => Math.min(currentStep + 1, totalSteps));
@@ -2777,6 +2791,15 @@ const AIAnalysisScreen = ({
     let isMounted = true;
     let fastForwardTimer: NodeJS.Timeout | null = null;
 
+    // Immediately trigger saveFitnessOnboardingAction so database record exists with onboarding_completed = true
+    void saveFitnessOnboardingAction(data).then((res) => {
+      if (res?.success) {
+        console.log("[Onboarding] Profile saved atomically to Supabase.");
+      }
+    }).catch((err) => {
+      console.warn("[Onboarding] Atomic profile save warning:", err);
+    });
+
     const t1 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 1));
     }, 1200);
@@ -2790,6 +2813,7 @@ const AIAnalysisScreen = ({
     // Safety timeout: Never hang indefinitely on mobile (25s max)
     const safetyTimer = setTimeout(() => {
       if (isMounted && !isDone && !analysisError) {
+        void saveFitnessOnboardingAction(data);
         setIsDone(true);
       }
     }, 25000);
@@ -2842,6 +2866,9 @@ const AIAnalysisScreen = ({
   const handleCompleteClick = () => {
     if (isNavigating) return;
     setIsNavigating(true);
+    void saveFitnessOnboardingAction(data).catch((e) => {
+      console.warn("[Onboarding] Background save error on complete click:", e);
+    });
     onComplete();
   };
 

@@ -26,8 +26,13 @@ test.describe("GrindLog Onboarding Flow Deep Verification", () => {
     await expect(startBtn).toBeVisible();
     await startBtn.click();
 
-    // Advances to Step 2 (Personal Profile)
-    await expect(page.getByRole("heading", { name: "PERSONAL PROFILE" })).toBeVisible();
+    // In case initial click arrived during React hydration window, retry click
+    try {
+      await expect(page.getByRole("heading", { name: "PERSONAL PROFILE" })).toBeVisible({ timeout: 4000 });
+    } catch {
+      await startBtn.click();
+      await expect(page.getByRole("heading", { name: "PERSONAL PROFILE" })).toBeVisible({ timeout: 10000 });
+    }
     await expect(page.getByPlaceholder("Your Name")).toBeVisible();
   });
 
@@ -302,6 +307,14 @@ test.describe("GrindLog Onboarding Flow Deep Verification", () => {
     await expect(page.getByText(/Transformation Ready/i)).toBeVisible({ timeout: 12000 });
     const viewPlanBtn = page.getByRole("button", { name: /View My Transformation Plan/i });
     await expect(viewPlanBtn).toBeVisible();
+
+    // Click "View My Transformation Plan" and verify full transition into Report
+    await viewPlanBtn.click();
+    await expect(page).toHaveURL(/(\/report|\/test-report)/, { timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "Your Starting Point" })).toBeVisible({ timeout: 15000 });
+
+    // Verify user is NOT bounced back to /onboarding
+    expect(page.url()).not.toContain("/onboarding");
   });
 
   // ── 11. MOBILE APK VIEWPORT (390x844) RESPONSIVENESS & ZERO OVERFLOW ──
@@ -326,5 +339,19 @@ test.describe("GrindLog Onboarding Flow Deep Verification", () => {
     if (box) {
       expect(box.y + box.height).toBeLessThanOrEqual(844);
     }
+  });
+
+  // ── 12. COMPLETION PERSISTENCE & NO RESET TO STEP 1 ──
+  test("Completion Persistence: Completed onboarding redirects directly to report without restarting at Step 1", async ({ page }) => {
+    // Pre-seed localStorage with completed onboarding state
+    await page.addInitScript(() => {
+      localStorage.setItem("grindlog_onboarding_completed", "true");
+    });
+
+    await page.goto("/test-onboarding");
+    // Should immediately navigate to report and NOT show Step 1
+    await expect(page).toHaveURL(/(\/report|\/test-report)/, { timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /PUSH/i })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: /GET STARTED/i })).not.toBeVisible();
   });
 });

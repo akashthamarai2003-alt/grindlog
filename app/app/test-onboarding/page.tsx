@@ -58,6 +58,7 @@ export default async function TestOnboardingPage({
         sessionId="test-session-e2e" 
         isEditing={isEditing}
         initialStep={parsedStep}
+        redirectTo="/test-report?subscribed=1"
       />
     </div>
   );
