@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { OnboardingSchema, OnboardingData } from "@/types/fitness/onboarding";
@@ -140,6 +141,23 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
   return { success: true };
 }
 
+const UpdateBaselineProfileSchema = z.object({
+  name: z.string().trim().max(100).nullable().optional(),
+  weight: z.number().min(20).max(400).nullable().optional(),
+  target_weight: z.number().min(20).max(400).nullable().optional(),
+  height: z.number().min(40).max(300).nullable().optional(),
+  fitness_level: z.enum(["Beginner", "Intermediate", "Advanced"]).nullable().optional(),
+  training_days_per_week: z.number().min(1).max(7).nullable().optional(),
+  goal: z.enum([
+    "Lose Fat", "Cut", "Build Muscle", "Gain Weight",
+    "Lose Fat + Build Muscle", "Build Strength", "Improve Fitness", "Maintain"
+  ]).nullable().optional(),
+  waist_cm: z.number().min(20).max(300).nullable().optional(),
+  chest_cm: z.number().min(20).max(300).nullable().optional(),
+  arm_cm: z.number().min(10).max(100).nullable().optional(),
+  thigh_cm: z.number().min(10).max(150).nullable().optional(),
+});
+
 export async function updateFitnessProfilePartialAction(payload: Record<string, any>) {
   const supabase = await createServerSupabase();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -147,11 +165,33 @@ export async function updateFitnessProfilePartialAction(payload: Record<string, 
     return { success: false, error: "Not authenticated" };
   }
 
-  // Calculate BMI if height and weight updated
-  let updates: Record<string, any> = { ...payload };
-  if (updates.height && updates.weight) {
-    const heightInMeters = updates.height / 100;
-    updates.bmi = parseFloat((updates.weight / (heightInMeters * heightInMeters)).toFixed(1));
+  const parsed = UpdateBaselineProfileSchema.safeParse(payload);
+  if (!parsed.success) {
+    console.error("Baseline Profile Validation Error:", parsed.error.format());
+    return { success: false, error: "Invalid profile data provided" };
+  }
+
+  const validData = parsed.data;
+
+  // Fetch current profile to calculate BMI and check existing values safely
+  const { data: currentProfile } = await supabase
+    .from("fitness_os_profiles")
+    .select("height, weight")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const updates: Record<string, any> = { ...validData };
+
+  // Calculate BMI if height or weight updated (or from current profile)
+  const effHeight = updates.height !== undefined ? updates.height : currentProfile?.height;
+  const effWeight = updates.weight !== undefined ? updates.weight : currentProfile?.weight;
+
+  if (typeof effHeight === "number" && typeof effWeight === "number" && effHeight > 40 && effWeight > 20) {
+    const heightInMeters = effHeight / 100;
+    const bmiVal = effWeight / (heightInMeters * heightInMeters);
+    if (isFinite(bmiVal) && bmiVal > 0) {
+      updates.bmi = parseFloat(bmiVal.toFixed(1));
+    }
   }
 
   updates.updated_at = new Date().toISOString();
@@ -185,12 +225,19 @@ export async function updateFitnessProfilePartialAction(payload: Record<string, 
     }
   }
 
-  // Also update the main profile's display_name if a name was updated
-  if (updates.name) {
+  // Also update the main profile's display_name & name, plus auth user metadata if name was specified
+  if (updates.name !== undefined) {
+    const newName = updates.name ? updates.name.trim() : null;
     await supabase
       .from("profiles")
-      .update({ display_name: updates.name })
+      .update({ display_name: newName, name: newName })
       .eq("id", user.id);
+
+    try {
+      await supabase.auth.updateUser({
+        data: { full_name: newName || "" }
+      });
+    } catch {}
   }
 
   // Recalculate targets if any target-affecting fields were updated
@@ -967,10 +1014,11 @@ export async function toggleRemindersEnabledAction(enabled: boolean) {
 
   const { error } = await supabase
     .from("fitness_os_profiles")
-    .update({
+    .upsert({
+      user_id: user.id,
       reminders_enabled: enabled,
-    })
-    .eq("user_id", user.id);
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
 
   if (error) {
     console.error("Error toggling reminders:", error);

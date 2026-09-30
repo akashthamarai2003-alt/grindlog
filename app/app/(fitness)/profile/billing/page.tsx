@@ -51,7 +51,7 @@ export default async function FitnessBillingPage({ searchParams }: { searchParam
   const proUpgradePrice = pricingConfig?.monthly?.pro?.price ?? DEFAULT_PRICING.monthly.pro.price ?? 2;
   const membershipLevel = fitnessProfile?.fitness_premium_level === "pro" || subscriptionState.plan.id === "pro"
     ? "pro"
-    : fitnessProfile?.fitness_premium_level === "core" || subscriptionState.plan.id === "starter"
+    : fitnessProfile?.fitness_premium_level === "core" || subscriptionState.plan.id === "core" || subscriptionState.plan.id === "starter"
     ? "core"
     : undefined;
   let lockedRatePaise: number | null = null;
@@ -67,7 +67,11 @@ export default async function FitnessBillingPage({ searchParams }: { searchParam
   const paymentHistory = (subscriptionsData || []).map((sub: any) => ({
     id: sub.id,
     plan: sub.plan,
-    amount: sub.amount_paise == null ? null : Number(sub.amount_paise) / 100,
+    amount: sub.amount_paise != null 
+      ? Number(sub.amount_paise) / 100 
+      : sub.amount != null 
+      ? Number(sub.amount) 
+      : null,
     status: sub.status === "active" ? "Paid ✓" : sub.status,
     paymentId: sub.razorpay_payment_id || "",
     date: sub.started_at || new Date().toISOString(),

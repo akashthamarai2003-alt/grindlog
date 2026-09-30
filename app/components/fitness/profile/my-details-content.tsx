@@ -64,12 +64,15 @@ export function MyDetailsContent({
     thigh_cm: initialFitnessProfile?.thigh_cm || ""
   });
 
-  // Calculate BMI
-  const heightM = fitnessProfile?.height ? fitnessProfile.height / 100 : null;
-  const weight = fitnessProfile?.weight || null;
-  const bmi = (heightM && weight) ? (weight / (heightM * heightM)).toFixed(1) : null;
+  // Safe BMI Calculation
+  const heightVal = typeof fitnessProfile?.height === "number" ? fitnessProfile.height : parseFloat(fitnessProfile?.height);
+  const weightVal = typeof fitnessProfile?.weight === "number" ? fitnessProfile.weight : parseFloat(fitnessProfile?.weight);
+  const heightM = (heightVal && heightVal > 40) ? heightVal / 100 : null;
+  const bmiRaw = (heightM && weightVal && weightVal > 20) ? (weightVal / (heightM * heightM)) : null;
+  const bmi = (bmiRaw && isFinite(bmiRaw) && bmiRaw > 0 && bmiRaw <= 150) ? bmiRaw.toFixed(1) : null;
 
   const getBmiCategory = (bmiVal: number) => {
+    if (isNaN(bmiVal) || !isFinite(bmiVal)) return null;
     if (bmiVal < 18.5) return { text: "Underweight", color: "text-yellow-400" };
     if (bmiVal < 25) return { text: "Optimal", color: "text-[#ADFF00]" };
     if (bmiVal < 30) return { text: "Overweight", color: "text-orange-400" };
@@ -77,6 +80,16 @@ export function MyDetailsContent({
   };
 
   const bmiStatus = bmi ? getBmiCategory(parseFloat(bmi)) : null;
+
+  const renderListOrString = (val: any, fallback: string = "Not specified") => {
+    if (Array.isArray(val)) {
+      return val.length > 0 ? val.join(", ") : fallback;
+    }
+    if (typeof val === "string" && val.trim().length > 0) {
+      return val.trim();
+    }
+    return fallback;
+  };
 
   const openEditModal = () => {
     setFormData({
@@ -97,13 +110,16 @@ export function MyDetailsContent({
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("fcm_token");
+        localStorage.removeItem("fcm_registered");
+      }
+      await fetch("/api/auth/signout", { method: "POST" });
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
-      router.push("/auth/signin?redirect=/");
-      router.refresh();
+      window.location.href = "/auth/signin";
     } catch (err) {
-      toast.error("Failed to sign out");
-      setIsSigningOut(false);
+      window.location.href = "/auth/signin";
     }
   };
 
@@ -200,7 +216,7 @@ export function MyDetailsContent({
                 <Scale className="w-4 h-4 text-[#ADFF00]" />
               </div>
               <div>
-                <div className="text-2xl font-black text-white">{weight ? `${weight} kg` : "--"}</div>
+                <div className="text-2xl font-black text-white">{fitnessProfile?.weight ? `${fitnessProfile.weight} kg` : "--"}</div>
                 {fitnessProfile?.target_weight && (
                   <p className="text-[11px] text-[#ADFF00] font-semibold mt-0.5">
                     Target: {fitnessProfile.target_weight} kg
@@ -436,19 +452,23 @@ export function MyDetailsContent({
           <div className="bg-[#121E12] border border-[#1A2619] p-5 rounded-3xl space-y-3">
             <div className="flex flex-col gap-1 pb-2 border-b border-[#1A2619]">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Physical Problems</span>
-              <span className="text-xs font-medium text-white">{fitnessProfile?.physical_problems?.length > 0 ? fitnessProfile.physical_problems.join(", ") : "None reported"}</span>
+              <span className="text-xs font-medium text-white">{renderListOrString(fitnessProfile?.physical_problems, "None reported")}</span>
             </div>
             <div className="flex flex-col gap-1 pb-2 border-b border-[#1A2619]">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Exercise Limitations</span>
-              <span className="text-xs font-medium text-white">{fitnessProfile?.exercise_limitations?.length > 0 ? fitnessProfile.exercise_limitations.join(", ") : "None"}</span>
+              <span className="text-xs font-medium text-white">{renderListOrString(fitnessProfile?.exercise_limitations, "None")}</span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Previous Injuries</span>
               <span className="text-xs font-medium text-white">
                 {typeof fitnessProfile?.previous_injuries === "boolean"
                   ? fitnessProfile.previous_injuries
-                    ? `Yes${fitnessProfile?.previous_injury_areas?.length ? ` — ${fitnessProfile.previous_injury_areas.join(", ")}` : ""}`
+                    ? `Yes${Array.isArray(fitnessProfile?.previous_injury_areas) && fitnessProfile.previous_injury_areas.length > 0 ? ` — ${fitnessProfile.previous_injury_areas.join(", ")}` : typeof fitnessProfile?.previous_injury_areas === "string" && fitnessProfile.previous_injury_areas.trim() ? ` — ${fitnessProfile.previous_injury_areas.trim()}` : ""}`
                     : "No"
+                  : typeof fitnessProfile?.injuries === "string" && fitnessProfile.injuries.trim()
+                  ? fitnessProfile.injuries.trim()
+                  : Array.isArray(fitnessProfile?.injuries) && fitnessProfile.injuries.length > 0
+                  ? fitnessProfile.injuries.join(", ")
                   : "Not answered"}
               </span>
             </div>
@@ -470,11 +490,11 @@ export function MyDetailsContent({
           <div className="bg-[#121E12] border border-[#1A2619] p-5 rounded-3xl space-y-3">
             <div className="flex flex-col gap-1 pb-2 border-b border-[#1A2619]">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Available Equipment</span>
-              <span className="text-xs font-medium text-white">{fitnessProfile?.equipment?.length > 0 ? fitnessProfile.equipment.join(", ") : "Not specified"}</span>
+              <span className="text-xs font-medium text-white">{renderListOrString(fitnessProfile?.equipment || fitnessProfile?.equipment_available, "Not specified")}</span>
             </div>
             <div className="flex justify-between items-center pb-2 border-b border-[#1A2619]">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Preferred Days</span>
-              <span className="text-xs font-extrabold text-white text-right max-w-[200px] truncate">{fitnessProfile?.preferred_training_days?.length ? fitnessProfile.preferred_training_days.join(", ") : "Not specified"}</span>
+              <span className="text-xs font-extrabold text-white text-right max-w-[200px] truncate">{renderListOrString(fitnessProfile?.preferred_training_days || fitnessProfile?.preferred_workout_days, "Not specified")}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Preferred Time</span>
@@ -608,6 +628,7 @@ export function MyDetailsContent({
                       <span className="text-[10px] text-gray-500 font-bold block mb-1">Waist</span>
                       <input 
                         type="number"
+                        step="0.1"
                         value={formData.waist_cm}
                         onChange={(e) => setFormData(prev => ({ ...prev, waist_cm: e.target.value }))}
                         className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
@@ -618,10 +639,33 @@ export function MyDetailsContent({
                       <span className="text-[10px] text-gray-500 font-bold block mb-1">Chest</span>
                       <input 
                         type="number"
+                        step="0.1"
                         value={formData.chest_cm}
                         onChange={(e) => setFormData(prev => ({ ...prev, chest_cm: e.target.value }))}
                         className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
                         placeholder="95"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-bold block mb-1">Arms</span>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        value={formData.arm_cm}
+                        onChange={(e) => setFormData(prev => ({ ...prev, arm_cm: e.target.value }))}
+                        className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
+                        placeholder="35"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-bold block mb-1">Thighs</span>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        value={formData.thigh_cm}
+                        onChange={(e) => setFormData(prev => ({ ...prev, thigh_cm: e.target.value }))}
+                        className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
+                        placeholder="55"
                       />
                     </div>
                   </div>

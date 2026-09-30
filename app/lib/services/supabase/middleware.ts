@@ -88,6 +88,9 @@ export async function updateSession(request: NextRequest) {
     publicPaths.push("/test-progress");
     publicPaths.push("/test-notifications");
     publicPaths.push("/test-reminders");
+    publicPaths.push("/test-profile");
+    publicPaths.push("/test-details");
+    publicPaths.push("/test-billing");
   }
 
   const isPublicPath = publicPaths.some(

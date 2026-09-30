@@ -51,6 +51,13 @@ interface BillingManagementClientProps {
   userName?: string;
 }
 
+const formatSafeDate = (d: string | null | undefined, pattern: string = "dd MMM yyyy, hh:mm a") => {
+  if (!d) return "N/A";
+  const parsed = new Date(d);
+  if (isNaN(parsed.getTime())) return "N/A";
+  return format(parsed, pattern);
+};
+
 export function BillingManagementClient({
   paymentConfirmed = false,
   lockedRatePaise = null,
@@ -198,7 +205,7 @@ export function BillingManagementClient({
 
   return (
     <>
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
 
       <div className="min-h-screen bg-[#060D06] text-white pb-24">
         {/* Top Header */}
@@ -244,7 +251,7 @@ export function BillingManagementClient({
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
-                  {isActive ? (
+                  {status === "active" ? (
                     <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00] text-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
                       Active Membership
@@ -252,6 +259,10 @@ export function BillingManagementClient({
                   ) : isGracePeriod ? (
                     <span className="text-[10px] font-black uppercase tracking-wider bg-amber-500 text-black px-2.5 py-0.5 rounded-full">
                       Grace Period ({graceHoursRemaining}h left)
+                    </span>
+                  ) : status === "free" ? (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+                      Free Account
                     </span>
                   ) : (
                     <span className="text-[10px] font-black uppercase tracking-wider bg-gray-700 text-gray-300 px-2.5 py-0.5 rounded-full">
@@ -309,21 +320,50 @@ export function BillingManagementClient({
           </div>
 
           {/* 2. Self-Serve Renewal / Extension Action */}
-          {rateCheckFailed && <p role="alert" className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-700">We could not confirm your saved renewal price. Please contact support before renewing.</p>}
+          {rateCheckFailed && <p role="alert" className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-300 font-semibold">We could not confirm your saved renewal price. Please contact support before renewing.</p>}
           <div className="p-5 rounded-3xl bg-[#111A10] border border-white/10 space-y-4 shadow-lg">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#ADFF00]" />
-                  <span>Extend Subscription (1 Month)</span>
+                  <span>{status === "free" ? "Choose Your Plan" : "Extend Subscription (1 Month)"}</span>
                 </h3>
                 <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                  Renew ahead of time to maintain your streak. One calendar month is added after your current expiry (new expiry: <strong className="text-white">{prospectiveNewExpiry}</strong>).
+                  {status === "free" 
+                    ? "Unlock AI workout planning, custom nutrition targets, and real-time guidance." 
+                    : `Renew ahead of time to maintain your streak. One calendar month is added after your current expiry (new expiry: ${prospectiveNewExpiry}).`}
                 </p>
               </div>
             </div>
 
-            {isCore ? (
+            {status === "free" ? (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleExtendOrUpgrade("pro")}
+                  disabled={isProcessing || rateCheckFailed}
+                  className="w-full py-3.5 bg-[#ADFF00] hover:bg-[#bbfb2e] text-black font-black uppercase tracking-wider text-xs rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.25)] transition-all active:scale-[0.98] disabled:opacity-50"
+                >
+                  {isProcessing ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Get Pro (1 Month) — ₹{proPrice}/mo 🚀</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleExtendOrUpgrade("core")}
+                  disabled={isProcessing || rateCheckFailed}
+                  className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-bold text-xs rounded-xl transition-colors"
+                >
+                  Get Core (1 Month) for ₹{corePrice}
+                </button>
+              </div>
+            ) : isCore ? (
               <div className="space-y-2">
                 <button
                   type="button"
@@ -439,7 +479,7 @@ export function BillingManagementClient({
                           {item.plan.replace(/_/g, " ")}
                         </p>
                         <p className="text-[10px] text-gray-400">
-                          {format(new Date(item.date), "dd MMM yyyy, hh:mm a")} • ID: {item.paymentId ? `${item.paymentId.substring(0, 14)}...` : "Direct"}
+                          {formatSafeDate(item.date)} • ID: {item.paymentId ? `${item.paymentId.substring(0, 14)}...` : "Direct"}
                         </p>
                       </div>
                     </div>

@@ -146,9 +146,10 @@ export function ProfileContent({
     setNotificationsEnabled(next);
     setIsTogglingNotifications(true);
 
-    // If turning ON, trigger push permission request if not granted yet
     if (next && typeof window !== "undefined" && "Notification" in window) {
-      if (Notification.permission === "default") {
+      if (Notification.permission === "denied") {
+        toast.error("Push alerts are blocked in browser settings. Please allow notifications in your site settings.");
+      } else {
         try {
           const token = await requestFirebaseNotificationPermission();
           if (token) {
@@ -201,6 +202,28 @@ export function ProfileContent({
     thigh_cm: initialFitnessProfile?.thigh_cm || ""
   });
 
+  const openEditModal = () => {
+    setFormData({
+      name: (typeof fitnessProfile?.name === "string" && fitnessProfile.name.trim()) || 
+            (typeof fitnessProfile?.onboarding_data?.name === "string" && fitnessProfile.onboarding_data.name.trim()) || 
+            (typeof mainProfile?.display_name === "string" && mainProfile.display_name.trim()) || 
+            (typeof (user as any)?.user_metadata?.full_name === "string" && (user as any).user_metadata.full_name.trim()) || 
+            (typeof (user as any)?.user_metadata?.name === "string" && (user as any).user_metadata.name.trim()) || 
+            "",
+      weight: fitnessProfile?.weight || "",
+      target_weight: fitnessProfile?.target_weight || "",
+      height: fitnessProfile?.height || "",
+      fitness_level: fitnessProfile?.fitness_level || "Intermediate",
+      training_days_per_week: fitnessProfile?.training_days_per_week || 4,
+      goal: fitnessProfile?.goal || "Lose Fat + Build Muscle",
+      waist_cm: fitnessProfile?.waist_cm || "",
+      chest_cm: fitnessProfile?.chest_cm || "",
+      arm_cm: fitnessProfile?.arm_cm || "",
+      thigh_cm: fitnessProfile?.thigh_cm || ""
+    });
+    setShowEditModal(true);
+  };
+
   const name = 
     (typeof fitnessProfile?.name === "string" && fitnessProfile.name.trim()) ||
     (typeof fitnessProfile?.onboarding_data?.name === "string" && fitnessProfile.onboarding_data.name.trim()) ||
@@ -215,25 +238,31 @@ export function ProfileContent({
     ? new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
     : "Recent Member";
 
-  // Use the canonical active Fitness subscription first. The fitness profile
-  // fields remain a fallback for accounts created before subscriptions were
-  // moved to fitness_os_subscriptions.
+  // Check if legacy profile premium is actively valid (not expired)
+  const isProfilePremiumActive = Boolean(
+    fitnessProfile?.fitness_is_premium &&
+    (!fitnessProfile?.fitness_premium_expires_at || new Date(fitnessProfile.fitness_premium_expires_at).getTime() > Date.now())
+  );
+
   const activeSubscriptionLevel = subscriptionPlan?.id === "pro"
     ? "pro"
     : (subscriptionPlan?.id === "starter" || subscriptionPlan?.id === "core")
     ? "core"
     : null;
-  const isPremium = Boolean(activeSubscriptionLevel || fitnessProfile?.fitness_is_premium);
-  const premiumLevel = activeSubscriptionLevel || fitnessProfile?.fitness_premium_level || (isPremium ? "core" : "free");
+  const isPremium = Boolean(activeSubscriptionLevel || isProfilePremiumActive);
+  const premiumLevel = activeSubscriptionLevel || (isProfilePremiumActive ? fitnessProfile?.fitness_premium_level : null) || (isPremium ? "core" : "free");
   const isPro = premiumLevel === "pro";
   const membershipLabel = isPro ? "Pro" : premiumLevel === "core" ? "Core" : "Free";
 
-  // Calculate BMI
-  const heightM = fitnessProfile?.height ? fitnessProfile.height / 100 : null;
-  const weight = fitnessProfile?.weight || null;
-  const bmi = (heightM && weight) ? (weight / (heightM * heightM)).toFixed(1) : null;
+  // Safe BMI Calculation
+  const heightVal = typeof fitnessProfile?.height === "number" ? fitnessProfile.height : parseFloat(fitnessProfile?.height);
+  const weightVal = typeof fitnessProfile?.weight === "number" ? fitnessProfile.weight : parseFloat(fitnessProfile?.weight);
+  const heightM = (heightVal && heightVal > 40) ? heightVal / 100 : null;
+  const bmiRaw = (heightM && weightVal && weightVal > 20) ? (weightVal / (heightM * heightM)) : null;
+  const bmi = (bmiRaw && isFinite(bmiRaw) && bmiRaw > 0 && bmiRaw <= 150) ? bmiRaw.toFixed(1) : null;
 
   const getBmiCategory = (bmiVal: number) => {
+    if (isNaN(bmiVal) || !isFinite(bmiVal)) return null;
     if (bmiVal < 18.5) return { text: "Underweight", color: "text-yellow-400" };
     if (bmiVal < 25) return { text: "Optimal", color: "text-[#ADFF00]" };
     if (bmiVal < 30) return { text: "Overweight", color: "text-orange-400" };
@@ -246,6 +275,10 @@ export function ProfileContent({
     setIsSigningOut(true);
     profileClientCache.clear();
     try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("fcm_token");
+        localStorage.removeItem("fcm_registered");
+      }
       await fetch("/api/auth/signout", { method: "POST" });
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
@@ -335,16 +368,10 @@ export function ProfileContent({
             </div>
 
             <div className="flex items-center justify-center gap-2">
-              <h1 className="text-2xl font-black tracking-tight text-white">{name}</h1>
+              <h2 className="text-2xl font-black tracking-tight text-white">{name}</h2>
               <button 
                 type="button"
-                onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    name: name !== "Athlete" ? name : ""
-                  }));
-                  setShowEditModal(true);
-                }}
+                onClick={openEditModal}
                 className="p-1.5 rounded-full text-gray-400 hover:text-[#ADFF00] hover:bg-[#1A2619] transition-all cursor-pointer"
                 title="Edit Name & Details"
                 aria-label="Edit Name & Details"
@@ -876,6 +903,7 @@ export function ProfileContent({
                     <option value="Gain Weight" className="bg-[#0A1108] text-white">Gain Weight</option>
                     <option value="Lose Fat + Build Muscle" className="bg-[#0A1108] text-white">Lose Fat + Build Muscle</option>
                     <option value="Build Strength" className="bg-[#0A1108] text-white">Build Strength</option>
+                    <option value="Improve Fitness" className="bg-[#0A1108] text-white">Improve Fitness</option>
                     <option value="Maintain" className="bg-[#0A1108] text-white">Maintain</option>
                   </select>
                 </div>
@@ -902,6 +930,7 @@ export function ProfileContent({
                       <span className="text-[10px] text-gray-500 font-bold block mb-1">Waist</span>
                       <input 
                         type="number"
+                        step="0.1"
                         value={formData.waist_cm}
                         onChange={(e) => setFormData(prev => ({ ...prev, waist_cm: e.target.value }))}
                         className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
@@ -912,10 +941,33 @@ export function ProfileContent({
                       <span className="text-[10px] text-gray-500 font-bold block mb-1">Chest</span>
                       <input 
                         type="number"
+                        step="0.1"
                         value={formData.chest_cm}
                         onChange={(e) => setFormData(prev => ({ ...prev, chest_cm: e.target.value }))}
                         className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
                         placeholder="95"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-bold block mb-1">Arms</span>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        value={formData.arm_cm}
+                        onChange={(e) => setFormData(prev => ({ ...prev, arm_cm: e.target.value }))}
+                        className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
+                        placeholder="35"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-bold block mb-1">Thighs</span>
+                      <input 
+                        type="number"
+                        step="0.1"
+                        value={formData.thigh_cm}
+                        onChange={(e) => setFormData(prev => ({ ...prev, thigh_cm: e.target.value }))}
+                        className="w-full p-2.5 rounded-xl bg-[#0A1108] border border-[#1A2619] text-white text-xs font-bold"
+                        placeholder="55"
                       />
                     </div>
                   </div>

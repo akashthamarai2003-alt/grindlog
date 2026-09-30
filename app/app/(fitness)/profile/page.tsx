@@ -54,21 +54,31 @@ export default async function FitnessProfilePage() {
     null;
 
   if (onboardingName) {
+    const syncPromises: Promise<any>[] = [];
     if (fitnessProfile && (!fitnessProfile.name || !fitnessProfile.name.trim())) {
       fitnessProfile.name = onboardingName;
-      supabase
-        .from("fitness_os_profiles")
-        .update({ name: onboardingName })
-        .eq("user_id", user.id)
-        .then(() => {});
+      syncPromises.push(
+        Promise.resolve(
+          supabase
+            .from("fitness_os_profiles")
+            .update({ name: onboardingName })
+            .eq("user_id", user.id)
+        )
+      );
     }
     if (mainProfile && (!mainProfile.display_name || !mainProfile.display_name.trim())) {
       mainProfile.display_name = onboardingName;
-      supabase
-        .from("profiles")
-        .update({ display_name: onboardingName })
-        .eq("id", user.id)
-        .then(() => {});
+      syncPromises.push(
+        Promise.resolve(
+          supabase
+            .from("profiles")
+            .update({ display_name: onboardingName })
+            .eq("id", user.id)
+        )
+      );
+    }
+    if (syncPromises.length > 0) {
+      await Promise.allSettled(syncPromises);
     }
   }
 

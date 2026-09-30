@@ -21,8 +21,8 @@ export interface PlanPricingConfig {
 
 export const DEFAULT_PRICING: PlanPricingConfig = {
   monthly: {
-    core: { price: 3, originalPrice: 10 },
-    pro: { price: 2, originalPrice: 5 },
+    core: { price: 29, originalPrice: 59 },
+    pro: { price: 99, originalPrice: 199 },
   },
   six_months: {
     core: { price: 199, originalPrice: 294 },
