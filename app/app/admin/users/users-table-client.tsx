@@ -381,10 +381,10 @@ export default function UsersTableClient({ users }: { users: UserWithDetails[] }
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold shrink-0">
-                          {user.display_name?.charAt(0).toUpperCase() || "?"}
+                          {(user.display_name?.trim()?.charAt(0) || user.email?.trim()?.charAt(0) || "?").toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">{user.display_name}</div>
+                          <div className="font-medium text-gray-900">{user.display_name || user.email?.split("@")[0] || "Unnamed User"}</div>
                           <div className="text-gray-500 text-xs">{user.email}</div>
                         </div>
                       </div>

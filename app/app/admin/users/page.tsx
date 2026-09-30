@@ -1,43 +1,58 @@
 import { createAdminClient } from "@/lib/services/supabase/admin";
-import Razorpay from "razorpay";
 import UsersTableClient from "./users-table-client";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
   const supabase = createAdminClient();
-  const razorpay = new Razorpay({
-    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
-    key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-  });
 
-  // Fetch all users with their active subscriptions if any
-  const { data: users, error: usersError } = await supabase
-    .from("profiles")
-    .select(`
-      *,
-      subscriptions (
-        id,
-        plan,
-        status,
-        started_at,
-        expires_at,
-        razorpay_subscription_id,
-        razorpay_payment_id
-      )
-    `)
-    .order("created_at", { ascending: false });
+  // Fetch profiles, fitness profiles, and payment receipts in parallel
+  const [
+    { data: users, error: usersError },
+    { data: fitnessProfiles },
+    { data: receipts }
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(`
+        *,
+        subscriptions (
+          id,
+          plan,
+          status,
+          started_at,
+          expires_at,
+          razorpay_subscription_id,
+          razorpay_payment_id,
+          amount_paise,
+          currency
+        )
+      `)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("fitness_os_profiles")
+      .select("user_id, onboarding_completed, fitness_is_premium, fitness_premium_tier, fitness_premium_level, fitness_premium_expires_at"),
+    supabase
+      .from("fitness_payment_receipts")
+      .select("*")
+      .order("processed_at", { ascending: false })
+  ]);
 
   if (usersError) {
     console.error("Error fetching profiles:", usersError);
   }
 
-  // Fetch fitness profiles separately to avoid PostgREST relationship ambiguity errors
-  const { data: fitnessProfiles } = await supabase
-    .from("fitness_os_profiles")
-    .select("user_id, onboarding_completed, fitness_is_premium, fitness_premium_tier, fitness_premium_level, fitness_premium_expires_at");
-
   const fitnessUsersMap = new Map((fitnessProfiles || []).map(fp => [fp.user_id, fp]));
 
-  // Helper to estimate paid amount since it wasn't historically tracked in DB
+  // Group receipts by user_id
+  const receiptsByUser = new Map<string, any[]>();
+  (receipts || []).forEach(r => {
+    const list = receiptsByUser.get(r.user_id) || [];
+    list.push(r);
+    receiptsByUser.set(r.user_id, list);
+  });
+
+  // Helper to estimate paid amount for legacy users without receipts
   const getPaidAmount = (tier?: string, level?: string, isPremium?: boolean) => {
     if (!isPremium || !tier || !level) return 0;
     if (tier === 'monthly' && level === 'core') return 49;
@@ -49,69 +64,74 @@ export default async function AdminUsersPage() {
     return 0;
   };
 
-  const { getPlanPricesAction } = await import("@/app/actions/admin-pricing");
-  const livePricing = await getPlanPricesAction();
+  const usersWithAmounts = (users || []).map((user) => {
+    const paymentIds = new Set<string>();
+    let actualPaidAmount = 0;
+    const paymentHistory: any[] = [];
+    const seenPaymentIds = new Set<string>();
 
-  const usersWithAmounts = await Promise.all(
-    (users || []).map(async (user) => {
-      const paymentIds = new Set<string>();
-      let hasPremiumPaymentId = false;
+    if (user.razorpay_payment_id) {
+      paymentIds.add(user.razorpay_payment_id);
+    }
 
-      if (user.razorpay_payment_id) {
-        paymentIds.add(user.razorpay_payment_id);
-        hasPremiumPaymentId = true;
-      }
+    if (user.subscriptions) {
+      user.subscriptions.forEach((sub: any) => {
+        if (sub.razorpay_payment_id) paymentIds.add(sub.razorpay_payment_id);
+        if (sub.razorpay_subscription_id) paymentIds.add(sub.razorpay_subscription_id);
+      });
+    }
 
-      if (user.subscriptions) {
-        user.subscriptions.forEach((sub: any) => {
-          if (sub.razorpay_payment_id) paymentIds.add(sub.razorpay_payment_id);
-          if (sub.razorpay_subscription_id) paymentIds.add(sub.razorpay_subscription_id);
-          if (sub.plan && sub.plan !== "ai_messages_10") {
-            hasPremiumPaymentId = true;
-          }
-        });
-      }
-      
-      const validPaymentIds = Array.from(paymentIds).filter(id => id && id.startsWith("pay_"));
-      let actualPaidAmount = 0;
-      let paymentHistory: any[] = [];
-      
-      // Fetch amounts for all valid Razorpay payments (AI topups + any recorded subs)
-      if (validPaymentIds.length > 0) {
-        for (const pid of validPaymentIds) {
-          try {
-            const payment = await razorpay.payments.fetch(pid);
-            actualPaidAmount += Number(payment.amount) / 100;
-            paymentHistory.push({
-              id: payment.id,
-              amount: Number(payment.amount) / 100,
-              currency: payment.currency,
-              status: payment.status,
-              created_at: payment.created_at,
-              method: payment.method,
-              description: payment.description || (user.subscriptions?.find((s: any) => s.razorpay_payment_id === pid)?.plan) || "Premium Plan",
-            });
-          } catch (e) {
-            console.error("Failed to fetch Razorpay payment", pid);
-          }
+    // 1. Process database payment receipts for this user
+    const userReceipts = receiptsByUser.get(user.id) || [];
+    userReceipts.forEach((r) => {
+      paymentIds.add(r.payment_id);
+      seenPaymentIds.add(r.payment_id);
+      const amount = Number(r.amount_paise) / 100;
+      actualPaidAmount += amount;
+      paymentHistory.push({
+        id: r.payment_id,
+        amount,
+        currency: r.currency || "INR",
+        status: "captured",
+        created_at: r.processed_at ? new Date(r.processed_at).getTime() / 1000 : Date.now() / 1000,
+        method: "razorpay",
+        description: "Fitness Subscription",
+      });
+    });
+
+    // 2. Process subscriptions with amount_paise if not already captured
+    if (user.subscriptions) {
+      user.subscriptions.forEach((sub: any) => {
+        const pid = sub.razorpay_payment_id || sub.id;
+        if (sub.amount_paise && !seenPaymentIds.has(pid)) {
+          seenPaymentIds.add(pid);
+          const amount = Number(sub.amount_paise) / 100;
+          actualPaidAmount += amount;
+          paymentHistory.push({
+            id: pid,
+            amount,
+            currency: sub.currency || "INR",
+            status: sub.status === "active" ? "captured" : sub.status,
+            created_at: sub.started_at ? new Date(sub.started_at).getTime() / 1000 : Date.now() / 1000,
+            method: "razorpay",
+            description: sub.plan || "Premium Plan",
+          });
         }
-      }
-      
-      // Sort payment history by date descending
-      paymentHistory.sort((a, b) => b.created_at - a.created_at);
-      
-      // If user is premium but their primary premium payment ID wasn't found in Razorpay records
-      if (user.is_premium && !hasPremiumPaymentId) {
-        const tier = user.premium_tier as "monthly" | "six_months" | "lifetime";
-        const level = user.premium_level as "core" | "pro";
-        
-        let estimatedPremiumCost = getPaidAmount(tier, level, true);
-        actualPaidAmount += estimatedPremiumCost;
-        
-        // Add a fallback manual record for legacy users
+      });
+    }
+
+    // 3. Fallback for legacy users with premium status but no receipts
+    const fp = fitnessUsersMap.get(user.id);
+    const isUserPremium = user.is_premium || fp?.fitness_is_premium;
+    if (isUserPremium && actualPaidAmount === 0) {
+      const tier = user.premium_tier || fp?.fitness_premium_tier;
+      const level = user.premium_level || fp?.fitness_premium_level;
+      const estimated = getPaidAmount(tier, level, true);
+      if (estimated > 0) {
+        actualPaidAmount += estimated;
         paymentHistory.push({
           id: "legacy_record",
-          amount: estimatedPremiumCost,
+          amount: estimated,
           currency: "INR",
           status: "captured",
           created_at: new Date(user.created_at).getTime() / 1000,
@@ -119,21 +139,25 @@ export default async function AdminUsersPage() {
           description: "Legacy Plan (No Receipt)",
         });
       }
-      
-      return {
-        ...user,
-        has_fitness_profile: fitnessUsersMap.has(user.id),
-        fitness_onboarding_completed: fitnessUsersMap.get(user.id)?.onboarding_completed || false,
-        fitness_is_premium: fitnessUsersMap.get(user.id)?.fitness_is_premium || false,
-        fitness_premium_tier: fitnessUsersMap.get(user.id)?.fitness_premium_tier || null,
-        fitness_premium_level: fitnessUsersMap.get(user.id)?.fitness_premium_level || null,
-        fitness_premium_expires_at: fitnessUsersMap.get(user.id)?.fitness_premium_expires_at || null,
-        actualPaidAmount,
-        paymentHistory,
-        paymentId: validPaymentIds.length > 0 ? validPaymentIds.join(", ") : "-"
-      };
-    })
-  );
+    }
+
+    paymentHistory.sort((a, b) => b.created_at - a.created_at);
+
+    const validPaymentIds = Array.from(paymentIds).filter(id => id && id.startsWith("pay_"));
+
+    return {
+      ...user,
+      has_fitness_profile: fitnessUsersMap.has(user.id),
+      fitness_onboarding_completed: fp?.onboarding_completed || false,
+      fitness_is_premium: fp?.fitness_is_premium || false,
+      fitness_premium_tier: fp?.fitness_premium_tier || null,
+      fitness_premium_level: fp?.fitness_premium_level || null,
+      fitness_premium_expires_at: fp?.fitness_premium_expires_at || null,
+      actualPaidAmount,
+      paymentHistory,
+      paymentId: validPaymentIds.length > 0 ? validPaymentIds.join(", ") : "-"
+    };
+  });
 
   return (
     <div className="space-y-6">

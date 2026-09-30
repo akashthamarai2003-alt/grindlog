@@ -19,7 +19,7 @@ export default function PaymentHistoryModal({ user, onClose }: PaymentHistoryMod
             <div>
               <h2 className="text-lg font-bold text-gray-900">Payment History</h2>
               <p className="text-xs text-gray-500 font-medium">
-                {user.display_name} • {user.email}
+                {user.display_name || user.email?.split("@")[0] || "User"} • {user.email}
               </p>
             </div>
           </div>
@@ -64,13 +64,23 @@ export default function PaymentHistoryModal({ user, onClose }: PaymentHistoryMod
                         {payment.id}
                       </span>
                       <span>
-                        {new Date(payment.created_at * 1000).toLocaleString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {(() => {
+                          try {
+                            const d = typeof payment.created_at === "number" && payment.created_at < 1e11
+                              ? new Date(payment.created_at * 1000)
+                              : new Date(payment.created_at);
+                            if (isNaN(d.getTime())) return "-";
+                            return d.toLocaleString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            });
+                          } catch {
+                            return "-";
+                          }
+                        })()}
                       </span>
                     </div>
                   </div>

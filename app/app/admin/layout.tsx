@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, CreditCard, LogOut, MessageSquare, Tag, Menu, X, Activity, Dumbbell } from "lucide-react";
+import { logoutAdminAction } from "@/app/actions/admin-auth";
 
 export default function AdminLayout({
   children,
@@ -56,13 +57,16 @@ export default function AdminLayout({
         </nav>
 
         <div className="p-4 border-t border-gray-200">
-          <Link
-            href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+          <button
+            type="button"
+            onClick={async () => {
+              await logoutAdminAction();
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <LogOut className="w-5 h-5 text-gray-400" />
             Exit Admin
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -158,14 +162,17 @@ export default function AdminLayout({
             </nav>
 
             <div className="p-4 border-t border-gray-200 bg-gray-50">
-              <Link
-                href="/"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-200 transition-colors bg-white border border-gray-200"
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsMobileMenuOpen(false);
+                  await logoutAdminAction();
+                }}
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-200 transition-colors bg-white border border-gray-200 cursor-pointer"
               >
                 <LogOut className="w-5 h-5 text-gray-500" />
                 Exit Admin
-              </Link>
+              </button>
             </div>
           </div>
         </div>

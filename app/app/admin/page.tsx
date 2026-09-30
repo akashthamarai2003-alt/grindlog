@@ -35,11 +35,13 @@ export default async function AdminDashboard() {
   let coreCount = 0;
   let onboardingCompletedCount = 0;
 
+  const now = new Date().toISOString();
   (fitnessProfiles || []).forEach(fp => {
-    if (fp.fitness_is_premium) {
+    const isExpired = fp.fitness_premium_expires_at && fp.fitness_premium_tier !== "lifetime" && fp.fitness_premium_expires_at < now;
+    if (fp.fitness_is_premium && !isExpired) {
       const level = (fp.fitness_premium_level || "pro").toLowerCase();
-      if (level === "pro") proCount++;
-      else if (level === "core") coreCount++;
+      if (level === "core") coreCount++;
+      else proCount++;
     }
     if (fp.onboarding_completed) {
       onboardingCompletedCount++;
@@ -152,9 +154,9 @@ export default async function AdminDashboard() {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xs shrink-0">
-                    {user.display_name?.charAt(0).toUpperCase() || "?"}
+                    {(user.display_name?.trim()?.charAt(0) || user.email?.trim()?.charAt(0) || "?").toUpperCase()}
                   </div>
-                  <span className="font-semibold text-sm text-gray-900 truncate">{user.display_name || "Unnamed"}</span>
+                  <span className="font-semibold text-sm text-gray-900 truncate">{user.display_name || user.email?.split("@")[0] || "Unnamed"}</span>
                 </div>
                 {user.isPremium ? (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
@@ -201,10 +203,10 @@ export default async function AdminDashboard() {
                   <td className="px-6 py-4 font-medium text-gray-900">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold shrink-0">
-                        {user.display_name?.charAt(0).toUpperCase() || "?"}
+                        {(user.display_name?.trim()?.charAt(0) || user.email?.trim()?.charAt(0) || "?").toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">{user.display_name || "Unnamed"}</div>
+                        <div className="font-semibold text-gray-900">{user.display_name || user.email?.split("@")[0] || "Unnamed"}</div>
                         <div className="text-xs text-gray-500 font-normal">{user.email}</div>
                       </div>
                     </div>

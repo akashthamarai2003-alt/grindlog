@@ -222,7 +222,7 @@ export default function FitnessTableClient({ users }: { users: FitnessUserDetail
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold shrink-0">
-                        {user.name.charAt(0).toUpperCase() || "?"}
+                        {(user.name?.trim()?.charAt(0) || user.email?.trim()?.charAt(0) || "?").toUpperCase()}
                       </div>
                       <div>
                         <div className="font-bold text-gray-900">{user.name}</div>
@@ -332,7 +332,7 @@ export default function FitnessTableClient({ users }: { users: FitnessUserDetail
             <div className="p-5 border-b border-gray-100 bg-gray-50/70 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-base shadow-xs">
-                  {selectedUser.name.charAt(0).toUpperCase() || "?"}
+                  {(selectedUser.name?.trim()?.charAt(0) || selectedUser.email?.trim()?.charAt(0) || "?").toUpperCase()}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 leading-snug">{selectedUser.name}</h3>

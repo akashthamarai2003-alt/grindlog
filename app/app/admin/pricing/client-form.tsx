@@ -114,7 +114,7 @@ export default function PricingClientForm({
     { key: "lifetime" as const, title: "Lifetime Access", emoji: "🌳", period: "one-time" },
   ];
 
-  const PLAN_METADATA = ALL_PLANS.filter(p => p.key === "monthly");
+  const PLAN_METADATA = ALL_PLANS;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -131,12 +131,35 @@ export default function PricingClientForm({
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
-
+          <div className="inline-flex p-1 bg-black/20 backdrop-blur-md rounded-xl border border-white/20">
+            <button
+              type="button"
+              onClick={() => handleFilterChange("fitness")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                appFilter === "fitness"
+                  ? "bg-white text-green-700 shadow-sm"
+                  : "text-white/80 hover:text-white"
+              }`}
+            >
+              Fitness AI OS
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterChange("grindlog")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                appFilter === "grindlog"
+                  ? "bg-white text-green-700 shadow-sm"
+                  : "text-white/80 hover:text-white"
+              }`}
+            >
+              GrindLog App
+            </button>
+          </div>
 
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-green-700 font-bold text-xs hover:bg-green-50 active:scale-95 shadow-sm transition-all disabled:opacity-50 shrink-0"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-green-700 font-bold text-xs hover:bg-green-50 active:scale-95 shadow-sm transition-all disabled:opacity-50 shrink-0 cursor-pointer"
           >
           {isSaving ? (
             <>

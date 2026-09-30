@@ -50,15 +50,25 @@ export default async function FitnessAdminDashboard() {
   }
 
   // Calculate metrics accurately
+  const now = new Date().toISOString();
+  const isProfileActive = (p: any) => {
+    if (!p.fitness_is_premium) return false;
+    if (p.fitness_premium_tier === "lifetime") return true;
+    if (!p.fitness_premium_expires_at) return true;
+    return p.fitness_premium_expires_at > now;
+  };
+
   const totalUsers = fitnessProfiles.length;
   const activeSubsCount = fitnessProfiles.filter(
-    (p) => p.fitness_is_premium || subscriptionsMap.get(p.user_id)?.status === "active"
+    (p) => isProfileActive(p) || subscriptionsMap.get(p.user_id)?.status === "active"
   ).length;
-  const proSubscribersCount = fitnessProfiles.filter(
-    (p) =>
-      (p.fitness_is_premium && (p.fitness_premium_tier === "pro" || p.fitness_premium_level === "pro" || p.fitness_premium_tier === "monthly")) ||
-      subscriptionsMap.get(p.user_id)?.plan === "pro"
-  ).length;
+
+  const proSubscribersCount = fitnessProfiles.filter((p) => {
+    const isActive = isProfileActive(p) || subscriptionsMap.get(p.user_id)?.status === "active";
+    if (!isActive) return false;
+    const isProLevel = p.fitness_premium_level === "pro" || subscriptionsMap.get(p.user_id)?.plan === "pro";
+    return isProLevel;
+  }).length;
 
   const metrics = [
     {

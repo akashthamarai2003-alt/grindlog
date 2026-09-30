@@ -76,8 +76,15 @@ export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'gri
   }
 }
 
+import { verifyAdminSession } from "./admin-auth";
+
 export async function updatePlanPricesAction(newPricing: PlanPricingConfig, appType: 'grindlog' | 'fitness' = 'grindlog') {
   try {
+    const isAdmin = await verifyAdminSession();
+    if (!isAdmin) {
+      return { success: false, error: "Unauthorized: Admin session required" };
+    }
+
     const supabase = createAdminClient();
     const configId = appType === 'fitness' ? 'fitness_pricing_config' : 'pricing_config';
 
@@ -94,7 +101,6 @@ export async function updatePlanPricesAction(newPricing: PlanPricingConfig, appT
 
     revalidatePath("/payment");
     revalidatePath("/admin/pricing");
-    revalidatePath("/payment");
     return { success: true };
   } catch (err: any) {
     console.error("updatePlanPricesAction exception:", err);

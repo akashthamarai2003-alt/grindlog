@@ -2,15 +2,15 @@
 
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { verifyAdminSession } from "./admin-auth";
 
 export async function createCouponAction(formData: FormData) {
   try {
-    const cookieStore = await cookies();
-    const adminAuth = cookieStore.get("admin_auth");
-    if (adminAuth?.value !== (process.env.ADMIN_PASSWORD || "admin")) {
-      return { success: false, error: "Unauthorized" };
+    const isAdmin = await verifyAdminSession();
+    if (!isAdmin) {
+      return { success: false, error: "Unauthorized: Admin session required" };
     }
+
     const code = formData.get("code") as string;
     const discountStr = formData.get("discount") as string;
     const maxUsesStr = formData.get("max_uses") as string;
@@ -21,17 +21,17 @@ export async function createCouponAction(formData: FormData) {
       return { success: false, error: "All fields are required" };
     }
     
-    let allowed_plan = allowedPlanStr === "any" ? null : allowedPlanStr;
-    let allowed_level = allowedLevelStr === "any" ? null : allowedLevelStr;
+    let allowed_plan = !allowedPlanStr || allowedPlanStr === "any" ? null : allowedPlanStr;
+    let allowed_level = !allowedLevelStr || allowedLevelStr === "any" ? null : allowedLevelStr;
     
     const discount_percentage = parseInt(discountStr, 10);
     const max_uses = parseInt(maxUsesStr, 10);
     
-    if (discount_percentage < 1 || discount_percentage > 100) {
+    if (isNaN(discount_percentage) || discount_percentage < 1 || discount_percentage > 100) {
       return { success: false, error: "Discount must be between 1 and 100" };
     }
     
-    if (max_uses < 1) {
+    if (isNaN(max_uses) || max_uses < 1) {
       return { success: false, error: "Max uses must be at least 1" };
     }
     
@@ -61,10 +61,9 @@ export async function createCouponAction(formData: FormData) {
 
 export async function toggleCouponStatusAction(id: string, currentStatus: boolean) {
   try {
-    const cookieStore = await cookies();
-    const adminAuth = cookieStore.get("admin_auth");
-    if (adminAuth?.value !== (process.env.ADMIN_PASSWORD || "admin")) {
-      return { success: false, error: "Unauthorized" };
+    const isAdmin = await verifyAdminSession();
+    if (!isAdmin) {
+      return { success: false, error: "Unauthorized: Admin session required" };
     }
 
     const supabase = createAdminClient();

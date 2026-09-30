@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { verifyAdminSession } from "./admin-auth";
 
 export async function deleteUserAdminAction(userId: string) {
   try {
@@ -9,10 +10,72 @@ export async function deleteUserAdminAction(userId: string) {
       return { success: false, error: "User ID is required" };
     }
 
+    const isAdmin = await verifyAdminSession();
+    if (!isAdmin) {
+      return { success: false, error: "Unauthorized: Admin session required" };
+    }
+
     const supabaseAdmin = createAdminClient();
 
-    // 1. Clean up user records from dependent tables
+    // 1. Clean up child workout sets and exercises first
+    try {
+      const { data: workouts } = await supabaseAdmin
+        .from("fitness_os_workouts")
+        .select("id")
+        .eq("user_id", userId);
+
+      const workoutIds = (workouts || []).map((w: { id: string }) => w.id).filter(Boolean);
+
+      if (workoutIds.length > 0) {
+        const { data: exercises } = await supabaseAdmin
+          .from("fitness_os_exercises")
+          .select("id")
+          .in("workout_id", workoutIds);
+
+        const exerciseIds = (exercises || []).map((e: { id: string }) => e.id).filter(Boolean);
+
+        if (exerciseIds.length > 0) {
+          await supabaseAdmin.from("fitness_os_sets").delete().in("exercise_id", exerciseIds);
+        }
+        await supabaseAdmin.from("fitness_os_exercises").delete().in("workout_id", workoutIds);
+      }
+    } catch (e) {
+      console.warn("Child exercise/set cleanup exception:", e);
+    }
+
+    // 2. Comprehensive list of all user-scoped tables to delete
     const tablesWithUserId = [
+      "fitness_os_workouts",
+      "fitness_os_workout_sessions",
+      "fitness_os_workout_plans",
+      "fitness_os_nutrition_plans",
+      "fitness_os_lifestyle_plans",
+      "fitness_os_plan_adjustments",
+      "fitness_os_progress_reviews",
+      "fitness_os_activity_logs",
+      "fitness_os_sleep_logs",
+      "fitness_os_water_logs",
+      "fitness_os_body_metrics",
+      "fitness_os_body_scans",
+      "fitness_os_scans",
+      "fitness_os_ai_insights",
+      "fitness_os_ai_sessions",
+      "fitness_os_coach_messages",
+      "fitness_os_coach_sessions",
+      "fitness_os_user_achievements",
+      "fitness_os_subscriptions",
+      "fitness_os_profiles",
+      "fitness_grocery_items",
+      "nutrition_targets",
+      "nutrition_daily_summary",
+      "daily_nutrition_summaries",
+      "meal_plan_items",
+      "meal_plans",
+      "food_logs",
+      "workout_ai_notes",
+      "fcm_tokens",
+      "fitness_payment_receipts",
+      "fitness_logs",
       "season_progress",
       "user_quests",
       "user_achievements",
@@ -21,8 +84,8 @@ export async function deleteUserAdminAction(userId: string) {
       "habits",
       "journal_entries",
       "goals",
-      "fitness_logs",
       "in_app_notifications",
+      "ai_usage_logs",
       "ai_usage",
       "support_messages",
     ];
@@ -31,6 +94,7 @@ export async function deleteUserAdminAction(userId: string) {
       try {
         const { error } = await supabaseAdmin.from(table).delete().eq("user_id", userId);
         if (error) {
+          // Log table-level notice without crashing the deletion sequence
           console.warn(`Table cleanup notice (${table}):`, error.message || error);
         }
       } catch (e) {
@@ -38,7 +102,7 @@ export async function deleteUserAdminAction(userId: string) {
       }
     }
 
-    // Delete profile record (referenced by profile id)
+    // 3. Delete profile record (referenced by id)
     try {
       const { error: profileErr } = await supabaseAdmin.from("profiles").delete().eq("id", userId);
       if (profileErr) {
@@ -48,7 +112,7 @@ export async function deleteUserAdminAction(userId: string) {
       console.warn("Profile cleanup exception:", e);
     }
 
-    // 2. Delete user from Supabase Auth (auth.users)
+    // 4. Delete user from Supabase Auth (auth.users)
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (authError) {
@@ -60,6 +124,8 @@ export async function deleteUserAdminAction(userId: string) {
     }
 
     revalidatePath("/admin/users");
+    revalidatePath("/admin/fitness");
+    revalidatePath("/admin");
     return { success: true };
   } catch (error: any) {
     console.error("Delete user admin action error:", error);
@@ -72,6 +138,11 @@ export async function deleteUserAdminAction(userId: string) {
 
 export async function sendUserEmailAdminAction(toEmail: string, subject: string, message: string) {
   try {
+    const isAdmin = await verifyAdminSession();
+    if (!isAdmin) {
+      return { success: false, error: "Unauthorized: Admin session required" };
+    }
+
     if (!toEmail || !toEmail.trim()) {
       return { success: false, error: "Recipient email is required" };
     }
@@ -138,6 +209,11 @@ export async function sendUserEmailAdminAction(toEmail: string, subject: string,
 
 export async function sendBulkUserEmailAdminAction(users: {email: string, name: string}[], subject: string, messageTemplate: string) {
   try {
+    const isAdmin = await verifyAdminSession();
+    if (!isAdmin) {
+      return { success: false, error: "Unauthorized: Admin session required" };
+    }
+
     if (!users || users.length === 0) {
       return { success: false, error: "No recipients provided" };
     }
@@ -208,6 +284,11 @@ export async function sendBulkUserEmailAdminAction(users: {email: string, name: 
 
 export async function extendUserSubscriptionAdminAction(userId: string, daysToAdd: number = 7) {
   try {
+    const isAdmin = await verifyAdminSession();
+    if (!isAdmin) {
+      return { success: false, error: "Unauthorized: Admin session required" };
+    }
+
     if (!userId) {
       return { success: false, error: "User ID is required" };
     }

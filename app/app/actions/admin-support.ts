@@ -1,21 +1,14 @@
 "use server";
 
-import { createServerSupabase } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-
-async function verifyAdmin() {
-  const cookieStore = await cookies();
-  const adminAuth = cookieStore.get("admin_auth");
-  return adminAuth?.value === (process.env.ADMIN_PASSWORD || "admin");
-}
+import { verifyAdminSession } from "./admin-auth";
 
 export async function fetchSupportMessages() {
   try {
-    const isAdmin = await verifyAdmin();
+    const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-      return { success: false, error: "Unauthorized", data: [] };
+      return { success: false, error: "Unauthorized: Admin session required", data: [] };
     }
 
     // Use service role to bypass RLS since this is a secure admin action
@@ -37,9 +30,9 @@ export async function fetchSupportMessages() {
 
 export async function updateMessageStatus(id: string, newStatus: string) {
   try {
-    const isAdmin = await verifyAdmin();
+    const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-      return { success: false, error: "Unauthorized" };
+      return { success: false, error: "Unauthorized: Admin session required" };
     }
 
     const adminSupabase = createAdminClient();
