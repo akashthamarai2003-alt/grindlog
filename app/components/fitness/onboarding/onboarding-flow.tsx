@@ -157,9 +157,20 @@ const compressImage = (file: File): Promise<string> => {
   });
 };
 
-export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: Partial<OnboardingData>, sessionId?: string }) {
-  const [step, setStep] = useState(1);
+export function OnboardingFlow({ 
+  initialData = {}, 
+  sessionId, 
+  isEditing = false,
+  initialStep
+}: { 
+  initialData?: Partial<OnboardingData>, 
+  sessionId?: string,
+  isEditing?: boolean,
+  initialStep?: number
+}) {
+  const [step, setStep] = useState(initialStep ?? (isEditing ? 15 : 1));
   const [direction, setDirection] = useState(1);
+  const [editingFromReview, setEditingFromReview] = useState(isEditing || initialStep === 15);
   const [data, setData] = useState<Partial<OnboardingData>>({
     plan_start_preference: "monday",
     ...initialData,
@@ -176,6 +187,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
   // Restore saved step and draft data from localStorage on mount
   useEffect(() => {
+    if (isEditing || initialStep !== undefined) return;
     try {
       const savedStep = localStorage.getItem("grindlog_onboarding_step");
       const savedData = localStorage.getItem("grindlog_onboarding_draft");
@@ -192,7 +204,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
         }
       }
     } catch {}
-  }, []);
+  }, [isEditing]);
 
   // Save current step and form draft on every change
   useEffect(() => {
@@ -217,6 +229,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
   };
 
   const jumpToStep = (s: number) => {
+    setEditingFromReview(true);
     setDirection(s > step ? 1 : -1);
     setStep(s);
   };
@@ -427,7 +440,13 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
   );
 
   const hasMeaningfulChoice = (values: unknown): boolean =>
-    Array.isArray(values) && values.some((value) => typeof value === "string" && value.trim().length > 0);
+    Array.isArray(values) && values.some((value) => {
+      if (typeof value !== "string") return false;
+      const trimmed = value.trim();
+      if (!trimmed || trimmed === "Other:" || trimmed === "Other") return false;
+      if (trimmed.startsWith("Other:")) return trimmed.slice(6).trim().length > 0;
+      return true;
+    });
 
   // Every route to the next screen goes through this gate. Disabled buttons
   // are useful UI, but this guard also protects direct links such as "Skip
@@ -449,7 +468,13 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
       case 10: return Boolean(data.activity_level && data.daily_steps && data.sleep_duration);
       case 12: {
         const physicalProblems = Array.isArray(data.physical_problems)
-          ? data.physical_problems.filter((value) => typeof value === "string" && value.trim())
+          ? data.physical_problems.filter((value) => {
+              if (typeof value !== "string") return false;
+              const trimmed = value.trim();
+              if (!trimmed || trimmed === "Other:" || trimmed === "Other") return false;
+              if (trimmed.startsWith("Other:")) return trimmed.slice(6).trim().length > 0;
+              return true;
+            })
           : [];
         return physicalProblems.length > 0 &&
           (physicalProblems.includes("None") || (typeof data.current_pain_severity === "number" && hasMeaningfulChoice(data.current_pain_triggers))) &&
@@ -465,20 +490,10 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 
   const handleNext = () => {
     if (!canAdvanceFromStep(step)) return;
-    if (step === 15) {
-      // Immediately save the onboarding profile so closing the app on Step 16 never loses progress
-      const {
-        body_scan_front,
-        body_scan_left,
-        body_scan_right,
-        body_scan_back,
-        goal_physique_image,
-        body_scan_inspiration,
-        ...safeData
-      } = data as any;
-      saveFitnessOnboardingAction(safeData).catch(err => {
-        console.warn("Background onboarding save notice:", err);
-      });
+    if (editingFromReview && step !== 15) {
+      setDirection(1);
+      setStep(15);
+      return;
     }
     setDirection(1);
     setStep((currentStep) => Math.min(currentStep + 1, totalSteps));
@@ -2497,7 +2512,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                     }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                     {data.body_scan_inspiration || data.goal_physique_image ? (
                       <>
-                        <img src={data.body_scan_inspiration || data.goal_physique_image} className="w-full h-full object-cover" />
+                        <img src={(data.body_scan_inspiration || data.goal_physique_image) || ""} className="w-full h-full object-cover" />
                         <button 
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdate({ body_scan_inspiration: undefined, goal_physique_image: undefined }); }}
                           className="absolute top-2 right-2 z-20 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center hover:bg-red-500/80 transition-colors"
@@ -2614,7 +2629,7 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
             <BottomBar 
               canProceed={canAdvanceFromStep(14)}
               onProceed={handleNext} 
-              label="Analyze & Generate Plan" 
+              label="Review Profile" 
             />
           </div>
         );
@@ -2658,12 +2673,19 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
                 </div>
               ))}
             </div>
-            <BottomBar canProceed={true} onProceed={handleNext} label="Looks Good" />
+            <BottomBar canProceed={true} onProceed={handleNext} label="Generate Transformation Plan" />
           </div>
         );
 
       case 16:
-        return <AIAnalysisScreen onComplete={handleComplete} data={data} sessionId={sessionId} />;
+        return (
+          <AIAnalysisScreen 
+            onComplete={handleComplete} 
+            data={data} 
+            sessionId={sessionId} 
+            onReview={() => jumpToStep(15)} 
+          />
+        );
 
       default:
         return null;
@@ -2724,11 +2746,32 @@ export function OnboardingFlow({ initialData = {}, sessionId }: { initialData?: 
 let lastSubmissionSessionId: string | null = null;
 let lastSubmissionPromise: Promise<any> | null = null;
 
-const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => void, data: any, sessionId?: string }) => {
+const AIAnalysisScreen = ({ 
+  onComplete, 
+  data, 
+  sessionId, 
+  onReview 
+}: { 
+  onComplete: () => void, 
+  data: any, 
+  sessionId?: string,
+  onReview?: () => void 
+}) => {
   const router = useRouter();
   const [phase, setPhase] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const handleRetry = () => {
+    lastSubmissionSessionId = null;
+    lastSubmissionPromise = null;
+    setAnalysisError(null);
+    setPhase(0);
+    setIsDone(false);
+    setRetryCount(c => c + 1);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -2744,15 +2787,15 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
       if (isMounted) setPhase(prev => Math.max(prev, 3));
     }, 3600);
 
-    // Safety timeout: Never hang indefinitely on mobile (20s max)
+    // Safety timeout: Never hang indefinitely on mobile (25s max)
     const safetyTimer = setTimeout(() => {
-      if (isMounted && !isDone) {
+      if (isMounted && !isDone && !analysisError) {
         setIsDone(true);
       }
-    }, 20000);
+    }, 25000);
 
     // Use sessionId for deduping if provided, otherwise fallback to always fetching
-    if (sessionId && lastSubmissionSessionId === sessionId && lastSubmissionPromise) {
+    if (sessionId && lastSubmissionSessionId === sessionId && lastSubmissionPromise && retryCount === 0) {
       // Reuse existing promise
     } else {
       if (sessionId) {
@@ -2767,30 +2810,26 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
 
     lastSubmissionPromise
     .then(res => {
-      if (isMounted) {
-        setIsDone(true);
-        setPhase(prev => Math.max(prev, 3));
-        fastForwardTimer = setTimeout(() => {
-          if (isMounted) {
-            setPhase(4);
-          }
-        }, 300);
-      }
-    })
-    .catch(err => {
-      if (isMounted) {
+      if (!isMounted) return;
+      if (!res || res.success === false) {
         lastSubmissionSessionId = null;
         lastSubmissionPromise = null;
-        // Resilient mobile UX: Even if cell signal dropped during background fetch,
-        // we smoothly finish analysis because /report generates on the server!
-        setIsDone(true);
-        setPhase(prev => Math.max(prev, 3));
-        fastForwardTimer = setTimeout(() => {
-          if (isMounted) {
-            setPhase(4);
-          }
-        }, 300);
+        setAnalysisError(res?.error || "We couldn't generate your starting strategy. Please retry.");
+        return;
       }
+      setIsDone(true);
+      setPhase(prev => Math.max(prev, 3));
+      fastForwardTimer = setTimeout(() => {
+        if (isMounted) {
+          setPhase(4);
+        }
+      }, 300);
+    })
+    .catch(err => {
+      if (!isMounted) return;
+      lastSubmissionSessionId = null;
+      lastSubmissionPromise = null;
+      setAnalysisError(err?.message || "Network issue during strategy generation. Please check your connection and retry.");
     });
 
     return () => { 
@@ -2798,7 +2837,7 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(safetyTimer);
       if (fastForwardTimer) clearTimeout(fastForwardTimer);
     };
-  }, [data, router, sessionId]);
+  }, [data, router, sessionId, retryCount]);
 
   const handleCompleteClick = () => {
     if (isNavigating) return;
@@ -2893,19 +2932,29 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
 
         {/* Phase Pill Badge */}
         <motion.div
-          key={`pill-${phase}`}
+          key={`pill-${analysisError ? 'err' : phase}`}
           initial={{ opacity: 0, y: -6, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[#ADFF00]/30 bg-[#0D150D]/80 backdrop-blur-md mb-4 shadow-[0_0_15px_rgba(173,255,0,0.15)]"
+          className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full border backdrop-blur-md mb-4 shadow-[0_0_15px_rgba(173,255,0,0.15)] ${
+            analysisError 
+              ? "border-red-500/40 bg-red-950/40" 
+              : "border-[#ADFF00]/30 bg-[#0D150D]/80"
+          }`}
         >
-          <span className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse" />
-          <span className="text-[11px] font-extrabold tracking-widest uppercase text-[#ADFF00]">
-            {phase === 0 && "Step 1 of 3 • Analyzing Profile"}
-            {phase === 1 && "Step 2 of 3 • Visual Assessment"}
-            {phase === 2 && "Step 3 of 3 • Engineering Strategy"}
-            {phase >= 3 && !isDone && "Finalizing Strategy..."}
-            {phase >= 3 && isDone && "Transformation Ready"}
+          <span className={`w-2 h-2 rounded-full ${analysisError ? "bg-red-500" : "bg-[#ADFF00]"} animate-pulse`} />
+          <span className={`text-[11px] font-extrabold tracking-widest uppercase ${analysisError ? "text-red-400" : "text-[#ADFF00]"}`}>
+            {analysisError
+              ? "Strategy Generation Paused"
+              : phase === 0
+                ? "Step 1 of 3 • Analyzing Profile"
+                : phase === 1
+                  ? "Step 2 of 3 • Visual Assessment"
+                  : phase === 2
+                    ? "Step 3 of 3 • Engineering Strategy"
+                    : !isDone
+                      ? "Finalizing Strategy..."
+                      : "Transformation Ready"}
           </span>
         </motion.div>
 
@@ -2919,35 +2968,65 @@ const AIAnalysisScreen = ({ onComplete, data, sessionId }: { onComplete: () => v
           />
         </div>
 
-        {/* Glassmorphism Analysis Content Card (Translucent HUD letting warp streaks shine through) */}
-        <div className="relative rounded-3xl border border-[#ADFF00]/30 bg-[#0A130B]/65 backdrop-blur-md p-5 shadow-[0_0_40px_rgba(0,0,0,0.7)] space-y-6 text-left">
-          {/* Subtle top neon glow accent line */}
-          <div className="absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#ADFF00]/70 to-transparent" />
+        {/* Glassmorphism Analysis Content Card or Error View */}
+        {analysisError ? (
+          <div className="relative rounded-3xl border border-red-500/40 bg-red-950/20 backdrop-blur-md p-5 shadow-[0_0_30px_rgba(239,68,68,0.2)] text-left space-y-4">
+            <div className="flex items-center gap-2 text-red-400">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <h3 className="font-bold text-sm">Action Needed</h3>
+            </div>
+            <p className="text-xs text-gray-300 leading-relaxed font-medium">{analysisError}</p>
+            <div className="flex flex-col gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={handleRetry}
+                className="w-full py-3.5 rounded-xl font-bold text-sm bg-[#ADFF00] text-black hover:bg-[#c6ff47] transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(173,255,0,0.3)] active:scale-95"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Retry Generation</span>
+              </button>
+              {onReview && (
+                <button
+                  type="button"
+                  onClick={onReview}
+                  className="w-full py-3 rounded-xl font-semibold text-xs bg-white/5 border border-white/10 text-gray-300 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Review & Edit Profile</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="relative rounded-3xl border border-[#ADFF00]/30 bg-[#0A130B]/65 backdrop-blur-md p-5 shadow-[0_0_40px_rgba(0,0,0,0.7)] space-y-6 text-left">
+            {/* Subtle top neon glow accent line */}
+            <div className="absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#ADFF00]/70 to-transparent" />
 
-          <AnalysisBlock 
-            title="Understanding your profile..." 
-            items={["Body information", "Fitness goal", "Training experience", "Lifestyle", "Nutrition preferences"]}
-            isActive={phase >= 0}
-            isComplete={phase >= 1}
-          />
-          <AnalysisBlock 
-            title="Analyzing your uploaded photos..." 
-            items={["Visual assessment"]}
-            isActive={phase >= 1}
-            isComplete={phase >= 2}
-          />
-          <AnalysisBlock 
-            title="Building your transformation strategy..." 
-            items={["Training strategy", "Nutrition strategy", "Progress roadmap"]}
-            isActive={phase >= 2}
-            isComplete={phase >= 3}
-          />
-        </div>
+            <AnalysisBlock 
+              title="Understanding your profile..." 
+              items={["Body information", "Fitness goal", "Training experience", "Lifestyle", "Nutrition preferences"]}
+              isActive={phase >= 0}
+              isComplete={phase >= 1}
+            />
+            <AnalysisBlock 
+              title="Analyzing your uploaded photos..." 
+              items={["Visual assessment"]}
+              isActive={phase >= 1}
+              isComplete={phase >= 2}
+            />
+            <AnalysisBlock 
+              title="Building your transformation strategy..." 
+              items={["Training strategy", "Nutrition strategy", "Progress roadmap"]}
+              isActive={phase >= 2}
+              isComplete={phase >= 3}
+            />
+          </div>
+        )}
 
         {/* Bottom Actions with Shimmering Glow */}
         <div className="mt-6 sm:mt-8 h-16">
           <AnimatePresence>
-            {phase >= 3 && (
+            {!analysisError && phase >= 3 && (
               <motion.div
                 initial={{ opacity: 0, y: 14, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}

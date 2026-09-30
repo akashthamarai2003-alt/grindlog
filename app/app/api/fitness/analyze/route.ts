@@ -213,6 +213,7 @@ export async function POST(req: Request) {
       } else {
         bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age - 78;
       }
+      bmr = Math.max(800, bmr);
 
       const activityMultipliers: Record<string, number> = {
         "Mostly sitting": 1.2,
@@ -302,6 +303,7 @@ export async function POST(req: Request) {
         data.target_physique ||
         (data.goal_physique_image ? "Custom Photo" : "Not specified"),
       bmi,
+      estimated_body_fat: estimated_body_fat || null,
       baseline_calories,
       initial_protein_target,
       weight_trend_baseline,
@@ -497,6 +499,7 @@ export async function POST(req: Request) {
 
       // Computed Data
       bmi,
+      estimated_body_fat: estimated_body_fat || null,
       baseline_calories,
       initial_protein_target,
       weight_trend_baseline,
@@ -532,13 +535,13 @@ export async function POST(req: Request) {
       const cleanName = data.name.trim();
       const { error: nameErr } = await supabase
         .from("profiles")
-        .update({ display_name: cleanName })
+        .update({ display_name: cleanName, name: cleanName })
         .eq("id", user.id);
 
       if (nameErr) {
         await admin
           .from("profiles")
-          .update({ display_name: cleanName })
+          .update({ display_name: cleanName, name: cleanName })
           .eq("id", user.id);
       }
 

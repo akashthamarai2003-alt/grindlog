@@ -51,6 +51,7 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     } else {
       bmr = 10 * validData.weight + 6.25 * validData.height - 5 * validData.age - 78;
     }
+    bmr = Math.max(800, bmr);
 
     const activityMultipliers: Record<string, number> = {
       "Mostly sitting": 1.2,
@@ -91,14 +92,26 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
 
   const weight_trend_baseline = validData.weight || null;
 
+  // Strip raw base64 image strings to avoid bloating fitness_os_profiles
+  const {
+    body_scan_front,
+    body_scan_left,
+    body_scan_right,
+    body_scan_back,
+    goal_physique_image,
+    body_scan_inspiration,
+    ...profileData
+  } = validData;
+
   // Insert or Update logic based on UNIQUE user_id
   const { error: upsertError } = await supabase
     .from("fitness_os_profiles")
     .upsert(
       { 
         user_id: user.id, 
-        ...validData,
+        ...profileData,
         bmi,
+        estimated_body_fat: estimated_body_fat || null,
         baseline_calories,
         initial_protein_target,
         weight_trend_baseline,
@@ -113,12 +126,18 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     return { success: false, error: "Failed to save profile. Please try again." };
   }
 
-  // Also update the main profile's display_name if a name was provided
-  if (validData.name) {
+  // Also update the main profile's display_name and name if provided
+  if (validData.name && validData.name.trim()) {
+    const cleanName = validData.name.trim();
     await supabase
       .from("profiles")
-      .update({ display_name: validData.name })
+      .update({ display_name: cleanName, name: cleanName })
       .eq("id", user.id);
+    try {
+      await supabase.auth.updateUser({
+        data: { name: cleanName, full_name: cleanName }
+      });
+    } catch {}
   }
 
   // Recalculate and persist fresh nutrition targets immediately upon onboarding

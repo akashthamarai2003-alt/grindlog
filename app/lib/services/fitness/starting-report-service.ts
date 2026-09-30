@@ -288,7 +288,7 @@ export async function generateStartingReport({
     console.warn("[StartingReport] OpenAI call skipped or timed out, switching to Gemini:", openAiErr?.message);
   }
 
-  // 2. High-Speed Secondary Attempt: Google Gemini (gemini-3.6-flash ~1.5s with 4s timeout)
+  // 2. High-Speed Secondary Attempt: Google Gemini (~1.5s with 4s timeout)
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (geminiApiKey) {
     try {
@@ -298,7 +298,7 @@ export async function generateStartingReport({
         setTimeout(() => reject(new Error("Gemini call exceeded 4s limit")), 4000)
       );
       const geminiPromise = gemini.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: process.env.GEMINI_REPORT_MODEL || "gemini-2.0-flash",
         contents: [
           {
             role: "user",
@@ -324,7 +324,7 @@ export async function generateStartingReport({
       if (parsedJson) {
         const geminiParsed = StartingReportSchema.safeParse(parsedJson);
         if (geminiParsed.success) {
-          console.info("[StartingReport] Successfully generated starting report via Gemini 3.6 Flash!");
+          console.info("[StartingReport] Successfully generated starting report via Gemini fallback!");
           return geminiParsed.data;
         }
       }

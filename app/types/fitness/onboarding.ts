@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 export const OnboardingSchema = z.object({
-  name: z.string().optional(),
-  country: z.string().optional(),
-  preferred_language: z.string().optional(),
+  name: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+  preferred_language: z.string().nullable().optional(),
 
   goal: z.enum([
     "Lose Fat", 
@@ -14,7 +14,7 @@ export const OnboardingSchema = z.object({
     "Build Strength", 
     "Improve Fitness", 
     "Maintain"
-  ]).optional(),
+  ]).nullable().optional(),
 
   target_physique: z.enum([
     "Lean Athletic",
@@ -24,78 +24,84 @@ export const OnboardingSchema = z.object({
     "Bodybuilder",
     "Sporty",
     "Strong & Functional"
-  ]).optional(),
-  goal_physique_image: z.string().optional(),
+  ]).nullable().optional(),
+  goal_physique_image: z.string().nullable().optional(),
   
-  fitness_level: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
+  fitness_level: z.enum(["Beginner", "Intermediate", "Advanced"]).nullable().optional(),
   
-  age: z.number().min(16, "Must be at least 16").max(120, "Please enter a valid age").optional(),
-  height: z.number().min(50, "Height seems too low").max(300, "Height seems too high").optional(),
-  weight: z.number().min(30, "Weight seems too low").max(400, "Weight seems too high").optional(),
-  target_weight: z.number().min(30).max(400).optional(),
-  target_deadline_days: z.number().min(1).max(3650).optional(),
-  waist_cm: z.number().min(20).max(300).optional(),
-  chest_cm: z.number().min(20).max(300).optional(),
-  arm_cm: z.number().min(10).max(100).optional(),
-  thigh_cm: z.number().min(10).max(150).optional(),
-  gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
+  age: z.number().min(16, "Must be at least 16").max(120, "Please enter a valid age").nullable().optional(),
+  height: z.number().min(50, "Height seems too low").max(300, "Height seems too high").nullable().optional(),
+  weight: z.number().min(30, "Weight seems too low").max(400, "Weight seems too high").nullable().optional(),
+  target_weight: z.number().min(30).max(400).nullable().optional(),
+  target_deadline_days: z.number().min(1).max(3650).nullable().optional(),
+  waist_cm: z.number().min(20).max(300).nullable().optional(),
+  chest_cm: z.number().min(20).max(300).nullable().optional(),
+  arm_cm: z.number().min(10).max(100).nullable().optional(),
+  thigh_cm: z.number().min(10).max(150).nullable().optional(),
+  gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).nullable().optional(),
   
-  training_location: z.enum(["Gym", "Home", "Outdoor", "Combination"]).optional(),
-  equipment: z.array(z.string()).optional(),
+  training_location: z.enum(["Gym", "Home", "Outdoor", "Combination"]).nullable().optional(),
+  equipment: z.array(z.string()).nullable().optional(),
   
-  training_days_per_week: z.number().min(1).max(7).optional(),
-  workout_duration_minutes: z.number().min(10).max(180).optional(),
-  plan_start_preference: z.enum(["today", "monday"]).optional(),
-  preferred_training_days: z.array(z.string()).optional(),
-  preferred_training_time: z.string().optional(),
+  training_days_per_week: z.number().min(1).max(7).nullable().optional(),
+  workout_duration_minutes: z.number().min(10).max(180).nullable().optional(),
+  plan_start_preference: z.enum(["today", "monday"]).nullable().optional(),
+  preferred_training_days: z.array(z.string()).nullable().optional(),
+  preferred_training_time: z.string().nullable().optional(),
   
-  food_type: z.enum(["Vegetarian", "Eggetarian", "Non-Vegetarian", "Vegan"]).optional(),
-  food_environment: z.enum(["Home", "PG", "Hostel", "Office/Canteen", "I Cook", "Mixed"]).optional(),
-  meals_per_day: z.enum(["2 meals", "3 meals", "4 meals", "5+ meals"]).optional(),
-  nutrition_budget: z.enum(["₹0–1,000", "₹1,000–2,000", "₹2,000–5,000", "₹5,000+"]).optional(),
-  available_foods: z.array(z.string()).optional(),
-  food_allergies: z.string().optional(),
-  foods_disliked: z.string().optional(),
-  foods_avoided: z.string().optional(),
+  food_type: z.enum(["Vegetarian", "Eggetarian", "Non-Vegetarian", "Vegan"]).nullable().optional(),
+  food_environment: z.enum(["Home", "PG", "Hostel", "Office/Canteen", "I Cook", "Mixed"]).nullable().optional(),
+  meals_per_day: z.enum(["2 meals", "3 meals", "4 meals", "5+ meals"]).nullable().optional(),
+  nutrition_budget: z.enum(["₹0–1,000", "₹1,000–2,000", "₹2,000–5,000", "₹5,000+"]).nullable().optional(),
+  available_foods: z.array(z.string()).nullable().optional(),
+  food_allergies: z.string().nullable().optional(),
+  foods_disliked: z.string().nullable().optional(),
+  foods_avoided: z.string().nullable().optional(),
   nutrition_medical_conditions: z.array(z.enum([
     "None", "Diabetes", "Kidney disease", "Pregnancy or breastfeeding", "Other medical diet"
-  ])).optional(),
+  ])).nullable().optional(),
   
-  activity_level: z.enum(["Mostly sitting", "Lightly active", "Moderately active", "Very active"]).optional(),
-  daily_steps: z.enum(["<3k", "3–5k", "5–10k", "10k+"]).optional(),
-  sleep_duration: z.enum(["<5h", "5–6h", "6–7h", "7–8h", "8h+"]).optional(),
+  activity_level: z.enum(["Mostly sitting", "Lightly active", "Moderately active", "Very active"]).nullable().optional(),
+  daily_steps: z.enum(["<3k", "3–5k", "5–10k", "10k+"]).nullable().optional(),
+  sleep_duration: z.enum(["<5h", "5–6h", "6–7h", "7–8h", "8h+"]).nullable().optional(),
   
-  wake_time: z.string().optional(),
-  sleep_time: z.string().optional(),
-  workout_time: z.string().optional(),
-  work_time: z.string().optional(),
+  wake_time: z.string().nullable().optional(),
+  sleep_time: z.string().nullable().optional(),
+  workout_time: z.string().nullable().optional(),
+  work_time: z.string().nullable().optional(),
   
-  physical_problems: z.array(z.string()).optional(),
-  previous_injuries: z.boolean().optional(),
-  previous_injury_areas: z.array(z.string()).optional(),
-  previous_injury_timeline: z.string().optional(),
-  current_pain_severity: z.number().min(0).max(10).optional(),
-  current_pain_triggers: z.array(z.string()).optional(),
-  exercise_limitations: z.array(z.string()).optional(),
-  medical_guidance: z.string().optional(),
-  additional_health_notes: z.string().optional(),
-  safety_acknowledged: z.boolean().optional(),
+  physical_problems: z.array(z.string()).nullable().optional(),
+  previous_injuries: z.boolean().nullable().optional(),
+  previous_injury_areas: z.array(z.string()).nullable().optional(),
+  previous_injury_timeline: z.string().nullable().optional(),
+  current_pain_severity: z.number().min(0).max(10).nullable().optional(),
+  current_pain_triggers: z.array(z.string()).nullable().optional(),
+  exercise_limitations: z.array(z.string()).nullable().optional(),
+  medical_guidance: z.string().nullable().optional(),
+  additional_health_notes: z.string().nullable().optional(),
+  safety_acknowledged: z.boolean().nullable().optional(),
   
-  lifestyle_description: z.string().optional(),
+  lifestyle_description: z.string().nullable().optional(),
   
-  body_scan_front: z.string().optional(),
-  body_scan_left: z.string().optional(),
-  body_scan_right: z.string().optional(),
-  body_scan_back: z.string().optional(),
-  body_scan_inspiration: z.string().optional(),
+  body_scan_front: z.string().nullable().optional(),
+  body_scan_left: z.string().nullable().optional(),
+  body_scan_right: z.string().nullable().optional(),
+  body_scan_back: z.string().nullable().optional(),
+  body_scan_inspiration: z.string().nullable().optional(),
   
-  ai_strategy: z.record(z.any()).optional()
+  ai_strategy: z.record(z.any()).nullable().optional()
 });
 
 export type OnboardingData = z.infer<typeof OnboardingSchema>;
 
 function hasText(value: unknown): boolean {
-  return typeof value === "string" && value.trim().length > 0;
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "Other:" || trimmed === "Other") return false;
+  if (trimmed.startsWith("Other:")) {
+    return trimmed.slice(6).trim().length > 0;
+  }
+  return true;
 }
 
 function hasChoice(values: unknown): boolean {
