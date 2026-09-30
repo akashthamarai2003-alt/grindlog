@@ -17,6 +17,16 @@ function getPeriodDescription(period: AnalyticsPeriod, joinedDate?: string): str
   
   const formatDate = (d: Date) => `${months[d.getMonth()]} ${d.getDate()}`;
   
+  const subtractMonthsSafe = (d: Date, m: number): Date => {
+    const res = new Date(d.getTime());
+    const expectedMonth = (res.getMonth() - m + 1200) % 12;
+    res.setMonth(res.getMonth() - m);
+    if (res.getMonth() !== expectedMonth) {
+      res.setDate(0); // clamp to last day of previous month
+    }
+    return res;
+  };
+
   if (period === '7D') {
     const start = new Date(now.getTime());
     start.setDate(start.getDate() - 7);
@@ -28,13 +38,11 @@ function getPeriodDescription(period: AnalyticsPeriod, joinedDate?: string): str
     return `Past 30 Days • ${formatDate(start)} – ${formatDate(now)}`;
   }
   if (period === '3M') {
-    const start = new Date(now.getTime());
-    start.setMonth(start.getMonth() - 3);
+    const start = subtractMonthsSafe(now, 3);
     return `Past 3 Months • ${formatDate(start)} – ${formatDate(now)}`;
   }
   if (period === '6M') {
-    const start = new Date(now.getTime());
-    start.setMonth(start.getMonth() - 6);
+    const start = subtractMonthsSafe(now, 6);
     return `Past 6 Months • ${formatDate(start)} – ${formatDate(now)}`;
   }
   if (period === 'ALL') {

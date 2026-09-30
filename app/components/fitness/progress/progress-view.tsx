@@ -21,11 +21,7 @@ import Link from "next/link";
 import { progressClientCache } from "@/lib/api/progress-cache";
 
 export function ProgressView({ initialData, isPro = true }: { initialData: AggregatedProgressPayload; isPro?: boolean }) {
-  const [data, setData] = useState<AggregatedProgressPayload>(() => {
-    const cached = progressClientCache.get(initialData?.period || "30D");
-    if (cached) return cached;
-    return initialData;
-  });
+  const [data, setData] = useState<AggregatedProgressPayload>(initialData);
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialData.period);
   const [isFetching, setIsFetching] = useState(false);
   const [workoutDates, setWorkoutDates] = useState<string[]>([]);
@@ -275,6 +271,7 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
                 <WeightChart 
                   data={data.weightHistory} 
                   targetWeight={data.transformation.targetWeight} 
+                  isBulking={(data.transformation.targetWeight || 0) > (data.transformation.startingWeight || 0)}
                   isPro={isPro}
                   onProClick={triggerProModal}
                 />

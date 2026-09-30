@@ -5,14 +5,22 @@ import { useRouter } from "next/navigation";
 import { Camera, ArrowLeft, Loader2, X, User, Calendar, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { progressClientCache } from "@/lib/api/progress-cache";
 import frontImg from "@/assets/images/placeholder-front.png";
 import backImg from "@/assets/images/placeholder-back.png";
 import leftImg from "@/assets/images/placeholder-left.png";
 import rightImg from "@/assets/images/placeholder-right.png";
 
+function getLocalDateString(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export default function AddScanPage() {
   const [images, setImages] = useState<{ front?: string; left?: string; right?: string; back?: string }>({});
-  const [scanDate, setScanDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [scanDate, setScanDate] = useState(() => getLocalDateString());
   const [isLoading, setIsLoading] = useState(false);
   const [processingField, setProcessingField] = useState<'front' | 'left' | 'right' | 'back' | null>(null);
   const router = useRouter();
@@ -22,8 +30,10 @@ export default function AddScanPage() {
   const rightInputRef = useRef<HTMLInputElement>(null);
   const backInputRef = useRef<HTMLInputElement>(null);
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = getLocalDateString(yesterdayDate);
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -119,6 +129,8 @@ export default function AddScanPage() {
       }
       
       toast.success("Body scan saved successfully!", { id: toastId });
+      progressClientCache.clear();
+      progressClientCache.notifyUpdated();
       router.push("/progress");
       router.refresh();
     } catch (error: any) {

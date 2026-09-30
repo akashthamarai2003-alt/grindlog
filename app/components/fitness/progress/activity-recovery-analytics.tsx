@@ -8,6 +8,13 @@ import { Footprints, Moon, Plus, Sparkles, X, Check, Loader2, Calendar, Zap, Loc
 import { BarChart, Bar, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { toast } from "sonner";
 
+function getLocalDateString(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function ActivityRecoveryAnalyticsCard({
   activity,
   recovery,
@@ -36,11 +43,11 @@ export function ActivityRecoveryAnalyticsCard({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"steps" | "sleep">("steps");
 
-  // Logging modal form state
-  const todayStr = new Date().toISOString().split("T")[0];
+  // Logging modal form state using local calendar date
+  const todayStr = getLocalDateString(new Date());
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
+  const yesterdayStr = getLocalDateString(yesterdayDate);
 
   const [logDate, setLogDate] = useState(todayStr);
   const [stepsInput, setStepsInput] = useState<string>(
@@ -254,11 +261,11 @@ export function ActivityRecoveryAnalyticsCard({
 
             <div className="flex items-baseline gap-1 mb-1">
               <span className="text-xl font-black text-white leading-none">
-                {currentSteps.toLocaleString()}
+                {(currentSteps ?? 0).toLocaleString()}
                 <span className="text-[10px] text-white/60 font-bold ml-0.5">steps</span>
               </span>
               <span className="text-[9px] font-bold text-white/40 tracking-wider">
-                / {activity.stepTarget.toLocaleString()} goal
+                / {(activity.stepTarget ?? 8000).toLocaleString()} goal
               </span>
             </div>
 
@@ -266,7 +273,7 @@ export function ActivityRecoveryAnalyticsCard({
               <span>
                 {activity.todaySteps && activity.todaySteps > 0 ? "Today's Steps" : "Daily Average"}
                 {activity.averageDailySteps > 0 && activity.todaySteps !== undefined && (
-                  <span className="text-white/30 ml-1">· Avg: {activity.averageDailySteps.toLocaleString()}</span>
+                  <span className="text-white/30 ml-1">· Avg: {(activity.averageDailySteps ?? 0).toLocaleString()}</span>
                 )}
               </span>
             </div>

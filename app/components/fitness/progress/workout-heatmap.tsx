@@ -177,7 +177,7 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
       const col: CellData[] = [];
 
       for (let day = 0; day < DAYS_IN_WEEK; day++) {
-        const cellDate = new Date(startMs + (week * 7 + day) * ONE_DAY_MS);
+        const cellDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + (week * 7 + day));
         const dateStr = formatDate(cellDate);
         const isFuture = dateStr > todayStr;
         const isToday = dateStr === todayStr;

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
+import { invalidateProgressServerCache } from "@/lib/services/analytics/progress-service";
 
 // Optional Cloudflare R2 Client (only active if configured in env)
 const isR2Configured = Boolean(
@@ -155,37 +156,23 @@ export async function POST(req: Request) {
       }
     };
 
-    // Enforce 9-photo storage ceiling per user (Baseline 4 + Current 4 + Goal 1 = 9 max):
-    // If the user already has 2 or more scans (Baseline + Current):
-    // 1. ALWAYS PRESERVE existingScans[0] (Day 1 Baseline scan) - never delete!
-    // 2. Clean up previous Current check-in photos from Cloudflare R2 to save storage.
-    // 3. Remove old check-in records from Supabase so only Baseline + Newest Current exist.
-    if (existingScans && existingScans.length >= 2) {
-      const scansToCleanup = existingScans.slice(1);
+    // Storage lifecycle: Always preserve existingScans[0] (Day 1 Baseline scan).
+    // Allow up to 10 historical check-in scans. Only prune excess intermediate scans beyond 10.
+    if (existingScans && existingScans.length > 10) {
+      // Keep baseline (index 0) and the 9 most recent; prune the oldest intermediate scans
+      const scansToCleanup = existingScans.slice(1, existingScans.length - 9);
       const idsToDelete = scansToCleanup.map((s: any) => s.id);
 
-      // Delete old check-in photos from Cloudflare R2 storage
       for (const oldScan of scansToCleanup) {
         await deleteScanPhotosFromR2(oldScan, user.id);
       }
 
-      // Remove previous check-in rows from database
       if (idsToDelete.length > 0) {
         await supabase
           .from('fitness_os_body_scans')
           .delete()
           .in('id', idsToDelete);
       }
-    } else if (existingScans && existingScans.length === 1 && existingScans[0].scan_date === finalScanDate) {
-      // If the user currently has only 1 scan and its date matches the new scan:
-      // Ensure the initial scan is preserved as the Day 1 Baseline (backdated by 14 days so comparison is clear)
-      const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 14);
-      const baselineDate = pastDate.toISOString().split('T')[0];
-      await supabase
-        .from('fitness_os_body_scans')
-        .update({ scan_date: baselineDate })
-        .eq('id', existingScans[0].id);
     }
 
     // Insert the new scan as the updated Current scan
@@ -200,6 +187,10 @@ export async function POST(req: Request) {
       console.error("Insert scan error:", scanError);
       throw scanError;
     }
+
+    try {
+      invalidateProgressServerCache(user.id);
+    } catch {}
 
     return NextResponse.json({ 
       success: true, 

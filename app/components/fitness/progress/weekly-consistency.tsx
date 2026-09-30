@@ -3,9 +3,10 @@
 import { ConsistencyMetrics } from "@/types/fitness/analytics";
 
 function CircularProgress({ percentage, color, icon, label }: { percentage: number, color: string, icon: string, label: string }) {
+  const safePercentage = isNaN(percentage) || !isFinite(percentage) ? 0 : Math.max(0, Math.min(100, percentage));
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const strokeDashoffset = circumference - (safePercentage / 100) * circumference;
 
   return (
     <div className="flex flex-col items-center gap-1.5">
@@ -31,7 +32,7 @@ function CircularProgress({ percentage, color, icon, label }: { percentage: numb
       </div>
       <div className="flex flex-col items-center text-center">
         <span className="text-[10px] font-black text-white/70 tracking-widest uppercase">{label}</span>
-        <span className="text-[9px] font-bold text-white/40">{Math.round(percentage)}%</span>
+        <span className="text-[9px] font-bold text-white/40">{Math.round(safePercentage)}%</span>
       </div>
     </div>
   );
@@ -45,7 +46,7 @@ export function WeeklyConsistency({ metrics }: { metrics: ConsistencyMetrics }) 
           Consistency Overview
         </h2>
         <span className="text-[10px] font-bold text-[#ADFF00]/60 uppercase tracking-widest">
-          Score: {Math.round(metrics.overallScore)}
+          Score: {Math.round(metrics.overallScore ?? 0)}
         </span>
       </div>
 

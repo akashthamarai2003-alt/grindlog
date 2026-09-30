@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
+import { invalidateProgressServerCache } from "@/lib/services/analytics/progress-service";
 
 export async function GET(req: Request) {
   try {
@@ -136,6 +137,10 @@ export async function POST(req: Request) {
     if (loggedCount === 0) {
       return NextResponse.json({ success: false, error: 'No activity or sleep data provided.' }, { status: 400 });
     }
+
+    try {
+      invalidateProgressServerCache(user.id);
+    } catch {}
 
     return NextResponse.json({
       success: true,

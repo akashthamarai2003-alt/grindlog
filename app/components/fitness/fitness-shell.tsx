@@ -18,6 +18,10 @@ const MAIN_PAGES = new Set([
   "/diet",
   "/progress",
   "/profile",
+  "/test-home",
+  "/test-workout",
+  "/test-nutrition",
+  "/test-progress",
 ]);
 
 function FitnessShellInner({ children, isPro = false }: { children: React.ReactNode; isPro?: boolean }) {

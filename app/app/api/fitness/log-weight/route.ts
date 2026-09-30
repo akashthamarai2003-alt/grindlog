@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
+import { canUseFitnessFeature, requireFitnessSubscription } from "@/lib/fitness/subscription/access";
 import { invalidateProgressServerCache } from "@/lib/services/analytics/progress-service";
 
 export async function GET(req: Request) {
@@ -55,8 +55,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    if (!(await canUseFitnessFeature(user.id, "advanced_progress_analysis"))) {
-      return NextResponse.json({ success: false, error: "Progress tracking is available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
+    if (!(await requireFitnessSubscription(user.id))) {
+      return NextResponse.json({ success: false, error: "Active plan required to log weight.", errorType: "PLAN_REQUIRED" }, { status: 403 });
     }
 
     const body = await req.json();

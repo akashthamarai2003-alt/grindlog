@@ -50,7 +50,7 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
         </h2>
         {currentCals > 0 && (
           <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">
-            Today: <strong className="text-white font-black">{currentCals.toLocaleString()}</strong> / {metrics.calorieTarget.toLocaleString()} kcal
+            Today: <strong className="text-white font-black">{(currentCals ?? 0).toLocaleString()}</strong> / {(metrics.calorieTarget ?? 2000).toLocaleString()} kcal
           </span>
         )}
       </div>
@@ -71,15 +71,15 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
             </div>
             <div className="flex items-baseline gap-1 mb-1">
               <span className="text-xl font-black text-white leading-none">
-                {currentCals.toLocaleString()}
+                {(currentCals ?? 0).toLocaleString()}
                 <span className="text-[10px] text-white/60 font-bold ml-0.5">kcal</span>
               </span>
-              <span className="text-[9px] font-bold text-white/40 tracking-wider">/ {metrics.calorieTarget.toLocaleString()} kcal</span>
+              <span className="text-[9px] font-bold text-white/40 tracking-wider">/ {(metrics.calorieTarget ?? 2000).toLocaleString()} kcal</span>
             </div>
             <div className="text-[9px] font-semibold text-white/40 mb-3">
               {metrics.todayCalories && metrics.todayCalories > 0 ? "Today's Intake" : "Daily Average"}
               {metrics.averageCalories > 0 && metrics.todayCalories !== undefined && (
-                <span className="text-white/30 ml-1">· Avg: {metrics.averageCalories.toLocaleString()}</span>
+                <span className="text-white/30 ml-1">· Avg: {(metrics.averageCalories ?? 0).toLocaleString()}</span>
               )}
             </div>
           </div>
@@ -206,7 +206,7 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
               <Sparkles className="w-3 h-3 text-[#ADFF00]" /> Today's Macronutrient Breakdown
             </span>
             <span className="text-[9px] font-mono font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded border border-[#ADFF00]/20">
-              {currentCals.toLocaleString()} kcal logged
+              {(currentCals ?? 0).toLocaleString()} kcal logged
             </span>
           </div>
 
@@ -220,10 +220,10 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
               <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-red-400 rounded-full transition-all" 
-                  style={{ width: `${Math.min(100, Math.round((currentPro / metrics.proteinTarget) * 100))}%` }} 
+                  style={{ width: `${(metrics.proteinTarget || 130) > 0 ? Math.min(100, Math.round(((currentPro || 0) / (metrics.proteinTarget || 130)) * 100)) : 0}%` }} 
                 />
               </div>
-              <span className="text-[8px] text-white/40 text-right">Goal: {metrics.proteinTarget}g</span>
+              <span className="text-[8px] text-white/40 text-right">Goal: {metrics.proteinTarget || 130}g</span>
             </div>
 
             {/* Carbs */}
@@ -235,7 +235,7 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
               <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-amber-400 rounded-full transition-all" 
-                  style={{ width: `${Math.min(100, Math.round((todayCarbs / carbsTarget) * 100))}%` }} 
+                  style={{ width: `${carbsTarget > 0 ? Math.min(100, Math.round(((todayCarbs || 0) / carbsTarget) * 100)) : 0}%` }} 
                 />
               </div>
               <span className="text-[8px] text-white/40 text-right">Goal: {carbsTarget}g</span>
@@ -250,7 +250,7 @@ export function NutritionAnalyticsCard({ metrics }: { metrics: NutritionAnalytic
               <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-sky-400 rounded-full transition-all" 
-                  style={{ width: `${Math.min(100, Math.round((todayFat / fatTarget) * 100))}%` }} 
+                  style={{ width: `${fatTarget > 0 ? Math.min(100, Math.round(((todayFat || 0) / fatTarget) * 100)) : 0}%` }} 
                 />
               </div>
               <span className="text-[8px] text-white/40 text-right">Goal: {fatTarget}g</span>

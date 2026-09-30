@@ -89,7 +89,8 @@ export class ProgressAnalyticsService {
       { data: latestReview },
       { data: userAchievementsData },
       { data: bodyMetricsData },
-      { data: activePlanData }
+      { data: activePlanData },
+      { data: streakWorkoutsData }
     ] = await Promise.all([
       supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target, goal_physique_image, target_physique').eq('user_id', userId).maybeSingle(),
       supabase.from('fitness_os_body_scans').select('*').eq('user_id', userId).order('scan_date', { ascending: true }).order('created_at', { ascending: true }),
@@ -126,7 +127,8 @@ export class ProgressAnalyticsService {
       supabase.from('fitness_os_ai_insights').select('*').eq('user_id', userId).order('generated_at', { ascending: false }).limit(5),
       supabase.from('fitness_os_user_achievements').select('*, achievement:achievement_id(title, description, icon)').eq('user_id', userId),
       supabase.from('fitness_os_body_metrics').select('weight, recorded_at').eq('user_id', userId).not('weight', 'is', null).gte('recorded_at', startDateStr).order('recorded_at', { ascending: true }),
-      supabase.from('fitness_os_workout_plans').select('plan_data').eq('user_id', userId).eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle()
+      supabase.from('fitness_os_workout_plans').select('plan_data').eq('user_id', userId).eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('fitness_os_workouts').select('workout_date, completed_at').eq('user_id', userId).eq('status', 'completed').order('workout_date', { ascending: false }).limit(60)
     ]);
 
     const workouts = workoutsData || [];
@@ -135,6 +137,7 @@ export class ProgressAnalyticsService {
     const sleepLogs = sleepLogsData || [];
     const userAchievements = userAchievementsData || [];
     const activePlan = activePlanData;
+    const streakWorkouts = streakWorkoutsData || [];
 
     // 1. Profile Data Processing
     const profileStartWeight = fitProfile?.weight_trend_baseline || fitProfile?.weight || 0;
@@ -179,9 +182,8 @@ export class ProgressAnalyticsService {
       }
     }
 
-    const userCreatedAt = fitProfile?.created_at ? new Date(fitProfile.created_at) : startDate;
-    const effectiveStart = userCreatedAt > startDate ? userCreatedAt : startDate;
-    const elapsedDays = Math.max(1, Math.floor((now.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+    const userCreatedAt = fitProfile?.created_at ? new Date(fitProfile.created_at) : now;
+    const elapsedDays = Math.max(1, Math.floor((now.getTime() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
     const transformation: TransformationMetrics = {
       startingWeight: profileStartWeight,
@@ -471,12 +473,11 @@ export class ProgressAnalyticsService {
       weeklyChart: weeklyChartData
     };
 
-    // Calculate current workout streak
-    const completedWorkoutDates = new Set<string>(
-      completedWorkouts
-        .map((w: any) => (w.completed_at || w.workout_date || '').split('T')[0])
-        .filter(Boolean)
-    );
+    // Calculate current workout streak (merge period-scoped workouts and 60-day historical workouts)
+    const completedWorkoutDates = new Set<string>([
+      ...completedWorkouts.map((w: any) => (w.completed_at || w.workout_date || '').split('T')[0]),
+      ...streakWorkouts.map((w: any) => (w.completed_at || w.workout_date || '').split('T')[0])
+    ].filter(Boolean));
     let calcStreak = 0;
     const checkD = new Date(now.getTime());
     const todayYMD = `${checkD.getFullYear()}-${String(checkD.getMonth() + 1).padStart(2, '0')}-${String(checkD.getDate()).padStart(2, '0')}`;

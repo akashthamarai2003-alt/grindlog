@@ -26,7 +26,7 @@ export default async function ProgressPage() {
   const isPro = plan?.id === "pro";
 
   return (
-    <FitnessGuard featureName="advanced progress analysis">
+    <FitnessGuard requirePaid={true} featureName="progress tracking">
       <Suspense fallback={<ProgressInstantFallback isPro={isPro} />}>
         <ProgressContent userId={user.id} isPro={isPro} />
       </Suspense>

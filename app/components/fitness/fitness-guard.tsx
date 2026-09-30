@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 
-function ProAccessGate({ featureName }: { featureName: string }) {
+export function ProAccessGate({ featureName }: { featureName: string }) {
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] px-6 py-16 text-white">
       <div className="mx-auto flex max-w-md flex-col items-center rounded-3xl border border-[#ADFF00]/25 bg-[linear-gradient(145deg,rgba(173,255,0,0.10),rgba(18,30,18,1)_48%)] p-6 text-center">
@@ -29,7 +29,7 @@ function ProAccessGate({ featureName }: { featureName: string }) {
   );
 }
 
-function PaidAccessGate({ featureName }: { featureName: string }) {
+export function PaidAccessGate({ featureName }: { featureName: string }) {
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] px-6 py-16 text-white">
       <div className="mx-auto flex max-w-md flex-col items-center rounded-3xl border border-[#ADFF00]/25 bg-[linear-gradient(145deg,rgba(173,255,0,0.10),rgba(18,30,18,1)_48%)] p-6 text-center">

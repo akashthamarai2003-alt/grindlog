@@ -35,10 +35,10 @@ export function AchievementsShowcase({ achievements }: { achievements: Achieveme
                   <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-white/30 rounded-full"
-                      style={{ width: `${(ach.progress / ach.target) * 100}%` }}
+                      style={{ width: `${ach.target > 0 ? Math.min(100, Math.max(0, Math.round(((ach.progress || 0) / ach.target) * 100))) : 0}%` }}
                     />
                   </div>
-                  <span className="text-[9px] font-bold text-white/40">{ach.progress}/{ach.target}</span>
+                  <span className="text-[9px] font-bold text-white/40">{ach.progress || 0}/{ach.target || 1}</span>
                 </div>
               )}
             </div>

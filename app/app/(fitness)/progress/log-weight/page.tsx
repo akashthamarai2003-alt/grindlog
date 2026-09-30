@@ -6,6 +6,14 @@ import { ArrowLeft, Loader2, Weight, AlertCircle, Calendar, Target, CheckCircle2
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { toast } from "sonner";
+import { progressClientCache } from "@/lib/api/progress-cache";
+
+function getLocalDateString(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 interface RecentLog {
   id: string;
@@ -17,9 +25,7 @@ export default function LogWeightPage() {
   const [weight, setWeight] = useState<string>("");
   const [targetWeight, setTargetWeight] = useState<number | null>(null);
   const [recentLogs, setRecentLogs] = useState<RecentLog[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
   const [isFetching, setIsFetching] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
@@ -109,6 +115,8 @@ export default function LogWeightPage() {
       }
 
       toast.success(`Weight logged: ${data.weight} kg`);
+      progressClientCache.clear();
+      progressClientCache.notifyUpdated();
       router.push("/progress");
       router.refresh();
     } catch (err: any) {
@@ -134,10 +142,10 @@ export default function LogWeightPage() {
     }
   };
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalDateString(new Date());
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
+  const yesterdayStr = getLocalDateString(yesterdayDate);
 
   return (
     <div className="w-full flex flex-col min-h-screen bg-[#0A1108] p-5 relative overflow-y-auto pb-12">

@@ -6,6 +6,14 @@ import { ArrowLeft, Loader2, Ruler, AlertCircle, Calendar, History } from "lucid
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { progressClientCache } from "@/lib/api/progress-cache";
+
+function getLocalDateString(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 interface FieldConfig {
   field: "waist" | "chest" | "hip" | "neck" | "left_arm" | "right_arm" | "left_thigh" | "right_thigh";
@@ -41,9 +49,7 @@ export default function LogMeasurementsPage() {
   const [previous, setPrevious] = useState<Record<string, number | null>>({});
   const [isFetching, setIsFetching] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
   const router = useRouter();
 
   // Load previous measurements
@@ -121,6 +127,8 @@ export default function LogMeasurementsPage() {
       }
 
       toast.success("Measurements saved successfully!");
+      progressClientCache.clear();
+      progressClientCache.notifyUpdated();
       router.push("/progress");
       router.refresh();
     } catch (err: any) {
@@ -130,10 +138,10 @@ export default function LogMeasurementsPage() {
     }
   };
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalDateString(new Date());
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
+  const yesterdayStr = getLocalDateString(yesterdayDate);
 
   const hasPreviousData = Object.values(previous).some(v => v !== null && v !== undefined && v > 0);
 

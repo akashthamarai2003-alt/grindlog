@@ -9,12 +9,16 @@ import Link from "next/link";
 export function WeightChart({ 
   data, 
   targetWeight, 
+  isBulking = false,
   isPro = true, 
+  canLogWeight = true,
   onProClick 
 }: { 
   data: WeightPoint[]; 
   targetWeight: number | null; 
+  isBulking?: boolean;
   isPro?: boolean; 
+  canLogWeight?: boolean;
   onProClick?: (feature: string) => void; 
 }) {
   const [viewMode, setViewMode] = useState<"daily" | "weekly">("daily");
@@ -30,8 +34,8 @@ export function WeightChart({
       const d = new Date(p.date + "T00:00:00");
       const day = d.getDay();
       const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
-      const monday = new Date(d.setDate(diff));
-      const weekKey = monday.toISOString().split("T")[0];
+      const monday = new Date(d.getFullYear(), d.getMonth(), diff);
+      const weekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
 
       const current = weekMap.get(weekKey) || { sum: 0, count: 0, lastDate: p.date };
       current.sum += p.weight;
@@ -94,7 +98,7 @@ export function WeightChart({
         </h2>
         <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center text-center h-48">
           <p className="text-sm font-bold text-white/60 mb-2">No weight history yet</p>
-          {isPro ? (
+          {canLogWeight ? (
             <Link href="/progress/log-weight" className="flex items-center gap-2 px-4 py-2 bg-[#ADFF00]/10 text-[#ADFF00] rounded-xl font-black text-xs uppercase tracking-widest border border-[#ADFF00]/20 hover:bg-[#ADFF00]/20 transition-colors">
               <Plus className="w-3 h-3" /> Log Weight
             </Link>
@@ -119,7 +123,7 @@ export function WeightChart({
         <h2 className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
           Weight History
         </h2>
-        {isPro ? (
+        {canLogWeight ? (
           <Link href="/progress/log-weight" className="flex items-center gap-1 text-[#ADFF00] font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors">
             <Plus className="w-3 h-3" /> Log
           </Link>
@@ -142,8 +146,12 @@ export function WeightChart({
               {latestWeight.toFixed(1)} <span className="text-xs text-white/40 font-bold">kg</span>
             </span>
             {changeDiff !== 0 && (
-              <span className={`text-[11px] font-bold flex items-center gap-0.5 ${changeDiff < 0 ? "text-[#ADFF00]" : "text-amber-400"}`}>
-                {changeDiff < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+              <span className={`text-[11px] font-bold flex items-center gap-0.5 ${
+                isBulking 
+                  ? (changeDiff > 0 ? "text-[#ADFF00]" : "text-amber-400")
+                  : (changeDiff < 0 ? "text-[#ADFF00]" : "text-amber-400")
+              }`}>
+                {changeDiff > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                 {changeDiff > 0 ? `+${changeDiff}` : changeDiff} kg
               </span>
             )}

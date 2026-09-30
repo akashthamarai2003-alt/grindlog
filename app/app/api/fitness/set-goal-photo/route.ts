@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
+import { invalidateProgressServerCache } from "@/lib/services/analytics/progress-service";
 
 const isR2Configured = Boolean(
   process.env.R2_ACCOUNT_ID &&
@@ -60,6 +62,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
+    if (!(await canUseFitnessFeature(user.id, "advanced_progress_analysis"))) {
+      return NextResponse.json({ success: false, error: "Goal photo upload is available on the Pro plan.", errorType: "PRO_REQUIRED" }, { status: 403 });
+    }
+
     const { goalImage } = await req.json();
 
     let finalGoalUrl: string | null = null;
@@ -117,6 +123,10 @@ export async function POST(req: Request) {
       .from('fitness_os_body_scans')
       .update({ goal_image_url: finalGoalUrl })
       .eq('user_id', user.id);
+
+    try {
+      invalidateProgressServerCache(user.id);
+    } catch {}
 
     return NextResponse.json({
       success: true,

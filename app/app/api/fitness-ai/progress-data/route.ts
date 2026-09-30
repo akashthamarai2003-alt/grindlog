@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     }
 
     const plan = await getFitnessPlan(user.id);
-    if (!plan) {
+    if (!plan || plan.id === "free") {
       return NextResponse.json({ error: "Active plan required.", errorType: "PLAN_REQUIRED" }, { status: 403 });
     }
 
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "private, max-age=120, stale-while-revalidate=600",
+        "Cache-Control": "private, no-cache, no-store, must-revalidate",
       },
     });
   } catch (error: any) {
