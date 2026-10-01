@@ -9,6 +9,7 @@ import { settleFitnessPayment } from "@/lib/fitness/subscription/settle-payment"
 import { getLockedFitnessRate } from "@/lib/fitness/subscription/locked-rate";
 import { calculateExpiryDate } from "@/lib/utils";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
+import { invalidateFitnessSubscriptionCache } from "@/lib/fitness/subscription/access";
 
 const razorpay = new Razorpay({
   key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
@@ -125,32 +126,41 @@ export async function claimSpinDiscountAction() {
   };
 }
 
-export async function validateCouponAction(code: string) {
-  if (!code) return { success: false, error: "Please enter a code" };
+export async function validateCouponAction(code: string, tier: string = "monthly", level: string = "pro") {
+  if (!code || !code.trim()) return { success: false, error: "Please enter a coupon code" };
   
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("coupons")
-    .select("id, discount_percentage, used_count, max_uses, is_active, allowed_plan, allowed_level")
+    .select("id, code, discount_percentage, used_count, max_uses, is_active, allowed_plan, allowed_level")
     .eq("code", code.toUpperCase().trim())
-    .single();
+    .maybeSingle();
     
   if (error || !data) {
     return { success: false, error: "Invalid coupon code" };
   }
   
   if (!data.is_active) {
-    return { success: false, error: "This coupon is disabled" };
+    return { success: false, error: "This coupon is no longer active" };
   }
   
   if (data.used_count >= data.max_uses) {
     return { success: false, error: "This coupon has reached its usage limit" };
   }
+
+  if (data.allowed_plan && data.allowed_plan !== "any" && data.allowed_plan !== tier) {
+    return { success: false, error: `This coupon is only valid for ${data.allowed_plan} plans` };
+  }
+
+  if (data.allowed_level && data.allowed_level !== "any" && data.allowed_level !== level) {
+    return { success: false, error: `This coupon is only valid for the ${data.allowed_level.toUpperCase()} tier` };
+  }
   
   return { 
     success: true, 
-    discount: data.discount_percentage,
     id: data.id,
+    code: data.code,
+    discount: data.discount_percentage,
     allowed_plan: data.allowed_plan,
     allowed_level: data.allowed_level
   };
@@ -250,13 +260,13 @@ export async function createRazorpayOrder(
   }
 
   // Calculate coupon discount if applicable
-  if (couponId && !isSpinDiscountApplied) {
+  if (couponId) {
     const adminClient = createAdminClient();
     const { data: coupon } = await adminClient
       .from("coupons")
       .select("discount_percentage, used_count, max_uses, is_active, allowed_plan, allowed_level")
       .eq("id", couponId)
-      .single();
+      .maybeSingle();
       
     if (!coupon || !coupon.is_active || coupon.used_count >= coupon.max_uses) {
       return { success: false, error: "Coupon is no longer valid" };
@@ -267,7 +277,7 @@ export async function createRazorpayOrder(
     }
 
     if (coupon.allowed_level && coupon.allowed_level !== "any" && coupon.allowed_level !== level) {
-      return { success: false, error: `This coupon is only valid for ${coupon.allowed_level} level` };
+      return { success: false, error: `This coupon is only valid for ${coupon.allowed_level} tier` };
     }
     
     const discount = (finalPrice * coupon.discount_percentage) / 100;
@@ -276,7 +286,7 @@ export async function createRazorpayOrder(
 
   // If final price is 0 (100% discount), we can just bypass Razorpay
   if (finalPrice === 0) {
-    return { success: true, bypassRazorpay: true, finalPrice };
+    return { success: true, bypassRazorpay: true, finalPrice, couponId };
   }
 
   try {
@@ -327,7 +337,104 @@ export async function verifyRazorpayPayment(
   }
 
   if (appName === "fitness_os") {
-    if (isBypass) return { success: false, error: "Fitness renewal requires a captured payment." };
+    if (isBypass) {
+      if (!couponId) {
+        console.warn(`[Security] Rejected payment bypass attempt by user ${user.id}: missing couponId`);
+        return { success: false, error: "Payment verification failed. Bypass requires a valid coupon." };
+      }
+      const adminCheckClient = createAdminClient();
+      const { data: coupon, error: couponErr } = await adminCheckClient
+        .from("coupons")
+        .select("id, discount_percentage, used_count, max_uses, is_active, allowed_plan, allowed_level")
+        .eq("id", couponId)
+        .maybeSingle();
+
+      if (couponErr || !coupon) {
+        console.warn(`[Security] Rejected payment bypass attempt by user ${user.id}: coupon ${couponId} not found`);
+        return { success: false, error: "Payment verification failed. Invalid coupon." };
+      }
+      if (!coupon.is_active) {
+        return { success: false, error: "Payment verification failed. Coupon is inactive." };
+      }
+      if (coupon.used_count >= coupon.max_uses) {
+        return { success: false, error: "Payment verification failed. Coupon usage limit reached." };
+      }
+      if (coupon.discount_percentage !== 100) {
+        console.warn(`[Security] Rejected payment bypass attempt by user ${user.id}: coupon discount is ${coupon.discount_percentage}%, not 100%`);
+        return { success: false, error: "Payment verification failed. Coupon does not grant a 100% discount." };
+      }
+      if (coupon.allowed_plan && coupon.allowed_plan !== "any" && coupon.allowed_plan !== tier) {
+        return { success: false, error: "Payment verification failed. Coupon not valid for this plan." };
+      }
+      if (coupon.allowed_level && coupon.allowed_level !== "any" && coupon.allowed_level !== level) {
+        return { success: false, error: "Payment verification failed. Coupon not valid for this tier level." };
+      }
+
+      // Increment coupon usage
+      await adminCheckClient
+        .from("coupons")
+        .update({ used_count: coupon.used_count + 1 })
+        .eq("id", couponId);
+      revalidatePath("/admin/coupons");
+
+      // Activate Fitness OS membership for 30 days
+      const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      await adminCheckClient
+        .from("fitness_os_profiles")
+        .update({
+          fitness_is_premium: true,
+          fitness_premium_tier: tier,
+          fitness_premium_level: level,
+          fitness_premium_expires_at: newExpiry,
+        })
+        .eq("user_id", user.id);
+
+      await adminCheckClient
+        .from("fitness_os_subscriptions")
+        .upsert({
+          user_id: user.id,
+          plan: level === "pro" ? "pro" : "starter",
+          status: "active",
+          provider: "coupon_bypass",
+          provider_order_id: `coupon_${couponId}_${Date.now()}`,
+          provider_payment_id: `free_${coupon.id}_${Date.now()}`,
+          current_period_start: new Date().toISOString(),
+          current_period_end: newExpiry,
+        });
+
+      await adminCheckClient
+        .from("profiles")
+        .update({
+          is_premium: true,
+          premium_tier: tier,
+          premium_level: level,
+          premium_expires_at: newExpiry,
+        })
+        .eq("id", user.id);
+
+      invalidateFitnessSubscriptionCache(user.id);
+      revalidatePath("/", "layout");
+      return { success: true };
+    }
+
+    if (couponId) {
+      const adminClient = createAdminClient();
+      const { data: coupon } = await adminClient
+        .from("coupons")
+        .select("used_count")
+        .eq("id", couponId)
+        .single();
+        
+      if (coupon) {
+        await adminClient
+          .from("coupons")
+          .update({ used_count: coupon.used_count + 1 })
+          .eq("id", couponId);
+          
+        revalidatePath("/admin/coupons");
+      }
+    }
+
     try {
       const result = await settleFitnessPayment(razorpayPaymentId, { userId: user.id, orderId: razorpayOrderId, tier, level });
       revalidatePath("/", "layout");

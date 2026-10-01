@@ -21,7 +21,8 @@ import {
   Sparkles,
   Lock,
   ArrowRight,
-  Loader2
+  Loader2,
+  Tag
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSafeRedirect } from "@/lib/utils/redirect";
@@ -29,7 +30,8 @@ import {
   createRazorpayOrder, 
   verifyRazorpayPayment, 
   getUserPremiumDetailsAction,
-  acceptFreePreviewAction
+  acceptFreePreviewAction,
+  validateCouponAction
 } from "@/app/actions/payment";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
@@ -262,20 +264,91 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
     sessionStorage.setItem("fitness_spin_completed_or_dismissed", "true");
   }, []);
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string;
+    code: string;
+    discount: number;
+    allowed_plan?: string | null;
+    allowed_level?: string | null;
+  } | null>(null);
+
+  const handleApplyCoupon = async () => {
+    const trimmed = couponInput.trim();
+    if (!trimmed || isValidatingCoupon || isProcessing) return;
+    setIsValidatingCoupon(true);
+    setCouponError(null);
+
+    try {
+      const res = await validateCouponAction(trimmed, selectedPlan, level);
+      if (res.success && res.id) {
+        setAppliedCoupon({
+          id: res.id,
+          code: res.code || trimmed.toUpperCase(),
+          discount: res.discount,
+          allowed_plan: res.allowed_plan,
+          allowed_level: res.allowed_level,
+        });
+        setCouponInput("");
+        setCouponError(null);
+      } else {
+        setCouponError(res.error || "Invalid coupon code");
+      }
+    } catch (err: any) {
+      setCouponError(err?.message || "Failed to validate coupon");
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError(null);
+    setCouponInput("");
+  };
+
+  // Re-check coupon validity if user switches between Core and Pro
+  useEffect(() => {
+    if (appliedCoupon?.allowed_level && appliedCoupon.allowed_level !== "any" && appliedCoupon.allowed_level !== level) {
+      setCouponError(`Coupon ${appliedCoupon.code} is only valid for ${appliedCoupon.allowed_level.toUpperCase()} tier`);
+    } else if (couponError?.includes("only valid for")) {
+      setCouponError(null);
+    }
+  }, [level, appliedCoupon]);
+
   const isDiscountActive = !isRenewal && (isCurrentCore || (Boolean(discountToken) && !isDiscountExpired && (discountExpiresAt ? Date.now() < discountExpiresAt : false)));
 
   const discountPercent = pricingConfig?.spinDiscountPercentage ?? 70;
 
-  // Dynamic offer and regular prices from live admin configuration with production fallbacks (10 & 5)
-  const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? 10;
-  const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 5;
+  // Dynamic offer and regular prices from live admin configuration with production fallbacks (59 & 199)
+  const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? 59;
+  const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 199;
   const corePrice = pricingConfig?.monthly?.core?.price ?? Math.max(1, Math.round(coreOriginalPrice * (1 - discountPercent / 100)));
   const proPrice = pricingConfig?.monthly?.pro?.price ?? Math.max(1, Math.round(proOriginalPrice * (1 - discountPercent / 100)));
-  const currentPrice = isRenewal && lockedRatePaise != null
+
+  const baseCurrentPrice = isRenewal && lockedRatePaise != null
     ? lockedRatePaise / 100
     : level === "pro"
     ? ((isCurrentCore || isDiscountActive) ? proPrice : (proOriginalPrice || proPrice))
     : (isDiscountActive ? corePrice : (coreOriginalPrice || corePrice));
+
+  // Determine coupon discount for current tier
+  const isCouponApplicableToCurrentTier = Boolean(
+    appliedCoupon && 
+    (!appliedCoupon.allowed_level || appliedCoupon.allowed_level === "any" || appliedCoupon.allowed_level === level)
+  );
+  const couponDiscountPercent = isCouponApplicableToCurrentTier ? appliedCoupon!.discount : 0;
+  const couponSavings = Math.round((baseCurrentPrice * couponDiscountPercent) / 100);
+  const currentPrice = Math.max(0, baseCurrentPrice - couponSavings);
+
+  // Effective prices shown on plan cards if coupon applies
+  const isCouponForCore = Boolean(appliedCoupon && (!appliedCoupon.allowed_level || appliedCoupon.allowed_level === "any" || appliedCoupon.allowed_level === "core"));
+  const isCouponForPro = Boolean(appliedCoupon && (!appliedCoupon.allowed_level || appliedCoupon.allowed_level === "any" || appliedCoupon.allowed_level === "pro"));
+  const effectiveCorePrice = isCouponForCore ? Math.max(0, Math.round(corePrice * (1 - appliedCoupon!.discount / 100))) : corePrice;
+  const effectiveProPrice = isCouponForPro ? Math.max(0, Math.round(proPrice * (1 - appliedCoupon!.discount / 100))) : proPrice;
 
   // Fetch current premium status if not passed from server
   useEffect(() => {
@@ -427,7 +500,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
       const orderResponse = await createRazorpayOrder(
         selectedPlan, 
         level, 
-        undefined, 
+        appliedCoupon?.id || undefined, 
         "fitness_os",
         isRenewal ? undefined : discountToken || undefined
       );
@@ -452,7 +525,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
           "bypass",
           selectedPlan,
           level,
-          undefined,
+          appliedCoupon?.id || undefined,
           true,
           "fitness_os"
         );
@@ -462,7 +535,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
           setIsProcessing(false);
           sessionStorage.removeItem("payment_in_progress");
         } else {
-          throw new Error("Failed to activate free tier");
+          throw new Error(verifyRes.error || "Failed to activate free tier");
         }
         return;
       }
@@ -476,7 +549,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         amount: orderResponse.amount,
         currency: orderResponse.currency,
         name: "Fitness OS",
-        description: `${isRenewal ? "Renew" : "Upgrade to"} ${level.toUpperCase()} - ${selectedPlan.replace('_', ' ').toUpperCase()}`,
+        description: `${isRenewal ? "Renew" : "Upgrade to"} ${level.toUpperCase()} - ${selectedPlan.replace('_', ' ').toUpperCase()}${appliedCoupon ? ` (${appliedCoupon.code})` : ""}`,
         image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAACXBIWXMAAAsTAAALEwEAmpwYAAAEeklEQVR4nO2dz8sVVRjHj29oFmUulLBFaUFZWZIS1wyXWu3SMIoWUYL7MogrGhaVC1f1TwTJu6mlP9biSkuooCLblBZ5M1B4+/GRU2dgut73zDl3zrznzsz3s77nuTPf7/kx55mZZ4wRQgghhBBCCCFyAywD7gY2AduA9cBtuY+r0wB3Aq8B88AfTOY88CGwJffxdgZgBbAf+Jk4TsiImgAbgW+Ynr+Bw3bKqnssvQN4FhiRhk+1RkQA7AEWSItdOzQSMolfcKjyAPoMsLtB8Ys14fHc59kV8f8ELgBngcsR7T7Lfa4zB/B8hPi/AweA1WMbs+3A6cAY/dgnELDoAeuAa4HC/Qg84ok1B3wcEOd903WA291maF/Ab18C/goQ//6AWHMBI+Gc6YH4p0oLX10TgsQvxXqqwoB/gJWmB+KTwIQo8UtrQlXqYr3pifh1TIgWvxTnDH4GpkfiT2PC99OK72J8iZ9Npmfil014MiDmv3M08DCwPPJ4Vgdc1q4xPRTfcjQi9sAl5OZjTHD7hKq9RPvzQiyN+AVBJrgUthXYx3HTEfFPRoh/LCL2VuC3CTG8JgD3urWjildNmyGP+F4TIsT/BVhl2gp5xZ9oQoT4ljdMm+G/Xeb1JZjzfYyKnJB7IuKHwHZfd2IHDOwMSKA10fML8QdT9PyrvkRe6wB2eUZCkz2/EP9W4NvAdnZP8JzpGkweCY33/FL7ve7GjA+b1njZdBX+b8KSiR9oQnvFB26JnI7ea3raicyi2mnnBdPyS81hA7GT9PyKkdDqnj9+nT+cdfHHTLjedvEn5XbeTBA76bTj+Z97TEd3uMNZ7fmtJyK9MJwitsRPnFLeMWvTTmuZkcSaReIHcEziq+e3H007GZH4mQGecHnxEI5GxNXVToRY2wOeGtCCm9EEiZ/RBImf0QSJnwPgaeBIxO8HSi9kAqUX8oHETyLiuinbDTTtpHkD3d6ueyWy3VZlNdOIv1C6YR1kAhK/sdoLlSZI/OYLXyxqgsRfuqojN5kg8dMVOwqtvfCdfdDVtdPVTl2Ah4ArgeLb93AfcO10tVMXW5YrosbaRWCDa6een4KA1zNvEt+1OxjYbtS7R0dCAe4ALsVMO2Ptj0j8GgCvTyt+gAkj9fxqA+YDpo+NAXHelfiRuCJFV1O9nlkyYaSeHybY2grx7Z7grkhTh+UX4mLa9g7gsQoDvqgRe4PbrL2Y9qg7hLuO93GmhvgXXQz7+o9M8Ajl46fY8ixj4hfIBM8OuIptNcUvkAmLiGY/XuDDvgcwV1P8ApkwQbgPqOYjnwmuPFiV+AXXpr3H3ElcNjOEU67iybKxGmtvBTwzWr6s3ZP3jGcQ4HPCueRKO14IqLdQRuJ7DNjsqhI2xYJ6fvUoeKdB8XenHrWdw5Xt/UTi538VyX64JgVXgGdynk+bR8LhmmvCV8CDuc+l1QCPutFgS7aH8ivwtj79lNaILW6zdm4R0e0e4Lgtampvb6b8bzGGLd0I3Oc+hGk/iLlWIgkhhBBCCCGEMLPADQSR7/UMayFBAAAAAElFTkSuQmCC",
         order_id: orderResponse.orderId,
         webview_intent: true,
@@ -489,7 +562,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                 response.razorpay_signature,
                 selectedPlan,
                 level,
-                undefined,
+                appliedCoupon?.id || undefined,
                 false,
                 "fitness_os"
               );
@@ -762,6 +835,21 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                         <span className="text-xs text-gray-500 font-medium">/month</span>
                         {lockedRatePaise != null && <span className="text-[10px] font-bold text-[#ADFF00]">Your locked rate</span>}
                       </>
+                    ) : appliedCoupon && isCouponForCore ? (
+                      <>
+                        <span className="text-sm text-gray-500 line-through font-semibold">₹{corePrice}</span>
+                        {appliedCoupon.discount === 100 ? (
+                          <>
+                            <span className="text-2xl font-black text-emerald-400">₹0</span>
+                            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider bg-emerald-500/20 px-2 py-0.5 rounded-full ml-1">100% FREE</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-2xl font-black text-[#ADFF00]">₹{effectiveCorePrice}</span>
+                            <span className="text-xs text-gray-500 font-medium">/month</span>
+                          </>
+                        )}
+                      </>
                     ) : isDiscountActive ? (
                       <>
                         {coreOriginalPrice && coreOriginalPrice > corePrice && (
@@ -818,6 +906,24 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                         <span className="text-xs text-gray-500 font-medium">/month</span>
                         {lockedRatePaise != null && <span className="text-[10px] font-bold text-[#ADFF00]">Your locked rate</span>}
                       </>
+                    ) : appliedCoupon && isCouponForPro ? (
+                      <>
+                        <span className="text-sm text-gray-500 line-through font-semibold">₹{proPrice}</span>
+                        {appliedCoupon.discount === 100 ? (
+                          <>
+                            <span className="text-2xl font-black text-emerald-400">₹0</span>
+                            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider bg-emerald-500/20 px-2 py-0.5 rounded-full ml-1">100% FREE</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-2xl font-black text-[#ADFF00]">₹{effectiveProPrice}</span>
+                            <span className="text-xs text-gray-500 font-medium">/month</span>
+                          </>
+                        )}
+                        <span className="ml-auto text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
+                          {appliedCoupon.code} • {appliedCoupon.discount}% OFF
+                        </span>
+                      </>
                     ) : isCurrentCore || isDiscountActive ? (
                       <>
                         {proOriginalPrice && proOriginalPrice > proPrice && (
@@ -858,6 +964,94 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
             </div>
           </div>
         ) : null}
+
+        {/* Coupon Code Section */}
+        {!isRenewal && (
+          <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-4 mb-6 shadow-sm">
+            {!appliedCoupon ? (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5">
+                    <Tag size={13} className="text-[#ADFF00]" />
+                    Have a Promo / Coupon Code?
+                  </label>
+                  {couponError && (
+                    <span className="text-[11px] font-semibold text-rose-400">
+                      {couponError}
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        if (couponError) setCouponError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleApplyCoupon();
+                        }
+                      }}
+                      placeholder="e.g. EARLYBIRD"
+                      disabled={isValidatingCoupon || isProcessing}
+                      className="w-full px-3.5 py-2.5 bg-black/60 border border-[#233823] focus:border-[#ADFF00] rounded-xl text-xs font-black tracking-wider uppercase text-white placeholder:text-gray-500 outline-none transition-all"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={!couponInput.trim() || isValidatingCoupon || isProcessing}
+                    className="px-5 py-2.5 bg-[#ADFF00] hover:bg-[#b8ff1f] active:scale-95 disabled:opacity-40 disabled:hover:bg-[#ADFF00] text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {isValidatingCoupon ? (
+                      <Loader2 size={13} className="animate-spin text-black" />
+                    ) : (
+                      <span>Apply</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3 bg-[#ADFF00]/10 border border-[#ADFF00]/30 rounded-xl p-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-[#ADFF00] text-black flex items-center justify-center shrink-0 font-black">
+                    <Check size={16} strokeWidth={3} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-white tracking-wider uppercase truncate">
+                        {appliedCoupon.code}
+                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00] text-black px-2 py-0.5 rounded-full shrink-0">
+                        {appliedCoupon.discount}% OFF
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#ADFF00] font-medium truncate mt-0.5">
+                      {appliedCoupon.discount === 100 
+                        ? `100% Free Access on ${level.toUpperCase()} tier unlocked!` 
+                        : isCouponApplicableToCurrentTier 
+                          ? `Saving ₹${couponSavings} on ${level.toUpperCase()} tier`
+                          : `Switch to ${appliedCoupon.allowed_level?.toUpperCase()} tier to redeem this coupon`
+                      }
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="text-xs font-bold text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all shrink-0 cursor-pointer"
+                  title="Remove coupon"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Floating CTA with Nested Spin & Win Badge (Zero Overlap) */}
@@ -895,13 +1089,29 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                 <span className="flex items-center gap-2 animate-pulse">
                   <Zap size={20} className="animate-spin" /> Processing Payment...
                 </span>
+              ) : currentPrice === 0 ? (
+                <span className="flex items-center gap-2">
+                  Claim 100% Free Access (₹0) 🎉 <ChevronLeft className="w-5 h-5 rotate-180" />
+                </span>
               ) : isCurrentCore ? (
                 <span className="flex items-center gap-2">
-                  Upgrade to Fitness OS Pro (₹{proPrice}) <ChevronLeft className="w-5 h-5 rotate-180" />
+                  Upgrade to Fitness OS Pro (₹{currentPrice})
+                  {couponSavings > 0 && (
+                    <span className="bg-black/20 text-xs px-2 py-0.5 rounded-full font-bold">
+                      Saved ₹{couponSavings}
+                    </span>
+                  )}
+                  <ChevronLeft className="w-5 h-5 rotate-180" />
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  {isRenewal && rateCheckFailed ? "Renewal rate needs verification" : `${isRenewal ? "Renew" : "Get Fitness OS"} ${level === "pro" ? "Pro" : "Core"} (₹${currentPrice}/mo)`} <ChevronLeft className="w-5 h-5 rotate-180" />
+                  {isRenewal && rateCheckFailed ? "Renewal rate needs verification" : `${isRenewal ? "Renew" : "Get Fitness OS"} ${level === "pro" ? "Pro" : "Core"} (₹${currentPrice}/mo)`}
+                  {couponSavings > 0 && (
+                    <span className="bg-black/20 text-xs px-2 py-0.5 rounded-full font-bold">
+                      Saved ₹{couponSavings}
+                    </span>
+                  )}
+                  <ChevronLeft className="w-5 h-5 rotate-180" />
                 </span>
               )}
             </button>
