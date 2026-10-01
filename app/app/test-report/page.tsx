@@ -193,6 +193,7 @@ export default async function TestReportPage({
           goal={mockProfile.goal}
           trainingDaysPerWeek={mockProfile.training_days_per_week}
           targetDeadlineDays={mockProfile.onboarding_data?.target_deadline_days}
+          targetPhysique={mockProfile.target_physique}
         />
 
         {/* Health & Safety Protocol */}

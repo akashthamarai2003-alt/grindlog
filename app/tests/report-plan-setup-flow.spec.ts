@@ -10,10 +10,10 @@ test.describe("GrindLog Report & Plan Setup Flow Verification", () => {
     await expect(page.getByRole("heading", { name: "Your Starting Point" })).toBeVisible();
 
     // Verify stats cards
-    await expect(page.getByRole("paragraph").filter({ hasText: "76.5 kg" })).toBeVisible();
-    await expect(page.getByRole("paragraph").filter({ hasText: "80 kg" })).toBeVisible();
+    await expect(page.getByRole("paragraph").filter({ hasText: /^76\.5 kg$/ })).toBeVisible();
+    await expect(page.getByRole("paragraph").filter({ hasText: /^80 kg$/ })).toBeVisible();
     await expect(page.getByText("Build Muscle")).toBeVisible();
-    await expect(page.getByText("Muscular", { exact: true })).toBeVisible();
+    await expect(page.getByRole("paragraph").filter({ hasText: /^Muscular$/ })).toBeVisible();
   });
 
   // ── THE REAL-WORLD SCIENTIFIC TIMEFRAME ──

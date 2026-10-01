@@ -529,6 +529,7 @@ export default async function AIStartingReportPage({
           goal={profile.goal}
           trainingDaysPerWeek={profile.training_days_per_week}
           targetDeadlineDays={onboardingData.target_deadline_days}
+          targetPhysique={profile.target_physique}
         />
 
         {/* HEALTH & SAFETY PROTOCOL */}
@@ -585,16 +586,25 @@ export default async function AIStartingReportPage({
             {timelineProjection.map((phase: any, index: number) => {
               const estimatedWeight = (() => {
                 if (phase.target_weight_kg) return `${phase.target_weight_kg} kg`;
-                if (typeof profile.weight === "number" && typeof profile.target_weight === "number") {
-                  const isLoss = profile.weight > profile.target_weight;
-                  const isGain = profile.target_weight > profile.weight;
-                  const monthlyDelta = isLoss ? -3.0 : isGain ? 1.2 : 0;
-                  const milestone = Math.round((profile.weight + monthlyDelta * (index + 1)) * 10) / 10;
-                  if (isLoss && milestone < profile.target_weight) return `${profile.target_weight} kg`;
-                  if (isGain && milestone > profile.target_weight) return `${profile.target_weight} kg`;
-                  return `~${milestone} kg`;
+                const cWeight = typeof profile.weight === "number" && profile.weight > 20 ? profile.weight : 70;
+                let tWeight = typeof profile.target_weight === "number" && profile.target_weight > 20 ? profile.target_weight : null;
+                const normGoal = (profile.goal || "").toLowerCase();
+                const isLossGoal = normGoal.includes("fat") || normGoal.includes("cut") || normGoal.includes("loss");
+                const isGainGoal = normGoal.includes("muscle") || normGoal.includes("bulk") || normGoal.includes("gain");
+                
+                if (tWeight === null) {
+                  if (isLossGoal) tWeight = Math.round(cWeight * 0.9 * 10) / 10;
+                  else if (isGainGoal) tWeight = Math.round(cWeight * 1.05 * 10) / 10;
+                  else tWeight = cWeight;
                 }
-                return null;
+
+                const isLoss = cWeight > tWeight;
+                const isGain = tWeight > cWeight;
+                const monthlyDelta = isLoss ? -3.0 : isGain ? 1.2 : 0;
+                const milestone = Math.round((cWeight + monthlyDelta * (index + 1)) * 10) / 10;
+                if (isLoss && milestone < tWeight) return `${tWeight} kg`;
+                if (isGain && milestone > tWeight) return `${tWeight} kg`;
+                return `~${milestone} kg`;
               })();
 
               return (
