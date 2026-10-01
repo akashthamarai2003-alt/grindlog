@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/services/supabase/admin";
 import { revalidatePath, unstable_noStore } from "next/cache";
 import { DEFAULT_PRICING, PlanPricingConfig, PlanPriceItem } from "@/lib/constants/pricing";
 
-export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'grindlog'): Promise<PlanPricingConfig> {
+export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'fitness'): Promise<PlanPricingConfig> {
   unstable_noStore();
   try {
     const supabase = createAdminClient();
@@ -78,7 +78,7 @@ export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'gri
 
 import { verifyAdminSession } from "./admin-auth";
 
-export async function updatePlanPricesAction(newPricing: PlanPricingConfig, appType: 'grindlog' | 'fitness' = 'grindlog') {
+export async function updatePlanPricesAction(newPricing: PlanPricingConfig, appType: 'grindlog' | 'fitness' = 'fitness') {
   try {
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {

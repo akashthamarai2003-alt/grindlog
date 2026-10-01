@@ -1,7 +1,7 @@
 {
-  "name": "GrindLog",
+  "name": "GrindLog Fitness",
   "short_name": "GrindLog",
-  "description": "Transform your habits into a living, breathing tree. AI-powered habit tracking, beautifully designed.",
+  "description": "Smart hyper-personalized workouts, Indian nutrition engine, progressive overload tracking, and real-time AI coaching.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

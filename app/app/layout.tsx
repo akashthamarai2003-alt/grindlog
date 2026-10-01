@@ -22,14 +22,14 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   applicationName: "GrindLog",
-  title: "GrindLog",
+  title: "GrindLog | AI-Powered Fitness OS",
   description:
-    "Transform your habits into a living, breathing tree. The most beautiful mobile AI habit tracker. Grow with every action.",
+    "Smart hyper-personalized workouts, Indian nutrition engine, progressive overload tracking, and real-time AI coaching.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "GrindLog",
+    title: "GrindLog Fitness",
     startupImage: ["/icons/apple-touch-icon.png"],
   },
   icons: {
@@ -41,11 +41,11 @@ export const metadata: Metadata = {
     other: [{ rel: "mask-icon", url: "/icons/notification-badge.svg?v=4", color: "#ADFF00" }],
   },
   openGraph: {
-    title: "GrindLog",
+    title: "GrindLog | AI-Powered Fitness OS",
     description:
-      "Transform your habits into a living, breathing tree. AI-powered, beautifully designed.",
+      "Smart hyper-personalized workouts, Indian nutrition engine, progressive overload tracking, and real-time AI coaching.",
     type: "website",
-    siteName: "GrindLog",
+    siteName: "GrindLog Fitness",
   },
 };
 

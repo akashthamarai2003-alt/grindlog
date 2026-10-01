@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage() {
         
         <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">1. Information We Collect</h2>
         <p className="mt-4 leading-relaxed">
-          At GrindLog, we collect information you provide directly to us when you create an account, update your profile, and use our habit tracking features. This may include your name, email address, profile picture, and the habits, logs, and journals you choose to track.
+          At GrindLog, we collect information you provide directly to us when you create an account, update your profile, and use our fitness tracking features. This may include your name, email address, profile picture, and the workout sessions, nutrition logs, body metrics, and fitness preferences you choose to record.
         </p>
 
         <h2 className="mt-8 text-xl font-bold text-[var(--color-text-primary)]">2. How We Use Your Information</h2>
