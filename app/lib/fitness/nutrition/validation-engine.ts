@@ -283,16 +283,16 @@ export class NutritionValidationEngine {
     );
 
     if (calsDiffPct > 8) {
-      issues.push(`Calories deviated by ${calsDiffPct}% (target: ${targets.caloriesTarget}, actual: ${totals.calories})`);
+      issues.push(`Calories deviated by ${calsDiffPct}% (target: ${targets.caloriesTarget}, actual: ${Math.round(totals.calories)})`);
     }
     if (proDiffPct > 10) {
-      issues.push(`Protein deviated by ${proDiffPct}% (target: ${targets.proteinTarget}g, actual: ${totals.protein}g)`);
+      issues.push(`Protein deviated by ${proDiffPct}% (target: ${targets.proteinTarget}g, actual: ${Math.round(totals.protein * 10) / 10}g)`);
     }
     if (targets.carbsTarget > 0 && carbsDiffPct > 15) {
-      issues.push(`Carbs deviated by ${carbsDiffPct}% (target: ${targets.carbsTarget}g, actual: ${totals.carbs}g)`);
+      issues.push(`Carbs deviated by ${carbsDiffPct}% (target: ${targets.carbsTarget}g, actual: ${Math.round(totals.carbs * 10) / 10}g)`);
     }
     if (targets.fatTarget > 0 && fatDiffPct > 15) {
-      issues.push(`Fat deviated by ${fatDiffPct}% (target: ${targets.fatTarget}g, actual: ${totals.fat}g)`);
+      issues.push(`Fat deviated by ${fatDiffPct}% (target: ${targets.fatTarget}g, actual: ${Math.round(totals.fat * 10) / 10}g)`);
     }
 
     return {

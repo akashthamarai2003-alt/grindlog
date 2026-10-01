@@ -280,7 +280,8 @@ export function calibrateMealsToTargets(
       'chicken-breast-addon': ['Chicken Breast (Cooked)', 'Chicken Breast (Grilled / Cooked)', 'Boiled Chicken Breast'],
       'soya-chunks-addon': ['Soy Chunks (Cooked)', 'Soya Chunks Curry (Cooked)'],
       'egg-white-addon': ['Boiled Egg White'],
-      'low-fat-paneer-addon': ['Low Fat Paneer'],
+      'low-fat-paneer-addon': ['Low Fat Paneer', 'Paneer (Raw)', 'Paneer Tikka'],
+      'curd-addon': ['Curd (Plain)', 'Curd', 'Plain Curd', 'Dahi', 'Dahi (Curd)', 'Yogurt'],
       'tofu-addon': ['Tofu (Firm / Cooked)', 'Tofu (Firm)'],
     };
     const names = aliases[String(food.id)] || [food.name];
@@ -460,8 +461,8 @@ export function calibrateMealsToTargets(
     proGap = targetPro - totals.pro;
 
     if (proGap > 8) {
-      // Find candidate meals to inject protein (Lunch and Dinner)
-      const candidateSlots = ['dinner', 'lunch'];
+      // Find candidate meals to inject protein across all available slots
+      const candidateSlots = ['dinner', 'lunch', 'breakfast', 'snack', 'evening_snack', 'morning_snack'];
       const hasSoyChunksInDay = calibratedMeals.some(m =>
         (m.meal_plan_items || m.items || []).some((it: any) => {
           const n = (it.foods?.name || it.name || '').toLowerCase();
@@ -519,6 +520,19 @@ export function calibrateMealsToTargets(
               estimated_cost: 20,
             };
             addOnQty = Number(Math.max(0.3, Math.min(0.6, proGap / 52)).toFixed(1));
+          } else if (slot === 'breakfast' || slot.includes('snack')) {
+            addOnFood = {
+              id: 'curd-addon',
+              name: 'Curd (Plain)',
+              category: 'Dairy',
+              serving_size: '1 bowl (150g)',
+              calories: 90,
+              protein: 11,
+              carbs: 6,
+              fat: 4,
+              estimated_cost: 15,
+            };
+            addOnQty = Number(Math.max(0.5, Math.min(1.5, proGap / 11)).toFixed(1));
           } else {
             addOnFood = {
               id: 'low-fat-paneer-addon',
