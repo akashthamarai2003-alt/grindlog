@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/services/supabase/admin";
+import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import UsersTableClient from "./users-table-client";
 
 export const dynamic = "force-dynamic";
@@ -6,11 +7,13 @@ export const dynamic = "force-dynamic";
 export default async function AdminUsersPage() {
   const supabase = createAdminClient();
 
-  // Fetch profiles, fitness profiles, and payment receipts in parallel
+  // Fetch profiles, fitness profiles, payment receipts, fitness subscriptions, and dynamic pricing in parallel
   const [
     { data: users, error: usersError },
     { data: fitnessProfiles },
-    { data: receipts }
+    { data: receipts },
+    { data: fitSubscriptions },
+    fitnessPricingConfig,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -35,7 +38,11 @@ export default async function AdminUsersPage() {
     supabase
       .from("fitness_payment_receipts")
       .select("*")
-      .order("processed_at", { ascending: false })
+      .order("processed_at", { ascending: false }),
+    supabase
+      .from("fitness_os_subscriptions")
+      .select("*"),
+    getPlanPricesAction("fitness"),
   ]);
 
   if (usersError) {
@@ -43,6 +50,7 @@ export default async function AdminUsersPage() {
   }
 
   const fitnessUsersMap = new Map((fitnessProfiles || []).map(fp => [fp.user_id, fp]));
+  const fitSubscriptionsMap = new Map((fitSubscriptions || []).map(fs => [fs.user_id, fs]));
 
   // Group receipts by user_id
   const receiptsByUser = new Map<string, any[]>();
@@ -52,15 +60,15 @@ export default async function AdminUsersPage() {
     receiptsByUser.set(r.user_id, list);
   });
 
-  // Helper to estimate paid amount for legacy users without receipts
+  // Helper to get dynamic price configured by admin for legacy users without receipts
   const getPaidAmount = (tier?: string, level?: string, isPremium?: boolean) => {
     if (!isPremium || !tier || !level) return 0;
-    if (tier === 'monthly' && level === 'core') return 49;
-    if (tier === 'monthly' && level === 'pro') return 69;
-    if (tier === 'six_months' && level === 'core') return 199;
-    if (tier === 'six_months' && level === 'pro') return 249;
-    if (tier === 'lifetime' && level === 'core') return 599;
-    if (tier === 'lifetime' && level === 'pro') return 799;
+    const t = tier as "monthly" | "six_months" | "lifetime";
+    const l = level as "core" | "pro";
+    const configuredPrice = fitnessPricingConfig?.[t]?.[l]?.price;
+    if (typeof configuredPrice === "number" && configuredPrice > 0) {
+      return configuredPrice;
+    }
     return 0;
   };
 
@@ -79,6 +87,11 @@ export default async function AdminUsersPage() {
         if (sub.razorpay_payment_id) paymentIds.add(sub.razorpay_payment_id);
         if (sub.razorpay_subscription_id) paymentIds.add(sub.razorpay_subscription_id);
       });
+    }
+
+    const fitSub = fitSubscriptionsMap.get(user.id);
+    if (fitSub?.provider_payment_id) {
+      paymentIds.add(fitSub.provider_payment_id);
     }
 
     // 1. Process database payment receipts for this user
@@ -118,6 +131,26 @@ export default async function AdminUsersPage() {
           });
         }
       });
+    }
+
+    // 2b. Process fitness_os_subscriptions if not already captured
+    if (fitSub?.provider_payment_id && !seenPaymentIds.has(fitSub.provider_payment_id)) {
+      seenPaymentIds.add(fitSub.provider_payment_id);
+      const amount = typeof fitSub.locked_rate_paise === "number" && fitSub.locked_rate_paise > 0
+        ? Number(fitSub.locked_rate_paise) / 100
+        : getPaidAmount("monthly", fitSub.plan || fitSub.locked_level || "pro", true);
+      if (amount > 0) {
+        actualPaidAmount += amount;
+        paymentHistory.push({
+          id: fitSub.provider_payment_id,
+          amount,
+          currency: "INR",
+          status: fitSub.status === "active" ? "captured" : fitSub.status,
+          created_at: fitSub.created_at ? new Date(fitSub.created_at).getTime() / 1000 : Date.now() / 1000,
+          method: "razorpay",
+          description: `Fitness ${fitSub.plan || "Pro"} Plan`,
+        });
+      }
     }
 
     // 3. Fallback for legacy users with premium status but no receipts
