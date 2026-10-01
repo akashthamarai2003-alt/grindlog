@@ -87,14 +87,14 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
   let effectiveCalendarWorkouts = calendarWorkouts || [];
 
   // Auto-Recurring Weekly Split:
-  // If no workouts exist for this week, but athlete has an active plan,
+  // If workouts are missing for this week, but athlete has an active plan,
   // automatically instantiate the recurring weekly split from their active plan template!
-  if (effectiveCalendarWorkouts.length === 0 && !isFree && activePlan) {
+  if (!isFree && activePlan) {
     const recurring = await ensureWeeklyWorkoutsScheduled(
-      admin, userId, activePlan, startOfWeek, weekStartStr, weekEndStr
+      admin, userId, activePlan, startOfWeek, weekStartStr, weekEndStr, effectiveCalendarWorkouts, userLocalDate
     );
     if (recurring && recurring.length > 0) {
-      effectiveCalendarWorkouts = recurring;
+      effectiveCalendarWorkouts = [...effectiveCalendarWorkouts, ...recurring];
     }
   }
 
@@ -213,20 +213,53 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
 
   // Build standard 7-day plan split
   const dayIndices = [1, 2, 3, 4, 5, 6, 0];
+  const templateWorkouts: any[] = Array.isArray(activePlan?.plan_data?.workouts)
+    ? activePlan.plan_data.workouts
+    : [];
+
   const planDays = dayNames.map((dayName, idx) => {
     const targetDayOfWeek = dayIndices[idx];
     const isToday = targetDayOfWeek === dayOfWeek;
-    const matchingWorkout = rawList.find((w: any) => {
+
+    // 1. Check if there is an active/completed workout in the current week's rawList for real-time status
+    const currentWeekWorkout = rawList.find((w: any) => {
       const d = new Date(`${w.workout_date}T12:00:00Z`);
       return d.getUTCDay() === targetDayOfWeek;
     });
 
-    if (matchingWorkout) {
+    // 2. Check the master plan template in activePlan.plan_data.workouts
+    const templateMatch = templateWorkouts.find((tw: any, twIdx: number) => {
+      let dow: number | undefined;
+      if (tw.workout_date) {
+        const d = new Date(`${tw.workout_date}T12:00:00Z`);
+        if (!isNaN(d.getTime())) dow = d.getUTCDay();
+      }
+      if (dow === undefined) {
+        dow = dayIndices[Math.min(twIdx * 2, dayIndices.length - 1)];
+      }
+      return dow === targetDayOfWeek;
+    });
+
+    const workout = currentWeekWorkout || templateMatch;
+
+    if (workout) {
+      const name = workout.name || workout.title;
+      let status = "upcoming";
+      if (currentWeekWorkout) {
+        status = currentWeekWorkout.status === "completed"
+          ? "completed"
+          : isToday
+          ? "today"
+          : "upcoming";
+      } else if (isToday) {
+        status = "today";
+      }
+
       return {
         day: dayName,
-        status: matchingWorkout.status === "completed" ? "completed" : isToday ? "today" : "upcoming",
-        name: matchingWorkout.name,
-        date: matchingWorkout.workout_date,
+        status,
+        name,
+        date: currentWeekWorkout?.workout_date || workout.workout_date,
         isToday,
       };
     }
@@ -304,15 +337,14 @@ async function ensureWeeklyWorkoutsScheduled(
   activePlan: any,
   startOfWeek: Date,
   _weekStartStr: string,
-  _weekEndStr: string
+  _weekEndStr: string,
+  existingWorkouts: any[] = [],
+  userLocalDate: string = ""
 ) {
   if (!activePlan || !activePlan.id) return [];
   const planData = activePlan.plan_data;
   const templateWorkouts = Array.isArray(planData?.workouts) ? planData.workouts : [];
   if (templateWorkouts.length === 0) return [];
-
-  // The caller already confirmed zero workouts exist for this week range,
-  // so skip the redundant idempotency re-check query.
 
   // Pre-compute the 7 dates of this week (Monday=0 to Sunday=6)
   const dayIndices = [1, 2, 3, 4, 5, 6, 0]; // Mon to Sun
@@ -325,7 +357,12 @@ async function ensureWeeklyWorkoutsScheduled(
     weekDatesMap.set(dow, dateStr);
   }
 
-  // ── STEP 1: Batch insert ALL workouts at once ──
+  const existingDatesSet = new Set(existingWorkouts.map((w: any) => w.workout_date));
+  const planCreatedAtStr = activePlan.created_at
+    ? new Date(activePlan.created_at).toISOString().split("T")[0]
+    : userLocalDate;
+
+  // ── STEP 1: Batch insert ONLY missing workouts for this week ──
   const workoutInserts = [];
   for (let idx = 0; idx < templateWorkouts.length; idx++) {
     const tw = templateWorkouts[idx];
@@ -345,6 +382,12 @@ async function ensureWeeklyWorkoutsScheduled(
     }
 
     const targetDateStr = weekDatesMap.get(targetDow) || _weekStartStr;
+
+    // Skip if workout already exists on this date
+    if (existingDatesSet.has(targetDateStr)) continue;
+
+    // Do NOT insert workouts on past dates prior to when the plan was created
+    if (targetDateStr < userLocalDate && targetDateStr < planCreatedAtStr) continue;
 
     workoutInserts.push({
       user_id: userId,
