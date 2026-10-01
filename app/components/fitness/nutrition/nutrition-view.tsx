@@ -1316,20 +1316,31 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
     if (nameLower.includes('egg white') || (nameLower.includes('egg') && serving.toLowerCase().includes('white'))) {
       const count = currentCount();
-      const grams = Math.round(baseGrams !== null ? baseGrams * q : 33 * count);
-      return `${displayCount(count)} egg white${count > 1 ? 's' : ''} (${grams}g)`;
+      const cleanCount = Math.round(count);
+      const grams = Math.round(baseGrams !== null ? baseGrams * q : 33 * cleanCount);
+      return `${cleanCount} egg white${cleanCount > 1 ? 's' : ''} (${grams}g)`;
     }
 
-    if (nameLower.includes('egg') && !nameLower.includes('bhurji') && !nameLower.includes('curry')) {
+    if (nameLower.includes('egg bhurji') || (nameLower.includes('egg') && nameLower.includes('scramble'))) {
       const count = currentCount();
-      const grams = Math.round(baseGrams !== null ? baseGrams * q : 50 * count);
-      return `${displayCount(count)} large egg${count > 1 ? 's' : ''} (${grams}g)`;
+      const wholeEggs = Math.max(1, Math.round(count));
+      const grams = Math.round(baseGrams !== null ? baseGrams * q : 50 * wholeEggs);
+      return `${wholeEggs} whole eggs (scrambled, ${grams}g)`;
+    }
+
+    if (nameLower.includes('egg') && !nameLower.includes('curry')) {
+      const count = currentCount();
+      const wholeEggs = Math.max(1, Math.round(count));
+      const grams = Math.round(baseGrams !== null ? baseGrams * q : 50 * wholeEggs);
+      return `${wholeEggs} large egg${wholeEggs > 1 ? 's' : ''} (${grams}g)`;
     }
 
     if (nameLower.includes('roti') || nameLower.includes('chapati') || nameLower.includes('phulka')) {
       const count = currentCount();
+      const roundedHalf = Math.round(count * 2) / 2;
+      const countStr = roundedHalf % 1 === 0 ? String(roundedHalf) : `${Math.floor(roundedHalf)}½`;
       const grams = Math.round(baseGrams !== null ? baseGrams * q : 40 * count);
-      return `${displayCount(count)} chapati${count > 1 ? 's' : ''} (${grams}g)`;
+      return `${countStr} chapati${roundedHalf > 1 ? 's' : ''} (${grams}g)`;
     }
 
     if (nameLower.includes('banana') || nameLower.includes('apple') || nameLower.includes('orange')) {
@@ -1337,7 +1348,18 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
       const fruitName = nameLower.includes('banana') ? 'banana' : nameLower.includes('apple') ? 'apple' : 'orange';
       const weight = baseGrams || (fruitName === 'banana' ? 118 : 180);
       const grams = baseGrams !== null ? Math.round(baseGrams * q) : Math.round(weight * count);
-      return `${displayCount(count)} medium ${fruitName}${count > 1 ? 's' : ''} (${grams}g)`;
+      let fruitCountStr = '1';
+      if (count < 0.7) {
+        fruitCountStr = '½';
+      } else if (count <= 1.3) {
+        fruitCountStr = '1';
+      } else if (count <= 1.7) {
+        fruitCountStr = '1½';
+      } else {
+        fruitCountStr = String(Math.round(count));
+      }
+      const isPlural = count > 1.3;
+      return `${fruitCountStr} medium ${fruitName}${isPlural ? 's' : ''} (${grams}g)`;
     }
 
     if (nameLower.includes('idli')) {
@@ -1876,15 +1898,20 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
               const mealCals = Math.round(loggedFoods.reduce((acc: number, f: any) => acc + (Number(f.calories) || 0), 0));
               const mealPro = Math.round(loggedFoods.reduce((acc: number, f: any) => acc + (Number(f.protein) || 0), 0));
               
-              const plannedTotals = currentPlannedFoods.reduce((totals: any, item: any) => {
-                const quantity = Number(item.quantity) || 1;
-                return {
-                  calories: totals.calories + Number(item.foods?.calories || 0) * quantity,
-                  protein: totals.protein + Number(item.foods?.protein || 0) * quantity,
-                  carbs: totals.carbs + Number(item.foods?.carbs || 0) * quantity,
-                  fat: totals.fat + Number(item.foods?.fat || 0) * quantity,
-                };
-              }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+              const plannedTotals = {
+                calories: currentPlannedFoods.reduce((acc: number, it: any) => {
+                  return acc + Math.round(Number(it.foods?.calories || 0) * (Number(it.quantity) || 1));
+                }, 0),
+                protein: currentPlannedFoods.reduce((acc: number, it: any) => {
+                  return acc + Math.round(Number(it.foods?.protein || 0) * (Number(it.quantity) || 1));
+                }, 0),
+                carbs: currentPlannedFoods.reduce((acc: number, it: any) => {
+                  return acc + Math.round(Number(it.foods?.carbs || 0) * (Number(it.quantity) || 1));
+                }, 0),
+                fat: currentPlannedFoods.reduce((acc: number, it: any) => {
+                  return acc + Math.round(Number(it.foods?.fat || 0) * (Number(it.quantity) || 1));
+                }, 0),
+              };
 
               const corePlannedItems = currentPlannedFoods.filter((it: any) => isItemCoreCheck(it));
               const addonPlannedItems = currentPlannedFoods.filter((it: any) => !isItemCoreCheck(it));
@@ -1945,7 +1972,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
 
                       <div className="flex items-center gap-1.5">
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-black backdrop-blur-md bg-black/70 text-[#ADFF00] border border-[#ADFF00]/30 shadow-md">
-                          {hasLoggedFoods ? `${mealCals} kcal · ${mealPro}g P logged` : `${Math.round(plannedTotals.calories)} kcal · ${Math.round(plannedTotals.protein)}g P`}
+                          {hasLoggedFoods ? `${mealCals} kcal · ${mealPro}g P logged` : `${plannedTotals.calories} kcal · ${plannedTotals.protein}g P`}
                         </span>
                       </div>
                     </div>
@@ -1970,7 +1997,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   {/* Dual-Option Switcher (Option A vs Option B) */}
                   {hasOptionB && !hasLoggedFoods && (
                     <div className="px-5 pt-3 pb-1">
-                      <div className="grid grid-cols-2 gap-1 bg-black/50 p-1 rounded-xl border border-white/10 shadow-inner">
+                      <div className="grid grid-cols-2 gap-1.5 bg-black/50 p-1.5 rounded-xl border border-white/10 shadow-inner">
                         <button
                           type="button"
                           onClick={() => setSelectedMealOptions(prev => ({ ...prev, [mealKey]: 'A' }))}
@@ -1978,12 +2005,12 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           aria-label={`Select Option A: ${meal.name || 'Quick / Mess'}`}
                           className={`min-w-0 min-h-16 py-2 px-2.5 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center ${
                             !isOptB 
-                              ? 'bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.3)]' 
-                              : 'text-white/60 hover:text-white hover:bg-white/5'
+                              ? 'bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.3)] font-black' 
+                              : 'bg-white/[0.04] text-white/90 hover:text-white hover:bg-white/10 border border-white/10'
                           }`}
                         >
-                          <span className="text-[11px] font-black uppercase tracking-wide">Option A</span>
-                          <span className="w-full text-[11px] font-medium normal-case leading-tight break-words whitespace-normal opacity-80">
+                          <span className={`text-[11px] font-black uppercase tracking-wide ${!isOptB ? 'text-black' : 'text-white/60'}`}>Option A</span>
+                          <span className={`w-full text-[11px] font-semibold normal-case leading-tight break-words whitespace-normal ${!isOptB ? 'text-black' : 'text-white'}`}>
                             {getFoodEmoji(meal.name)} {meal.name || 'Quick / Mess'}
                           </span>
                         </button>
@@ -1994,12 +2021,12 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                           aria-label={`Select Option B: ${meal.option_b_name}`}
                           className={`min-w-0 min-h-16 py-2 px-2.5 rounded-lg transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center ${
                             isOptB 
-                              ? 'bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.3)]' 
-                              : 'text-white/60 hover:text-white hover:bg-white/5'
+                              ? 'bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.3)] font-black' 
+                              : 'bg-white/[0.04] text-white/90 hover:text-white hover:bg-white/10 border border-white/10'
                           }`}
                         >
-                          <span className="text-[11px] font-black uppercase tracking-wide">Option B</span>
-                          <span className="w-full text-[11px] font-medium normal-case leading-tight break-words whitespace-normal opacity-80">
+                          <span className={`text-[11px] font-black uppercase tracking-wide ${isOptB ? 'text-black' : 'text-white/60'}`}>Option B</span>
+                          <span className={`w-full text-[11px] font-semibold normal-case leading-tight break-words whitespace-normal ${isOptB ? 'text-black' : 'text-white'}`}>
                             {getFoodEmoji(meal.option_b_name)} {meal.option_b_name}
                           </span>
                         </button>
@@ -2010,14 +2037,14 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                   <div className="p-5">
                     {/* Status Subtitle */}
                     <div className="flex justify-between items-center mb-3">
-                      <p className="text-xs text-white/50 font-medium">
-                        {hasLoggedFoods ? `${loggedFoods.length} item${loggedFoods.length === 1 ? '' : 's'} logged` : (currentPlannedFoods.length > 0 ? (isOptB ? 'Option B Planned Foods' : 'Option A Planned Foods') : 'Not planned yet')}
+                      <p className="text-xs text-white/70 font-semibold flex items-center gap-1.5">
+                        <span>📋</span> {hasLoggedFoods ? `${loggedFoods.length} item${loggedFoods.length === 1 ? '' : 's'} logged` : `${isOptB ? 'Option B' : 'Option A'} Planned Ingredients`}
                       </p>
                       <div className="text-right">
                         {hasLoggedFoods ? (
                           <span className="text-xs font-bold text-[#ADFF00]">✓ Logged</span>
                         ) : currentPlannedFoods.length > 0 ? (
-                          <span className="text-xs text-white/50">
+                          <span className="text-[11px] font-semibold text-white/40">
                             {isOptB ? 'Alternative Recipe' : 'Primary Plan'}
                           </span>
                         ) : null}
@@ -2211,7 +2238,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                     {!hasLoggedFoods && currentPlannedFoods.length > 0 && (
                       <div className="grid grid-cols-4 gap-2 bg-black/30 rounded-xl p-3 border border-white/5 mb-4">
                         {[
-                          { label: 'Calories', value: Math.round(plannedTotals.calories), suffix: 'kcal', className: 'text-white' },
+                          { label: 'Calories', value: Math.round(plannedTotals.calories), suffix: ' kcal', className: 'text-white' },
                           { label: 'Fat', value: Math.round(plannedTotals.fat), suffix: 'g', className: 'text-amber-400' },
                           { label: 'Carbs', value: Math.round(plannedTotals.carbs), suffix: 'g', className: 'text-sky-400' },
                           { label: 'Protein', value: Math.round(plannedTotals.protein), suffix: 'g', className: 'text-[#ADFF00]' },
