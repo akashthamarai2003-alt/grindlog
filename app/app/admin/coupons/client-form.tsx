@@ -94,33 +94,18 @@ export default function ClientCouponForm() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 mb-1">APPLICABLE PLAN</label>
-          <select
-            name="allowed_plan"
-            defaultValue="any"
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-green-500 bg-white cursor-pointer"
-          >
-            <option value="any">Any Plan</option>
-            <option value="monthly">Monthly</option>
-            <option value="six_months">6 Months</option>
-            <option value="lifetime">Lifetime</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 mb-1">APPLICABLE TIER</label>
-          <select
-            name="allowed_level"
-            defaultValue="any"
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-green-500 bg-white cursor-pointer"
-          >
-            <option value="any">Any Tier</option>
-            <option value="core">Core Tier</option>
-            <option value="pro">Pro Tier</option>
-          </select>
-        </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1">APPLICABLE TIER (MONTHLY PLAN)</label>
+        <input type="hidden" name="allowed_plan" value="monthly" />
+        <select
+          name="allowed_level"
+          defaultValue="any"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-green-500 bg-white cursor-pointer"
+        >
+          <option value="any">Any Tier (Both Core & Pro)</option>
+          <option value="core">Core Tier Only</option>
+          <option value="pro">Pro Tier Only</option>
+        </select>
       </div>
 
       <button 

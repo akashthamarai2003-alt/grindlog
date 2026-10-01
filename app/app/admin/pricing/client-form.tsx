@@ -47,7 +47,6 @@ export default function PricingClientForm({
   };
 
   const handlePriceChange = (
-    tier: "monthly" | "six_months" | "lifetime",
     level: "core" | "pro",
     field: "price" | "originalPrice",
     value: string
@@ -56,17 +55,17 @@ export default function PricingClientForm({
     setPricing((prev) => {
       const updated = {
         ...prev,
-        [tier]: {
-          ...prev[tier],
+        monthly: {
+          ...prev.monthly,
           [level]: {
-            ...prev[tier][level],
+            ...prev.monthly[level],
             [field]: num,
           },
         },
       };
 
       // When setting originalPrice for monthly, automatically compute offer price based on current spin discount
-      if (tier === "monthly" && field === "originalPrice" && num != null) {
+      if (field === "originalPrice" && num != null) {
         updated.monthly[level].price = Math.max(1, Math.round(num * (1 - spinDiscount / 100)));
       }
 
@@ -253,7 +252,7 @@ export default function PricingClientForm({
                   <input
                     type="number"
                     value={pricing.monthly.core.originalPrice ?? ""}
-                    onChange={(e) => handlePriceChange("monthly", "core", "originalPrice", e.target.value)}
+                    onChange={(e) => handlePriceChange("core", "originalPrice", e.target.value)}
                     placeholder="e.g. 59"
                     className="w-full pl-7 pr-3 py-2 text-sm font-bold bg-gray-50 border border-gray-200 rounded-xl text-gray-500 line-through outline-none focus:border-green-500 focus:bg-white transition-all"
                   />
@@ -270,7 +269,7 @@ export default function PricingClientForm({
                   <input
                     type="number"
                     value={pricing.monthly.core.price ?? ""}
-                    onChange={(e) => handlePriceChange("monthly", "core", "price", e.target.value)}
+                    onChange={(e) => handlePriceChange("core", "price", e.target.value)}
                     placeholder="e.g. 19"
                     className="w-full pl-7 pr-3 py-2 text-sm font-black bg-green-50/60 border border-green-300 rounded-xl text-green-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:bg-white transition-all"
                   />
@@ -327,7 +326,7 @@ export default function PricingClientForm({
                   <input
                     type="number"
                     value={pricing.monthly.pro.originalPrice ?? ""}
-                    onChange={(e) => handlePriceChange("monthly", "pro", "originalPrice", e.target.value)}
+                    onChange={(e) => handlePriceChange("pro", "originalPrice", e.target.value)}
                     placeholder="e.g. 199"
                     className="w-full pl-7 pr-3 py-2 text-sm font-bold bg-gray-50 border border-gray-200 rounded-xl text-gray-500 line-through outline-none focus:border-purple-500 focus:bg-white transition-all"
                   />
@@ -344,7 +343,7 @@ export default function PricingClientForm({
                   <input
                     type="number"
                     value={pricing.monthly.pro.price ?? ""}
-                    onChange={(e) => handlePriceChange("monthly", "pro", "price", e.target.value)}
+                    onChange={(e) => handlePriceChange("pro", "price", e.target.value)}
                     placeholder="e.g. 59"
                     className="w-full pl-7 pr-3 py-2 text-sm font-black bg-purple-50 border border-purple-300 rounded-xl text-purple-950 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:bg-white transition-all"
                   />
