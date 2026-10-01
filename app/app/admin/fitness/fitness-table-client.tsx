@@ -49,6 +49,8 @@ export interface FitnessUserDetails {
   sleepDuration: string;
   dailySteps: string;
   isPremium: boolean;
+  isActive?: boolean;
+  isExpired?: boolean;
   premiumTier: string;
   premiumLevel: string;
   premiumExpiresAt?: string;
@@ -254,7 +256,7 @@ export default function FitnessTableClient({ users }: { users: FitnessUserDetail
                         {user.goal}
                       </span>
                       <span className="text-xs text-gray-600 font-medium">
-                        {user.weight} → {user.targetWeight}
+                        {user.weight && user.weight !== "-" ? `${String(user.weight).replace(/kg/i, "").trim()} kg` : "-"} → {user.targetWeight && user.targetWeight !== "-" ? `${String(user.targetWeight).replace(/kg/i, "").trim()} kg` : "-"}
                       </span>
                     </div>
                   </td>
@@ -273,12 +275,24 @@ export default function FitnessTableClient({ users }: { users: FitnessUserDetail
 
                   {/* Plan Status */}
                   <td className="px-6 py-4">
-                    {user.isPremium ? (
+                    {user.isActive ? (
                       <div className="flex flex-col gap-0.5">
                         <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
                           Monthly - {user.premiumLevel === "core" ? "Core" : "Pro"}
                         </span>
-                        <span className="text-[11px] text-green-600 font-semibold">Active</span>
+                        <span className="text-[11px] text-green-600 font-semibold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                          Active
+                        </span>
+                      </div>
+                    ) : user.isExpired ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                          Monthly - {user.premiumLevel === "core" ? "Core" : "Pro"}
+                        </span>
+                        <span className="text-[11px] text-amber-600 font-medium">
+                          Expired {user.premiumExpiresAt ? `(${formatDate(user.premiumExpiresAt)})` : ""}
+                        </span>
                       </div>
                     ) : (
                       <span className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
@@ -378,8 +392,14 @@ export default function FitnessTableClient({ users }: { users: FitnessUserDetail
                   </div>
                   <div>
                     <span className="text-gray-400 block text-[11px]">Subscription</span>
-                    <span className="font-bold text-purple-700">
-                      {selectedUser.isPremium ? `Monthly - ${selectedUser.premiumLevel.toUpperCase()}` : "Free"}
+                    <span className="font-bold">
+                      {selectedUser.isActive ? (
+                        <span className="text-purple-700">Monthly - {selectedUser.premiumLevel.toUpperCase()} (Active)</span>
+                      ) : selectedUser.isExpired ? (
+                        <span className="text-amber-600">Monthly - {selectedUser.premiumLevel.toUpperCase()} (Expired {selectedUser.premiumExpiresAt ? formatDate(selectedUser.premiumExpiresAt) : ""})</span>
+                      ) : (
+                        <span className="text-gray-500">Free / Unpaid</span>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -397,11 +417,11 @@ export default function FitnessTableClient({ users }: { users: FitnessUserDetail
                   </div>
                   <div>
                     <span className="text-gray-400 block text-[11px]">Current Weight</span>
-                    <span className="font-bold text-gray-800">{selectedUser.weight}</span>
+                    <span className="font-bold text-gray-800">{selectedUser.weight && selectedUser.weight !== "-" ? `${String(selectedUser.weight).replace(/kg/i, "").trim()} kg` : "-"}</span>
                   </div>
                   <div>
                     <span className="text-gray-400 block text-[11px]">Target Weight</span>
-                    <span className="font-bold text-emerald-600">{selectedUser.targetWeight}</span>
+                    <span className="font-bold text-emerald-600">{selectedUser.targetWeight && selectedUser.targetWeight !== "-" ? `${String(selectedUser.targetWeight).replace(/kg/i, "").trim()} kg` : "-"}</span>
                   </div>
                   <div>
                     <span className="text-gray-400 block text-[11px]">Height / BMI</span>

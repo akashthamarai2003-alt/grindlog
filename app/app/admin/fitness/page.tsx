@@ -27,14 +27,28 @@ export default async function FitnessAdminDashboard() {
   let subscriptionsMap = new Map<string, { plan?: string; status?: string; current_period_end?: string }>();
 
   if (userIds.length > 0) {
-    const [profilesRes, subsRes] = await Promise.all([
+    const [profilesRes, subsRes, authUsersRes] = await Promise.all([
       supabase.from("profiles").select("id, display_name, email").in("id", userIds),
       supabase.from("fitness_os_subscriptions").select("user_id, plan, status, current_period_end").in("user_id", userIds),
+      supabase.auth.admin.listUsers({ perPage: 1000 }),
     ]);
+
+    if (authUsersRes.data?.users) {
+      authUsersRes.data.users.forEach((u) => {
+        profilesMap.set(u.id, {
+          display_name: (u.user_metadata as any)?.display_name || (u.user_metadata as any)?.name || null,
+          email: u.email || null,
+        });
+      });
+    }
 
     if (profilesRes.data) {
       profilesRes.data.forEach((p) => {
-        profilesMap.set(p.id, { display_name: p.display_name, email: p.email });
+        const existing = profilesMap.get(p.id);
+        profilesMap.set(p.id, { 
+          display_name: p.display_name || existing?.display_name, 
+          email: p.email || existing?.email 
+        });
       });
     }
 
@@ -50,23 +64,27 @@ export default async function FitnessAdminDashboard() {
   }
 
   // Calculate metrics accurately
-  const now = new Date().toISOString();
-  const isProfileActive = (p: any) => {
+  const now = new Date();
+  const isProfileActive = (p: any, sub?: any) => {
+    const isSubActive = sub?.status === "active";
+    const expiresAt = p.fitness_premium_expires_at || sub?.current_period_end;
+    if (isSubActive) return true;
     if (!p.fitness_is_premium) return false;
     if (p.fitness_premium_tier === "lifetime") return true;
-    if (!p.fitness_premium_expires_at) return true;
-    return p.fitness_premium_expires_at > now;
+    if (!expiresAt) return true;
+    return new Date(expiresAt) > now;
   };
 
   const totalUsers = fitnessProfiles.length;
   const activeSubsCount = fitnessProfiles.filter(
-    (p) => isProfileActive(p) || subscriptionsMap.get(p.user_id)?.status === "active"
+    (p) => isProfileActive(p, subscriptionsMap.get(p.user_id))
   ).length;
 
   const proSubscribersCount = fitnessProfiles.filter((p) => {
-    const isActive = isProfileActive(p) || subscriptionsMap.get(p.user_id)?.status === "active";
+    const sub = subscriptionsMap.get(p.user_id);
+    const isActive = isProfileActive(p, sub);
     if (!isActive) return false;
-    const isProLevel = p.fitness_premium_level === "pro" || subscriptionsMap.get(p.user_id)?.plan === "pro";
+    const isProLevel = p.fitness_premium_level === "pro" || sub?.plan === "pro";
     return isProLevel;
   }).length;
 
@@ -151,10 +169,40 @@ export default async function FitnessAdminDashboard() {
     const sleepDuration = fp.sleep_duration || ob.sleep_duration || "-";
     const dailySteps = fp.daily_steps || ob.daily_steps || "-";
 
-    const isPremium = Boolean(fp.fitness_is_premium || sub?.status === "active");
+    const expiresAtStr = fp.fitness_premium_expires_at || sub?.current_period_end;
+    const hasPaidPlan = Boolean(
+      fp.fitness_is_premium || 
+      sub?.status === "active" || 
+      (fp.fitness_premium_level && fp.fitness_premium_level !== "free") ||
+      (sub?.plan && sub.plan !== "free")
+    );
+
+    let isExpired = false;
+    let isActive = false;
+
+    if (hasPaidPlan) {
+      if (fp.fitness_premium_tier === "lifetime") {
+        isActive = true;
+      } else if (expiresAtStr) {
+        const expDate = new Date(expiresAtStr);
+        if (!isNaN(expDate.getTime())) {
+          if (expDate > now) {
+            isActive = true;
+          } else {
+            isExpired = true;
+          }
+        } else {
+          isActive = true;
+        }
+      } else {
+        isActive = true;
+      }
+    }
+
+    const isPremium = isActive;
     const premiumTier = fp.fitness_premium_tier || sub?.plan || "monthly";
     const premiumLevel = fp.fitness_premium_level || sub?.plan || "pro";
-    const premiumExpiresAt = fp.fitness_premium_expires_at || sub?.current_period_end;
+    const premiumExpiresAt = expiresAtStr;
 
     return {
       userId: fp.user_id,
@@ -185,6 +233,8 @@ export default async function FitnessAdminDashboard() {
       sleepDuration,
       dailySteps,
       isPremium,
+      isActive,
+      isExpired,
       premiumTier,
       premiumLevel,
       premiumExpiresAt,
