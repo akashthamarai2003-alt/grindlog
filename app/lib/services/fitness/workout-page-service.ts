@@ -7,7 +7,7 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
   const admin = createAdminClient();
   const nowDate = new Date();
 
-  // 1. Fetch user timezone, active workout plan, and subscription in parallel
+  // ── WAVE 1: Fire all independent queries in parallel ──
   const [
     { data: mainProfile },
     { data: activePlan },
@@ -37,10 +37,9 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
     day: "2-digit",
   }).format(nowDate);
 
-  const formatter = new Intl.DateTimeFormat("en-US", { 
+  const dateStr = new Intl.DateTimeFormat("en-US", { 
     timeZone: tz, weekday: "short", month: "short", day: "numeric" 
-  });
-  const dateStr = formatter.format(nowDate);
+  }).format(nowDate);
 
   const isFree = subscriptionPlan?.id === "free";
 
@@ -56,7 +55,7 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
   const weekStartStr = startOfWeek.toISOString().split("T")[0];
   const weekEndStr = endOfWeek.toISOString().split("T")[0];
 
-  // 2. Fetch workouts for the current week or in-progress, plus AI notes if pro
+  // ── WAVE 2: Calendar workouts + in-progress + AI notes ──
   const [
     { data: calendarWorkouts },
     { data: inProgressWorkouts },
@@ -92,12 +91,7 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
   // automatically instantiate the recurring weekly split from their active plan template!
   if (effectiveCalendarWorkouts.length === 0 && !isFree && activePlan) {
     const recurring = await ensureWeeklyWorkoutsScheduled(
-      admin,
-      userId,
-      activePlan,
-      startOfWeek,
-      weekStartStr,
-      weekEndStr
+      admin, userId, activePlan, startOfWeek, weekStartStr, weekEndStr
     );
     if (recurring && recurring.length > 0) {
       effectiveCalendarWorkouts = recurring;
@@ -115,17 +109,66 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
   const scheduledToday = rawList.find((w: any) => w.workout_date === userLocalDate);
   const targetWorkout = inProgress || scheduledToday || null;
 
-  // Load exercise details for whichever workout is displayed.
-  async function withExercises(workout: any) {
-    const { data: exercises } = await admin
+  // Find next upcoming workout if no workout scheduled today
+  let nextWorkoutRaw: any = null;
+  let nextWorkoutQueryPromise: Promise<any> | null = null;
+
+  if (!targetWorkout) {
+    const upcoming = rawList.find((w: any) => w.workout_date > userLocalDate && w.status === "scheduled");
+    if (upcoming) {
+      nextWorkoutRaw = upcoming;
+    } else {
+      // Fire DB query for next scheduled workout outside this week
+      nextWorkoutQueryPromise = Promise.resolve(
+        admin
+          .from("fitness_os_workouts")
+          .select("id, name, workout_date, status, duration_minutes, plan_id")
+          .eq("user_id", userId)
+          .gt("workout_date", userLocalDate)
+          .eq("status", "scheduled")
+          .order("workout_date", { ascending: true })
+          .limit(1)
+          .maybeSingle()
+      );
+    }
+  }
+
+  // ── WAVE 3: Load exercises for target + next workout IN PARALLEL ──
+  // Collect all workout IDs we need exercises for
+  const workoutIdsToFetch: string[] = [];
+  if (targetWorkout) workoutIdsToFetch.push(targetWorkout.id);
+
+  // Resolve next workout query if needed
+  if (nextWorkoutQueryPromise) {
+    const { data: nextScheduled } = await nextWorkoutQueryPromise;
+    nextWorkoutRaw = nextScheduled || null;
+  }
+  if (!targetWorkout && nextWorkoutRaw) {
+    workoutIdsToFetch.push(nextWorkoutRaw.id);
+  }
+
+  // Single batch query for exercises of ALL needed workouts
+  let exercisesByWorkoutId = new Map<string, any[]>();
+  if (workoutIdsToFetch.length > 0) {
+    const { data: allExercises } = await admin
       .from("fitness_os_exercises")
       .select(`
-        id, name, target_sets, target_reps, rest_seconds,
+        id, name, target_sets, target_reps, rest_seconds, workout_id,
         fitness_os_sets (completed)
       `)
-      .eq("workout_id", workout.id);
+      .in("workout_id", workoutIdsToFetch);
 
-    const exerciseList = exercises || [];
+    for (const ex of (allExercises || [])) {
+      const wid = ex.workout_id;
+      if (!exercisesByWorkoutId.has(wid)) {
+        exercisesByWorkoutId.set(wid, []);
+      }
+      exercisesByWorkoutId.get(wid)!.push(ex);
+    }
+  }
+
+  function enrichWorkout(workout: any) {
+    const exerciseList = exercisesByWorkoutId.get(workout.id) || [];
     const completedExercises = exerciseList.filter((e: any) =>
       e.fitness_os_sets && e.fitness_os_sets.length > 0 && e.fitness_os_sets.every((s: any) => s.completed)
     ).length;
@@ -138,30 +181,8 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
     };
   }
 
-  const fullTargetWorkout = targetWorkout ? await withExercises(targetWorkout) : null;
-
-  // Find next upcoming workout if no workout scheduled today
-  let nextWorkout: any = null;
-  if (!fullTargetWorkout) {
-    const upcoming = rawList.find((w: any) => w.workout_date > userLocalDate && w.status === "scheduled");
-    if (upcoming) {
-      nextWorkout = upcoming;
-    } else {
-      // If none in this week, query the very next scheduled workout
-      const { data: nextScheduled } = await admin
-        .from("fitness_os_workouts")
-        .select("id, name, workout_date, status, duration_minutes, plan_id")
-        .eq("user_id", userId)
-        .gt("workout_date", userLocalDate)
-        .eq("status", "scheduled")
-        .order("workout_date", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      nextWorkout = nextScheduled || null;
-    }
-  }
-
-  if (nextWorkout) nextWorkout = await withExercises(nextWorkout);
+  const fullTargetWorkout = targetWorkout ? enrichWorkout(targetWorkout) : null;
+  const nextWorkout = !targetWorkout && nextWorkoutRaw ? enrichWorkout(nextWorkoutRaw) : null;
 
   // Build weekly calendar (Monday to Sunday)
   const dayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -187,13 +208,7 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
       }
     }
 
-    return {
-      day: dayName,
-      status,
-      name,
-      date: iterStr,
-      isToday,
-    };
+    return { day: dayName, status, name, date: iterStr, isToday };
   });
 
   // Build standard 7-day plan split
@@ -216,13 +231,7 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
       };
     }
 
-    return {
-      day: dayName,
-      status: "rest",
-      name: "Rest",
-      date: undefined,
-      isToday,
-    };
+    return { day: dayName, status: "rest", name: "Rest", date: undefined, isToday };
   });
 
   const effectiveWorkout = isFree ? (SAMPLE_FREE_WORKOUT as any) : fullTargetWorkout;
@@ -287,32 +296,23 @@ export async function getWorkoutPageData(userId: string): Promise<WorkoutPageDat
 /**
  * Idempotently auto-schedules recurring workouts from the active plan template
  * into the given week when no workouts exist yet.
+ * Optimized: batched inserts for exercises and sets.
  */
 async function ensureWeeklyWorkoutsScheduled(
   admin: any,
   userId: string,
   activePlan: any,
   startOfWeek: Date,
-  weekStartStr: string,
-  weekEndStr: string
+  _weekStartStr: string,
+  _weekEndStr: string
 ) {
   if (!activePlan || !activePlan.id) return [];
   const planData = activePlan.plan_data;
   const templateWorkouts = Array.isArray(planData?.workouts) ? planData.workouts : [];
   if (templateWorkouts.length === 0) return [];
 
-  // Check if any workouts exist in this week range already to guarantee idempotence
-  const { data: existing } = await admin
-    .from("fitness_os_workouts")
-    .select("id, name, workout_date, status, duration_minutes, plan_id")
-    .eq("user_id", userId)
-    .gte("workout_date", weekStartStr)
-    .lte("workout_date", weekEndStr)
-    .order("workout_date", { ascending: true });
-
-  if (existing && existing.length > 0) {
-    return existing;
-  }
+  // The caller already confirmed zero workouts exist for this week range,
+  // so skip the redundant idempotency re-check query.
 
   // Pre-compute the 7 dates of this week (Monday=0 to Sunday=6)
   const dayIndices = [1, 2, 3, 4, 5, 6, 0]; // Mon to Sun
@@ -325,13 +325,12 @@ async function ensureWeeklyWorkoutsScheduled(
     weekDatesMap.set(dow, dateStr);
   }
 
-  const createdWorkouts: any[] = [];
-
+  // ── STEP 1: Batch insert ALL workouts at once ──
+  const workoutInserts = [];
   for (let idx = 0; idx < templateWorkouts.length; idx++) {
     const tw = templateWorkouts[idx];
     if (!tw || !tw.title) continue;
 
-    // Determine target day of week
     let targetDow: number | undefined;
     if (tw.workout_date) {
       const templateDate = new Date(`${tw.workout_date}T12:00:00Z`);
@@ -345,71 +344,97 @@ async function ensureWeeklyWorkoutsScheduled(
       targetDow = fallbackDow;
     }
 
-    const targetDateStr = weekDatesMap.get(targetDow) || weekStartStr;
+    const targetDateStr = weekDatesMap.get(targetDow) || _weekStartStr;
 
-    // 1. Insert Workout
-    const { data: newWorkout, error: wErr } = await admin
-      .from("fitness_os_workouts")
-      .insert({
-        user_id: userId,
-        plan_id: activePlan.id,
-        workout_date: targetDateStr,
-        name: tw.title,
-        status: "scheduled",
-        duration_minutes: Number(tw.duration_minutes) || 45,
-        plan_data: tw.plan_data || { target_muscles: [] }
-      })
-      .select("id, name, workout_date, status, duration_minutes, plan_id")
-      .single();
+    workoutInserts.push({
+      user_id: userId,
+      plan_id: activePlan.id,
+      workout_date: targetDateStr,
+      name: tw.title,
+      status: "scheduled",
+      duration_minutes: Number(tw.duration_minutes) || 45,
+      plan_data: tw.plan_data || { target_muscles: [] },
+      _templateIdx: idx, // internal ref, stripped before insert
+    });
+  }
 
-    if (wErr || !newWorkout) {
-      console.warn("Failed to auto-schedule recurring workout:", wErr);
-      continue;
-    }
+  if (workoutInserts.length === 0) return [];
 
-    createdWorkouts.push(newWorkout);
+  // Strip _templateIdx before insert
+  const cleanInserts = workoutInserts.map(({ _templateIdx, ...rest }) => rest);
 
-    // 2. Insert Exercises & Sets
-    const exercises = Array.isArray(tw.exercises) ? tw.exercises : [];
+  const { data: newWorkouts, error: wErr } = await admin
+    .from("fitness_os_workouts")
+    .insert(cleanInserts)
+    .select("id, name, workout_date, status, duration_minutes, plan_id");
+
+  if (wErr || !newWorkouts || newWorkouts.length === 0) {
+    console.warn("Failed to batch auto-schedule recurring workouts:", wErr);
+    return [];
+  }
+
+  // ── STEP 2: Batch insert ALL exercises for ALL workouts ──
+  const exerciseInserts: any[] = [];
+  // Map template index -> workout id for exercise association
+  for (let i = 0; i < newWorkouts.length; i++) {
+    const templateIdx = workoutInserts[i]._templateIdx;
+    const tw = templateWorkouts[templateIdx];
+    const exercises = Array.isArray(tw?.exercises) ? tw.exercises : [];
+
     for (let eIdx = 0; eIdx < exercises.length; eIdx++) {
       const ex = exercises[eIdx];
       if (!ex || !ex.name) continue;
 
-      const targetSets = Number(ex.sets) || 3;
-      const targetRepsNum = Number(ex.target_reps_num) || 10;
-      const restSec = Number(ex.rest_seconds) || 90;
-
-      const { data: newExercise, error: exErr } = await admin
-        .from("fitness_os_exercises")
-        .insert({
-          workout_id: newWorkout.id,
-          name: ex.name,
-          exercise_order: Number(ex.exercise_order) || eIdx + 1,
-          target_sets: targetSets,
-          target_reps: targetRepsNum,
-          rest_seconds: restSec,
-          notes: ex.notes || null,
-        })
-        .select("id")
-        .single();
-
-      if (exErr || !newExercise) continue;
-
-      // 3. Insert Sets
-      const setsToInsert = [];
-      for (let s = 1; s <= targetSets; s++) {
-        setsToInsert.push({
-          exercise_id: newExercise.id,
-          set_number: s,
-          target_reps: targetRepsNum,
-          completed: false,
-        });
-      }
-      if (setsToInsert.length > 0) {
-        await admin.from("fitness_os_sets").insert(setsToInsert);
-      }
+      exerciseInserts.push({
+        workout_id: newWorkouts[i].id,
+        name: ex.name,
+        exercise_order: Number(ex.exercise_order) || eIdx + 1,
+        target_sets: Number(ex.sets) || 3,
+        target_reps: Number(ex.target_reps_num) || 10,
+        rest_seconds: Number(ex.rest_seconds) || 90,
+        notes: ex.notes || null,
+        _targetSets: Number(ex.sets) || 3, // internal ref for set generation
+        _targetReps: Number(ex.target_reps_num) || 10, // internal ref
+      });
     }
   }
 
-  return createdWorkouts;
+  if (exerciseInserts.length === 0) return newWorkouts;
+
+  const cleanExInserts = exerciseInserts.map(({ _targetSets, _targetReps, ...rest }) => rest);
+
+  const { data: newExercises, error: exErr } = await admin
+    .from("fitness_os_exercises")
+    .insert(cleanExInserts)
+    .select("id");
+
+  if (exErr || !newExercises) {
+    console.warn("Failed to batch insert exercises:", exErr);
+    return newWorkouts;
+  }
+
+  // ── STEP 3: Batch insert ALL sets for ALL exercises ──
+  const setInserts: any[] = [];
+  for (let i = 0; i < newExercises.length; i++) {
+    const targetSets = exerciseInserts[i]._targetSets;
+    const targetReps = exerciseInserts[i]._targetReps;
+
+    for (let s = 1; s <= targetSets; s++) {
+      setInserts.push({
+        exercise_id: newExercises[i].id,
+        set_number: s,
+        target_reps: targetReps,
+        completed: false,
+      });
+    }
+  }
+
+  if (setInserts.length > 0) {
+    const { error: setErr } = await admin.from("fitness_os_sets").insert(setInserts);
+    if (setErr) {
+      console.warn("Failed to batch insert sets:", setErr);
+    }
+  }
+
+  return newWorkouts;
 }
