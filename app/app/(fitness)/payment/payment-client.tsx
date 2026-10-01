@@ -167,6 +167,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   const [paymentOrderId, setPaymentOrderId] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isDraftReady, setIsDraftReady] = useState(false);
   // Pre-seed pricing directly from server props so there is ZERO flash of wrong amounts
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(initialPricing || DEFAULT_PRICING);
   const [isLoadingPrices, setIsLoadingPrices] = useState(!initialPricing);
@@ -308,9 +309,16 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ retry: false }),
-      }).catch((err) => {
-        console.warn("Background draft pre-generation failed to initiate:", err);
-      });
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.success) {
+            setIsDraftReady(true);
+          }
+        })
+        .catch((err) => {
+          console.warn("Background draft pre-generation failed to initiate:", err);
+        });
     }
   }, [showCelebration, returnTo]);
 
@@ -557,6 +565,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
           onComplete={handleFinishCelebration}
           planName={level}
           orderId={paymentOrderId}
+          isReady={isDraftReady}
         />
       )}
 

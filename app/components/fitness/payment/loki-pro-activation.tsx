@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle2, 
@@ -11,7 +11,8 @@ import {
   Zap, 
   Dumbbell, 
   Apple, 
-  Activity 
+  Activity,
+  Loader2
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { AICharacter } from "@/components/fitness/plan-animation";
@@ -21,25 +22,28 @@ interface LokiProActivationProps {
   onComplete: () => void;
   planName?: string;
   orderId?: string | null;
+  isReady?: boolean;
 }
 
-const TOTAL_DURATION_MS = 10000; // 10 seconds
+const BASE_DURATION_MS = 10000; // 10 seconds minimum celebration
+const MAX_WAIT_MS = 16000; // 16 seconds maximum safety timeout
 
 export function LokiProActivation({
   onComplete,
   planName = "PRO",
   orderId,
+  isReady = false,
 }: LokiProActivationProps) {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [isFinishing, setIsFinishing] = useState(false);
   const hasCompletedRef = useRef(false);
 
-  const handleFinish = () => {
+  const handleFinish = useCallback(() => {
     if (hasCompletedRef.current) return;
     hasCompletedRef.current = true;
     setIsFinishing(true);
     onComplete();
-  };
+  }, [onComplete]);
 
   // 1. Confetti bursts
   useEffect(() => {
@@ -93,30 +97,44 @@ export function LokiProActivation({
     }
   }, []);
 
-  // 2. 10-second ticker
+  const isReadyRef = useRef(isReady);
+  useEffect(() => {
+    isReadyRef.current = isReady;
+  }, [isReady]);
+
+  // 2. 10-second+ intelligent ticker synchronized with AI background pre-generation
   useEffect(() => {
     const startTime = Date.now();
+    let finished = false;
+
     const interval = setInterval(() => {
+      if (finished) return;
       const elapsed = Date.now() - startTime;
-      if (elapsed >= TOTAL_DURATION_MS) {
-        setElapsedMs(TOTAL_DURATION_MS);
+      setElapsedMs(elapsed);
+
+      // Auto-finish if:
+      // 1. Minimum 10 seconds elapsed AND the AI plan generation is ready
+      // 2. OR max safety timeout (16s) is reached
+      if ((elapsed >= BASE_DURATION_MS && isReadyRef.current) || elapsed >= MAX_WAIT_MS) {
+        finished = true;
         clearInterval(interval);
         handleFinish();
-      } else {
-        setElapsedMs(elapsed);
       }
     }, 50);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [handleFinish]);
 
-  const progress = Math.min(100, (elapsedMs / TOTAL_DURATION_MS) * 100);
-  const remainingSeconds = Math.max(1, Math.ceil((TOTAL_DURATION_MS - elapsedMs) / 1000));
+  const isBaseTimeComplete = elapsedMs >= BASE_DURATION_MS;
+  const progress = isReady && isBaseTimeComplete
+    ? 100
+    : Math.min(96, (elapsedMs / BASE_DURATION_MS) * 96);
+  const remainingSeconds = Math.max(0, Math.ceil((BASE_DURATION_MS - elapsedMs) / 1000));
 
   // Determine active stage
   // Stage 1: 0 - 33% (0 - 3300ms)
   // Stage 2: 33% - 66% (3300ms - 6600ms)
-  // Stage 3: 66% - 100% (6600ms - 10000ms)
+  // Stage 3: 66% - 100% (6600ms - 10000ms+)
   const currentStage = elapsedMs < 3300 ? 1 : elapsedMs < 6600 ? 2 : 3;
 
   return (
@@ -329,13 +347,24 @@ export function LokiProActivation({
         >
           {isFinishing ? (
             <span>Opening Your Plan...</span>
-          ) : (
+          ) : isReady && isBaseTimeComplete ? (
             <>
-              <span>Jump to Plan Now</span>
+              <CheckCircle2 size={18} className="text-black" />
+              <span>Plan Ready • Reveal Now</span>
+              <ArrowRight size={16} strokeWidth={2.5} />
+            </>
+          ) : remainingSeconds > 0 ? (
+            <>
+              <span>Jump to Plan</span>
               <span className="bg-black/15 text-black px-2 py-0.5 rounded-full text-xs font-mono font-black">
                 {remainingSeconds}s
               </span>
               <ArrowRight size={16} strokeWidth={2.5} />
+            </>
+          ) : (
+            <>
+              <span>Finalizing Plan Blueprint...</span>
+              <Loader2 size={16} className="animate-spin text-black" />
             </>
           )}
         </button>

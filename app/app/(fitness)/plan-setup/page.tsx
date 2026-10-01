@@ -281,13 +281,19 @@ export default function PlanSetupPage() {
   const [modulating, setModulating] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [isReturningFromUpgrade] = useState(() => {
+    if (typeof window !== "undefined") {
+      return (
+        window.location.search.includes("intent=upgrade_pro") ||
+        window.location.search.includes("success=true")
+      );
+    }
+    return false;
+  });
+
   useEffect(() => {
     // Generate draft on mount
     let isMounted = true;
-    const isReturningFromUpgrade = typeof window !== "undefined" && (
-      window.location.search.includes("intent=upgrade_pro") ||
-      window.location.search.includes("success=true")
-    );
     const isRenew = typeof window !== "undefined" && window.location.search.includes("renew=true");
     
     // Never force retry: true on initial mount; allow in-flight background generation from payment or cached draft to resolve cleanly without double API calls
@@ -295,8 +301,11 @@ export default function PlanSetupPage() {
       .then((res) => {
         if (!isMounted) return;
         setPlanData(res.data);
-        if (isReturningFromUpgrade && res.data?._subscriptionPlan === "pro") {
-          toast.success("Upgraded to Pro! Your personalized nutrition and grocery plans are unlocked.");
+        if (isReturningFromUpgrade) {
+          setLoading(false);
+          if (res.data?._subscriptionPlan === "pro") {
+            toast.success("Upgraded to Pro! Your personalized plan is ready.");
+          }
         }
       })
       .catch((err: unknown) => {
@@ -712,13 +721,28 @@ export default function PlanSetupPage() {
         </div>
       )}
 
-      {loading && (
+      {loading && !isReturningFromUpgrade && (
         <AIPlanAnimation
           isReady={Boolean(planData || generationError)}
           hasError={Boolean(generationError)}
           minDurationMs={2000}
           onAnimationComplete={() => setLoading(false)}
         />
+      )}
+
+      {loading && isReturningFromUpgrade && (
+        <div className="fixed inset-0 z-50 bg-[#0A1108] flex flex-col items-center justify-center p-6 text-white animate-in fade-in duration-200">
+          <div className="relative flex items-center justify-center mb-4">
+            <div className="absolute inset-0 bg-[#ADFF00]/20 blur-2xl rounded-full" />
+            <Brain className="w-12 h-12 text-[#ADFF00] animate-pulse relative z-10" />
+          </div>
+          <h2 className="text-xl font-black tracking-tight text-white mb-1">
+            Revealing Your Master Plan...
+          </h2>
+          <p className="text-xs text-gray-400">
+            Personalizing workouts and natural food nutrition
+          </p>
+        </div>
       )}
     </>
   );
