@@ -300,16 +300,55 @@ export default async function AIStartingReportPage({
 
   const rawRealityCheck = aiStrategy.reality_check;
   const realityCheck = rawRealityCheck || {};
-
-  const healthAndSafety = aiStrategy.health_and_safety;
-  
-  const timelineProjection = Array.isArray(aiStrategy.timeline_projection)
-    ? aiStrategy.timeline_projection
-    : [];
   
   const achievableList = Array.isArray(realityCheck.achievable_in_timeframe)
     ? realityCheck.achievable_in_timeframe
     : [];
+
+  const healthAndSafety = aiStrategy.health_and_safety;
+  const timelineProjection = Array.isArray(aiStrategy.timeline_projection)
+    ? aiStrategy.timeline_projection
+    : [];
+
+  const currentWeightNum = typeof profile.weight === "number" ? profile.weight : null;
+  const targetWeightNum = typeof profile.target_weight === "number" ? profile.target_weight : null;
+  const deadlineDays = typeof onboardingData.target_deadline_days === "number" ? onboardingData.target_deadline_days : null;
+  const diffKg = currentWeightNum && targetWeightNum ? Math.round(Math.abs(currentWeightNum - targetWeightNum) * 10) / 10 : 0;
+  const normalizedGoal = (profile.goal || "").toLowerCase();
+  const isGainGoal = normalizedGoal.includes("gain") || normalizedGoal.includes("bulk") || (currentWeightNum !== null && targetWeightNum !== null && targetWeightNum > currentWeightNum);
+  const isLossGoal = normalizedGoal.includes("loss") || normalizedGoal.includes("cut") || (currentWeightNum !== null && targetWeightNum !== null && targetWeightNum < currentWeightNum);
+  
+  const impliedMonthlyRate = diffKg > 0 && deadlineDays && deadlineDays > 0 ? (diffKg / deadlineDays) * 30.4 : 0;
+  const isScientificallyUnrealistic = diffKg >= 4 && ((isGainGoal && impliedMonthlyRate > 2.0) || (isLossGoal && impliedMonthlyRate > 4.5));
+
+  const isTimeframeRealistic = isScientificallyUnrealistic ? false : Boolean(realityCheck.is_timeframe_realistic ?? true);
+  
+  let displayedAssessment = String(realityCheck.honest_assessment || "");
+  let displayedAchievableList = achievableList;
+
+  if (isScientificallyUnrealistic) {
+    if (displayedAssessment.includes("100% achievable") || realityCheck.is_timeframe_realistic || displayedAssessment.includes("goal of gain weight")) {
+      if (isGainGoal) {
+        displayedAssessment = `Listen bro, gaining ${diffKg} kg in ${deadlineDays || 60} days isn't realistic or healthy—trying to gain that fast would mostly build unwanted body fat. In your ${deadlineDays || 60}-day window, a clean, realistic target is ~2.5 to 3.5 kg of solid lean mass. Reaching ${targetWeightNum || 65} kg safely is a longer journey, and we're locking in the foundation right now!`;
+        displayedAchievableList = [
+          "Gain ~2.5 to 3.5 kg of solid lean muscle safely",
+          "Measurable jump in functional lifting strength and stamina",
+          "Consistent high-protein nutrition routine without force-feeding",
+          `Clear foundation laid for your full ${targetWeightNum || 65} kg goal`,
+        ];
+      } else if (isLossGoal) {
+        displayedAssessment = `Listen bro, dropping ${diffKg} kg in ${deadlineDays || 60} days requires an extreme, unhealthy deficit that burns muscle. In your ${deadlineDays || 60}-day window, dropping ~5 to 7 kg of pure fat is a much safer, sustainable target. We're gonna lock in your daily routine and crush this step by step!`;
+        displayedAchievableList = [
+          "Drop ~5 to 7 kg of pure body fat safely",
+          "Maintain lean muscle and active metabolic rate",
+          "Build consistent daily activity and nutrition habits",
+          "Noticeable reduction in waistline and visceral fat",
+        ];
+      }
+    }
+  } else if (displayedAssessment.includes("goal of gain weight")) {
+    displayedAssessment = displayedAssessment.replace("goal of gain weight", "goal of gaining weight");
+  }
 
   return (
     <div className="min-h-screen bg-[#0A1108] p-6 pb-28 text-white">
@@ -461,26 +500,26 @@ export default async function AIStartingReportPage({
             </div>
             <span
               className={`shrink-0 rounded-full px-2.5 py-1 text-center text-[10px] font-bold tracking-wider uppercase sm:text-xs ${
-                realityCheck.is_timeframe_realistic
+                isTimeframeRealistic
                   ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                   : "border border-amber-500/30 bg-amber-500/20 text-amber-400"
               }`}
             >
-              {realityCheck.is_timeframe_realistic ? "Realistic" : "Expectation Adjusted"}
+              {isTimeframeRealistic ? "Realistic" : "Expectation Adjusted"}
             </span>
           </div>
 
           <p className="rounded-2xl border border-white/5 bg-[#0D150D] p-4 text-sm leading-relaxed font-medium text-gray-300">
-            {String(realityCheck.honest_assessment || "")}
+            {displayedAssessment}
           </p>
 
-          {achievableList.length > 0 && (
+          {displayedAchievableList.length > 0 && (
             <div>
               <p className="mb-2 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
                 What you WILL achieve in this period:
               </p>
               <ul className="space-y-2">
-                {achievableList.map((item: any, idx: number) => (
+                {displayedAchievableList.map((item: any, idx: number) => (
                   <li key={idx} className="flex items-start gap-2 text-sm text-gray-300">
                     <span className="mt-0.5 font-bold text-[#ADFF00]">✓</span>
                     <span>{String(item)}</span>

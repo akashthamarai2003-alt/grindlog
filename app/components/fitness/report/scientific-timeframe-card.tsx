@@ -526,7 +526,9 @@ export function ScientificTimeframeCard({
             </div>
             <p className="text-[11px] leading-relaxed text-gray-400">
               {isDeadlineUnrealistic
-                ? `Dropping ${diffKg} kg in ${userRequestedDays} days requires an extreme, unhealthy deficit. GrindLog's sports science model protects your muscle by structuring your first 90 days as Phase 1 (targeting ≈ -9 kg safely), before stepping smoothly into Phase 2.`
+                ? (isGain
+                    ? `Gaining ${diffKg} kg in ${userRequestedDays} days would require an excessive calorie surplus resulting mostly in unwanted body fat. GrindLog's sports science model structures your journey with a steady lean surplus (targeting ≈ +2.5 to 3.5 kg of lean mass in your first 60–90 days safely), before stepping into Phase 2.`
+                    : `Dropping ${diffKg} kg in ${userRequestedDays} days requires an extreme, unhealthy deficit. GrindLog's sports science model protects your muscle by structuring your first 90 days as Phase 1 (targeting ≈ -9 kg safely), before stepping smoothly into Phase 2.`)
                 : `Your requested ${userRequestedDays}-day timeframe aligns well with healthy, sustainable sports science recommendations.`}
             </p>
           </div>

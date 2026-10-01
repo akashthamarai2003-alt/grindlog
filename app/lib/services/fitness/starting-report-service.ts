@@ -250,8 +250,12 @@ export async function generateStartingReport({
   - nutrition_strategy: short personalised strategy that strictly respects diet_type, allergies, avoided foods, food environment, and budget. For Lose Fat and Cut goals, mention limiting added sugar, sugary drinks, deep-fried foods, and frequent fast food, while using measured oil and keeping occasional treats within the calorie target. Never recommend zero sugar or zero oil. For Cut, mention adequate protein and resistance training for muscle retention.
   - progress_roadmap: 3 or 4 short milestones. (e.g., "Hit your first 5 pushups!", "Start noticing your shirts fitting tighter around the chest")
   - focus_areas: exactly 5 short personalised focus areas. Use slang like "Grow those shoulders" instead of "Deltoid hypertrophy".
-  - fitness_score: a number from 0 to 100; it is a non-medical coaching baseline.
-  - reality_check: { is_timeframe_realistic, honest_assessment, achievable_in_timeframe } with 3 to 5 practical outcomes. If no deadline or target weight is provided, state that it was not supplied rather than inventing one. EXTREMELY IMPORTANT: TALK LIKE A FRIENDLY GYM BRO / PERSONAL TRAINER in the honest_assessment. Use words like "Listen bro," "Don't sweat it," "We're gonna crush this." NEVER USE ROBOTIC LANGUAGE!
+  - reality_check: { is_timeframe_realistic, honest_assessment, achievable_in_timeframe } with 3 to 5 practical outcomes. If no deadline or target weight is provided, state that it was not supplied rather than inventing one.
+    CRITICAL REALITY CHECK MATH RULES: Compare current weight, target weight, and target_deadline_days!
+    - For Weight / Muscle Gain: Natural clean bulk lean gain rate is max 1.0 - 1.5 kg per month (0.25 - 0.35 kg/week). Gaining more than 2.0 kg/month of lean tissue is biologically unrealistic (it would be mostly excess fat). If user wants to gain e.g. 15 kg in 60 days, that is 7.5 kg/month — is_timeframe_realistic MUST be FALSE! In honest_assessment, explain gently as a coach that gaining 15 kg in 60 days isn't realistic or healthy, that ~2.5–3.5 kg of lean mass in 60 days is a solid realistic target, and that reaching the full goal safely will take 10–12 months.
+    - For Fat Loss: Safe fat loss is max 0.5 - 1.0 kg/week (~3.0 - 4.0 kg/month). Losing > 4.5 kg/month requires an extreme, unhealthy starvation deficit. If user wants to lose e.g. 15 kg in 60 days, is_timeframe_realistic MUST be FALSE!
+    - If is_timeframe_realistic is false, achievable_in_timeframe must list realistic outcomes that CAN be achieved in the user's deadline.
+    EXTREMELY IMPORTANT: TALK LIKE A FRIENDLY GYM BRO / PERSONAL TRAINER in the honest_assessment. Use words like "Listen bro," "Don't sweat it," "We're gonna crush this." NEVER USE ROBOTIC LANGUAGE!
   - timeline_projection: 3 or 4 objects { timeframe, target_weight_kg, expected_changes }. target_weight_kg must be null when no safe target can be calculated from supplied data. Make "expected_changes" sound human and encouraging!
   - health_and_safety: { has_concerns, safety_verdict, medical_focus_areas }. Set has_concerns to true if the user's profile lists ANY physical_problems, previous_injuries, or exercise_limitations. Keep medical_focus_areas empty if there are no stated concerns. The safety_verdict MUST also use the friendly, human coach tone (e.g., "Since you mentioned knee pain, we're gonna swap heavy squats for safer moves to protect those joints. Safety first!"). Do NOT use robotic clinical language.
   
@@ -406,15 +410,51 @@ export function buildDeterministicStartingReport(
       "Consistent Recovery Sleep",
     ],
     fitness_score: Math.min(92, Math.max(68, Math.round(75 + (daysPerWeek * 2) - (bmi ? Math.abs(bmi - 22) * 1.2 : 0)))),
-    reality_check: {
-      is_timeframe_realistic: true,
-      honest_assessment: `Listen bro, your goal of ${goal.toLowerCase()} is 100% achievable with consistency. We are going to lock in your daily routine and crush this step by step!`,
-      achievable_in_timeframe: [
-        "Consistent workout habit built",
-        "Measurable jump in functional strength",
-        "Clear progress in body composition and energy levels",
-      ],
-    },
+    reality_check: (() => {
+      const diffKg = Math.round(Math.abs(weight - targetWeight) * 10) / 10;
+      const deadlineDays = onboarding.target_deadline_days || 60;
+      const normalizedGoal = goal.toLowerCase();
+      const isGain = normalizedGoal.includes("gain") || normalizedGoal.includes("bulk") || targetWeight > weight;
+      const isLoss = normalizedGoal.includes("loss") || normalizedGoal.includes("cut") || targetWeight < weight;
+      const monthlyRate = diffKg > 0 && deadlineDays > 0 ? (diffKg / deadlineDays) * 30.4 : 0;
+      const isUnrealistic = diffKg >= 4 && ((isGain && monthlyRate > 2.0) || (isLoss && monthlyRate > 4.5));
+
+      if (isUnrealistic) {
+        if (isGain) {
+          return {
+            is_timeframe_realistic: false,
+            honest_assessment: `Listen bro, gaining ${diffKg} kg in ${deadlineDays} days isn't realistic or healthy—trying to gain that fast would mostly build unwanted body fat. In your ${deadlineDays}-day window, a clean, realistic target is ~2.5 to 3.5 kg of solid lean mass. Reaching ${targetWeight} kg safely is a longer journey, and we're locking in the foundation right now!`,
+            achievable_in_timeframe: [
+              "Gain ~2.5 to 3.5 kg of solid lean muscle safely",
+              "Measurable jump in functional lifting strength and stamina",
+              "Consistent high-protein nutrition routine without force-feeding",
+              `Clear foundation laid for your full ${targetWeight} kg goal`,
+            ],
+          };
+        } else {
+          return {
+            is_timeframe_realistic: false,
+            honest_assessment: `Listen bro, dropping ${diffKg} kg in ${deadlineDays} days requires an extreme, unhealthy deficit that burns muscle. In your ${deadlineDays}-day window, dropping ~5 to 7 kg of pure fat is a much safer, sustainable target. We're gonna lock in your daily routine and crush this step by step!`,
+            achievable_in_timeframe: [
+              "Drop ~5 to 7 kg of pure body fat safely",
+              "Maintain lean muscle and active metabolic rate",
+              "Build consistent daily activity and nutrition habits",
+              "Noticeable reduction in waistline and visceral fat",
+            ],
+          };
+        }
+      }
+
+      return {
+        is_timeframe_realistic: true,
+        honest_assessment: `Listen bro, your goal of ${normalizedGoal.includes("gain") ? "gaining weight" : normalizedGoal.includes("lose") ? "losing fat" : normalizedGoal} is 100% achievable with consistency. We are going to lock in your daily routine and crush this step by step!`,
+        achievable_in_timeframe: [
+          "Consistent workout habit built",
+          "Measurable jump in functional strength",
+          "Clear progress in body composition and energy levels",
+        ],
+      };
+    })(),
     timeline_projection: [
       { timeframe: "Month 1", target_weight_kg: weight, expected_changes: "Noticeable boost in energy, workout stamina, and sleep quality." },
       { timeframe: "Month 2", target_weight_kg: targetWeight ? Math.round((weight + targetWeight) / 2) : weight, expected_changes: "Shirts fitting better, muscles feeling firmer, consistent strength gains." },
