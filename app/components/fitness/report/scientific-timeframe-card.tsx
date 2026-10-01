@@ -253,12 +253,14 @@ export function ScientificTimeframeCard({
         takeaway: "End of Phase 1: Noticeable body recomposition. Caloric check-in to prepare Phase 2.",
       });
 
-      if (diffKg > 12) {
-        const p2Loss = Math.round(diffKg * 0.65 * 10) / 10;
+      if (totalMonths > 6) {
+        // At Month 6 (6 months of steady, safe sports science deficit):
+        // 6 months * monthlyRate (3.2 kg/mo) = 19.2 kg
+        const p2Loss = Math.min(diffKg - 2, Math.round(6 * monthlyRate * 10) / 10);
         const p2Weight = Math.round((current - p2Loss) * 10) / 10;
         milestones.push({
           stage: "MONTHS 4 – 6",
-          weeks: "Phase 2 (Weeks 13 – 24)",
+          weeks: "Weeks 13 – 26",
           targetWeightKg: p2Weight,
           deltaKg: -p2Loss,
           deltaLabel: `-${p2Loss.toFixed(1)} kg`,
@@ -267,7 +269,7 @@ export function ScientificTimeframeCard({
 
         milestones.push({
           stage: `MONTHS 7 – ${Math.ceil(totalMonths)}`,
-          weeks: "Final Goal Phase",
+          weeks: `Weeks 27 – ${totalWeeks}`,
           targetWeightKg: target,
           deltaKg: -diffKg,
           deltaLabel: `-${diffKg.toFixed(1)} kg`,
@@ -275,9 +277,10 @@ export function ScientificTimeframeCard({
           takeaway: `Reach your ${target} kg goal physique safely while keeping 100% of your hard-earned muscle.`,
         });
       } else {
+        const endMonth = Math.ceil(totalMonths);
         milestones.push({
-          stage: `MONTH 4 – ${Math.ceil(totalMonths)}`,
-          weeks: "Final Goal Phase",
+          stage: endMonth === 4 ? "MONTH 4" : `MONTHS 4 – ${endMonth}`,
+          weeks: `Weeks 13 – ${totalWeeks}`,
           targetWeightKg: target,
           deltaKg: -diffKg,
           deltaLabel: `-${diffKg.toFixed(1)} kg`,
@@ -381,27 +384,39 @@ export function ScientificTimeframeCard({
         }
       );
 
-      if (diffKg > 6.0) {
-        const p2Gain = Math.round(diffKg * 0.65 * 10) / 10;
+      if (totalMonths > 6) {
+        // At Month 6 (6 months of steady lean bulk at ~1.3 kg/mo):
+        const p2Gain = Math.min(diffKg - 1, Math.round(6 * monthlyRate * 10) / 10);
         milestones.push({
           stage: "MONTHS 4 – 6",
-          weeks: "Phase 2 (Weeks 13 – 24)",
+          weeks: "Weeks 13 – 26",
           targetWeightKg: Math.round((current + p2Gain) * 10) / 10,
           deltaKg: p2Gain,
           deltaLabel: `+${p2Gain.toFixed(1)} kg`,
           takeaway: "Sustained progressive hypertrophy with periodic deload weeks to safeguard joints.",
         });
-      }
 
-      milestones.push({
-        stage: `MONTHS 7 – ${Math.ceil(totalMonths)}`,
-        weeks: "Final Goal Phase",
-        targetWeightKg: target,
-        deltaKg: diffKg,
-        deltaLabel: `+${diffKg.toFixed(1)} kg`,
-        isFinalGoal: true,
-        takeaway: `Hit your ${target} kg target physique with high lean-tissue ratio and dense athletic structure.`,
-      });
+        milestones.push({
+          stage: `MONTHS 7 – ${Math.ceil(totalMonths)}`,
+          weeks: `Weeks 27 – ${totalWeeks}`,
+          targetWeightKg: target,
+          deltaKg: diffKg,
+          deltaLabel: `+${diffKg.toFixed(1)} kg`,
+          isFinalGoal: true,
+          takeaway: `Hit your ${target} kg target physique with high lean-tissue ratio and dense athletic structure.`,
+        });
+      } else {
+        const endMonth = Math.ceil(totalMonths);
+        milestones.push({
+          stage: endMonth === 4 ? "MONTH 4" : `MONTHS 4 – ${endMonth}`,
+          weeks: `Weeks 13 – ${totalWeeks}`,
+          targetWeightKg: target,
+          deltaKg: diffKg,
+          deltaLabel: `+${diffKg.toFixed(1)} kg`,
+          isFinalGoal: true,
+          takeaway: `Hit your ${target} kg target physique with high lean-tissue ratio and dense athletic structure.`,
+        });
+      }
     }
   }
 
@@ -531,38 +546,38 @@ export function ScientificTimeframeCard({
                 : "border-white/5 bg-[#0D150D]"
             }`}
           >
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <div className="flex items-center gap-2">
+            <div className="flex items-start sm:items-center justify-between gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
                 <span
-                  className={`text-xs font-black tracking-wider uppercase ${
+                  className={`text-xs font-black tracking-wider uppercase whitespace-nowrap ${
                     m.isFinalGoal ? "text-[#ADFF00]" : "text-white"
                   }`}
                 >
                   {m.stage}
                 </span>
-                <span className="text-[10px] font-medium text-gray-400">
+                <span className="text-[11px] font-medium text-gray-400 whitespace-nowrap">
                   ({m.weeks})
                 </span>
                 {m.isPhase1End && (
-                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-bold text-emerald-400 uppercase tracking-wider">
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[9px] font-bold text-emerald-400 uppercase tracking-wider whitespace-nowrap">
                     Phase 1 End
                   </span>
                 )}
                 {m.isFinalGoal && (
-                  <span className="rounded-full bg-[#ADFF00]/20 px-2 py-0.5 text-[9px] font-black text-[#ADFF00] uppercase tracking-wider">
+                  <span className="inline-flex items-center rounded-full bg-[#ADFF00]/20 border border-[#ADFF00]/30 px-2 py-0.5 text-[9px] font-black text-[#ADFF00] uppercase tracking-wider whitespace-nowrap">
                     Final Goal
                   </span>
                 )}
               </div>
 
               {/* Estimated Weight Badge */}
-              <div className="shrink-0 flex items-center gap-1.5">
-                <span className="rounded-full bg-black/50 border border-white/10 px-2.5 py-0.5 text-xs font-black text-white">
+              <div className="shrink-0 flex items-center gap-1.5 whitespace-nowrap pt-0.5 sm:pt-0">
+                <span className="rounded-full bg-black/60 border border-white/10 px-2.5 py-0.5 text-xs font-black text-white whitespace-nowrap">
                   ≈ {m.targetWeightKg} kg
                 </span>
                 {m.deltaLabel && !isMaintain && (
                   <span
-                    className={`text-[10px] font-bold ${
+                    className={`text-[11px] font-bold whitespace-nowrap ${
                       isLoss ? "text-emerald-400" : "text-[#ADFF00]"
                     }`}
                   >
