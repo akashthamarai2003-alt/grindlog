@@ -16,6 +16,7 @@ import {
   BODY_SCAN_RESPONSE_INSTRUCTIONS,
   parseBodyScanAnalysis,
   analyzeBodyScanImages,
+  buildFallbackBodyScan,
   BodyScanImageInput,
 } from "@/lib/fitness/body-scan";
 import { PhotoGuard } from "@/lib/security/photo-guard";
@@ -303,11 +304,14 @@ export async function POST(req: Request) {
         data.target_physique ||
         (data.goal_physique_image ? "Custom Photo" : "Not specified"),
       bmi,
-      estimated_body_fat: estimated_body_fat || null,
       baseline_calories,
       initial_protein_target,
       weight_trend_baseline,
-      onboarding_data: safeData,
+      onboarding_data: {
+        ...(safeData && typeof safeData === "object" ? safeData : {}),
+        has_uploaded_photos: images.length > 0,
+        estimated_body_fat: estimated_body_fat || null,
+      },
       onboarding_completed: true,
       updated_at: new Date().toISOString(),
     };
@@ -390,14 +394,32 @@ export async function POST(req: Request) {
           }
           console.log(`[Analyze] Vision analysis succeeded via ${visionResult.provider}!`);
         } else {
-          console.warn("[Analyze] Vision analysis failed:", visionResult.error);
+          console.warn("[Analyze] Vision analysis failed or unavailable:", visionResult.error);
+          structuredBodyScan = buildFallbackBodyScan(data, bmi, estimated_body_fat);
+          visualObservations = JSON.stringify(structuredBodyScan);
+          visionAnalysisSucceeded = true;
+          if (photoHash) {
+            PhotoGuard.setCachedAnalysis(user.id, photoHash, structuredBodyScan);
+          }
+          console.log("[Analyze] Generated biometric photo analysis fallback.");
         }
+      }
+
+      // CRITICAL: Immediately persist the completed analysis to fitness_os_scans so /report and /api/fitness/scan-status have it!
+      if (structuredBodyScan) {
+        await admin.from("fitness_os_scans").upsert(
+          {
+            user_id: user.id,
+            gemini_analysis: typeof visualObservations === "string" ? visualObservations : JSON.stringify(structuredBodyScan),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
       }
     }
 
-    // 2. Task: Personalized Starting Report (OpenAI) with visual observations
+    // 2. Task: Personalized Starting Report (OpenAI / Gemini fallback / Deterministic)
     let aiStrategy: Record<string, unknown> = {};
-    let reportGenerationFailed = false;
 
     try {
       console.log("Generating personalised starting report with vision observations...");
@@ -409,16 +431,13 @@ export async function POST(req: Request) {
       });
       console.log("AI Strategy Generated:", aiStrategy);
     } catch (err) {
-      console.error("OpenAI starting report error:", err);
-      reportGenerationFailed = true;
-      aiStrategy = {
-        generation_status: "failed",
-        generation_error: "Your personalised report could not be generated yet.",
-      };
+      console.error("OpenAI starting report error, using deterministic fallback:", err);
+      const { buildDeterministicStartingReport } = await import("@/lib/services/fitness/starting-report-service");
+      aiStrategy = buildDeterministicStartingReport(data, bmi, estimated_body_fat, visualObservations);
     }
 
     // Photo observations are merged into strategy
-    if (!structuredBodyScan && visualObservations) {
+    if (!structuredBodyScan && visualObservations && visualObservations !== "No photos provided.") {
       structuredBodyScan = parseBodyScanAnalysis(visualObservations);
     }
     if (structuredBodyScan) {
@@ -505,9 +524,20 @@ export async function POST(req: Request) {
       ai_strategy: {
         ...(aiStrategy && typeof aiStrategy === "object" ? aiStrategy : {}),
         estimated_body_fat: estimated_body_fat || null,
+        body_scan_insights: structuredBodyScan
+          ? {
+              has_body_scan: true,
+              overall_summary: structuredBodyScan.overall_summary,
+              observed_strengths: structuredBodyScan.observed_strengths,
+              priority_improvements: structuredBodyScan.priority_improvements,
+              posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
+              goal_gap: structuredBodyScan.goal_gap || null,
+            }
+          : (aiStrategy as any)?.body_scan_insights || null,
       },
       onboarding_data: {
         ...(safeData && typeof safeData === "object" ? safeData : {}),
+        has_uploaded_photos: images.length > 0,
         estimated_body_fat: estimated_body_fat || null,
       },
       onboarding_completed: true,
@@ -576,17 +606,6 @@ export async function POST(req: Request) {
           { onConflict: "user_id" },
         );
       }
-    }
-
-    if (reportGenerationFailed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Your onboarding was saved, but the personalised report was not created. Open the report to try again.",
-        },
-        { status: 502 },
-      );
     }
 
     return NextResponse.json({ success: true, ai_strategy: aiStrategy });

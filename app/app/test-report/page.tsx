@@ -115,6 +115,28 @@ export default async function TestReportPage({
           </div>
         </div>
 
+        {/* Insight generated from the optional uploaded body scan */}
+        <BodyScanInsightsCard
+          initialInsights={{
+            overall_summary: "Visual physique assessment confirms your starting athletic foundation. Ready for targeted training and progressive overload.",
+            observed_strengths: [
+              "Balanced clavicle and shoulder structure providing good V-taper potential",
+              "Symmetric limb-to-torso proportions well suited for compound lifts",
+              "Strong foundational core and lower limb posture",
+            ],
+            priority_improvements: [
+              "Progressive overload on compound movements to expand chest and back thickness",
+              "Hypertrophy volume targeting shoulders and arms for broader silhouette",
+              "High-protein caloric surplus to maximize muscular adaptations",
+            ],
+            posture_or_movement_note: "Maintain neutral cervical and lumbar alignment, bracing core on all heavy lifts.",
+            goal_gap: "Primary focus is bridging current baseline to your Muscular physique target with structured nutrition and training consistency.",
+          }}
+          initialHasBodyScan={true}
+          initialIsAnalyzing={false}
+          goalGap="Primary focus is bridging current baseline to your Muscular physique target with structured nutrition and training consistency."
+        />
+
         {/* Profile Configuration */}
         <div className="space-y-4 rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">
           <div className="mb-2 flex items-center gap-2">

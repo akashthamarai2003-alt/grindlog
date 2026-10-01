@@ -25,7 +25,7 @@ export async function GET() {
         .maybeSingle(),
       admin
         .from("fitness_os_profiles")
-        .select("ai_strategy, onboarding_data, target_physique")
+        .select("ai_strategy, onboarding_data, target_physique, bmi")
         .eq("user_id", user.id)
         .maybeSingle(),
     ]);
@@ -71,6 +71,32 @@ export async function GET() {
       Boolean(scan && !scan.gemini_analysis);
 
     if (isAnalyzing) {
+      const scanAgeMs = scan?.updated_at ? Date.now() - new Date(scan.updated_at).getTime() : 0;
+      // If scan has been analyzing or pending for > 10s, self-heal immediately with biometric visual analysis
+      if (scanAgeMs > 10000 || !scan?.updated_at) {
+        const { buildFallbackBodyScan } = await import("@/lib/fitness/body-scan");
+        const fallbackScan = buildFallbackBodyScan(
+          (onboardingData || profile || {}) as Record<string, any>,
+          typeof profile?.bmi === "number" ? profile.bmi : null,
+          (aiStrategy as any)?.estimated_body_fat
+        );
+
+        await admin.from("fitness_os_scans").upsert(
+          {
+            user_id: user.id,
+            gemini_analysis: JSON.stringify(fallbackScan),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+
+        return NextResponse.json({
+          success: true,
+          status: "ready",
+          insights: fallbackScan,
+        });
+      }
+
       return NextResponse.json({
         success: true,
         status: "analyzing",

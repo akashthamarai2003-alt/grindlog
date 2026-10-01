@@ -13,7 +13,20 @@ test.describe("GrindLog Report & Plan Setup Flow Verification", () => {
     await expect(page.getByText("76.5 kg")).toBeVisible();
     await expect(page.getByRole("paragraph").filter({ hasText: "80 kg" })).toBeVisible();
     await expect(page.getByText("Build Muscle")).toBeVisible();
-    await expect(page.getByText("Muscular")).toBeVisible();
+    await expect(page.getByText("Muscular", { exact: true })).toBeVisible();
+  });
+
+  // ── BODY SCAN PHOTO INSIGHTS ──
+  test("Report: Displays Body Scan Insights card with visible observations, strengths, and priorities", async ({ page }) => {
+    await page.goto("/test-report?subscribed=1");
+
+    await expect(page.getByText("Your body scan insights")).toBeVisible();
+    await expect(page.getByText("What the uploaded photos show")).toBeVisible();
+    await expect(page.getByText("What I notice")).toBeVisible();
+    await expect(page.getByText(/Visual physique assessment confirms your starting athletic foundation/i)).toBeVisible();
+    await expect(page.getByText("Your first priorities")).toBeVisible();
+    await expect(page.getByText("Posture & alignment observation")).toBeVisible();
+    await expect(page.getByText("Goal direction & gap")).toBeVisible();
   });
 
   // ── 2. REPORT PAGE: PERSONAL TARGETS & FITNESS SCORE ──

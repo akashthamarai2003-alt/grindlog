@@ -4,6 +4,7 @@ import {
   FITNESS_REPORT_MODEL,
   generateOpenAIResponseJSON,
 } from "@/lib/services/openai/client";
+import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
 
 const StartingReportSchema = z.object({
   body_scan_insights: z.object({
@@ -174,6 +175,7 @@ function hasUsableBodyScan(raw: string): boolean {
   return Boolean(
     value &&
       value !== "No photos provided." &&
+      value !== "ANALYZING" &&
       !value.includes('"error"') &&
       !value.includes("Gemini Vision API Error"),
   );
@@ -294,42 +296,56 @@ export async function generateStartingReport({
     try {
       const { GoogleGenAI } = await import("@google/genai");
       const gemini = new GoogleGenAI({ apiKey: geminiApiKey });
-      const geminiTimeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Gemini call exceeded 4s limit")), 4000)
-      );
-      const geminiPromise = gemini.models.generateContent({
-        model: process.env.GEMINI_REPORT_MODEL || "gemini-2.0-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { text: `${systemPrompt}\n\nIMPORTANT: Return a single valid JSON object following the required schema.\n\n${reportPrompt}` }
-            ]
+      const candidateModels = [
+        process.env.GEMINI_REPORT_MODEL?.trim(),
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-flash-lite-latest",
+      ].filter((m): m is string => Boolean(m));
+
+      for (const model of candidateModels) {
+        try {
+          const geminiTimeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Gemini call exceeded 4s limit")), 4000)
+          );
+          const geminiPromise = gemini.models.generateContent({
+            model,
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { text: `${systemPrompt}\n\nIMPORTANT: Return a single valid JSON object following the required schema.\n\n${reportPrompt}` }
+                ]
+              }
+            ],
+            config: {
+              temperature: 0.2,
+              responseMimeType: "application/json",
+            }
+          });
+          const geminiResponse = await Promise.race([geminiPromise, geminiTimeout]);
+          const rawText = geminiResponse?.text?.trim() || "";
+          let parsedJson: any;
+          try {
+            parsedJson = JSON.parse(rawText);
+          } catch {
+            const match = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+            if (match) parsedJson = JSON.parse(match[1].trim());
           }
-        ],
-        config: {
-          temperature: 0.2,
-          responseMimeType: "application/json",
-        }
-      });
-      const geminiResponse = await Promise.race([geminiPromise, geminiTimeout]);
-      const rawText = geminiResponse?.text?.trim() || "";
-      let parsedJson: any;
-      try {
-        parsedJson = JSON.parse(rawText);
-      } catch {
-        const match = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        if (match) parsedJson = JSON.parse(match[1].trim());
-      }
-      if (parsedJson) {
-        const geminiParsed = StartingReportSchema.safeParse(parsedJson);
-        if (geminiParsed.success) {
-          console.info("[StartingReport] Successfully generated starting report via Gemini fallback!");
-          return geminiParsed.data;
+          if (parsedJson) {
+            const geminiParsed = StartingReportSchema.safeParse(parsedJson);
+            if (geminiParsed.success) {
+              console.info(`[StartingReport] Successfully generated starting report via Gemini (${model})!`);
+              return geminiParsed.data;
+            }
+          }
+        } catch (modelErr: any) {
+          console.warn(`[StartingReport] Gemini model ${model} failed:`, modelErr?.message || modelErr);
         }
       }
     } catch (geminiErr: any) {
-      console.warn("[StartingReport] Gemini fallback failed:", geminiErr?.message);
+      console.warn("[StartingReport] Gemini fallback initialization failed:", geminiErr?.message);
     }
   }
 
@@ -338,7 +354,7 @@ export async function generateStartingReport({
   return buildDeterministicStartingReport(onboarding, bmi, estimatedBodyFat, visualObservations);
 }
 
-function buildDeterministicStartingReport(
+export function buildDeterministicStartingReport(
   onboarding: Partial<OnboardingData>,
   bmi: number | null,
   estimatedBodyFat: number | null,
@@ -352,17 +368,22 @@ function buildDeterministicStartingReport(
   const location = onboarding.training_location || "Gym";
 
   const hasPhotos = hasUsableBodyScan(visualObservations);
+  const parsedDirectScan = parseBodyScanAnalysis(visualObservations);
 
   return {
     body_scan_insights: {
       has_body_scan: hasPhotos,
-      overall_summary: hasPhotos
+      overall_summary: parsedDirectScan?.overall_summary || (hasPhotos
         ? "Visual assessment indicates a solid athletic foundation ready for progressive overload."
-        : "No photos provided. Starting baseline built from your self-reported measurements.",
-      observed_strengths: ["Solid frame and foundation", "High readiness for training"],
-      priority_improvements: ["Progressive strength adaptation", "Nutritional consistency"],
-      posture_or_movement_note: "Prioritize core stabilization and neutral spine on compound lifts.",
-      goal_gap: targetWeight ? `Target goal is ${targetWeight}kg from current ${weight}kg.` : null,
+        : "No photos provided. Starting baseline built from your self-reported measurements."),
+      observed_strengths: (parsedDirectScan?.observed_strengths && parsedDirectScan.observed_strengths.length > 0)
+        ? parsedDirectScan.observed_strengths
+        : (hasPhotos ? ["Solid frame and foundation", "High readiness for training"] : []),
+      priority_improvements: (parsedDirectScan?.priority_improvements && parsedDirectScan.priority_improvements.length > 0)
+        ? parsedDirectScan.priority_improvements
+        : ["Progressive strength adaptation", "Nutritional consistency"],
+      posture_or_movement_note: parsedDirectScan?.posture_or_movement_note || "Prioritize core stabilization and neutral spine on compound lifts.",
+      goal_gap: parsedDirectScan?.goal_gap || (targetWeight ? `Target goal is ${targetWeight}kg from current ${weight}kg.` : null),
     },
     first_two_weeks: {
       training_start: `Establish movement rhythm with ${daysPerWeek} training days at ${location}, dialing in form.`,

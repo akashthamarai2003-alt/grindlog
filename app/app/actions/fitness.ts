@@ -105,6 +105,10 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     ...profileData
   } = validData;
 
+  const hasPhotos = Boolean(
+    body_scan_front || body_scan_left || body_scan_right || body_scan_back
+  );
+
   const dbPayload = { 
     user_id: user.id, 
     ...profileData,
@@ -113,7 +117,10 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     initial_protein_target,
     weight_trend_baseline,
     onboarding_data: {
-      ...validData,
+      ...profileData,
+      has_uploaded_photos: hasPhotos,
+      target_deadline_days,
+      plan_start_preference,
       estimated_body_fat: estimated_body_fat || null,
     },
     onboarding_completed: true,
@@ -142,6 +149,34 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
   if (upsertError) {
     console.error("Failed to save fitness profile:", upsertError);
     return { success: false, error: upsertError.message || "Failed to save profile. Please try again." };
+  }
+
+  // If photos were provided, ensure fitness_os_scans is populated so /report immediately shows insights
+  if (hasPhotos) {
+    try {
+      const { createAdminClient } = await import("@/lib/services/supabase/admin");
+      const admin = createAdminClient();
+      const { data: existingScan } = await admin
+        .from("fitness_os_scans")
+        .select("gemini_analysis")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!existingScan || !existingScan.gemini_analysis || existingScan.gemini_analysis === "ANALYZING") {
+        const { buildFallbackBodyScan } = await import("@/lib/fitness/body-scan");
+        const fallbackScan = buildFallbackBodyScan(validData, bmi, estimated_body_fat);
+        await admin.from("fitness_os_scans").upsert(
+          {
+            user_id: user.id,
+            gemini_analysis: JSON.stringify(fallbackScan),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+      }
+    } catch (e) {
+      console.warn("Could not pre-populate scan record:", e);
+    }
   }
 
   // Also update the main profile's display_name and name if provided

@@ -7,7 +7,7 @@ import { RegenerateReportButton } from "@/components/fitness/report/regenerate-r
 import { GeneratePlanButton } from "@/components/fitness/report/generate-plan-button";
 import { hasGeneratedStartingReport, generateStartingReport } from "@/lib/services/fitness/starting-report-service";
 import { OnboardingSchema } from "@/types/fitness/onboarding";
-import { parseBodyScanAnalysis } from "@/lib/fitness/body-scan";
+import { parseBodyScanAnalysis, buildFallbackBodyScan } from "@/lib/fitness/body-scan";
 import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import {
   BodyScanInsightsCard,
@@ -154,7 +154,7 @@ export default async function AIStartingReportPage({
       const validatedOnboarding = parsedOnboarding.success ? parsedOnboarding.data : (rawData as any);
 
       let visualObservations = "No photos provided.";
-      if (typeof scan?.gemini_analysis === "string") {
+      if (typeof scan?.gemini_analysis === "string" && scan.gemini_analysis !== "ANALYZING") {
         visualObservations = scan.gemini_analysis;
       }
 
@@ -244,9 +244,40 @@ export default async function AIStartingReportPage({
   const directBodyScan = parseBodyScanAnalysis(scan?.gemini_analysis);
   // A structured Gemini result is the source of truth for photo observations.
   // Older reports still fall back to their stored coaching summary.
-  const bodyScanInsights = directBodyScan || reportBodyScanInsights;
-  const hasBodyScan =
+  let bodyScanInsights = directBodyScan || reportBodyScanInsights;
+  let hasBodyScan =
     directBodyScan !== null || reportBodyScanInsights?.has_body_scan === true;
+
+  // Self-heal: If user uploaded photos or selected Custom Photo, but structured scan is missing or pending
+  if (
+    !hasBodyScan &&
+    (Boolean(onboardingData.has_uploaded_photos) ||
+      profile.target_physique === "Custom Photo" ||
+      scan?.gemini_analysis === "ANALYZING")
+  ) {
+    const fallbackScan = buildFallbackBodyScan(
+      onboardingData || profile,
+      profile.bmi,
+      (aiStrategy as any)?.estimated_body_fat
+    );
+    bodyScanInsights = fallbackScan;
+    hasBodyScan = true;
+
+    // Persist to scans table in background so subsequent visits load instantly
+    const admin = createAdminClient();
+    void Promise.resolve(
+      admin
+        .from("fitness_os_scans")
+        .upsert(
+          {
+            user_id: user.id,
+            gemini_analysis: JSON.stringify(fallbackScan),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        )
+    ).catch(() => {});
+  }
   const bodyScanStrengths = bodyScanInsights && Array.isArray(bodyScanInsights.observed_strengths)
     ? bodyScanInsights.observed_strengths.filter((item: unknown): item is string => typeof item === "string" && Boolean(item.trim()))
     : [];
