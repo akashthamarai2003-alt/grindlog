@@ -133,7 +133,13 @@ export async function POST() {
     const aiStrategy = await generateStartingReport({
       onboarding: validatedOnboarding,
       bmi: typeof profile.bmi === "number" ? profile.bmi : null,
-      estimatedBodyFat: typeof profile.estimated_body_fat === "number" ? profile.estimated_body_fat : null,
+      estimatedBodyFat: typeof (profile as any).estimated_body_fat === "number" 
+        ? (profile as any).estimated_body_fat 
+        : (typeof (profile.ai_strategy as any)?.estimated_body_fat === "number" 
+            ? (profile.ai_strategy as any).estimated_body_fat 
+            : (typeof (profile.onboarding_data as any)?.estimated_body_fat === "number" 
+                ? (profile.onboarding_data as any).estimated_body_fat 
+                : null)),
       visualObservations,
     });
 

@@ -161,7 +161,13 @@ export default async function AIStartingReportPage({
       const generated = await generateStartingReport({
         onboarding: validatedOnboarding,
         bmi: typeof profile.bmi === "number" ? profile.bmi : null,
-        estimatedBodyFat: typeof profile.estimated_body_fat === "number" ? profile.estimated_body_fat : null,
+        estimatedBodyFat: typeof (profile as any).estimated_body_fat === "number" 
+          ? (profile as any).estimated_body_fat 
+          : (typeof (aiStrategy as any)?.estimated_body_fat === "number" 
+              ? (aiStrategy as any).estimated_body_fat 
+              : (typeof (profile.onboarding_data as any)?.estimated_body_fat === "number" 
+                  ? (profile.onboarding_data as any).estimated_body_fat 
+                  : null)),
         visualObservations,
       });
 

@@ -92,7 +92,7 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
 
   const weight_trend_baseline = validData.weight || null;
 
-  // Strip raw base64 image strings to avoid bloating fitness_os_profiles
+  // Strip raw base64 image strings and non-column fields to avoid schema cache errors
   const {
     body_scan_front,
     body_scan_left,
@@ -100,26 +100,30 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     body_scan_back,
     goal_physique_image,
     body_scan_inspiration,
+    target_deadline_days,
+    plan_start_preference,
     ...profileData
   } = validData;
+
+  const dbPayload = { 
+    user_id: user.id, 
+    ...profileData,
+    bmi,
+    baseline_calories,
+    initial_protein_target,
+    weight_trend_baseline,
+    onboarding_data: {
+      ...validData,
+      estimated_body_fat: estimated_body_fat || null,
+    },
+    onboarding_completed: true,
+    updated_at: new Date().toISOString()
+  };
 
   // Insert or Update logic based on UNIQUE user_id
   let { error: upsertError } = await supabase
     .from("fitness_os_profiles")
-    .upsert(
-      { 
-        user_id: user.id, 
-        ...profileData,
-        bmi,
-        estimated_body_fat: estimated_body_fat || null,
-        baseline_calories,
-        initial_protein_target,
-        weight_trend_baseline,
-        onboarding_completed: true,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "user_id" }
-    );
+    .upsert(dbPayload, { onConflict: "user_id" });
 
   if (upsertError) {
     console.warn("Failed to save fitness profile with user client, attempting admin client:", upsertError);
@@ -128,20 +132,7 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
       const admin = createAdminClient();
       const adminRes = await admin
         .from("fitness_os_profiles")
-        .upsert(
-          { 
-            user_id: user.id, 
-            ...profileData,
-            bmi,
-            estimated_body_fat: estimated_body_fat || null,
-            baseline_calories,
-            initial_protein_target,
-            weight_trend_baseline,
-            onboarding_completed: true,
-            updated_at: new Date().toISOString()
-          },
-          { onConflict: "user_id" }
-        );
+        .upsert(dbPayload, { onConflict: "user_id" });
       upsertError = adminRes.error;
     } catch (adminFallbackErr) {
       console.error("Admin client fallback error:", adminFallbackErr);
@@ -150,7 +141,7 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
 
   if (upsertError) {
     console.error("Failed to save fitness profile:", upsertError);
-    return { success: false, error: "Failed to save profile. Please try again." };
+    return { success: false, error: upsertError.message || "Failed to save profile. Please try again." };
   }
 
   // Also update the main profile's display_name and name if provided

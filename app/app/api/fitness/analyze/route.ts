@@ -499,12 +499,17 @@ export async function POST(req: Request) {
 
       // Computed Data
       bmi,
-      estimated_body_fat: estimated_body_fat || null,
       baseline_calories,
       initial_protein_target,
       weight_trend_baseline,
-      ai_strategy: aiStrategy,
-      onboarding_data: safeData,
+      ai_strategy: {
+        ...(aiStrategy && typeof aiStrategy === "object" ? aiStrategy : {}),
+        estimated_body_fat: estimated_body_fat || null,
+      },
+      onboarding_data: {
+        ...(safeData && typeof safeData === "object" ? safeData : {}),
+        estimated_body_fat: estimated_body_fat || null,
+      },
       onboarding_completed: true,
       updated_at: new Date().toISOString(),
     };
@@ -526,7 +531,7 @@ export async function POST(req: Request) {
     if (upsertError) {
       console.error("Failed to save fitness profile:", upsertError);
       return NextResponse.json(
-        { success: false, error: "Failed to save profile." },
+        { success: false, error: upsertError.message || "Failed to save profile." },
         { status: 500 },
       );
     }
