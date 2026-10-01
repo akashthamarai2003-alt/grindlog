@@ -104,40 +104,9 @@ export default async function AIStartingReportPage({
         .eq("user_id", user.id);
       profile.onboarding_completed = true;
     } else {
-      // User is authenticated and reached /report.
-      // NEVER bounce back to /onboarding causing a loop! Upsert baseline profile so the report loads gracefully.
-      const { data: baseProfile } = await admin
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const fallbackName = baseProfile?.display_name || baseProfile?.name || user.user_metadata?.full_name || "Athlete";
-      const fallbackPayload = {
-        user_id: user.id,
-        name: fallbackName,
-        fitness_level: "beginner",
-        goal: "muscle_gain",
-        gender: "male",
-        age: 25,
-        height: 175,
-        weight: 70,
-        target_weight: 72,
-        onboarding_completed: true,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data: createdProfile } = await admin
-        .from("fitness_os_profiles")
-        .upsert(fallbackPayload, { onConflict: "user_id" })
-        .select()
-        .maybeSingle();
-
-      if (createdProfile) {
-        profile = createdProfile;
-      } else {
-        profile = { ...fallbackPayload, id: user.id } as any;
-      }
+      // User has not completed onboarding and has no saved onboarding data.
+      // Redirect them to onboarding so they can set up their profile properly.
+      redirect("/onboarding");
     }
   }
 

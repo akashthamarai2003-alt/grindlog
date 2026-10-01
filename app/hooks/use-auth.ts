@@ -306,6 +306,11 @@ export function useAuth() {
 
 
   const signOutUser = async () => {
+    try {
+      localStorage.removeItem("grindlog_onboarding_completed");
+      localStorage.removeItem("grindlog_onboarding_step");
+      localStorage.removeItem("grindlog_onboarding_draft");
+    } catch {}
     await supabase.auth.signOut();
     cachedProfile = null;
     cachedUserId = null;

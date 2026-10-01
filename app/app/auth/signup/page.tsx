@@ -95,6 +95,13 @@ function SignUpContent() {
       if (result.requiresConfirmation) {
         setConfirmationNeeded(true);
       } else {
+        // Clear any stale onboarding data from previous sessions or deleted accounts on this browser
+        try {
+          localStorage.removeItem("grindlog_onboarding_completed");
+          localStorage.removeItem("grindlog_onboarding_step");
+          localStorage.removeItem("grindlog_onboarding_draft");
+        } catch {}
+
         // Full document navigation ensures all cookies in document.cookie
         // are sent in the HTTP request headers to middleware and SSR /onboarding,
         // avoiding Next.js client router cache race condition where user is seen as null.

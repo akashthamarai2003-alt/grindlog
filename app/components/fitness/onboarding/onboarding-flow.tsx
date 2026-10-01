@@ -164,7 +164,7 @@ export function OnboardingFlow({
   initialStep,
   redirectTo = "/report"
 }: { 
-  initialData?: Partial<OnboardingData>, 
+  initialData?: Partial<OnboardingData> & { onboarding_completed?: boolean }, 
   sessionId?: string,
   isEditing?: boolean,
   initialStep?: number,
@@ -191,11 +191,19 @@ export function OnboardingFlow({
   useEffect(() => {
     if (isEditing || initialStep !== undefined) return;
     try {
-      const isCompleted = localStorage.getItem("grindlog_onboarding_completed");
-      if (isCompleted === "true") {
-        window.location.href = redirectTo || "/report";
+      // If this user has not completed onboarding in the database, clear any stale completed flag
+      if (!initialData?.onboarding_completed) {
+        localStorage.removeItem("grindlog_onboarding_completed");
+      }
+
+      // If user is brand new (no saved profile in DB), clear stale draft and step from previous accounts
+      const isBrandNewUser = !initialData?.name && !initialData?.weight && !initialData?.goal;
+      if (isBrandNewUser) {
+        localStorage.removeItem("grindlog_onboarding_step");
+        localStorage.removeItem("grindlog_onboarding_draft");
         return;
       }
+
       const savedStep = localStorage.getItem("grindlog_onboarding_step");
       const savedData = localStorage.getItem("grindlog_onboarding_draft");
       if (savedData) {
@@ -211,7 +219,7 @@ export function OnboardingFlow({
         }
       }
     } catch {}
-  }, [isEditing, initialStep, redirectTo]);
+  }, [isEditing, initialStep, initialData]);
 
   // Save current step and form draft on every change
   useEffect(() => {
