@@ -34,6 +34,7 @@ import {
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { DEFAULT_PRICING, PlanPricingConfig } from "@/lib/constants/pricing";
 import { LuckyWheelModal } from "@/components/fitness/subscription/lucky-wheel-modal";
+import { LokiProActivation } from "@/components/fitness/payment/loki-pro-activation";
 
 const features = [
   { icon: Target, label: "Personalized 7-day plan", core: true, pro: true },
@@ -165,6 +166,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   const [isPolling, setIsPolling] = useState(false);
   const [paymentOrderId, setPaymentOrderId] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   // Pre-seed pricing directly from server props so there is ZERO flash of wrong amounts
   const [pricingConfig, setPricingConfig] = useState<PlanPricingConfig>(initialPricing || DEFAULT_PRICING);
   const [isLoadingPrices, setIsLoadingPrices] = useState(!initialPricing);
@@ -292,14 +294,34 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
     }
   }, [currentPremiumInfo, isPlanGenerationIntent, isUpgradeIntent, premiumStatusLoaded]);
 
-  // Reliable redirect effect
+  const handleFinishCelebration = useCallback(() => {
+    sessionStorage.removeItem("fitness_pending_order");
+    sessionStorage.removeItem("payment_in_progress");
+    const separator = returnTo.includes("?") ? "&" : "?";
+    window.location.href = `${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`;
+  }, [returnTo, paymentOrderId]);
+
+  // Background pre-fetch AI draft plan while the 10-second Loki celebration is active
   useEffect(() => {
-    if (isSuccess) {
+    if (showCelebration && returnTo.includes("/plan-setup")) {
+      fetch("/api/fitness-ai/generate-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ retry: true }),
+      }).catch((err) => {
+        console.warn("Background draft pre-generation failed to initiate:", err);
+      });
+    }
+  }, [showCelebration, returnTo]);
+
+  // Reliable redirect effect for instant cases without celebration (e.g. already active subscription returning)
+  useEffect(() => {
+    if (isSuccess && !showCelebration) {
       sessionStorage.removeItem("fitness_pending_order");
       const separator = returnTo.includes("?") ? "&" : "?";
       window.location.href = `${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`;
     }
-  }, [isSuccess, returnTo, paymentOrderId]);
+  }, [isSuccess, showCelebration, returnTo, paymentOrderId]);
 
   // Robust polling that survives modal dismissal or external redirect
   useEffect(() => {
@@ -321,6 +343,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
       (paymentOrderId ? isFitnessOrderSettled(paymentOrderId) : Promise.resolve(false)).then((isPremium) => {
         if (cancelled) return;
         if (isPremium) {
+          setShowCelebration(true);
           setIsSuccess(true);
           setIsPolling(false);
           setIsProcessing(false);
@@ -367,6 +390,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         if (paymentOrderId) {
           isFitnessOrderSettled(paymentOrderId).then((isSettled) => {
             if (isSettled) {
+              setShowCelebration(true);
               setIsSuccess(true);
               setIsProcessing(false);
               setIsPolling(false);
@@ -425,6 +449,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
           "fitness_os"
         );
         if (verifyRes.success) {
+          setShowCelebration(true);
           setIsSuccess(true);
           setIsProcessing(false);
           sessionStorage.removeItem("payment_in_progress");
@@ -462,6 +487,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
               );
 
             if (verifyRes.success) {
+              setShowCelebration(true);
               setIsSuccess(true);
               setIsPolling(false);
               setIsProcessing(false);
@@ -490,7 +516,10 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
 
             if (orderResponse.orderId) {
               isFitnessOrderSettled(orderResponse.orderId).then((settled) => {
-                if (settled) setIsSuccess(true);
+                if (settled) {
+                  setShowCelebration(true);
+                  setIsSuccess(true);
+                }
               }).catch(() => {});
             }
           },
@@ -521,6 +550,15 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   return (
     <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col relative overflow-hidden pb-[180px]">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+
+      {/* 10-Second Loki Pro Activation Celebration Modal */}
+      {showCelebration && (
+        <LokiProActivation
+          onComplete={handleFinishCelebration}
+          planName={level}
+          orderId={paymentOrderId}
+        />
+      )}
 
       {/* Lucky Wheel Modal */}
       <LuckyWheelModal

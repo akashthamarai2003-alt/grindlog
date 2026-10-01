@@ -94,6 +94,7 @@ export async function updateSession(request: NextRequest) {
     publicPaths.push("/test-onboarding");
     publicPaths.push("/test-report");
     publicPaths.push("/test-plan-setup");
+    publicPaths.push("/test-payment");
   }
 
   const isPublicPath = publicPaths.some(

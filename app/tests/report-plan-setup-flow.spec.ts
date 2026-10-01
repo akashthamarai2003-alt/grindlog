@@ -216,4 +216,41 @@ test.describe("GrindLog Report & Plan Setup Flow Verification", () => {
     await expect(saveBtn).toBeVisible();
   });
 
+  // ── 13. POST-PAYMENT LOKI PRO CELEBRATION MODAL ──
+  test("Post-Payment: Displays Loki Pro 10s Celebration, atomic orbitals, milestones, and Jump button", async ({ page }) => {
+    await page.goto("/test-payment?celebrate=1&plan=pro");
+
+    // Header & mascot
+    await expect(page.getByText("Loki Pro AI Engine")).toBeVisible();
+    await expect(page.getByRole("img", { name: "GrindLog AI" })).toBeVisible();
+
+    // Stage 1 copy
+    await expect(page.getByText(/Payment Verified • PRO Unlocked/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Welcome to Pro Tier/i })).toBeVisible();
+
+    // 3 Milestones
+    await expect(page.getByText("Payment", { exact: true })).toBeVisible();
+    await expect(page.getByText("Metabolism", { exact: true })).toBeVisible();
+    await expect(page.getByText("Mesocycle", { exact: true })).toBeVisible();
+
+    // Jump button
+    const jumpBtn = page.getByRole("button", { name: /Jump to Plan Now/i });
+    await expect(jumpBtn).toBeVisible();
+    await jumpBtn.click();
+
+    // Verify redirected completion state
+    await expect(page.getByText("Celebration Completed!")).toBeVisible();
+  });
+
+  // ── 14. POST-PAYMENT LOKI CELEBRATION SKIP BUTTON ──
+  test("Post-Payment: Header Skip to Plan button immediately proceeds", async ({ page }) => {
+    await page.goto("/test-payment?celebrate=1&plan=pro");
+
+    const skipBtn = page.getByRole("button", { name: "Skip to Plan" });
+    await expect(skipBtn).toBeVisible();
+    await skipBtn.click();
+
+    await expect(page.getByText("Celebration Completed!")).toBeVisible();
+  });
+
 });
