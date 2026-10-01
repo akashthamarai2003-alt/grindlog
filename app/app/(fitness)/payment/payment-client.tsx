@@ -307,7 +307,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
       fetch("/api/fitness-ai/generate-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ retry: true }),
+        body: JSON.stringify({ retry: false }),
       }).catch((err) => {
         console.warn("Background draft pre-generation failed to initiate:", err);
       });

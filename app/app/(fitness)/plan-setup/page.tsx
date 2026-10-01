@@ -290,7 +290,8 @@ export default function PlanSetupPage() {
     );
     const isRenew = typeof window !== "undefined" && window.location.search.includes("renew=true");
     
-    requestPlanDraft({ retry: isReturningFromUpgrade, renew: isRenew })
+    // Never force retry: true on initial mount; allow in-flight background generation from payment or cached draft to resolve cleanly without double API calls
+    requestPlanDraft({ retry: false, renew: isRenew })
       .then((res) => {
         if (!isMounted) return;
         setPlanData(res.data);
