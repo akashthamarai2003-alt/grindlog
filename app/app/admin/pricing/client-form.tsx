@@ -274,33 +274,179 @@ export default function PricingClientForm({
       )}
 
       {/* Plan Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {PLAN_METADATA.map((plan) => {
-          const coreData = pricing[plan.key].core;
-          const proData = pricing[plan.key].pro;
+      {appFilter === "fitness" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Core Plan Card */}
+          <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="px-5 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">⚡</span>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Core Plan</h3>
+                  <p className="text-[11px] text-gray-500 font-medium">Monthly Plan • Workouts, Macros & Calorie Tracking</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-gray-600 bg-gray-200/80 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                Base Tier
+              </span>
+            </div>
 
-          return (
-            <div key={plan.key} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-              {/* Card Header */}
-              <div className="px-5 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{plan.emoji}</span>
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900">{plan.title}</h3>
-                    <p className="text-[10px] text-gray-500 font-medium">{plan.period}</p>
+            <div className="p-6 space-y-4 flex-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 block mb-1.5">
+                    Original Price (~~₹~~)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">₹</span>
+                    <input
+                      type="number"
+                      value={pricing.monthly.core.originalPrice ?? ""}
+                      onChange={(e) => handlePriceChange("monthly", "core", "originalPrice", e.target.value)}
+                      placeholder="e.g. 59"
+                      className="w-full pl-7 pr-3 py-2 text-sm font-bold bg-gray-50 border border-gray-200 rounded-xl text-gray-500 line-through outline-none focus:border-green-500 focus:bg-white transition-all"
+                    />
                   </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Strikethrough base price</p>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-green-700 block mb-1.5">
+                    Offer Price (₹)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-green-600">₹</span>
+                    <input
+                      type="number"
+                      value={pricing.monthly.core.price ?? ""}
+                      onChange={(e) => handlePriceChange("monthly", "core", "price", e.target.value)}
+                      placeholder="e.g. 19"
+                      className="w-full pl-7 pr-3 py-2 text-sm font-black bg-green-50/60 border border-green-300 rounded-xl text-green-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:bg-white transition-all"
+                    />
+                  </div>
+                  <p className="text-[10px] text-green-600 mt-1">Active price on /payment</p>
                 </div>
               </div>
 
-              {/* Core Tier Section - Only show for fitness */}
-              {appFilter === "fitness" && (
-                <div className="p-5 border-b border-gray-100 space-y-3 bg-white">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                      Core Tier
+              {/* Core Live Preview Badge */}
+              <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-gray-700 block">User Sees on /payment:</span>
+                  <span className="text-[11px] text-gray-400">Monthly auto-renewal</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {pricing.monthly.core.originalPrice && pricing.monthly.core.originalPrice > pricing.monthly.core.price && (
+                    <span className="text-sm font-bold text-gray-400 line-through">
+                      ₹{pricing.monthly.core.originalPrice}
                     </span>
-                    <span className="text-[10px] font-semibold text-gray-400">Base Features</span>
+                  )}
+                  <span className="text-xl font-black text-green-600">
+                    ₹{pricing.monthly.core.price}/mo
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pro Plan Card */}
+          <div className="bg-white rounded-2xl border-2 border-purple-300 shadow-sm overflow-hidden flex flex-col relative">
+            <div className="px-5 py-4 bg-purple-50/80 border-b border-purple-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">🔥</span>
+                <div>
+                  <h3 className="text-base font-bold text-purple-950 flex items-center gap-2">
+                    Pro Plan
+                    <span className="text-[10px] font-black text-purple-700 bg-purple-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      ⭐ Recommended
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-purple-700 font-medium">Monthly Plan • Full Luna AI, Mesocycles, Meal Plans & Body Scan</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4 flex-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 block mb-1.5">
+                    Original Price (~~₹~~)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">₹</span>
+                    <input
+                      type="number"
+                      value={pricing.monthly.pro.originalPrice ?? ""}
+                      onChange={(e) => handlePriceChange("monthly", "pro", "originalPrice", e.target.value)}
+                      placeholder="e.g. 199"
+                      className="w-full pl-7 pr-3 py-2 text-sm font-bold bg-gray-50 border border-gray-200 rounded-xl text-gray-500 line-through outline-none focus:border-purple-500 focus:bg-white transition-all"
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Strikethrough base price</p>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-purple-800 block mb-1.5">
+                    Offer Price (₹)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-purple-600">₹</span>
+                    <input
+                      type="number"
+                      value={pricing.monthly.pro.price ?? ""}
+                      onChange={(e) => handlePriceChange("monthly", "pro", "price", e.target.value)}
+                      placeholder="e.g. 59"
+                      className="w-full pl-7 pr-3 py-2 text-sm font-black bg-purple-50 border border-purple-300 rounded-xl text-purple-950 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:bg-white transition-all"
+                    />
+                  </div>
+                  <p className="text-[10px] text-purple-600 mt-1">Active price on /payment</p>
+                </div>
+              </div>
+
+              {/* Pro Live Preview Badge */}
+              <div className="bg-purple-50/50 rounded-2xl p-4 border border-purple-100 flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-purple-900 block">User Sees on /payment:</span>
+                  <span className="text-[11px] text-purple-600">Monthly auto-renewal</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {pricing.monthly.pro.originalPrice && pricing.monthly.pro.originalPrice > pricing.monthly.pro.price && (
+                    <span className="text-sm font-bold text-gray-400 line-through">
+                      ₹{pricing.monthly.pro.originalPrice}
+                    </span>
+                  )}
+                  <span className="text-xl font-black text-purple-700">
+                    ₹{pricing.monthly.pro.price}/mo
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {PLAN_METADATA.map((plan) => {
+            const proData = pricing[plan.key].pro;
+
+            return (
+              <div key={plan.key} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                {/* Card Header */}
+                <div className="px-5 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{plan.emoji}</span>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">{plan.title}</h3>
+                      <p className="text-[10px] text-gray-500 font-medium">{plan.period}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Plan Price Section for legacy GrindLog app */}
+                <div className="p-5 space-y-3 bg-purple-50/30 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-purple-900 flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                      Plan Price
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -312,113 +458,50 @@ export default function PricingClientForm({
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
                         <input
                           type="number"
-                          value={coreData.originalPrice ?? ""}
-                          onChange={(e) => handlePriceChange(plan.key, "core", "originalPrice", e.target.value)}
-                          placeholder="e.g. 99"
-                          className="w-full pl-6 pr-2 py-1.5 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg text-gray-500 line-through outline-none focus:border-green-500 focus:bg-white transition-all"
+                          value={proData.originalPrice ?? ""}
+                          onChange={(e) => handlePriceChange(plan.key, "pro", "originalPrice", e.target.value)}
+                          placeholder="e.g. 149"
+                          className="w-full pl-6 pr-2 py-1.5 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg text-gray-500 line-through outline-none focus:border-purple-500 focus:bg-white transition-all"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-green-700 block mb-1">
+                      <label className="text-[10px] font-bold text-purple-800 block mb-1">
                         Offer Price (₹)
                       </label>
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-green-600">₹</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-purple-600">₹</span>
                         <input
                           type="number"
-                          value={coreData.price ?? ""}
-                          onChange={(e) => handlePriceChange(plan.key, "core", "price", e.target.value)}
-                          placeholder="e.g. 49"
-                          className="w-full pl-6 pr-2 py-1.5 text-xs font-extrabold bg-green-50/50 border border-green-300 rounded-lg text-green-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 focus:bg-white transition-all"
+                          value={proData.price ?? ""}
+                          onChange={(e) => handlePriceChange(plan.key, "pro", "price", e.target.value)}
+                          placeholder="e.g. 69"
+                          className="w-full pl-6 pr-2 py-1.5 text-xs font-extrabold bg-purple-50 border border-purple-300 rounded-lg text-purple-950 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:bg-white transition-all"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Core Live Preview Badge */}
-                  <div className="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold text-gray-500">Preview (Core):</span>
+                  <div className="bg-white rounded-xl p-2.5 border border-purple-100 flex items-center justify-between shadow-2xs">
+                    <span className="text-[10px] font-semibold text-purple-700">Preview:</span>
                     <div className="flex items-center gap-1.5">
-                      {coreData.originalPrice && coreData.originalPrice > coreData.price && (
+                      {proData.originalPrice && proData.originalPrice > proData.price && (
                         <span className="text-[10px] font-bold text-gray-400 line-through">
-                          ₹{coreData.originalPrice}
+                          ₹{proData.originalPrice}
                         </span>
                       )}
-                      <span className="text-xs font-extrabold text-green-600">
-                        ₹{coreData.price}
+                      <span className="text-xs font-extrabold text-purple-700">
+                        ₹{proData.price}
                       </span>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Pro Tier Section */}
-              <div className="p-5 space-y-3 bg-purple-50/30 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-purple-900 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                    {appFilter === "grindlog" ? "Plan Price" : "Pro Tier"}
-                  </span>
-                  {appFilter === "fitness" && (
-                    <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">AI Unlocked</span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-500 block mb-1">
-                      Original Price (~~₹~~)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
-                      <input
-                        type="number"
-                        value={proData.originalPrice ?? ""}
-                        onChange={(e) => handlePriceChange(plan.key, "pro", "originalPrice", e.target.value)}
-                        placeholder="e.g. 149"
-                        className="w-full pl-6 pr-2 py-1.5 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg text-gray-500 line-through outline-none focus:border-purple-500 focus:bg-white transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold text-purple-800 block mb-1">
-                      Offer Price (₹)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-purple-600">₹</span>
-                      <input
-                        type="number"
-                        value={proData.price ?? ""}
-                        onChange={(e) => handlePriceChange(plan.key, "pro", "price", e.target.value)}
-                        placeholder="e.g. 69"
-                        className="w-full pl-6 pr-2 py-1.5 text-xs font-extrabold bg-purple-50 border border-purple-300 rounded-lg text-purple-950 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:bg-white transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pro Live Preview Badge */}
-                <div className="bg-white rounded-xl p-2.5 border border-purple-100 flex items-center justify-between shadow-2xs">
-                  <span className="text-[10px] font-semibold text-purple-700">Preview (Pro):</span>
-                  <div className="flex items-center gap-1.5">
-                    {proData.originalPrice && proData.originalPrice > proData.price && (
-                      <span className="text-[10px] font-bold text-gray-400 line-through">
-                        ₹{proData.originalPrice}
-                      </span>
-                    )}
-                    <span className="text-xs font-extrabold text-purple-700">
-                      ₹{proData.price}
-                    </span>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Save Button Footer Bar */}
       <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center justify-between">
