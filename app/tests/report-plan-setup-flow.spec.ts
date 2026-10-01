@@ -10,10 +10,23 @@ test.describe("GrindLog Report & Plan Setup Flow Verification", () => {
     await expect(page.getByRole("heading", { name: "Your Starting Point" })).toBeVisible();
 
     // Verify stats cards
-    await expect(page.getByText("76.5 kg")).toBeVisible();
+    await expect(page.getByRole("paragraph").filter({ hasText: "76.5 kg" })).toBeVisible();
     await expect(page.getByRole("paragraph").filter({ hasText: "80 kg" })).toBeVisible();
     await expect(page.getByText("Build Muscle")).toBeVisible();
     await expect(page.getByText("Muscular", { exact: true })).toBeVisible();
+  });
+
+  // ── THE REAL-WORLD SCIENTIFIC TIMEFRAME ──
+  test("Report: Displays The Real-World Scientific Timeframe card with mesocycles and milestones", async ({ page }) => {
+    await page.goto("/test-report?subscribed=1");
+
+    await expect(page.getByText("The Real-World Scientific Timeframe")).toBeVisible();
+    await expect(page.getByText(/Safe lean hypertrophy rate/i)).toBeVisible();
+    await expect(page.getByText("Why GrindLog structures your plan in 3-Month Mesocycles")).toBeVisible();
+    await expect(page.getByText("MONTH 1", { exact: true })).toBeVisible();
+    await expect(page.getByText("MONTH 2", { exact: true })).toBeVisible();
+    await expect(page.getByText("MONTH 3", { exact: true })).toBeVisible();
+    await expect(page.getByText("Phase 1 End")).toBeVisible();
   });
 
   // ── BODY SCAN PHOTO INSIGHTS ──

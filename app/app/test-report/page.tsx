@@ -2,6 +2,7 @@ import { Brain, Info, Check } from "lucide-react";
 import { GeneratePlanButton } from "@/components/fitness/report/generate-plan-button";
 import { RegenerateReportButton } from "@/components/fitness/report/regenerate-report-button";
 import { BodyScanInsightsCard } from "@/components/fitness/report/body-scan-insights-card";
+import { ScientificTimeframeCard } from "@/components/fitness/report/scientific-timeframe-card";
 
 export const dynamic = "force-dynamic";
 
@@ -184,6 +185,15 @@ export default async function TestReportPage({
             A 3.5 kg lean muscle gain over 90 days represents an optimal ~0.3 kg/week rate of lean mass accretion with negligible fat gain.
           </p>
         </div>
+
+        {/* The Real-World Scientific Timeframe */}
+        <ScientificTimeframeCard
+          currentWeight={mockProfile.weight}
+          targetWeight={mockProfile.target_weight}
+          goal={mockProfile.goal}
+          trainingDaysPerWeek={mockProfile.training_days_per_week}
+          targetDeadlineDays={mockProfile.onboarding_data?.target_deadline_days}
+        />
 
         {/* Health & Safety Protocol */}
         <div className={`relative space-y-4 overflow-hidden rounded-3xl border p-5 ${hasSafetyConcerns ? 'border-red-900/30 bg-[#121E12]' : 'border-[#1A2619] bg-[#0A1108]'}`}>

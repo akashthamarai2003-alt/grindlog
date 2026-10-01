@@ -13,6 +13,7 @@ import {
   BodyScanInsightsCard,
   type BodyScanInsightsData,
 } from "@/components/fitness/report/body-scan-insights-card";
+import { ScientificTimeframeCard } from "@/components/fitness/report/scientific-timeframe-card";
 
 // A newly completed photo analysis must be visible immediately after the
 // onboarding flow redirects here. Never serve a cached server-rendered report.
@@ -521,6 +522,15 @@ export default async function AIStartingReportPage({
           )}
         </div>
 
+        {/* SCIENTIFIC TIMEFRAME & JOURNEY BREAKDOWN */}
+        <ScientificTimeframeCard
+          currentWeight={profile.weight}
+          targetWeight={profile.target_weight}
+          goal={profile.goal}
+          trainingDaysPerWeek={profile.training_days_per_week}
+          targetDeadlineDays={onboardingData.target_deadline_days}
+        />
+
         {/* HEALTH & SAFETY PROTOCOL */}
         {healthAndSafety && (
           <div className={`relative space-y-4 overflow-hidden rounded-3xl border p-5 ${healthAndSafety.has_concerns ? 'border-red-900/30 bg-[#121E12]' : 'border-[#1A2619] bg-[#0A1108]'}`}>
@@ -572,26 +582,42 @@ export default async function AIStartingReportPage({
             <span>📅</span> Expected Progress Roadmap
           </h2>
           <div className="space-y-3">
-            {timelineProjection.map((phase: any, index: number) => (
-              <div
-                key={index}
-                className="space-y-1 rounded-2xl border border-[#1A2619] bg-[#121E12] p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-                    {String(phase.timeframe || "")}
-                  </span>
-                  {phase.target_weight_kg && (
-                    <span className="rounded-full bg-black/40 px-2.5 py-0.5 text-xs font-extrabold text-white">
-                      {String(phase.target_weight_kg)} kg
+            {timelineProjection.map((phase: any, index: number) => {
+              const estimatedWeight = (() => {
+                if (phase.target_weight_kg) return `${phase.target_weight_kg} kg`;
+                if (typeof profile.weight === "number" && typeof profile.target_weight === "number") {
+                  const isLoss = profile.weight > profile.target_weight;
+                  const isGain = profile.target_weight > profile.weight;
+                  const monthlyDelta = isLoss ? -3.0 : isGain ? 1.2 : 0;
+                  const milestone = Math.round((profile.weight + monthlyDelta * (index + 1)) * 10) / 10;
+                  if (isLoss && milestone < profile.target_weight) return `${profile.target_weight} kg`;
+                  if (isGain && milestone > profile.target_weight) return `${profile.target_weight} kg`;
+                  return `~${milestone} kg`;
+                }
+                return null;
+              })();
+
+              return (
+                <div
+                  key={index}
+                  className="space-y-1 rounded-2xl border border-[#1A2619] bg-[#121E12] p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
+                      {String(phase.timeframe || "")}
                     </span>
-                  )}
+                    {estimatedWeight && (
+                      <span className="rounded-full bg-black/40 px-2.5 py-0.5 text-xs font-extrabold text-white">
+                        {estimatedWeight}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-medium text-gray-300">
+                    {String(phase.expected_changes || "")}
+                  </p>
                 </div>
-                <p className="text-xs font-medium text-gray-300">
-                  {String(phase.expected_changes || "")}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
