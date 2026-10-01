@@ -311,13 +311,17 @@ export default function PlanSetupPage() {
         const message = err instanceof Error ? err.message : "Network error while generating the plan.";
         setGenerationError(message);
         setGenerationErrorType(getPlanGenerationErrorType(err));
+        setLoading(false);
         toast.error(message);
       });
 
-    // Safety timeout: ensure loading state is released if the animation callback doesn't fire
+    // Safety timeout: ensure loading state is released if generation takes longer than 60 seconds
     const safetyTimer = setTimeout(() => {
-      if (isMounted) setLoading(false);
-    }, 12000);
+      if (isMounted) {
+        setGenerationError("Plan generation timed out. Please tap Try Again to load your plan.");
+        setLoading(false);
+      }
+    }, 60000);
       
     return () => { 
       isMounted = false; 
@@ -425,6 +429,7 @@ export default function PlanSetupPage() {
                   err instanceof Error ? err.message : "Network error while generating the plan.",
                 );
                 setGenerationErrorType(getPlanGenerationErrorType(err));
+                setLoading(false);
               });
           }} 
           className="px-8 py-3 bg-[#ADFF00] text-black font-extrabold rounded-full flex items-center gap-2 hover:bg-[#c4ff33] transition-colors"
