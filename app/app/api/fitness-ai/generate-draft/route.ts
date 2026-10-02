@@ -29,6 +29,7 @@ import {
 } from "@/lib/services/fitness-ai-generation-guard";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import { applyFitnessPlanEntitlements } from "@/lib/fitness/subscription/plan-entitlements";
+import { getMesocycleProgressionContext } from "@/lib/services/fitness/mesocycle-progression-service";
 
 // A high-reasoning, full weekly plan can take longer than one minute. Avoid a
 // platform timeout turning a valid in-progress response into an empty client
@@ -164,7 +165,7 @@ export async function POST(req: Request) {
       cachedDraftQuery = cachedDraftQuery.gte("created_at", profile.updated_at);
     }
 
-    const [foodCatalogResult, { data: cachedDraft }] = await Promise.all([
+    const [foodCatalogResult, { data: cachedDraft }, progressionContext] = await Promise.all([
       subscriptionPlan.id === "pro"
         ? supabase
             .from("foods")
@@ -174,6 +175,7 @@ export async function POST(req: Request) {
             .limit(250)
         : Promise.resolve({ data: [] as any[] }),
       cachedDraftQuery.maybeSingle(),
+      getMesocycleProgressionContext(supabase, user.id, profile, isRenew),
     ]);
     const rawFoodCatalog: any[] = foodCatalogResult.data || [];
     // Filter strictly to user's onboarding diet & allergies, capping items to keep prompt lean & fast
@@ -184,6 +186,7 @@ export async function POST(req: Request) {
       todayStr,
       scan?.gemini_analysis,
       foodCatalog,
+      progressionContext,
     );
     const painSeverity = Number(profile.current_pain_severity);
     const exactWorkoutCount =
@@ -218,6 +221,7 @@ export async function POST(req: Request) {
               ...applyFitnessPlanEntitlements(enrichPlanWithFoodLibrary(profileCheck.plan, foodCatalog || []), subscriptionPlan.id),
               _profile: profile,
               _subscriptionPlan: subscriptionPlan.id,
+              _progression: progressionContext,
             },
           });
         }
@@ -494,7 +498,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      data: { ...planData, _profile: profile, _subscriptionPlan: subscriptionPlan.id },
+      data: {
+        ...planData,
+        _profile: profile,
+        _subscriptionPlan: subscriptionPlan.id,
+        _progression: progressionContext,
+      },
     });
   } catch (error: any) {
     console.error("Fitness AI Generation Error:", error);

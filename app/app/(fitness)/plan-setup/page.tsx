@@ -501,10 +501,41 @@ export default function PlanSetupPage() {
         <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[220px]">
           <div className="mx-auto max-w-md pt-10 px-6 pb-6">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#233522] bg-[#121E12] px-3 py-1.5 text-[10px] font-extrabold tracking-[0.14em] text-[#ADFF00] uppercase">
-              <CircleCheck size={13} /> Your personalised plan
+              {planData?._progression && planData._progression.mesocycleNumber >= 2 ? (
+                <>
+                  <Flame size={13} className="text-[#ADFF00]" /> Mesocycle {planData._progression.mesocycleNumber}: Progression Plan
+                </>
+              ) : (
+                <>
+                  <CircleCheck size={13} /> Your personalised plan
+                </>
+              )}
             </div>
             <h1 className="text-3xl font-black tracking-tight">{tabTitle}</h1>
             <p className="mt-2 text-sm leading-relaxed text-gray-400">{tabDescription}</p>
+
+            {planData?._progression && planData._progression.mesocycleNumber >= 2 && (
+              <div className="mt-4 rounded-2xl border border-[#ADFF00]/30 bg-gradient-to-r from-[#1A2619] via-[#121E12] to-[#1A2619] p-3.5 flex items-start gap-3 shadow-[0_0_15px_rgba(173,255,0,0.1)]">
+                <div className="w-8 h-8 rounded-xl bg-[#ADFF00]/15 border border-[#ADFF00]/30 flex items-center justify-center text-[#ADFF00] shrink-0 mt-0.5">
+                  <Sparkles size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00] text-black px-2 py-0.5 rounded-full">
+                      Month {planData._progression.mesocycleNumber}
+                    </span>
+                    <span className="text-xs font-bold text-[#ADFF00]">
+                      {planData._progression.progressionFocus || "Progressive Overload"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/80 mt-1 leading-relaxed">
+                    {planData._progression.completedWorkoutsCount > 0
+                      ? `Calibrated from ${planData._progression.completedWorkoutsCount} completed workouts in Cycle 1. Secondary movements rotated and progressive overload targets active.`
+                      : "Secondary movements rotated and progressive overload cues enabled for your next training block."}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
       {/* Tab Toggle */}
@@ -713,7 +744,16 @@ export default function PlanSetupPage() {
                 {saving ? (
                   <><Loader2 size={20} className="animate-spin" /> <span>Locking In Your Plan...</span></>
                 ) : (
-                  <><span>{trainingPausedForSafety ? "Save Recovery Plan" : "Lock In My Plan"}</span> <ArrowRight size={20} /></>
+                  <>
+                    <span>
+                      {trainingPausedForSafety
+                        ? "Save Recovery Plan"
+                        : planData?._progression && planData._progression.mesocycleNumber >= 2
+                          ? `Lock In Month ${planData._progression.mesocycleNumber} Plan ⚡`
+                          : "Lock In My Plan"}
+                    </span>
+                    <ArrowRight size={20} />
+                  </>
                 )}
               </button>
             </div>

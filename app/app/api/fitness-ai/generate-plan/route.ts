@@ -31,6 +31,7 @@ import {
 } from "@/lib/services/fitness-ai-generation-guard";
 import { getFitnessPlan, requireFitnessSubscription } from "@/lib/fitness/subscription/access";
 import { applyFitnessPlanEntitlements } from "@/lib/fitness/subscription/plan-entitlements";
+import { getMesocycleProgressionContext } from "@/lib/services/fitness/mesocycle-progression-service";
 
 export const maxDuration = 180;
 const MAX_AUTOMATIC_GENERATION_ATTEMPTS = 2;
@@ -162,11 +163,19 @@ export async function POST(req: Request) {
     // Filter strictly to user's onboarding diet & allergies, capping items to keep prompt lean & fast
     const foodCatalog = filterFoodCatalogForProfile(rawFoodCatalog, profile);
 
+    const progressionContext = await getMesocycleProgressionContext(
+      supabase,
+      user.id,
+      profile,
+      isRenew,
+    );
+
     const userPrompt = buildFitnessPlanPrompt(
       profile,
       todayStr,
       scan?.gemini_analysis,
       foodCatalog,
+      progressionContext,
     );
     const painSeverity = Number(profile.current_pain_severity);
     const exactWorkoutCount =

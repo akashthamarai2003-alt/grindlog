@@ -1,6 +1,7 @@
 import { OnboardingData } from "@/types/fitness/onboarding";
 import { getPlanNutritionTargets } from "@/lib/fitness/validation/fitness-plan-profile";
 import { getCoreMealLabel } from "@/lib/fitness/nutrition/constants";
+import type { PlanProgressionContext } from "@/lib/services/fitness/mesocycle-progression-service";
 
 export const FITNESS_PLAN_SYSTEM_PROMPT = `You are Grindlog's elite, cautious fitness and sports science coach. Build one complete, personalised 7-day plan from the supplied PROFILE JSON. The profile is the absolute source of truth.
 
@@ -56,6 +57,14 @@ FITNESS LEVEL ADAPTATION (profile.training.level):
 - Beginner: High-stability exercises (machines, cables, supported benches, goblet squats). 2–3 sets per exercise. Provide crystal-clear form, setup, and breathing cues in exercises[].notes.
 - Intermediate: Barbell and dumbbell free-weight compounds alongside isolation movements. 3–4 sets. Include progressive overload cues (e.g., 'Target 1–2 reps in reserve [RIR 2]') in exercises[].notes.
 - Advanced: Higher volume (3–5 sets), complex compound variations, and intensity techniques. Detail tempo and RPE cues (e.g., '3s slow eccentric, explosive concentric [RPE 8-9]') in exercises[].notes.
+
+MESOCYCLE PROGRESSION & RENEWAL RULES (profile.progression):
+When profile.progression is present (e.g. mesocycle >= 2, Month 2 renewal):
+- Cycle Identification: Reflect the mesocycle number clearly in plan.name and plan.description (e.g., 'Mesocycle 2: Hypertrophy Progression' or 'Phase 1 · Month 2: Progressive Overload & Density').
+- Fundamental Compound Continuity: Keep the foundational primary compound movements (Squat, Hinge, Push, Pull) consistent so the athlete can benchmark strength PRs and progressive overload from Cycle 1.
+- Strategic Secondary & Accessory Rotation: Actively rotate secondary compound angles and isolation movements compared to profile.progression.previous_exercises (e.g., if Cycle 1 had Flat Dumbbell Press, advance to Incline Barbell Press or Dips; if Cycle 1 had Lat Pulldowns, rotate to Chest-Supported T-Bar Rows or Neutral Pull-ups; if Cycle 1 had Standing Dumbbell Curls, rotate to Incline Biceps Curls). This introduces novel motor unit recruitment, prevents joint overuse, and drives ongoing hypertrophy.
+- Progressive Overload Directives: In exercises[].notes, write specific progressive overload cues comparing against Cycle 1 (e.g., 'Mesocycle 2 Overload: Target +2.5kg or +1 rep over Cycle 1 while maintaining strict form at RIR 1-2').
+- Body Weight & Nutrition Adaptation: Acknowledge the user's progress in nutrition.guidance based on profile.progression.weight_change_from_start_kg. If gaining or losing on pace, encourage consistency; if stalled, note surplus/deficit reinforcement.
 
 EQUIPMENT & LOCATION ENFORCEMENT:
 - Use ONLY equipment listed in profile.training.equipment at profile.training.location.
@@ -320,6 +329,7 @@ function buildCompactPlanProfile(
   todayDateStr: string,
   geminiAnalysis?: string | null,
   foodCatalog: PlanFoodCatalogItem[] = [],
+  progressionContext?: PlanProgressionContext | null,
 ): Record<string, unknown> {
   const foodEnvironment = profile.food_environment;
   const savedOnboarding = isRecord(profile.onboarding_data) ? profile.onboarding_data : {};
@@ -409,6 +419,17 @@ function buildCompactPlanProfile(
     safety: buildPlanSafetyBrief(profile),
     body_scan: compactText(geminiAnalysis, PLAN_BODY_SCAN_CONTEXT_LIMIT),
     report_insights: buildPlanReportInsights(profile.ai_strategy),
+    progression: progressionContext ? {
+      mesocycle: progressionContext.mesocycleNumber,
+      is_renewal: progressionContext.isRenewal,
+      previous_plan_name: progressionContext.previousPlanTitle,
+      previous_exercises: progressionContext.previousExercises,
+      completed_workouts: progressionContext.completedWorkoutsCount,
+      adherence_pct: progressionContext.adherencePercentage,
+      current_weight_kg: progressionContext.currentWeightKg,
+      weight_delta_from_baseline_kg: progressionContext.weightDeltaKg,
+      progression_focus: progressionContext.progressionFocus,
+    } : undefined,
   }) || {}) as Record<string, unknown>;
 }
 
@@ -417,12 +438,14 @@ export function buildFitnessPlanPrompt(
   todayDateStr: string,
   geminiAnalysis?: string | null,
   foodCatalog: PlanFoodCatalogItem[] = [],
+  progressionContext?: PlanProgressionContext | null,
 ): string {
   const compactProfile = buildCompactPlanProfile(
     isRecord(profileData) ? profileData : {},
     todayDateStr,
     geminiAnalysis,
     foodCatalog,
+    progressionContext,
   );
 
   return `PROFILE_JSON:\n${JSON.stringify(compactProfile)}`;
