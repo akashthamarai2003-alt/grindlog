@@ -20,6 +20,7 @@ export async function getRoadmapData(
   userId: string,
   profile: any,
   activePlan: any,
+  targetDateStr?: string,
 ): Promise<TransformationRoadmapData | null> {
   if (!activePlan?.created_at || !activePlan?.id) return null;
 
@@ -54,7 +55,7 @@ export async function getRoadmapData(
   const journeyStartDate = new Date(
     earliestPlanResult.data?.created_at || activePlan.created_at
   );
-  const now = new Date();
+  const now = targetDateStr ? new Date(`${targetDateStr}T12:00:00Z`) : new Date();
   const daysOnJourney = Math.max(1, differenceInCalendarDays(now, journeyStartDate));
 
   const allWorkouts = workoutsResult.data || [];
@@ -418,10 +419,11 @@ function computeStreak(allWorkouts: any[], now: Date): number {
       .map((w: any) => w.workout_date)
   );
   let streak = 0;
+  let iterations = 0;
   const checkDate = new Date(now);
   const todayStr = format(checkDate, "yyyy-MM-dd");
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  while (iterations < 365) {
+    iterations++;
     const ymd = format(checkDate, "yyyy-MM-dd");
     if (completedDates.has(ymd)) {
       streak++;

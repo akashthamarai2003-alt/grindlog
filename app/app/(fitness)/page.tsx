@@ -130,7 +130,7 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
 
   // ── Compute live transformation roadmap data ──
   const roadmapData = plan?.id
-    ? await getRoadmapData(user.id, profile, plan)
+    ? await getRoadmapData(user.id, profile, plan, targetDateStr)
     : null;
 
   const dailyActivity = subscriptionPlan?.id === "pro"
