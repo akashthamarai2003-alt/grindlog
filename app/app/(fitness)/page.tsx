@@ -12,6 +12,7 @@ import { FitnessLandingPage } from "@/components/fitness/landing/fitness-landing
 import { SAMPLE_FREE_PLAN, SAMPLE_FREE_WORKOUT, SAMPLE_FREE_WEEK_DAYS, getSampleFreeWeekDays } from "@/lib/fitness/sample-free-preview";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { hasGeneratedStartingReport } from "@/lib/services/fitness/starting-report-service";
+import { getRoadmapData } from "@/lib/services/fitness/roadmap-service";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -127,6 +128,11 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
 
   const premiumLevel = isFreeUser ? "free" : subscriptionPlan?.id === "pro" ? "pro" : "core";
 
+  // ── Compute live transformation roadmap data ──
+  const roadmapData = plan?.id
+    ? await getRoadmapData(user.id, profile, plan)
+    : null;
+
   const dailyActivity = subscriptionPlan?.id === "pro"
     ? {
         steps: Number(activityLog?.steps) || null,
@@ -152,6 +158,7 @@ async function DashboardAboveFold({ searchParams }: { searchParams?: { date?: st
       premiumLevel={premiumLevel}
       targetDateStr={targetDateStr}
       subscriptionState={subscriptionState}
+      roadmapData={roadmapData}
       bottomSlot={
         // Nutrition, activity, goals stream in below — wrapped in its own Suspense
         <Suspense fallback={<NutritionSkeleton />}>

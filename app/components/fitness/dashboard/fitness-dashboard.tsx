@@ -8,7 +8,8 @@ import { Sparkles } from "lucide-react";
 import { DashboardHeader } from "./dashboard-header";
 import { HorizontalCalendar } from "./horizontal-calendar";
 import { TodaysWorkoutCard } from "./todays-workout-card";
-import { TransformationCard } from "./transformation-card";
+import { TransformationRoadmapCard } from "./transformation-roadmap-card";
+import type { TransformationRoadmapData } from "@/types/fitness/roadmap";
 import { ExerciseLibraryCard } from "./exercise-library-card";
 import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
 import { RenewalBanner } from "@/components/fitness/subscription/renewal-banner";
@@ -31,6 +32,8 @@ interface FitnessDashboardProps {
   subscriptionState?: FitnessSubscriptionState;
   /** Streaming bottom section (nutrition, activity, goals cards) injected from server */
   bottomSlot?: React.ReactNode;
+  /** Live transformation roadmap data computed server-side */
+  roadmapData?: TransformationRoadmapData | null;
 }
 
 export function FitnessDashboard({
@@ -48,6 +51,7 @@ export function FitnessDashboard({
   targetDateStr,
   subscriptionState,
   bottomSlot,
+  roadmapData,
 }: FitnessDashboardProps) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [modalFeature, setModalFeature] = useState("Workout Sessions");
@@ -147,8 +151,8 @@ export function FitnessDashboard({
           </div>
         )}
 
-        {/* 3. Transformation Card */}
-        <TransformationCard profile={profile} premiumLevel={premiumLevel} />
+        {/* 3. Live Transformation Roadmap */}
+        <TransformationRoadmapCard roadmapData={roadmapData ?? null} profile={profile} premiumLevel={premiumLevel} />
 
         {/* 4. Horizontal Calendar */}
         <HorizontalCalendar weekWorkouts={weekWorkouts} targetDateStr={targetDateStr} />
