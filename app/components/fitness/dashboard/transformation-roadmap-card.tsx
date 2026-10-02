@@ -1,10 +1,26 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Target, Flame, Lock, CheckCircle2, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  ArrowRight,
+  Target,
+  CheckCircle2,
+  TrendingDown,
+  TrendingUp,
+  Camera,
+  Trophy,
+} from "lucide-react";
 import Link from "next/link";
-import type { TransformationRoadmapData, WeekMilestone } from "@/types/fitness/roadmap";
+import type {
+  TransformationRoadmapData,
+  MonthMilestone,
+  PhaseBlock,
+} from "@/types/fitness/roadmap";
 import { OnboardingData } from "@/types/fitness/onboarding";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface TransformationRoadmapCardProps {
   roadmapData: TransformationRoadmapData | null;
@@ -17,22 +33,21 @@ export function TransformationRoadmapCard({
   profile,
   premiumLevel = "core",
 }: TransformationRoadmapCardProps) {
-  // ── Fallback: no plan → show simple weight summary ──
   if (!roadmapData) {
     return <FallbackWeightCard profile={profile} premiumLevel={premiumLevel} />;
   }
 
   const {
     currentDay,
-    currentWeek,
-    totalWeeks,
-    phaseName,
-    phaseDescription,
+    currentMonth,
+    currentWeekInMonth,
+    totalMonthsProjected,
+    direction,
     startWeight,
     currentWeight,
     targetWeight,
-    direction,
-    weeks,
+    progressPercentage,
+    phases,
     totalWorkoutsCompleted,
     totalWorkoutsScheduled,
     streak,
@@ -43,98 +58,193 @@ export function TransformationRoadmapCard({
   const deltaKg = Math.round((currentWeight - startWeight) * 10) / 10;
   const isBulking = direction === "gain";
   const isProgressingTowardGoal =
-    (isBulking && deltaKg > 0) || (!isBulking && deltaKg < 0);
+    (isBulking && deltaKg > 0) || (!isBulking && deltaKg < 0) || direction === "maintain";
 
   return (
-    <div className="rounded-3xl border border-[#1A2619] bg-[#121E12] p-5 space-y-5 overflow-hidden relative">
+    <div className="rounded-3xl border border-[#1A2619] bg-[#121E12] overflow-hidden relative">
       {/* Ambient glow */}
       <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-[#ADFF00]/5 blur-3xl pointer-events-none" />
 
-      {/* ── Header ── */}
-      <div className="relative z-10 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center shrink-0">
-            <Target className="w-4.5 h-4.5 text-[#ADFF00]" />
+      <div className="p-5 space-y-4">
+        {/* ── Header ── */}
+        <div className="relative z-10 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center shrink-0">
+              <Target className="w-4 h-4 text-[#ADFF00]" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black tracking-wider text-[#ADFF00] uppercase">
+                Transformation Roadmap
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {direction === "maintain"
+                  ? `${startWeight} kg · Recomposition`
+                  : `${startWeight} → ${targetWeight} kg`}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] font-black tracking-wider text-[#ADFF00] uppercase">
-              Your Transformation Roadmap
-            </p>
-            <p className="text-[11px] text-gray-400 mt-0.5">
-              Phase: {phaseName}
-            </p>
-          </div>
+          <span className="shrink-0 rounded-full bg-black/50 border border-white/10 px-2.5 py-1 text-[10px] font-black text-white tracking-wider">
+            Day {currentDay}
+          </span>
         </div>
-        <span className="shrink-0 rounded-full bg-black/50 border border-white/10 px-2.5 py-1 text-[10px] font-black text-white tracking-wider uppercase">
-          Day {currentDay} / 28
-        </span>
-      </div>
 
-      {/* ── Phase Description ── */}
-      <p className="text-[11px] leading-relaxed text-gray-400 relative z-10">
-        {phaseDescription}
-      </p>
-
-      {/* ── Weight Summary Row ── */}
-      <div className="relative z-10 grid grid-cols-3 gap-2">
-        <WeightPill label="Start" value={startWeight} sub="Baseline" />
-        <div className="relative rounded-2xl border border-[#ADFF00]/30 bg-[#ADFF00]/5 px-3 py-2.5 text-center">
-          <p className="text-[9px] font-bold tracking-wider text-gray-500 uppercase">
-            Current
-          </p>
-          <p className="text-lg font-black text-white leading-tight">
-            {currentWeight}<span className="text-xs font-bold text-gray-500 ml-0.5">kg</span>
-          </p>
-          {deltaKg !== 0 && (
-            <span
-              className={`mt-1 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                isProgressingTowardGoal
-                  ? "bg-emerald-500/20 text-emerald-400"
-                  : "bg-amber-500/20 text-amber-400"
-              }`}
-            >
-              {deltaKg > 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-              {deltaKg > 0 ? "+" : ""}{deltaKg} kg
+        {/* ── Overall Progress Bar ── */}
+        <div className="relative z-10 space-y-1.5">
+          <div className="flex justify-between text-[10px] font-bold tracking-wider uppercase">
+            <span className="text-gray-500">
+              Month {currentMonth} of {totalMonthsProjected} · Week {currentWeekInMonth}
             </span>
+            <span className="text-[#ADFF00]">{progressPercentage}%</span>
+          </div>
+          <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-[#ADFF00] to-emerald-400"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercentage}%` }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+            />
+          </div>
+          {/* Weight delta pill */}
+          {deltaKg !== 0 && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <span
+                className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  isProgressingTowardGoal
+                    ? "bg-emerald-500/15 text-emerald-400"
+                    : "bg-amber-500/15 text-amber-400"
+                }`}
+              >
+                {deltaKg > 0 ? (
+                  <TrendingUp className="w-2.5 h-2.5" />
+                ) : (
+                  <TrendingDown className="w-2.5 h-2.5" />
+                )}
+                {deltaKg > 0 ? "+" : ""}
+                {deltaKg} kg from baseline
+              </span>
+            </div>
           )}
         </div>
-        <WeightPill label="Target" value={targetWeight} sub="Goal" isTarget />
       </div>
 
-      {/* ── Vertical Timeline ── */}
-      <div className="relative z-10 space-y-0">
-        {weeks.map((week, index) => {
-          const isBlurred = isFree && week.weekNumber >= 3;
+      {/* ── Phase Timeline ── */}
+      <div className="px-5 pb-5 space-y-0">
+        {phases.map((phase, phaseIdx) => {
+          const isCurrentPhase = phase.status === "current";
+          const isUpcomingPhase = phase.status === "upcoming";
+          const isBlurred = isFree && phaseIdx >= 1;
+
           return (
-            <div key={week.weekNumber} className={isBlurred ? "blur-[3px] select-none" : ""}>
-              <WeekNode
-                week={week}
-                direction={direction}
-                isLast={index === weeks.length - 1}
-              />
+            <div key={phase.phaseNumber} className={isBlurred ? "blur-[3px] select-none" : ""}>
+              {/* Phase header bar */}
+              <div
+                className={`flex items-center gap-2 py-2 ${
+                  phaseIdx > 0 ? "mt-2 border-t border-white/5 pt-3" : ""
+                }`}
+              >
+                <div
+                  className={`h-px flex-1 ${
+                    phase.status === "completed"
+                      ? "bg-emerald-500/30"
+                      : isCurrentPhase
+                        ? "bg-[#ADFF00]/30"
+                        : "bg-white/5"
+                  }`}
+                />
+                <span
+                  className={`text-[9px] font-black tracking-[0.15em] uppercase px-2 ${
+                    phase.status === "completed"
+                      ? "text-emerald-500"
+                      : isCurrentPhase
+                        ? "text-[#ADFF00]"
+                        : "text-gray-600"
+                  }`}
+                >
+                  Phase {phase.phaseNumber}: {phase.phaseName}
+                </span>
+                <div
+                  className={`h-px flex-1 ${
+                    phase.status === "completed"
+                      ? "bg-emerald-500/30"
+                      : isCurrentPhase
+                        ? "bg-[#ADFF00]/30"
+                        : "bg-white/5"
+                  }`}
+                />
+              </div>
+
+              {/* Months — expanded for current/completed, condensed for upcoming */}
+              {isCurrentPhase || phase.status === "completed" ? (
+                <div className="space-y-0">
+                  {phase.months.map((month, mIdx) => (
+                    <MonthNode
+                      key={month.monthNumber}
+                      month={month}
+                      direction={direction}
+                      currentWeekInMonth={
+                        month.status === "current" ? currentWeekInMonth : undefined
+                      }
+                      isLast={mIdx === phase.months.length - 1}
+                    />
+                  ))}
+                </div>
+              ) : (
+                /* Condensed upcoming phase */
+                <div className="flex items-center gap-3 py-2 pl-1">
+                  <div className="w-5 h-5 rounded-full border border-white/10 bg-white/5 flex items-center justify-center shrink-0">
+                    <span className="text-[8px] text-gray-500">
+                      {phase.months.length > 1
+                        ? `${phase.months[0].monthNumber}–${phase.months[phase.months.length - 1].monthNumber}`
+                        : phase.months[0]?.monthNumber}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[11px] text-gray-500">
+                      {phase.months.length === 1
+                        ? `Month ${phase.months[0].monthNumber}`
+                        : `Months ${phase.months[0].monthNumber}–${phase.months[phase.months.length - 1].monthNumber}`}
+                      {" · "}
+                      <span className="text-gray-600">{phase.weightRange}</span>
+                    </p>
+                    {phase.months.some((m) => m.isFinalGoal) && (
+                      <p className="text-[10px] text-[#ADFF00]/60 mt-0.5">
+                        🎯 Goal target: {targetWeight} kg
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
+
+        {/* Goal marker (if not already in the last phase) */}
+        {progressPercentage >= 100 && (
+          <div className="flex items-center gap-3 pt-3 border-t border-[#ADFF00]/20">
+            <div className="w-5 h-5 rounded-full bg-[#ADFF00]/20 border border-[#ADFF00]/50 flex items-center justify-center shrink-0">
+              <Trophy className="w-3 h-3 text-[#ADFF00]" />
+            </div>
+            <p className="text-xs font-bold text-[#ADFF00]">
+              Goal Achieved! 🎉 — {targetWeight} kg reached
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── Stats Summary ── */}
-      <div className="relative z-10 grid grid-cols-3 gap-2">
-        <StatPill
-          label="Workouts"
-          value={`${totalWorkoutsCompleted}/${totalWorkoutsScheduled}`}
-        />
-        <StatPill
-          label="Streak"
-          value={streak > 0 ? `🔥 ${streak}` : "—"}
-        />
-        <StatPill
-          label="Consistency"
-          value={`${consistencyScore}%`}
-        />
+      <div className="px-5 pb-4">
+        <div className="grid grid-cols-3 gap-2">
+          <StatPill
+            label="Workouts"
+            value={`${totalWorkoutsCompleted}/${totalWorkoutsScheduled}`}
+          />
+          <StatPill label="Streak" value={streak > 0 ? `🔥 ${streak}` : "—"} />
+          <StatPill label="Consistency" value={`${consistencyScore}%`} />
+        </div>
       </div>
 
       {/* ── CTA ── */}
-      <div className="relative z-10">
+      <div className="px-5 pb-5">
         {premiumLevel === "pro" ? (
           <Link
             href="/progress"
@@ -148,7 +258,7 @@ export function TransformationRoadmapCard({
             href="/payment?returnTo=/&intent=upgrade_pro"
             className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-white/[0.04] border border-white/10 text-sm font-bold text-gray-200 hover:bg-white/[0.07] transition-colors"
           >
-            Upgrade to unlock AI Progress Tracking
+            Upgrade for AI Progress Tracking
             <span className="text-[9px] bg-black text-amber-400 px-1.5 py-0.5 rounded font-black">
               PRO
             </span>
@@ -170,27 +280,27 @@ export function TransformationRoadmapCard({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sub-components
+// MonthNode — a single month in the expanded phase timeline
 // ─────────────────────────────────────────────────────────────────────────────
 
-function WeekNode({
-  week,
+function MonthNode({
+  month,
   direction,
+  currentWeekInMonth,
   isLast,
 }: {
-  week: WeekMilestone;
+  month: MonthMilestone;
   direction: string;
+  currentWeekInMonth?: number;
   isLast: boolean;
 }) {
-  const isCompleted = week.status === "completed";
-  const isCurrent = week.status === "current";
-  const isUpcoming = week.status === "upcoming";
+  const isCompleted = month.status === "completed";
+  const isCurrent = month.status === "current";
 
   return (
     <div className="flex gap-3">
       {/* Timeline spine */}
       <div className="flex flex-col items-center w-5 shrink-0">
-        {/* Node dot */}
         {isCompleted ? (
           <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
@@ -198,15 +308,14 @@ function WeekNode({
         ) : isCurrent ? (
           <div className="relative w-5 h-5 shrink-0">
             <span className="absolute inset-0 rounded-full bg-[#ADFF00]/30 animate-ping" />
-            <span className="relative block w-5 h-5 rounded-full bg-[#ADFF00] border-2 border-[#0A1108]" />
+            <span className="relative block w-5 h-5 rounded-full bg-[#ADFF00] border-2 border-[#121E12]" />
           </div>
         ) : (
           <div className="w-5 h-5 rounded-full border border-white/15 bg-white/5 shrink-0" />
         )}
-        {/* Connector line */}
         {!isLast && (
           <div
-            className={`w-px flex-1 min-h-[24px] ${
+            className={`w-px flex-1 min-h-[20px] ${
               isCompleted
                 ? "bg-gradient-to-b from-emerald-500/40 to-emerald-500/10"
                 : isCurrent
@@ -217,10 +326,11 @@ function WeekNode({
         )}
       </div>
 
-      {/* Week content */}
-      <div className={`flex-1 pb-4 ${isLast ? "pb-0" : ""}`}>
+      {/* Content */}
+      <div className={`flex-1 ${isLast ? "pb-1" : "pb-3"}`}>
+        {/* Title row */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span
               className={`text-xs font-black uppercase tracking-wider ${
                 isCompleted
@@ -230,63 +340,75 @@ function WeekNode({
                     : "text-gray-500"
               }`}
             >
-              Week {week.weekNumber}
+              Month {month.monthNumber}
+            </span>
+            <span className={`text-[10px] ${isCompleted ? "text-emerald-400/60" : isCurrent ? "text-[#ADFF00]/60" : "text-gray-600"}`}>
+              · {month.phaseName}
             </span>
             {isCurrent && (
-              <span className="text-[9px] font-bold bg-[#ADFF00]/15 text-[#ADFF00] px-1.5 py-0.5 rounded-full border border-[#ADFF00]/30 uppercase tracking-wider">
-                Now
+              <span className="text-[8px] font-bold bg-[#ADFF00]/15 text-[#ADFF00] px-1.5 py-0.5 rounded-full border border-[#ADFF00]/30 uppercase tracking-wider">
+                Wk {currentWeekInMonth}
               </span>
             )}
           </div>
-          <span className="text-[10px] text-gray-500">{week.dateRange}</span>
+          <span className="text-[10px] text-gray-600 shrink-0">{month.dateRange}</span>
         </div>
 
         {/* Stats row */}
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
           {/* Workout completion */}
-          <span className={isUpcoming ? "text-gray-600" : "text-gray-300"}>
-            {isUpcoming
-              ? `${week.workoutsScheduled} workouts`
-              : `${week.workoutsCompleted}/${week.workoutsScheduled} workouts`}
-          </span>
-
-          {/* Weight info */}
-          {week.actualWeight != null && (
+          {(isCompleted || isCurrent) && (
             <span className="text-gray-300">
-              {week.actualWeight} kg
-              {week.weightDelta != null && week.weightDelta !== 0 && (
+              {month.workoutsCompleted}/{month.workoutsScheduled} workouts
+            </span>
+          )}
+
+          {/* Weight */}
+          {month.actualWeight != null ? (
+            <span className="text-gray-300">
+              {month.actualWeight} kg
+              {month.weightDelta != null && month.weightDelta !== 0 && (
                 <span
                   className={`ml-1 ${
-                    (direction === "loss" && week.weightDelta < 0) ||
-                    (direction === "gain" && week.weightDelta > 0)
+                    (direction === "loss" && month.weightDelta < 0) ||
+                    (direction === "gain" && month.weightDelta > 0)
                       ? "text-emerald-400"
                       : "text-amber-400"
                   }`}
                 >
-                  ({week.weightDelta > 0 ? "+" : ""}
-                  {week.weightDelta} kg)
+                  ({month.weightDelta > 0 ? "+" : ""}
+                  {month.weightDelta})
                 </span>
               )}
             </span>
-          )}
-
-          {isUpcoming && week.projectedWeight != null && (
-            <span className="text-gray-600">
-              Target: ~{week.projectedWeight} kg
-            </span>
-          )}
-
-          {isCurrent && week.projectedWeight != null && (
+          ) : isCurrent ? (
             <span className="text-gray-500">
-              Proj: {week.projectedWeight} kg
+              Proj: {month.projectedWeight} kg
             </span>
-          )}
+          ) : month.status === "upcoming" ? (
+            <span className="text-gray-600">
+              Target: ~{month.projectedWeight} kg
+            </span>
+          ) : null}
         </div>
 
+        {/* Focus area */}
+        <p
+          className={`mt-1 text-[10px] leading-snug ${
+            isCompleted
+              ? "text-gray-500"
+              : isCurrent
+                ? "text-gray-400"
+                : "text-gray-600"
+          }`}
+        >
+          {month.focusArea}
+        </p>
+
         {/* Milestone badge */}
-        {week.milestone && (
+        {month.milestone && (
           <p
-            className={`mt-1.5 text-[11px] font-medium leading-snug ${
+            className={`mt-1 text-[11px] font-medium ${
               isCompleted
                 ? "text-emerald-400/80"
                 : isCurrent
@@ -294,7 +416,7 @@ function WeekNode({
                   : "text-gray-600"
             }`}
           >
-            {week.milestone}
+            {month.milestone}
           </p>
         )}
       </div>
@@ -302,34 +424,9 @@ function WeekNode({
   );
 }
 
-function WeightPill({
-  label,
-  value,
-  sub,
-  isTarget,
-}: {
-  label: string;
-  value: number;
-  sub: string;
-  isTarget?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/5 bg-[#0D150D] px-3 py-2.5 text-center">
-      <p className="text-[9px] font-bold tracking-wider text-gray-500 uppercase">
-        {label}
-      </p>
-      <p
-        className={`text-lg font-black leading-tight ${
-          isTarget ? "text-[#ADFF00]" : "text-white"
-        }`}
-      >
-        {value}
-        <span className="text-xs font-bold text-gray-500 ml-0.5">kg</span>
-      </p>
-      <p className="text-[9px] text-gray-600 mt-0.5">{sub}</p>
-    </div>
-  );
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Stat pill
+// ─────────────────────────────────────────────────────────────────────────────
 
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
@@ -343,7 +440,7 @@ function StatPill({ label, value }: { label: string; value: string }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Fallback card when no active plan exists (same as original TransformationCard)
+// Fallback when no active plan exists
 // ─────────────────────────────────────────────────────────────────────────────
 
 function FallbackWeightCard({
@@ -388,7 +485,7 @@ function FallbackWeightCard({
     <div className="rounded-3xl border border-[#1A2619] bg-[#121E12] p-5 space-y-4">
       <div className="flex items-center gap-2.5">
         <div className="w-9 h-9 rounded-xl bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center">
-          <Target className="w-4.5 h-4.5 text-[#ADFF00]" />
+          <Target className="w-4 h-4 text-[#ADFF00]" />
         </div>
         <div>
           <p className="text-[10px] font-black tracking-wider text-[#ADFF00] uppercase">
@@ -400,16 +497,15 @@ function FallbackWeightCard({
 
       {hasWeights && (
         <div className="grid grid-cols-3 gap-2">
-          <WeightPill label="Start" value={startNum} sub="Baseline" />
-          <WeightPill label="Current" value={currentNum} sub="Now" />
-          <WeightPill label="Target" value={targetNum} sub="Goal" isTarget />
+          <WeightPill label="Start" value={startNum} />
+          <WeightPill label="Current" value={currentNum} />
+          <WeightPill label="Target" value={targetNum} isTarget />
         </div>
       )}
 
-      {/* Progress bar */}
       {hasWeights && totalGoal > 0 && (
         <div className="space-y-1.5">
-          <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+          <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-wider">
             <span>Progress</span>
             <span>{progressPercentage}%</span>
           </div>
@@ -431,6 +527,32 @@ function FallbackWeightCard({
         {premiumLevel === "pro" ? "View Progress" : "Unlock Tracking"}
         <ArrowRight className="w-4 h-4" />
       </Link>
+    </div>
+  );
+}
+
+function WeightPill({
+  label,
+  value,
+  isTarget,
+}: {
+  label: string;
+  value: number;
+  isTarget?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/5 bg-[#0D150D] px-3 py-2.5 text-center">
+      <p className="text-[9px] font-bold tracking-wider text-gray-500 uppercase">
+        {label}
+      </p>
+      <p
+        className={`text-lg font-black leading-tight ${
+          isTarget ? "text-[#ADFF00]" : "text-white"
+        }`}
+      >
+        {value}
+        <span className="text-xs font-bold text-gray-500 ml-0.5">kg</span>
+      </p>
     </div>
   );
 }

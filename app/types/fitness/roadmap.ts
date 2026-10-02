@@ -1,40 +1,65 @@
-/** Individual week milestone in the 4-week mesocycle */
-export interface WeekMilestone {
-  weekNumber: number;
+// ─────────────────────────────────────────────────────────────────────────────
+// Live Transformation Roadmap — Full Journey Types
+// Covers: Phase 1 (M1-3) → Phase 2 (M4-6) → Phase 3 (M7+) → Goal
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A single month in the transformation journey */
+export interface MonthMilestone {
+  monthNumber: number;
   status: "completed" | "current" | "upcoming";
   dateRange: string;
-  startDate: string;
-  endDate: string;
+  weekRange: string;
 
-  workoutsCompleted: number;
-  workoutsScheduled: number;
+  // Phase context
+  phaseName: string;
+  focusArea: string;
 
-  projectedWeight: number | null;
+  // Weight
+  projectedWeight: number;
   actualWeight: number | null;
   weightDelta: number | null;
 
+  // Workout stats
+  workoutsCompleted: number;
+  workoutsScheduled: number;
+
+  // Markers
+  isPhaseEnd: boolean;
+  isFinalGoal: boolean;
   milestone: string | null;
 }
 
-/** Full roadmap payload computed server-side */
-export interface TransformationRoadmapData {
-  currentDay: number;
-  currentWeek: number;
-  currentMonth: number;
-  totalWeeks: number;
-  planStartDate: string;
+/** A multi-month phase block (3 months each) */
+export interface PhaseBlock {
+  phaseNumber: number;
+  phaseName: string;
+  status: "completed" | "current" | "upcoming";
+  months: MonthMilestone[];
+  /** Condensed weight range for collapsed display */
+  weightRange: string;
+}
 
+/** Full journey data computed server-side */
+export interface TransformationRoadmapData {
+  // Journey overview
+  journeyStartDate: string;
+  totalMonthsProjected: number;
+  currentMonth: number;
+  currentWeekInMonth: number;
+  currentDay: number;
+
+  // Goal
   goal: string;
   direction: "loss" | "gain" | "maintain";
-  phaseName: string;
-  phaseDescription: string;
-
   startWeight: number;
   currentWeight: number;
   targetWeight: number;
+  progressPercentage: number;
 
-  weeks: WeekMilestone[];
+  // Phase structure
+  phases: PhaseBlock[];
 
+  // Aggregate stats
   totalWorkoutsCompleted: number;
   totalWorkoutsScheduled: number;
   streak: number;
