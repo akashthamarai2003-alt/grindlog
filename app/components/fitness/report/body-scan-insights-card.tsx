@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { LoaderCircle, Sparkles, RefreshCw, CheckCircle2, ShieldAlert } from "lucide-react";
+import { LoaderCircle, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export interface BodyScanInsightsData {
@@ -30,7 +29,6 @@ export function BodyScanInsightsCard({
   const [insights, setInsights] = useState<BodyScanInsightsData | null>(initialInsights);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(initialIsAnalyzing && !initialInsights);
   const [pollCount, setPollCount] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const hasLoadedRef = useRef(Boolean(initialInsights));
 
   useEffect(() => {
@@ -95,30 +93,6 @@ export function BodyScanInsightsCard({
       clearTimeout(timeoutId);
     };
   }, [isAnalyzing, pollCount, router]);
-
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const res = await fetch("/api/fitness/scan-status");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.status === "ready" && data.insights) {
-          setInsights(data.insights);
-          setIsAnalyzing(false);
-          hasLoadedRef.current = true;
-          router.refresh();
-          return;
-        }
-      }
-      // If still not ready, restart polling
-      setIsAnalyzing(true);
-      setPollCount(0);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   const currentGoalGap = insights?.goal_gap || initialGoalGap;
 
@@ -261,45 +235,14 @@ export function BodyScanInsightsCard({
             </div>
           </div>
 
-          {/* Gentle refresh helper if connection is slow */}
-          <div className="flex justify-end pt-1">
-            <button
-              type="button"
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
-              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gray-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <RefreshCw size={11} className={isRefreshing ? "animate-spin" : ""} />
-              <span>{isRefreshing ? "Checking..." : "Still analyzing? Click to refresh"}</span>
-            </button>
-          </div>
         </div>
       ) : (
         /* STATE 3: No photos uploaded in onboarding */
         <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-          <p className="text-sm font-bold text-white">Add photos for visual coaching feedback</p>
+          <p className="text-sm font-bold text-white">Visual coaching feedback</p>
           <p className="mt-1 text-xs leading-relaxed text-gray-400">
-            Upload fresh front, side, and back photos in onboarding. We keep the
-            generated coaching observations, not your raw onboarding photos.
+            Coaching observations are generated based on your biometric profile and fitness goals.
           </p>
-          <div className="mt-3 flex items-center gap-3">
-            <Link
-              href="/onboarding?mode=edit"
-              className="inline-flex text-xs font-bold text-[#ADFF00] hover:underline"
-            >
-              Add body-scan photos
-            </Link>
-            <span className="text-gray-600">•</span>
-            <button
-              type="button"
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
-              className="inline-flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <RefreshCw size={12} className={isRefreshing ? "animate-spin" : ""} />
-              <span>Check scan status</span>
-            </button>
-          </div>
         </div>
       )}
 
