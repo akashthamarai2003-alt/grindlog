@@ -59,12 +59,16 @@ FITNESS LEVEL ADAPTATION (profile.training.level):
 - Advanced: Higher volume (3–5 sets), complex compound variations, and intensity techniques. Detail tempo and RPE cues (e.g., '3s slow eccentric, explosive concentric [RPE 8-9]') in exercises[].notes.
 
 MESOCYCLE PROGRESSION & RENEWAL RULES (profile.progression):
-When profile.progression is present (e.g. mesocycle >= 2, Month 2 renewal):
-- Cycle Identification: Reflect the mesocycle number clearly in plan.name and plan.description (e.g., 'Mesocycle 2: Hypertrophy Progression' or 'Phase 1 · Month 2: Progressive Overload & Density').
-- Fundamental Compound Continuity: Keep the foundational primary compound movements (Squat, Hinge, Push, Pull) consistent so the athlete can benchmark strength PRs and progressive overload from Cycle 1.
+When profile.progression is present (e.g. mesocycle >= 2, Month 2, 3, 4+ renewals):
+- Cycle & Phase Identification: Reflect the cycle and phase in plan.name and plan.description (e.g., 'Mesocycle 2: Hypertrophy Progression', 'Phase 1 · Mesocycle 3: Peak Muscle Density & PR Consolidation', 'Phase 2 · Mesocycle 4: New Stimulus & Split Specialization').
+- Fundamental Compound Continuity: Keep foundational primary compound movements (Squat, Hinge, Push, Pull) consistent so the athlete can benchmark strength PRs and progressive overload from earlier cycles.
 - Strategic Secondary & Accessory Rotation: Actively rotate secondary compound angles and isolation movements compared to profile.progression.previous_exercises (e.g., if Cycle 1 had Flat Dumbbell Press, advance to Incline Barbell Press or Dips; if Cycle 1 had Lat Pulldowns, rotate to Chest-Supported T-Bar Rows or Neutral Pull-ups; if Cycle 1 had Standing Dumbbell Curls, rotate to Incline Biceps Curls). This introduces novel motor unit recruitment, prevents joint overuse, and drives ongoing hypertrophy.
-- Progressive Overload Directives: In exercises[].notes, write specific progressive overload cues comparing against Cycle 1 (e.g., 'Mesocycle 2 Overload: Target +2.5kg or +1 rep over Cycle 1 while maintaining strict form at RIR 1-2').
-- Body Weight & Nutrition Adaptation: Acknowledge the user's progress in nutrition.guidance based on profile.progression.weight_change_from_start_kg. If gaining or losing on pace, encourage consistency; if stalled, note surplus/deficit reinforcement.
+- Stage-Specific Periodization:
+  * Month 3 (Mesocycle 3 - Phase 1 Climax): Peak volume accumulation. Program intensity techniques (e.g., final set drop-sets on isolation exercises, RIR 1 on top sets) to maximize muscle fiber recruitment before Phase 1 completion.
+  * Month 4–6 (Mesocycle 4–6 - Phase 2 Sustained Growth / Deep Cut): Split modulation & metabolic adjustment. Recalibrate maintenance calories for the athlete's new body weight. Shift exercise angles to emphasize aesthetic symmetry and weak points.
+  * Month 7+ (Phase 3 - Final Push & Set Point): Approach final goal weight. Transition volume toward joint preservation, peak muscular density, and preparing for sustainable reverse dieting / maintenance.
+- Progressive Overload Directives: In exercises[].notes, write specific progressive overload cues comparing against prior cycles (e.g., 'Mesocycle 2 Overload: Target +2.5kg or +1 rep over Cycle 1 while maintaining strict form at RIR 1-2').
+- Body Weight & Nutrition Adaptation: Acknowledge the user's progress in nutrition.guidance based on profile.progression.weight_delta_from_baseline_kg. If gaining or losing on pace, encourage consistency; if stalled, note surplus/deficit reinforcement.
 
 EQUIPMENT & LOCATION ENFORCEMENT:
 - Use ONLY equipment listed in profile.training.equipment at profile.training.location.

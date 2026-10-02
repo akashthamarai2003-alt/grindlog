@@ -112,13 +112,19 @@ export async function getMesocycleProgressionContext(
     const currentWeightKg = latestMetric?.weight ? Number(latestMetric.weight) : baselineWeightKg;
     const weightDeltaKg = Math.round((currentWeightKg - baselineWeightKg) * 10) / 10;
 
-    // 5. Progression Focus description
+    // 5. Progression Focus description across 3-month phase blocks
     const progressionFocus =
       mesocycleNumber === 2
         ? "Mesocycle 2: Progressive Overload & Secondary Movement Rotation"
         : mesocycleNumber === 3
-          ? "Mesocycle 3: Peak Muscle Density & Volume Consolidation"
-          : `Mesocycle ${mesocycleNumber}: Advanced Periodization`;
+          ? "Mesocycle 3: Peak Volume Accumulation & Phase 1 Climax"
+          : mesocycleNumber === 4
+            ? "Mesocycle 4 (Phase 2): New Stimulus, Split Specialization & Macro Recalibration"
+            : mesocycleNumber === 5
+              ? "Mesocycle 5 (Phase 2): Plateau Breakthrough & Hypertrophy Density"
+              : mesocycleNumber === 6
+                ? "Mesocycle 6 (Phase 2): Phase 2 Climax & Mid-Journey Transformation"
+                : `Mesocycle ${mesocycleNumber} (Phase 3): Final Goal Push & Set-Point Consolidation`;
 
     return {
       mesocycleNumber,
