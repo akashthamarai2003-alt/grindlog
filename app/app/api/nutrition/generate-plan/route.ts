@@ -5,6 +5,7 @@ import { AINutritionService } from "@/lib/services/nutrition/ai-nutrition-servic
 import { V2PlanService } from "@/lib/services/nutrition/v2-plan-service";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { isFitnessPro } from "@/lib/fitness/subscription/access";
+import { verifyAdminSession } from "@/app/actions/admin-auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     const requestedV2 = forceV2 || body?.v2 === true || body?.engine === 'v2';
+    const isAdmin = await verifyAdminSession().catch(() => false);
 
     const { data: profile } = await supabase
       .from('fitness_os_profiles')
@@ -83,7 +85,10 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    const isV2 = V2PlanService.isNutritionV2Enabled(user.id, profile, { forceV2: requestedV2 });
+    const isV2 = V2PlanService.isNutritionV2Enabled(user.id, profile, { 
+      forceV2: requestedV2, 
+      isAdmin 
+    });
 
     let result: any;
     if (isV2) {
@@ -138,6 +143,7 @@ export async function POST(request: NextRequest) {
 
     if (
       message.startsWith('PROFILE_INCOMPLETE:') ||
+      message.startsWith('AGE_RESTRICTED_NUTRITION_PLAN:') ||
       message.startsWith('CLINICAL_REVIEW_REQUIRED:') ||
       message.startsWith('PLAN_VALIDATION_FAILED:')
     ) {

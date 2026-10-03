@@ -108,22 +108,31 @@ export class V2PlanService {
 
   /**
    * Safe feature flag evaluator for controlled rollout.
-   * Checks user profile attribute, environment variable, or explicit override.
+   * Checks authoritative database profile flag, global env toggle, or authenticated admin override.
    */
   static isNutritionV2Enabled(
     userId: string,
     profile?: any,
-    options?: { forceV2?: boolean }
+    options?: { forceV2?: boolean; isAdmin?: boolean }
   ): boolean {
-    if (options?.forceV2) return true;
+    // 1. Authoritative controlled feature flag from database profile
     if (profile?.nutrition_engine_v2 === true) return true;
-    if (profile?.metadata?.nutrition_engine_v2 === true) return true;
+
+    // 2. Global rollout flag via environment variable
     if (
       process.env.NUTRITION_ENGINE_V2 === "true" ||
       process.env.ENABLE_NUTRITION_V2 === "true"
     ) {
       return true;
     }
+
+    // 3. Secure override: ONLY permitted in development/test OR for authenticated admins
+    const isNonProd = process.env.NODE_ENV !== "production";
+    if (options?.forceV2 && (isNonProd || options?.isAdmin === true)) {
+      return true;
+    }
+
+    // Normal production users CANNOT bypass the rollout via query params or request payload
     return false;
   }
 
@@ -332,7 +341,7 @@ export class V2PlanService {
       const ageNum = Number(profile.age);
       if (!Number.isFinite(ageNum) || ageNum < 18) {
         throw new Error(
-          "CLINICAL_REVIEW_REQUIRED: Automatic adult diet plans are not available for users under 18. Ask a qualified clinician or dietitian to review your nutrition needs."
+          "AGE_RESTRICTED_NUTRITION_PLAN: GrindLog automated nutrition planner is calibrated for adults aged 18 and older. Automated adult meal plans cannot be generated for minors."
         );
       }
 
@@ -391,6 +400,29 @@ export class V2PlanService {
       const planDaysPayload: any[] = [];
       const distinctDates = Array.from(mealsByDate.keys()).sort();
 
+      // Fetch live database food IDs to guarantee foreign key integrity across schema migrations
+      const { data: dbFoods } = await supabase.from("foods").select("id, name");
+      const dbFoodIdByName = new Map((dbFoods || []).map((f) => [f.name.toLowerCase().trim(), f.id]));
+      const dbFoodIdSet = new Set((dbFoods || []).map((f) => f.id));
+      const resolveFoodId = (it: any) => {
+        if (it.foodId && dbFoodIdSet.has(it.foodId)) {
+          return it.foodId;
+        }
+        if (it.foodName) {
+          const clean = it.foodName.replace(/\s*\([^)]*\)/g, "").replace(/^Mess\s+/i, "").trim().toLowerCase();
+          const liveId = dbFoodIdByName.get(clean);
+          if (liveId) return liveId;
+        }
+        if (it.foodId && catalog.foodById.has(it.foodId)) {
+          const catFood = catalog.foodById.get(it.foodId);
+          if (catFood?.name) {
+            const liveId = dbFoodIdByName.get(catFood.name.toLowerCase().trim());
+            if (liveId) return liveId;
+          }
+        }
+        return it.foodId;
+      };
+
       for (const dateStr of distinctDates) {
         const dayMeals = mealsByDate.get(dateStr) || [];
 
@@ -429,7 +461,7 @@ export class V2PlanService {
               : `${item.quantity}${item.unit}`;
 
             dayItems.push({
-              food_id: item.foodId,
+              food_id: resolveFoodId(item),
               quantity: item.portionType === "DISCRETE" ? item.quantity : 1,
               serving_size: `${meal.mealSlot}::${mealTitle}::${rawServing}`,
             });
@@ -450,82 +482,105 @@ export class V2PlanService {
         });
       }
 
-      // 9. Transactional persistence via atomic RPC
-      const { error: saveError } = await supabase.rpc("replace_weekly_meal_plans", {
-        p_days: planDaysPayload,
-      });
+      // 9. Authoritative PostgreSQL Atomic Transaction & Advisory Lock
+      const plannedMealsPayload = rawResult.plannedMeals.map((m) => ({
+        id: m.id,
+        meal_plan_id: m.mealPlanId,
+        local_date: m.localDate,
+        meal_slot: m.mealSlot,
+        meal_sequence: m.mealSequence,
+        scheduled_time: m.scheduledTime,
+        source_type: m.sourceType,
+        recipe_version_id: m.recipeVersionId,
+        recipe_variant_id: m.recipeVariantId,
+        meal_template_id: m.mealTemplateId,
+        calories_snapshot: m.caloriesSnapshot,
+        protein_snapshot: m.proteinSnapshot,
+        carbs_snapshot: m.carbsSnapshot,
+        fat_snapshot: m.fatSnapshot,
+        cost_snapshot: m.costSnapshot,
+        status: m.status,
+        planner_version: V2PlanService.PLANNER_VERSION,
+        timezone_snapshot: tz,
+        items: (m.items || []).map((it) => ({
+          id: it.id,
+          food_id: resolveFoodId(it),
+          food_name: it.foodName,
+          quantity: it.quantity,
+          portion_type: it.portionType,
+          unit: it.unit,
+          ingredient_role: it.ingredientRole,
+          is_provided: it.isProvided,
+          calories_snapshot: it.caloriesSnapshot,
+          protein_snapshot: it.proteinSnapshot,
+          carbs_snapshot: it.carbsSnapshot,
+          fat_snapshot: it.fatSnapshot,
+          cost_snapshot: it.costSnapshot,
+        })),
+      }));
 
-      if (saveError) {
-        console.error("[V2PlanService] Error saving weekly meal plan:", saveError);
-        throw new Error(
-          `Failed to persist meal plan. Your previous plan was left untouched: ${saveError.message}`
-        );
-      }
-
-      // 9b. Also persist into planned_meals / planned_meal_items if available in schema
-      try {
-        const { error: testErr } = await supabase.from("planned_meals").select("id").limit(1);
-        if (!testErr) {
-          // Table exists! Insert/replace rows
-          const mealRows = rawResult.plannedMeals.map((m) => ({
-            id: m.id,
-            meal_plan_id: m.mealPlanId,
-            user_id: userId,
-            local_date: m.localDate,
-            meal_slot: m.mealSlot,
-            meal_sequence: m.mealSequence,
-            scheduled_time: m.scheduledTime,
-            source_type: m.sourceType,
-            recipe_version_id: m.recipeVersionId,
-            recipe_variant_id: m.recipeVariantId,
-            meal_template_id: m.mealTemplateId,
-            calories_snapshot: m.caloriesSnapshot,
-            protein_snapshot: m.proteinSnapshot,
-            carbs_snapshot: m.carbsSnapshot,
-            fat_snapshot: m.fatSnapshot,
-            cost_snapshot: m.costSnapshot,
-            status: m.status,
-            planner_version: V2PlanService.PLANNER_VERSION,
-            timezone_snapshot: tz,
-          }));
-
-          const itemRows = rawResult.plannedMeals.flatMap((m) =>
-            (m.items || []).map((it) => ({
-              id: it.id,
-              planned_meal_id: m.id,
-              user_id: userId,
-              food_id: it.foodId,
-              food_name: it.foodName,
-              quantity: it.quantity,
-              portion_type: it.portionType,
-              unit: it.unit,
-              ingredient_role: it.ingredientRole,
-              is_provided: it.isProvided,
-              calories_snapshot: it.caloriesSnapshot,
-              protein_snapshot: it.proteinSnapshot,
-              carbs_snapshot: it.carbsSnapshot,
-              fat_snapshot: it.fatSnapshot,
-              cost_snapshot: it.costSnapshot,
-            }))
-          );
-
-          // Delete existing for these dates
-          await supabase
-            .from("planned_meals")
-            .delete()
-            .eq("user_id", userId)
-            .in("local_date", distinctDates);
-
-          if (mealRows.length > 0) {
-            await supabase.from("planned_meals").insert(mealRows);
-          }
-          if (itemRows.length > 0) {
-            await supabase.from("planned_meal_items").insert(itemRows);
-          }
+      // Call authoritative PostgreSQL RPC with pg_advisory_xact_lock
+      const { data: atomicResult, error: atomicSaveError } = await supabase.rpc(
+        "persist_v2_meal_plan_atomic",
+        {
+          p_user_id: userId,
+          p_plan_days: planDaysPayload,
+          p_planned_meals: plannedMealsPayload,
         }
-      } catch (pmErr: any) {
-        // Non-blocking schema addition notice
-        console.warn("[V2PlanService] planned_meals table write notice:", pmErr?.message);
+      );
+
+      if (atomicSaveError) {
+        // Fallback for environments where Migration 5 has not yet been applied
+        if (
+          atomicSaveError.code === "42883" ||
+          atomicSaveError.message?.includes("function") ||
+          atomicSaveError.message?.includes("schema cache")
+        ) {
+          console.warn("[V2PlanService] persist_v2_meal_plan_atomic RPC not yet installed; executing fallback transaction.");
+          const { error: saveError } = await supabase.rpc("replace_weekly_meal_plans", {
+            p_days: planDaysPayload,
+          });
+          if (saveError) {
+            console.error("[V2PlanService] Error saving weekly meal plan:", saveError);
+            throw new Error(`Failed to persist meal plan. Your previous plan was left untouched: ${saveError.message}`);
+          }
+
+          // Persist planned_meals & meal_plan_items
+          try {
+            await supabase.from("planned_meals").delete().eq("user_id", userId).in("local_date", distinctDates);
+            const mealRows = rawResult.plannedMeals.map((m) => ({
+              id: m.id,
+              meal_plan_id: m.mealPlanId,
+              user_id: userId,
+              local_date: m.localDate,
+              meal_slot: m.mealSlot,
+              meal_sequence: m.mealSequence,
+              scheduled_time: m.scheduledTime,
+              source_type: m.sourceType,
+              recipe_version_id: m.recipeVersionId,
+              recipe_variant_id: m.recipeVariantId,
+              meal_template_id: m.mealTemplateId,
+              calories_snapshot: m.caloriesSnapshot,
+              protein_snapshot: m.proteinSnapshot,
+              carbs_snapshot: m.carbsSnapshot,
+              fat_snapshot: m.fatSnapshot,
+              cost_snapshot: m.costSnapshot,
+              status: m.status,
+              planner_version: V2PlanService.PLANNER_VERSION,
+              timezone_snapshot: tz,
+            }));
+            if (mealRows.length > 0) {
+              await supabase.from("planned_meals").insert(mealRows);
+            }
+          } catch (pmErr: any) {
+            console.warn("[V2PlanService] Fallback planned_meals notice:", pmErr?.message);
+          }
+        } else {
+          console.error("[V2PlanService] Database error persisting weekly plan:", atomicSaveError);
+          throw new Error(
+            `Failed to persist meal plan. Your previous plan was left untouched: ${atomicSaveError.message}`
+          );
+        }
       }
 
       // 10. Synchronize V2 Smart Grocery List
@@ -772,10 +827,92 @@ export class V2PlanService {
   ): Promise<any> {
     const supabase = createAdminClient();
 
-    // 1. Check if user already logged foods for this slot on this date
+    // 1. Resolve date boundaries
     const tz = await NutritionService.getUserTimezone(userId);
     const { start, end } = await NutritionService.getLocalDateBoundaries(userId, tz, dateStr);
 
+    // 2. Prepare swap payload for PostgreSQL RPC
+    const swapRpcPayload = {
+      name: chosenOption.name,
+      recipe_version_id: chosenOption.id.startsWith("v2-swap-") ? null : null, // Handled via name & items
+      recipe_variant_id: null,
+      image_asset_id: null,
+      image_storage_path_snapshot: null,
+      image_url_snapshot: chosenOption.image_url || null,
+      calories: chosenOption.calories,
+      protein: chosenOption.protein,
+      carbs: chosenOption.carbs,
+      fat: chosenOption.fat,
+      estimated_cost: chosenOption.estimated_cost,
+      items: chosenOption.items.map((it) => ({
+        food_id: it.food_id,
+        name: it.name,
+        quantity: it.portion_type === "DISCRETE" ? it.quantity : 1,
+        portion_type: it.portion_type,
+        unit: it.unit,
+        serving_size: it.serving_size,
+        calories_snapshot: it.calories,
+        protein_snapshot: it.protein,
+        carbs_snapshot: it.carbs,
+        fat_snapshot: it.fat,
+        cost_snapshot: it.estimated_cost,
+        is_provided: it.is_provided || false,
+      })),
+    };
+
+    // 3. Attempt Authoritative PostgreSQL Atomic Swap RPC
+    const { data: atomicSwapResult, error: atomicSwapErr } = await supabase.rpc(
+      "execute_v2_meal_swap_atomic",
+      {
+        p_user_id: userId,
+        p_date: dateStr,
+        p_meal_slot: mealSlot,
+        p_day_start: start,
+        p_day_end: end,
+        p_swap: swapRpcPayload,
+      }
+    );
+
+    if (atomicSwapErr) {
+      if (
+        atomicSwapErr.message?.includes("CANNOT_SWAP_LOGGED_MEAL")
+      ) {
+        throw new Error("CANNOT_SWAP_LOGGED_MEAL: This meal has already been logged. Past and logged meals cannot be altered.");
+      }
+
+      // If RPC is missing in this environment, proceed to fallback with row-locking simulation
+      const isMissingRpc =
+        atomicSwapErr.code === "42883" ||
+        atomicSwapErr.message?.includes("function") ||
+        atomicSwapErr.message?.includes("schema cache");
+
+      if (!isMissingRpc) {
+        console.error("[V2PlanService] Database error executing atomic swap:", atomicSwapErr);
+        throw new Error(`Swap failed: ${atomicSwapErr.message}`);
+      }
+    } else {
+      // Atomic RPC succeeded! Invalidate server cache & return
+      NutritionService.invalidateServerCache(userId);
+      invalidateNutritionServerCache(userId);
+      this.generateV2GroceryList(userId).catch(() => {});
+
+      return {
+        success: true,
+        message: `Swapped to ${chosenOption.name} safely.`,
+        updatedMeal: {
+          meal_type: mealSlot,
+          name: chosenOption.name,
+          calories: chosenOption.calories,
+          protein: chosenOption.protein,
+          carbs: chosenOption.carbs,
+          fat: chosenOption.fat,
+          estimated_cost: chosenOption.estimated_cost,
+        },
+      };
+    }
+
+    // --- Fallback Swap Handler (if RPC not yet installed) ---
+    // Check if user already logged foods for this slot on this date
     const { data: existingLogs } = await supabase
       .from("food_logs")
       .select("id")
@@ -788,7 +925,20 @@ export class V2PlanService {
       throw new Error("CANNOT_SWAP_LOGGED_MEAL: This meal has already been logged. Past and logged meals cannot be altered.");
     }
 
-    // 2. Fetch existing daily plan for dateStr
+    // Check planned_meals status
+    const { data: pmCheck } = await supabase
+      .from("planned_meals")
+      .select("status")
+      .eq("user_id", userId)
+      .eq("local_date", dateStr)
+      .eq("meal_slot", mealSlot)
+      .maybeSingle();
+
+    if (pmCheck?.status === "LOGGED") {
+      throw new Error("CANNOT_SWAP_LOGGED_MEAL: This meal has already been logged. Past and logged meals cannot be altered.");
+    }
+
+    // Fetch existing daily plan for dateStr
     const { data: existingPlan, error: planErr } = await supabase
       .from("meal_plans")
       .select("*, meal_plan_items(*)")
@@ -1198,6 +1348,10 @@ export class V2PlanService {
       food_id: it.food_id,
       meal_type: mealSlot,
       quantity: Number(it.quantity) || 1,
+      calories: it.foods ? Math.round(Number(it.foods.calories) * (Number(it.quantity) || 1)) : 0,
+      protein: it.foods ? Number((Number(it.foods.protein) * (Number(it.quantity) || 1)).toFixed(1)) : 0,
+      carbs: it.foods ? Number((Number(it.foods.carbs) * (Number(it.quantity) || 1)).toFixed(1)) : 0,
+      fat: it.foods ? Number((Number(it.foods.fat) * (Number(it.quantity) || 1)).toFixed(1)) : 0,
       custom_food: it.foods
         ? {
             name: it.foods.name,
@@ -1211,18 +1365,32 @@ export class V2PlanService {
         : undefined,
     }));
 
-    // 3. Batch insert using NutritionService.logMultipleFoods
-    const inserted = await NutritionService.logMultipleFoods(userId, logItems);
+    // 3. Attempt Authoritative PostgreSQL Atomic Log RPC
+    const { data: atomicLogRes, error: atomicLogErr } = await supabase.rpc(
+      "log_v2_planned_meal_atomic",
+      {
+        p_user_id: userId,
+        p_date: dateStr,
+        p_meal_slot: mealSlot,
+        p_food_logs: logItems,
+      }
+    );
 
-    // 4. Mark planned meal as LOGGED if planned_meals table is active
-    try {
-      await supabase
-        .from("planned_meals")
-        .update({ status: "LOGGED" })
-        .eq("user_id", userId)
-        .eq("local_date", dateStr)
-        .eq("meal_slot", mealSlot);
-    } catch {}
+    let inserted: any[] = [];
+    if (atomicLogErr) {
+      // Fallback path
+      inserted = await NutritionService.logMultipleFoods(userId, logItems);
+      try {
+        await supabase
+          .from("planned_meals")
+          .update({ status: "LOGGED" })
+          .eq("user_id", userId)
+          .eq("local_date", dateStr)
+          .eq("meal_slot", mealSlot);
+      } catch {}
+    } else {
+      inserted = logItems;
+    }
 
     // 5. Invalidate server cache & return adaptive day state
     NutritionService.invalidateServerCache(userId);
