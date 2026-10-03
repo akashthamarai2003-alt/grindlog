@@ -2,19 +2,7 @@ import path from "node:path";
 import process from "node:process";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-
-dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
-dotenv.config({ path: path.resolve(process.cwd(), "app/.env.local") });
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error("Missing Supabase credentials in .env.local");
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { pathToFileURL } from "node:url";
 
 export const VERIFIED_FOODS = [
   // ==========================================
@@ -204,6 +192,14 @@ export const VERIFIED_FOODS = [
 ];
 
 async function seed() {
+  dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+  dotenv.config({ path: path.resolve(process.cwd(), "app/.env.local") });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Missing Supabase service credentials in .env.local");
+  }
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
   console.log(`Starting insertion of ${VERIFIED_FOODS.length} verified foods into public.foods...`);
 
   let insertedCount = 0;
@@ -266,7 +262,9 @@ async function seed() {
   console.log(`✓ Seeding complete! Inserted: ${insertedCount}, Updated: ${updatedCount}, Total: ${VERIFIED_FOODS.length}`);
 }
 
-seed().catch(err => {
-  console.error("Seed script failed:", err);
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  seed().catch(err => {
+    console.error("Seed script failed:", err);
+    process.exit(1);
+  });
+}

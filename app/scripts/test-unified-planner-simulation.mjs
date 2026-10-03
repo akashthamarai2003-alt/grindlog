@@ -1,4 +1,5 @@
 import { generateUnified7DayPlan } from "../lib/fitness/nutrition/unified-7day-planner.ts";
+import assert from "node:assert/strict";
 
 console.log("==================================================");
 console.log("GRINDLOG NUTRITION V2: 7-DAY PLANNER SIMULATION");
@@ -132,12 +133,24 @@ const testProfiles = [
 ];
 
 let allPassed = true;
+let assertionCount = 0;
+function check(condition, message) {
+  assertionCount++;
+  assert.ok(condition, message);
+}
 
 for (const t of testProfiles) {
   console.log(`\n--------------------------------------------------`);
   console.log(`Testing: ${t.name}`);
   try {
     const res = generateUnified7DayPlan(t.profile, "2026-10-05");
+    check(res.dailySummaries.length === 7, `${t.name}: seven daily summaries`);
+    check(res.plannedMeals.length === 7 * t.profile.mealsPerDay, `${t.name}: expected meal count`);
+    check(res.metrics.hardConstraintPass && res.metrics.compositeScore >= 75, `${t.name}: hard quality gate`);
+    check(res.plannedMeals.every((meal) => meal.items?.length > 0 && meal.items.every((item) =>
+      item.foodName.length > 0 && Number.isFinite(item.quantity) && item.quantity > 0)), `${t.name}: named positive portions`);
+    check(res.dailySummaries.every((day) => Math.abs(day.calorieDeviationPct) <= 5 &&
+      day.proteinDeviationPct >= -5 && day.proteinDeviationPct <= 10), `${t.name}: daily macro bounds`);
     console.log(`  Plan ID: ${res.planId}`);
     console.log(`  Date Range: ${res.startDate} to ${res.endDate}`);
     console.log(`  Daily Targets: ${res.dailyTargets.calories} kcal | ${res.dailyTargets.protein}g P | ${res.dailyTargets.carbs}g C | ${res.dailyTargets.fat}g F`);
@@ -170,7 +183,7 @@ for (const t of testProfiles) {
 
 console.log("\n==================================================");
 if (allPassed) {
-  console.log("ALL 7-DAY PLANNER SIMULATION TESTS PASSED PERFECTLY!");
+  console.log(`PHASE 3 PLANNER: ${assertionCount} ASSERTIONS PASSED`);
 } else {
   console.error("FAIL: One or more simulation tests failed!");
   process.exit(1);

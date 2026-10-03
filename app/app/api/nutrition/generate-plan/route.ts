@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('fitness_os_profiles')
-      .select('nutrition_engine_v2, metadata')
+      .select('nutrition_engine_v2')
       .eq('user_id', user.id)
       .maybeSingle();
 

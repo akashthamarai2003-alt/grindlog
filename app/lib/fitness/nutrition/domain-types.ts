@@ -195,7 +195,7 @@ export interface PlannedMealItem {
   id: string;
   plannedMealId: string;
   foodId: string;
-  foodName?: string;
+  foodName: string;
   quantity: number;
   portionType: PortionType;
   unit: string;

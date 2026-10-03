@@ -9,6 +9,12 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test:e2e": "playwright test",
+    "test:nutrition:phase3": "node --import ./scripts/register-ts-loader.mjs scripts/test-unified-planner-simulation.mjs",
+    "test:nutrition:phase4": "node --import ./scripts/register-ts-loader.mjs scripts/test-phase4-service.mjs",
+    "test:nutrition:phase4.5": "node --import ./scripts/register-ts-loader.mjs scripts/test-phase4.5-integration.mjs",
+    "test:nutrition:safety": "node --import ./scripts/register-ts-loader.mjs --test scripts/test_weekly_nutrition_safety.mjs",
+    "test:nutrition:integrity": "node --import ./scripts/register-ts-loader.mjs scripts/verify-nutrition-v2-integrity.mjs",
+    "test:nutrition:phase4.7": "node --import ./scripts/register-ts-loader.mjs --test scripts/test-phase47-backend.mjs",
     "import:usda": "node scripts/import-usda-foundation-foods.mjs"
   },
   "dependencies": {

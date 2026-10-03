@@ -4,6 +4,7 @@ import { calculateTargets } from "@/lib/fitness/nutrition/nutrition-engine";
 import { calculateDailyBudget, normalizeDietType, parseStringList, resolveMealSlots } from "@/lib/fitness/nutrition/user-context";
 import { getFoodServingLimit } from "@/lib/fitness/nutrition/constants";
 import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
+import { selectDisplayPlanItems } from "@/lib/services/nutrition/v2-display-items";
 import { cache } from "react";
 
 interface NutritionServerCacheEntry {
@@ -3896,7 +3897,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
         .lte('logged_at', end),
       supabase
         .from('meal_plans')
-        .select('*, meal_plan_items(*, foods(*))')
+        .select('*, meal_plan_items(*, foods(*), planned_meals(meal_slot))')
         .eq('user_id', userId)
         .eq('date', localDate),
       supabase
@@ -4019,7 +4020,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
     if (plans && plans.length > 0) {
       if (plans.length === 1 && plans[0].meal_type === 'daily') {
         const dailyPlan = plans[0];
-        const allItems = dailyPlan.meal_plan_items || [];
+        const allItems = selectDisplayPlanItems(dailyPlan.meal_plan_items || []);
         
         const itemsByType: Record<string, any[]> = {};
         const titleByType: Record<string, string> = {};
@@ -4050,7 +4051,9 @@ function scaleServingSize(servingSize: string, scale: number): string {
             }
           }
 
-          const isItemCore = isStapleCoreFood(item.foods?.name, fitProfile?.food_environment);
+          const isItemCore = item.planned_meal_id != null
+            ? item.is_provided === true
+            : isStapleCoreFood(item.foods?.name, fitProfile?.food_environment);
           const unitCost = isItemCore ? 0 : getRealisticFoodCost(item.foods?.name, item.foods?.estimated_cost);
           const normalizedItem = {
             ...item,

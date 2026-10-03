@@ -120,7 +120,14 @@ export async function GET(request: Request) {
 
     const isV2 = V2PlanService.isNutritionV2Enabled(user.id, profile, { forceV2 });
 
-    if (isV2 && ALLOWED_MEAL_TYPES.has(mealType)) {
+    const { data: v2Meals, error: v2LookupError } = isV2
+      ? await supabase.from("planned_meals").select("id").eq("user_id", user.id)
+          .eq("local_date", targetDate || await NutritionService.getLocalDateString(user.id))
+          .eq("meal_slot", mealType).limit(1)
+      : { data: [], error: null };
+    if (v2LookupError) throw v2LookupError;
+
+    if (isV2 && v2Meals?.length && ALLOWED_MEAL_TYPES.has(mealType)) {
       try {
         const localDate = targetDate || await NutritionService.getLocalDateString(user.id);
         const v2Options = await V2PlanService.getV2SwapOptions(user.id, localDate, mealType as MealSlotType);
@@ -134,7 +141,7 @@ export async function GET(request: Request) {
           }
         });
       } catch (v2Err: any) {
-        console.warn("[Swap API] V2 swap options fallback to curated:", v2Err?.message);
+        throw v2Err;
       }
     }
 
@@ -205,14 +212,34 @@ export async function POST(request: Request) {
     const forceV2 = body.v2 === true;
     const isV2 = V2PlanService.isNutritionV2Enabled(user.id, profile, { forceV2 });
 
-    // V2 swap path: enforces atomic swap, slot macro matching, and protecting logged meals
-    if (isV2 && body.selected_option && Array.isArray(body.selected_option.items) && body.selected_option.items.length > 0) {
+    const { data: v2Meals, error: v2LookupError } = isV2
+      ? await supabase.from("planned_meals").select("id").eq("user_id", user.id)
+          .eq("local_date", localDate).eq("meal_slot", mealType).limit(1)
+      : { data: [], error: null };
+    if (v2LookupError) throw v2LookupError;
+
+    // Preserve legacy swaps for legacy plans. A normalized V2 meal must use the atomic RPC.
+    if (isV2 && v2Meals?.length) {
+      if (typeof body.selected_option?.id !== "string") {
+        return NextResponse.json(
+          { success: false, error: { code: "INVALID_SWAP_OPTION", message: "Choose a meal from the available options." } },
+          { status: 400 }
+        );
+      }
       try {
+        const options = await V2PlanService.getV2SwapOptions(user.id, localDate, mealType as MealSlotType);
+        const selectedOption = options.find((option) => option.id === body.selected_option.id);
+        if (!selectedOption) {
+          return NextResponse.json(
+            { success: false, error: { code: "INVALID_SWAP_OPTION", message: "This meal is no longer available." } },
+            { status: 400 }
+          );
+        }
         const swapResult = await V2PlanService.executeV2MealSwap(
           user.id,
           localDate,
           mealType as MealSlotType,
-          body.selected_option
+          selectedOption
         );
 
         try {
@@ -234,8 +261,11 @@ export async function POST(request: Request) {
             { status: 400 }
           );
         }
-        console.warn("[Swap API] V2 execute swap notice:", v2SwapErr?.message);
-        // If V2 failed due to missing daily container, proceed to standard handler
+        console.error("[Swap API] V2 execute swap failed:", v2SwapErr);
+        return NextResponse.json(
+          { success: false, error: { code: "V2_SWAP_FAILED", message: "Could not swap this meal. Your plan was left unchanged." } },
+          { status: 500 }
+        );
       }
     }
 

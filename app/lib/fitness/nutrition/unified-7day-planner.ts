@@ -553,8 +553,12 @@ export function generateUnified7DayPlan(
         const templateId = generateDeterministicUuid("meal_template", templateCode);
         const mealId = generateDeterministicUuid("planned_meal", `${planId}:${dateStr}:${alloc.slot}`);
 
-        const stapleFood = foodLookup("Chapati / Phulka") || foodLookup("Cooked Rice") || catalog.foods[0];
-        const dalFood = foodLookup("Dal Tadka") || foodLookup("Moong Dal") || catalog.foods[1];
+        const avoidGluten = profile.allergies.some((allergy) => matchesAllergen(allergy, "gluten"));
+        const avoidDairy = profile.allergies.some((allergy) => matchesAllergen(allergy, "dairy"));
+        const stapleFood = (avoidGluten ? foodLookup("White Rice (Steamed)") : foodLookup("Chapati / Phulka")) || catalog.foods[0];
+        const dalFood = (profile.dietPreference === "vegan" || avoidDairy
+          ? foodLookup("Yellow Moong Dal")
+          : foodLookup("Dal Tadka")) || catalog.foods[1];
         const sabziFood = foodLookup("Mixed Vegetable Sabzi") || foodLookup("Green Salad") || catalog.foods[2];
 
         let boosterFood = foodLookup("Low Fat Curd / Dahi") || catalog.foods[3];

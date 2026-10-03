@@ -29,10 +29,6 @@ import {
   Unified7DayPlanResult,
 } from "@/lib/fitness/nutrition/unified-7day-planner";
 import {
-  validate7DayPlan,
-  DayPlanSummary,
-} from "@/lib/fitness/nutrition/plan-quality-validator";
-import {
   generateMealCandidates,
   RecipeCatalogItem,
   CandidateMeal,
@@ -48,12 +44,18 @@ import {
   isStapleCoreFood,
 } from "@/lib/services/nutrition/nutrition-service";
 import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
+import { createLiveFoodIdResolver } from "@/lib/services/nutrition/live-food-id";
+import { groceryPortionAmount, selectGroceryPlanItems } from "@/lib/services/nutrition/v2-grocery-items";
 
 // Concurrency lock to prevent concurrent duplicate generation per user
 const v2PlanGenInFlight = new Map<string, Promise<any>>();
 
 export interface V2SwapCandidate {
   id: string;
+  recipe_version_id: string;
+  recipe_variant_id: string;
+  image_asset_id: string | null;
+  image_storage_path: string | null;
   name: string;
   description: string;
   calories: number;
@@ -212,7 +214,10 @@ export class V2PlanService {
     }
 
     // 5. Equipment parsing
-    const rawEq = Array.isArray(profile?.equipment) ? profile.equipment : [];
+    const hasExplicitEquipment = Array.isArray(profile?.available_equipment);
+    const rawEq = hasExplicitEquipment
+      ? profile.available_equipment
+      : Array.isArray(profile?.equipment) ? profile.equipment : [];
     const availableEquipment: CookingEquipment[] = rawEq
       .map((eq: string) => {
         const l = String(eq).toLowerCase();
@@ -227,7 +232,7 @@ export class V2PlanService {
       })
       .filter((eq: CookingEquipment) => eq !== "none");
 
-    if (availableEquipment.length === 0) {
+    if (availableEquipment.length === 0 && !hasExplicitEquipment) {
       if (foodEnvironment === "Hostel" || foodEnvironment === "PG") {
         availableEquipment.push("kettle");
       } else {
@@ -236,14 +241,17 @@ export class V2PlanService {
     }
 
     // 6. Mess meals resolution
-    const messAvailable =
-      foodEnvironment === "Hostel" ||
-      foodEnvironment === "PG" ||
-      foodEnvironment === "Office/Canteen";
+    const messAvailable = typeof profile?.mess_available === "boolean"
+      ? profile.mess_available
+      : foodEnvironment === "Hostel" || foodEnvironment === "PG" || foodEnvironment === "Office/Canteen";
+    const defaultMessMeals: MealSlotType[] = mealsPerDay === 2
+      ? ["lunch", "dinner"]
+      : ["breakfast", "lunch", "dinner"];
     const messMeals: MealSlotType[] = messAvailable
-      ? mealsPerDay === 2
-        ? ["lunch", "dinner"]
-        : ["breakfast", "lunch", "dinner"]
+      ? Array.isArray(profile?.mess_meals)
+        ? profile.mess_meals.filter((slot: string): slot is MealSlotType =>
+            ["breakfast", "lunch", "dinner", "snack", "pre_workout", "post_workout"].includes(slot))
+        : defaultMessMeals
       : [];
 
     const parseList = (val: any): string[] => {
@@ -368,15 +376,10 @@ export class V2PlanService {
       const rawResult = generateUnified7DayPlan(v2Profile, localDate);
 
       // 6. Validate Plan Quality & Hard Constraints
-      const validation = validate7DayPlan(
-        rawResult.dailySummaries,
-        v2Profile,
-        dailyTargets
-      );
-
-      if (!validation.metrics.hardConstraintPass || validation.metrics.compositeScore < 75) {
+      // The planner has already validated these meals with the catalog allergen lookup.
+      if (!rawResult.metrics.hardConstraintPass || rawResult.metrics.compositeScore < 75) {
         const failureReason =
-          (validation.metrics.failureReasons && validation.metrics.failureReasons.join(", ")) ||
+          (rawResult.metrics.failureReasons && rawResult.metrics.failureReasons.join(", ")) ||
           "Plan did not meet deterministic quality rules.";
         throw new Error(`PLAN_VALIDATION_FAILED: ${failureReason}. Your saved plan was left untouched.`);
       }
@@ -401,27 +404,10 @@ export class V2PlanService {
       const distinctDates = Array.from(mealsByDate.keys()).sort();
 
       // Fetch live database food IDs to guarantee foreign key integrity across schema migrations
-      const { data: dbFoods } = await supabase.from("foods").select("id, name");
-      const dbFoodIdByName = new Map((dbFoods || []).map((f) => [f.name.toLowerCase().trim(), f.id]));
-      const dbFoodIdSet = new Set((dbFoods || []).map((f) => f.id));
-      const resolveFoodId = (it: any) => {
-        if (it.foodId && dbFoodIdSet.has(it.foodId)) {
-          return it.foodId;
-        }
-        if (it.foodName) {
-          const clean = it.foodName.replace(/\s*\([^)]*\)/g, "").replace(/^Mess\s+/i, "").trim().toLowerCase();
-          const liveId = dbFoodIdByName.get(clean);
-          if (liveId) return liveId;
-        }
-        if (it.foodId && catalog.foodById.has(it.foodId)) {
-          const catFood = catalog.foodById.get(it.foodId);
-          if (catFood?.name) {
-            const liveId = dbFoodIdByName.get(catFood.name.toLowerCase().trim());
-            if (liveId) return liveId;
-          }
-        }
-        return it.foodId;
-      };
+      const { data: dbFoods, error: dbFoodsError } = await supabase.from("foods").select("id, name");
+      if (dbFoodsError) throw dbFoodsError;
+      const resolveFoodId = createLiveFoodIdResolver(dbFoods || [], catalog.foodById);
+      for (const food of catalog.foods) resolveFoodId(food.id);
 
       for (const dateStr of distinctDates) {
         const dayMeals = mealsByDate.get(dateStr) || [];
@@ -450,7 +436,7 @@ export class V2PlanService {
             const boosterItem = (meal.items || []).find(
               (it) => it.ingredientRole === "PRIMARY_PROTEIN" && !it.isProvided
             );
-            mealTitle = boosterItem
+            mealTitle = boosterItem?.foodName
               ? `${v2Profile.foodEnvironment} Mess ${meal.mealSlot} (+ ${boosterItem.foodName.replace(/^Mess\s+/i, "")})`
               : `${v2Profile.foodEnvironment} Mess ${meal.mealSlot}`;
           }
@@ -461,7 +447,7 @@ export class V2PlanService {
               : `${item.quantity}${item.unit}`;
 
             dayItems.push({
-              food_id: resolveFoodId(item),
+              food_id: resolveFoodId(item.foodId),
               quantity: item.portionType === "DISCRETE" ? item.quantity : 1,
               serving_size: `${meal.mealSlot}::${mealTitle}::${rawServing}`,
             });
@@ -494,6 +480,9 @@ export class V2PlanService {
         recipe_version_id: m.recipeVersionId,
         recipe_variant_id: m.recipeVariantId,
         meal_template_id: m.mealTemplateId,
+        image_asset_id: m.imageAssetId,
+        image_storage_path_snapshot: m.imageStoragePathSnapshot,
+        image_url_snapshot: m.imageUrlSnapshot,
         calories_snapshot: m.caloriesSnapshot,
         protein_snapshot: m.proteinSnapshot,
         carbs_snapshot: m.carbsSnapshot,
@@ -504,11 +493,12 @@ export class V2PlanService {
         timezone_snapshot: tz,
         items: (m.items || []).map((it) => ({
           id: it.id,
-          food_id: resolveFoodId(it),
+          food_id: resolveFoodId(it.foodId),
           food_name: it.foodName,
           quantity: it.quantity,
           portion_type: it.portionType,
           unit: it.unit,
+          serving_size: `${it.quantity} ${it.unit}`,
           ingredient_role: it.ingredientRole,
           is_provided: it.isProvided,
           calories_snapshot: it.caloriesSnapshot,
@@ -520,7 +510,7 @@ export class V2PlanService {
       }));
 
       // Call authoritative PostgreSQL RPC with pg_advisory_xact_lock
-      const { data: atomicResult, error: atomicSaveError } = await supabase.rpc(
+      const { error: atomicSaveError } = await supabase.rpc(
         "persist_v2_meal_plan_atomic",
         {
           p_user_id: userId,
@@ -530,57 +520,10 @@ export class V2PlanService {
       );
 
       if (atomicSaveError) {
-        // Fallback for environments where Migration 5 has not yet been applied
-        if (
-          atomicSaveError.code === "42883" ||
-          atomicSaveError.message?.includes("function") ||
-          atomicSaveError.message?.includes("schema cache")
-        ) {
-          console.warn("[V2PlanService] persist_v2_meal_plan_atomic RPC not yet installed; executing fallback transaction.");
-          const { error: saveError } = await supabase.rpc("replace_weekly_meal_plans", {
-            p_days: planDaysPayload,
-          });
-          if (saveError) {
-            console.error("[V2PlanService] Error saving weekly meal plan:", saveError);
-            throw new Error(`Failed to persist meal plan. Your previous plan was left untouched: ${saveError.message}`);
-          }
-
-          // Persist planned_meals & meal_plan_items
-          try {
-            await supabase.from("planned_meals").delete().eq("user_id", userId).in("local_date", distinctDates);
-            const mealRows = rawResult.plannedMeals.map((m) => ({
-              id: m.id,
-              meal_plan_id: m.mealPlanId,
-              user_id: userId,
-              local_date: m.localDate,
-              meal_slot: m.mealSlot,
-              meal_sequence: m.mealSequence,
-              scheduled_time: m.scheduledTime,
-              source_type: m.sourceType,
-              recipe_version_id: m.recipeVersionId,
-              recipe_variant_id: m.recipeVariantId,
-              meal_template_id: m.mealTemplateId,
-              calories_snapshot: m.caloriesSnapshot,
-              protein_snapshot: m.proteinSnapshot,
-              carbs_snapshot: m.carbsSnapshot,
-              fat_snapshot: m.fatSnapshot,
-              cost_snapshot: m.costSnapshot,
-              status: m.status,
-              planner_version: V2PlanService.PLANNER_VERSION,
-              timezone_snapshot: tz,
-            }));
-            if (mealRows.length > 0) {
-              await supabase.from("planned_meals").insert(mealRows);
-            }
-          } catch (pmErr: any) {
-            console.warn("[V2PlanService] Fallback planned_meals notice:", pmErr?.message);
-          }
-        } else {
-          console.error("[V2PlanService] Database error persisting weekly plan:", atomicSaveError);
-          throw new Error(
-            `Failed to persist meal plan. Your previous plan was left untouched: ${atomicSaveError.message}`
-          );
-        }
+        console.error("[V2PlanService] Database error persisting weekly plan:", atomicSaveError);
+        throw new Error(
+          `Failed to persist meal plan. Your previous plan was left untouched: ${atomicSaveError.message}`
+        );
       }
 
       // 10. Synchronize V2 Smart Grocery List
@@ -774,7 +717,7 @@ export class V2PlanService {
         portionRulesLookup
       );
 
-      const items = optResult.optimizedIngredients.map((ing) => {
+      const items = optResult.ingredients.map((ing) => {
         const food = catalog.foodById.get(ing.foodId);
         const portionType = ing.portionType || "CONTINUOUS";
         const unit = ing.unit || "g";
@@ -788,17 +731,23 @@ export class V2PlanService {
           portion_type: portionType,
           unit,
           serving_size: rawServing,
-          calories: ing.caloriesSnapshot,
-          protein: ing.proteinSnapshot,
-          carbs: ing.carbsSnapshot,
-          fat: ing.fatSnapshot,
-          estimated_cost: ing.costSnapshot,
+          calories: ing.calories,
+          protein: ing.protein,
+          carbs: ing.carbs,
+          fat: ing.fat,
+          estimated_cost: ing.cost,
           is_provided: false,
         };
       });
 
+      if (items.length === 0) continue;
+
       results.push({
         id: `v2-swap-${cand.catalogItem.recipe.slug}-${variant.variantTier}`,
+        recipe_version_id: rv.id,
+        recipe_variant_id: variant.id,
+        image_asset_id: img?.id || null,
+        image_storage_path: img?.storagePath || null,
         name: rv.name,
         description: rv.description || `Optimized for ${optResult.totalCalories} kcal`,
         calories: optResult.totalCalories,
@@ -831,13 +780,23 @@ export class V2PlanService {
     const tz = await NutritionService.getUserTimezone(userId);
     const { start, end } = await NutritionService.getLocalDateBoundaries(userId, tz, dateStr);
 
+    // Food seed upserts preserve pre-existing database IDs, which can differ from catalog IDs.
+    const { data: liveFoods, error: foodLookupError } = await supabase
+      .from("foods")
+      .select("id, name");
+    if (foodLookupError) throw foodLookupError;
+    const resolveSwapFoodId = createLiveFoodIdResolver(
+      liveFoods || [],
+      loadNutritionCatalog().foodById
+    );
+
     // 2. Prepare swap payload for PostgreSQL RPC
     const swapRpcPayload = {
       name: chosenOption.name,
-      recipe_version_id: chosenOption.id.startsWith("v2-swap-") ? null : null, // Handled via name & items
-      recipe_variant_id: null,
-      image_asset_id: null,
-      image_storage_path_snapshot: null,
+      recipe_version_id: chosenOption.recipe_version_id,
+      recipe_variant_id: chosenOption.recipe_variant_id,
+      image_asset_id: chosenOption.image_asset_id,
+      image_storage_path_snapshot: chosenOption.image_storage_path,
       image_url_snapshot: chosenOption.image_url || null,
       calories: chosenOption.calories,
       protein: chosenOption.protein,
@@ -845,9 +804,11 @@ export class V2PlanService {
       fat: chosenOption.fat,
       estimated_cost: chosenOption.estimated_cost,
       items: chosenOption.items.map((it) => ({
-        food_id: it.food_id,
+        food_id: resolveSwapFoodId(it.food_id),
         name: it.name,
-        quantity: it.portion_type === "DISCRETE" ? it.quantity : 1,
+        // Detailed V2 items store the actual portion: grams for continuous foods,
+        // pieces for discrete foods. The snapshots use that same portion.
+        quantity: it.quantity,
         portion_type: it.portion_type,
         unit: it.unit,
         serving_size: it.serving_size,
@@ -861,7 +822,7 @@ export class V2PlanService {
     };
 
     // 3. Attempt Authoritative PostgreSQL Atomic Swap RPC
-    const { data: atomicSwapResult, error: atomicSwapErr } = await supabase.rpc(
+    const { error: atomicSwapErr } = await supabase.rpc(
       "execute_v2_meal_swap_atomic",
       {
         p_user_id: userId,
@@ -874,22 +835,11 @@ export class V2PlanService {
     );
 
     if (atomicSwapErr) {
-      if (
-        atomicSwapErr.message?.includes("CANNOT_SWAP_LOGGED_MEAL")
-      ) {
+      if (atomicSwapErr.message?.includes("CANNOT_SWAP_LOGGED_MEAL")) {
         throw new Error("CANNOT_SWAP_LOGGED_MEAL: This meal has already been logged. Past and logged meals cannot be altered.");
       }
-
-      // If RPC is missing in this environment, proceed to fallback with row-locking simulation
-      const isMissingRpc =
-        atomicSwapErr.code === "42883" ||
-        atomicSwapErr.message?.includes("function") ||
-        atomicSwapErr.message?.includes("schema cache");
-
-      if (!isMissingRpc) {
-        console.error("[V2PlanService] Database error executing atomic swap:", atomicSwapErr);
-        throw new Error(`Swap failed: ${atomicSwapErr.message}`);
-      }
+      console.error("[V2PlanService] Database error executing atomic swap:", atomicSwapErr);
+      throw new Error(`Swap failed: ${atomicSwapErr.message}`);
     } else {
       // Atomic RPC succeeded! Invalidate server cache & return
       NutritionService.invalidateServerCache(userId);
@@ -911,123 +861,7 @@ export class V2PlanService {
       };
     }
 
-    // --- Fallback Swap Handler (if RPC not yet installed) ---
-    // Check if user already logged foods for this slot on this date
-    const { data: existingLogs } = await supabase
-      .from("food_logs")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("meal_type", mealSlot)
-      .gte("logged_at", start)
-      .lte("logged_at", end);
 
-    if (existingLogs && existingLogs.length > 0) {
-      throw new Error("CANNOT_SWAP_LOGGED_MEAL: This meal has already been logged. Past and logged meals cannot be altered.");
-    }
-
-    // Check planned_meals status
-    const { data: pmCheck } = await supabase
-      .from("planned_meals")
-      .select("status")
-      .eq("user_id", userId)
-      .eq("local_date", dateStr)
-      .eq("meal_slot", mealSlot)
-      .maybeSingle();
-
-    if (pmCheck?.status === "LOGGED") {
-      throw new Error("CANNOT_SWAP_LOGGED_MEAL: This meal has already been logged. Past and logged meals cannot be altered.");
-    }
-
-    // Fetch existing daily plan for dateStr
-    const { data: existingPlan, error: planErr } = await supabase
-      .from("meal_plans")
-      .select("*, meal_plan_items(*)")
-      .eq("user_id", userId)
-      .eq("date", dateStr)
-      .maybeSingle();
-
-    if (planErr) throw planErr;
-    if (!existingPlan) {
-      throw new Error("No active meal plan found for this date to swap.");
-    }
-
-    // 3. Remove old items for this specific mealSlot
-    const slotPrefix = `${mealSlot}::`;
-    const oldSlotItems = (existingPlan.meal_plan_items || []).filter(
-      (it: any) =>
-        typeof it.serving_size === "string" && it.serving_size.startsWith(slotPrefix)
-    );
-
-    if (oldSlotItems.length > 0) {
-      const deleteIds = oldSlotItems.map((it: any) => it.id).filter(Boolean);
-      if (deleteIds.length > 0) {
-        const { error: delErr } = await supabase
-          .from("meal_plan_items")
-          .delete()
-          .in("id", deleteIds);
-        if (delErr) throw delErr;
-      }
-    }
-
-    // 4. Insert new candidate items
-    const newItemsPayload = chosenOption.items.map((it) => ({
-      meal_plan_id: existingPlan.id,
-      food_id: it.food_id,
-      quantity: it.portion_type === "DISCRETE" ? it.quantity : 1,
-      serving_size: `${mealSlot}::${chosenOption.name}::${it.serving_size}`,
-    }));
-
-    const { error: insertErr } = await supabase
-      .from("meal_plan_items")
-      .insert(newItemsPayload);
-
-    if (insertErr) throw insertErr;
-
-    // 5. Update day macro totals on meal_plans container
-    const oldSlotCal = oldSlotItems.reduce((s: number, it: any) => s + (Number(it.calories) || 0), 0);
-    const oldSlotPro = oldSlotItems.reduce((s: number, it: any) => s + (Number(it.protein) || 0), 0);
-    const oldSlotCarbs = oldSlotItems.reduce((s: number, it: any) => s + (Number(it.carbs) || 0), 0);
-    const oldSlotFat = oldSlotItems.reduce((s: number, it: any) => s + (Number(it.fat) || 0), 0);
-    const oldSlotCost = oldSlotItems.reduce((s: number, it: any) => s + (Number(it.estimated_cost) || 0), 0);
-
-    const updatedCal = Math.max(0, existingPlan.calories - oldSlotCal + chosenOption.calories);
-    const updatedPro = Math.max(0, Number((existingPlan.protein - oldSlotPro + chosenOption.protein).toFixed(1)));
-    const updatedCarbs = Math.max(0, Number((existingPlan.carbs - oldSlotCarbs + chosenOption.carbs).toFixed(1)));
-    const updatedFat = Math.max(0, Number((existingPlan.fat - oldSlotFat + chosenOption.fat).toFixed(1)));
-    const updatedCost = Math.max(0, existingPlan.estimated_cost - oldSlotCost + chosenOption.estimated_cost);
-
-    await supabase
-      .from("meal_plans")
-      .update({
-        calories: updatedCal,
-        protein: updatedPro,
-        carbs: updatedCarbs,
-        fat: updatedFat,
-        estimated_cost: updatedCost,
-      })
-      .eq("id", existingPlan.id);
-
-    // 6. Invalidate server cache & sync grocery list
-    NutritionService.invalidateServerCache(userId);
-    invalidateNutritionServerCache(userId);
-
-    this.generateV2GroceryList(userId).catch((err) => {
-      console.warn("[V2PlanService] Non-blocking grocery resync warning:", err?.message);
-    });
-
-    return {
-      success: true,
-      message: `Swapped to ${chosenOption.name} safely.`,
-      updatedMeal: {
-        meal_type: mealSlot,
-        name: chosenOption.name,
-        calories: chosenOption.calories,
-        protein: chosenOption.protein,
-        carbs: chosenOption.carbs,
-        fat: chosenOption.fat,
-        estimated_cost: chosenOption.estimated_cost,
-      },
-    };
   }
 
   /**
@@ -1059,22 +893,27 @@ export class V2PlanService {
       dateRange.push(d.toISOString().split("T")[0]);
     }
 
-    const { data: plans } = await supabase
+    const { data: plans, error: plansError } = await supabase
       .from("meal_plans")
-      .select("*, meal_plan_items(*, foods(*))")
+      .select("*, meal_plan_items(*, foods(*), planned_meals(meal_slot))")
       .eq("user_id", userId)
-      .in("date", dateRange);
+      .in("date", dateRange)
+      .eq("status", "READY");
+    if (plansError) throw plansError;
+    if (!plans?.length) throw new Error("V2_PLAN_NOT_FOUND: No ready meal plan in this date range.");
 
-    const pantryFoods = new Set(
+    const pantryFoods = new Set<string>(
       (Array.isArray(profile?.available_foods) ? profile.available_foods : [])
         .map((s: string) => s.toLowerCase().trim())
         .filter(Boolean)
     );
 
-    const isMessLiving =
-      profile?.food_environment === "Hostel" ||
-      profile?.food_environment === "PG" ||
-      profile?.food_environment === "Office/Canteen";
+    const isMessLiving = profile?.mess_available === true ||
+      (profile?.mess_available == null && (
+        profile?.food_environment === "Hostel" ||
+        profile?.food_environment === "PG" ||
+        profile?.food_environment === "Office/Canteen"
+      ));
 
     // 3. Aggregate items across 7 days
     const itemMap = new Map<
@@ -1093,7 +932,8 @@ export class V2PlanService {
     >();
 
     for (const plan of plans || []) {
-      for (const item of plan.meal_plan_items || []) {
+      const groceryItems = selectGroceryPlanItems(plan.meal_plan_items || []);
+      for (const item of groceryItems) {
         const food = item.foods;
         if (!food) continue;
 
@@ -1102,13 +942,14 @@ export class V2PlanService {
         const key = lowerName;
 
         const isCoreMessItem = isMessLiving && isStapleCoreFood(foodName, profile?.food_environment);
-        const isProvided = isCoreMessItem;
+        const isProvided = item.planned_meal_id != null
+          ? item.is_provided === true
+          : isCoreMessItem;
         const isPantry = Array.from(pantryFoods).some((p) => lowerName.includes(p) || p.includes(lowerName));
 
         // Parse quantity
-        let q = Number(item.quantity) || 1;
         const sSize = String(item.serving_size || "");
-        let slotName = "Meal";
+        let slotName = item.planned_meals?.meal_slot || "Meal";
         if (sSize.includes("::")) {
           slotName = sSize.split("::")[0];
         }
@@ -1131,8 +972,9 @@ export class V2PlanService {
         entry.usedInMeals.add(slotName);
 
         const sw = Number(food.serving_weight_g) || 100;
-        entry.totalGrams += sw * q;
-        entry.totalUnits += q;
+        const portion = groceryPortionAmount(item, sw);
+        entry.totalGrams += portion.grams;
+        entry.totalUnits += portion.units;
       }
     }
 
@@ -1266,19 +1108,21 @@ export class V2PlanService {
           },
         };
 
-        await supabase
+        const { error: workoutSyncError } = await supabase
           .from("fitness_os_workout_plans")
           .update({ plan_data: updatedPlanData })
           .eq("id", activePlan.id);
+        if (workoutSyncError) throw workoutSyncError;
 
-        await supabase
+        const { error: groceryDeleteError } = await supabase
           .from("fitness_grocery_items")
           .delete()
           .eq("user_id", userId)
           .eq("plan_id", activePlan.id);
+        if (groceryDeleteError) throw groceryDeleteError;
 
         if (legacyDbGroceryRows.length > 0) {
-          await supabase.from("fitness_grocery_items").insert(
+          const { error: groceryInsertError } = await supabase.from("fitness_grocery_items").insert(
             legacyDbGroceryRows.map((it) => ({
               user_id: userId,
               plan_id: activePlan.id,
@@ -1292,10 +1136,11 @@ export class V2PlanService {
               purchased: false,
             }))
           );
+          if (groceryInsertError) throw groceryInsertError;
         }
       }
     } catch (syncErr: any) {
-      console.warn("[V2PlanService] Non-blocking grocery persistence notice:", syncErr?.message);
+      throw new Error(`GROCERY_SYNC_FAILED: ${syncErr?.message || "Unknown persistence error"}`);
     }
 
     const needToBuyResult: V2GroceryCategoryGroup[] = [];
@@ -1323,46 +1168,53 @@ export class V2PlanService {
   ): Promise<any> {
     const supabase = createAdminClient();
 
-    // 1. Fetch planned meal items for this slot
-    const { data: plan } = await supabase
-      .from("meal_plans")
-      .select("id, meal_plan_items(*, foods(*))")
+    // Use the authoritative planned meal and its detailed ingredient rows.
+    const { data: plannedMeals, error: plannedMealError } = await supabase
+      .from("planned_meals")
+      .select("id, status, meal_plan_id")
       .eq("user_id", userId)
-      .eq("date", dateStr)
+      .eq("local_date", dateStr)
+      .eq("meal_slot", mealSlot)
+      .limit(2);
+    if (plannedMealError) throw plannedMealError;
+    if (plannedMeals?.length !== 1) {
+      throw new Error("PLANNED_MEAL_NOT_UNIQUE: Expected exactly one planned meal for this slot.");
+    }
+    const plannedMeal = plannedMeals[0];
+    if (plannedMeal.status !== "PLANNED") {
+      throw new Error("PLANNED_MEAL_NOT_LOGGABLE: This meal is already logged or inactive.");
+    }
+    const { data: plan, error: planError } = await supabase
+      .from("meal_plans")
+      .select("status")
+      .eq("id", plannedMeal.meal_plan_id)
+      .eq("user_id", userId)
       .maybeSingle();
+    if (planError) throw planError;
+    if (plan?.status !== "READY") throw new Error("PLAN_NOT_READY");
 
-    if (!plan) throw new Error("No planned meal found for this date.");
-
-    const slotPrefix = `${mealSlot}::`;
-    const slotItems = (plan.meal_plan_items || []).filter(
-      (it: any) =>
-        typeof it.serving_size === "string" && it.serving_size.startsWith(slotPrefix)
-    );
-
-    if (slotItems.length === 0) {
-      throw new Error(`No planned items found for slot ${mealSlot}.`);
+    const { data: slotItems, error: itemError } = await supabase
+      .from("meal_plan_items")
+      .select("food_id, quantity, portion_type, unit, serving_size, calories_snapshot, protein_snapshot, carbs_snapshot, fat_snapshot, cost_snapshot")
+      .eq("planned_meal_id", plannedMeal.id);
+    if (itemError) throw itemError;
+    if (!slotItems?.length) throw new Error(`No detailed planned items found for ${mealSlot}.`);
+    for (const item of slotItems) {
+      if (!item.food_id || item.calories_snapshot == null || item.protein_snapshot == null ||
+          item.carbs_snapshot == null || item.fat_snapshot == null) {
+        throw new Error("PLANNED_MEAL_INCOMPLETE: Food and macro snapshots are required.");
+      }
     }
 
-    // 2. Prepare items for batch logging
-    const logItems = slotItems.map((it: any) => ({
-      food_id: it.food_id,
-      meal_type: mealSlot,
-      quantity: Number(it.quantity) || 1,
-      calories: it.foods ? Math.round(Number(it.foods.calories) * (Number(it.quantity) || 1)) : 0,
-      protein: it.foods ? Number((Number(it.foods.protein) * (Number(it.quantity) || 1)).toFixed(1)) : 0,
-      carbs: it.foods ? Number((Number(it.foods.carbs) * (Number(it.quantity) || 1)).toFixed(1)) : 0,
-      fat: it.foods ? Number((Number(it.foods.fat) * (Number(it.quantity) || 1)).toFixed(1)) : 0,
-      custom_food: it.foods
-        ? {
-            name: it.foods.name,
-            serving_size: it.serving_size.split("::")[2] || it.foods.serving_size,
-            calories: it.foods.calories,
-            protein: it.foods.protein,
-            carbs: it.foods.carbs,
-            fat: it.foods.fat,
-            estimated_cost: it.foods.estimated_cost,
-          }
-        : undefined,
+    // The current RPC signature accepts this payload. The corrective migration
+    // validates against and logs from the locked database rows, not client values.
+    const logItems = slotItems.map((item) => ({
+      food_id: item.food_id,
+      quantity: item.quantity,
+      calories: item.calories_snapshot,
+      protein: item.protein_snapshot,
+      carbs: item.carbs_snapshot,
+      fat: item.fat_snapshot,
     }));
 
     // 3. Attempt Authoritative PostgreSQL Atomic Log RPC
@@ -1376,20 +1228,12 @@ export class V2PlanService {
       }
     );
 
-    let inserted: any[] = [];
     if (atomicLogErr) {
-      // Fallback path
-      inserted = await NutritionService.logMultipleFoods(userId, logItems);
-      try {
-        await supabase
-          .from("planned_meals")
-          .update({ status: "LOGGED" })
-          .eq("user_id", userId)
-          .eq("local_date", dateStr)
-          .eq("meal_slot", mealSlot);
-      } catch {}
-    } else {
-      inserted = logItems;
+      throw new Error(`Atomic planned meal logging failed: ${atomicLogErr.message}`);
+    }
+    if (atomicLogRes?.planned_meal_id !== plannedMeal.id ||
+        atomicLogRes?.food_logs_count !== logItems.length) {
+      throw new Error("Atomic planned meal logging returned an unexpected result.");
     }
 
     // 5. Invalidate server cache & return adaptive day state
@@ -1400,7 +1244,7 @@ export class V2PlanService {
 
     return {
       success: true,
-      loggedItems: inserted,
+      loggedItems: logItems,
       adaptiveDay,
     };
   }

@@ -122,6 +122,15 @@ async function runPhase45SmokeTests() {
   assert(minorErrorCode.includes("AGE_RESTRICTED_NUTRITION_PLAN"), "Uses product-accurate AGE_RESTRICTED_NUTRITION_PLAN wording");
   assert(!minorErrorCode.includes("CLINICAL_REVIEW_REQUIRED"), "No misleading implication of a manual clinical review workflow");
 
+  // The older suites below delete and rewrite records belonging to whichever two users
+  // happen to be returned first. Keep this command read-only until a designated-user
+  // RPC smoke runner replaces those unsafe direct-write suites.
+  if (process.argv.includes("--live-smoke")) {
+    throw new Error("The old direct-write smoke flow is disabled. Use a designated Phase 4.7 test account and RPC flow.");
+  }
+  console.log(`\nPHASE 4.5 READ-ONLY SUMMARY: ${passedTests} / ${totalTests} ASSERTIONS PASSED`);
+  return;
+
   // =========================================================================
   // TEST SUITE 4: Real Database End-to-End User Flow (Steps A -> P)
   // =========================================================================
