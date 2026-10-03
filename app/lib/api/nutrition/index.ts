@@ -209,21 +209,28 @@ export const nutritionApi = {
     return json.data;
   },
 
-  async getSwapOptions(mealType: string) {
-    const res = await fetch(`/api/nutrition/swap-meal?meal_type=${encodeURIComponent(mealType)}&t=${Date.now()}`);
+  async getSwapOptions(mealType: string, date?: string, forceV2?: boolean) {
+    const params = new URLSearchParams({
+      meal_type: mealType,
+      t: String(Date.now()),
+    });
+    if (date) params.append('date', date);
+    if (forceV2) params.append('v2', 'true');
+    const res = await fetch(`/api/nutrition/swap-meal?${params.toString()}`);
     const json = await res.json();
     if (!res.ok) throw json.error;
     return json.data;
   },
 
-  async swapMeal(mealType: string, selectedOption?: any, date?: string) {
+  async swapMeal(mealType: string, selectedOption?: any, date?: string, forceV2?: boolean) {
     const res = await fetch('/api/nutrition/swap-meal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         meal_type: mealType,
         selected_option: selectedOption,
-        date
+        date,
+        v2: forceV2,
       })
     });
     const json = await res.json();
@@ -242,17 +249,29 @@ export const nutritionApi = {
     return json.data;
   },
 
-  async getPlanEligibility() {
-    const res = await fetch('/api/nutrition/generate-plan');
+  async getPlanEligibility(forceV2?: boolean) {
+    const url = `/api/nutrition/generate-plan${forceV2 ? '?v2=true' : ''}`;
+    const res = await fetch(url);
     const json = await res.json();
     if (!res.ok) throw json.error;
     return json.data;
   },
 
-  async generatePlan() {
-    const res = await fetch('/api/nutrition/generate-plan', {
-      method: 'POST'
+  async generatePlan(options?: { v2?: boolean; start_date?: string }) {
+    const url = `/api/nutrition/generate-plan${options?.v2 ? '?v2=true' : ''}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options || {})
     });
+    const json = await res.json();
+    if (!res.ok) throw json.error;
+    return json.data;
+  },
+
+  async getAdaptiveDay(date?: string) {
+    const url = `/api/nutrition/adaptive-day${date ? `?date=${encodeURIComponent(date)}` : ''}`;
+    const res = await fetch(url);
     const json = await res.json();
     if (!res.ok) throw json.error;
     return json.data;

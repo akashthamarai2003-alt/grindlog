@@ -10,6 +10,7 @@ interface SwapMealModalProps {
   isOpen: boolean;
   onClose: () => void;
   mealType: string;
+  date?: string;
   onSelectOption: (option: any) => Promise<void> | void;
   onCustomFoodClick?: () => void;
 }
@@ -22,6 +23,7 @@ export function SwapMealModal({
   isOpen,
   onClose,
   mealType,
+  date,
   onSelectOption,
   onCustomFoodClick
 }: SwapMealModalProps) {
@@ -40,7 +42,7 @@ export function SwapMealModal({
     let isMounted = true;
     setIsLoading(true);
 
-    nutritionApi.getSwapOptions(mealType)
+    nutritionApi.getSwapOptions(mealType, date)
       .then((res: any) => {
         if (!isMounted) return;
         setOptions(res.options || []);
@@ -58,7 +60,7 @@ export function SwapMealModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, mealType]);
+  }, [isOpen, mealType, date]);
 
   const handleSelect = async (opt: any) => {
     if (selectingId) return;

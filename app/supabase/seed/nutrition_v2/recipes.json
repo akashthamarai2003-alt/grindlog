@@ -1,0 +1,1322 @@
+[
+  {
+    "id": "aeec054a-27d7-4040-a8b8-4def72f46e2a",
+    "slug": "moong-dal-cheela-tomato",
+    "current_version_id": "d6e0e109-4393-4d2f-8275-757f8414e821",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "958e9ea8-dfda-49ea-be13-f35427b42083",
+    "slug": "besan-cheela-cucumber",
+    "current_version_id": "74d63b7c-a470-4c7a-b5b7-58a29d7cd150",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8dd57240-8812-43e4-a914-d03833386df6",
+    "slug": "poha-roasted-peanuts",
+    "current_version_id": "8adec2ac-bd4a-457f-9b79-94b23a407a8f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8640f778-9bcd-402b-910f-57be3a93d0fa",
+    "slug": "vegetable-upma",
+    "current_version_id": "99c372cf-2c38-4d83-907d-5a716e05d711",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "bc20ccb7-7f77-4e3d-a9f9-92be8fa3aa18",
+    "slug": "steamed-idli-sambar",
+    "current_version_id": "7cf45a45-eee9-4c47-b817-9f9689016619",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8675e4da-461f-4a86-a363-c4b5841fa6e5",
+    "slug": "plain-dosa-sambar",
+    "current_version_id": "4a12c1f3-45f0-4bda-b96e-2b077a927397",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "147de60e-4d92-4afd-806e-0824e0864957",
+    "slug": "masala-oats-veggies",
+    "current_version_id": "260c22e8-2792-47f2-a07e-1a5f45f227f6",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "e3c31d44-444a-4f73-b2f3-7a0233867517",
+    "slug": "vegetable-daliya-bowl",
+    "current_version_id": "e9eb3f5a-a34f-4b0c-8bf6-95f5606bf944",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c2da2644-504e-496d-8b95-2c0b62876a40",
+    "slug": "pb-toast-banana",
+    "current_version_id": "a2b8fd75-6548-460f-9ff8-d16d836a5a4d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "6d6532c4-015c-44a6-b27d-d2c79424e5d0",
+    "slug": "tofu-scramble-brown-bread",
+    "current_version_id": "b05ee640-3c90-4748-a6b3-d2a2ddc6b963",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9ddab34e-1d36-45e6-bfc5-bfd5d754c761",
+    "slug": "tofu-scramble-phulka",
+    "current_version_id": "5441aba5-557e-4621-ba49-f822d16bd746",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "20ec4871-d7d5-41e9-bc8e-ac1eeefff731",
+    "slug": "soya-chunks-bhurji-roti",
+    "current_version_id": "cb605a54-cade-46e1-892a-a04b48422b30",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "528f06f1-3d1d-487b-adad-5dfab9ebe111",
+    "slug": "overnight-oats-soy-milk",
+    "current_version_id": "3e8880e4-4656-45ff-851b-afcd7870b5e0",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "48ddcad4-4e9a-4222-a1c9-8ab79cc024c0",
+    "slug": "moong-sprouts-chaat",
+    "current_version_id": "d55da81f-858a-41c0-b017-f28ec8b8f916",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "0eacfbb7-5b15-419b-ac46-b17ba17bc70d",
+    "slug": "chana-chaat-lemon",
+    "current_version_id": "d0da04ea-5d08-407c-9a6d-88f775c61e93",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8d51d875-5458-4a18-99f3-b0273d9012d9",
+    "slug": "yellow-moong-dal-phulka",
+    "current_version_id": "0abc4f02-f00d-4416-9970-dd4554803088",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "e324b98a-48c9-4f54-99ff-65ac92706573",
+    "slug": "yellow-moong-dal-rice",
+    "current_version_id": "c8ae1d5f-b04a-47df-ac60-7a85f947a843",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d98056ae-1b71-496d-b28b-965eaab4fd62",
+    "slug": "masoor-dal-phulka",
+    "current_version_id": "2472ed1e-b51e-45e6-9429-a14c5aedc0dc",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "6afb691c-ed3d-4d9a-babf-e21ea4bfd1b4",
+    "slug": "masoor-dal-rice",
+    "current_version_id": "c7f3fd03-06da-49d6-a2b9-a6a476b1c5eb",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "4da4dc85-6824-46a6-832f-b9ae165405a1",
+    "slug": "toor-dal-phulka",
+    "current_version_id": "842620db-22d7-4d11-8c37-2141b1d1ee68",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "4e26534a-7470-4ced-9c53-17e5445b8179",
+    "slug": "toor-dal-jeera-rice",
+    "current_version_id": "7266dc1a-0a7b-4760-ab2f-6aee176b1a0c",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "48b7dc8b-9b1a-4515-8e51-2c1438c4bb54",
+    "slug": "chana-dal-phulka",
+    "current_version_id": "b9d68049-5a5b-4e33-8930-2ece9e7db4d8",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "85da334b-eca4-4765-ad61-6c841df9b805",
+    "slug": "punjabi-rajma-chawal",
+    "current_version_id": "715720ef-8919-4b98-aaf6-5051c9e9ac9a",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "74a2481c-30f4-4f42-80ef-ce6b406363f7",
+    "slug": "punjabi-rajma-phulka",
+    "current_version_id": "c5fa4edd-a6f4-4413-97ab-d9cbf024ca29",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a1390b27-bf0b-40e8-af96-04e7c6d27ec4",
+    "slug": "chole-masala-rice",
+    "current_version_id": "6ab3c434-bcb5-402d-a4fe-47b18e805a1e",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ae9cde60-38ad-43b2-8359-0e89ff28d0ae",
+    "slug": "chole-masala-phulka",
+    "current_version_id": "3db53ee8-be3a-40bd-9fb0-1c0a908ea145",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a1c89baa-505a-44fc-a445-a94c0a88fec4",
+    "slug": "kala-chana-curry-phulka",
+    "current_version_id": "103003e7-2069-4bd2-adee-896ea039ca0f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9023de78-a20e-45bf-98f2-1a23292f6525",
+    "slug": "kala-chana-curry-rice",
+    "current_version_id": "64c4bcf8-8061-4c65-bbeb-535025e393f2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "2d3381dc-5a8d-4c1a-8ad1-134318cfa2da",
+    "slug": "lobia-masala-rice",
+    "current_version_id": "d9712365-c0c3-4435-81db-3b3a3ac8983d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "0fd925d0-2c07-4464-a514-13e4c925ec95",
+    "slug": "lobia-masala-phulka",
+    "current_version_id": "103efb9c-32f9-4701-b9ff-1e0cf041ec2b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "41ea21ae-93b4-4e3a-94c2-7ed8aac7b527",
+    "slug": "soya-chunks-curry-roti",
+    "current_version_id": "bf7b4d42-eb06-4703-abe7-1db5414644f2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "e49ec7ee-d552-4d3c-b78a-b1761706172c",
+    "slug": "soya-chunks-curry-rice",
+    "current_version_id": "acf8d601-6c0f-4a9e-9e62-ab1b4482e192",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "b3e84e66-289b-495e-88d2-c79110f4c60d",
+    "slug": "tofu-matar-curry-rice",
+    "current_version_id": "e1f2417c-f7da-4b2a-8c6c-7026dd394b57",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "5b5395dd-8d2d-4f19-b205-2a2966c57663",
+    "slug": "tofu-quinoa-broccoli-bowl",
+    "current_version_id": "06b40c0d-cd95-4b9b-92f4-09836acc3fe9",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "e0556adc-a388-4e82-98fb-41631f8e6cd5",
+    "slug": "soya-chaap-curry-phulka",
+    "current_version_id": "0f9d849f-0714-4bda-9fe1-d183b49f7a37",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "316c8df2-db1c-4281-bf59-5754a89a9aa1",
+    "slug": "tempeh-tikka-brown-rice",
+    "current_version_id": "b8ecc53d-3405-4c7b-8b96-166e0968eb36",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ec5294f3-fa91-4fde-b9de-6d5a27c90158",
+    "slug": "mixed-veg-sabzi-phulka",
+    "current_version_id": "b54b660a-a843-42ff-8056-ca4b749b91dc",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c91d7cb1-9348-4ee0-b4fc-ba3ac82c3d4a",
+    "slug": "baingan-bharta-phulka",
+    "current_version_id": "8136e867-a752-4951-9861-4f7ea32b94db",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "914f4d3f-4352-4658-bce7-f7ae4ae8f8f4",
+    "slug": "bhindi-masala-phulka",
+    "current_version_id": "930c00cd-8014-47e0-8088-6e3cb6c7cd0b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "987b7ac9-2f95-4606-a945-84aaad766cb0",
+    "slug": "aloo-gobi-phulka",
+    "current_version_id": "3e5f93e6-f593-4f90-aecf-b53574a6cf2d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "04f26396-7c69-4ef4-877c-c7b953609835",
+    "slug": "mushroom-masala-rice",
+    "current_version_id": "5fea0794-09a7-4098-903e-513501e332f3",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "91244e33-e557-411a-b0f6-d4f2ca98d273",
+    "slug": "sambar-rice-bowl",
+    "current_version_id": "1347efe9-5da4-49eb-95f0-bc106f149b0a",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "4a30cadb-25e9-40c2-9f35-1e526ebf4f2d",
+    "slug": "rasam-rice-potato",
+    "current_version_id": "20583283-157e-43a9-967a-169953903e15",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "67385188-3f92-4221-8b62-e0d0ec0749d5",
+    "slug": "sweet-potato-chaat",
+    "current_version_id": "9c35f3ce-ee3d-43bc-9417-ba1f92ad8389",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "941e940b-d707-40ab-9792-54f8ff388a8b",
+    "slug": "lemon-peanut-rice",
+    "current_version_id": "8de44b41-7dd6-4e98-986a-23c20175f991",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "27797527-b45e-4f28-ad82-cc1cb9deefc6",
+    "slug": "roasted-chana-green-tea",
+    "current_version_id": "a6e6a2da-9375-4a22-94fc-6a34eede16d4",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "373daccb-3be4-46c1-8ddd-794e18d39867",
+    "slug": "roasted-makhana-black-coffee",
+    "current_version_id": "1c2e36de-952c-4f01-beb3-22b15fc1e690",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9896a89b-c9dd-4055-ba76-05c2e56e0a42",
+    "slug": "fresh-fruit-platter-chia",
+    "current_version_id": "d1c9de03-0803-4352-8b14-b486a68768a1",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "fc60d55c-7d17-4dfd-8804-a37e0f7bd55f",
+    "slug": "steamed-sweet-corn-chaat",
+    "current_version_id": "c7d2da25-e9bb-4bb5-8b5d-fe2bda5afba5",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d008d285-3786-430b-904d-f101692d01c9",
+    "slug": "soy-milk-chia-smoothie",
+    "current_version_id": "09aa758b-01c3-43c3-8c73-e9e61a0ab7d5",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "5e73b639-c7ea-448d-9774-02c94a640ffa",
+    "slug": "paneer-bhurji-phulka",
+    "current_version_id": "394650d7-54b7-4a04-bbc6-564b202c84fa",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "00e46fc8-3a00-4003-974e-1c5efb696b70",
+    "slug": "low-fat-paneer-bhurji-roti",
+    "current_version_id": "ee694d24-83df-4871-a8ff-5e596b4f7484",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c995a8b2-64db-4107-a081-792ed93b098c",
+    "slug": "paneer-paratha-curd",
+    "current_version_id": "ad98afd4-4f71-47fb-8034-ef7e17512b9d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c04c3990-8801-46b4-989c-cb9c24bab2e9",
+    "slug": "aloo-paratha-dahi",
+    "current_version_id": "1475d216-a25f-4a06-a6ce-adc8e59201d9",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9a0965bd-8e89-4831-ad6f-e857c76302e5",
+    "slug": "gobi-paratha-chaas",
+    "current_version_id": "a1fc51b8-3d6a-4722-b092-ce17ed3ba5b1",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "039ccffc-7a22-44bb-abc2-9d784ee4f327",
+    "slug": "ven-pongal-sambar",
+    "current_version_id": "ade15918-e534-4f3f-aa14-730c72c637dc",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "48a49b93-57fb-45c6-9f75-9cb1955b0769",
+    "slug": "oats-milk-almonds",
+    "current_version_id": "60f08d3c-4af2-498e-917c-23524fab869b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "541dbda6-16bf-4810-9695-8d7f87349963",
+    "slug": "overnight-oats-milk-chia",
+    "current_version_id": "92e094dd-185a-4317-84a9-afbad38c1fd5",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a3e4943e-823d-42a9-a721-6c55bf81efb5",
+    "slug": "besan-cheela-paneer-stuffing",
+    "current_version_id": "5df56b77-c1ba-453b-82f9-274244500c01",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d2be4f41-f659-4f0c-83ae-84cfe1e606df",
+    "slug": "moong-dal-cheela-paneer",
+    "current_version_id": "9791e9c8-124e-44f9-b512-4ece663d88e4",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9d7eb842-d2cc-4b5f-bbeb-e61fe43adce6",
+    "slug": "greek-yogurt-banana-walnuts",
+    "current_version_id": "2b81dbfc-9d5e-48d4-88ed-77acbc4f8010",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9d71cd65-1e4a-458d-95ce-22b7c46f152b",
+    "slug": "palak-paneer-phulka",
+    "current_version_id": "17c079a0-5eb3-42d2-b015-6abf83e4aabb",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "6322e390-6c6c-46f8-88d8-fc8f702471bf",
+    "slug": "palak-paneer-jeera-rice",
+    "current_version_id": "bd07dfb0-c170-45f2-aad3-5512651d5c31",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "895cce2d-5d76-45bf-ab6d-f7434c6c6588",
+    "slug": "matar-paneer-phulka",
+    "current_version_id": "829a2301-3171-4c02-acde-9ff921f17217",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "6cf06665-559d-4c4d-b900-fa2f07277317",
+    "slug": "kadai-paneer-phulka",
+    "current_version_id": "eb36bd81-1fe7-4385-880d-f5b3d7079f5c",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "dc4d8b12-270b-47e1-a97a-c847537a4587",
+    "slug": "grilled-paneer-tikka-salad",
+    "current_version_id": "fbdc86f8-f81c-4eba-a3d2-8cb37a319021",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "942e1c99-91d5-4b87-9e86-64fd6771d19d",
+    "slug": "dal-tadka-paneer-bhurji-phulka",
+    "current_version_id": "22d032e0-d131-4ca2-9370-394bc585487a",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ed02a4b5-ff89-49fd-a423-1c2bc89e6228",
+    "slug": "dal-fry-ghee-phulka-dahi",
+    "current_version_id": "8d6383c5-74b8-4cdc-b044-d04b60223bb9",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "cb1cab6a-c00d-4693-ab10-3c2ac70f2b8c",
+    "slug": "punjabi-rajma-paneer-rice",
+    "current_version_id": "5abd0285-6c10-4e58-ade8-2bd40f0c3758",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "66407ce6-e1bc-4d9d-8feb-9df61d4a71d1",
+    "slug": "moong-dal-khichdi-ghee-dahi",
+    "current_version_id": "0e901929-957e-4c22-9d37-266a623fcba2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "759dd17a-3835-42f8-904a-dd925e99e801",
+    "slug": "curd-rice-tadka-cucumber",
+    "current_version_id": "0d2482c8-7648-4220-911d-e8b00129cab6",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "6b5b29ea-4e9f-4f16-9422-43c9cba211fc",
+    "slug": "curd-rice-paneer-tikka",
+    "current_version_id": "58e94ded-8010-4768-958e-05af1372a5ed",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "69697d60-46bb-425e-905f-af841f648419",
+    "slug": "low-fat-paneer-quinoa-broccoli",
+    "current_version_id": "620cbd92-cb6d-45b0-841b-488e0b3f3059",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "1c3b9c09-cf1a-4400-b557-1d2fd60044b2",
+    "slug": "grilled-paneer-sweet-potato",
+    "current_version_id": "2a23136f-9e40-482d-93fa-49f41d3370b9",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "7e2115fc-24e9-49e7-8319-f22ce7726824",
+    "slug": "high-protein-veg-thali",
+    "current_version_id": "91ea2c84-a430-418e-9a54-b61120d2bdfb",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "98440ff1-bf35-4f9e-9c03-e660a07ce5ab",
+    "slug": "chaas-roasted-chana",
+    "current_version_id": "64f8b641-e0b3-4767-b967-63ce223afba2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "89f2900c-f3e2-40d4-a8b5-21fb68b6f79c",
+    "slug": "sweet-lassi-almonds",
+    "current_version_id": "afd2885e-4a3f-4878-8b70-da6997e8e153",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "811761df-e730-49ba-93b5-a39575590661",
+    "slug": "low-fat-curd-pomegranate",
+    "current_version_id": "0aba2b0e-35ca-4fa4-9a61-b5d1b8bbdc04",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "65fe278a-52c1-4bfc-b67e-1f2b81acf895",
+    "slug": "toned-milk-raw-almonds",
+    "current_version_id": "2381b5b0-419b-4990-acdd-8f6013640daf",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "e3a57471-46e8-48c2-b0e0-d8ed0f511f54",
+    "slug": "raw-paneer-chaat",
+    "current_version_id": "1b6a27fc-0df2-4fe9-a92a-38deb938d9cc",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "0641d194-ca96-4995-870c-d3bfc3ac3a32",
+    "slug": "paneer-butter-masala-phulka",
+    "current_version_id": "9da2239f-04da-41c2-8ac5-f069b537a81c",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "af83089c-f31a-4911-99a6-a9c0152a7ad4",
+    "slug": "kadai-paneer-rice",
+    "current_version_id": "d1df7229-103d-405f-878f-9a501f2861b9",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "1c35d5f7-ea56-499a-83bb-9dad0d9d5d09",
+    "slug": "matar-paneer-steamed-rice",
+    "current_version_id": "bfc24a9a-aab2-461e-b2d6-d32cc8669a6c",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9b1a67b2-641b-4d1b-888c-f0da1c165fdd",
+    "slug": "dal-tadka-paneer-rice",
+    "current_version_id": "4b6ce4e7-052a-4301-82d7-530d55708899",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "4c5fac01-cf60-468d-8d93-2fb5a222d915",
+    "slug": "dal-fry-paneer-rice",
+    "current_version_id": "48920f74-d8d9-4126-b807-e3683ab6a97b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "42ea346e-39ca-49f0-8d5a-8d95eaed17e1",
+    "slug": "yellow-dal-paneer-bhurji-roti",
+    "current_version_id": "e23401f2-be7c-4bd9-9839-22766a6f3d25",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "084c6703-8a7e-47b5-a12a-5b0aa95e3b1e",
+    "slug": "toor-dal-paneer-tikka-rice",
+    "current_version_id": "5d048d5a-6806-40cf-b6be-ef93123cd121",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a1616617-6bfc-43c7-85d9-1a963885f4c6",
+    "slug": "chana-dal-paneer-phulka",
+    "current_version_id": "edb9dc6e-8aaf-48e1-8948-87a2f91bc884",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "7052914e-f5a4-45cc-a012-cd39ac8e9161",
+    "slug": "punjabi-rajma-curd-phulka",
+    "current_version_id": "1f8410c6-b240-46ee-98ef-5a378e7e2a84",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "6243a435-d1cb-42a7-bdd3-0868efa189ed",
+    "slug": "chole-paneer-paratha",
+    "current_version_id": "afb0faad-8d9a-4dc8-a246-58a50ce61257",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "dcebad05-8077-4fec-b10d-8037d25b5403",
+    "slug": "chole-masala-curd-rice",
+    "current_version_id": "d35dd989-234e-48a6-a0f0-d03a8b70bfb4",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "b0a1d0fb-73ea-4579-8f34-cb08dc1c1df4",
+    "slug": "kala-chana-paneer-phulka",
+    "current_version_id": "ed551a00-6c63-4755-9cd7-2bf2d9a3701f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "f315a8db-2e94-4551-95a0-368d96a29000",
+    "slug": "sambar-rice-curd-salad",
+    "current_version_id": "657399ed-af82-4478-8755-fc5582cdb27c",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ba4f55fb-0648-4995-a85b-10e49bbab542",
+    "slug": "rasam-rice-paneer-bhurji",
+    "current_version_id": "0cdb00dd-b5bb-4ad8-9497-2f7c7c53de2f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "526fff29-a53f-4410-85b2-2e5c9c55caef",
+    "slug": "mixed-veg-paneer-bhurji-phulka",
+    "current_version_id": "a71cad5f-546e-4078-85a3-e40979beb383",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a0950b64-4498-421a-b853-0296a7bfe431",
+    "slug": "baingan-bharta-dahi-phulka",
+    "current_version_id": "e4573772-1621-47ad-b9b2-9707780dc3f2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "195db58c-a810-4f71-8754-8a4bf0c76f0d",
+    "slug": "bhindi-masala-yellow-dal-phulka",
+    "current_version_id": "e2b70e90-fc8b-4335-be5f-b1b5ec010f4b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "e2c9369e-621e-457c-9746-e2a34fe0f62f",
+    "slug": "aloo-gobi-paneer-phulka",
+    "current_version_id": "e49690cb-e280-454a-9f86-a3372782c448",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c31e4edf-2b5f-4ea8-a8d2-7239c7f1378d",
+    "slug": "mushroom-masala-paneer-roti",
+    "current_version_id": "87a8800b-b2cd-4f53-b6f3-fd7d6cb35b0c",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "b3ef8f68-f6be-439d-b547-03b813322286",
+    "slug": "mushroom-masala-curd-rice",
+    "current_version_id": "3515578c-d56d-4aaf-8fe1-35315cf662f2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ae8dea8c-a6aa-467a-bd77-386337356e22",
+    "slug": "paneer-keema-style-phulka",
+    "current_version_id": "9ee0ef17-d0ef-4406-9ad1-d892eae57118",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8f8cb3fa-7897-4807-ac6d-d2fd1fc52fe6",
+    "slug": "jain-yellow-dal-jeera-rice",
+    "current_version_id": "d4a5693c-b73f-48c0-a0e8-c61ed1061930",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c2a37750-9e55-4f81-a825-ba216c03ae98",
+    "slug": "jain-paneer-curry-phulka",
+    "current_version_id": "25f5aa25-a2c8-400b-8871-d39115a40258",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c95428b8-8b18-4a30-ade5-c9199db9c739",
+    "slug": "jain-khichdi-ghee-curd",
+    "current_version_id": "11015405-7a8a-4dbb-a427-fa5fe529dc41",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "b940a63a-d3a6-4da4-860e-0d6112272eee",
+    "slug": "jain-steamed-idli-curd",
+    "current_version_id": "0b69b2ec-43b0-4aee-8a75-e9fe816f149b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "643508e5-ef2f-4765-b2cc-eb0c9e3b6a40",
+    "slug": "cheese-toast-chai",
+    "current_version_id": "c9c444de-5f0c-42cf-a51b-ec3eb21e790d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a1d4020f-d954-4df4-bf1f-15f87f13e2af",
+    "slug": "vegetable-daliya-ghee",
+    "current_version_id": "3728e0a8-1a51-44dd-ba31-4facf8e42de2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a2dc2757-ae57-4b8f-adb3-cab10fe29085",
+    "slug": "set-dosa-dahi-sambar",
+    "current_version_id": "7881fb91-23ae-4195-b110-82a47ad54d2d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "dd680986-7781-4cfd-9fb7-c3184847f55f",
+    "slug": "masala-dosa-curd",
+    "current_version_id": "7eb896bd-590a-45bb-a476-cd0a3daf5303",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "113dc1c1-dd1e-4387-90bf-95cc1f7c8b60",
+    "slug": "rava-dosa-curd",
+    "current_version_id": "381d8e97-aaf5-4b77-b411-ead97b3bac77",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "2ff81b10-89b3-4ee0-ac0b-5f0c5e5d50da",
+    "slug": "greek-yogurt-apple-chia",
+    "current_version_id": "cf07ac06-dfcf-46a3-9818-9679cf75ceb1",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "4a9478e0-d3c1-4f2f-9b52-ec4d0e3ae401",
+    "slug": "filter-coffee-milk-makhana",
+    "current_version_id": "17739669-94c3-4c10-900e-b7c88846e53a",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "541b4950-1793-4ce4-86b2-81878d160217",
+    "slug": "masala-chai-wheat-toast",
+    "current_version_id": "3abffda3-295b-4d40-818d-cc6ca0e4fa9b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d2e8d505-454f-4f54-9c32-efa62a31ce0f",
+    "slug": "curd-banana-walnuts",
+    "current_version_id": "e7a78661-efec-4503-a081-8aea9d3d942d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "e213724e-57b3-4bc2-965a-438baf919ccb",
+    "slug": "double-toned-milk-dates",
+    "current_version_id": "5df3d746-26d0-4a8a-887e-749f81a0d3ce",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "57b0eaea-e645-4545-affa-6aa6c27c75c6",
+    "slug": "boiled-egg-whites-phulka",
+    "current_version_id": "9ace69b8-1a55-4016-afa6-5e822efb79e7",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "556dff9a-61f8-478a-9846-24ff92378848",
+    "slug": "egg-bhurji-chapati",
+    "current_version_id": "6cc27632-feb3-4290-be82-2cc5e0de6330",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a3d58424-1649-4739-9dc5-3d0e48af5dc9",
+    "slug": "egg-bhurji-multigrain-roti",
+    "current_version_id": "2a62f802-af8f-4292-8210-309ba5eb7dac",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "7363b66f-387b-489a-8db4-91828be6c939",
+    "slug": "scrambled-eggs-brown-toast",
+    "current_version_id": "c204d1d0-1fb0-4922-8b49-bb87f909be7f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "42ec4bf5-69e6-4ff8-9fa3-e3df5f5636f0",
+    "slug": "egg-omelette-brown-toast",
+    "current_version_id": "b2bf6c61-0173-4c7f-9485-d0979638958f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "28afd9dc-a505-4c9c-abf4-5295df7af55b",
+    "slug": "bread-omelette-homestyle",
+    "current_version_id": "1b088bf6-d816-4df9-af4f-87fb0908ddb1",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "5466c0c2-dcbf-4c92-a0c3-c8e80ca053ae",
+    "slug": "boiled-eggs-masala-oats",
+    "current_version_id": "0b26c074-4768-4c16-a0b6-726526e4c93c",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ead6b2b2-f375-45f4-8836-999a07fb5651",
+    "slug": "boiled-egg-whites-poha",
+    "current_version_id": "a564f6e5-09ec-4e63-9356-9edbc6ff8ecc",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9aafd3f2-4ee6-45db-b356-c339360833eb",
+    "slug": "boiled-eggs-banana-pb",
+    "current_version_id": "05be5e2c-0e57-4efd-b513-97e1a635c201",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "0fe7b460-7d3e-47db-aa6e-6443b42b1b06",
+    "slug": "boiled-eggs-sweet-potato",
+    "current_version_id": "fbd2dbba-e4eb-4b10-bd1c-6b62e0d9c2ad",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "6852a2e5-1ada-40d2-94fb-5f39382b98b5",
+    "slug": "homestyle-egg-curry-rice",
+    "current_version_id": "46b75803-d792-4d5c-986e-ce32e87ba279",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "90cb6144-bc69-4c7a-96c2-0099cbd6439e",
+    "slug": "homestyle-egg-curry-phulka",
+    "current_version_id": "378193a1-30af-466e-8131-173d3a68bcc5",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d1059d08-98a2-4d43-8963-6019a2b1c7e5",
+    "slug": "spicy-egg-curry-multigrain-roti",
+    "current_version_id": "9eccabb2-0a6c-47c1-ae67-333c3f419196",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "0840d650-eede-43c4-8575-35fd039f37d0",
+    "slug": "egg-biryani-homestyle",
+    "current_version_id": "87f391ba-2329-4e60-8627-db3acf7d62e1",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ea99ab6d-c6c6-4ee0-a84d-8d4e914b975b",
+    "slug": "egg-bhurji-dal-tadka-phulka",
+    "current_version_id": "e7dd24dc-40e3-43e1-aaa9-6ca655a5c0e3",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "f9912172-c888-481c-a3ee-d55daff3e636",
+    "slug": "boiled-eggs-dal-tadka-phulka",
+    "current_version_id": "357db1bb-ebc7-489b-99d0-d81ef1f1e841",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "351a48f0-c24a-4075-b704-c64ef2d00a4b",
+    "slug": "boiled-eggs-punjabi-rajma-rice",
+    "current_version_id": "762fe4f1-2698-406b-b8a2-8f8ee73d8472",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "96bf610e-9eaa-42e4-bc73-c8e12a8de1e6",
+    "slug": "boiled-eggs-chole-masala-phulka",
+    "current_version_id": "745c1120-5645-4b4f-8524-ac0796e72490",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "27397c5f-dc33-4617-bd69-592e5cfd1657",
+    "slug": "boiled-eggs-sambar-rice",
+    "current_version_id": "35a235fa-6b87-4e9e-9f0e-0004d7050f48",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "6491d1d6-7c07-411a-9233-5bbc778af458",
+    "slug": "egg-white-scramble-quinoa-broccoli",
+    "current_version_id": "8056f3bf-2abd-47d9-a1df-b7d093f7240e",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "0f61a8ac-c897-4f6b-bc01-28e008eafe16",
+    "slug": "boiled-eggs-black-coffee",
+    "current_version_id": "2235cfbd-3cd3-4e83-ad74-d4d29bc5a5f4",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "95832cee-2522-4012-8bf4-17abf9f8a000",
+    "slug": "boiled-egg-whites-green-tea",
+    "current_version_id": "29b70919-783a-49ab-a57c-088e162bbe49",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "74072fca-fe6c-4df3-b873-e3f0c77ff269",
+    "slug": "boiled-egg-roasted-peanuts",
+    "current_version_id": "d5eb654f-05b8-4d3b-9872-e73928af3445",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "13d1f262-ee26-4119-8d0f-9d903270fb4f",
+    "slug": "boiled-eggs-apple-snack",
+    "current_version_id": "1405fb4e-cbcb-4b09-a634-8bcd7aa478a7",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "15645ffa-8226-424b-beaf-7bcf2aa18f14",
+    "slug": "egg-bhurji-poha",
+    "current_version_id": "ed7c03d3-5fe8-4a84-81d8-adf3b88fb98b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "24d5eccc-4359-44b7-b912-047afec08e1e",
+    "slug": "boiled-eggs-toor-dal-rice",
+    "current_version_id": "8cd57c7a-af42-4843-9c59-b9c254f729f9",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "757a51d5-77bd-4d3f-b10f-5eae9ad85e63",
+    "slug": "boiled-eggs-toor-dal-phulka",
+    "current_version_id": "cc38f66a-e73a-4276-b4fa-16b26a999e2f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "bd7b4456-2c35-4ec8-b389-d790aadcda2e",
+    "slug": "boiled-eggs-masoor-dal-phulka",
+    "current_version_id": "9fa691f3-8b17-476d-a430-1815fa6a0fd1",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c0686b35-d535-4bdd-98e8-a102355c1e2c",
+    "slug": "boiled-eggs-chana-dal-phulka",
+    "current_version_id": "727c5142-463c-4d04-a42f-56f9ae328fa5",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "bf9b3f0d-e84d-4c79-b143-648f90dd692e",
+    "slug": "boiled-eggs-punjabi-rajma-phulka",
+    "current_version_id": "269a0eb9-b3a2-49a2-8ab3-687880580187",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "02b1f596-c563-422c-8b06-2db376230753",
+    "slug": "boiled-eggs-chole-masala-rice",
+    "current_version_id": "aa7e8abc-c31e-468a-b74f-4d70a2f4b824",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d1845479-606f-4dcc-a05f-22bba856eec3",
+    "slug": "boiled-eggs-kala-chana-phulka",
+    "current_version_id": "cb6c530c-35d9-4ab8-aae5-2e9734e968c2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "5b38ae81-e4c7-43d7-ae8e-9b80448663fb",
+    "slug": "boiled-eggs-kala-chana-rice",
+    "current_version_id": "bacb692e-061b-40e4-af9b-a8d91566344f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "0bb2ab1b-fae3-4782-82f6-a083ed3b079d",
+    "slug": "boiled-eggs-lobia-masala-rice",
+    "current_version_id": "5b955fa2-209a-495e-abd0-f79d1f9f4d63",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "90a9cb5e-2e84-4a1c-9a7e-303db75b11f7",
+    "slug": "boiled-eggs-rasam-rice",
+    "current_version_id": "a2c9b25c-13cf-461f-bef6-73d6ba69fae4",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "5e508b0e-3870-4080-85ad-1cd56e237281",
+    "slug": "egg-bhurji-mixed-veg-phulka",
+    "current_version_id": "fa86eab6-d0be-4812-8e33-ff35d13a5166",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "09709dd5-0d13-474f-bcc9-072d2f61fad6",
+    "slug": "egg-bhurji-bhindi-masala-phulka",
+    "current_version_id": "42e11ba7-1c00-4cac-8542-9406ec37da9b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "bd424735-a403-4c36-8be6-5e8c07ed9a6f",
+    "slug": "egg-bhurji-aloo-gobi-phulka",
+    "current_version_id": "38a0d74e-bb18-4651-9ede-2fdfba0811ad",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "11e7be8c-88d5-4052-9c53-379654e0a4c2",
+    "slug": "boiled-egg-whites-sweet-potato-salad",
+    "current_version_id": "c087965c-5c5a-4eae-afa3-01f11fe866b7",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ee5acab2-51a4-499c-befa-fed0c505cbd3",
+    "slug": "gluten-free-egg-curry-rice",
+    "current_version_id": "727e5f8f-d697-4a67-b60e-952c65d75862",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9e8ec7d7-b171-41a6-8f86-e7bcc8b82cb1",
+    "slug": "hostel-kettle-boiled-eggs-oats",
+    "current_version_id": "8d727fb7-7e00-4ae9-b5bb-9ee627d43adb",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d588a85b-e80b-4885-bb5a-c8f6d3aef52d",
+    "slug": "hostel-kettle-boiled-eggs-bread",
+    "current_version_id": "89a4cfe2-309c-40e8-9b0e-60864e759944",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "b5030a0a-17ae-48a9-92d9-a6572ac63b03",
+    "slug": "egg-white-cucumber-chaat",
+    "current_version_id": "1d6809c2-b4fc-4180-8b01-319073785eb8",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8ba3cb9a-f398-40d4-9432-6e10128d166e",
+    "slug": "egg-curry-jeera-rice",
+    "current_version_id": "f7267782-7d1f-46a7-bec0-18b2710896f2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "79ed3499-8121-4311-a1b8-bddbfac42f94",
+    "slug": "egg-curry-brown-rice",
+    "current_version_id": "227a7ed5-3466-477e-99a5-47488962783b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "4a27a917-8dcd-4445-b311-bfa37419becb",
+    "slug": "egg-bhurji-dal-fry-rice",
+    "current_version_id": "7898fd47-e6b3-4b52-aed5-47d8290745ba",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8d65c618-cbdb-44c9-8e71-90999502608f",
+    "slug": "boiled-eggs-dal-fry-rice",
+    "current_version_id": "04277c91-1fce-4eb1-a4be-fdf09f91520d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "69bac342-5aeb-457c-8e97-0da4edb896ca",
+    "slug": "egg-white-omelette-broccoli",
+    "current_version_id": "0a2f0c6f-3f10-4f3d-994e-a128927f57a5",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "5a1ab01c-d8bb-427b-b812-71284b9d1c6f",
+    "slug": "scrambled-eggs-sweet-corn",
+    "current_version_id": "3a8077e5-ca8d-43b7-8fa9-57ed7b9669c3",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "1d1e2b88-522e-4873-8489-ab28ad963c37",
+    "slug": "egg-bhurji-upma",
+    "current_version_id": "0fc3419a-e87a-4dca-a569-46ad96879fc5",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "f6f6a238-69b5-4c71-bfbb-2c56d22e7f5a",
+    "slug": "grilled-chicken-phulka-salad",
+    "current_version_id": "3f46a517-2168-4f02-a843-a31a2cfe88b1",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "3e840027-0420-45ab-978b-e7295eeb7f25",
+    "slug": "grilled-chicken-steamed-rice",
+    "current_version_id": "9b18ccd4-2266-4d41-89f4-d17fbbf58276",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "0f21e079-4f34-4f69-b096-b6ae8f853588",
+    "slug": "grilled-chicken-brown-rice",
+    "current_version_id": "5fefa227-b7af-4482-807f-d671147bbb13",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "23803c6e-350a-45f5-a814-2827c37a2b6c",
+    "slug": "boiled-chicken-sweet-potato",
+    "current_version_id": "54bb00a9-915d-4186-addb-e29a1e1b9bbf",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "4ee76928-dc8b-4f66-a307-18f7513db7cb",
+    "slug": "boiled-chicken-brown-toast",
+    "current_version_id": "783b5933-5eec-435f-8f97-5878d8e0259b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "e2c005c8-5bc7-47d9-a142-de72460124b3",
+    "slug": "homestyle-chicken-curry-rice",
+    "current_version_id": "fec7d491-5687-49ad-9c07-4c5e08409d73",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "0a101ce2-2f9d-4499-bd3a-605bb3157b6f",
+    "slug": "homestyle-chicken-curry-phulka",
+    "current_version_id": "c2c56d2c-aca2-4391-9231-5d380a8f2b42",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a668f197-f6c0-4118-b49a-9972a60c8514",
+    "slug": "chicken-curry-jeera-rice",
+    "current_version_id": "7a89d6ac-2977-4d61-8e34-76931e8c33a3",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ca541d5b-b0a9-4885-9f99-0c745907abed",
+    "slug": "chicken-curry-multigrain-roti",
+    "current_version_id": "6029a8b0-fa6e-41ad-852e-6144021b03c4",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8e5608f4-1f6a-45ad-a640-f4255a250411",
+    "slug": "tandoori-chicken-phulka",
+    "current_version_id": "6f89bcfa-6805-46d9-a423-0774c84afaa4",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8312d616-c7b6-4584-94b7-eda446e2d1fa",
+    "slug": "chicken-tikka-platter-phulka",
+    "current_version_id": "d1e88da7-49ab-4ce6-bcb0-e19aa0fc04d1",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "511510fa-6b18-453a-9f8e-a2752e7bd9e7",
+    "slug": "chicken-keema-phulka",
+    "current_version_id": "b3251625-136f-4818-865a-2ac16a32cae4",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "f229e99e-1d54-4644-9dbd-bec4804c466e",
+    "slug": "chicken-keema-brown-toast",
+    "current_version_id": "f669c25c-3f7f-46e1-8f35-14d57d74ffc9",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d20eaf2e-0e5c-4de4-8832-bf4e1ebd3eec",
+    "slug": "chicken-keema-jeera-rice",
+    "current_version_id": "3154fb5d-b682-4c61-8b2e-a9dda54fc5c5",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "8fdf246a-c3fe-4aaf-b33f-888dc57d702e",
+    "slug": "chicken-biryani-homestyle",
+    "current_version_id": "7dbbd49a-96c3-4dc3-9460-4be1f9c0a472",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d7845915-3fb2-4500-b3ea-8cd1e876f84b",
+    "slug": "chicken-breast-dal-tadka-rice",
+    "current_version_id": "16a32f61-fbeb-41b1-80ed-fa82a9e5616d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "04dfe175-5c66-47f8-b03e-a6648e25bbcc",
+    "slug": "chicken-breast-dal-tadka-phulka",
+    "current_version_id": "540a407d-e413-488a-9b1c-6d28732180ef",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "558d4af6-3c26-4374-bc35-ee94fc9426ed",
+    "slug": "chicken-breast-rajma-rice",
+    "current_version_id": "45827f20-a059-4074-a09c-009dc023b36d",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "5ca0358e-81da-48bb-8d04-9b9f237d4db0",
+    "slug": "chicken-breast-chole-phulka",
+    "current_version_id": "a7a03929-a449-4e70-b8a4-ca19ae30ad9b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c3140324-c511-4fb2-bb61-3805b9fcd330",
+    "slug": "chicken-breast-moong-khichdi",
+    "current_version_id": "ecfd43cb-59c8-4485-b3ac-a33379d3a10b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "9b3d4c29-d089-476f-ad2b-703bce604504",
+    "slug": "chicken-breast-quinoa-broccoli",
+    "current_version_id": "f56923d2-1eb3-4602-bef1-b5c03c71489a",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "69f78121-c3f1-4bb8-b22d-5549b65a0214",
+    "slug": "tandoori-chicken-sweet-potato",
+    "current_version_id": "a650729c-a081-492e-976a-b59f03c632ac",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "eae33718-c209-4a34-98bf-8d20ecb0073f",
+    "slug": "chicken-tikka-green-tea-snack",
+    "current_version_id": "008bd223-7a46-45cc-a9bf-a588e9520a07",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "e324ecfe-1061-4f50-a79b-acd33677ac13",
+    "slug": "boiled-chicken-apple-snack",
+    "current_version_id": "3de3ffef-692d-487f-8377-5d9ca268d53f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d978d48a-03e5-4f6e-92f3-444c4c12d30a",
+    "slug": "grilled-chicken-sweet-corn-salad",
+    "current_version_id": "e2da919c-5632-4348-bf88-9d350623864c",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "f08214c5-c143-4826-92ba-745391813886",
+    "slug": "chicken-breast-egg-whites-power-bowl",
+    "current_version_id": "887baf09-872b-425c-9f41-1b72ef1aa634",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "87b3ee85-3a41-43cf-8e7c-84ad9c14c7a1",
+    "slug": "chicken-breast-egg-whites-sweet-potato",
+    "current_version_id": "1aff5380-da5e-4156-a0c9-4ec17e474286",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "c0783489-613f-4f8a-90f7-a7a86bab3eb7",
+    "slug": "tandoori-chicken-black-coffee",
+    "current_version_id": "d1cc089d-10d6-4fa4-aad4-d71f85343ae2",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "3a86d158-35cc-4a0e-8e80-237b6fb396f6",
+    "slug": "fish-curry-steamed-rice",
+    "current_version_id": "0fc38ae0-c5c0-4ae4-b572-09f0f0ab7a1a",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "b0c2d388-fa79-45b4-bc99-c7ea1966b325",
+    "slug": "fish-curry-phulka",
+    "current_version_id": "4622edd2-77c8-43a8-8bde-1caa6d3a7b43",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "eea6487b-c4e0-4581-9cb3-c85e4862347e",
+    "slug": "fish-curry-brown-rice",
+    "current_version_id": "14d1b76f-485a-4f73-a88e-be5da6733a38",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "45af4090-1756-4dd4-a0c5-c3b98aa136fc",
+    "slug": "fish-curry-jeera-rice",
+    "current_version_id": "51f432e3-179d-4a4b-a47f-1acad6d90219",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "cce96c12-c72d-4435-992b-98f4502a3a78",
+    "slug": "fish-curry-dal-tadka-rice",
+    "current_version_id": "c69f75b3-e602-49bc-9e13-debcf91f4385",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "80afe81c-f01e-4c41-a055-e6c6e70d9669",
+    "slug": "grilled-fish-phulka-salad",
+    "current_version_id": "325cffe1-662a-47b1-8bb8-27d8e5add8c8",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "7147d0d7-716c-4a03-8f31-3c1fcdecfa6d",
+    "slug": "grilled-fish-steamed-rice",
+    "current_version_id": "d96234d6-eee4-4795-9328-86d4f55c333b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "11249457-0388-4b63-9c2b-65c67dceb936",
+    "slug": "grilled-fish-brown-rice-broccoli",
+    "current_version_id": "7f73b7b4-109f-43ec-8912-f553214e5cb7",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "fc788e94-1376-415c-8628-08cab62c6dd3",
+    "slug": "grilled-salmon-steamed-rice",
+    "current_version_id": "7ee586f0-4902-4894-836e-f988e79018a0",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "3e72bb74-185e-4c80-a7e1-c16bf8e8bb85",
+    "slug": "grilled-salmon-brown-rice-veggies",
+    "current_version_id": "1d60e54c-8818-4bea-bd9d-43daa02606c9",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "612c4eac-d9aa-4884-bb65-7ade2d555006",
+    "slug": "grilled-salmon-sweet-potato",
+    "current_version_id": "846ef0be-06f7-4282-a7f1-6203e606ef48",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "f01a626f-5449-49e4-aeeb-aa46c8a98ed8",
+    "slug": "canned-tuna-brown-toast",
+    "current_version_id": "e6d2a0a1-d350-4b9f-adf3-c6ab14a3977f",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "4a4bf62e-b521-4577-92a1-ab7a9f96ed4a",
+    "slug": "canned-tuna-rice-bowl",
+    "current_version_id": "6785b187-e554-4e63-b2ea-66af360b1896",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "83234b18-388c-4c63-af2f-437e988f6a7b",
+    "slug": "canned-tuna-brown-rice-salad",
+    "current_version_id": "d7db9a43-35b7-4345-a84d-f364314e043a",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "463b88da-df25-442d-a0dc-e03f745139c2",
+    "slug": "canned-tuna-boiled-eggs-toast",
+    "current_version_id": "ad157a10-d55e-4bd4-960a-c3e9d286f37b",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "ebc74006-0112-4b52-abd9-e52b9caa3d6b",
+    "slug": "prawns-masala-steamed-rice",
+    "current_version_id": "bc0f3998-7eaa-4e1d-8cce-66d965fb70aa",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "d9f65b72-1705-4d09-b49f-f6e6cbfc4308",
+    "slug": "prawns-masala-phulka",
+    "current_version_id": "264726f6-1b32-4eba-a5d1-de8a6076d787",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "7b821e00-dfe3-4ab6-b5ce-2413871ce2a3",
+    "slug": "prawns-masala-brown-rice",
+    "current_version_id": "8d78896c-be4d-4cf2-b4a2-8a5efca3915a",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "60121444-6530-4aa2-8ee1-9916454ebd5e",
+    "slug": "prawns-masala-jeera-rice",
+    "current_version_id": "63dc2ad3-ad0e-4907-937f-6da31c3efff7",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "f314ce5d-f839-440b-a6a4-b28c493feecc",
+    "slug": "homestyle-mutton-curry-rice",
+    "current_version_id": "c6bcc33c-5501-45f1-93ff-2effb40b6492",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "a3bfda7f-f1b5-4580-a875-24f0542448f2",
+    "slug": "homestyle-mutton-curry-phulka",
+    "current_version_id": "e0bfc320-192c-4714-907a-74767dc34ba0",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "4087e961-02ed-4e69-8008-fc076e81e84a",
+    "slug": "homestyle-mutton-curry-jeera-rice",
+    "current_version_id": "55fe46dc-e765-4a2c-8f83-da40befd1c8e",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "625853f2-7b9c-4135-9d9b-e50ba111a4fc",
+    "slug": "chicken-tikka-steamed-rice",
+    "current_version_id": "f6084808-09d6-4375-8119-e15958aefdfa",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "bfc1b395-992e-4ff3-8c17-07735005946c",
+    "slug": "chicken-tikka-brown-rice",
+    "current_version_id": "210a3952-8b7f-400c-897d-ecab6ab6fb2e",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "569e742c-4680-47ab-9da4-7865a1208a8b",
+    "slug": "grilled-chicken-brown-rice-dal",
+    "current_version_id": "8bb597b0-8031-4d5d-a539-aa409401f8e4",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "7a6493b8-ac69-43d1-9d49-5782280160ea",
+    "slug": "fish-curry-chole-rice",
+    "current_version_id": "55908f07-dab9-49f9-aa2b-0ea4b928b499",
+    "status": "PUBLISHED"
+  },
+  {
+    "id": "38d00cdb-a1f5-43a0-a846-0e23109770ce",
+    "slug": "tandoori-chicken-jeera-rice",
+    "current_version_id": "75452dd5-cb3d-4909-9f3e-1bf2955df335",
+    "status": "PUBLISHED"
+  }
+]

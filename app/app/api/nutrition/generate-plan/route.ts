@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { AINutritionService } from "@/lib/services/nutrition/ai-nutrition-service";
+import { V2PlanService } from "@/lib/services/nutrition/v2-plan-service";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { isFitnessPro } from "@/lib/fitness/subscription/access";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabase();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -17,8 +18,26 @@ export async function GET() {
       );
     }
 
+    const { searchParams } = new URL(request.url);
+    const forceV2 = searchParams.get('v2') === 'true' || searchParams.get('engine') === 'v2';
+
+    const { data: profile } = await supabase
+      .from('fitness_os_profiles')
+      .select('nutrition_engine_v2, metadata')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const isV2 = V2PlanService.isNutritionV2Enabled(user.id, profile, { forceV2 });
     const eligibility = await NutritionService.getWeeklyPlanEligibility(user.id);
-    return NextResponse.json({ success: true, data: eligibility });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...eligibility,
+        nutrition_engine_v2: isV2,
+        planner_version: isV2 ? V2PlanService.PLANNER_VERSION : 'v1-legacy',
+      }
+    });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: { code: 'SERVER_ERROR', message: error?.message || 'Failed to check eligibility' } },
@@ -27,7 +46,7 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabase();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -46,16 +65,49 @@ export async function POST() {
       );
     }
 
-    // Pro users can generate a personalized weekly 7-day plan (1/week, max 4/month).
-    const result = await AINutritionService.generateMealPlan(user.id);
+    const { searchParams } = new URL(request.url);
+    const forceV2 = searchParams.get('v2') === 'true' || searchParams.get('engine') === 'v2';
+
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
+
+    const requestedV2 = forceV2 || body?.v2 === true || body?.engine === 'v2';
+
+    const { data: profile } = await supabase
+      .from('fitness_os_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const isV2 = V2PlanService.isNutritionV2Enabled(user.id, profile, { forceV2: requestedV2 });
+
+    let result: any;
+    if (isV2) {
+      // Source of truth for new plans: V2 deterministic unified planner
+      // Validated against GrindLog deterministic nutrition rules and automated acceptance tests.
+      result = await V2PlanService.generateV2MealPlan(user.id, {
+        forceV2: requestedV2,
+        startDate: body?.start_date,
+      });
+    } else {
+      // Legacy fallback: Pro users can generate via legacy path
+      result = await AINutritionService.generateMealPlan(user.id);
+    }
+
     NutritionService.invalidateServerCache(user.id);
     try {
       revalidatePath("/nutrition");
       revalidatePath("/");
+      revalidatePath("/grocery");
     } catch {}
 
     return NextResponse.json({ 
       success: true, 
+      engine: isV2 ? 'v2' : 'v1',
       data: result 
     });
   } catch (error: any) {
@@ -84,7 +136,11 @@ export async function POST() {
       );
     }
 
-    if (message.startsWith('PROFILE_INCOMPLETE:') || message.startsWith('CLINICAL_REVIEW_REQUIRED:') || message.startsWith('PLAN_VALIDATION_FAILED:')) {
+    if (
+      message.startsWith('PROFILE_INCOMPLETE:') ||
+      message.startsWith('CLINICAL_REVIEW_REQUIRED:') ||
+      message.startsWith('PLAN_VALIDATION_FAILED:')
+    ) {
       const [code, ...details] = message.split(':');
       return NextResponse.json(
         { success: false, error: { code, message: details.join(':').trim() } },
@@ -93,7 +149,7 @@ export async function POST() {
     }
 
     return NextResponse.json(
-      { success: false, error: { code: 'SERVER_ERROR', message: message } },
+      { success: false, error: { code: 'SERVER_ERROR', message } },
       { status: 500 }
     );
   }

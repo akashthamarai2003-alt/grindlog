@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+import { V2PlanService } from "@/lib/services/nutrition/v2-plan-service";
+import { MealSlotType } from "@/lib/fitness/nutrition/domain-types";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import { buildNutritionUserContext } from "@/lib/fitness/nutrition/user-context";
 import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
@@ -95,11 +97,13 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const mealType = String(searchParams.get("meal_type") || "breakfast").toLowerCase().trim();
+    const targetDate = String(searchParams.get("date") || "").trim();
+    const forceV2 = searchParams.get("v2") === "true";
 
     const [profileRes, targetsRes, foodCatalogRes] = await Promise.all([
       supabase
         .from("fitness_os_profiles")
-        .select("diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods, nutrition_budget, food_environment, meals_per_day")
+        .select("*")
         .eq("user_id", user.id)
         .maybeSingle(),
       NutritionService.getEffectiveTargets(user.id),
@@ -114,10 +118,32 @@ export async function GET(request: Request) {
     const targets = targetsRes || { calories: 2000, protein: 130 };
     const foodCatalog = (foodCatalogRes.data || []) as any[];
 
+    const isV2 = V2PlanService.isNutritionV2Enabled(user.id, profile, { forceV2 });
+
+    if (isV2 && ALLOWED_MEAL_TYPES.has(mealType)) {
+      try {
+        const localDate = targetDate || await NutritionService.getLocalDateString(user.id);
+        const v2Options = await V2PlanService.getV2SwapOptions(user.id, localDate, mealType as MealSlotType);
+        return NextResponse.json({
+          success: true,
+          engine: "v2",
+          data: {
+            meal_type: mealType,
+            options: v2Options,
+            profile_diet: profile.diet_preference || profile.food_type || "Balanced",
+          }
+        });
+      } catch (v2Err: any) {
+        console.warn("[Swap API] V2 swap options fallback to curated:", v2Err?.message);
+      }
+    }
+
+    // Fallback to curated swap options for legacy plans
     const options = NutritionService.getCuratedSwapOptions(mealType, profile, targets, foodCatalog);
 
     return NextResponse.json({
       success: true,
+      engine: "v1",
       data: {
         meal_type: mealType,
         options,
@@ -145,8 +171,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Nutrition is a Pro-only surface. Keep the API protected even if called
-    // directly without going through the page guard.
     const plan = await getFitnessPlan(user.id);
     if (plan?.id !== "pro") {
       return NextResponse.json(
@@ -167,7 +191,7 @@ export async function POST(request: Request) {
     const localDate = body.date || await NutritionService.getLocalDateString(user.id);
     const { data: profile, error: profileError } = await supabase
       .from("fitness_os_profiles")
-      .select("diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods")
+      .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -178,24 +202,60 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: allFoods, error: foodsError } = await supabase
-      .from("foods")
-      .select("id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, allergens")
-      .eq("is_active", true);
+    const forceV2 = body.v2 === true;
+    const isV2 = V2PlanService.isNutritionV2Enabled(user.id, profile, { forceV2 });
 
-    if (foodsError || !allFoods || allFoods.length === 0) {
-      return NextResponse.json(
-        { success: false, error: { code: "NO_FOODS", message: "The food catalog is temporarily unavailable." } },
-        { status: 400 },
-      );
+    // V2 swap path: enforces atomic swap, slot macro matching, and protecting logged meals
+    if (isV2 && body.selected_option && Array.isArray(body.selected_option.items) && body.selected_option.items.length > 0) {
+      try {
+        const swapResult = await V2PlanService.executeV2MealSwap(
+          user.id,
+          localDate,
+          mealType as MealSlotType,
+          body.selected_option
+        );
+
+        try {
+          revalidatePath("/");
+          revalidatePath("/nutrition");
+          revalidatePath("/grocery");
+        } catch {}
+
+        return NextResponse.json({
+          success: true,
+          engine: "v2",
+          message: swapResult.message,
+          data: swapResult.updatedMeal,
+        });
+      } catch (v2SwapErr: any) {
+        if (v2SwapErr?.message?.includes("CANNOT_SWAP_LOGGED_MEAL")) {
+          return NextResponse.json(
+            { success: false, error: { code: "CANNOT_SWAP_LOGGED_MEAL", message: "This meal has already been logged. Past and logged meals cannot be altered." } },
+            { status: 400 }
+          );
+        }
+        console.warn("[Swap API] V2 execute swap notice:", v2SwapErr?.message);
+        // If V2 failed due to missing daily container, proceed to standard handler
+      }
     }
 
-    const diet = normalize(profile.diet_preference || profile.food_type);
+    // Legacy swap path (backward compatibility for existing plans)
     const available = profileTerms(profile.available_foods);
-    const blocked = [profile.food_allergies, profile.foods_disliked, profile.foods_avoided]
-      .flatMap((value) => profileTerms(value));
+    const blocked = [
+      ...profileTerms(profile.food_allergies),
+      ...profileTerms(profile.foods_disliked),
+      ...profileTerms(profile.foods_avoided),
+    ];
+    const diet = normalize(`${profile.food_type || ""} ${profile.diet_preference || ""}`);
 
-    const compatibleFoods = allFoods.filter((food) => (
+    const { data: allFoods, error: foodsError } = await supabase
+      .from("foods")
+      .select("id, name, category, serving_size, calories, protein, carbs, fat, estimated_cost, diet_type, is_pg_friendly, allergens")
+      .eq("is_active", true)
+      .limit(300);
+    if (foodsError) throw foodsError;
+
+    const compatibleFoods = (allFoods || []).filter((food) => (
       isDietCompatible(food, diet)
       && isFoodAvailable(food, available)
       && !isFoodBlocked(food, blocked)
@@ -211,7 +271,6 @@ export async function POST(request: Request) {
     });
     const candidates = categoryFoods.length >= 2 ? categoryFoods : compatibleFoods;
 
-    // Find existing plan for today (single daily plan or legacy slot plan)
     const { data: existingPlans, error: plansError } = await supabase
       .from("meal_plans")
       .select("id, meal_type, meal_plan_items(id, food_id, quantity, serving_size)")
@@ -270,7 +329,6 @@ export async function POST(request: Request) {
 
     const totals = totalsForFoods(selectedFoods);
 
-    // Validate swap selection against user diet and restrictions
     const userContext = buildNutritionUserContext(profile, null, user.id);
     const swapValidation = NutritionValidationEngine.validateSwap(
       { calories: totals.calories, protein: totals.protein },
@@ -307,7 +365,6 @@ export async function POST(request: Request) {
       swapPlan = newPlan;
       createdPlan = true;
     } else {
-      // Remove only previous items belonging to this specific mealType slot
       if (swapPlan.meal_type === 'daily') {
         const slotPrefix = `${mealType}::`;
         const itemsToDelete = (swapPlan.meal_plan_items || []).filter((it: any) =>
@@ -359,6 +416,7 @@ export async function POST(request: Request) {
     try {
       revalidatePath("/");
       revalidatePath("/nutrition");
+      revalidatePath("/grocery");
     } catch {}
 
     return NextResponse.json({

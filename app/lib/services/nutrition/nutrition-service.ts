@@ -4151,9 +4151,13 @@ function scaleServingSize(servingSize: string, scale: number): string {
             option_b_items: optBItems,
             is_ai_generated: Boolean(dailyPlan.ai_generated),
             ai_generated: Boolean(dailyPlan.ai_generated),
-            // The dated-plan schema stores foods and portions, but no recipe.
-            // Do not invent directions that may contradict the saved foods.
-            prep_instructions: ''
+            prep_instructions: NutritionService.getPrepInstructionForSlot(
+              mType,
+              mName,
+              dayOfWeek,
+              fitProfile?.food_environment,
+              rawDietStr
+            )
           });
         });
       } else {

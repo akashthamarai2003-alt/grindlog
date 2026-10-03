@@ -2415,6 +2415,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
         isOpen={swapModalOpen}
         onClose={() => setSwapModalOpen(false)}
         mealType={swapMealType}
+        date={selectedDate}
         onSelectOption={handleSelectSwapOption}
         onCustomFoodClick={() => {
           setSwapModalOpen(false);
