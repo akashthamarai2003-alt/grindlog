@@ -95,8 +95,39 @@ for (const slot of slots) {
       `template slot ${slot.name} supports ${diet}`);
   }
 }
-const deployedTemplates = await all("meal_templates", "id,code");
+const deployedTemplates = await all("meal_templates", "id,code,environment,meal_slot");
+const deployedSlots = await all("meal_template_slots", "id,template_id,slot_name,role,is_provided,is_mandatory");
+const deployedOptions = await all("meal_template_slot_options", "id,template_slot_id,food_id,default_portion,unit,priority,diet_category,compatible_diets,required_equipment,is_active");
+const deployedTemplateById = new Map(deployedTemplates.map((row) => [row.id, row]));
+const deployedSlotById = new Map(deployedSlots.map((row) => [row.id, row]));
+const deployedOptionById = new Map(deployedOptions.map((row) => [row.id, row]));
+check(deployedTemplates.length === templates.length, "deployed template count matches the seed");
+check(deployedSlots.length === slots.length, "deployed template slot count matches the seed");
+check(deployedOptions.length === options.length, "deployed template option count matches the seed");
+for (const template of templates) {
+  const live = deployedTemplateById.get(template.id);
+  check(Boolean(live && live.code === template.code && live.environment === template.environment &&
+    live.meal_slot === template.mealSlot), `deployed template identity ${template.code}`);
+}
+for (const slot of slots) {
+  const live = deployedSlotById.get(slot.id);
+  check(Boolean(live && live.template_id === slot.templateId && live.slot_name === slot.name &&
+    live.role === slot.role && live.is_provided === slot.provided && live.is_mandatory === true),
+    `deployed template slot identity ${slot.id}`);
+}
+for (const option of options) {
+  const live = deployedOptionById.get(option.id);
+  const localFood = localFoods.find((food) => food.name === option.foodName);
+  check(Boolean(live && localFood && live.template_slot_id === option.slotId &&
+    live.food_id === resolveFoodId(localFood.id) && Number(live.default_portion) === option.portion &&
+    live.unit === option.unit && live.priority === option.priority &&
+    live.diet_category === option.diet &&
+    JSON.stringify(live.compatible_diets) === JSON.stringify(option.compatible) &&
+    Array.isArray(live.required_equipment) && live.required_equipment.length === 0 &&
+    live.is_active === true), `deployed template option and live food ${option.id}`);
+}
 console.log(JSON.stringify({ localFoods: localFoods.length, liveFoods: liveFoods.length,
   imagesVerified: localImages.length,
   templatesPrepared: templates.length, templateOptionsPrepared: options.length,
-  templatesDeployed: deployedTemplates.length, assertionsPassed: assertions }));
+  templatesDeployed: deployedTemplates.length, templateSlotsDeployed: deployedSlots.length,
+  templateOptionsDeployed: deployedOptions.length, assertionsPassed: assertions }));
