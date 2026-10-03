@@ -149,8 +149,8 @@ function sqlStr(val) {
 
 function sqlArray(arr) {
   if (!arr || arr.length === 0) return "'{}'::TEXT[]";
-  const elements = arr.map(e => `"${String(e).replace(/"/g, '\\"')}"`).join(",");
-  return `'${elements}'::TEXT[]`;
+  const elements = arr.map(e => `'${String(e).replace(/'/g, "''")}'`).join(", ");
+  return `ARRAY[${elements}]::TEXT[]`;
 }
 
 const sqlLines = [];
