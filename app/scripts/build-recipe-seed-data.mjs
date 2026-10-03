@@ -232,7 +232,7 @@ sqlLines.push(recipeBaseTuples.join("\n"));
 sqlLines.push(`ON CONFLICT (slug) DO UPDATE SET status = EXCLUDED.status;\n`);
 
 // E. Insert Recipe Versions
-sqlLines.push(`-- 5. Insert Recipe Versions (${recipeVersionsRows.length} versions)`);
+sqlLines.push(`-- 5. Insert Recipe Versions (${recipeVersionsRows.length} versions, initially unlocked)`);
 sqlLines.push(`INSERT INTO public.recipe_versions (`);
 sqlLines.push(`    id, recipe_id, version, name, description, diet_category, compatible_diets,`);
 sqlLines.push(`    dietary_tags, cuisine, prep_instructions, cooking_time_min, difficulty,`);
@@ -240,23 +240,10 @@ sqlLines.push(`    required_equipment, supported_environments, primary_protein, 
 sqlLines.push(`) VALUES`);
 const versionTuples = recipeVersionsRows.map((v, i) => {
   const comma = i === recipeVersionsRows.length - 1 ? "" : ",";
-  return `    (${sqlStr(v.id)}, ${sqlStr(v.recipe_id)}, ${v.version}, ${sqlStr(v.name)}, ${sqlStr(v.description)}, ${sqlStr(v.diet_category)}, ${sqlArray(v.compatible_diets)}, ${sqlArray(v.dietary_tags)}, ${sqlStr(v.cuisine)}, ${sqlStr(v.prep_instructions)}, ${v.cooking_time_min}, ${sqlStr(v.difficulty)}, ${sqlArray(v.required_equipment)}, ${sqlArray(v.supported_environments)}, ${sqlStr(v.primary_protein)}, ${v.is_locked})${comma}`;
+  return `    (${sqlStr(v.id)}, ${sqlStr(v.recipe_id)}, ${v.version}, ${sqlStr(v.name)}, ${sqlStr(v.description)}, ${sqlStr(v.diet_category)}, ${sqlArray(v.compatible_diets)}, ${sqlArray(v.dietary_tags)}, ${sqlStr(v.cuisine)}, ${sqlStr(v.prep_instructions)}, ${v.cooking_time_min}, ${sqlStr(v.difficulty)}, ${sqlArray(v.required_equipment)}, ${sqlArray(v.supported_environments)}, ${sqlStr(v.primary_protein)}, false)${comma}`;
 });
 sqlLines.push(versionTuples.join("\n"));
-sqlLines.push(`ON CONFLICT (recipe_id, version) DO UPDATE SET`);
-sqlLines.push(`    name = EXCLUDED.name,`);
-sqlLines.push(`    description = EXCLUDED.description,`);
-sqlLines.push(`    diet_category = EXCLUDED.diet_category,`);
-sqlLines.push(`    compatible_diets = EXCLUDED.compatible_diets,`);
-sqlLines.push(`    dietary_tags = EXCLUDED.dietary_tags,`);
-sqlLines.push(`    cuisine = EXCLUDED.cuisine,`);
-sqlLines.push(`    prep_instructions = EXCLUDED.prep_instructions,`);
-sqlLines.push(`    cooking_time_min = EXCLUDED.cooking_time_min,`);
-sqlLines.push(`    difficulty = EXCLUDED.difficulty,`);
-sqlLines.push(`    required_equipment = EXCLUDED.required_equipment,`);
-sqlLines.push(`    supported_environments = EXCLUDED.supported_environments,`);
-sqlLines.push(`    primary_protein = EXCLUDED.primary_protein,`);
-sqlLines.push(`    is_locked = EXCLUDED.is_locked;\n`);
+sqlLines.push(`ON CONFLICT (recipe_id, version) DO NOTHING;\n`);
 
 // F. Update Recipes current_version_id (Enforces current version composite FK)
 sqlLines.push(`-- 6. Link Recipes to current_version_id`);
@@ -275,11 +262,7 @@ const variantTuples = recipeVariantsRows.map((vt, i) => {
   return `    (${sqlStr(vt.id)}, ${sqlStr(vt.recipe_version_id)}, ${sqlStr(vt.variant_tier)}, ${vt.target_calories}, ${vt.target_protein}, ${vt.target_carbs}, ${vt.target_fat})${comma}`;
 });
 sqlLines.push(variantTuples.join("\n"));
-sqlLines.push(`ON CONFLICT (recipe_version_id, variant_tier) DO UPDATE SET`);
-sqlLines.push(`    target_calories = EXCLUDED.target_calories,`);
-sqlLines.push(`    target_protein = EXCLUDED.target_protein,`);
-sqlLines.push(`    target_carbs = EXCLUDED.target_carbs,`);
-sqlLines.push(`    target_fat = EXCLUDED.target_fat;\n`);
+sqlLines.push(`ON CONFLICT (recipe_version_id, variant_tier) DO NOTHING;\n`);
 
 // H. Insert Recipe Variant Ingredients
 sqlLines.push(`-- 8. Insert Recipe Variant Ingredients (${recipeVariantIngredientsRows.length} ingredient allocations)`);
@@ -291,15 +274,7 @@ const ingTuples = recipeVariantIngredientsRows.map((ing, i) => {
   return `    (${sqlStr(ing.id)}, ${sqlStr(ing.recipe_variant_id)}, (SELECT id FROM public.foods WHERE name = ${sqlStr(ing.food_name)} LIMIT 1), ${sqlStr(ing.portion_type)}, ${ing.amount}, ${sqlStr(ing.unit)}, ${ing.min_portion}, ${ing.max_portion}, ${ing.increment_step}, ${sqlStr(ing.role)}, ${ing.is_removable})${comma}`;
 });
 sqlLines.push(ingTuples.join("\n"));
-sqlLines.push(`ON CONFLICT (recipe_variant_id, food_id) DO UPDATE SET`);
-sqlLines.push(`    portion_type = EXCLUDED.portion_type,`);
-sqlLines.push(`    amount = EXCLUDED.amount,`);
-sqlLines.push(`    unit = EXCLUDED.unit,`);
-sqlLines.push(`    min_portion = EXCLUDED.min_portion,`);
-sqlLines.push(`    max_portion = EXCLUDED.max_portion,`);
-sqlLines.push(`    increment_step = EXCLUDED.increment_step,`);
-sqlLines.push(`    role = EXCLUDED.role,`);
-sqlLines.push(`    is_removable = EXCLUDED.is_removable;\n`);
+sqlLines.push(`ON CONFLICT (recipe_variant_id, food_id) DO NOTHING;\n`);
 
 // I. Insert Recipe Images
 sqlLines.push(`-- 9. Insert Recipe Images (${recipeImagesRows.length} verified image assets)`);
@@ -311,13 +286,11 @@ const imgTuples = recipeImagesRows.map((img, i) => {
   return `    (${sqlStr(img.id)}, ${sqlStr(img.recipe_version_id)}, ${sqlStr(img.storage_path)}, ${sqlStr(img.url)}, ${sqlStr(img.status)}, ${sqlStr(img.alt_text)}, ${sqlArray(img.dominant_foods)}, ${img.is_primary})${comma}`;
 });
 sqlLines.push(imgTuples.join("\n"));
-sqlLines.push(`ON CONFLICT (id) DO UPDATE SET`);
-sqlLines.push(`    storage_path = EXCLUDED.storage_path,`);
-sqlLines.push(`    url = EXCLUDED.url,`);
-sqlLines.push(`    status = EXCLUDED.status,`);
-sqlLines.push(`    alt_text = EXCLUDED.alt_text,`);
-sqlLines.push(`    dominant_foods = EXCLUDED.dominant_foods,`);
-sqlLines.push(`    is_primary = EXCLUDED.is_primary;\n`);
+sqlLines.push(`ON CONFLICT (id) DO NOTHING;\n`);
+
+// J. Lock all recipe versions now that variants and ingredients have been attached
+sqlLines.push(`-- 10. Lock all published recipe versions to enforce immutability`);
+sqlLines.push(`UPDATE public.recipe_versions SET is_locked = true WHERE is_locked = false;\n`);
 
 sqlLines.push(`COMMIT;\n`);
 
