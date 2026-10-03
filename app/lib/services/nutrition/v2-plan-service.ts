@@ -709,12 +709,13 @@ export class V2PlanService {
       const img = cand.catalogItem.image;
 
       // Optimize portions for this candidate to target slot macros
+      const foodLookup = (foodIdOrName: string) => catalog.foodById.get(foodIdOrName);
       const optResult = optimizeMealPortions(
+        variant,
+        cand.variantIngredients || cand.catalogItem.variantIngredients || [],
         targetSlot.targetCalories,
         targetSlot.targetProtein,
-        variant,
-        cand.catalogItem.ingredients,
-        catalog.foodById,
+        foodLookup,
         portionRulesLookup
       );
 

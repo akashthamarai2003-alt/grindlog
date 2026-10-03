@@ -13,15 +13,31 @@ ALTER TABLE public.meal_plans
     ADD COLUMN IF NOT EXISTS budget_target_weekly NUMERIC(8,2) DEFAULT 0,
     ADD COLUMN IF NOT EXISTS budget_utilized_weekly NUMERIC(8,2) DEFAULT 0;
 
--- Idempotency Guard: Exactly one active READY plan per user
+-- Defensive deduplication: If any user has multiple READY plans for the same date,
+-- retain the most recently created one as READY and transition older duplicates to SUPERSEDED.
+WITH ranked_plans AS (
+    SELECT id, ROW_NUMBER() OVER (
+        PARTITION BY user_id, date 
+        ORDER BY created_at DESC, id DESC
+    ) AS rn
+    FROM public.meal_plans
+    WHERE status = 'READY'
+)
+UPDATE public.meal_plans mp
+SET status = 'SUPERSEDED'
+FROM ranked_plans rp
+WHERE mp.id = rp.id AND rp.rn > 1;
+
+-- Idempotency Guard: Exactly one active READY plan per user per date
 CREATE UNIQUE INDEX IF NOT EXISTS uq_meal_plans_single_active_plan 
-    ON public.meal_plans (user_id) 
+    ON public.meal_plans (user_id, date) 
     WHERE status = 'READY';
 
 -- 2. Planned Meals (Normalized timeline slot entities)
 CREATE TABLE IF NOT EXISTS public.planned_meals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    meal_plan_id UUID NOT NULL REFERENCES public.meal_plans(id) ON DELETE CASCADE,
+    meal_plan_id UUID REFERENCES public.meal_plans(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     local_date DATE NOT NULL,
     meal_slot TEXT NOT NULL,                                -- 'breakfast', 'lunch', 'dinner', 'snack', 'pre_workout'
     meal_sequence INT NOT NULL CHECK (meal_sequence >= 1),  -- 1, 2, 3, 4, 5 (permits multiple snacks on same day!)
@@ -41,7 +57,7 @@ CREATE TABLE IF NOT EXISTS public.planned_meals (
     status TEXT NOT NULL DEFAULT 'PLANNED' CHECK (status IN ('PLANNED', 'LOGGED', 'SKIPPED', 'CANCELLED')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     -- Multiple same-type meals supported cleanly via meal_sequence
-    CONSTRAINT uq_planned_meals_sequence UNIQUE (meal_plan_id, local_date, meal_sequence),
+    CONSTRAINT uq_planned_meals_sequence UNIQUE (user_id, local_date, meal_sequence),
     -- Variant Ownership FK: variant must belong to the exact recipe_version (ON DELETE RESTRICT)
     CONSTRAINT fk_planned_meals_variant_ownership 
         FOREIGN KEY (recipe_variant_id, recipe_version_id) 
@@ -101,16 +117,24 @@ ALTER TABLE public.food_logs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can manage their own planned meals" ON public.planned_meals
     FOR ALL TO authenticated
-    USING (EXISTS (
-        SELECT 1 FROM public.meal_plans 
-        WHERE meal_plans.id = planned_meals.meal_plan_id 
-        AND meal_plans.user_id = auth.uid()
-    ))
-    WITH CHECK (EXISTS (
-        SELECT 1 FROM public.meal_plans 
-        WHERE meal_plans.id = planned_meals.meal_plan_id 
-        AND meal_plans.user_id = auth.uid()
-    ));
+    USING (
+        (user_id IS NOT NULL AND auth.uid() = user_id)
+        OR
+        (meal_plan_id IS NOT NULL AND EXISTS (
+            SELECT 1 FROM public.meal_plans 
+            WHERE meal_plans.id = planned_meals.meal_plan_id 
+            AND meal_plans.user_id = auth.uid()
+        ))
+    )
+    WITH CHECK (
+        (user_id IS NOT NULL AND auth.uid() = user_id)
+        OR
+        (meal_plan_id IS NOT NULL AND EXISTS (
+            SELECT 1 FROM public.meal_plans 
+            WHERE meal_plans.id = planned_meals.meal_plan_id 
+            AND meal_plans.user_id = auth.uid()
+        ))
+    );
 
 -- Dual Compatibility policy for meal_plan_items (supports both legacy meal_plan_id and V2 planned_meal_id)
 DROP POLICY IF EXISTS "Users can manage their own meal plan items" ON public.meal_plan_items;
