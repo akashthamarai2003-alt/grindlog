@@ -46,7 +46,7 @@ export async function getLockedFitnessRate(userId: string, level: "core" | "pro"
     key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
     key_secret: process.env.RAZORPAY_KEY_SECRET || "",
   });
-  let lookupFailed = false;
+
   for (const paymentId of new Set(paymentIds)) {
     try {
       const payment = await razorpay.payments.fetch(paymentId);
@@ -63,10 +63,10 @@ export async function getLockedFitnessRate(userId: string, level: "core" | "pro"
         Number.isSafeInteger(Number(payment.amount)) &&
         Number(payment.amount) > 0
       ) return Number(payment.amount);
-    } catch {
-      lookupFailed = true;
+    } catch (err: any) {
+      console.warn("Could not fetch payment from Razorpay for rate check:", paymentId, err?.message);
     }
   }
-  if (lookupFailed) throw new Error("Your saved renewal rate needs verification.");
+
   return null;
 }

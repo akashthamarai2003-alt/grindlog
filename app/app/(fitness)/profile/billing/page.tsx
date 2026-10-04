@@ -46,9 +46,9 @@ export default async function FitnessBillingPage({ searchParams }: { searchParam
     getPlanPricesAction("fitness").catch(() => null),
   ]);
 
-  const proPrice = pricingConfig?.monthly?.pro?.originalPrice ?? DEFAULT_PRICING.monthly.pro.originalPrice ?? 5;
-  const corePrice = pricingConfig?.monthly?.core?.originalPrice ?? DEFAULT_PRICING.monthly.core.originalPrice ?? 10;
-  const proUpgradePrice = pricingConfig?.monthly?.pro?.price ?? DEFAULT_PRICING.monthly.pro.price ?? 2;
+  const proPrice = pricingConfig?.monthly?.pro?.price ?? DEFAULT_PRICING.monthly.pro.price ?? 99;
+  const corePrice = pricingConfig?.monthly?.core?.price ?? DEFAULT_PRICING.monthly.core.price ?? 29;
+  const proUpgradePrice = pricingConfig?.monthly?.pro?.price ?? DEFAULT_PRICING.monthly.pro.price ?? 99;
   const membershipLevel = fitnessProfile?.fitness_premium_level === "pro" || subscriptionState.plan.id === "pro"
     ? "pro"
     : fitnessProfile?.fitness_premium_level === "core" || subscriptionState.plan.id === "core" || subscriptionState.plan.id === "starter"

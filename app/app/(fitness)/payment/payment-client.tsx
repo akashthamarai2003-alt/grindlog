@@ -153,7 +153,12 @@ export interface FitnessPaymentClientProps {
 export default function FitnessPaymentClient({ initialPricing, initialPremiumDetails, renewalPlan, renewalExpiresAt, lockedRatePaise, rateCheckFailed = false }: FitnessPaymentClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isRenewal = searchParams.get("intent") === "renew_monthly";
+  const isExpiredSubscriber = Boolean(
+    (renewalPlan === "core" || renewalPlan === "pro") &&
+    renewalExpiresAt &&
+    new Date(renewalExpiresAt).getTime() < Date.now()
+  );
+  const isRenewal = searchParams.get("intent") === "renew_monthly" || isExpiredSubscriber;
   const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
   // Plan purchases go straight to setup, including older links with returnTo=/.
   const returnTo = isPlanGenerationIntent
@@ -162,7 +167,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   
   // In Fitness OS, the duration is always monthly, but we let them choose the tier
   const selectedPlan = "monthly";
-  const requestedPlan = (isRenewal ? renewalPlan : null) || searchParams.get("plan") || searchParams.get("level") || (searchParams.get("intent") === "upgrade_core" ? "core" : null);
+  const requestedPlan = (searchParams.get("plan") as "core" | "pro") || (isRenewal ? renewalPlan : null) || searchParams.get("level") || (searchParams.get("intent") === "upgrade_core" ? "core" : null);
   const [level, setLevel] = useState<"core" | "pro">(requestedPlan === "core" ? "core" : "pro");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
@@ -326,14 +331,16 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   // Dynamic offer and regular prices from live admin configuration with production fallbacks (59 & 199)
   const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? 59;
   const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 199;
-  const corePrice = pricingConfig?.monthly?.core?.price ?? Math.max(1, Math.round(coreOriginalPrice * (1 - discountPercent / 100)));
-  const proPrice = pricingConfig?.monthly?.pro?.price ?? Math.max(1, Math.round(proOriginalPrice * (1 - discountPercent / 100)));
+  const corePrice = pricingConfig?.monthly?.core?.price ?? 29;
+  const proPrice = pricingConfig?.monthly?.pro?.price ?? 99;
 
-  const baseCurrentPrice = isRenewal && lockedRatePaise != null
-    ? lockedRatePaise / 100
+  const baseCurrentPrice = isRenewal
+    ? (lockedRatePaise != null
+        ? lockedRatePaise / 100
+        : (level === "pro" ? proPrice : corePrice))
     : level === "pro"
-    ? ((isCurrentCore || isDiscountActive) ? proPrice : (proOriginalPrice || proPrice))
-    : (isDiscountActive ? corePrice : (coreOriginalPrice || corePrice));
+    ? ((isCurrentCore || isDiscountActive) ? proPrice : proPrice)
+    : (isDiscountActive ? corePrice : corePrice);
 
   // Determine coupon discount for current tier
   const isCouponApplicableToCurrentTier = Boolean(
@@ -502,7 +509,8 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         level, 
         appliedCoupon?.id || undefined, 
         "fitness_os",
-        isRenewal ? undefined : discountToken || undefined
+        isRenewal ? undefined : discountToken || undefined,
+        isRenewal
       );
 
       if (!orderResponse.success) {

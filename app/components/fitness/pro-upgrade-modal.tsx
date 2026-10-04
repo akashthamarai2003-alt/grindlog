@@ -10,6 +10,9 @@ interface ProUpgradeModalProps {
   onClose: () => void;
   featureName?: string;
   planRequired?: "pro" | "any";
+  isExpired?: boolean;
+  proPrice?: number;
+  corePrice?: number;
 }
 
 export function ProUpgradeModal({
@@ -17,6 +20,9 @@ export function ProUpgradeModal({
   onClose,
   featureName = "This feature",
   planRequired = "pro",
+  isExpired = false,
+  proPrice = 99,
+  corePrice = 29,
 }: ProUpgradeModalProps) {
   const pathname = usePathname();
   const returnTo = pathname || "/";
@@ -39,15 +45,19 @@ export function ProUpgradeModal({
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-label={`Unlock ${featureName}`}
+            aria-label={isExpired ? "Renew Month 2 Access" : `Unlock ${featureName}`}
             initial={{ opacity: 0, scale: 0.92, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ type: "spring", damping: 26, stiffness: 260 }}
-            className="relative w-full max-w-sm bg-[#111A10] border border-[#ADFF00]/40 rounded-3xl p-6 shadow-[0_0_50px_rgba(173,255,0,0.2)] overflow-hidden z-10"
+            className={`relative w-full max-w-sm bg-[#111A10] border rounded-3xl p-6 shadow-2xl overflow-hidden z-10 ${
+              isExpired ? "border-purple-500/40 shadow-[0_0_50px_rgba(168,85,247,0.2)]" : "border-[#ADFF00]/40 shadow-[0_0_50px_rgba(173,255,0,0.2)]"
+            }`}
           >
             {/* Ambient Background Glow */}
-            <div className="absolute -top-16 -right-16 w-36 h-36 bg-[#ADFF00]/15 rounded-full blur-3xl pointer-events-none" />
+            <div className={`absolute -top-16 -right-16 w-36 h-36 rounded-full blur-3xl pointer-events-none ${
+              isExpired ? "bg-purple-500/15" : "bg-[#ADFF00]/15"
+            }`} />
 
             {/* Close Button */}
             <button
@@ -59,23 +69,31 @@ export function ProUpgradeModal({
             </button>
 
             {/* Icon Header */}
-            <div className="w-12 h-12 rounded-2xl bg-[#ADFF00]/15 border border-[#ADFF00]/30 flex items-center justify-center text-[#ADFF00] mb-4 shadow-[0_0_15px_rgba(173,255,0,0.25)]">
+            <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center mb-4 ${
+              isExpired 
+                ? "bg-purple-500/15 border-purple-500/30 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.25)]" 
+                : "bg-[#ADFF00]/15 border-[#ADFF00]/30 text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.25)]"
+            }`}>
               <Lock className="w-6 h-6" />
             </div>
 
             {/* Badge & Title */}
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="bg-[#ADFF00] text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                {isAnyTier ? "Membership Required" : "Pro Feature"}
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                isExpired ? "bg-purple-500 text-white" : "bg-[#ADFF00] text-black"
+              }`}>
+                {isExpired ? "Month Completed" : isAnyTier ? "Membership Required" : "Pro Feature"}
               </span>
             </div>
 
             <h3 className="text-xl font-black text-white leading-tight mb-2">
-              Unlock {featureName}
+              {isExpired ? "Unlock Next Month" : `Unlock ${featureName}`}
             </h3>
 
             <p className="text-xs text-white/70 leading-relaxed mb-5">
-              {isAnyTier
+              {isExpired
+                ? "Your previous month has ended. Renew now to recalibrate your weight, target calories, and unlock your next progressive workout split."
+                : isAnyTier
                 ? "You are exploring GrindLog in preview mode. Choose a plan to unlock live tracking, workout sessions, and full access."
                 : "Core members can preview these pages, but interactive tracking, logging, and AI coach tools require GrindLog Pro."}
             </p>
@@ -110,14 +128,34 @@ export function ProUpgradeModal({
 
             {/* CTA Buttons */}
             <div className="flex flex-col gap-2.5">
-              {isAnyTier ? (
+              {isExpired ? (
+                <>
+                  <Link
+                    href="/payment?intent=renew_monthly&plan=pro"
+                    onClick={onClose}
+                    className="w-full py-3 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all"
+                  >
+                    <span>Renew Pro (₹{proPrice}/mo) — All Features</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+
+                  <Link
+                    href="/payment?intent=renew_monthly&plan=core"
+                    onClick={onClose}
+                    className="w-full py-2.5 bg-[#1A2619] hover:bg-[#233522] border border-[#ADFF00]/30 text-white font-bold uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                  >
+                    <span>Renew Core (₹{corePrice}/mo) — Workouts Only</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#ADFF00]" />
+                  </Link>
+                </>
+              ) : isAnyTier ? (
                 <>
                   <Link
                     href={`/payment?plan=pro&returnTo=${encodeURIComponent(returnTo)}&intent=upgrade_pro`}
                     onClick={onClose}
                     className="w-full py-3 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all"
                   >
-                    <span>Get Pro (₹99/mo) — All Features</span>
+                    <span>Get Pro (₹{proPrice}/mo) — All Features</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
 
@@ -126,7 +164,7 @@ export function ProUpgradeModal({
                     onClick={onClose}
                     className="w-full py-2.5 bg-[#1A2619] hover:bg-[#233522] border border-[#ADFF00]/30 text-white font-bold uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                   >
-                    <span>Get Core (₹29/mo) — Workouts Only</span>
+                    <span>Get Core (₹{corePrice}/mo) — Workouts Only</span>
                     <ArrowRight className="w-3.5 h-3.5 text-[#ADFF00]" />
                   </Link>
                 </>

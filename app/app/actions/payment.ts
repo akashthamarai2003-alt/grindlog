@@ -171,7 +171,8 @@ export async function createRazorpayOrder(
   level: "core" | "pro", 
   couponId?: string,
   source?: string,
-  discountToken?: string
+  discountToken?: string,
+  isRenewal?: boolean
 ) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -227,6 +228,10 @@ export async function createRazorpayOrder(
       // The captured wheel payment, not today's admin offer, controls renewals.
       finalPrice = lockedRatePaise / 100;
       isSpinDiscountApplied = true;
+    } else if (isRenewal) {
+      // Standard monthly renewal rate
+      finalPrice = level === "pro" ? adminProPrice : adminCorePrice;
+      isSpinDiscountApplied = true;
     } else if (isCoreUpgrade) {
       // Automatic locked upgrade pricing: Pro offer price configured in Admin
       finalPrice = adminProPrice;
@@ -246,8 +251,8 @@ export async function createRazorpayOrder(
         : (verification.payload.prices?.core ?? adminCorePrice);
       isSpinDiscountApplied = true;
     } else {
-      // Standard pricing when no spin discount is active
-      finalPrice = level === "pro" ? adminProOriginal : adminCoreOriginal;
+      // Standard monthly plan pricing
+      finalPrice = level === "pro" ? adminProPrice : adminCorePrice;
     }
   } else {
     const appType = "grindlog";

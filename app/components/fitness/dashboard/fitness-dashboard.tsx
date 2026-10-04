@@ -178,6 +178,7 @@ export function FitnessDashboard({
         onClose={() => setShowUpgradeModal(false)}
         featureName={modalFeature}
         planRequired="any"
+        isExpired={Boolean(subscriptionState?.isExpired || subscriptionState?.status === "expired")}
       />
 
     </div>
