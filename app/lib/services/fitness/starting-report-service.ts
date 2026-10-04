@@ -250,13 +250,25 @@ export async function generateStartingReport({
   - nutrition_strategy: short personalised strategy that strictly respects diet_type, allergies, avoided foods, food environment, and budget. For Lose Fat and Cut goals, mention limiting added sugar, sugary drinks, deep-fried foods, and frequent fast food, while using measured oil and keeping occasional treats within the calorie target. Never recommend zero sugar or zero oil. For Cut, mention adequate protein and resistance training for muscle retention.
   - progress_roadmap: 3 or 4 short milestones. (e.g., "Hit your first 5 pushups!", "Start noticing your shirts fitting tighter around the chest")
   - focus_areas: exactly 5 short personalised focus areas. Use slang like "Grow those shoulders" instead of "Deltoid hypertrophy".
-  - reality_check: { is_timeframe_realistic, honest_assessment, achievable_in_timeframe } with 3 to 5 practical outcomes. If no deadline or target weight is provided, state that it was not supplied rather than inventing one.
-    CRITICAL REALITY CHECK MATH RULES: Compare current weight, target weight, and target_deadline_days!
-    - For Weight / Muscle Gain: Natural clean bulk lean gain rate is max 1.0 - 1.5 kg per month (0.25 - 0.35 kg/week). Gaining more than 2.0 kg/month of lean tissue is biologically unrealistic (it would be mostly excess fat). If user wants to gain e.g. 15 kg in 60 days, that is 7.5 kg/month — is_timeframe_realistic MUST be FALSE! In honest_assessment, explain gently as a coach that gaining 15 kg in 60 days isn't realistic or healthy, that ~2.5–3.5 kg of lean mass in 60 days is a solid realistic target, and that reaching the full goal safely will take 10–12 months.
-    - For Fat Loss: Safe fat loss is max 0.5 - 1.0 kg/week (~3.0 - 4.0 kg/month). Losing > 4.5 kg/month requires an extreme, unhealthy starvation deficit. If user wants to lose e.g. 15 kg in 60 days, is_timeframe_realistic MUST be FALSE!
-    - If is_timeframe_realistic is false, achievable_in_timeframe must list realistic outcomes that CAN be achieved in the user's deadline.
+  - reality_check: { is_timeframe_realistic, honest_assessment, achievable_in_timeframe } with 3 to 5 practical outcomes.
+    CRITICAL REALITY CHECK MATH & DEADLINE RULES:
+    1. If target_deadline_days IS NULL, UNDEFINED, OR NOT PROVIDED:
+       - You MUST NOT invent or assume any deadline (NEVER mention "60 days", "30 days", or "90 days")!
+       - is_timeframe_realistic MUST be TRUE.
+       - In honest_assessment, praise the user for not setting an aggressive or rushed deadline, and explain the smart, science-backed approach: safe fat loss is ~3.0 - 3.5 kg/month; clean lean gain is ~1.0 - 1.5 kg/month. Explain how many months the full goal will take safely (e.g., losing 35 kg takes ~11 months), and explain that in their initial 3-Month Launch Phase (Months 1–3), we are locking in their daily routine and targeting their first ~9 kg of fat loss safely while preserving lean muscle.
+       - achievable_in_timeframe must list 3 to 5 realistic outcomes for their 3-Month Launch Phase.
+    2. If target_deadline_days IS EXPLICITLY PROVIDED BY THE USER:
+       - Compare current weight, target weight, and target_deadline_days.
+       - For Weight / Muscle Gain: Clean lean gain is max 1.0 - 1.5 kg/month (0.25 - 0.35 kg/week). If their deadline requires > 2.0 kg/month, is_timeframe_realistic MUST be FALSE! In honest_assessment, explain that gaining that fast is mostly excess body fat, and explain what can realistically be built in their requested deadline.
+       - For Fat Loss: Safe fat loss is max 0.5 - 1.0 kg/week (~3.0 - 4.0 kg/month). If their deadline requires > 4.5 kg/month, is_timeframe_realistic MUST be FALSE! In honest_assessment, explain that dropping that fast requires an extreme, unhealthy starvation deficit, and explain what can safely be dropped in their requested window.
+       - If their deadline is reasonable, is_timeframe_realistic MUST be TRUE!
     EXTREMELY IMPORTANT: TALK LIKE A FRIENDLY GYM BRO / PERSONAL TRAINER in the honest_assessment. Use words like "Listen bro," "Don't sweat it," "We're gonna crush this." NEVER USE ROBOTIC LANGUAGE!
-  - timeline_projection: 3 or 4 objects { timeframe, target_weight_kg, expected_changes }. target_weight_kg must be null when no safe target can be calculated from supplied data. Make "expected_changes" sound human and encouraging!
+  - timeline_projection: exactly 3 objects for Month 1, Month 2, and Month 3 (The 3-Month Launch Phase / Mesocycle).
+    CRITICAL PROJECTION MATH: DO NOT COMPRESS A FULL 1-YEAR TRANSFORMATION INTO 3 MONTHS!
+    - For Fat Loss: target_weight_kg for Month 1 = current_weight - 3.0 kg; Month 2 = current_weight - 6.0 kg; Month 3 = current_weight - 9.0 kg (capped at target_weight).
+    - For Muscle Gain: target_weight_kg for Month 1 = current_weight + 1.2 kg; Month 2 = current_weight + 2.4 kg; Month 3 = current_weight + 3.6 kg (capped at target_weight).
+    - For Maintenance / Recomposition: target_weight_kg = current_weight for all 3 months.
+    Make "expected_changes" sound human and encouraging!
   - health_and_safety: { has_concerns, safety_verdict, medical_focus_areas }. Set has_concerns to true if the user's profile lists ANY physical_problems, previous_injuries, or exercise_limitations. Keep medical_focus_areas empty if there are no stated concerns. The safety_verdict MUST also use the friendly, human coach tone (e.g., "Since you mentioned knee pain, we're gonna swap heavy squats for safer moves to protect those joints. Safety first!"). Do NOT use robotic clinical language.
   
   Keep each string plain, concrete, and concise, but friendly.`;
@@ -412,37 +424,84 @@ export function buildDeterministicStartingReport(
     fitness_score: Math.min(92, Math.max(68, Math.round(75 + (daysPerWeek * 2) - (bmi ? Math.abs(bmi - 22) * 1.2 : 0)))),
     reality_check: (() => {
       const diffKg = Math.round(Math.abs(weight - targetWeight) * 10) / 10;
-      const deadlineDays = onboarding.target_deadline_days || 60;
+      const hasUserDeadline = typeof onboarding.target_deadline_days === "number" && onboarding.target_deadline_days > 0;
+      const deadlineDays = hasUserDeadline ? onboarding.target_deadline_days : null;
       const normalizedGoal = goal.toLowerCase();
       const isGain = normalizedGoal.includes("gain") || normalizedGoal.includes("bulk") || targetWeight > weight;
       const isLoss = normalizedGoal.includes("loss") || normalizedGoal.includes("cut") || targetWeight < weight;
-      const monthlyRate = diffKg > 0 && deadlineDays > 0 ? (diffKg / deadlineDays) * 30.4 : 0;
-      const isUnrealistic = diffKg >= 4 && ((isGain && monthlyRate > 2.0) || (isLoss && monthlyRate > 4.5));
+      const monthlyRate = isLoss ? 3.2 : isGain ? 1.3 : 0;
+      const totalMonthsExact = monthlyRate > 0 && diffKg > 0 ? diffKg / monthlyRate : 3;
+      const totalMonths = Math.max(1, Math.round(totalMonthsExact * 10) / 10);
+      const totalWeeks = Math.max(4, Math.round(totalMonths * 4.3));
 
-      if (isUnrealistic) {
-        if (isGain) {
-          return {
-            is_timeframe_realistic: false,
-            honest_assessment: `Listen bro, gaining ${diffKg} kg in ${deadlineDays} days isn't realistic or healthy—trying to gain that fast would mostly build unwanted body fat. In your ${deadlineDays}-day window, a clean, realistic target is ~2.5 to 3.5 kg of solid lean mass. Reaching ${targetWeight} kg safely is a longer journey, and we're locking in the foundation right now!`,
-            achievable_in_timeframe: [
-              "Gain ~2.5 to 3.5 kg of solid lean muscle safely",
-              "Measurable jump in functional lifting strength and stamina",
-              "Consistent high-protein nutrition routine without force-feeding",
-              `Clear foundation laid for your full ${targetWeight} kg goal`,
-            ],
-          };
+      // ── CASE 1: USER EXPLICITLY PROVIDED A DEADLINE ──
+      if (hasUserDeadline && deadlineDays) {
+        const impliedMonthlyRate = diffKg > 0 ? (diffKg / deadlineDays) * 30.4 : 0;
+        const isUnrealistic = diffKg >= 4 && ((isGain && impliedMonthlyRate > 2.0) || (isLoss && impliedMonthlyRate > 4.5));
+
+        if (isUnrealistic) {
+          if (isGain) {
+            return {
+              is_timeframe_realistic: false,
+              honest_assessment: `Listen bro, gaining ${diffKg} kg in your requested ${deadlineDays} days isn't realistic or healthy—trying to gain that fast would mostly build unwanted body fat. In your ${deadlineDays}-day window, a clean, realistic target is ~2.5 to 3.5 kg of solid lean mass. Reaching ${targetWeight} kg safely will take ~${totalMonths} months, and we're locking in the foundation right now!`,
+              achievable_in_timeframe: [
+                "Gain ~2.5 to 3.5 kg of solid lean muscle safely",
+                "Measurable jump in functional lifting strength and stamina",
+                "Consistent high-protein nutrition routine without force-feeding",
+                `Clear foundation laid for your full ${targetWeight} kg goal`,
+              ],
+            };
+          } else {
+            const safeLossInWindow = Math.min(diffKg, Math.max(3, Math.round((deadlineDays / 30.4) * 3.2)));
+            return {
+              is_timeframe_realistic: false,
+              honest_assessment: `Listen bro, dropping ${diffKg} kg in your requested ${deadlineDays} days requires an extreme, unhealthy deficit that burns muscle. In your ${deadlineDays}-day window, dropping ~${Math.max(3, safeLossInWindow - 2)} to ${safeLossInWindow} kg of pure fat is a much safer, sustainable target. Reaching your full ${targetWeight} kg goal safely will take ~${totalMonths} months (~${totalWeeks} weeks), and we're gonna crush this step by step!`,
+              achievable_in_timeframe: [
+                `Drop ~${Math.max(3, safeLossInWindow - 2)} to ${safeLossInWindow} kg of pure body fat safely`,
+                "Maintain lean muscle and active metabolic rate",
+                "Build consistent daily activity and nutrition habits",
+                "Noticeable reduction in waistline and visceral fat",
+              ],
+            };
+          }
         } else {
           return {
-            is_timeframe_realistic: false,
-            honest_assessment: `Listen bro, dropping ${diffKg} kg in ${deadlineDays} days requires an extreme, unhealthy deficit that burns muscle. In your ${deadlineDays}-day window, dropping ~5 to 7 kg of pure fat is a much safer, sustainable target. We're gonna lock in your daily routine and crush this step by step!`,
+            is_timeframe_realistic: true,
+            honest_assessment: `Listen bro, your goal of ${isLoss ? `dropping ${diffKg} kg` : isGain ? `gaining ${diffKg} kg` : "transforming your body"} in ${deadlineDays} days is 100% realistic and well-paced! We are going to lock in your daily routine and crush this step by step!`,
             achievable_in_timeframe: [
-              "Drop ~5 to 7 kg of pure body fat safely",
-              "Maintain lean muscle and active metabolic rate",
-              "Build consistent daily activity and nutrition habits",
-              "Noticeable reduction in waistline and visceral fat",
+              "Consistent workout and nutrition habit built",
+              "Measurable jump in functional strength",
+              `Clear progress towards your ${targetWeight} kg goal`,
             ],
           };
         }
+      }
+
+      // ── CASE 2: USER DID NOT SPECIFY A DEADLINE (SMART SCIENTIFIC PACING) ──
+      if (isLoss && diffKg >= 4) {
+        return {
+          is_timeframe_realistic: true,
+          honest_assessment: `Since you haven't set a rushed deadline, we're taking the smart, scientific approach. Dropping ${diffKg} kg at a safe, sustainable pace of ~3.0 to 3.5 kg/month will take approximately ${totalMonths} months (~${totalWeeks} weeks). This protects your metabolism, retains 100% of your lean muscle, and ensures the fat stays off permanently! In your 3-month Launch Phase, we're targeting your first ~9 kg of fat loss.`,
+          achievable_in_timeframe: [
+            "Drop ~3.0 to 3.5 kg of pure body fat each month safely",
+            "Complete Phase 1 (first 3 months) dropping ~9 kg of fat",
+            "Maintain 100% of lean muscle and active metabolic rate",
+            "Build consistent daily activity and nutrition habits with zero crash dieting",
+          ],
+        };
+      }
+
+      if (isGain && diffKg >= 3) {
+        return {
+          is_timeframe_realistic: true,
+          honest_assessment: `Since you haven't set a rushed deadline, we're taking the smart, scientific approach. Gaining ${diffKg} kg of quality lean mass at a clean rate of ~1.0 to 1.5 kg/month will take approximately ${totalMonths} months (~${totalWeeks} weeks). This minimizes unwanted body fat and builds solid functional strength. In your 3-month Launch Phase, we're targeting your first ~3.5 kg of lean muscle!`,
+          achievable_in_timeframe: [
+            "Gain ~1.0 to 1.5 kg of solid lean muscle each month safely",
+            "Noticeable increases in compound lifting strength and stamina",
+            "Consistent high-protein nutrition routine without force-feeding",
+            `Clear foundation laid for your full ${targetWeight} kg goal`,
+          ],
+        };
       }
 
       return {
@@ -455,11 +514,51 @@ export function buildDeterministicStartingReport(
         ],
       };
     })(),
-    timeline_projection: [
-      { timeframe: "Month 1", target_weight_kg: weight, expected_changes: "Noticeable boost in energy, workout stamina, and sleep quality." },
-      { timeframe: "Month 2", target_weight_kg: targetWeight ? Math.round((weight + targetWeight) / 2) : weight, expected_changes: "Shirts fitting better, muscles feeling firmer, consistent strength gains." },
-      { timeframe: "Month 3", target_weight_kg: targetWeight, expected_changes: "Dramatic transformation in physical shape, posture, and athletic performance." },
-    ],
+    timeline_projection: (() => {
+      const isLoss = weight > targetWeight;
+      const isGain = targetWeight > weight;
+      const monthlyDelta = isLoss ? -3.0 : isGain ? 1.2 : 0;
+      
+      const m1 = isLoss ? Math.max(targetWeight, Math.round((weight + monthlyDelta) * 10) / 10)
+               : isGain ? Math.min(targetWeight, Math.round((weight + monthlyDelta) * 10) / 10)
+               : weight;
+      const m2 = isLoss ? Math.max(targetWeight, Math.round((weight + monthlyDelta * 2) * 10) / 10)
+               : isGain ? Math.min(targetWeight, Math.round((weight + monthlyDelta * 2) * 10) / 10)
+               : weight;
+      const m3 = isLoss ? Math.max(targetWeight, Math.round((weight + monthlyDelta * 3) * 10) / 10)
+               : isGain ? Math.min(targetWeight, Math.round((weight + monthlyDelta * 3) * 10) / 10)
+               : weight;
+
+      return [
+        {
+          timeframe: "Month 1",
+          target_weight_kg: m1,
+          expected_changes: isLoss
+            ? "Drop initial water weight, adapt to training volume, and establish daily calorie consistency."
+            : isGain
+            ? "Establish high-protein habits, master compound movements, and build initial lifting momentum."
+            : "Dial in training intensity, establish daily protein targets, and stabilize metabolic rate.",
+        },
+        {
+          timeframe: "Month 2",
+          target_weight_kg: m2,
+          expected_changes: isLoss
+            ? "Visible waistline reduction, looser-fitting clothes, and increased stamina during workouts."
+            : isGain
+            ? "Noticeable jump in lifting weights, fuller muscle bellies, and improved workout recovery."
+            : "Gradual reduction in subcutaneous body fat accompanied by noticeable increases in muscular firmness.",
+        },
+        {
+          timeframe: "Month 3",
+          target_weight_kg: m3,
+          expected_changes: isLoss
+            ? "End of Phase 1: Noticeable body recomposition. Caloric check-in to prepare Phase 2."
+            : isGain
+            ? "End of Phase 1: Measurable muscle growth across upper and lower body. Caloric recalibration for Phase 2."
+            : "End of Phase 1: Measurable strength PRs and a visibly tighter, more athletic silhouette.",
+        },
+      ];
+    })(),
     health_and_safety: {
       has_concerns: Boolean(onboarding.physical_problems && onboarding.physical_problems.length > 0 && !onboarding.physical_problems.includes("None")),
       safety_verdict: "We will prioritize joint-friendly movement variations and proper warmups so you train hard while staying 100% injury-free.",
