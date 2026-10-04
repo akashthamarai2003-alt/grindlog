@@ -191,6 +191,29 @@ export function RoadmapView({
                     ? "Body Recomposition"
                     : `${startWeight} kg → ${targetWeight} kg`}
                 </h1>
+                {/* Onboarding Profile Pills */}
+                <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                  {profile.target_physique && (
+                    <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                      🎯 {profile.target_physique}
+                    </span>
+                  )}
+                  {profile.training_location && (
+                    <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                      📍 {profile.training_location}
+                    </span>
+                  )}
+                  {profile.fitness_level && (
+                    <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                      ⚡ {profile.fitness_level}
+                    </span>
+                  )}
+                  {profile.food_type && (
+                    <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                      🥗 {profile.food_type}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

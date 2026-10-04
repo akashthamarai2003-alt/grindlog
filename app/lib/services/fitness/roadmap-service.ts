@@ -59,7 +59,8 @@ export async function getRoadmapData(
     new Date();
   const journeyStartDate = new Date(rawStartDate);
   const now = targetDateStr ? new Date(`${targetDateStr}T12:00:00Z`) : new Date();
-  const daysOnJourney = Math.max(1, differenceInCalendarDays(now, journeyStartDate));
+  // Day 1 on signup day, Day 2 on next day, etc.
+  const daysOnJourney = Math.max(1, differenceInCalendarDays(now, journeyStartDate) + 1);
 
   const allWorkouts = workoutsResult.data || [];
   const weightLogs = weightLogsResult.data || [];
@@ -75,29 +76,61 @@ export async function getRoadmapData(
     profile.weight
   ) || 70;
   const currentWeight = Number(latestWeightLog || profile.weight || startWeight);
-  const targetWeight = Number(profile.target_weight) || currentWeight;
-  const goalLower = (profile.goal || "").toLowerCase();
 
-  const isGoalLoss =
-    goalLower.includes("loss") ||
-    goalLower.includes("cut") ||
-    goalLower.includes("fat") ||
-    goalLower.includes("lose");
-  const isGoalGain =
-    goalLower.includes("gain") ||
-    goalLower.includes("bulk") ||
-    goalLower.includes("muscle") ||
-    goalLower.includes("mass");
+  // ── Goal recognition from onboarding ──
+  const goalLower = (profile.goal || "").toLowerCase().trim();
+
   const isGoalRecomp =
     goalLower.includes("maintain") ||
     goalLower.includes("recomp") ||
     goalLower.includes("strength") ||
-    goalLower.includes("fitness");
+    goalLower.includes("fitness") ||
+    goalLower.includes("lose fat + build muscle") ||
+    goalLower.includes("build muscle + lose fat");
+
+  const isGoalLoss =
+    !isGoalRecomp && (
+      goalLower.includes("loss") ||
+      goalLower.includes("cut") ||
+      goalLower.includes("fat") ||
+      goalLower.includes("lose")
+    );
+
+  const isGoalGain =
+    !isGoalRecomp && (
+      goalLower.includes("gain") ||
+      goalLower.includes("bulk") ||
+      goalLower.includes("muscle") ||
+      goalLower.includes("mass")
+    );
+
+  // ── Target weight sanitization & intelligent defaults ──
+  let rawTargetWeight = Number(profile.target_weight);
+  let targetWeight: number;
+
+  if (!rawTargetWeight || isNaN(rawTargetWeight) || rawTargetWeight <= 20) {
+    if (isGoalLoss) {
+      targetWeight = Math.round(startWeight * 0.92 * 10) / 10;
+    } else if (isGoalGain) {
+      targetWeight = Math.round(startWeight * 1.08 * 10) / 10;
+    } else {
+      targetWeight = startWeight;
+    }
+  } else {
+    // Correct inverted user inputs (e.g. said "Lose Fat" but typed higher target)
+    if (isGoalLoss && rawTargetWeight > startWeight) {
+      targetWeight = Math.round(startWeight * 0.92 * 10) / 10;
+    } else if (isGoalGain && rawTargetWeight < startWeight) {
+      targetWeight = Math.round(startWeight * 1.08 * 10) / 10;
+    } else {
+      targetWeight = rawTargetWeight;
+    }
+  }
 
   const diffKg = Math.round(Math.abs(targetWeight - startWeight) * 10) / 10;
-  const isMaintain = diffKg < 0.5 || (isGoalRecomp && diffKg <= 1.5);
+  const isMaintain = diffKg < 0.5 || isGoalRecomp || (diffKg <= 1.5 && !isGoalLoss && !isGoalGain);
   const direction: "loss" | "gain" | "maintain" =
-    isMaintain ? "maintain" : (startWeight > targetWeight || isGoalLoss) ? "loss" : "gain";
+    isMaintain ? "maintain" : targetWeight > startWeight ? "gain" : "loss";
 
   // Scientific sports-science monthly delta rates
   const monthlyRate = direction === "loss" ? 3.2 : direction === "gain" ? 1.3 : 0;
@@ -113,7 +146,7 @@ export async function getRoadmapData(
     totalMonthsProjected = 3; // Standard 12-week recomp mesocycle
   } else if (userDeadlineDays) {
     const userMonths = Math.ceil(userDeadlineDays / 28);
-    // Respect user deadline while maintaining minimum safe duration
+    // Respect user deadline while maintaining safe bounds (3 to 12 months)
     totalMonthsProjected = Math.max(3, Math.min(12, userMonths));
   } else {
     totalMonthsProjected = Math.max(3, Math.min(12, Math.ceil(diffKg / monthlyRate)));
@@ -170,10 +203,10 @@ export async function getRoadmapData(
     const status: MonthMilestone["status"] =
       m < currentMonth ? "completed" : m === currentMonth ? "current" : "upcoming";
 
-    // Phase context from AI or scientific defaults
+    // Phase context customized with onboarding details
     const aiEntry = aiTimeline[m - 1];
     const { phaseName, focusArea, trainingFocus, nutritionFocus } = getMonthContext(
-      m, direction, isMaintain, totalMonthsProjected,
+      m, direction, isMaintain, totalMonthsProjected, profile,
       aiEntry?.expected_changes,
       aiRoadmap[m - 1],
     );
@@ -239,8 +272,9 @@ export async function getRoadmapData(
   const totalCompleted = allWorkouts.filter((w: any) => w.status === "completed").length;
   const totalScheduled = allWorkouts.length;
   const streak = computeStreak(allWorkouts, now);
+  // On Day 1 with 0 scheduled workouts yet, show 100% baseline consistency
   const consistencyScore =
-    totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
+    totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 100;
 
   return {
     journeyStartDate: journeyStartDate.toISOString(),
@@ -263,7 +297,7 @@ export async function getRoadmapData(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Group months into 3-month phase blocks
+// Group months into 3-month phase blocks (Supports 1 to 4 phases up to 12 months)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function groupIntoPhases(
@@ -272,48 +306,45 @@ function groupIntoPhases(
   isMaintain: boolean,
 ): PhaseBlock[] {
   const phases: PhaseBlock[] = [];
+  const phaseNames: Record<number, Record<string, string>> = {
+    1: {
+      loss: "Cut & Define",
+      gain: "Foundation & Growth",
+      maintain: "Recomposition",
+    },
+    2: {
+      loss: "Sustained Fat Loss",
+      gain: "Progressive Overload",
+      maintain: "Advanced Recomp",
+    },
+    3: {
+      loss: "Deep Definition",
+      gain: "Hypertrophy Push",
+      maintain: "Peak Density",
+    },
+    4: {
+      loss: "Final Goal Consolidation",
+      gain: "Peak Physique Accumulation",
+      maintain: "Physique Mastery",
+    },
+  };
 
-  // Phase 1: Months 1–3
-  const p1 = months.filter((m) => m.monthNumber <= 3);
-  if (p1.length > 0) {
-    phases.push({
-      phaseNumber: 1,
-      phaseName: isMaintain
-        ? "Recomposition"
-        : direction === "loss"
-          ? "Cut & Define"
-          : "Foundation & Growth",
-      status: getBlockStatus(p1),
-      months: p1,
-      weightRange: weightRangeStr(p1),
-    });
-  }
+  const totalPhases = Math.ceil(months.length / 3);
+  for (let p = 1; p <= totalPhases; p++) {
+    const startM = (p - 1) * 3 + 1;
+    const endM = p * 3;
+    const pMonths = months.filter((m) => m.monthNumber >= startM && m.monthNumber <= endM);
+    if (pMonths.length === 0) continue;
 
-  // Phase 2: Months 4–6
-  const p2 = months.filter((m) => m.monthNumber >= 4 && m.monthNumber <= 6);
-  if (p2.length > 0) {
-    phases.push({
-      phaseNumber: 2,
-      phaseName: direction === "loss"
-        ? "Sustained Fat Loss"
-        : direction === "gain"
-          ? "Progressive Overload"
-          : "Advanced Recomp",
-      status: getBlockStatus(p2),
-      months: p2,
-      weightRange: weightRangeStr(p2),
-    });
-  }
+    const dirKey = isMaintain ? "maintain" : direction === "gain" ? "gain" : "loss";
+    const phaseName = phaseNames[p]?.[dirKey] || `Phase ${p} Progression`;
 
-  // Phase 3: Months 7+
-  const p3 = months.filter((m) => m.monthNumber >= 7);
-  if (p3.length > 0) {
     phases.push({
-      phaseNumber: 3,
-      phaseName: "Final Push to Goal",
-      status: getBlockStatus(p3),
-      months: p3,
-      weightRange: weightRangeStr(p3),
+      phaseNumber: p,
+      phaseName,
+      status: getBlockStatus(pMonths),
+      months: pMonths,
+      weightRange: weightRangeStr(pMonths),
     });
   }
 
@@ -345,33 +376,48 @@ function getMonthContext(
   direction: string,
   isMaintain: boolean,
   totalMonths: number,
+  profile?: any,
   aiDescription?: string,
   aiRoadmapEntry?: string,
 ): { phaseName: string; focusArea: string; trainingFocus?: string; nutritionFocus?: string } {
   const genericPhaseName = getGenericPhaseName(month, direction, isMaintain);
 
+  const isHome = profile?.training_location === "Home";
+  const isVeg = profile?.food_type === "Vegetarian" || profile?.food_type === "Vegan";
+  const isVegan = profile?.food_type === "Vegan";
+
+  const dietNote = isVegan
+    ? " (Plant-based anchors: tofu, soy chunks, lentils, pea protein)"
+    : isVeg
+    ? " (Veg anchors: paneer, Greek yogurt/curd, lentils, whey)"
+    : " (Lean anchors: eggs, chicken breast, fish, dairy)";
+
+  const locationNote = isHome
+    ? " [Home Setup: Calisthenics levers, dumbbell tempo & high tension]"
+    : " [Gym Setup: Barbell compounds, cable isolation & progressive overload]";
+
   if (isMaintain) {
     const recompData: Record<number, { focusArea: string; trainingFocus: string; nutritionFocus: string }> = {
       1: {
         focusArea: aiDescription || "Establish workout rhythm, dial in compound exercise execution, and stabilize metabolic baseline.",
-        trainingFocus: "Movement mechanics mastery, consistent session completion, RPE 6-7 calibration",
-        nutritionFocus: "Caloric maintenance target, 2.0g/kg protein intake, 3-4L daily hydration",
+        trainingFocus: `Movement mechanics mastery, consistent session completion, RPE 6-7 calibration${locationNote}`,
+        nutritionFocus: `Caloric maintenance target, 2.0g/kg protein intake, 3-4L daily hydration${dietNote}`,
       },
       2: {
         focusArea: aiDescription || "Body recomposition underway: subcutaneous fat reducing, muscle firmness increasing, compound lifts progressing.",
-        trainingFocus: "Progressive overload on major lifts, increased time-under-tension, controlled eccentrics",
-        nutritionFocus: "Nutrient timing around workout windows, electrolyte balance, optimal sleep recovery",
+        trainingFocus: `Progressive overload on major lifts, increased time-under-tension, controlled eccentrics${locationNote}`,
+        nutritionFocus: `Nutrient timing around workout windows, electrolyte balance, optimal sleep recovery${dietNote}`,
       },
       3: {
         focusArea: aiDescription || "Peak muscle density achieved: noticeable strength improvements and athletic silhouette refinement.",
-        trainingFocus: "Peak strength testing, supersets and density blocks, volume optimization",
-        nutritionFocus: "Long-term sustainable macro balance, lifestyle integration, metabolic stability",
+        trainingFocus: `Peak strength testing, supersets and density blocks, volume optimization${locationNote}`,
+        nutritionFocus: `Long-term sustainable macro balance, lifestyle integration, metabolic stability${dietNote}`,
       },
     };
     const current = recompData[month] || {
       focusArea: aiDescription || "Sustaining your athletic silhouette through structured training and flexible nutrition.",
-      trainingFocus: "Periodized volume maintenance and injury prevention",
-      nutritionFocus: "Intuitive maintenance eating with protein anchor",
+      trainingFocus: `Periodized volume maintenance and injury prevention${locationNote}`,
+      nutritionFocus: `Intuitive maintenance eating with protein anchor${dietNote}`,
     };
     return { phaseName: genericPhaseName, ...current };
   }
@@ -380,39 +426,39 @@ function getMonthContext(
     const lossData: Record<number, { focusArea: string; trainingFocus: string; nutritionFocus: string }> = {
       1: {
         focusArea: aiDescription || "Establishing caloric deficit, flushing intracellular water retention, and metabolic fat adaptation.",
-        trainingFocus: "Compound movement foundation, elevated daily NEAT steps, moderate intensity volume",
-        nutritionFocus: "Targeted 300-500 kcal deficit, 2.0-2.2g/kg protein anchor, high-volume whole foods",
+        trainingFocus: `Compound movement foundation, elevated daily NEAT steps, moderate intensity volume${locationNote}`,
+        nutritionFocus: `Targeted 300-500 kcal deficit, 2.0-2.2g/kg protein anchor, high-volume whole foods${dietNote}`,
       },
       2: {
         focusArea: aiDescription || "Accelerated fat loss phase: waistline reduction clearly visible, muscle tone emerging, stamina improving.",
-        trainingFocus: "Progressive overload preservation, metabolic supersets, post-workout conditioning",
-        nutritionFocus: "Strict deficit adherence, zero liquid calories, micronutrient density optimization",
+        trainingFocus: `Progressive overload preservation, metabolic supersets, post-workout conditioning${locationNote}`,
+        nutritionFocus: `Strict deficit adherence, zero liquid calories, micronutrient density optimization${dietNote}`,
       },
       3: {
         focusArea: aiDescription || "Phase 1 completion milestone: major reduction in body fat percentage, muscle shape defined across core and arms.",
-        trainingFocus: "Deload and intensity maintenance, heavy compounds to retain lean mass",
-        nutritionFocus: "Structured refeed meal if needed, metabolic check-in, fiber and hydration audit",
+        trainingFocus: `Deload and intensity maintenance, heavy compounds to retain lean mass${locationNote}`,
+        nutritionFocus: `Structured refeed meal if needed, metabolic check-in, fiber and hydration audit${dietNote}`,
       },
       4: {
         focusArea: aiDescription || "Sustained deficit loading: targeting stubborn fat reserves with adjusted macros to prevent metabolic slowdown.",
-        trainingFocus: "High-density training, drop-sets and rest-pause sets, targeted isolation",
-        nutritionFocus: "Macro recalculation for lowered bodyweight, nutrient partitioning",
+        trainingFocus: `High-density training, drop-sets and rest-pause sets, targeted isolation${locationNote}`,
+        nutritionFocus: `Macro recalculation for lowered bodyweight, nutrient partitioning${dietNote}`,
       },
       5: {
         focusArea: aiDescription || "Deep cut refinement: muscular striations appearing, vascularity increasing, athletic silhouette locked in.",
-        trainingFocus: "Peak workout intensity, core stabilization, volume preservation",
-        nutritionFocus: "Precision meal timing, peri-workout carbohydrate allocation",
+        trainingFocus: `Peak workout intensity, core stabilization, volume preservation${locationNote}`,
+        nutritionFocus: `Precision meal timing, peri-workout carbohydrate allocation${dietNote}`,
       },
       6: {
         focusArea: aiDescription || "Consolidation phase: reaching final goal body composition, setting up safe reverse-dieting to maintain results.",
-        trainingFocus: "Strength consolidation, mobility maintenance, sustainable workout habits",
-        nutritionFocus: "Gradual calorie increase to maintenance set-point without fat rebound",
+        trainingFocus: `Strength consolidation, mobility maintenance, sustainable workout habits${locationNote}`,
+        nutritionFocus: `Gradual calorie increase to maintenance set-point without fat rebound${dietNote}`,
       },
     };
     const current = lossData[month] || {
       focusArea: aiDescription || "Reaching your target body composition safely while maintaining lean muscle mass.",
-      trainingFocus: "High-intensity resistance training to signal muscle retention",
-      nutritionFocus: "Carefully calibrated caloric deficit with high protein",
+      trainingFocus: `High-intensity resistance training to signal muscle retention${locationNote}`,
+      nutritionFocus: `Carefully calibrated caloric deficit with high protein${dietNote}`,
     };
     return { phaseName: genericPhaseName, ...current };
   }
@@ -421,39 +467,39 @@ function getMonthContext(
   const gainData: Record<number, { focusArea: string; trainingFocus: string; nutritionFocus: string }> = {
     1: {
       focusArea: aiDescription || "Neural adaptation phase: neuromuscular efficiency, form mastery on compound lifts, initial glycogen storage.",
-      trainingFocus: "Perfect exercise technique, motor unit recruitment, compound lifting foundation",
-      nutritionFocus: "Controlled caloric surplus (+250 kcal), 1.8-2.0g/kg protein, complex carb loading",
+      trainingFocus: `Perfect exercise technique, motor unit recruitment, compound lifting foundation${locationNote}`,
+      nutritionFocus: `Controlled caloric surplus (+250 kcal), 1.8-2.0g/kg protein, complex carb loading${dietNote}`,
     },
     2: {
-      focusArea: aiDescription || "Strength foundation: measurable strength PRs on bench, squat, and deadlift, fuller muscle bellies visible.",
-      trainingFocus: "Systematic progressive overload, +2.5kg weight increments, 6-10 rep hypertrophy range",
-      nutritionFocus: "Consistent daily surplus adherence, intra-workout hydration, creatine saturation",
+      focusArea: aiDescription || "Strength foundation: measurable strength PRs on major compound lifts, fuller muscle bellies visible.",
+      trainingFocus: `Systematic progressive overload, +2.5kg weight increments, 6-10 rep hypertrophy range${locationNote}`,
+      nutritionFocus: `Consistent daily surplus adherence, intra-workout hydration, creatine saturation${dietNote}`,
     },
     3: {
       focusArea: aiDescription || "Hypertrophy loading: noticeable muscle growth in chest, shoulders, and back with progressive mechanical tension.",
-      trainingFocus: "Hypertrophy volume expansion, 12-16 sets per muscle group per week, form discipline",
-      nutritionFocus: "Caloric surplus adjustment, post-workout fast-digesting protein and carbs",
+      trainingFocus: `Hypertrophy volume expansion, 12-16 sets per muscle group per week, form discipline${locationNote}`,
+      nutritionFocus: `Caloric surplus adjustment, post-workout fast-digesting protein and carbs${dietNote}`,
     },
     4: {
       focusArea: aiDescription || "Advanced progressive overload: breaking through strength plateaus with targeted accessory work and deload balance.",
-      trainingFocus: "Heavy compound anchors + hypertrophy isolation accessories, mind-muscle connection",
-      nutritionFocus: "Sustained nutrient density, clean calorie surplus, digestive health optimization",
+      trainingFocus: `Heavy compound anchors + hypertrophy isolation accessories, mind-muscle connection${locationNote}`,
+      nutritionFocus: `Sustained nutrient density, clean calorie surplus, digestive health optimization${dietNote}`,
     },
     5: {
       focusArea: aiDescription || "Mass building acceleration: substantial lean tissue accretion, overall frame filling out noticeably.",
-      trainingFocus: "High-volume hypertrophy, mechanical drops, intense eccentric control",
-      nutritionFocus: "Calorie density management, high quality fats and slow burning carbohydrates",
+      trainingFocus: `High-volume hypertrophy, mechanical drops, intense eccentric control${locationNote}`,
+      nutritionFocus: `Calorie density management, high quality fats and slow burning carbohydrates${dietNote}`,
     },
     6: {
       focusArea: aiDescription || "Peak physique consolidation: target lean mass achieved with balanced muscle symmetry and dense muscle maturity.",
-      trainingFocus: "Weak point targeting, symmetry and posture balance, peak strength preservation",
-      nutritionFocus: "Transitioning to maintenance calories to solidify new lean muscle tissue",
+      trainingFocus: `Weak point targeting, symmetry and posture balance, peak strength preservation${locationNote}`,
+      nutritionFocus: `Transitioning to maintenance calories to solidify new lean muscle tissue${dietNote}`,
     },
   };
   const current = gainData[month] || {
     focusArea: aiDescription || "Reaching target muscle mass with continuous progressive overload and surplus nutrition.",
-    trainingFocus: "Progressive mechanical tension on multi-joint lifts",
-    nutritionFocus: "Sustained clean hypercaloric diet with adequate protein",
+    trainingFocus: `Progressive mechanical tension on multi-joint lifts${locationNote}`,
+    nutritionFocus: `Sustained clean hypercaloric diet with adequate protein${dietNote}`,
   };
   return { phaseName: genericPhaseName, ...current };
 }
