@@ -131,7 +131,7 @@ export function ProUpgradeModal({
               {isExpired ? (
                 <>
                   <Link
-                    href="/payment?intent=renew_monthly&plan=pro"
+                    href={`/payment?intent=renew_monthly&plan=pro&returnTo=${encodeURIComponent(returnTo)}`}
                     onClick={onClose}
                     className="w-full py-3 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.35)] active:scale-[0.98] transition-all"
                   >
@@ -140,7 +140,7 @@ export function ProUpgradeModal({
                   </Link>
 
                   <Link
-                    href="/payment?intent=renew_monthly&plan=core"
+                    href={`/payment?intent=renew_monthly&plan=core&returnTo=${encodeURIComponent(returnTo)}`}
                     onClick={onClose}
                     className="w-full py-2.5 bg-[#1A2619] hover:bg-[#233522] border border-[#ADFF00]/30 text-white font-bold uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                   >

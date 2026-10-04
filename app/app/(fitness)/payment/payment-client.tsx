@@ -176,7 +176,9 @@ export default function FitnessPaymentClient({
   // Plan purchases go straight to setup, including older links with returnTo=/.
   const returnTo = isPlanGenerationIntent
     ? "/plan-setup"
-    : isRenewal ? (searchParams.get("returnTo") ? getSafeRedirect(searchParams.get("returnTo")) : "/profile/billing") : getSafeRedirect(searchParams.get("returnTo"));
+    : searchParams.get("returnTo")
+    ? getSafeRedirect(searchParams.get("returnTo"))
+    : (isRenewal ? "/" : getSafeRedirect(searchParams.get("returnTo")));
   
   // In Fitness OS, the duration is always monthly, but we let them choose the tier
   const selectedPlan = "monthly";
