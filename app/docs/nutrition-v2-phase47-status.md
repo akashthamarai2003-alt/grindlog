@@ -12,8 +12,9 @@ Updated 2026-10-04. The real designated-account smoke flow ran. Phase 4.7 is
   database. Catalog image metadata matches; asset delivery does not.
 - Supabase SQL Editor results confirm the timestamp column, corrected logging
   function, ownership-consistent policies, and explicit RPC execution grants.
-  The normalized body hashes match the reviewed repository versions:
-  persist `b8018a4bf66ca3bf6e76eab8c34d147c`,
+  The latest eight-row read-only diagnostic passed after the logged-history
+  guard deployment. The normalized body hashes match the reviewed versions:
+  persist `46e3693967bb49a76c33c32083f9eb2e`,
   swap `f0afa01b9412010c1091e373795a8fbf`,
   log `0afea0e58dcd0f2d323725ee8c5a4483`.
 - The migration history table is absent. Deployment effects are verified; exact
@@ -43,10 +44,12 @@ Updated 2026-10-04. The real designated-account smoke flow ran. Phase 4.7 is
   and template asset identity remains intact. Actual asset coverage remains
   a separate rollout blocker.
 - The service refuses regeneration over an already logged meal. The deployed
-  persistence RPC still uses a different advisory key from logging and swap
-  and deletes existing planned meals for the same dates. The staged
-  `20261003_06` SQL uses the shared lock and refuses replacement of logged
-  history under that lock. It has **not** been applied or verified live.
+  persistence RPC now uses the same advisory lock key as swap and logging,
+  and rejects replacement of logged history under that lock. Both deployed
+  guard branches were tested directly: a `LOGGED` meal with a linked log, and
+  a `PLANNED` meal with a linked log. Each call returned
+  `CANNOT_REGENERATE_LOGGED_MEAL`; the plan, meal, item, and log stayed
+  unchanged. The one-account fixture was removed, with V2 left disabled.
 
 ## Executed checks after these fixes
 
@@ -57,6 +60,8 @@ Updated 2026-10-04. The real designated-account smoke flow ran. Phase 4.7 is
   disabled and were not counted as executed.
 - Phase 4.7: eight tests / 31 assertion calls passed.
 - Nutrition safety: five tests passed.
+- Live direct persistence RPC guard: 21 assertions passed, two rejection
+  branches exercised, and fixture cleanup verified against account baseline.
 
 ## Real designated-account smoke result
 
@@ -90,11 +95,6 @@ Updated 2026-10-04. The real designated-account smoke flow ran. Phase 4.7 is
   the live value after cleanup was `2026-10-04T10:04:05.124437+00:00`. An
   exact private snapshot and guarded SQL Editor restoration script are saved
   outside the Git repository. Exact profile restoration is **not yet proved**.
-- `20261003_06` must be reviewed, applied, and verified before direct RPC
-  callers can safely regenerate over logged history. The service guard alone
-  does not close the concurrent RPC race. The staged persist function's
-  normalized body hash is `46e3693967bb49a76c33c32083f9eb2e`; verify it
-  with `nutrition_v2_phase47_post_history_guard_readonly.sql` after deployment.
 - Actual recipe and template image assets are missing. Badge fallback passes
   the backend smoke test but is not production image coverage.
 
