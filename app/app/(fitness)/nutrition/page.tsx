@@ -3,7 +3,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Utensils, ShoppingCart } from "lucide-react";
 import { NutritionView } from "@/components/fitness/nutrition/nutrition-view";
+import { V2NutritionView } from "@/components/fitness/nutrition/v2-nutrition-view";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+import { getV2NutritionDay } from "@/lib/services/nutrition/v2-ui-data";
 import { getCachedUser } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
@@ -21,22 +23,17 @@ async function NutritionContent() {
 
   const admin = createAdminClient();
 
-  // Fetch onboarding status, subscription plan, and today's nutrition in a single parallel batch
+  // Keep the validated V2 experience scoped to the existing profile flag.
   const [
     { data: profile },
     plan,
-    initialData,
   ] = await Promise.all([
     admin
       .from("fitness_os_profiles")
-      .select("onboarding_completed")
+      .select("onboarding_completed,nutrition_engine_v2")
       .eq("user_id", user.id)
       .maybeSingle(),
     getFitnessPlan(user.id),
-    NutritionService.getTodaySummaryAndDetails(user.id).catch((err) => {
-      console.warn("Failed to prefetch today nutrition on server:", err?.message || err);
-      return null;
-    }),
   ]);
 
   if (!profile?.onboarding_completed) {
@@ -44,6 +41,25 @@ async function NutritionContent() {
   }
 
   const isPro = plan?.id === "pro";
+
+  if (profile.nutrition_engine_v2 === true) {
+    const initialData = await getV2NutritionDay(user.id).catch((err) => {
+      console.warn("Failed to prefetch V2 nutrition:", err?.message || err);
+      return null;
+    });
+    return (
+      <div className="min-h-screen bg-[#0A1108] text-white">
+        <div className="mx-auto w-full max-w-5xl px-4 pb-32 pt-6 sm:px-6 sm:pt-10">
+          <V2NutritionView initialData={initialData} isPro={isPro} />
+        </div>
+      </div>
+    );
+  }
+
+  const initialData = await NutritionService.getTodaySummaryAndDetails(user.id).catch((err) => {
+    console.warn("Failed to prefetch today nutrition on server:", err?.message || err);
+    return null;
+  });
 
   return (
     <div className="min-h-screen bg-[#0A1108] text-white">

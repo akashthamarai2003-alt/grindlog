@@ -25,9 +25,9 @@ export default async function GroceryPage() {
 
   // Run all independent queries in parallel
   const [
-    { data: activePlan },
+    { data: activePlan, error: activePlanError },
     { data: profile },
-    { data: dbGroceryItems }
+    { data: dbGroceryItems, error: groceryItemsError }
   ] = await Promise.all([
     supabase
       .from("fitness_os_workout_plans")
@@ -62,6 +62,49 @@ export default async function GroceryPage() {
     weeklyBudget,
     tier: parsedBudget.tier,
   };
+
+  if (profile.nutrition_engine_v2 === true) {
+    // V2 groceries are written by the validated V2 aggregator. Never fill a
+    // flagged user's empty list with legacy or AI generated purchase rows.
+    if (activePlanError) throw activePlanError;
+    if (groceryItemsError) throw groceryItemsError;
+    const today = await NutritionService.getLocalDateString(user.id);
+    const { data: readyPlans, error: readyPlanError } = await supabase.from("meal_plans")
+      .select("id").eq("user_id", user.id).eq("status", "READY")
+      .gte("date", today).order("date").limit(7);
+    if (readyPlanError) throw readyPlanError;
+    const readyIds = (readyPlans || []).map((row) => row.id);
+    const { data: v2Meals, error: v2MealError } = readyIds.length
+      ? await supabase.from("planned_meals").select("id").eq("user_id", user.id)
+          .in("meal_plan_id", readyIds).like("planner_version", "v2%").limit(1)
+      : { data: [], error: null };
+    if (v2MealError) throw v2MealError;
+    const v2Rows = v2Meals?.length && activePlan?.id
+      ? (dbGroceryItems || []).filter((row) => row.plan_id === activePlan.id)
+      : [];
+    if (v2Rows.length === 0) {
+      return <div className="min-h-screen bg-[#0A1108] px-4 pb-28 pt-16 text-center text-white">
+        <div className="mx-auto max-w-md rounded-[28px] border border-white/10 bg-[#111A10] p-8">
+          <ShoppingCart className="mx-auto mb-4 text-[#ADFF00]" size={32} />
+          <h1 className="text-2xl font-black uppercase">Your Grocery List</h1>
+          <p className="mt-3 text-sm leading-relaxed text-white/55">{v2Meals?.length
+            ? "Nothing needs buying for your saved plan. Mess and pantry foods stay off the purchase list."
+            : "Generate a V2 meal plan to see what you need to buy."}</p>
+          <Link href="/nutrition" className="mt-6 inline-flex rounded-xl bg-[#ADFF00] px-5 py-3 text-sm font-black text-black">Back to Nutrition</Link>
+        </div>
+      </div>;
+    }
+    const v2Items: GroceryItemData[] = v2Rows.map((row) => ({
+      id: row.id, name: row.name, monthlyQuantity: Number(row.monthly_quantity),
+      unit: row.unit || "unit", estimatedPrice: Number(row.estimated_price),
+      category: row.category || "General", isOptional: Boolean(row.is_optional),
+      reason: row.reason || "", purchased: Boolean(row.purchased),
+    }));
+    return <GroceryView initialItems={v2Items} budget={budgetSummary} authoritativePurchases
+      planName="V2 7-Day Nutrition Plan" planGoal={activePlan?.goal || "Nutrition"}
+      dietType={profile.diet_preference || profile.food_type || undefined}
+      userId={user.id} planId={activePlan?.id || ""} />;
+  }
 
   const planNutrition = activePlan?.plan_data?.nutrition;
   const planGroceryList = planNutrition?.grocery_list || [];

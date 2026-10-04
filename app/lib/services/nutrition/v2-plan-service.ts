@@ -72,6 +72,7 @@ export interface V2SwapCandidate {
   fat: number;
   estimated_cost: number;
   prep_instructions: string;
+  prep_time_min: number;
   image_url?: string;
   items: Array<{
     food_id: string;
@@ -763,6 +764,7 @@ export class V2PlanService {
         fat: optResult.totalFat,
         estimated_cost: optResult.totalCost,
         prep_instructions: rv.prepInstructions || "Prepare using recommended portions.",
+        prep_time_min: rv.cookingTimeMin,
         image_url: resolveV2ImageSnapshot(img?.url, rv.name),
         items,
       });

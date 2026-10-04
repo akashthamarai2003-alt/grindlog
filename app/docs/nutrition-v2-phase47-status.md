@@ -1,7 +1,8 @@
 # Nutrition V2 Phase 4.7 status
 
-Updated 2026-10-04. The real designated-account smoke flow ran. Phase 4.7 is
-**not complete**. V2 is back to disabled for the test profile.
+Updated 2026-10-04. The real designated-account smoke flow and deployed RPC
+history guard passed. **PHASE 4 BACKEND COMPLETE.** V2 is disabled for the
+test profile and remains behind its per-profile feature flag.
 
 ## Database evidence
 
@@ -87,15 +88,13 @@ Updated 2026-10-04. The real designated-account smoke flow ran. Phase 4.7 is
   rows, workout plan data, four targets, and empty plan/log state were
   restored after the test and compared.
 
-## Remaining blockers
+## Profile restoration and Phase 5B
 
-- All original functional profile fields and the disabled V2 flag were restored
-  and compared. The profile's `updated_at` trigger changed its timestamp again
-  during restoration. Its old value was `2026-10-01T09:24:55.791454+00:00`;
-  the live value after cleanup was `2026-10-04T10:04:05.124437+00:00`. An
-  exact private snapshot and guarded SQL Editor restoration script are saved
-  outside the Git repository. Exact profile restoration is **not yet proved**.
+- All functional profile data was restored exactly. updated_at intentionally reflects the controlled restoration operation and was not backdated.
+- The private restore-timestamp SQL must not be run. Backdating this audit
+  metadata would misrepresent the completed test and restoration.
 - Actual recipe and template image assets are missing. Badge fallback passes
-  the backend smoke test but is not production image coverage.
+  the backend smoke test but is not production image coverage. Real asset
+  coverage is tracked separately for Phase 5B.
 
 No further production migration or general rollout is authorized by this file.

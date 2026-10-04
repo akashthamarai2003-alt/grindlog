@@ -45,6 +45,7 @@ interface GroceryViewProps {
   dietType?: string;
   userId: string;
   planId: string;
+  authoritativePurchases?: boolean;
 }
 
 export function GroceryView({
@@ -55,6 +56,7 @@ export function GroceryView({
   dietType,
   userId,
   planId,
+  authoritativePurchases = false,
 }: GroceryViewProps) {
   const router = useRouter();
   const [items, setItems] = useState<GroceryItemData[]>(initialItems);
@@ -67,6 +69,7 @@ export function GroceryView({
 
   // Sync state from localStorage on initial load
   useEffect(() => {
+    if (authoritativePurchases) return;
     try {
       const storageKey = `grindlog_grocery_checked_${userId}_${planId}`;
       const saved = localStorage.getItem(storageKey);
@@ -82,7 +85,7 @@ export function GroceryView({
     } catch {
       // ignore localStorage parse issues
     }
-  }, [userId, planId]);
+  }, [userId, planId, authoritativePurchases]);
 
   // Clean up pending timeouts on unmount
   useEffect(() => {
