@@ -22,6 +22,7 @@ WITH expected_rpc(name, signature, body_hash) AS (
            AND p.prosecdef
            AND p.proconfig @> ARRAY['search_path=public, pg_catalog']::text[]
            AND has_function_privilege('authenticated', p.oid, 'EXECUTE')
+           AND has_function_privilege('service_role', p.oid, 'EXECUTE')
            AND NOT has_function_privilege('anon', p.oid, 'EXECUTE')
            AND (SELECT count(*) FROM pg_proc overload
                 WHERE overload.pronamespace = 'public'::regnamespace
@@ -34,6 +35,7 @@ WITH expected_rpc(name, signature, body_hash) AS (
            'security_definer', p.prosecdef,
            'settings', p.proconfig,
            'authenticated_execute', has_function_privilege('authenticated', p.oid, 'EXECUTE'),
+           'service_role_execute', has_function_privilege('service_role', p.oid, 'EXECUTE'),
            'anon_execute', has_function_privilege('anon', p.oid, 'EXECUTE')
          ) AS details
   FROM expected_rpc e
