@@ -1951,12 +1951,12 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                         (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80";
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#111A10] via-[#111A10]/50 to-black/40" />
+                    <div className="nutrition-hero-scrim absolute inset-0 bg-gradient-to-t from-[#111A10] via-[#111A10]/50 to-black/40" />
                     
                     {/* Top Floating Badge Bar */}
                     <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-md bg-black/70 text-white border border-white/15 flex items-center gap-1.5 shadow-md">
+                        <span className="nutrition-hero-badge px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-md bg-black/70 text-white border border-white/15 flex items-center gap-1.5 shadow-md">
                           <span>{getMealIcon(meal.meal_type)}</span>
                           <span>{formatMealType(meal.meal_type)}</span>
                         </span>
@@ -1971,7 +1971,7 @@ export function NutritionView({ initialData, isPro = true }: { initialData?: any
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black backdrop-blur-md bg-black/70 text-[#ADFF00] border border-[#ADFF00]/30 shadow-md">
+                        <span className="nutrition-hero-badge px-2.5 py-1 rounded-full text-[10px] font-black backdrop-blur-md bg-black/70 text-[#ADFF00] border border-[#ADFF00]/30 shadow-md">
                           {hasLoggedFoods ? `${mealCals} kcal · ${mealPro}g P logged` : `${plannedTotals.calories} kcal · ${plannedTotals.protein}g P`}
                         </span>
                       </div>

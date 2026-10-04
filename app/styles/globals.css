@@ -1029,9 +1029,95 @@ html.theme-white .fitness-streak-badge {
 }
 html.theme-white .fitness-streak-badge svg { color: var(--fitness-achievement) !important; }
 html.theme-white .fitness-streak-badge span { color: #92400E !important; }
-/* Captions remain light on the dark food-photo overlay. */
-html.theme-white .nutrition-meal-hero-caption .text-white,
-html.theme-white .nutrition-meal-hero-caption .text-white\/70 { color: #FFFFFF !important; }
+/* Nutrition meal title on white cards: high-contrast dark text */
+html.theme-white .nutrition-meal-hero-caption .text-white {
+  color: var(--fitness-text) !important;
+}
+html.theme-white .nutrition-meal-hero-caption .text-white\/70 {
+  color: var(--fitness-secondary) !important;
+}
+
+/* Nutrition Hero Scrim & Badges in White Theme */
+html.theme-white .nutrition-hero-scrim {
+  background-image: linear-gradient(to top, #FFFFFF 0%, rgba(255, 255, 255, 0.75) 45%, rgba(0, 0, 0, 0.15) 100%) !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+html.theme-white .nutrition-hero-badge {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: var(--fitness-border) !important;
+  color: var(--fitness-text) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+html.theme-white .nutrition-hero-badge .text-white,
+html.theme-white .nutrition-hero-badge span {
+  color: var(--fitness-text) !important;
+}
+html.theme-white .nutrition-hero-badge .text-\[\#ADFF00\] {
+  color: var(--fitness-primary) !important;
+}
+
+/* Disabled button states in white theme: clean soft background & readable secondary text */
+html.theme-white button:disabled,
+html.theme-white button[disabled] {
+  background-color: var(--fitness-soft-bg) !important;
+  color: var(--fitness-secondary) !important;
+  border: 1px solid var(--fitness-border) !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+html.theme-white button:disabled *,
+html.theme-white button[disabled] * {
+  color: var(--fitness-secondary) !important;
+}
+
+/* Exercise Animation Player floating media badges in White Theme */
+html.theme-white .exercise-badge-pill,
+html.theme-white .exercise-overlay-btn {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: var(--fitness-border) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+}
+html.theme-white .exercise-badge-pill .text-white {
+  color: var(--fitness-text) !important;
+}
+html.theme-white .exercise-badge-pill .text-\[\#ADFF00\] {
+  color: var(--fitness-primary) !important;
+}
+html.theme-white .exercise-overlay-btn {
+  color: var(--fitness-text) !important;
+}
+html.theme-white .exercise-overlay-btn:hover {
+  background-color: #FFFFFF !important;
+  color: var(--fitness-primary) !important;
+}
+
+/* Roadmap profile pills & focus cards in White Theme */
+html.theme-white .roadmap-pill {
+  background-color: var(--fitness-soft-bg) !important;
+  border-color: var(--fitness-border) !important;
+  color: var(--fitness-text) !important;
+}
+html.theme-white .roadmap-focus-card {
+  background-color: #FFFFFF !important;
+  border-color: var(--fitness-border) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+html.theme-white .roadmap-focus-card .font-bold,
+html.theme-white .roadmap-focus-card p:first-child {
+  color: var(--fitness-text) !important;
+}
+html.theme-white .roadmap-focus-card p:last-child {
+  color: var(--fitness-secondary) !important;
+}
+html.theme-white .roadmap-focus-card svg.text-\[\#ADFF00\] {
+  color: var(--fitness-primary) !important;
+}
+html.theme-white .roadmap-focus-card svg.text-emerald-400 {
+  color: var(--fitness-primary) !important;
+}
 html.theme-white .recharts-cartesian-axis-tick-value { fill: var(--fitness-secondary) !important; }
 html.theme-white .recharts-wrapper [stroke="#ADFF00"] { stroke: var(--fitness-primary) !important; }
 html.theme-white .recharts-wrapper [fill="#ADFF00"] { fill: var(--fitness-primary) !important; }

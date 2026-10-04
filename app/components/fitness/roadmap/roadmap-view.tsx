@@ -201,22 +201,22 @@ export function RoadmapView({
                   return (
                     <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                       {targetPhysique && (
-                        <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                        <span className="roadmap-pill text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
                           🎯 {targetPhysique}
                         </span>
                       )}
                       {trainingLocation && (
-                        <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                        <span className="roadmap-pill text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
                           📍 {trainingLocation}
                         </span>
                       )}
                       {fitnessLevel && (
-                        <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                        <span className="roadmap-pill text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
                           ⚡ {fitnessLevel}
                         </span>
                       )}
                       {foodType && (
-                        <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                        <span className="roadmap-pill text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
                           🥗 {foodType}
                         </span>
                       )}
@@ -707,7 +707,7 @@ function RoadmapMonthRow({
                 className="overflow-hidden pt-3 mt-3 border-t border-white/5 space-y-2 text-[11px]"
               >
                 {month.trainingFocus && (
-                  <div className="flex items-start gap-2 rounded-xl bg-black/30 p-2.5 border border-white/5">
+                  <div className="roadmap-focus-card flex items-start gap-2 rounded-xl bg-black/30 p-2.5 border border-white/5">
                     <Dumbbell className="w-3.5 h-3.5 text-[#ADFF00] mt-0.5 shrink-0" />
                     <div>
                       <p className="font-bold text-gray-200">Training Focus</p>
@@ -717,7 +717,7 @@ function RoadmapMonthRow({
                 )}
 
                 {month.nutritionFocus && (
-                  <div className="flex items-start gap-2 rounded-xl bg-black/30 p-2.5 border border-white/5">
+                  <div className="roadmap-focus-card flex items-start gap-2 rounded-xl bg-black/30 p-2.5 border border-white/5">
                     <Apple className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
                     <div>
                       <p className="font-bold text-gray-200">Nutrition Strategy</p>

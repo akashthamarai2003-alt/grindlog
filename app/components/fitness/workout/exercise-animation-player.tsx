@@ -93,14 +93,14 @@ export function ExerciseAnimationPlayer({
         {/* Top Badges Bar */}
         {showBadges && (
           <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2 pointer-events-none">
-            <div className="flex items-center gap-1.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 shadow-lg">
+            <div className="exercise-badge-pill flex items-center gap-1.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 shadow-lg">
               <span className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse" />
               <span className="text-[10px] font-black tracking-widest text-[#ADFF00] uppercase">
                 Form Demo
               </span>
             </div>
 
-            <div className="flex items-center gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 shadow-lg">
+            <div className="exercise-badge-pill flex items-center gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 shadow-lg">
               <Target className="w-3 h-3 text-[#ADFF00]" />
               <span className="text-[10px] font-bold tracking-wider text-white uppercase">
                 {animation.targetMuscle}
@@ -153,7 +153,7 @@ export function ExerciseAnimationPlayer({
               type="button"
               onClick={() => setIsZoomModalOpen(true)}
               aria-label="Expand exercise demonstration"
-              className="p-2 rounded-full bg-black/80 hover:bg-black text-white hover:text-[#ADFF00] border border-black/20 backdrop-blur-md transition-all active:scale-95 shadow-lg cursor-pointer"
+              className="exercise-overlay-btn p-2 rounded-full bg-black/80 hover:bg-black text-white hover:text-[#ADFF00] border border-black/20 backdrop-blur-md transition-all active:scale-95 shadow-lg cursor-pointer"
               title="Full View"
             >
               <Maximize2 className="w-3.5 h-3.5" />
@@ -164,7 +164,7 @@ export function ExerciseAnimationPlayer({
         {/* Equipment Chip (Bottom Left) */}
         {animation.equipment && showBadges && (
           <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
-            <span className="text-[9px] font-black tracking-wider text-white bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 uppercase shadow-lg">
+            <span className="exercise-badge-pill text-[9px] font-black tracking-wider text-white bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 uppercase shadow-lg">
               {animation.equipment}
             </span>
           </div>
