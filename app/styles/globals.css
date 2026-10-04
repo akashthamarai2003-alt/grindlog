@@ -494,18 +494,22 @@ html.theme-white {
   --fitness-primary: #16A34A;
   --fitness-primary-dark: #15803D;
   --fitness-primary-light: #DCFCE7;
-  --fitness-canvas: #F9FAFB;
   --fitness-active-background: #F0FDF4;
-  --fitness-pro: #A855F7;
+  --fitness-canvas: #F8F8F8;
+  --fitness-sidebar: #FFFFFF;
   --fitness-card: #FFFFFF;
+  --fitness-input: #F5F5F5;
+  --fitness-soft-bg: #F5F5F5;
+  --fitness-border: #E5E5E5;
   --fitness-text: #111827;
   --fitness-secondary: #6B7280;
-  --fitness-success: #22C55E;
-  --fitness-achievement: #F59E0B;
+  --fitness-pro: #A855F7;
   --fitness-error: #EF4444;
   --fitness-info: #3B82F6;
-  --fitness-track: #E5F5E9;
-  --fitness-border: #E5E7EB;
+  --fitness-warning: #F59E0B;
+  --fitness-achievement: #F59E0B;
+  --fitness-success: #16A34A;
+  --fitness-track: #E5E5E5;
 }
 
 /* ============================================
@@ -520,7 +524,10 @@ html.theme-white body {
 /* Surface backgrounds — base page canvas */
 html.theme-white .bg-\[\#0A1108\],
 html.theme-white .bg-\[\#060D06\],
-html.theme-white .bg-\[\#050905\] {
+html.theme-white .bg-\[\#050905\],
+html.theme-white .bg-\[\#070D07\],
+html.theme-white .bg-\[\#080D08\],
+html.theme-white .bg-\[\#070C07\] {
   background-color: var(--fitness-canvas) !important;
 }
 
@@ -531,7 +538,8 @@ html.theme-white .bg-\[\#0A1108\]\/95,
 html.theme-white .bg-\[\#070C07\]\/85,
 html.theme-white .bg-\[\#111A10\]\/90,
 html.theme-white .bg-\[\#121E12\]\/90 {
-  background-color: rgba(249, 250, 251, 0.95) !important;
+  background-color: rgba(248, 248, 248, 0.95) !important;
+  border-color: var(--fitness-border) !important;
 }
 
 /* Primary cards & dialogs — pure white with soft shadow */
@@ -539,27 +547,31 @@ html.theme-white .bg-\[\#121E12\],
 html.theme-white .bg-\[\#111A10\],
 html.theme-white .bg-\[\#0E160E\],
 html.theme-white [class*="from-\[\#121E12\]"],
+html.theme-white [class*="from-\[\#111A10\]"],
 html.theme-white [class*="from-\[\#1A2619\]"] {
   background-image: none !important;
   background-color: var(--fitness-card) !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 2px 12px -2px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 2px 8px -2px rgba(0, 0, 0, 0.02) !important;
+  border-color: var(--fitness-border) !important;
 }
 
-/* Secondary containers, chips, item insets, water stepper tray */
+/* Secondary containers, chips, item insets, water stepper tray, metric boxes */
 html.theme-white .bg-\[\#1A2619\],
 html.theme-white .bg-\[\#1E2C1D\],
 html.theme-white .bg-\[\#152014\],
 html.theme-white .bg-\[\#1E261D\],
 html.theme-white .bg-\[\#0D150D\],
 html.theme-white .bg-\[\#081008\] {
-  background-color: var(--fitness-canvas) !important;
+  background-color: var(--fitness-soft-bg) !important;
+  border-color: var(--fitness-border) !important;
 }
 
 /* Tertiary dark surfaces — water history stats, heatmap empty cells, future cells */
 html.theme-white .bg-\[\#182216\],
 html.theme-white .bg-\[\#141C12\],
 html.theme-white .bg-\[\#121811\] {
-  background-color: var(--fitness-track) !important;
+  background-color: var(--fitness-soft-bg) !important;
+  border-color: var(--fitness-border) !important;
 }
 
 /* Water heatmap level colors — keep vibrant on white */
@@ -606,7 +618,7 @@ html.theme-white .active\:bg-white\/\[0\.1\]:active {
   background-color: rgba(0, 0, 0, 0.07) !important;
 }
 
-/* Dark surfaces & card containers → clean light surfaces */
+/* Dark surfaces & metric containers → #F5F5F5 soft background */
 html.theme-white .bg-black\/10,
 html.theme-white .bg-black\/15,
 html.theme-white .bg-black\/20,
@@ -615,7 +627,8 @@ html.theme-white .bg-black\/30,
 html.theme-white .bg-black\/35,
 html.theme-white .bg-black\/40,
 html.theme-white .bg-black\/45 {
-  background-color: var(--fitness-canvas) !important;
+  background-color: var(--fitness-soft-bg) !important;
+  border-color: var(--fitness-border) !important;
 }
 /* Progress bar tracks inside rounded-full */
 html.theme-white .rounded-full.bg-black\/30,
@@ -627,7 +640,8 @@ html.theme-white .rounded-full.bg-black\/60 {
 html.theme-white .bg-black\/50,
 html.theme-white .bg-black\/60,
 html.theme-white .bg-black\/70 {
-  background-color: var(--fitness-canvas) !important;
+  background-color: var(--fitness-soft-bg) !important;
+  border-color: var(--fitness-border) !important;
 }
 
 /* Border overrides — unified subtle light borders */
@@ -779,14 +793,18 @@ html.theme-white .border-\[\#ADFF00\]\/60 {
 html.theme-white .decoration-\[\#ADFF00\]\/40 {
   text-decoration-color: rgba(21, 128, 61, 0.45) !important;
 }
+html.theme-white .group\/btn .text-white,
+html.theme-white .group\/btn:hover .text-white {
+  color: var(--fitness-primary-dark) !important;
+}
 
-/* Primary controls use emerald with a readable navy foreground. */
+/* Primary controls use Primary Green #16A34A with crisp white text */
 html.theme-white .bg-\[\#ADFF00\] {
   background-color: var(--fitness-primary) !important;
-  color: var(--fitness-text) !important;
+  color: #FFFFFF !important;
 }
 html.theme-white .bg-\[\#ADFF00\] * {
-  color: var(--fitness-text) !important;
+  color: #FFFFFF !important;
 }
 
 /* Water cyan accent backgrounds — keep vibrant on white */
@@ -843,10 +861,12 @@ html.theme-white [class*="blur-\["] {
   opacity: 0.4;
 }
 
-/* ─── Form controls ─── */
-html.theme-white input,
+/* ─── Form controls: #F5F5F5 input / soft background, #E5E5E5 border, #111827 text ─── */
+html.theme-white input:not([type="checkbox"]):not([type="radio"]),
 html.theme-white select,
 html.theme-white textarea {
+  background-color: var(--fitness-input) !important;
+  border-color: var(--fitness-border) !important;
   color: var(--fitness-text) !important;
 }
 html.theme-white input::placeholder,
@@ -1090,7 +1110,7 @@ html.theme-white .bg-\[\#bfff33\],
 html.theme-white .bg-\[\#c4ff33\],
 html.theme-white .bg-\[\#c6ff47\] {
   background-color: var(--fitness-primary) !important;
-  color: var(--fitness-text) !important;
+  color: #FFFFFF !important;
 }
 
 html.theme-white .hover\:bg-\[\#c4ff33\]:hover,
@@ -1120,20 +1140,31 @@ html.theme-white .fitness-nav-link .fitness-nav-glow {
 html.theme-white .fitness-nav-link[data-active="true"] .fitness-nav-label,
 html.theme-white .fitness-nav-link[data-active="true"] .fitness-nav-icon > svg,
 html.theme-white .fitness-nav-link[data-active="true"] .fitness-nav-icon > svg * {
-  color: var(--fitness-primary-dark) !important;
+  color: var(--fitness-primary) !important;
 }
 html.theme-white .fitness-nav-link[data-active="false"] .fitness-nav-label,
 html.theme-white .fitness-nav-link[data-active="false"] .fitness-nav-icon > svg {
   color: var(--fitness-secondary) !important;
 }
 html.theme-white .fitness-pro-badge,
-html.theme-white .fitness-nav-active .fitness-pro-badge {
+html.theme-white .fitness-nav-active .fitness-pro-badge,
+html.theme-white .bg-purple-500,
+html.theme-white .bg-purple-600 {
   background-color: var(--fitness-pro) !important;
   border-color: var(--fitness-pro) !important;
-  color: var(--fitness-text) !important;
+  color: #FFFFFF !important;
   box-shadow: none !important;
 }
-html.theme-white .fitness-pro-badge * { color: var(--fitness-text) !important; }
+html.theme-white .fitness-pro-badge *,
+html.theme-white .fitness-nav-active .fitness-pro-badge * { 
+  color: #FFFFFF !important; 
+}
+html.theme-white aside,
+html.theme-white [role="complementary"],
+html.theme-white .fitness-sidebar {
+  background-color: var(--fitness-sidebar) !important;
+  border-color: var(--fitness-border) !important;
+}
 html.theme-white [aria-current="page"]:not(.fitness-nav-link) {
   background-color: var(--fitness-active-background) !important;
   color: var(--fitness-primary-dark) !important;

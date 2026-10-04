@@ -187,6 +187,15 @@ export function OnboardingFlow({
   const totalSteps = 16;
   const showProgress = step > 1 && step < 16;
 
+  // Force dark cyberpunk theme during onboarding flow
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.remove("theme-white");
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    }
+  }, []);
+
   // Restore saved step and draft data from localStorage on mount
   useEffect(() => {
     if (isEditing || initialStep !== undefined) return;

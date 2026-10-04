@@ -664,9 +664,9 @@ export function ProfileContent({
             <div className="p-4 flex items-center justify-between border-b border-white/5 hover:bg-white/5 transition-all">
               <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                  theme === "white" ? "bg-amber-500/15 text-amber-500" : "bg-[#1A2619] text-[#ADFF00]"
+                  theme === "white" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#1A2619] text-[#ADFF00]"
                 }`}>
-                  {theme === "white" ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+                  {theme === "white" ? <Sun className="w-4.5 h-4.5 text-[#16A34A]" /> : <Moon className="w-4.5 h-4.5" />}
                 </div>
                 <div>
                   <p className="text-sm font-bold text-white">Appearance & Theme</p>
@@ -692,7 +692,7 @@ export function ProfileContent({
                   onClick={() => setTheme("white")}
                   className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                     theme === "white"
-                      ? "bg-white text-black shadow-sm"
+                      ? "bg-[#16A34A] text-white shadow-sm"
                       : "text-gray-400 hover:text-white"
                   }`}
                 >

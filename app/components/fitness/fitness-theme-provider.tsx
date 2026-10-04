@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export type FitnessTheme = "primary" | "white";
 
@@ -21,27 +22,22 @@ const THEME_STORAGE_KEY = "grindlog_fitness_theme";
 export function FitnessThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<FitnessTheme>("primary");
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(THEME_STORAGE_KEY) as FitnessTheme | null;
-      if (stored === "white" || stored === "primary") {
-        setThemeState(stored);
-        applyTheme(stored);
-      } else {
-        applyTheme("primary");
-      }
-    } catch {
-      applyTheme("primary");
-    } finally {
-      setMounted(true);
-    }
-  }, []);
+  const isExcludedRoute = (path?: string | null) => {
+    if (!path) return false;
+    return (
+      path.startsWith("/onboarding") ||
+      path.startsWith("/auth") ||
+      path.startsWith("/landing")
+    );
+  };
 
-  const applyTheme = (newTheme: FitnessTheme) => {
+  const applyTheme = (newTheme: FitnessTheme, currentPath?: string | null) => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
-    if (newTheme === "white") {
+    const targetPath = currentPath !== undefined ? currentPath : pathname;
+    if (newTheme === "white" && !isExcludedRoute(targetPath)) {
       root.classList.add("theme-white");
       root.classList.remove("dark");
       root.style.colorScheme = "light";
@@ -51,6 +47,27 @@ export function FitnessThemeProvider({ children }: { children: React.ReactNode }
       root.style.colorScheme = "dark";
     }
   };
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(THEME_STORAGE_KEY) as FitnessTheme | null;
+      if (stored === "white" || stored === "primary") {
+        setThemeState(stored);
+        applyTheme(stored, pathname);
+      } else {
+        applyTheme("primary", pathname);
+      }
+    } catch {
+      applyTheme("primary", pathname);
+    } finally {
+      setMounted(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    applyTheme(theme, pathname);
+  }, [pathname, theme, mounted]);
 
   const setTheme = (newTheme: FitnessTheme) => {
     setThemeState(newTheme);

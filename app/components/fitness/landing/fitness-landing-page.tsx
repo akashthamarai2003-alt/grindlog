@@ -48,6 +48,11 @@ export function FitnessLandingPage() {
   const [isNative, setIsNative] = useState(false);
 
   React.useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.remove("theme-white");
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    }
     if (isNativePlatform()) {
       setIsNative(true);
       window.location.replace("/auth/signin");

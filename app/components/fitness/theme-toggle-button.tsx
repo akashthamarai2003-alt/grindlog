@@ -34,7 +34,7 @@ export function ThemeToggleButton({ className = "", size = "md" }: ThemeToggleBu
       onClick={toggleTheme}
       className={`relative rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 cursor-pointer ${
         isWhite
-          ? "w-10 h-10 bg-white border border-gray-200 text-gray-800 shadow-[0_2px_10px_rgba(0,0,0,0.06)] hover:bg-gray-50"
+          ? "w-10 h-10 bg-white border border-[#E5E5E5] text-[#111827] shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:bg-[#F5F5F5]"
           : "w-10 h-10 bg-[#121E12] border border-[#1A2619] text-gray-300 hover:text-white hover:border-[#ADFF00]/40 shadow-[0_0_12px_rgba(0,0,0,0.3)]"
       } ${className}`}
       title={isWhite ? "Switch to Primary (Dark) Theme" : "Switch to White Theme"}
@@ -42,7 +42,7 @@ export function ThemeToggleButton({ className = "", size = "md" }: ThemeToggleBu
     >
       <div className="relative w-5 h-5 flex items-center justify-center">
         {isWhite ? (
-          <Moon className="w-4 h-4 text-emerald-600 transition-transform duration-300 rotate-0 scale-100" />
+          <Moon className="w-4 h-4 text-[#16A34A] transition-transform duration-300 rotate-0 scale-100" />
         ) : (
           <Sun className="w-4 h-4 text-amber-400 transition-transform duration-300 rotate-0 scale-100" />
         )}

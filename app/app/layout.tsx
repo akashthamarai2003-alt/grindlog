@@ -72,8 +72,12 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
+                  var p = window.location.pathname;
+                  var isExcluded = p.indexOf('/onboarding') === 0 || 
+                                   p.indexOf('/auth') === 0 || 
+                                   p.indexOf('/landing') === 0;
                   var t = localStorage.getItem('grindlog_fitness_theme');
-                  if (t === 'white') {
+                  if (t === 'white' && !isExcluded) {
                     document.documentElement.classList.add('theme-white');
                     document.documentElement.classList.remove('dark');
                     document.documentElement.style.colorScheme = 'light';
