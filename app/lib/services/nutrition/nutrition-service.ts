@@ -4,7 +4,7 @@ import { calculateTargets } from "@/lib/fitness/nutrition/nutrition-engine";
 import { calculateDailyBudget, normalizeDietType, parseStringList, resolveMealSlots } from "@/lib/fitness/nutrition/user-context";
 import { getFoodServingLimit } from "@/lib/fitness/nutrition/constants";
 import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
-import { selectDisplayPlanItems } from "@/lib/services/nutrition/v2-display-items";
+import { persistedV2MealSlots, selectDisplayPlanItems } from "@/lib/services/nutrition/v2-display-items";
 import { cache } from "react";
 
 interface NutritionServerCacheEntry {
@@ -3897,7 +3897,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
         .lte('logged_at', end),
       supabase
         .from('meal_plans')
-        .select('*, meal_plan_items(*, foods(*), planned_meals(meal_slot))')
+        .select('*, meal_plan_items(*, foods(*), planned_meals(meal_slot, meal_sequence, calories_snapshot, protein_snapshot, carbs_snapshot, fat_snapshot, cost_snapshot))')
         .eq('user_id', userId)
         .eq('date', localDate),
       supabase
@@ -3994,7 +3994,9 @@ function scaleServingSize(servingSize: string, scale: number): string {
     // 2-week cycle calculation (Week A = 0, Week B = 1) ensuring next week has a brand new fresh rotation
     const epochWeeks = Math.floor((targetDate.getTime() || Date.now()) / (7 * 24 * 60 * 60 * 1000));
     const weekCycle = Math.abs(epochWeeks) % 2;
-    const rotatingPlans = NutritionService.getRotatingMealPlanForDay(dayOfWeek, fitProfile, targets, foodCatalog, weekCycle);
+    const v2Slots = persistedV2MealSlots((plans || []).flatMap(plan => plan.meal_plan_items || []));
+    const hasV2Meals = v2Slots.length > 0;
+    const rotatingPlans = hasV2Meals ? new Map() : NutritionService.getRotatingMealPlanForDay(dayOfWeek, fitProfile, targets, foodCatalog, weekCycle);
 
     const rawDietStr = `${fitProfile?.diet_preference || ''} ${fitProfile?.food_type || ''}`.toLowerCase().trim() || 'balanced';
     const isProfileVegan = rawDietStr.includes('vegan');
@@ -4005,7 +4007,9 @@ function scaleServingSize(servingSize: string, scale: number): string {
     // Determine meal types based on user's meals_per_day preference
     const mealsPerDay = fitProfile?.meals_per_day || '4 meals';
     let ALL_MEAL_TYPES: string[];
-    if (mealsPerDay === '2 meals') {
+    if (hasV2Meals) {
+      ALL_MEAL_TYPES = v2Slots;
+    } else if (mealsPerDay === '2 meals') {
       ALL_MEAL_TYPES = ['lunch', 'dinner'];
     } else if (mealsPerDay === '3 meals') {
       ALL_MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
@@ -4054,7 +4058,9 @@ function scaleServingSize(servingSize: string, scale: number): string {
           const isItemCore = item.planned_meal_id != null
             ? item.is_provided === true
             : isStapleCoreFood(item.foods?.name, fitProfile?.food_environment);
-          const unitCost = isItemCore ? 0 : getRealisticFoodCost(item.foods?.name, item.foods?.estimated_cost);
+          const unitCost = isItemCore ? 0 : item.planned_meal_id != null
+            ? Number(item.cost_snapshot ?? item.foods?.estimated_cost ?? 0)
+            : getRealisticFoodCost(item.foods?.name, item.foods?.estimated_cost);
           const normalizedItem = {
             ...item,
             is_core: isItemCore,
@@ -4099,12 +4105,14 @@ function scaleServingSize(servingSize: string, scale: number): string {
         });
 
         ALL_MEAL_TYPES.forEach(mType => {
-          const mItems = consolidateMealItems(itemsByType[mType]);
+          // V2 rows hold whole-portion totals. Consolidating by catalog food and
+          // multiplying the first row's totals would corrupt distinct portions.
+          const mItems = hasV2Meals ? itemsByType[mType] : consolidateMealItems(itemsByType[mType]);
           let optBItems = optBItemsByType[mType] || [];
           let optBName = optBTitleByType[mType] || '';
 
           // If no Option B was stored, synthesize an authentic Option B using swap alternatives
-          if (!optBItems || optBItems.length === 0) {
+          if (!hasV2Meals && (!optBItems || optBItems.length === 0)) {
             const swapAlternatives = NutritionService.getCuratedSwapOptions(mType, fitProfile, targets, foodCatalog);
             const altOpt = swapAlternatives[1] || swapAlternatives[0];
             if (altOpt) {
@@ -4129,13 +4137,22 @@ function scaleServingSize(servingSize: string, scale: number): string {
             }
           }
 
-          const mCals = mItems.reduce((acc, it) => acc + Math.round((it.foods?.calories || 0) * it.quantity), 0);
-          const mPro = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.protein || 0) * it.quantity), 0).toFixed(1));
-          const mCarbs = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.carbs || 0) * it.quantity), 0).toFixed(1));
-          const mFat = Number(mItems.reduce((acc, it) => acc + Number((it.foods?.fat || 0) * it.quantity), 0).toFixed(1));
-          const mCost = mItems.reduce((acc, it) => {
+          // Whole-meal calories can differ from summed ingredient calories
+          // because V2 computes its meal energy from the final macro totals.
+          const frozenMeal = hasV2Meals ? mItems[0]?.planned_meals : undefined;
+          const mCals = frozenMeal?.calories_snapshot != null ? Number(frozenMeal.calories_snapshot)
+            : mItems.reduce((acc, it) => acc + Math.round((it.foods?.calories || 0) * it.quantity), 0);
+          const mPro = frozenMeal?.protein_snapshot != null ? Number(frozenMeal.protein_snapshot)
+            : Number(mItems.reduce((acc, it) => acc + Number((it.foods?.protein || 0) * it.quantity), 0).toFixed(1));
+          const mCarbs = frozenMeal?.carbs_snapshot != null ? Number(frozenMeal.carbs_snapshot)
+            : Number(mItems.reduce((acc, it) => acc + Number((it.foods?.carbs || 0) * it.quantity), 0).toFixed(1));
+          const mFat = frozenMeal?.fat_snapshot != null ? Number(frozenMeal.fat_snapshot)
+            : Number(mItems.reduce((acc, it) => acc + Number((it.foods?.fat || 0) * it.quantity), 0).toFixed(1));
+          const mCost = frozenMeal?.cost_snapshot != null ? Number(frozenMeal.cost_snapshot) : mItems.reduce((acc, it) => {
             const isCore = it.is_core ?? isStapleCoreFood(it.foods?.name, fitProfile?.food_environment);
-            const itemUnitCost = isCore ? 0 : getRealisticFoodCost(it.foods?.name, it.foods?.estimated_cost);
+            const itemUnitCost = isCore ? 0 : it.planned_meal_id != null
+              ? Number(it.cost_snapshot ?? it.foods?.estimated_cost ?? 0)
+              : getRealisticFoodCost(it.foods?.name, it.foods?.estimated_cost);
             return acc + Math.round(itemUnitCost * it.quantity);
           }, 0);
           const mName = titleByType[mType] || (mType.charAt(0).toUpperCase() + mType.slice(1) + " Plan");
@@ -4206,7 +4223,7 @@ function scaleServingSize(servingSize: string, scale: number): string {
         // 1. Manually saved/logged meal plan items for this specific date take top priority
         const existing = plansByMealType.get(mType);
         if (existing) {
-          if (isProfileVegan || isProfileVegetarian || isProfileEggetarian) {
+          if (!hasV2Meals && (isProfileVegan || isProfileVegetarian || isProfileEggetarian)) {
             const sanitizedItems = (existing.meal_plan_items || []).map((it: any) => {
               const foodName = it.foods?.name || '';
               const sanitizedName = sanitizeAIItemName(foodName, isProfileVegan, isProfileVegetarian, isProfileEggetarian);

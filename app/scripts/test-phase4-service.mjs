@@ -103,7 +103,9 @@ const rawDbProfileHostel = {
   food_type: "Vegetarian",
   food_environment: "Hostel",
   meals_per_day: "3 meals",
-  nutrition_budget: "₹2,000–3,000",
+  // Use the saved application's midrange tier. The old custom 2,000–3,000
+  // value only worked here because V2 incorrectly treated it as 4,500.
+  nutrition_budget: "₹2,000–5,000",
   available_foods: ["Peanuts", "Curd"],
   food_allergies: "None",
   equipment: ["kettle"],

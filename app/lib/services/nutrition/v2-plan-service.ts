@@ -46,6 +46,7 @@ import {
 import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-engine";
 import { createLiveFoodIdResolver } from "@/lib/services/nutrition/live-food-id";
 import { groceryPortionAmount, selectGroceryPlanItems } from "@/lib/services/nutrition/v2-grocery-items";
+import { calculateDailyBudget } from "@/lib/fitness/nutrition/user-context";
 
 // Concurrency lock to prevent concurrent duplicate generation per user
 const v2PlanGenInFlight = new Map<string, Promise<any>>();
@@ -184,34 +185,12 @@ export class V2PlanService {
     else mealsPerDay = 3;
 
     // 4. Budget normalization
-    let monthlyBudgetInr = 4500;
-    let weeklyBudgetTargetInr = 1125;
-    let budgetPolicy: BudgetPolicy = "FLEXIBLE";
-    const rawBudget = String(profile?.nutrition_budget || "");
-    if (
-      rawBudget.includes("0–1,000") ||
-      rawBudget.includes("0-1,000") ||
-      rawBudget.includes("1000")
-    ) {
-      monthlyBudgetInr = 1100;
-      weeklyBudgetTargetInr = Math.round(1100 / 4);
-      budgetPolicy = "STRICT";
-    } else if (
-      rawBudget.includes("1,000–2,000") ||
-      rawBudget.includes("1,000-2,000")
-    ) {
-      monthlyBudgetInr = 2000;
-      weeklyBudgetTargetInr = 500;
-      budgetPolicy = "STRICT";
-    } else if (rawBudget.includes("5,000") || rawBudget.includes("5000")) {
-      monthlyBudgetInr = 7500;
-      weeklyBudgetTargetInr = 1875;
-      budgetPolicy = "FLEXIBLE";
-    } else {
-      monthlyBudgetInr = 4500;
-      weeklyBudgetTargetInr = 1125;
-      budgetPolicy = "FLEXIBLE";
-    }
+    // Reuse the existing budget tiers. A range ending in 5,000 is not the
+    // premium 5,000+ tier, and explicit numeric budgets must remain exact.
+    const rawBudget = String(profile?.nutrition_budget ?? "").trim().replace(/[–—]/g, "-");
+    const monthlyBudgetInr = calculateDailyBudget(rawBudget || 4500, profile).monthlyBudget;
+    const weeklyBudgetTargetInr = Math.round(monthlyBudgetInr / 4);
+    const budgetPolicy: BudgetPolicy = monthlyBudgetInr <= 2000 ? "STRICT" : "FLEXIBLE";
 
     // 5. Equipment parsing
     const hasExplicitEquipment = Array.isArray(profile?.available_equipment);

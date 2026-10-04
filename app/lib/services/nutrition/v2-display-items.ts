@@ -1,6 +1,14 @@
 interface DisplayPlanItem {
   planned_meal_id?: string | null;
-  planned_meals?: { meal_slot: string } | null;
+  planned_meals?: {
+    meal_slot: string;
+    meal_sequence?: number;
+    calories_snapshot?: number | null;
+    protein_snapshot?: number | null;
+    carbs_snapshot?: number | null;
+    fat_snapshot?: number | null;
+    cost_snapshot?: number | null;
+  } | null;
   serving_size?: string | null;
   quantity: number | string;
   calories_snapshot?: number | null;
@@ -11,22 +19,43 @@ interface DisplayPlanItem {
   foods?: Record<string, unknown> | null;
 }
 
-/** Keep legacy projection rows; use detailed rows only where a swap removed a projection. */
+function itemSlot(item: DisplayPlanItem): string {
+  return item.planned_meals?.meal_slot ||
+    (String(item.serving_size || "").includes("::")
+      ? String(item.serving_size).split("::")[0] : "");
+}
+
+/** V2 slot identities come from persisted meals, including snack slots. */
+export function persistedV2MealSlots(items: DisplayPlanItem[]): string[] {
+  const slots = new Map<string, number>();
+  for (const item of items) {
+    if (item.planned_meal_id == null) continue;
+    const slot = itemSlot(item);
+    if (slot) slots.set(slot, item.planned_meals?.meal_sequence ?? slots.get(slot) ?? slots.size);
+  }
+  return [...slots].sort((a, b) => a[1] - b[1]).map(([slot]) => slot);
+}
+
+/** Prefer frozen V2 portions; retain projections only for legacy slots. */
 export function selectDisplayPlanItems<T extends DisplayPlanItem>(items: T[]): T[] {
-  const projectedSlots = new Set(items
-    .filter((item) => item.planned_meal_id == null)
-    .map((item) => String(item.serving_size || "").split("::")[0])
+  const detailedSlots = new Set(items
+    .filter((item) => item.planned_meal_id != null)
+    .map(itemSlot)
     .filter(Boolean));
+  const projectedTitles = new Map(items
+    .filter((item) => item.planned_meal_id == null)
+    .map((item) => {
+      const [slot, title] = String(item.serving_size || "").split("::");
+      return [slot, title] as const;
+    }));
 
   return items.flatMap((item) => {
-    if (item.planned_meal_id == null) return [item];
-    const slot = item.planned_meals?.meal_slot ||
-      (String(item.serving_size || "").includes("::")
-        ? String(item.serving_size).split("::")[0] : "");
-    if (!slot || projectedSlots.has(slot)) return [];
+    if (item.planned_meal_id == null) return detailedSlots.has(itemSlot(item)) ? [] : [item];
+    const slot = itemSlot(item);
+    if (!slot) return [];
     const rawServing = String(item.serving_size || "1 serving");
     const servingSize = rawServing.includes("::")
-      ? rawServing : `${slot}::${slot[0].toUpperCase()}${slot.slice(1)} Meal::${rawServing}`;
+      ? rawServing : `${slot}::${projectedTitles.get(slot) || `${slot[0].toUpperCase()}${slot.slice(1)} Meal`}::${rawServing}`;
     // Legacy summary multiplies per-serving food macros by quantity. Detailed V2
     // rows already carry frozen totals for their whole portion (including grams).
     return [{
