@@ -45,5 +45,9 @@ export default async function OnboardingPage({
     redirect("/");
   }
 
-  return <OnboardingFlow initialData={profile || {}} sessionId={crypto.randomUUID()} isEditing={isEditing} />;
+  const initialData = profile
+    ? { ...(profile.onboarding_data || {}), ...profile }
+    : {};
+
+  return <OnboardingFlow initialData={initialData} sessionId={crypto.randomUUID()} isEditing={isEditing} />;
 }
