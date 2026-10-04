@@ -396,7 +396,6 @@ async function ensureWeeklyWorkoutsScheduled(
       name: tw.title,
       status: "scheduled",
       duration_minutes: Number(tw.duration_minutes) || 45,
-      plan_data: tw.plan_data || { target_muscles: [] },
       _templateIdx: idx, // internal ref, stripped before insert
     });
   }
