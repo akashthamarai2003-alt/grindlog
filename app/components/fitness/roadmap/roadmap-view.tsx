@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,13 +9,14 @@ import {
   CheckCircle2,
   TrendingDown,
   TrendingUp,
-  Flame,
-  Calendar,
   Dumbbell,
   Sparkles,
   Trophy,
   ShieldCheck,
   Zap,
+  ChevronDown,
+  Lock,
+  Apple,
 } from "lucide-react";
 import Link from "next/link";
 import type {
@@ -31,6 +33,31 @@ interface RoadmapViewProps {
   hasPlan?: boolean;
 }
 
+// ── 60fps Mobile-Optimized Animation Variants ──
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 14 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      damping: 24,
+      stiffness: 280,
+    },
+  },
+};
+
 export function RoadmapView({
   roadmapData,
   profile,
@@ -39,6 +66,15 @@ export function RoadmapView({
 }: RoadmapViewProps) {
   const isPro = premiumLevel === "pro";
   const isFree = premiumLevel === "free";
+
+  // State to track which month node is expanded for deep drill-down
+  const [expandedMonth, setExpandedMonth] = useState<number | null>(
+    roadmapData?.currentMonth ?? 1
+  );
+
+  const toggleMonth = (mNum: number) => {
+    setExpandedMonth((prev) => (prev === mNum ? null : mNum));
+  };
 
   if (!roadmapData) {
     return (
@@ -57,7 +93,7 @@ export function RoadmapView({
             </div>
           </div>
 
-          <div className="rounded-3xl border border-[#1A2619] bg-[#121E12] p-6 text-center space-y-4 mt-8">
+          <div className="rounded-3xl border border-[#1A2619] bg-[#121E12] p-6 text-center space-y-4 mt-8 shadow-xl">
             <div className="w-14 h-14 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/30 flex items-center justify-center mx-auto text-[#ADFF00]">
               <Target size={28} />
             </div>
@@ -104,13 +140,21 @@ export function RoadmapView({
     (isBulking && deltaKg > 0) || (!isBulking && deltaKg < 0) || direction === "maintain";
 
   return (
-    <div className="min-h-screen bg-[#0A1108] text-white flex flex-col relative overflow-x-hidden">
-      {/* Background ambient glow */}
-      <div className="dark-ambient-glow absolute top-0 left-0 right-0 h-96 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60 z-0" />
+    <div className="min-h-screen bg-[#0A1108] text-white flex flex-col relative overflow-x-hidden selection:bg-[#ADFF00]/20 selection:text-[#ADFF00]">
+      {/* Background ambient glow - hardware accelerated */}
+      <div className="dark-ambient-glow absolute top-0 left-0 right-0 h-96 bg-[radial-gradient(ellipse_at_top,#1A2619_0%,transparent_70%)] pointer-events-none opacity-60 z-0 transform-gpu" />
 
-      <main className="flex-1 flex flex-col w-full max-w-md mx-auto pt-6 pb-36 px-5 z-10 relative space-y-5">
+      <motion.main
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex-1 flex flex-col w-full max-w-md mx-auto pt-6 pb-44 px-4 sm:px-5 z-10 relative space-y-4"
+      >
         {/* ── Top Navigation Bar ── */}
-        <div className="flex items-center justify-between gap-3">
+        <motion.div
+          variants={itemVariants}
+          className="flex items-center justify-between gap-3 transform-gpu will-change-transform"
+        >
           <Link
             href="/"
             className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-white transition-colors group"
@@ -121,18 +165,21 @@ export function RoadmapView({
             <span>Dashboard</span>
           </Link>
 
-          <span className="shrink-0 rounded-full bg-[#121E12] border border-[#ADFF00]/30 px-3 py-1 text-[11px] font-black text-[#ADFF00] tracking-wider uppercase">
+          <span className="shrink-0 rounded-full bg-[#121E12] border border-[#ADFF00]/30 px-3 py-1 text-[11px] font-black text-[#ADFF00] tracking-wider uppercase shadow-[0_0_12px_rgba(173,255,0,0.15)]">
             Day {currentDay}
           </span>
-        </div>
+        </motion.div>
 
         {/* ── Hero Journey Title Card ── */}
-        <div className="rounded-3xl border border-[#1A2619] bg-[#121E12] p-5 space-y-4 relative overflow-hidden shadow-xl">
-          <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-[#ADFF00]/5 blur-3xl pointer-events-none" />
+        <motion.div
+          variants={itemVariants}
+          className="rounded-3xl border border-[#1A2619] bg-[#121E12] p-5 space-y-4 relative overflow-hidden shadow-2xl transform-gpu will-change-transform"
+        >
+          <div className="absolute top-0 right-0 h-44 w-44 rounded-full bg-[#ADFF00]/5 blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/25 flex items-center justify-center text-[#ADFF00]">
+              <div className="w-10 h-10 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/25 flex items-center justify-center text-[#ADFF00] shadow-[0_0_15px_rgba(173,255,0,0.15)]">
                 <Target size={20} />
               </div>
               <div>
@@ -148,7 +195,9 @@ export function RoadmapView({
             </div>
 
             <div className="text-right">
-              <span className="text-lg font-black text-[#ADFF00]">{progressPercentage}%</span>
+              <span className="text-xl font-black text-[#ADFF00] drop-shadow-[0_0_8px_rgba(173,255,0,0.3)]">
+                {progressPercentage}%
+              </span>
               <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Completed</p>
             </div>
           </div>
@@ -167,9 +216,9 @@ export function RoadmapView({
                   : `${Math.abs(Math.round((currentWeight - targetWeight) * 10) / 10)} kg to goal`}
               </span>
             </div>
-            <div className="h-2.5 rounded-full bg-black/50 overflow-hidden border border-white/5">
+            <div className="h-2.5 rounded-full bg-black/50 overflow-hidden border border-white/5 relative">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#ADFF00] via-emerald-400 to-[#ADFF00]"
+                className="h-full rounded-full bg-gradient-to-r from-[#ADFF00] via-emerald-400 to-[#ADFF00] shadow-[0_0_10px_rgba(173,255,0,0.4)]"
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.max(5, progressPercentage)}%` }}
                 transition={{ duration: 1.2, ease: "easeOut" }}
@@ -187,21 +236,28 @@ export function RoadmapView({
               <span className="font-bold text-white">{currentWeight} kg</span>
             </div>
             <div className="flex items-center gap-1 font-bold">
-              <span
-                className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] ${
-                  isProgressingTowardGoal
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                    : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                }`}
-              >
-                {deltaKg > 0 ? (
-                  <TrendingUp className="w-2.5 h-2.5" />
-                ) : (
-                  <TrendingDown className="w-2.5 h-2.5" />
-                )}
-                {deltaKg > 0 ? "+" : ""}
-                {deltaKg} kg
-              </span>
+              {deltaKg === 0 ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Starting Baseline
+                </span>
+              ) : (
+                <span
+                  className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] ${
+                    isProgressingTowardGoal
+                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                      : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                  }`}
+                >
+                  {deltaKg > 0 ? (
+                    <TrendingUp className="w-2.5 h-2.5" />
+                  ) : (
+                    <TrendingDown className="w-2.5 h-2.5" />
+                  )}
+                  {deltaKg > 0 ? "+" : ""}
+                  {deltaKg} kg
+                </span>
+              )}
             </div>
           </div>
 
@@ -220,10 +276,37 @@ export function RoadmapView({
               <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mt-0.5">Consistency</p>
             </div>
           </div>
-        </div>
+        </motion.div>
+
+        {/* ── Active Workout Plan Reminder (If User has no plan yet) ── */}
+        {!hasPlan && (
+          <motion.div
+            variants={itemVariants}
+            className="rounded-2xl border border-[#ADFF00]/30 bg-[#ADFF00]/5 p-4 flex items-center justify-between gap-3 transform-gpu will-change-transform"
+          >
+            <div className="flex items-center gap-2.5">
+              <Zap className="w-5 h-5 text-[#ADFF00] shrink-0" />
+              <div>
+                <p className="text-xs font-black text-white">Daily Plan Sync Pending</p>
+                <p className="text-[11px] text-gray-400">
+                  Generate your custom plan to link real-time workout logging.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/plan-setup"
+              className="shrink-0 px-3 py-1.5 rounded-full bg-[#ADFF00] text-black text-[11px] font-black hover:bg-[#c4ff33] active:scale-95 transition-transform"
+            >
+              Setup Plan
+            </Link>
+          </motion.div>
+        )}
 
         {/* ── Journey Phase Breakdown Timeline ── */}
-        <section className="rounded-3xl border border-[#1A2619] bg-[#121E12] p-5 space-y-4">
+        <motion.section
+          variants={itemVariants}
+          className="rounded-3xl border border-[#1A2619] bg-[#121E12] p-5 space-y-4 shadow-xl transform-gpu will-change-transform"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-base">📅</span>
@@ -239,10 +322,10 @@ export function RoadmapView({
           <div className="space-y-4 pt-1">
             {phases.map((phase, phaseIdx) => {
               const isCurrentPhase = phase.status === "current";
-              const isBlurred = isFree && phaseIdx >= 1;
+              const isLockedPhase = isFree && phaseIdx >= 1;
 
               return (
-                <div key={phase.phaseNumber} className={isBlurred ? "blur-[3px] select-none" : ""}>
+                <div key={phase.phaseNumber} className="relative">
                   {/* Phase header */}
                   <div className="flex items-center gap-2 py-2">
                     <div
@@ -277,44 +360,73 @@ export function RoadmapView({
                   </div>
 
                   {/* Expanded months */}
-                  {isCurrentPhase || phase.status === "completed" ? (
-                    <div className="space-y-0 mt-2">
-                      {phase.months.map((month, mIdx) => (
-                        <RoadmapMonthRow
-                          key={month.monthNumber}
-                          month={month}
-                          direction={direction}
-                          currentWeekInMonth={
-                            month.status === "current" ? currentWeekInMonth : undefined
-                          }
-                          isLast={mIdx === phase.months.length - 1}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    /* Condensed upcoming phase */
-                    <div className="flex items-center gap-3 py-3 px-3 rounded-2xl border border-white/5 bg-[#0D150D]">
-                      <div className="w-7 h-7 rounded-full border border-white/10 bg-white/5 flex items-center justify-center shrink-0">
-                        <span className="text-[9px] font-bold text-gray-400">
-                          {phase.months.length > 1
-                            ? `${phase.months[0].monthNumber}–${phase.months[phase.months.length - 1].monthNumber}`
-                            : phase.months[0]?.monthNumber}
-                        </span>
+                  <div className={isLockedPhase ? "blur-[2.5px] select-none pointer-events-none opacity-50" : ""}>
+                    {isCurrentPhase || phase.status === "completed" ? (
+                      <div className="space-y-0 mt-2">
+                        {phase.months.map((month, mIdx) => (
+                          <RoadmapMonthRow
+                            key={month.monthNumber}
+                            month={month}
+                            direction={direction}
+                            currentWeekInMonth={
+                              month.status === "current" ? currentWeekInMonth : undefined
+                            }
+                            isExpanded={expandedMonth === month.monthNumber}
+                            onToggle={() => toggleMonth(month.monthNumber)}
+                            isLast={mIdx === phase.months.length - 1}
+                          />
+                        ))}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-gray-300">
-                          {phase.months.length === 1
-                            ? `Month ${phase.months[0].monthNumber}`
-                            : `Months ${phase.months[0].monthNumber}–${phase.months[phase.months.length - 1].monthNumber}`}
-                          {" · "}
-                          <span className="text-gray-500 font-normal">{phase.weightRange}</span>
-                        </p>
-                        {phase.months.some((m) => m.isFinalGoal) && (
-                          <p className="text-[11px] text-[#ADFF00] font-semibold mt-0.5 flex items-center gap-1">
-                            <span>🎯</span> Final Goal Target: {targetWeight} kg
-                          </p>
-                        )}
+                    ) : (
+                      /* Condensed upcoming phase */
+                      <div
+                        onClick={() => toggleMonth(phase.months[0]?.monthNumber)}
+                        className="flex items-center justify-between gap-3 py-3 px-3.5 rounded-2xl border border-white/5 bg-[#0D150D] cursor-pointer hover:border-white/10 active:scale-[0.99] transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full border border-white/10 bg-white/5 flex items-center justify-center shrink-0">
+                            <span className="text-[9px] font-bold text-gray-400">
+                              {phase.months.length > 1
+                                ? `${phase.months[0].monthNumber}–${phase.months[phase.months.length - 1].monthNumber}`
+                                : phase.months[0]?.monthNumber}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-300">
+                              {phase.months.length === 1
+                                ? `Month ${phase.months[0].monthNumber}`
+                                : `Months ${phase.months[0].monthNumber}–${phase.months[phase.months.length - 1].monthNumber}`}
+                              {" · "}
+                              <span className="text-gray-500 font-normal">{phase.weightRange}</span>
+                            </p>
+                            {phase.months.some((m) => m.isFinalGoal) && (
+                              <p className="text-[11px] text-[#ADFF00] font-semibold mt-0.5 flex items-center gap-1">
+                                <span>🎯</span> Final Goal Target: {targetWeight} kg
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronDown size={14} className="text-gray-500" />
                       </div>
+                    )}
+                  </div>
+
+                  {/* Free Tier Lock Overlay */}
+                  {isLockedPhase && (
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4 rounded-2xl bg-black/60 backdrop-blur-sm border border-white/10 text-center">
+                      <div className="w-9 h-9 rounded-full bg-[#ADFF00]/10 border border-[#ADFF00]/30 flex items-center justify-center text-[#ADFF00] mb-2">
+                        <Lock size={16} />
+                      </div>
+                      <p className="text-xs font-black text-white">Phase {phase.phaseNumber} Locked</p>
+                      <p className="text-[10px] text-gray-400 max-w-[220px] mt-0.5">
+                        Upgrade to Pro to unlock your complete multi-month periodized progression.
+                      </p>
+                      <Link
+                        href="/pricing"
+                        className="mt-2.5 px-4 py-1.5 rounded-full bg-[#ADFF00] text-black text-[11px] font-black hover:bg-[#c4ff33] active:scale-95 transition-transform"
+                      >
+                        Unlock with Pro
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -324,7 +436,7 @@ export function RoadmapView({
 
           {/* Goal Completed Trophy */}
           {progressPercentage >= 100 && (
-            <div className="flex items-center gap-3 p-4 rounded-2xl border border-[#ADFF00]/40 bg-[#ADFF00]/10">
+            <div className="flex items-center gap-3 p-4 rounded-2xl border border-[#ADFF00]/40 bg-[#ADFF00]/10 shadow-[0_0_20px_rgba(173,255,0,0.15)]">
               <div className="w-8 h-8 rounded-full bg-[#ADFF00]/20 border border-[#ADFF00]/50 flex items-center justify-center shrink-0">
                 <Trophy className="w-4 h-4 text-[#ADFF00]" />
               </div>
@@ -336,26 +448,32 @@ export function RoadmapView({
               </div>
             </div>
           )}
-        </section>
+        </motion.section>
 
         {/* ── Why 3-Month Mesocycles Card ── */}
-        <div className="rounded-3xl border border-white/5 bg-[#121E12] p-4 space-y-2">
+        <motion.div
+          variants={itemVariants}
+          className="rounded-3xl border border-white/5 bg-[#121E12] p-4 space-y-2 transform-gpu will-change-transform shadow-lg"
+        >
           <div className="flex items-center gap-2 text-xs font-bold text-[#ADFF00]">
             <ShieldCheck size={15} />
             <span>Science-Backed Periodization</span>
           </div>
           <p className="text-xs leading-relaxed text-gray-400">
             GrindLog automatically periodizes your journey into 3-month mesocycles. At the end of
-            Month 3, a photo check-in recalibrates your training volume, exercise selection, and
+            each phase, a photo check-in recalibrates your training volume, exercise selection, and
             metabolic caloric targets so you progress smoothly without hitting plateaus.
           </p>
-        </div>
+        </motion.div>
 
         {/* ── Actions ── */}
-        <div className="space-y-2.5 pt-2">
+        <motion.div
+          variants={itemVariants}
+          className="space-y-2.5 pt-2 mb-4 transform-gpu will-change-transform"
+        >
           <Link
             href="/workout"
-            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-extrabold text-sm shadow-[0_0_20px_rgba(173,255,0,0.2)] transition-transform active:scale-95"
+            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-extrabold text-sm shadow-[0_0_20px_rgba(173,255,0,0.25)] transition-transform active:scale-95"
           >
             <Dumbbell size={16} />
             <span>Go to Today's Workout</span>
@@ -363,12 +481,12 @@ export function RoadmapView({
           </Link>
           <Link
             href="/"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-[#121E12] hover:bg-[#1A2619] border border-white/10 text-gray-300 font-bold text-xs transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-[#121E12] hover:bg-[#1A2619] border border-white/10 text-gray-300 font-bold text-xs transition-colors active:scale-95"
           >
             <span>Return to Dashboard</span>
           </Link>
-        </div>
-      </main>
+        </motion.div>
+      </motion.main>
 
       <BottomNav isPro={isPro} />
     </div>
@@ -376,18 +494,22 @@ export function RoadmapView({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Month Timeline Node
+// Month Timeline Node (Smooth 60fps & Tap-to-Expand)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function RoadmapMonthRow({
   month,
   direction,
   currentWeekInMonth,
+  isExpanded,
+  onToggle,
   isLast,
 }: {
   month: MonthMilestone;
   direction: string;
   currentWeekInMonth?: number;
+  isExpanded: boolean;
+  onToggle: () => void;
   isLast: boolean;
 }) {
   const isCompleted = month.status === "completed";
@@ -395,23 +517,28 @@ function RoadmapMonthRow({
 
   return (
     <div className="flex gap-3">
-      {/* Spine */}
-      <div className="flex flex-col items-center w-5 shrink-0">
+      {/* Spine with Smooth Glowing Radar Node */}
+      <div className="flex flex-col items-center w-5 shrink-0 pt-0.5">
         {isCompleted ? (
           <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
           </div>
         ) : isCurrent ? (
-          <div className="relative w-5 h-5 shrink-0">
-            <span className="absolute inset-0 rounded-full bg-[#ADFF00]/30 animate-ping" />
-            <span className="relative block w-5 h-5 rounded-full bg-[#ADFF00] border-2 border-[#121E12]" />
+          <div className="relative w-5 h-5 shrink-0 flex items-center justify-center">
+            {/* Smooth 60fps radar ping */}
+            <motion.span
+              className="absolute inset-0 rounded-full bg-[#ADFF00]/30"
+              animate={{ scale: [1, 1.6, 1], opacity: [0.7, 0, 0.7] }}
+              transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+            />
+            <span className="relative block w-3.5 h-3.5 rounded-full bg-[#ADFF00] border-2 border-[#121E12] shadow-[0_0_12px_#ADFF00]" />
           </div>
         ) : (
           <div className="w-5 h-5 rounded-full border border-white/15 bg-white/5 shrink-0" />
         )}
         {!isLast && (
           <div
-            className={`w-px flex-1 min-h-[24px] ${
+            className={`w-px flex-1 min-h-[26px] my-1 ${
               isCompleted
                 ? "bg-gradient-to-b from-emerald-500/40 to-emerald-500/10"
                 : isCurrent
@@ -422,15 +549,17 @@ function RoadmapMonthRow({
         )}
       </div>
 
-      {/* Content Card */}
-      <div className={`flex-1 ${isLast ? "pb-1" : "pb-4"}`}>
-        <div
-          className={`rounded-2xl border p-3.5 transition-all ${
+      {/* Content Card with Tap Feedback */}
+      <div className={`flex-1 ${isLast ? "pb-1" : "pb-3.5"}`}>
+        <motion.div
+          whileTap={{ scale: 0.985 }}
+          onClick={onToggle}
+          className={`rounded-2xl border p-3.5 transition-colors cursor-pointer select-none transform-gpu will-change-transform ${
             isCurrent
-              ? "border-[#ADFF00]/30 bg-[#ADFF00]/5"
+              ? "border-[#ADFF00]/30 bg-[#ADFF00]/5 shadow-[0_0_15px_rgba(173,255,0,0.05)]"
               : isCompleted
               ? "border-emerald-500/20 bg-[#0D150D]"
-              : "border-white/5 bg-[#0D150D]"
+              : "border-white/5 bg-[#0D150D] hover:border-white/10"
           }`}
         >
           {/* Header */}
@@ -448,25 +577,33 @@ function RoadmapMonthRow({
                 Month {month.monthNumber}
               </span>
               <span
-                className={`text-[11px] font-medium ${
+                className={`text-[11px] font-semibold ${
                   isCompleted
-                    ? "text-emerald-400/70"
+                    ? "text-emerald-400/80"
                     : isCurrent
-                    ? "text-[#ADFF00]/70"
-                    : "text-gray-500"
+                    ? "text-[#ADFF00]/80"
+                    : "text-gray-400"
                 }`}
               >
                 · {month.phaseName}
               </span>
               {isCurrent && (
-                <span className="text-[8px] font-black bg-[#ADFF00] text-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                <span className="text-[8px] font-black bg-[#ADFF00] text-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
                   Wk {currentWeekInMonth}
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-gray-500 shrink-0 font-medium">
-              {month.dateRange}
-            </span>
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-[10px] text-gray-500 font-medium">
+                {month.dateRange}
+              </span>
+              <ChevronDown
+                size={13}
+                className={`text-gray-500 transition-transform duration-200 ${
+                  isExpanded ? "rotate-180 text-gray-300" : ""
+                }`}
+              />
+            </div>
           </div>
 
           {/* Stats Row */}
@@ -505,27 +642,61 @@ function RoadmapMonthRow({
             ) : null}
           </div>
 
-          {/* Expected changes description */}
+          {/* Primary Focus Area */}
           <p className="mt-1.5 text-xs leading-relaxed text-gray-300">
             {month.focusArea}
           </p>
 
-          {/* Milestone takeaway */}
+          {/* Milestone Badge (CLEAN - ZERO DUPLICATE EMOJIS) */}
           {month.milestone && (
-            <p
-              className={`mt-2 text-xs font-semibold flex items-center gap-1.5 ${
-                isCompleted
-                  ? "text-emerald-400"
-                  : isCurrent
-                  ? "text-[#ADFF00]"
-                  : "text-gray-400"
-              }`}
-            >
-              <span>{isCompleted ? "✓" : isCurrent ? "📊" : "📸"}</span>
-              <span>{month.milestone}</span>
-            </p>
+            <div className="mt-2.5">
+              <span
+                className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-lg border ${
+                  isCompleted
+                    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                    : isCurrent
+                    ? "text-[#ADFF00] bg-[#ADFF00]/10 border-[#ADFF00]/25 shadow-[0_0_10px_rgba(173,255,0,0.1)]"
+                    : "text-gray-400 bg-white/5 border-white/10"
+                }`}
+              >
+                {month.milestone}
+              </span>
+            </div>
           )}
-        </div>
+
+          {/* ── Expandable Deep Scientific Drill-Down ── */}
+          <AnimatePresence initial={false}>
+            {isExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className="overflow-hidden pt-3 mt-3 border-t border-white/5 space-y-2 text-[11px]"
+              >
+                {month.trainingFocus && (
+                  <div className="flex items-start gap-2 rounded-xl bg-black/30 p-2.5 border border-white/5">
+                    <Dumbbell className="w-3.5 h-3.5 text-[#ADFF00] mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-bold text-gray-200">Training Focus</p>
+                      <p className="text-gray-400 leading-normal mt-0.5">{month.trainingFocus}</p>
+                    </div>
+                  </div>
+                )}
+
+                {month.nutritionFocus && (
+                  <div className="flex items-start gap-2 rounded-xl bg-black/30 p-2.5 border border-white/5">
+                    <Apple className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-bold text-gray-200">Nutrition Strategy</p>
+                      <p className="text-gray-400 leading-normal mt-0.5">{month.nutritionFocus}</p>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </div>
   );

@@ -45,9 +45,7 @@ export default async function RoadmapPage() {
     ? "pro"
     : "core";
 
-  const roadmapData = plan?.id
-    ? await getRoadmapData(user.id, profile, plan)
-    : null;
+  const roadmapData = await getRoadmapData(user.id, profile, plan);
 
   return (
     <RoadmapView

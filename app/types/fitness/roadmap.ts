@@ -13,6 +13,8 @@ export interface MonthMilestone {
   // Phase context
   phaseName: string;
   focusArea: string;
+  trainingFocus?: string;
+  nutritionFocus?: string;
 
   // Weight
   projectedWeight: number;
