@@ -224,7 +224,7 @@ export async function createRazorpayOrder(
     const adminProPrice = livePricing?.monthly?.pro?.price ?? 59;
     const adminProOriginal = livePricing?.monthly?.pro?.originalPrice ?? 199;
     const lockedRatePaise = tier === "monthly" ? await getLockedFitnessRate(user.id, level) : null;
-    if (lockedRatePaise !== null && lockedRatePaise >= 1000) {
+    if (lockedRatePaise !== null && lockedRatePaise >= 100) {
       // The captured wheel payment, not today's admin offer, controls renewals.
       finalPrice = lockedRatePaise / 100;
       isSpinDiscountApplied = true;

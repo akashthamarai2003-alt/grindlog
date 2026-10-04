@@ -350,7 +350,7 @@ export default function FitnessPaymentClient({
   const proPrice = pricingConfig?.monthly?.pro?.price ?? 59;
 
   const baseCurrentPrice = isRenewal
-    ? (lockedRatePaise != null && lockedRatePaise >= 1000
+    ? (lockedRatePaise != null && lockedRatePaise >= 100
         ? lockedRatePaise / 100
         : (level === "pro" ? proPrice : corePrice))
     : level === "pro"
