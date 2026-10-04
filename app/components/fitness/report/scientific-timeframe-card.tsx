@@ -7,6 +7,7 @@ interface ScientificTimeframeCardProps {
   trainingDaysPerWeek?: number | null;
   targetDeadlineDays?: number | null;
   targetPhysique?: string | null;
+  gender?: string | null;
 }
 
 interface TimelineMilestone {
@@ -27,6 +28,7 @@ export function ScientificTimeframeCard({
   trainingDaysPerWeek,
   targetDeadlineDays,
   targetPhysique,
+  gender,
 }: ScientificTimeframeCardProps) {
   // 1. Safe normalization of weights
   const current = typeof currentWeight === "number" && currentWeight > 20 ? Math.round(currentWeight * 10) / 10 : 70;
@@ -36,7 +38,8 @@ export function ScientificTimeframeCard({
   const isGoalFatLoss =
     normalizedGoal.includes("fat") ||
     normalizedGoal.includes("cut") ||
-    normalizedGoal.includes("loss");
+    normalizedGoal.includes("loss") ||
+    normalizedGoal.includes("lose");
   const isGoalMuscleGain =
     normalizedGoal.includes("muscle") ||
     normalizedGoal.includes("bulk") ||
@@ -65,14 +68,15 @@ export function ScientificTimeframeCard({
   
   // 4. Direction classification
   const isMaintain = diffKg < 0.5 || (isGoalRecomp && diffKg <= 1.5);
-  const isLoss = !isMaintain && (current > target || isGoalFatLoss);
+  const isLoss = !isMaintain && (current > target || (isGoalFatLoss && !isGoalMuscleGain));
   const isGain = !isMaintain && !isLoss;
 
   // 5. Scientific progress rates based on sports science guidelines
-  // Fat loss: Safe, sustainable rate is 0.5 - 0.9 kg/week (~3.0 - 3.5 kg/month)
-  // Muscle gain: Safe lean rate is 0.25 - 0.4 kg/week (~1.0 - 1.5 kg/month)
-  const monthlyRate = isLoss ? 3.2 : isGain ? 1.3 : 0;
-  const totalMonthsExact = monthlyRate > 0 ? diffKg / monthlyRate : 3;
+  // Fat loss: Safe, sustainable rate is 0.5 - 0.9 kg/week (~3.0 - 3.5 kg/month for men, ~2.0 - 2.5 kg/month for women)
+  // Muscle gain: Safe lean rate is 0.25 - 0.4 kg/week (~1.0 - 1.5 kg/month for men, ~0.6 - 0.8 kg/month for women)
+  const isFemale = (gender || "").toLowerCase().trim().startsWith("f");
+  const monthlyRate = isLoss ? (isFemale ? 2.4 : 3.2) : isGain ? (isFemale ? 0.7 : 1.3) : 0;
+  const totalMonthsExact = monthlyRate > 0 && diffKg > 0 ? diffKg / monthlyRate : 3;
   const totalMonths = Math.max(1, Math.round(totalMonthsExact * 10) / 10);
   const totalWeeks = Math.max(4, Math.round(totalMonths * 4.3));
 
@@ -119,7 +123,14 @@ export function ScientificTimeframeCard({
     );
   } else if (isLoss) {
     // ── FAT LOSS / CUT ARCHETYPE ──
-    if (diffKg <= 3.0) {
+    const m1Limit = isFemale ? 2.4 : 3.0;
+    const m2Limit = isFemale ? 4.8 : 6.0;
+    const m3Limit = isFemale ? 7.2 : 9.0;
+    const m1Loss = isFemale ? 2.4 : 3.0;
+    const m2Loss = isFemale ? 4.8 : 6.0;
+    const m3Loss = isFemale ? 7.2 : 9.0;
+
+    if (diffKg <= m1Limit) {
       // Small Cut (1 - 3 kg)
       milestones.push(
         {
@@ -149,9 +160,8 @@ export function ScientificTimeframeCard({
           takeaway: "End of Phase 1: Solidify your new lower set point with sustained muscle density and energy.",
         }
       );
-    } else if (diffKg <= 6.0) {
+    } else if (diffKg <= m2Limit) {
       // Moderate Cut (4 - 6 kg)
-      const m1Loss = 3.0;
       const m1Weight = Math.round((current - m1Loss) * 10) / 10;
       milestones.push({
         stage: "MONTH 1",
@@ -181,10 +191,8 @@ export function ScientificTimeframeCard({
         isPhase1End: true,
         takeaway: "End of Phase 1: Consolidate new body composition and lock in your new maintenance metabolic rate.",
       });
-    } else if (diffKg <= 9.0) {
+    } else if (diffKg <= m3Limit) {
       // Substantial 3-Month Cut (7 - 9 kg)
-      const m1Loss = 3.0;
-      const m2Loss = 6.0;
       const m1Weight = Math.round((current - m1Loss) * 10) / 10;
       const m2Weight = Math.round((current - m2Loss) * 10) / 10;
 
@@ -218,9 +226,6 @@ export function ScientificTimeframeCard({
       });
     } else {
       // Extensive Transformation Journey (> 9 kg, e.g. 15 kg - 28 kg)
-      const m1Loss = 3.0;
-      const m2Loss = 6.0;
-      const m3Loss = 9.0;
       const m1Weight = Math.round((current - m1Loss) * 10) / 10;
       const m2Weight = Math.round((current - m2Loss) * 10) / 10;
       const m3Weight = Math.round((current - m3Loss) * 10) / 10;
@@ -291,14 +296,20 @@ export function ScientificTimeframeCard({
     }
   } else {
     // ── LEAN HYPERTROPHY / BULK ARCHETYPE ──
-    if (diffKg <= 2.0) {
+    const m1BulkLimit = isFemale ? 1.4 : 2.0;
+    const m2BulkLimit = isFemale ? 2.8 : 4.0;
+    const m1Gain = isFemale ? 0.7 : 1.2;
+    const m2Gain = isFemale ? 1.4 : 2.4;
+    const m3Gain = isFemale ? 2.1 : 3.6;
+
+    if (diffKg <= m1BulkLimit) {
       milestones.push(
         {
           stage: "MONTH 1",
           weeks: "Weeks 1 – 4",
-          targetWeightKg: Math.round((current + Math.min(diffKg, 1.2)) * 10) / 10,
-          deltaKg: Math.min(diffKg, 1.2),
-          deltaLabel: `+${Math.min(diffKg, 1.2).toFixed(1)} kg`,
+          targetWeightKg: Math.round((current + Math.min(diffKg, m1Gain)) * 10) / 10,
+          deltaKg: Math.min(diffKg, m1Gain),
+          deltaLabel: `+${Math.min(diffKg, m1Gain).toFixed(1)} kg`,
           takeaway: "Neurological adaptations, glycogen replenishment, and strict exercise form mastery.",
         },
         {
@@ -320,9 +331,7 @@ export function ScientificTimeframeCard({
           takeaway: "End of Phase 1: Lock in progressive strength PRs and increase muscle myofibrillar density.",
         }
       );
-    } else if (diffKg <= 4.0) {
-      const m1Gain = 1.2;
-      const m2Gain = 2.4;
+    } else if (diffKg <= m2BulkLimit) {
       milestones.push(
         {
           stage: "MONTH 1",
@@ -348,14 +357,11 @@ export function ScientificTimeframeCard({
           deltaLabel: `+${diffKg.toFixed(1)} kg`,
           isPhase1End: true,
           isFinalGoal: true,
-          takeaway: `End of Phase 1: Target ${target} kg physique achieved with noticeable chest, shoulder, and back hypertrophy.`,
+          takeaway: `End of Phase 1: Target ${target} kg physique achieved with noticeable muscular development.`,
         }
       );
     } else {
       // Extensive Muscle Building (> 4 kg)
-      const m1Gain = 1.2;
-      const m2Gain = 2.4;
-      const m3Gain = 3.6;
       milestones.push(
         {
           stage: "MONTH 1",
@@ -380,7 +386,7 @@ export function ScientificTimeframeCard({
           deltaKg: m3Gain,
           deltaLabel: `+${m3Gain.toFixed(1)} kg`,
           isPhase1End: true,
-          takeaway: "End of Phase 1: Noticeable chest, shoulder, and back hypertrophy with progressive tension.",
+          takeaway: "End of Phase 1: Noticeable muscular hypertrophy with progressive tension. Recalibrate for Phase 2.",
         }
       );
 
@@ -436,9 +442,13 @@ export function ScientificTimeframeCard({
           </div>
           <p className="mt-1 text-xs text-gray-400">
             {isLoss
-              ? "Safe, sustainable fat loss rate: 0.5 – 0.9 kg/week (~3.0 – 3.5 kg/month)"
+              ? isFemale
+                ? "Safe, sustainable fat loss rate: 0.4 – 0.7 kg/week (~2.0 – 2.5 kg/month)"
+                : "Safe, sustainable fat loss rate: 0.5 – 0.9 kg/week (~3.0 – 3.5 kg/month)"
               : isGain
-              ? "Safe lean hypertrophy rate: 0.25 – 0.4 kg/week (~1.0 – 1.5 kg/month)"
+              ? isFemale
+                ? "Safe lean hypertrophy rate: 0.15 – 0.25 kg/week (~0.6 – 0.8 kg/month)"
+                : "Safe lean hypertrophy rate: 0.25 – 0.4 kg/week (~1.0 – 1.5 kg/month)"
               : "Maintenance & body recomposition protocol"}
             {targetPhysique && (
               <span className="ml-1 text-gray-500 font-medium">
@@ -527,8 +537,8 @@ export function ScientificTimeframeCard({
             <p className="text-[11px] leading-relaxed text-gray-400">
               {isDeadlineUnrealistic
                 ? (isGain
-                    ? `Gaining ${diffKg} kg in ${userRequestedDays} days would require an excessive calorie surplus resulting mostly in unwanted body fat. GrindLog's sports science model structures your journey with a steady lean surplus (targeting ≈ +2.5 to 3.5 kg of lean mass in your first 60–90 days safely), before stepping into Phase 2.`
-                    : `Dropping ${diffKg} kg in ${userRequestedDays} days requires an extreme, unhealthy deficit. GrindLog's sports science model protects your muscle by structuring your first 90 days as Phase 1 (targeting ≈ -9 kg safely), before stepping smoothly into Phase 2.`)
+                    ? `Gaining ${diffKg} kg in ${userRequestedDays} days would require an excessive calorie surplus resulting mostly in unwanted body fat. GrindLog's sports science model structures your journey with a steady lean surplus (targeting ≈ +${isFemale ? "1.5 to 2.2" : "2.5 to 3.5"} kg of lean mass in your first 60–90 days safely), before stepping into Phase 2.`
+                    : `Dropping ${diffKg} kg in ${userRequestedDays} days requires an extreme, unhealthy deficit. GrindLog's sports science model protects your muscle by structuring your first 90 days as Phase 1 (targeting ≈ -${isFemale ? "6.6 to 7.2" : "9.0"} kg safely), before stepping smoothly into Phase 2.`)
                 : `Your requested ${userRequestedDays}-day timeframe aligns well with healthy, sustainable sports science recommendations.`}
             </p>
           </div>

@@ -628,8 +628,9 @@ export default async function AIStartingReportPage({
           targetWeight={profile.target_weight}
           goal={profile.goal}
           trainingDaysPerWeek={profile.training_days_per_week}
-          targetDeadlineDays={onboardingData.target_deadline_days}
+          targetDeadlineDays={deadlineDays}
           targetPhysique={profile.target_physique}
+          gender={profile.gender || onboardingData.gender}
         />
 
         {/* HEALTH & SAFETY PROTOCOL */}
@@ -719,7 +720,9 @@ export default async function AIStartingReportPage({
               const estimatedWeight = (() => {
                 if (typeof phase.target_weight_kg === "number" && phase.target_weight_kg > 20) {
                   const impliedMonthlyChange = Math.abs(cWeight - phase.target_weight_kg) / (index + 1);
-                  const isImplausible = (isLoss && impliedMonthlyChange > 4.2) || (isGain && impliedMonthlyChange > 1.8);
+                  const isImplausible =
+                    (isLoss && impliedMonthlyChange > (isFemale ? 3.2 : 4.2)) ||
+                    (isGain && impliedMonthlyChange > (isFemale ? 1.0 : 1.8));
                   if (!isImplausible) {
                     return `${phase.target_weight_kg} kg`;
                   }

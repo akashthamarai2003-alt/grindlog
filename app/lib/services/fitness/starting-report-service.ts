@@ -643,8 +643,17 @@ export function buildDeterministicStartingReport(
         ];
       }
 
+      const isFemale = (onboarding.gender || "").toLowerCase().startsWith("f");
+
       if (isLoss) {
-        if (diffKg <= 3.0) {
+        const m1Limit = isFemale ? 2.4 : 3.0;
+        const m2Limit = isFemale ? 4.8 : 6.0;
+        const m3Limit = isFemale ? 7.2 : 9.0;
+        const m1Loss = isFemale ? 2.4 : 3.0;
+        const m2Loss = isFemale ? 4.8 : 6.0;
+        const m3Loss = isFemale ? 7.2 : 9.0;
+
+        if (diffKg <= m1Limit) {
           return [
             {
               timeframe: "Month 1",
@@ -664,8 +673,8 @@ export function buildDeterministicStartingReport(
           ];
         }
 
-        if (diffKg <= 6.0) {
-          const m1Weight = Math.round((weight - 3.0) * 10) / 10;
+        if (diffKg <= m2Limit) {
+          const m1Weight = Math.round((weight - m1Loss) * 10) / 10;
           return [
             {
               timeframe: "Month 1",
@@ -685,9 +694,9 @@ export function buildDeterministicStartingReport(
           ];
         }
 
-        if (diffKg <= 9.0) {
-          const m1Weight = Math.round((weight - 3.0) * 10) / 10;
-          const m2Weight = Math.round((weight - 6.0) * 10) / 10;
+        if (diffKg <= m3Limit) {
+          const m1Weight = Math.round((weight - m1Loss) * 10) / 10;
+          const m2Weight = Math.round((weight - m2Loss) * 10) / 10;
           return [
             {
               timeframe: "Month 1",
@@ -707,10 +716,10 @@ export function buildDeterministicStartingReport(
           ];
         }
 
-        // diffKg > 9.0 (Multi-Phase Journey, e.g. 15 kg - 35 kg)
-        const m1Weight = Math.round((weight - 3.0) * 10) / 10;
-        const m2Weight = Math.round((weight - 6.0) * 10) / 10;
-        const m3Weight = Math.round((weight - 9.0) * 10) / 10;
+        // diffKg > m3Limit (Multi-Phase Journey, e.g. 15 kg - 35 kg)
+        const m1Weight = Math.round((weight - m1Loss) * 10) / 10;
+        const m2Weight = Math.round((weight - m2Loss) * 10) / 10;
+        const m3Weight = Math.round((weight - m3Loss) * 10) / 10;
         return [
           {
             timeframe: "Month 1",
@@ -731,11 +740,17 @@ export function buildDeterministicStartingReport(
       }
 
       // isGain
-      if (diffKg <= 2.0) {
+      const m1BulkLimit = isFemale ? 1.4 : 2.0;
+      const m2BulkLimit = isFemale ? 2.8 : 4.0;
+      const m1Gain = isFemale ? 0.7 : 1.2;
+      const m2Gain = isFemale ? 1.4 : 2.4;
+      const m3Gain = isFemale ? 2.1 : 3.6;
+
+      if (diffKg <= m1BulkLimit) {
         return [
           {
             timeframe: "Month 1",
-            target_weight_kg: Math.round((weight + Math.min(diffKg, 1.2)) * 10) / 10,
+            target_weight_kg: Math.round((weight + Math.min(diffKg, m1Gain)) * 10) / 10,
             expected_changes: "Neurological adaptations, glycogen replenishment, and strict exercise form mastery.",
           },
           {
@@ -751,16 +766,16 @@ export function buildDeterministicStartingReport(
         ];
       }
 
-      if (diffKg <= 4.0) {
+      if (diffKg <= m2BulkLimit) {
         return [
           {
             timeframe: "Month 1",
-            target_weight_kg: Math.round((weight + 1.2) * 10) / 10,
+            target_weight_kg: Math.round((weight + m1Gain) * 10) / 10,
             expected_changes: "Neurological adaptations, glycogen replenishment, and strict exercise form mastery.",
           },
           {
             timeframe: "Month 2",
-            target_weight_kg: Math.round((weight + 2.4) * 10) / 10,
+            target_weight_kg: Math.round((weight + m2Gain) * 10) / 10,
             expected_changes: "Measurable strength increases across compound lifts with fuller muscle bellies.",
           },
           {
@@ -771,21 +786,21 @@ export function buildDeterministicStartingReport(
         ];
       }
 
-      // diffKg > 4.0 (Extensive Bulking Journey)
+      // diffKg > m2BulkLimit (Extensive Bulking Journey)
       return [
         {
           timeframe: "Month 1",
-          target_weight_kg: Math.round((weight + 1.2) * 10) / 10,
+          target_weight_kg: Math.round((weight + m1Gain) * 10) / 10,
           expected_changes: "Establish high-protein habits, master compound movements, and build initial lifting momentum.",
         },
         {
           timeframe: "Month 2",
-          target_weight_kg: Math.round((weight + 2.4) * 10) / 10,
+          target_weight_kg: Math.round((weight + m2Gain) * 10) / 10,
           expected_changes: "Noticeable jump in lifting weights, fuller muscle bellies, and improved workout recovery.",
         },
         {
           timeframe: "Month 3",
-          target_weight_kg: Math.round((weight + 3.6) * 10) / 10,
+          target_weight_kg: Math.round((weight + m3Gain) * 10) / 10,
           expected_changes: "End of Phase 1: Measurable muscle growth across upper and lower body. Caloric recalibration for Phase 2.",
         },
       ];
