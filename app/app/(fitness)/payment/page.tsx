@@ -1,5 +1,5 @@
 import { getCachedUser } from "@/lib/services/supabase/server";
-import { getFitnessSubscription } from "@/lib/fitness/subscription/access";
+import { getFitnessSubscription, getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
 import { getLockedFitnessRate } from "@/lib/fitness/subscription/locked-rate";
 import { Suspense } from "react";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
@@ -23,8 +23,23 @@ export default async function FitnessPaymentPage() {
   ]);
 
   const { data: { user } } = await getCachedUser();
-  const subscription = user ? await getFitnessSubscription(user.id) : null;
-  const renewalLevel = subscription ? (subscription.plan === "pro" ? "pro" : "core") : premiumDetails?.premium_level;
+  const [subscription, subscriptionState] = user
+    ? await Promise.all([
+        getFitnessSubscription(user.id).catch(() => null),
+        getFitnessSubscriptionState(user.id).catch(() => null),
+      ])
+    : [null, null];
+
+  const isExpired = Boolean(subscriptionState?.isExpired);
+  const renewalLevel: "core" | "pro" = isExpired
+    ? (subscriptionState?.previousPlan?.id === "core" ? "core" : "pro")
+    : (subscriptionState?.plan?.id === "pro" || subscriptionState?.plan?.id === "core"
+        ? (subscriptionState.plan.id as "core" | "pro")
+        : (subscription?.plan === "pro" ? "pro" : subscription?.plan === "core" ? "core" : (premiumDetails?.premium_level === "core" ? "core" : "pro")));
+
+  const renewalExpiresAt =
+    subscription?.current_period_end || subscriptionState?.expiresAt || premiumDetails?.premium_expires_at || null;
+
   let lockedRatePaise: number | null = null;
   let rateCheckFailed = false;
   if (user && (renewalLevel === "core" || renewalLevel === "pro")) {
@@ -42,8 +57,9 @@ export default async function FitnessPaymentPage() {
         renewalPlan={renewalLevel}
         lockedRatePaise={lockedRatePaise}
         rateCheckFailed={rateCheckFailed}
-        renewalExpiresAt={subscription?.current_period_end || premiumDetails?.premium_expires_at || null}
+        renewalExpiresAt={renewalExpiresAt}
         initialPremiumDetails={premiumDetails || undefined}
+        isExpiredSubscriber={isExpired}
       />
     </Suspense>
   );

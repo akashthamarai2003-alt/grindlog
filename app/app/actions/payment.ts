@@ -88,7 +88,7 @@ export async function claimSpinDiscountAction() {
   }
 
   const livePricing = await getPlanPricesAction("fitness");
-  const discountPercent = livePricing?.spinDiscountPercentage ?? 50;
+  const discountPercent = livePricing?.spinDiscountPercentage ?? 70;
 
   const coreRegular = livePricing?.monthly?.core?.originalPrice ?? 59;
   const proRegular = livePricing?.monthly?.pro?.originalPrice ?? 199;
@@ -219,12 +219,12 @@ export async function createRazorpayOrder(
     }
 
     const livePricing = await getPlanPricesAction("fitness");
-    const adminCorePrice = livePricing?.monthly?.core?.price ?? 29;
+    const adminCorePrice = livePricing?.monthly?.core?.price ?? 19;
     const adminCoreOriginal = livePricing?.monthly?.core?.originalPrice ?? 59;
-    const adminProPrice = livePricing?.monthly?.pro?.price ?? 99;
+    const adminProPrice = livePricing?.monthly?.pro?.price ?? 59;
     const adminProOriginal = livePricing?.monthly?.pro?.originalPrice ?? 199;
     const lockedRatePaise = tier === "monthly" ? await getLockedFitnessRate(user.id, level) : null;
-    if (lockedRatePaise !== null) {
+    if (lockedRatePaise !== null && lockedRatePaise >= 1000) {
       // The captured wheel payment, not today's admin offer, controls renewals.
       finalPrice = lockedRatePaise / 100;
       isSpinDiscountApplied = true;
@@ -767,15 +767,17 @@ export async function getUserPremiumDetailsAction(appName: "grindlog" | "fitness
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (profile?.fitness_is_premium) {
-        if (!profile.fitness_premium_expires_at || new Date(profile.fitness_premium_expires_at) > new Date()) {
-          return {
-            is_premium: profile.fitness_is_premium,
-            premium_expires_at: profile.fitness_premium_expires_at,
-            premium_tier: profile.fitness_premium_tier,
-            premium_level: profile.fitness_premium_level
-          };
-        }
+      if (profile?.fitness_is_premium || profile?.fitness_premium_level || profile?.fitness_premium_expires_at) {
+        const isExpired = Boolean(
+          profile.fitness_premium_expires_at && new Date(profile.fitness_premium_expires_at) <= new Date()
+        );
+        return {
+          is_premium: !isExpired && Boolean(profile.fitness_is_premium),
+          is_expired: isExpired,
+          premium_expires_at: profile.fitness_premium_expires_at,
+          premium_tier: profile.fitness_premium_tier || "monthly",
+          premium_level: profile.fitness_premium_level || "pro"
+        };
       }
     } else {
       const { data: profile } = await adminClient

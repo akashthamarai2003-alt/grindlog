@@ -24,7 +24,7 @@ export async function getLockedFitnessRate(userId: string, level: "core" | "pro"
   }
 
   const saved = Number(savedRate?.locked_rate_paise);
-  if (savedRate?.locked_level === level && Number.isSafeInteger(saved) && saved > 0) return saved;
+  if (savedRate?.locked_level === level && Number.isSafeInteger(saved) && saved >= 1000) return saved;
 
   // Payments made before the rate column existed can still prove their lock
   // from the provider's signed order and captured payment.
@@ -61,7 +61,7 @@ export async function getLockedFitnessRate(userId: string, level: "core" | "pro"
         order.currency === "INR" &&
         Number(payment.amount) === Number(order.amount) &&
         Number.isSafeInteger(Number(payment.amount)) &&
-        Number(payment.amount) > 0
+        Number(payment.amount) >= 1000
       ) return Number(payment.amount);
     } catch (err: any) {
       console.warn("Could not fetch payment from Razorpay for rate check:", paymentId, err?.message);

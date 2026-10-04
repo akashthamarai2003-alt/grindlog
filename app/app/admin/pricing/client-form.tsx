@@ -12,7 +12,7 @@ export default function PricingClientForm({
   initialPricing: PlanPricingConfig;
 }) {
   const [pricing, setPricing] = useState<PlanPricingConfig>(initialPricing);
-  const [spinDiscount, setSpinDiscount] = useState<number>(initialPricing.spinDiscountPercentage ?? 50);
+  const [spinDiscount, setSpinDiscount] = useState<number>(initialPricing.spinDiscountPercentage ?? 70);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleDiscountPercentChange = (newPercent: number) => {

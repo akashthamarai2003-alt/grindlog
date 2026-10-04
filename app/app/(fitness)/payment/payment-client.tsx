@@ -147,27 +147,40 @@ export interface FitnessPaymentClientProps {
   renewalExpiresAt?: string | null;
   lockedRatePaise?: number | null;
   rateCheckFailed?: boolean;
-  initialPremiumDetails?: { premium_tier?: string; premium_level?: string; is_premium?: boolean } | null;
+  initialPremiumDetails?: { premium_tier?: string; premium_level?: string; is_premium?: boolean; is_expired?: boolean } | null;
+  isExpiredSubscriber?: boolean;
 }
 
-export default function FitnessPaymentClient({ initialPricing, initialPremiumDetails, renewalPlan, renewalExpiresAt, lockedRatePaise, rateCheckFailed = false }: FitnessPaymentClientProps) {
+export default function FitnessPaymentClient({ 
+  initialPricing, 
+  initialPremiumDetails, 
+  renewalPlan, 
+  renewalExpiresAt, 
+  lockedRatePaise, 
+  rateCheckFailed = false,
+  isExpiredSubscriber: initialIsExpiredSubscriber = false
+}: FitnessPaymentClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isExpiredSubscriber = Boolean(
-    (renewalPlan === "core" || renewalPlan === "pro") &&
-    renewalExpiresAt &&
-    new Date(renewalExpiresAt).getTime() < Date.now()
+    initialIsExpiredSubscriber ||
+    initialPremiumDetails?.is_expired ||
+    (
+      (renewalPlan === "core" || renewalPlan === "pro" || initialPremiumDetails?.premium_level === "core" || initialPremiumDetails?.premium_level === "pro") &&
+      renewalExpiresAt &&
+      new Date(renewalExpiresAt).getTime() < Date.now()
+    )
   );
   const isRenewal = searchParams.get("intent") === "renew_monthly" || isExpiredSubscriber;
   const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
   // Plan purchases go straight to setup, including older links with returnTo=/.
   const returnTo = isPlanGenerationIntent
     ? "/plan-setup"
-    : isRenewal ? "/profile/billing" : getSafeRedirect(searchParams.get("returnTo"));
+    : isRenewal ? (searchParams.get("returnTo") ? getSafeRedirect(searchParams.get("returnTo")) : "/profile/billing") : getSafeRedirect(searchParams.get("returnTo"));
   
   // In Fitness OS, the duration is always monthly, but we let them choose the tier
   const selectedPlan = "monthly";
-  const requestedPlan = (searchParams.get("plan") as "core" | "pro") || (isRenewal ? renewalPlan : null) || searchParams.get("level") || (searchParams.get("intent") === "upgrade_core" ? "core" : null);
+  const requestedPlan = (searchParams.get("plan") as "core" | "pro") || (isRenewal ? (renewalPlan as "core" | "pro") : null) || (searchParams.get("level") as "core" | "pro") || (searchParams.get("intent") === "upgrade_core" ? "core" : null);
   const [level, setLevel] = useState<"core" | "pro">(requestedPlan === "core" ? "core" : "pro");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
@@ -331,11 +344,11 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
   // Dynamic offer and regular prices from live admin configuration with production fallbacks (59 & 199)
   const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? 59;
   const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 199;
-  const corePrice = pricingConfig?.monthly?.core?.price ?? 29;
-  const proPrice = pricingConfig?.monthly?.pro?.price ?? 99;
+  const corePrice = pricingConfig?.monthly?.core?.price ?? 19;
+  const proPrice = pricingConfig?.monthly?.pro?.price ?? 59;
 
   const baseCurrentPrice = isRenewal
-    ? (lockedRatePaise != null
+    ? (lockedRatePaise != null && lockedRatePaise >= 1000
         ? lockedRatePaise / 100
         : (level === "pro" ? proPrice : corePrice))
     : level === "pro"
@@ -682,7 +695,23 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
       </div>
 
       {/* Urgency / Active Discount Sticky Banner */}
-      {isCurrentCore ? (
+      {isRenewal ? (
+        <div className="sticky top-[72px] z-40 bg-gradient-to-r from-[#0E1A0F] via-[#162B17] to-[#0E1A0F] border-b border-[#ADFF00]/40 py-2.5 px-4 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)] transform-gpu">
+          <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-black text-white truncate">
+              <span className="text-base shrink-0">🔒</span>
+              <span className="truncate uppercase tracking-wide text-[#ADFF00]">
+                {discountPercent}% OFF Claimed • Locked For All Renewal Months
+              </span>
+            </div>
+            {((level === "pro" ? proOriginalPrice : coreOriginalPrice) > currentPrice) && (
+              <div className="bg-[#ADFF00] text-black font-black text-[10px] uppercase px-2.5 py-1 rounded-full shrink-0 shadow-[0_0_10px_rgba(173,255,0,0.3)]">
+                Save ₹{(level === "pro" ? proOriginalPrice : coreOriginalPrice) - currentPrice}/mo
+              </div>
+            )}
+          </div>
+        </div>
+      ) : isCurrentCore ? (
         <div className="sticky top-[72px] z-40 bg-gradient-to-r from-[#0E1A0F] via-[#162B17] to-[#0E1A0F] border-b border-[#ADFF00]/40 py-2.5 px-4 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)] transform-gpu">
           <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-black text-white truncate">
@@ -826,6 +855,10 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                     <span className="text-[10px] font-black uppercase tracking-wider bg-white/10 text-gray-300 border border-white/20 px-2 py-0.5 rounded-full">
                       Current Plan
                     </span>
+                  ) : isRenewal ? (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
+                      {discountPercent}% OFF CLAIMED • ALL MONTHS
+                    </span>
                   ) : isDiscountActive ? (
                     <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
                       {discountPercent}% OFF • ALL MONTHS
@@ -839,9 +872,14 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                       <span className="text-xs text-gray-400 font-medium">Active Subscription</span>
                     ) : isRenewal ? (
                       <>
+                        {coreOriginalPrice && coreOriginalPrice > currentPrice && (
+                          <span className="text-sm text-gray-500 line-through font-semibold">₹{coreOriginalPrice}</span>
+                        )}
                         <span className="text-2xl font-black text-[#ADFF00]">{rateCheckFailed ? "Rate unavailable" : `₹${currentPrice}`}</span>
                         <span className="text-xs text-gray-500 font-medium">/month</span>
-                        {lockedRatePaise != null && <span className="text-[10px] font-bold text-[#ADFF00]">Your locked rate</span>}
+                        <span className="ml-auto text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
+                          LOCKED CLAIMED RATE
+                        </span>
                       </>
                     ) : appliedCoupon && isCouponForCore ? (
                       <>
@@ -890,7 +928,7 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
             } cursor-pointer`}
           >
             <div className="absolute top-0 right-0 bg-[#ADFF00] text-black text-[10px] font-black px-3 py-1 rounded-bl-xl tracking-wider uppercase">
-              {isRenewal ? "Your Plan" : isCurrentCore ? "⭐ Upgrade Here" : "⭐ Recommended"}
+              {isRenewal ? "Your Locked Plan" : isCurrentCore ? "⭐ Upgrade Here" : "⭐ Recommended"}
             </div>
             
             <div className="flex items-center gap-4">
@@ -910,9 +948,14 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
                   <div className="flex items-baseline gap-2">
                     {isRenewal ? (
                       <>
+                        {proOriginalPrice && proOriginalPrice > currentPrice && (
+                          <span className="text-sm text-gray-500 line-through font-semibold">₹{proOriginalPrice}</span>
+                        )}
                         <span className="text-2xl font-black text-[#ADFF00]">{rateCheckFailed ? "Rate unavailable" : `₹${currentPrice}`}</span>
                         <span className="text-xs text-gray-500 font-medium">/month</span>
-                        {lockedRatePaise != null && <span className="text-[10px] font-bold text-[#ADFF00]">Your locked rate</span>}
+                        <span className="ml-auto text-[10px] font-black uppercase tracking-wider bg-[#ADFF00]/15 text-[#ADFF00] border border-[#ADFF00]/30 px-2 py-0.5 rounded-full">
+                          {discountPercent}% OFF CLAIMED • ALL MONTHS
+                        </span>
                       </>
                     ) : appliedCoupon && isCouponForPro ? (
                       <>
@@ -957,7 +1000,14 @@ export default function FitnessPaymentClient({ initialPricing, initialPremiumDet
         </div>
 
         {/* Lifetime Price Lock Guarantee Pill */}
-        {isCurrentCore ? (
+        {isRenewal ? (
+          <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-3.5 flex items-center gap-3 text-left mb-6 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
+            <ShieldCheck className="text-[#ADFF00] shrink-0" size={24} />
+            <div className="text-xs text-gray-300 leading-snug">
+              <span className="font-bold text-white">Lifetime Price Lock Active:</span> Your claimed <span className="text-[#ADFF00] font-bold">{discountPercent}% OFF</span> rate of <span className="text-[#ADFF00] font-bold">₹{currentPrice}/mo</span> is permanently locked for all months on your account.
+            </div>
+          </div>
+        ) : isCurrentCore ? (
           <div className="bg-[#121E12] border border-[#1F331F] rounded-2xl p-3.5 flex items-center gap-3 text-left mb-6 shadow-[0_0_20px_rgba(173,255,0,0.1)]">
             <ShieldCheck className="text-[#ADFF00] shrink-0" size={24} />
             <div className="text-xs text-gray-300 leading-snug">

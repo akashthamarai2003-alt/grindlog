@@ -21,8 +21,8 @@ export function ProUpgradeModal({
   featureName = "This feature",
   planRequired = "pro",
   isExpired = false,
-  proPrice = 99,
-  corePrice = 29,
+  proPrice = 59,
+  corePrice = 19,
 }: ProUpgradeModalProps) {
   const pathname = usePathname();
   const returnTo = pathname || "/";

@@ -22,7 +22,7 @@ export async function getPlanPricesAction(appType: 'grindlog' | 'fitness' = 'fit
 
     const spinDiscountPercentage = typeof data.prices.spinDiscountPercentage === "number" 
       ? data.prices.spinDiscountPercentage 
-      : 50;
+      : 70;
 
     // Helper to calculate fallback if one of originalPrice or price is missing
     const resolveTier = (item: any, defaultItem: PlanPriceItem): PlanPriceItem => {

@@ -33,7 +33,7 @@ export function LuckyWheelModal({ isOpen, onClose, onClaimDiscount, pricingConfi
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const discountPercent = pricingConfig?.spinDiscountPercentage ?? 50;
+  const discountPercent = pricingConfig?.spinDiscountPercentage ?? 70;
 
   const coreOriginalPrice = pricingConfig?.monthly?.core?.originalPrice ?? 59;
   const proOriginalPrice = pricingConfig?.monthly?.pro?.originalPrice ?? 199;
