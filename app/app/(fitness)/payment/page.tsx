@@ -4,6 +4,7 @@ import { getLockedFitnessRate } from "@/lib/fitness/subscription/locked-rate";
 import { Suspense } from "react";
 import { getPlanPricesAction } from "@/app/actions/admin-pricing";
 import { getUserPremiumDetailsAction } from "@/app/actions/payment";
+import { redirect } from "next/navigation";
 import FitnessPaymentClient from "./payment-client";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,14 @@ function PaymentLoadingFallback() {
   );
 }
 
-export default async function FitnessPaymentPage() {
+export default async function FitnessPaymentPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const intent = typeof resolvedParams.intent === "string" ? resolvedParams.intent : undefined;
+
   const [pricingConfig, premiumDetails] = await Promise.all([
     getPlanPricesAction("fitness").catch(() => null),
     getUserPremiumDetailsAction("fitness_os").catch(() => null),
@@ -31,6 +39,16 @@ export default async function FitnessPaymentPage() {
     : [null, null];
 
   const isExpired = Boolean(subscriptionState?.isExpired);
+  const isActivePro = Boolean(
+    subscriptionState?.status === "active" &&
+    !isExpired &&
+    (subscriptionState?.plan?.id === "pro" || premiumDetails?.premium_level === "pro" || subscription?.plan === "pro")
+  );
+
+  // If user is already active Pro, visiting renewal intent is obsolete — return to dashboard
+  if (user && isActivePro && intent === "renew_monthly") {
+    redirect("/");
+  }
   const renewalLevel: "core" | "pro" = isExpired
     ? (subscriptionState?.previousPlan?.id === "core" ? "core" : "pro")
     : (subscriptionState?.plan?.id === "pro" || subscriptionState?.plan?.id === "core"

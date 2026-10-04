@@ -390,11 +390,18 @@ export default function FitnessPaymentClient({
     }
   }, [currentPremiumInfo, isPlanGenerationIntent, isUpgradeIntent, premiumStatusLoaded]);
 
+  // If user is already active and arrives at monthly renewal checkout, redirect to dashboard
+  useEffect(() => {
+    if (isRenewal && !isExpiredSubscriber && currentPremiumInfo && (currentPremiumInfo as any).is_premium && !isUpgradeIntent) {
+      router.replace("/");
+    }
+  }, [isRenewal, isExpiredSubscriber, currentPremiumInfo, isUpgradeIntent, router]);
+
   const handleFinishCelebration = useCallback(() => {
     sessionStorage.removeItem("fitness_pending_order");
     sessionStorage.removeItem("payment_in_progress");
     const separator = returnTo.includes("?") ? "&" : "?";
-    window.location.href = `${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`;
+    window.location.replace(`${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`);
   }, [returnTo, paymentOrderId]);
 
   // Background pre-fetch AI draft plan while the 10-second Loki celebration is active
@@ -422,7 +429,7 @@ export default function FitnessPaymentClient({
     if (isSuccess && !showCelebration) {
       sessionStorage.removeItem("fitness_pending_order");
       const separator = returnTo.includes("?") ? "&" : "?";
-      window.location.href = `${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`;
+      window.location.replace(`${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`);
     }
   }, [isSuccess, showCelebration, returnTo, paymentOrderId]);
 
@@ -682,6 +689,8 @@ export default function FitnessPaymentClient({
           onClick={() => {
             if (isPlanGenerationIntent) {
               router.push("/report");
+            } else if (isRenewal) {
+              router.push("/");
             } else {
               router.push(returnTo);
             }
