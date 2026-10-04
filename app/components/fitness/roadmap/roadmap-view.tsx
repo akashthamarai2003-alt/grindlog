@@ -192,28 +192,37 @@ export function RoadmapView({
                     : `${startWeight} kg → ${targetWeight} kg`}
                 </h1>
                 {/* Onboarding Profile Pills */}
-                <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
-                  {profile.target_physique && (
-                    <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
-                      🎯 {profile.target_physique}
-                    </span>
-                  )}
-                  {profile.training_location && (
-                    <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
-                      📍 {profile.training_location}
-                    </span>
-                  )}
-                  {profile.fitness_level && (
-                    <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
-                      ⚡ {profile.fitness_level}
-                    </span>
-                  )}
-                  {profile.food_type && (
-                    <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
-                      🥗 {profile.food_type}
-                    </span>
-                  )}
-                </div>
+                {(() => {
+                  const targetPhysique = profile.target_physique || (profile as any).onboarding_data?.target_physique;
+                  const trainingLocation = profile.training_location || (profile as any).onboarding_data?.training_location;
+                  const fitnessLevel = profile.fitness_level || (profile as any).onboarding_data?.fitness_level;
+                  const foodType = profile.food_type || (profile as any).diet_preference || (profile as any).onboarding_data?.food_type;
+
+                  return (
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                      {targetPhysique && (
+                        <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                          🎯 {targetPhysique}
+                        </span>
+                      )}
+                      {trainingLocation && (
+                        <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                          📍 {trainingLocation}
+                        </span>
+                      )}
+                      {fitnessLevel && (
+                        <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                          ⚡ {fitnessLevel}
+                        </span>
+                      )}
+                      {foodType && (
+                        <span className="text-[9px] font-bold text-gray-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                          🥗 {foodType}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

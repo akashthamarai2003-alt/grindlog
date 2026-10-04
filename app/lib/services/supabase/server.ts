@@ -52,7 +52,7 @@ export const getCachedFitnessProfile = cache(async (userId: string) => {
   const admin = createAdminClient();
   const { data } = await admin
     .from("fitness_os_profiles")
-    .select("id, user_id, onboarding_completed, name, weight, weight_trend_baseline, target_weight, goal, physical_problems, diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods, nutrition_budget, food_environment, meals_per_day, ai_strategy")
+    .select("id, user_id, onboarding_completed, name, weight, weight_trend_baseline, target_weight, goal, physical_problems, diet_preference, food_type, food_allergies, foods_disliked, foods_avoided, available_foods, nutrition_budget, food_environment, meals_per_day, ai_strategy, target_physique, training_location, fitness_level, target_deadline_days, fitness_is_premium, fitness_premium_tier, fitness_premium_level, onboarding_data, created_at")
     .eq("user_id", userId)
     .maybeSingle();
   return data || null;

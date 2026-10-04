@@ -17,8 +17,12 @@ export default async function RoadmapPage() {
   }
 
   const admin = createAdminClient();
-  const [profile, { data: plan }, subscriptionState] = await Promise.all([
-    getCachedFitnessProfile(user.id),
+  const [profileResult, { data: plan }, subscriptionState] = await Promise.all([
+    admin
+      .from("fitness_os_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle(),
     admin
       .from("fitness_os_workout_plans")
       .select("id, name, description, goal, plan_data, created_at")
@@ -30,27 +34,54 @@ export default async function RoadmapPage() {
     getFitnessSubscriptionState(user.id),
   ]);
 
+  const profile = profileResult.data;
+
   if (!profile?.onboarding_completed) {
     redirect("/onboarding");
   }
 
+  // Merge onboarding_data to ensure 100% field coverage across all onboarding iterations
+  const mergedProfile = {
+    ...profile,
+    ...(profile.onboarding_data || {}),
+    // Ensure primary database values take precedence
+    weight: profile.weight ?? profile.onboarding_data?.weight,
+    target_weight: profile.target_weight ?? profile.onboarding_data?.target_weight,
+    goal: profile.goal ?? profile.onboarding_data?.goal,
+    created_at: profile.created_at,
+  };
+
+  const profileIsPremium = Boolean(
+    profile.fitness_is_premium ||
+    profile.fitness_premium_tier === "pro" ||
+    profile.fitness_premium_tier === "core" ||
+    profile.fitness_premium_level === "pro" ||
+    profile.fitness_premium_level === "core"
+  );
+
   const isPaidUser =
     subscriptionState?.status === "active" ||
     subscriptionState?.status === "grace_period" ||
-    Boolean(subscriptionState?.plan && subscriptionState.plan.id !== "free");
+    Boolean(subscriptionState?.plan && subscriptionState.plan.id !== "free") ||
+    profileIsPremium;
+
+  const isPro =
+    subscriptionState?.plan?.id === "pro" ||
+    profile.fitness_premium_tier === "pro" ||
+    profile.fitness_premium_level === "pro";
 
   const premiumLevel = !isPaidUser
     ? "free"
-    : subscriptionState?.plan?.id === "pro"
+    : isPro
     ? "pro"
     : "core";
 
-  const roadmapData = await getRoadmapData(user.id, profile, plan);
+  const roadmapData = await getRoadmapData(user.id, mergedProfile, plan);
 
   return (
     <RoadmapView
       roadmapData={roadmapData}
-      profile={profile}
+      profile={mergedProfile}
       premiumLevel={premiumLevel}
       hasPlan={Boolean(plan)}
     />
