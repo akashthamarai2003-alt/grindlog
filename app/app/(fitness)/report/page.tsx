@@ -279,12 +279,19 @@ export default async function AIStartingReportPage({
           goal_gap: goalGap,
         }
       : null;
+  const currentWeightNum = typeof profile.weight === "number" && profile.weight > 20 ? profile.weight : null;
+  const targetWeightNum = typeof profile.target_weight === "number" && profile.target_weight > 20 ? profile.target_weight : null;
+  const deadlineDays = typeof onboardingData.target_deadline_days === "number" && onboardingData.target_deadline_days > 0 
+    ? onboardingData.target_deadline_days 
+    : (typeof profile.target_deadline_days === "number" && profile.target_deadline_days > 0 ? profile.target_deadline_days : null);
+  const diffKg = currentWeightNum && targetWeightNum ? Math.round(Math.abs(currentWeightNum - targetWeightNum) * 10) / 10 : 0;
+
   const personalNumbers = [
-    ["Protein starting target", displayValue(profile.initial_protein_target, " g/day")],
-    ["Maintenance estimate", displayValue(profile.baseline_calories, " kcal/day")],
+    ["Protein starting target", displayValue(profile.initial_protein_target || (profile.weight ? Math.round(profile.weight * 1.8) : null), " g/day")],
+    ["Maintenance estimate", displayValue(profile.baseline_calories || (profile.weight ? Math.round(profile.weight * 28) : null), " kcal/day")],
     ["Daily activity", displayValue(profile.daily_steps)],
     ["Sleep", displayValue(profile.sleep_duration)],
-    ["Target deadline", displayValue(onboardingData.target_deadline_days, " days")],
+    ["Target deadline", displayValue(deadlineDays, " days")],
     [
       "Workout time",
       displayValue(profile.preferred_training_time || profile.workout_time),
@@ -309,11 +316,6 @@ export default async function AIStartingReportPage({
   const timelineProjection = Array.isArray(aiStrategy.timeline_projection)
     ? aiStrategy.timeline_projection
     : [];
-
-  const currentWeightNum = typeof profile.weight === "number" && profile.weight > 20 ? profile.weight : null;
-  const targetWeightNum = typeof profile.target_weight === "number" && profile.target_weight > 20 ? profile.target_weight : null;
-  const deadlineDays = typeof onboardingData.target_deadline_days === "number" && onboardingData.target_deadline_days > 0 ? onboardingData.target_deadline_days : null;
-  const diffKg = currentWeightNum && targetWeightNum ? Math.round(Math.abs(currentWeightNum - targetWeightNum) * 10) / 10 : 0;
   
   const normalizedGoal = (profile.goal || "").toLowerCase().trim();
   const isGoalFatLoss =
