@@ -8,7 +8,7 @@ import { Sparkles } from "lucide-react";
 import { DashboardHeader } from "./dashboard-header";
 import { HorizontalCalendar } from "./horizontal-calendar";
 import { TodaysWorkoutCard } from "./todays-workout-card";
-import { TransformationRoadmapCard } from "./transformation-roadmap-card";
+import { TransformationCard } from "./transformation-card";
 import type { TransformationRoadmapData } from "@/types/fitness/roadmap";
 import { ExerciseLibraryCard } from "./exercise-library-card";
 import { ProUpgradeModal } from "@/components/fitness/pro-upgrade-modal";
@@ -151,8 +151,8 @@ export function FitnessDashboard({
           </div>
         )}
 
-        {/* 3. Live Transformation Roadmap */}
-        <TransformationRoadmapCard roadmapData={roadmapData ?? null} profile={profile} premiumLevel={premiumLevel} />
+        {/* 3. Transformation Card */}
+        <TransformationCard profile={profile} premiumLevel={premiumLevel} roadmapData={roadmapData ?? null} />
 
         {/* 4. Horizontal Calendar */}
         <HorizontalCalendar weekWorkouts={weekWorkouts} targetDateStr={targetDateStr} />

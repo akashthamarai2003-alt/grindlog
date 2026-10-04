@@ -5,15 +5,22 @@ import { ArrowRight, Target, TrendingDown, TrendingUp, Sparkles } from "lucide-r
 import Link from "next/link";
 import { OnboardingData } from "@/types/fitness/onboarding";
 
+import type { TransformationRoadmapData } from "@/types/fitness/roadmap";
+
 interface TransformationCardProps {
   profile: Partial<OnboardingData>;
   premiumLevel?: string;
+  roadmapData?: TransformationRoadmapData | null;
 }
 
-export function TransformationCard({ profile, premiumLevel = "core" }: TransformationCardProps) {
-  const startWeight = (profile as any).weight_trend_baseline || profile.weight || null;
-  const currentWeight = profile.weight || null;
-  const targetWeight = profile.target_weight || null;
+export function TransformationCard({
+  profile,
+  premiumLevel = "core",
+  roadmapData,
+}: TransformationCardProps) {
+  const startWeight = roadmapData?.startWeight ?? ((profile as any).weight_trend_baseline || profile.weight || null);
+  const currentWeight = roadmapData?.currentWeight ?? (profile.weight || null);
+  const targetWeight = roadmapData?.targetWeight ?? (profile.target_weight || null);
 
   const startNum = startWeight != null ? Number(startWeight) : null;
   const currentNum = currentWeight != null ? Number(currentWeight) : null;
@@ -142,29 +149,16 @@ export function TransformationCard({ profile, premiumLevel = "core" }: Transform
           </div>
         </div>
 
-        {/* Action Button */}
-        {premiumLevel === "pro" ? (
-          <Link href="/progress" prefetch={true} className="w-full mt-1">
-            <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 active:bg-white/5 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-white/5 cursor-pointer">
-              <span className="text-xs sm:text-sm font-bold text-white/90 group-hover/btn:text-white transition-colors">View Full Progress & Weight History</span>
-              <ArrowRight className="w-4 h-4 text-[#ADFF00] group-hover/btn:translate-x-1 transition-transform duration-300" />
-            </button>
-          </Link>
-        ) : premiumLevel === "core" ? (
-          <Link href="/payment?returnTo=/&intent=upgrade_pro" prefetch={true} className="w-full mt-1">
-            <button className="w-full py-3 px-4 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-[#ADFF00]/20 cursor-pointer">
-              <span className="text-xs sm:text-sm font-bold text-[#ADFF00]">Upgrade to unlock Automated AI Tracking</span>
-              <div className="bg-[#ADFF00] text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Pro</div>
-            </button>
-          </Link>
-        ) : (
-          <Link href="/payment" prefetch={true} className="w-full mt-1">
-            <button className="w-full py-3 px-4 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-[#ADFF00]/20 cursor-pointer">
-              <span className="text-xs sm:text-sm font-bold text-[#ADFF00]">Choose Plan to unlock Weight & Milestone Tracking</span>
-              <div className="bg-[#ADFF00] text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Upgrade</div>
-            </button>
-          </Link>
-        )}
+        {/* Action Button: View Full Transformation Roadmap */}
+        <Link href="/roadmap" prefetch={true} className="w-full mt-1">
+          <button className="w-full py-3 px-4 bg-[#ADFF00]/10 hover:bg-[#ADFF00]/15 active:bg-[#ADFF00]/10 transition-all duration-300 rounded-xl flex items-center justify-between group/btn border border-[#ADFF00]/25 cursor-pointer">
+            <span className="text-xs sm:text-sm font-bold text-white group-hover/btn:text-[#ADFF00] transition-colors flex items-center gap-2">
+              <Target className="w-4 h-4 text-[#ADFF00]" />
+              <span>View Full Transformation Roadmap</span>
+            </span>
+            <ArrowRight className="w-4 h-4 text-[#ADFF00] group-hover/btn:translate-x-1 transition-transform duration-300" />
+          </button>
+        </Link>
       </div>
     </motion.div>
   );
