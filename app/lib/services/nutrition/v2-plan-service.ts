@@ -47,6 +47,13 @@ import { NutritionValidationEngine } from "@/lib/fitness/nutrition/validation-en
 import { createLiveFoodIdResolver } from "@/lib/services/nutrition/live-food-id";
 import { groceryPortionAmount, selectGroceryPlanItems } from "@/lib/services/nutrition/v2-grocery-items";
 import { calculateDailyBudget } from "@/lib/fitness/nutrition/user-context";
+import { getFoodSvgAvatar } from "@/lib/utils/food-images";
+
+/** Keep the catalog asset identity while avoiding the currently unreachable image host. */
+export function resolveV2ImageSnapshot(url: string | null | undefined, mealName: string): string {
+  if (url && !url.startsWith("https://images.grindlog.in/")) return url;
+  return getFoodSvgAvatar(mealName);
+}
 
 // Concurrency lock to prevent concurrent duplicate generation per user
 const v2PlanGenInFlight = new Map<string, Promise<any>>();
@@ -363,6 +370,22 @@ export class V2PlanService {
         throw new Error(`PLAN_VALIDATION_FAILED: ${failureReason}. Your saved plan was left untouched.`);
       }
 
+      // The deployed persistence RPC replaces plans for the requested dates.
+      // Keep logged history intact until the database function itself rejects
+      // replacement under its transaction lock.
+      const planDates = [...new Set(rawResult.plannedMeals.map((meal) => meal.localDate))];
+      const { data: loggedMeals, error: loggedMealsError } = await supabase
+        .from("planned_meals")
+        .select("id")
+        .eq("user_id", userId)
+        .in("local_date", planDates)
+        .eq("status", "LOGGED")
+        .limit(1);
+      if (loggedMealsError) throw loggedMealsError;
+      if (loggedMeals?.length) {
+        throw new Error("CANNOT_REGENERATE_LOGGED_MEAL: A meal in this date range has already been logged.");
+      }
+
       // 7. Catalog lookup to ensure recipe names and variant info are accurately rendered
       const catalog = loadNutritionCatalog();
       const versionById = new Map(
@@ -461,7 +484,12 @@ export class V2PlanService {
         meal_template_id: m.mealTemplateId,
         image_asset_id: m.imageAssetId,
         image_storage_path_snapshot: m.imageStoragePathSnapshot,
-        image_url_snapshot: m.imageUrlSnapshot,
+        image_url_snapshot: resolveV2ImageSnapshot(
+          m.imageUrlSnapshot,
+          m.sourceType === "RECIPE" && m.recipeVersionId
+            ? versionById.get(m.recipeVersionId)?.name || m.mealSlot
+            : m.mealSlot
+        ),
         calories_snapshot: m.caloriesSnapshot,
         protein_snapshot: m.proteinSnapshot,
         carbs_snapshot: m.carbsSnapshot,
@@ -735,7 +763,7 @@ export class V2PlanService {
         fat: optResult.totalFat,
         estimated_cost: optResult.totalCost,
         prep_instructions: rv.prepInstructions || "Prepare using recommended portions.",
-        image_url: img?.url,
+        image_url: resolveV2ImageSnapshot(img?.url, rv.name),
         items,
       });
     }

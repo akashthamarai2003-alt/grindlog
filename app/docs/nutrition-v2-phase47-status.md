@@ -1,6 +1,7 @@
 # Nutrition V2 Phase 4.7 status
 
-Updated 2026-10-04. Phase 4.7 is **not complete**. V2 remains disabled.
+Updated 2026-10-04. The real designated-account smoke flow ran. Phase 4.7 is
+**not complete**. V2 is back to disabled for the test profile.
 
 ## Database evidence
 
@@ -37,6 +38,15 @@ Updated 2026-10-04. Phase 4.7 is **not complete**. V2 remains disabled.
   Numeric budgets remain exact and the lowest tier no longer gains a 100-unit
   artificial increase. The Phase 4 fixture now uses the actual saved UI tier;
   its former custom range depended on the old incorrect 4,500 fallback.
+- Missing catalog URLs on the unreachable `images.grindlog.in` host now store
+  GrindLog's existing offline badge in the V2 plan and swap snapshots. Recipe
+  and template asset identity remains intact. Actual asset coverage remains
+  a separate rollout blocker.
+- The service refuses regeneration over an already logged meal. The deployed
+  persistence RPC still uses a different advisory key from logging and swap
+  and deletes existing planned meals for the same dates. The staged
+  `20261003_06` SQL uses the shared lock and refuses replacement of logged
+  history under that lock. It has **not** been applied or verified live.
 
 ## Executed checks after these fixes
 
@@ -45,23 +55,47 @@ Updated 2026-10-04. Phase 4.7 is **not complete**. V2 remains disabled.
 - Phase 4: 365 assertions passed, including successful module loading.
 - Phase 4.5: 12 read-only assertions passed. Its old direct-write suites remain
   disabled and were not counted as executed.
-- Phase 4.7: seven tests / 29 assertion calls passed.
+- Phase 4.7: eight tests / 31 assertion calls passed.
 - Nutrition safety: five tests passed.
+
+## Real designated-account smoke result
+
+- The exact original 81-field profile, four target rows, one workout plan,
+  four grocery rows, and empty meal plan/log state were saved in a private
+  temporary snapshot before any write. Only one approved test profile changed.
+- Today's validated three-meal Hostel plan scored 89, costing 812 against the
+  1,125 weekly budget. PostgreSQL persistence and reload showed 7 daily
+  containers, 21 planned meals, 84 detailed items, and 84 compatibility items.
+  All 21 meals used live templates; Day 1 displayed breakfast/lunch/dinner
+  from V2. Their five food UUIDs, three template IDs, UTC timezone, and badge
+  fallbacks resolved. No legacy meal generator produced the stored plan.
+- Lunch changed from a template to a live recipe and variant. Its calories
+  changed 902 to 744, cost 41 to 135, and three new ingredient rows persisted.
+- Logging breakfast created four frozen V2 item logs totaling 650 kcal and
+  marked that planned meal logged. Logging a different actual dinner food
+  created one manual log of 195 kcal with no planned meal link; dinner stayed
+  planned. Adaptive intake counted 845 kcal and left 1,260 kcal. Logged
+  breakfast was unchanged after rejected swap and regeneration attempts.
+- Grocery data persisted in both the workout plan and row table. The mess
+  supplied three foods. A temporary pantry item reduced four purchase rows
+  to three and retail estimate from 680 to 330. The original four grocery
+  rows, workout plan data, four targets, and empty plan/log state were
+  restored after the test and compared.
 
 ## Remaining blockers
 
-- The designated account's saved profile fails the existing planner quality
-  gate and exceeds its correctly mapped budget. No plan was persisted.
-- A temporary three-meal development setup passes the dry run at 95/100 and
-  721 weekly cost against 1,125. Changing body and living details requires the
-  account owner's approval, with original fields restored after testing. The
-  earlier four-meal proposal exceeds the corrected budget and is superseded.
-- Recipe/template image URLs use an unresolvable host, and the inspected
-  recipe/template storage prefixes contain no assets. Metadata presence is not
-  proof that images resolve.
-- Actual plan persistence/reload, Day 1 service output, lunch swap, planned and
-  different-actual-food logging, adaptive macros, and grocery persistence still
-  need the real designated-account flow. Passing isolated tests does not prove
-  these steps.
+- All original functional profile fields and the disabled V2 flag were restored
+  and compared. The profile's `updated_at` trigger changed its timestamp again
+  during restoration. Its old value was `2026-10-01T09:24:55.791454+00:00`;
+  the live value after cleanup was `2026-10-04T10:04:05.124437+00:00`. An
+  exact private snapshot and guarded SQL Editor restoration script are saved
+  outside the Git repository. Exact profile restoration is **not yet proved**.
+- `20261003_06` must be reviewed, applied, and verified before direct RPC
+  callers can safely regenerate over logged history. The service guard alone
+  does not close the concurrent RPC race. The staged persist function's
+  normalized body hash is `46e3693967bb49a76c33c32083f9eb2e`; verify it
+  with `nutrition_v2_phase47_post_history_guard_readonly.sql` after deployment.
+- Actual recipe and template image assets are missing. Badge fallback passes
+  the backend smoke test but is not production image coverage.
 
 No further production migration or general rollout is authorized by this file.

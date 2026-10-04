@@ -3,7 +3,7 @@ import test from "node:test";
 import { selectGroceryPlanItems, groceryPortionAmount } from "../lib/services/nutrition/v2-grocery-items.ts";
 import { createLiveFoodIdResolver } from "../lib/services/nutrition/live-food-id.ts";
 import { persistedV2MealSlots, selectDisplayPlanItems } from "../lib/services/nutrition/v2-display-items.ts";
-import { V2PlanService } from "../lib/services/nutrition/v2-plan-service.ts";
+import { V2PlanService, resolveV2ImageSnapshot } from "../lib/services/nutrition/v2-plan-service.ts";
 
 test("V2 grocery rows prefer authoritative details over compatibility projections", () => {
   const items = [
@@ -95,4 +95,11 @@ test("V2 budget mapping uses established tiers and preserves exact custom budget
     assert.deepEqual([mapped.monthlyBudgetInr, mapped.weeklyBudgetTargetInr, mapped.budgetPolicy],
       [monthly, weekly, policy]);
   }
+});
+
+test("missing catalog assets use the existing offline image badge", () => {
+  const fallback = resolveV2ImageSnapshot("https://images.grindlog.in/recipes/missing.webp", "Moong Dal Cheela");
+  assert.match(fallback, /^data:image\/svg\+xml;utf8,/);
+  assert.equal(resolveV2ImageSnapshot("https://cdn.example.test/approved.webp", "Approved"),
+    "https://cdn.example.test/approved.webp");
 });
