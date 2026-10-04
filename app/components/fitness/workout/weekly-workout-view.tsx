@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, X, Check, Circle, Dot, Minus } from "lucide-react";
+import { CalendarDays, X, Check, Circle, Dot, Minus, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export function WeeklyWorkoutView({ 
   weekDays = [],
@@ -119,6 +120,19 @@ export function WeeklyWorkoutView({
                     </div>
                   );
                 })}
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/10">
+                <Link
+                  href="/report?renew=true"
+                  className="w-full py-3.5 px-4 bg-[#ADFF00] hover:bg-[#bfff33] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.3)] transition-all active:scale-[0.98]"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Generate Month 2 Mesocycle ⚡</span>
+                </Link>
+                <p className="text-[11px] text-white/50 text-center mt-2">
+                  Recalibrate your weights, volume, and movement rotations for your next phase.
+                </p>
               </div>
               
             </motion.div>
