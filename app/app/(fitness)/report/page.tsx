@@ -310,21 +310,42 @@ export default async function AIStartingReportPage({
     ? aiStrategy.timeline_projection
     : [];
 
-  const currentWeightNum = typeof profile.weight === "number" ? profile.weight : null;
-  const targetWeightNum = typeof profile.target_weight === "number" ? profile.target_weight : null;
+  const currentWeightNum = typeof profile.weight === "number" && profile.weight > 20 ? profile.weight : null;
+  const targetWeightNum = typeof profile.target_weight === "number" && profile.target_weight > 20 ? profile.target_weight : null;
   const deadlineDays = typeof onboardingData.target_deadline_days === "number" && onboardingData.target_deadline_days > 0 ? onboardingData.target_deadline_days : null;
   const diffKg = currentWeightNum && targetWeightNum ? Math.round(Math.abs(currentWeightNum - targetWeightNum) * 10) / 10 : 0;
-  const normalizedGoal = (profile.goal || "").toLowerCase();
-  const isGainGoal = normalizedGoal.includes("gain") || normalizedGoal.includes("bulk") || (currentWeightNum !== null && targetWeightNum !== null && targetWeightNum > currentWeightNum);
-  const isLossGoal = normalizedGoal.includes("loss") || normalizedGoal.includes("cut") || (currentWeightNum !== null && targetWeightNum !== null && targetWeightNum < currentWeightNum);
   
-  const monthlyRate = isLossGoal ? 3.2 : isGainGoal ? 1.3 : 0;
+  const normalizedGoal = (profile.goal || "").toLowerCase().trim();
+  const isGoalFatLoss =
+    normalizedGoal.includes("fat") ||
+    normalizedGoal.includes("cut") ||
+    normalizedGoal.includes("loss") ||
+    normalizedGoal.includes("lose");
+  const isGoalMuscleGain =
+    normalizedGoal.includes("muscle") ||
+    normalizedGoal.includes("bulk") ||
+    normalizedGoal.includes("gain") ||
+    normalizedGoal.includes("mass");
+  const isGoalRecomp =
+    normalizedGoal.includes("maintain") ||
+    normalizedGoal.includes("recomp") ||
+    normalizedGoal.includes("strength") ||
+    normalizedGoal.includes("fitness") ||
+    normalizedGoal.includes("lose fat + build muscle");
+
+  const isMaintainGoal = diffKg < 0.5 || (isGoalRecomp && diffKg <= 1.5);
+  const isLossGoal = !isMaintainGoal && ((currentWeightNum !== null && targetWeightNum !== null && currentWeightNum > targetWeightNum) || (isGoalFatLoss && !isGoalMuscleGain));
+  const isGainGoal = !isMaintainGoal && !isLossGoal;
+
+  const isFemale = (profile.gender || onboardingData.gender || "").toLowerCase().startsWith("f");
+  const monthlyRate = isLossGoal ? (isFemale ? 2.4 : 3.2) : isGainGoal ? (isFemale ? 0.7 : 1.3) : 0;
   const totalMonthsExact = monthlyRate > 0 && diffKg > 0 ? diffKg / monthlyRate : 3;
   const totalMonths = Math.max(1, Math.round(totalMonthsExact * 10) / 10);
   const totalWeeks = Math.max(4, Math.round(totalMonths * 4.3));
 
   const impliedMonthlyRate = diffKg > 0 && deadlineDays && deadlineDays > 0 ? (diffKg / deadlineDays) * 30.4 : 0;
-  const isScientificallyUnrealistic = Boolean(deadlineDays && diffKg >= 4 && ((isGainGoal && impliedMonthlyRate > 2.0) || (isLossGoal && impliedMonthlyRate > 4.5)));
+  const maxSafeRate = isLossGoal ? (isFemale ? 3.2 : 4.5) : isGainGoal ? (isFemale ? 1.0 : 2.0) : 999;
+  const isScientificallyUnrealistic = Boolean(deadlineDays && diffKg >= 4 && !isMaintainGoal && impliedMonthlyRate > maxSafeRate);
 
   // If user did NOT specify a deadline, it is NEVER unrealistic!
   const isTimeframeRealistic = deadlineDays ? (isScientificallyUnrealistic ? false : Boolean(realityCheck.is_timeframe_realistic ?? true)) : true;
@@ -334,47 +355,82 @@ export default async function AIStartingReportPage({
 
   // Handle case where user DID NOT specify a deadline
   if (!deadlineDays) {
-    // If the saved AI assessment mistakenly injected a fake "60 days" or warned of an unhealthy deficit in 60 days:
-    if (displayedAssessment.includes("60 days") || displayedAssessment.includes("60-day") || !isTimeframeRealistic || displayedAssessment.includes("unhealthy deficit") || displayedAssessment.includes("extreme, unhealthy")) {
-      if (isLossGoal && diffKg >= 4) {
-        displayedAssessment = `Since you haven't set a rushed deadline, we're taking the smart, scientific approach. Dropping ${diffKg} kg at a safe, sustainable pace of ~3.0 to 3.5 kg/month will take approximately ${totalMonths} months (~${totalWeeks} weeks). This protects your metabolism, retains 100% of your lean muscle, and ensures the fat stays off permanently! In your 3-month Launch Phase, we're targeting your first ~9 kg of fat loss.`;
+    const hasHallucinatedWindow = /\b\d+\s*(?:days?|weeks?|months?)\b/i.test(displayedAssessment);
+    const hasNegativeWarning = displayedAssessment.includes("unhealthy") || displayedAssessment.includes("deficit") || displayedAssessment.includes("extreme") || displayedAssessment.includes("starvation");
+    const hasInvalidText = !displayedAssessment || !isTimeframeRealistic || hasHallucinatedWindow || hasNegativeWarning || displayedAssessment.includes("60-day") || displayedAssessment.includes("Listen bro, dropping");
+
+    if (hasInvalidText) {
+      if (isLossGoal && diffKg >= 1) {
+        const p1TargetLoss = Math.min(diffKg, isFemale ? 7 : 9);
+        displayedAssessment = totalMonths <= 3
+          ? `Since you haven't set a rushed deadline, we're taking the smart, scientific approach. Dropping ${diffKg} kg at a safe, sustainable pace will take approximately ${totalMonths} ${totalMonths === 1 ? "month" : "months"} (~${totalWeeks} weeks). This protects your metabolism, retains 100% of your lean muscle, and ensures the fat stays off permanently!`
+          : `Since you haven't set a rushed deadline, we're taking the smart, scientific approach. Dropping ${diffKg} kg at a safe, sustainable pace of ~${isFemale ? "2.0 to 2.5" : "3.0 to 3.5"} kg/month will take approximately ${totalMonths} months (~${totalWeeks} weeks). This protects your metabolism, retains 100% of your lean muscle, and ensures the fat stays off permanently! In your 3-month Launch Phase, we're targeting your first ~${p1TargetLoss} kg of fat loss.`;
         displayedAchievableList = [
-          "Drop ~3.0 to 3.5 kg of pure body fat each month safely",
-          "Complete Phase 1 (first 3 months) dropping ~9 kg of fat",
+          `Drop ~${isFemale ? "2.0 to 2.5" : "3.0 to 3.5"} kg of pure body fat each month safely`,
+          totalMonths <= 3 ? `Reach your full target weight of ${targetWeightNum} kg safely` : `Complete Phase 1 (first 3 months) dropping ~${p1TargetLoss} kg of fat`,
           "Maintain 100% of lean muscle and active metabolic rate",
           "Build consistent daily activity and nutrition habits with zero crash dieting",
         ];
-      } else if (isGainGoal && diffKg >= 3) {
-        displayedAssessment = `Since you haven't set a rushed deadline, we're taking the smart, scientific approach. Gaining ${diffKg} kg of quality lean mass at a clean rate of ~1.0 to 1.5 kg/month will take approximately ${totalMonths} months (~${totalWeeks} weeks). This minimizes unwanted body fat and builds solid functional strength. In your 3-month Launch Phase, we're targeting your first ~3.5 kg of lean muscle!`;
+      } else if (isGainGoal && diffKg >= 1) {
+        const p1TargetGain = Math.min(diffKg, isFemale ? 2 : 3.5);
+        displayedAssessment = totalMonths <= 3
+          ? `Since you haven't set a rushed deadline, we're taking the smart, scientific approach. Gaining ${diffKg} kg of quality lean mass at a clean rate will take approximately ${totalMonths} ${totalMonths === 1 ? "month" : "months"} (~${totalWeeks} weeks). This minimizes unwanted body fat and builds solid functional strength.`
+          : `Since you haven't set a rushed deadline, we're taking the smart, scientific approach. Gaining ${diffKg} kg of quality lean mass at a clean rate of ~${isFemale ? "0.5 to 0.8" : "1.0 to 1.5"} kg/month will take approximately ${totalMonths} months (~${totalWeeks} weeks). This minimizes unwanted body fat and builds solid functional strength. In your 3-month Launch Phase, we're targeting your first ~${p1TargetGain} kg of lean muscle!`;
         displayedAchievableList = [
-          "Gain ~1.0 to 1.5 kg of solid lean muscle each month safely",
+          `Gain ~${isFemale ? "0.5 to 0.8" : "1.0 to 1.5"} kg of solid lean muscle each month safely`,
           "Noticeable increases in compound lifting strength and stamina",
           "Consistent high-protein nutrition routine without force-feeding",
           `Clear foundation laid for your full ${targetWeightNum || 65} kg goal`,
         ];
-      } else {
-        displayedAssessment = `Since you haven't set a rushed deadline, we are focusing on steady, consistent habit building. We're gonna lock in your daily routine and crush this step by step!`;
+      } else if (normalizedGoal.includes("recomp") || normalizedGoal.includes("lose fat + build muscle")) {
+        displayedAssessment = "Since you haven't set a rushed deadline, we're taking the smart, scientific approach with body recomposition. We're keeping your weight stable while simultaneously dropping body fat and packing on lean muscle. Your clothes will fit looser, your waistline will tighten, and your compound lifts will climb!";
         displayedAchievableList = [
-          "Consistent workout habit built",
-          "Measurable jump in functional strength",
-          "Clear progress in body composition and energy levels",
+          "Simultaneous fat loss and muscle gain (recomposition)",
+          "Noticeable waistline reduction while shoulders & chest firm up",
+          "Consistent weekly strength PRs on core lifts",
+          "High-protein daily nutrition habits locked in",
+        ];
+      } else if (normalizedGoal.includes("strength")) {
+        displayedAssessment = "Since you haven't set a rushed deadline, we're focusing on pure progressive overload and compound strength. We're going to dial in your lifting technique, build raw power, and push your numbers up safely week after week!";
+        displayedAchievableList = [
+          "Measurable jump in bench, squat, and deadlift numbers",
+          "Enhanced tendon and joint stability under load",
+          "Consistent workout habit and recovery routine built",
+          "Rock-solid foundational strength established",
+        ];
+      } else if (normalizedGoal.includes("fitness")) {
+        displayedAssessment = "Since you haven't set a rushed deadline, we're building balanced athleticism, cardiovascular conditioning, and functional endurance. We're gonna lock in your daily routine and have you moving with peak stamina!";
+        displayedAchievableList = [
+          "Noticeable jump in stamina and workout recovery",
+          "Improved cardiovascular capacity and daily energy",
+          "Consistent workout habit and movement rhythm",
+          "High functional mobility and reduced fatigue",
+        ];
+      } else {
+        displayedAssessment = "Since you haven't set a rushed deadline, we are focused on maintaining your current physique while enhancing muscular density, posture, and metabolic health. We're gonna lock in your daily routine and crush this step by step!";
+        displayedAchievableList = [
+          "Consistent workout and nutrition habit maintained",
+          "Improved muscle tone and athletic posture",
+          "Stable energy levels throughout the day",
+          "Injury-free training consistency",
         ];
       }
     }
   } else if (isScientificallyUnrealistic) {
     if (isGainGoal) {
-      displayedAssessment = `Listen bro, gaining ${diffKg} kg in your requested ${deadlineDays} days isn't realistic or healthy—trying to gain that fast would mostly build unwanted body fat. In your ${deadlineDays}-day window, a clean, realistic target is ~2.5 to 3.5 kg of solid lean mass. Reaching ${targetWeightNum || 65} kg safely will take ~${totalMonths} months, and we're locking in the foundation right now!`;
+      const safeGainInWindow = Math.min(diffKg, Math.max(1.5, Math.round((deadlineDays / 30.4) * (isFemale ? 0.7 : 1.3) * 10) / 10));
+      displayedAssessment = `Listen bro, gaining ${diffKg} kg in your requested ${deadlineDays} days isn't realistic or healthy—trying to gain that fast would mostly build unwanted body fat. In your ${deadlineDays}-day window, a clean, realistic target is ~${safeGainInWindow} kg of solid lean mass. Reaching ${targetWeightNum || 65} kg safely will take ~${totalMonths} months (~${totalWeeks} weeks), and we're locking in the foundation right now!`;
       displayedAchievableList = [
-        "Gain ~2.5 to 3.5 kg of solid lean muscle safely",
+        `Gain ~${safeGainInWindow} kg of solid lean muscle safely`,
         "Measurable jump in functional lifting strength and stamina",
         "Consistent high-protein nutrition routine without force-feeding",
         `Clear foundation laid for your full ${targetWeightNum || 65} kg goal`,
       ];
     } else if (isLossGoal) {
-      const safeLossInWindow = Math.min(diffKg, Math.max(3, Math.round((deadlineDays / 30.4) * 3.2)));
-      displayedAssessment = `Listen bro, dropping ${diffKg} kg in your requested ${deadlineDays} days requires an extreme, unhealthy deficit that burns muscle. In your ${deadlineDays}-day window, dropping ~${Math.max(3, safeLossInWindow - 2)} to ${safeLossInWindow} kg of pure fat is a much safer, sustainable target. Reaching your full ${targetWeightNum || 50} kg goal safely will take ~${totalMonths} months (~${totalWeeks} weeks), and we're gonna crush this step by step!`;
+      const safeLossInWindow = Math.min(diffKg, Math.max(2.5, Math.round((deadlineDays / 30.4) * (isFemale ? 2.4 : 3.2) * 10) / 10));
+      displayedAssessment = `Listen bro, dropping ${diffKg} kg in your requested ${deadlineDays} days requires an extreme, unhealthy deficit that burns muscle. In your ${deadlineDays}-day window, dropping ~${Math.max(2, safeLossInWindow - 2)} to ${safeLossInWindow} kg of pure fat is a much safer, sustainable target. Reaching your full ${targetWeightNum || 50} kg goal safely will take ~${totalMonths} months (~${totalWeeks} weeks), and we're gonna crush this step by step!`;
       displayedAchievableList = [
-        `Drop ~${Math.max(3, safeLossInWindow - 2)} to ${safeLossInWindow} kg of pure body fat safely`,
+        `Drop ~${Math.max(2, safeLossInWindow - 2)} to ${safeLossInWindow} kg of pure body fat safely`,
         "Maintain lean muscle and active metabolic rate",
         "Build consistent daily activity and nutrition habits",
         "Noticeable reduction in waistline and visceral fat",
@@ -628,13 +684,31 @@ export default async function AIStartingReportPage({
             {timelineProjection.map((phase: any, index: number) => {
               const cWeight = typeof profile.weight === "number" && profile.weight > 20 ? profile.weight : 70;
               let tWeight = typeof profile.target_weight === "number" && profile.target_weight > 20 ? profile.target_weight : cWeight;
-              const normGoal = (profile.goal || "").toLowerCase();
-              const isLossGoal = normGoal.includes("fat") || normGoal.includes("cut") || normGoal.includes("loss") || cWeight > tWeight;
-              const isGainGoal = normGoal.includes("muscle") || normGoal.includes("bulk") || normGoal.includes("gain") || tWeight > cWeight;
+              const normGoal = (profile.goal || "").toLowerCase().trim();
+              const isGoalFatLoss =
+                normGoal.includes("fat") ||
+                normGoal.includes("cut") ||
+                normGoal.includes("loss") ||
+                normGoal.includes("lose");
+              const isGoalMuscleGain =
+                normGoal.includes("muscle") ||
+                normGoal.includes("bulk") ||
+                normGoal.includes("gain") ||
+                normGoal.includes("mass");
+              const isGoalRecomp =
+                normGoal.includes("maintain") ||
+                normGoal.includes("recomp") ||
+                normGoal.includes("strength") ||
+                normGoal.includes("fitness") ||
+                normGoal.includes("lose fat + build muscle");
 
-              const isLoss = cWeight > tWeight;
-              const isGain = tWeight > cWeight;
-              const monthlyDelta = isLoss ? -3.0 : isGain ? 1.2 : 0;
+              const totalDiff = Math.round(Math.abs(cWeight - tWeight) * 10) / 10;
+              const isMaintain = totalDiff < 0.5 || (isGoalRecomp && totalDiff <= 1.5);
+              const isLoss = !isMaintain && (cWeight > tWeight || (isGoalFatLoss && !isGoalMuscleGain));
+              const isGain = !isMaintain && !isLoss;
+
+              const isFemale = (profile.gender || onboardingData.gender || "").toLowerCase().startsWith("f");
+              const monthlyDelta = isLoss ? (isFemale ? -2.4 : -3.0) : isGain ? (isFemale ? 0.7 : 1.2) : 0;
               const scientificMilestone = Math.round((cWeight + monthlyDelta * (index + 1)) * 10) / 10;
               const safeMilestone = isLoss ? Math.max(tWeight, scientificMilestone)
                                   : isGain ? Math.min(tWeight, scientificMilestone)
@@ -651,8 +725,9 @@ export default async function AIStartingReportPage({
                 return `~${safeMilestone} kg`;
               })();
 
-              const totalDiff = Math.abs(cWeight - tWeight);
-              const totalMonthsNeeded = (isLoss ? 3.2 : isGain ? 1.3 : 0) > 0 && totalDiff > 0 ? totalDiff / (isLoss ? 3.2 : 1.3) : 3;
+              const totalMonthsNeeded = (isLoss ? (isFemale ? 2.4 : 3.2) : isGain ? (isFemale ? 0.7 : 1.3) : 0) > 0 && totalDiff > 0
+                ? totalDiff / (isLoss ? (isFemale ? 2.4 : 3.2) : (isFemale ? 0.7 : 1.3))
+                : 3;
               const isMultiPhase = totalMonthsNeeded > 3.5;
 
               let timeframeLabel = String(phase.timeframe || `Month ${index + 1}`);
@@ -661,7 +736,7 @@ export default async function AIStartingReportPage({
               }
 
               let expectedChanges = String(phase.expected_changes || "");
-              if (index === 2 && isMultiPhase && (expectedChanges.includes("Dramatic transformation in physical shape") || expectedChanges.includes("Full milestone achievement"))) {
+              if (isMultiPhase && index === 2 && (expectedChanges.includes("Dramatic transformation in physical shape") || expectedChanges.includes("Full milestone achievement"))) {
                 expectedChanges = "End of Phase 1: Noticeable body recomposition and steady habit formation, laying the groundwork for Phase 2.";
               }
 
