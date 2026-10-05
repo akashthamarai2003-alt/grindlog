@@ -3,13 +3,26 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/services/supabase/client";
-import { Camera, Image as ImageIcon, Loader2, ArrowRight, X, Sparkles, ChevronLeft, ShieldCheck } from "lucide-react";
+import { Camera, Image as ImageIcon, Loader2, ArrowRight, X, Sparkles, ChevronLeft, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { BodyScanCameraModal } from "./body-scan-camera-modal";
 
 type ScanImage = {
   file: File;
   previewUrl: string;
+};
+
+const base64ToFile = (dataurl: string, filename: string): File => {
+  const arr = dataurl.split(",");
+  const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
 };
 
 const compressImage = (file: File): Promise<string> => {
@@ -71,6 +84,17 @@ export function ScannerFlow({ isRenew: propIsRenew }: ScannerFlowProps) {
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [cameraModalView, setCameraModalView] = useState<keyof typeof images | null>(null);
+
+  const handleCameraCapture = (base64: string) => {
+    if (!cameraModalView) return;
+    const file = base64ToFile(base64, `${cameraModalView}.jpg`);
+    setImages(prev => ({
+      ...prev,
+      [cameraModalView]: { file, previewUrl: base64 }
+    }));
+    setCameraModalView(null);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, view: keyof typeof images) => {
     const file = e.target.files?.[0];
@@ -153,23 +177,50 @@ export function ScannerFlow({ isRenew: propIsRenew }: ScannerFlowProps) {
           <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden border border-[#ADFF00]/40 shadow-[0_0_15px_rgba(173,255,0,0.15)] bg-[#121E12]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={img.previewUrl} alt={view} className="w-full h-full object-cover" />
-            <button 
-              type="button"
-              onClick={() => removeImage(view)}
-              className="absolute top-2 right-2 p-2 bg-black/70 hover:bg-black/90 backdrop-blur-md rounded-full text-white transition-colors border border-white/10"
-            >
-              <X size={14} />
-            </button>
+            <div className="absolute top-2 right-2 flex items-center gap-1.5">
+              <button 
+                type="button"
+                onClick={() => setCameraModalView(view)}
+                className="p-1.5 bg-black/75 hover:bg-black/90 backdrop-blur-md rounded-full text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all border border-white/10 shadow-md cursor-pointer"
+                title="Retake with Camera"
+              >
+                <Camera size={13} />
+              </button>
+              <button 
+                type="button"
+                onClick={() => removeImage(view)}
+                className="p-1.5 bg-black/75 hover:bg-black/90 backdrop-blur-md rounded-full text-white/80 hover:bg-red-500 hover:text-white transition-all border border-white/10 shadow-md cursor-pointer"
+                title="Remove photo"
+              >
+                <X size={13} />
+              </button>
+            </div>
           </div>
         ) : (
-          <label className="w-full aspect-[3/4] rounded-2xl border-2 border-dashed border-[#1A2619] hover:border-[#ADFF00]/50 hover:bg-[#121E12]/80 bg-[#121E12]/40 transition-all flex flex-col items-center justify-center cursor-pointer group p-3 text-center">
-            <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-[#ADFF00]/15 flex items-center justify-center text-gray-400 group-hover:text-[#ADFF00] transition-colors mb-2 border border-white/5 group-hover:border-[#ADFF00]/30">
+          <div className="relative w-full aspect-[3/4] rounded-2xl border-2 border-dashed border-[#1A2619] hover:border-[#ADFF00]/50 bg-[#121E12]/40 transition-all flex flex-col items-center justify-center p-3 text-center">
+            <div 
+              onClick={() => setCameraModalView(view)}
+              className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#ADFF00]/15 flex items-center justify-center text-gray-400 hover:text-[#ADFF00] transition-colors mb-1.5 border border-white/5 hover:border-[#ADFF00]/30 cursor-pointer"
+            >
               <Camera className="w-5 h-5" />
             </div>
-            <span className="text-xs font-bold text-gray-300 group-hover:text-white">Upload {label}</span>
-            <span className="text-[10px] text-gray-500 mt-1">Tap to capture or choose</span>
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, view)} />
-          </label>
+            <span className="text-xs font-bold text-gray-300">{label}</span>
+            <div className="mt-2.5 flex items-center gap-1 w-full">
+              <button
+                type="button"
+                onClick={() => setCameraModalView(view)}
+                className="flex-1 py-1.5 px-1.5 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black text-[10px] uppercase tracking-wider rounded-lg flex items-center justify-center gap-1 shadow-[0_0_10px_rgba(173,255,0,0.3)] transition-all cursor-pointer"
+              >
+                <Camera size={11} />
+                <span>Camera</span>
+              </button>
+              <label className="flex-1 py-1.5 px-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer">
+                <Upload size={11} />
+                <span>Upload</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, view)} />
+              </label>
+            </div>
+          </div>
         )}
       </div>
     );
@@ -269,6 +320,17 @@ export function ScannerFlow({ isRenew: propIsRenew }: ScannerFlowProps) {
           </button>
         )}
       </div>
+
+      {/* AI Body Scan Live Camera Modal */}
+      {cameraModalView && (
+        <BodyScanCameraModal
+          isOpen={Boolean(cameraModalView)}
+          onClose={() => setCameraModalView(null)}
+          onCapture={handleCameraCapture}
+          viewType={cameraModalView === "goal" ? "goal" : cameraModalView === "front" ? "front" : cameraModalView === "back" ? "back" : "side"}
+          title={`${cameraModalView.toUpperCase()} VIEW BODY SCAN`}
+        />
+      )}
     </div>
   );
 }

@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { OnboardingData, OnboardingSchema } from "@/types/fitness/onboarding";
 import { saveFitnessOnboardingAction } from "@/app/actions/fitness";
-import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, CircleDashed, Shirt, BicepsFlexed, Building2, House, Trees, RefreshCw, Cable, Weight, Armchair, CircleDot, Bike, Footprints, PersonStanding, StretchHorizontal, MoveHorizontal, Landmark, CircleGauge, Grip, Waves, Mountain, Accessibility, Box, Play, CameraOff, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Dumbbell, Scale, Target, Flame, Heart, Info, ChevronRight, ChevronDown, Clock, ListChecks, ArrowRight, User, AlertTriangle, Stethoscope, Activity, Frown, Sparkles, Trash2, Calendar, Globe, Languages, Users, Ruler, CircleDashed, Shirt, BicepsFlexed, Building2, House, Trees, RefreshCw, Cable, Weight, Armchair, CircleDot, Bike, Footprints, PersonStanding, StretchHorizontal, MoveHorizontal, Landmark, CircleGauge, Grip, Waves, Mountain, Accessibility, Box, Play, Camera, CameraOff, Upload, type LucideIcon } from "lucide-react";
 import { BodySilhouette } from "./body-silhouette";
+import { BodyScanCameraModal } from "../scanner/body-scan-camera-modal";
 import { toast } from "sonner";
 import frontImg from "../../../assets/images/placeholder-front.png";
 import backImg from "../../../assets/images/placeholder-back.png";
@@ -182,6 +183,7 @@ export function OnboardingFlow({
   const [showLanguageSheet, setShowLanguageSheet] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
   const [showRestrictions, setShowRestrictions] = useState(false);
+  const [cameraModalField, setCameraModalField] = useState<string | null>(null);
   const router = useRouter();
 
   const totalSteps = 16;
@@ -2465,47 +2467,86 @@ export function OnboardingFlow({
                     <div key={item.field} className="relative">
                       <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider text-center">{item.label}</label>
                       <div className={`relative w-full aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
-                        <input type="file" accept="image/*" onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            try {
-                              const compressedBase64 = await compressImage(file);
-                              handleUpdate({ [item.field]: compressedBase64 });
-                            } catch (err) {
-                              console.error("Compression failed", err);
-                            }
-                          }
-                        }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                         {(data as any)[item.field] ? (
-                          <img src={(data as any)[item.field]} className="w-full h-full object-cover rounded-xl" />
+                          <>
+                            <img src={(data as any)[item.field]} className="w-full h-full object-cover rounded-xl" />
+                            <div className="absolute top-2 right-2 z-20 flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setCameraModalField(item.field);
+                                }}
+                                className="w-7 h-7 bg-black/75 backdrop-blur-md rounded-full flex items-center justify-center text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all shadow-md cursor-pointer"
+                                title="Retake with Camera"
+                              >
+                                <Camera size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleUpdate({ [item.field]: undefined });
+                                }}
+                                className="w-7 h-7 bg-black/75 backdrop-blur-md rounded-full flex items-center justify-center text-white/80 hover:bg-red-500 hover:text-white transition-all shadow-md cursor-pointer"
+                                title="Remove photo"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </>
                         ) : (
                           <>
-                        <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
-                          <img 
-                            src={(() => {
-                              const isFemale = data.gender === 'Female';
-                              const isMaleFat = !isFemale && data.goal && data.goal.includes('Fat');
-                              const imgMap: Record<string, any> = {
-                                body_scan_front: isFemale ? frontImgFemale : (isMaleFat ? frontImgMaleFat : frontImg),
-                                body_scan_back: isFemale ? backImgFemale : (isMaleFat ? backImgMaleFat : backImg),
-                                body_scan_left: isFemale ? leftImgFemale : (isMaleFat ? leftImgMaleFat : leftImg),
-                                body_scan_right: isFemale ? rightImgFemale : (isMaleFat ? rightImgMaleFat : rightImg),
-                              };
-                              const img = imgMap[item.field];
-                              return typeof img === 'string' ? img : (img as any).src;
-                            })()}
-                            alt={`${item.label} Reference`}
-                            className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
-                          />
-                        </div>
-                        <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/20 shadow-xl transition-all hover:bg-white/10">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_10px_rgba(173,255,0,0.4)]">
-                              <User className="w-3.5 h-3.5" />
+                            <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
+                              <img 
+                                src={(() => {
+                                  const isFemale = data.gender === 'Female';
+                                  const isMaleFat = !isFemale && data.goal && data.goal.includes('Fat');
+                                  const imgMap: Record<string, any> = {
+                                    body_scan_front: isFemale ? frontImgFemale : (isMaleFat ? frontImgMaleFat : frontImg),
+                                    body_scan_back: isFemale ? backImgFemale : (isMaleFat ? backImgMaleFat : backImg),
+                                    body_scan_left: isFemale ? leftImgFemale : (isMaleFat ? leftImgMaleFat : leftImg),
+                                    body_scan_right: isFemale ? rightImgFemale : (isMaleFat ? rightImgMaleFat : rightImg),
+                                  };
+                                  const img = imgMap[item.field];
+                                  return typeof img === 'string' ? img : (img as any).src;
+                                })()}
+                                alt={`${item.label} Reference`}
+                                className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
+                              />
                             </div>
-                            <span className="text-[11px] font-black text-white uppercase tracking-wider">+ Upload</span>
-                          </div>
-                        </div>
+                            <div className="absolute bottom-2.5 z-10 flex flex-wrap items-center justify-center gap-1.5 px-1 w-full max-w-[95%]">
+                              <button
+                                type="button"
+                                onClick={() => setCameraModalField(item.field)}
+                                className="flex-1 min-w-[68px] py-1.5 px-2 bg-[#ADFF00] hover:bg-[#c4ff33] active:scale-95 text-black rounded-lg font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-[0_0_12px_rgba(173,255,0,0.4)] transition-all cursor-pointer"
+                              >
+                                <Camera size={12} />
+                                <span>Camera</span>
+                              </button>
+                              <label className="flex-1 min-w-[68px] py-1.5 px-2 bg-black/70 hover:bg-black/90 active:scale-95 text-gray-200 border border-white/20 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer">
+                                <Upload size={12} />
+                                <span>Upload</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      try {
+                                        const compressedBase64 = await compressImage(file);
+                                        handleUpdate({ [item.field]: compressedBase64 });
+                                      } catch (err) {
+                                        console.error("Compression failed", err);
+                                      }
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
                           </>
                         )}
                       </div>
@@ -2535,26 +2576,31 @@ export function OnboardingFlow({
                     )}
                   </div>
                   <div className={`relative w-full sm:w-2/3 md:w-1/2 mx-auto aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
-                    <input type="file" accept="image/*" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        try {
-                          const compressedBase64 = await compressImage(file);
-                          handleUpdate({ body_scan_inspiration: compressedBase64, goal_physique_image: compressedBase64, target_physique: undefined });
-                        } catch (err) {
-                          console.error("Compression failed", err);
-                        }
-                      }
-                    }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                     {data.body_scan_inspiration || data.goal_physique_image ? (
                       <>
                         <img src={(data.body_scan_inspiration || data.goal_physique_image) || ""} className="w-full h-full object-cover" />
-                        <button 
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdate({ body_scan_inspiration: undefined, goal_physique_image: undefined }); }}
-                          className="absolute top-2 right-2 z-20 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center hover:bg-red-500/80 transition-colors"
-                        >
-                          <Trash2 size={14} className="text-white" />
-                        </button>
+                        <div className="absolute top-2 right-2 z-20 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setCameraModalField("body_scan_inspiration");
+                            }}
+                            className="w-7 h-7 bg-black/75 backdrop-blur-md rounded-full flex items-center justify-center text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all shadow-md cursor-pointer"
+                            title="Retake with Camera"
+                          >
+                            <Camera size={13} />
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdate({ body_scan_inspiration: undefined, goal_physique_image: undefined }); }}
+                            className="w-7 h-7 bg-black/60 rounded-full flex items-center justify-center hover:bg-red-500/80 transition-colors cursor-pointer"
+                            title="Remove photo"
+                          >
+                            <Trash2 size={13} className="text-white" />
+                          </button>
+                        </div>
                       </>
                     ) : (
                       <>
@@ -2565,13 +2611,35 @@ export function OnboardingFlow({
                             className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
                           />
                         </div>
-                        <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/20 shadow-xl transition-all hover:bg-white/10">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_10px_rgba(173,255,0,0.4)]">
-                              <Sparkles className="w-3.5 h-3.5" />
-                            </div>
-                            <span className="text-[11px] font-black text-white uppercase tracking-wider">+ Upload Goal</span>
-                          </div>
+                        <div className="absolute bottom-3 z-10 flex items-center justify-center gap-2 px-2 w-full max-w-[90%]">
+                          <button
+                            type="button"
+                            onClick={() => setCameraModalField("body_scan_inspiration")}
+                            className="flex-1 py-2 px-3 bg-[#ADFF00] hover:bg-[#c4ff33] active:scale-95 text-black rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(173,255,0,0.4)] transition-all cursor-pointer"
+                          >
+                            <Camera size={14} />
+                            <span>Camera</span>
+                          </button>
+                          <label className="flex-1 py-2 px-3 bg-black/70 hover:bg-black/90 active:scale-95 text-gray-200 border border-white/20 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                            <Upload size={14} />
+                            <span>Upload</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const compressedBase64 = await compressImage(file);
+                                    handleUpdate({ body_scan_inspiration: compressedBase64, goal_physique_image: compressedBase64, target_physique: undefined });
+                                  } catch (err) {
+                                    console.error("Compression failed", err);
+                                  }
+                                }
+                              }}
+                            />
+                          </label>
                         </div>
                       </>
                     )}
@@ -2773,6 +2841,48 @@ export function OnboardingFlow({
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* AI Body Scan Live Camera Modal */}
+        {cameraModalField && (
+          <BodyScanCameraModal
+            isOpen={Boolean(cameraModalField)}
+            onClose={() => setCameraModalField(null)}
+            onCapture={(base64) => {
+              if (cameraModalField === "body_scan_inspiration") {
+                handleUpdate({
+                  body_scan_inspiration: base64,
+                  goal_physique_image: base64,
+                  target_physique: undefined,
+                });
+              } else {
+                handleUpdate({ [cameraModalField]: base64 });
+              }
+              setCameraModalField(null);
+            }}
+            viewType={
+              cameraModalField === "body_scan_front"
+                ? "front"
+                : cameraModalField === "body_scan_back"
+                ? "back"
+                : cameraModalField === "body_scan_left"
+                ? "left"
+                : cameraModalField === "body_scan_right"
+                ? "right"
+                : "inspiration"
+            }
+            title={
+              cameraModalField === "body_scan_front"
+                ? "Front View Body Scan"
+                : cameraModalField === "body_scan_back"
+                ? "Back View Body Scan"
+                : cameraModalField === "body_scan_left"
+                ? "Left Side Profile Scan"
+                : cameraModalField === "body_scan_right"
+                ? "Right Side Profile Scan"
+                : "Goal Inspiration Photo"
+            }
+          />
+        )}
       </div>
     </div>
   );

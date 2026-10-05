@@ -2,10 +2,11 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ArrowLeft, Loader2, X, User, Calendar, CheckCircle2 } from "lucide-react";
+import { Camera, ArrowLeft, Loader2, X, User, Calendar, CheckCircle2, Upload } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { progressClientCache } from "@/lib/api/progress-cache";
+import { BodyScanCameraModal } from "@/components/fitness/scanner/body-scan-camera-modal";
 import frontImg from "@/assets/images/placeholder-front.png";
 import backImg from "@/assets/images/placeholder-back.png";
 import leftImg from "@/assets/images/placeholder-left.png";
@@ -23,6 +24,7 @@ export default function AddScanPage() {
   const [scanDate, setScanDate] = useState(() => getLocalDateString());
   const [isLoading, setIsLoading] = useState(false);
   const [processingField, setProcessingField] = useState<'front' | 'left' | 'right' | 'back' | null>(null);
+  const [cameraModalField, setCameraModalField] = useState<'front' | 'left' | 'right' | 'back' | null>(null);
   const router = useRouter();
   
   const frontInputRef = useRef<HTMLInputElement>(null);
@@ -161,11 +163,10 @@ export default function AddScanPage() {
           {hasImage && <CheckCircle2 className="w-3.5 h-3.5 text-[#ADFF00]" />}
         </div>
         <div 
-          onClick={() => !images[field] && !isProcessing && triggerUpload(field)}
           className={`relative w-full aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${
             hasImage 
               ? 'border-[#ADFF00] bg-[#ADFF00]/10 cursor-default' 
-              : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50 cursor-pointer'
+              : 'border-[#1A2619] bg-[#0D150D]'
           }`}
         >
           <input 
@@ -181,13 +182,24 @@ export default function AddScanPage() {
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={images[field]} className="w-full h-full object-cover rounded-xl" alt={title} />
-              <button 
-                onClick={(e) => { e.stopPropagation(); removeImage(field); }}
-                className="absolute top-2 right-2 w-8 h-8 bg-black/70 rounded-full flex items-center justify-center text-white hover:bg-red-500/90 transition-colors z-20 backdrop-blur-sm shadow-md"
-                title="Remove photo"
-              >
-                <X size={14} strokeWidth={3} />
-              </button>
+              <div className="absolute top-2 right-2 flex items-center gap-1.5 z-20">
+                <button 
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setCameraModalField(field); }}
+                  className="w-7 h-7 bg-black/75 backdrop-blur-md rounded-full flex items-center justify-center text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all shadow-md cursor-pointer"
+                  title="Retake photo with camera"
+                >
+                  <Camera size={13} strokeWidth={2.5} />
+                </button>
+                <button 
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); removeImage(field); }}
+                  className="w-7 h-7 bg-black/70 rounded-full flex items-center justify-center text-white hover:bg-red-500/90 transition-colors backdrop-blur-sm shadow-md cursor-pointer"
+                  title="Remove photo"
+                >
+                  <X size={13} strokeWidth={3} />
+                </button>
+              </div>
             </>
           ) : (
             <>
@@ -199,13 +211,31 @@ export default function AddScanPage() {
                   className={`w-full h-full object-cover object-top transition-opacity duration-300 ${isProcessing ? 'opacity-10 blur-sm' : 'opacity-25 hover:opacity-50'}`}
                 />
               </div>
-              <div className="absolute bottom-4 z-10 flex flex-col items-center justify-center px-4 py-2 bg-black/60 backdrop-blur-md rounded-xl border border-white/10 shadow-xl transition-all hover:bg-black/80">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-[#ADFF00] rounded-full flex items-center justify-center text-black shadow-[0_0_10px_rgba(173,255,0,0.4)]">
-                    {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <User className="w-3.5 h-3.5" />}
-                  </div>
-                  <span className="text-[11px] font-black text-white uppercase tracking-wider">{isProcessing ? "Loading" : "+ Upload"}</span>
-                </div>
+              <div className="absolute bottom-3 z-10 flex items-center justify-center gap-1.5 px-2 w-full max-w-[95%]">
+                <button
+                  type="button"
+                  disabled={isProcessing}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCameraModalField(field);
+                  }}
+                  className="flex-1 py-1.5 px-2 bg-[#ADFF00] hover:bg-[#baff22] active:scale-95 text-black rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-[0_0_12px_rgba(173,255,0,0.3)] transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Camera size={13} />
+                  <span>Camera</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isProcessing}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    triggerUpload(field);
+                  }}
+                  className="flex-1 py-1.5 px-2 bg-black/70 hover:bg-black/90 active:scale-95 text-gray-200 border border-white/20 rounded-lg font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload size={12} />}
+                  <span>{isProcessing ? "Loading" : "Upload"}</span>
+                </button>
               </div>
             </>
           )}
@@ -299,6 +329,21 @@ export default function AddScanPage() {
           </>
         )}
       </button>
+
+      {/* AI Body Scan Live Camera Modal */}
+      {cameraModalField && (
+        <BodyScanCameraModal
+          isOpen={Boolean(cameraModalField)}
+          onClose={() => setCameraModalField(null)}
+          onCapture={(base64) => {
+            setImages((prev) => ({ ...prev, [cameraModalField]: base64 }));
+            setCameraModalField(null);
+            toast.success(`${cameraModalField.charAt(0).toUpperCase() + cameraModalField.slice(1)} view captured`);
+          }}
+          viewType={cameraModalField}
+          title={`${cameraModalField.toUpperCase()} VIEW BODY SCAN`}
+        />
+      )}
     </div>
   );
 }
