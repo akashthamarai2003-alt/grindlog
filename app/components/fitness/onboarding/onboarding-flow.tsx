@@ -515,7 +515,12 @@ export function OnboardingFlow({
           hasMeaningfulChoice(data.exercise_limitations);
       }
       case 13: return data.safety_acknowledged === true;
-      case 14: return Boolean(data.target_physique || data.goal_physique_image || data.body_scan_inspiration);
+      case 14: return Boolean(
+        data.target_physique || 
+        data.goal_physique_image || 
+        data.body_scan_inspiration || 
+        data.body_scan_front
+      );
       default: return false;
     }
   };
@@ -2594,7 +2599,15 @@ export function OnboardingFlow({
                           </button>
                           <button 
                             type="button"
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUpdate({ body_scan_inspiration: undefined, goal_physique_image: undefined }); }}
+                            onClick={(e) => { 
+                              e.preventDefault(); 
+                              e.stopPropagation(); 
+                              handleUpdate({ 
+                                body_scan_inspiration: undefined, 
+                                goal_physique_image: undefined,
+                                target_physique: data.target_physique === "Custom Photo" ? undefined : data.target_physique
+                              }); 
+                            }}
                             className="w-7 h-7 bg-black/60 rounded-full flex items-center justify-center hover:bg-red-500/80 transition-colors cursor-pointer"
                             title="Remove photo"
                           >
@@ -2632,7 +2645,11 @@ export function OnboardingFlow({
                                 if (file) {
                                   try {
                                     const compressedBase64 = await compressImage(file);
-                                    handleUpdate({ body_scan_inspiration: compressedBase64, goal_physique_image: compressedBase64, target_physique: undefined });
+                                    handleUpdate({ 
+                                      body_scan_inspiration: compressedBase64, 
+                                      goal_physique_image: compressedBase64, 
+                                      target_physique: data.target_physique || "Custom Photo" 
+                                    });
                                   } catch (err) {
                                     console.error("Compression failed", err);
                                   }
@@ -2672,7 +2689,12 @@ export function OnboardingFlow({
                           key={opt.id}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          onClick={() => handleUpdate({ target_physique: opt.id as any, body_scan_inspiration: undefined, goal_physique_image: undefined })}
+                          onClick={() => {
+                            const nextTarget = isSelected 
+                              ? ((data.body_scan_inspiration || data.goal_physique_image) ? "Custom Photo" : undefined)
+                              : (opt.id as any);
+                            handleUpdate({ target_physique: nextTarget });
+                          }}
                           className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
                             isSelected 
                               ? "border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_20px_rgba(173,255,0,0.15)]" 
@@ -2760,8 +2782,40 @@ export function OnboardingFlow({
                 { label: "Nutrition", value: `${data.food_type || "Not set"}, ${data.meals_per_day || "Not set"}, ${data.food_environment || "Not set"}`, stepIndex: 8 },
                 { label: "Food & Budget", value: data.nutrition_budget ? `${data.nutrition_budget}, ${data.available_foods?.length || 0} foods` : null, stepIndex: 9 },
                 { label: "Lifestyle", value: `${data.activity_level || "Not set"}, ${data.daily_steps || "Not set"} steps, ${data.sleep_duration || "Not set"} sleep`, stepIndex: 10 },
-                { label: "Health & Safety", value: data.physical_problems?.includes("None") && data.previous_injuries === false ? "No concerns" : "Concerns noted", stepIndex: 12 },
-                { label: "Target Physique & Scan", value: data.target_physique ? `${data.target_physique} (${data.body_scan_front ? 'Photos uploaded' : 'No photos'})` : "Not set", stepIndex: 14 }
+                { 
+                  label: "Target Physique & Scan", 
+                  value: (() => {
+                    const scanCount = [
+                      data.body_scan_front,
+                      data.body_scan_left,
+                      data.body_scan_right,
+                      data.body_scan_back,
+                    ].filter(Boolean).length;
+
+                    const hasScans = scanCount > 0;
+                    const scansText = hasScans 
+                      ? (scanCount === 1 ? "1 photo uploaded" : `${scanCount} photos uploaded`)
+                      : "No photos";
+
+                    const hasGoalPhoto = Boolean(data.goal_physique_image || data.body_scan_inspiration);
+                    const hasPreset = Boolean(data.target_physique && data.target_physique !== "Custom Photo");
+
+                    if (hasPreset && hasGoalPhoto) {
+                      return `${data.target_physique} + Goal Photo (${scansText})`;
+                    }
+                    if (hasPreset) {
+                      return `${data.target_physique} (${scansText})`;
+                    }
+                    if (hasGoalPhoto) {
+                      return `Custom Goal Photo (${scansText})`;
+                    }
+                    if (hasScans) {
+                      return `Custom Physique (${scansText})`;
+                    }
+                    return "Not set";
+                  })(), 
+                  stepIndex: 14 
+                }
               ].map((section, idx) => (
                 <div key={idx} className="bg-[#0D150D] p-4 rounded-2xl border border-[#1A2619] flex justify-between items-center">
                   <div className="pr-4">
@@ -2852,7 +2906,7 @@ export function OnboardingFlow({
                 handleUpdate({
                   body_scan_inspiration: base64,
                   goal_physique_image: base64,
-                  target_physique: undefined,
+                  target_physique: data.target_physique || "Custom Photo",
                 });
               } else {
                 handleUpdate({ [cameraModalField]: base64 });

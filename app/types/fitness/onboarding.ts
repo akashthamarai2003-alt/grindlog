@@ -23,7 +23,8 @@ export const OnboardingSchema = z.object({
     "Men's Physique",
     "Bodybuilder",
     "Sporty",
-    "Strong & Functional"
+    "Strong & Functional",
+    "Custom Photo"
   ]).nullable().optional(),
   goal_physique_image: z.string().nullable().optional(),
   

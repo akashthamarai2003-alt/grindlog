@@ -113,6 +113,9 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
   const dbPayload = { 
     user_id: user.id, 
     ...profileData,
+    target_physique:
+      validData.target_physique ||
+      (validData.goal_physique_image || validData.body_scan_inspiration ? "Custom Photo" : null),
     bmi,
     baseline_calories,
     initial_protein_target,
