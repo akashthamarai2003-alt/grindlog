@@ -156,12 +156,12 @@ export async function POST(req: Request) {
 
     let cachedDraftQuery = supabase
       .from("fitness_os_ai_sessions")
-      .select("id, prompt, response")
+      .select("id, prompt, response, created_at")
       .eq("user_id", user.id)
       .eq("session_type", "plan_generation")
       .order("created_at", { ascending: false })
       .limit(1);
-    if (typeof profile.updated_at === "string" && profile.updated_at) {
+    if (!isRenew && typeof profile.updated_at === "string" && profile.updated_at) {
       cachedDraftQuery = cachedDraftQuery.gte("created_at", profile.updated_at);
     }
 
@@ -310,12 +310,12 @@ export async function POST(req: Request) {
           await new Promise((resolve) => setTimeout(resolve, 2500));
           let latestCachedDraftQuery = supabase
             .from("fitness_os_ai_sessions")
-            .select("prompt, response")
+            .select("prompt, response, created_at")
             .eq("user_id", user.id)
             .eq("session_type", "plan_generation")
             .order("created_at", { ascending: false })
             .limit(1);
-          if (typeof profile.updated_at === "string" && profile.updated_at) {
+          if (!isRenew && typeof profile.updated_at === "string" && profile.updated_at) {
             latestCachedDraftQuery = latestCachedDraftQuery.gte("created_at", profile.updated_at);
           }
           const { data: latestCachedDraft } = await latestCachedDraftQuery.maybeSingle();
