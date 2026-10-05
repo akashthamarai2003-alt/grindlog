@@ -8,6 +8,7 @@ interface ScientificTimeframeCardProps {
   targetDeadlineDays?: number | null;
   targetPhysique?: string | null;
   gender?: string | null;
+  isRenew?: boolean;
 }
 
 interface TimelineMilestone {
@@ -29,6 +30,7 @@ export function ScientificTimeframeCard({
   targetDeadlineDays,
   targetPhysique,
   gender,
+  isRenew = false,
 }: ScientificTimeframeCardProps) {
   // 1. Safe normalization of weights
   const current = typeof currentWeight === "number" && currentWeight > 20 ? Math.round(currentWeight * 10) / 10 : 70;
@@ -547,40 +549,64 @@ export function ScientificTimeframeCard({
 
       {/* Timeline Milestones Table/Cards */}
       <div className="space-y-2.5">
-        {milestones.map((m, idx) => (
-          <div
-            key={idx}
-            className={`rounded-2xl border p-3.5 transition-all ${
-              m.isFinalGoal
-                ? "border-[#ADFF00]/40 bg-[#ADFF00]/10"
-                : m.isPhase1End
-                ? "border-emerald-500/30 bg-[#0D150D]"
-                : "border-white/5 bg-[#0D150D]"
-            }`}
-          >
-            <div className="flex items-start sm:items-center justify-between gap-2 mb-2">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
-                <span
-                  className={`text-xs font-black tracking-wider uppercase whitespace-nowrap ${
-                    m.isFinalGoal ? "text-[#ADFF00]" : "text-white"
-                  }`}
-                >
-                  {m.stage}
-                </span>
-                <span className="text-[11px] font-medium text-gray-400 whitespace-nowrap">
-                  ({m.weeks})
-                </span>
-                {m.isPhase1End && (
-                  <span className="inline-flex items-center rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[9px] font-bold text-emerald-400 uppercase tracking-wider whitespace-nowrap">
-                    Phase 1 End
+        {milestones.map((m, idx) => {
+          const isMonth1Completed = isRenew && m.stage === "MONTH 1";
+          const isMonth2Active = isRenew && m.stage === "MONTH 2";
+
+          return (
+            <div
+              key={idx}
+              className={`rounded-2xl border p-3.5 transition-all ${
+                isMonth2Active
+                  ? "border-[#ADFF00] bg-[#ADFF00]/15 shadow-[0_0_20px_rgba(173,255,0,0.18)] ring-1 ring-[#ADFF00]/50"
+                  : isMonth1Completed
+                  ? "border-emerald-500/40 bg-emerald-950/20"
+                  : m.isFinalGoal
+                  ? "border-[#ADFF00]/40 bg-[#ADFF00]/10"
+                  : m.isPhase1End
+                  ? "border-emerald-500/30 bg-[#0D150D]"
+                  : "border-white/5 bg-[#0D150D]"
+              }`}
+            >
+              <div className="flex items-start sm:items-center justify-between gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                  <span
+                    className={`text-xs font-black tracking-wider uppercase whitespace-nowrap ${
+                      isMonth2Active
+                        ? "text-[#ADFF00]"
+                        : m.isFinalGoal
+                        ? "text-[#ADFF00]"
+                        : isMonth1Completed
+                        ? "text-emerald-400"
+                        : "text-white"
+                    }`}
+                  >
+                    {m.stage}
                   </span>
-                )}
-                {m.isFinalGoal && (
-                  <span className="inline-flex items-center rounded-full bg-[#ADFF00]/20 border border-[#ADFF00]/30 px-2 py-0.5 text-[9px] font-black text-[#ADFF00] uppercase tracking-wider whitespace-nowrap">
-                    Final Goal
+                  <span className="text-[11px] font-medium text-gray-400 whitespace-nowrap">
+                    ({m.weeks})
                   </span>
-                )}
-              </div>
+                  {isMonth1Completed && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[9px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">
+                      ✓ Phase 1 Completed
+                    </span>
+                  )}
+                  {isMonth2Active && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#ADFF00] px-2.5 py-0.5 text-[9px] font-black text-black uppercase tracking-wider whitespace-nowrap shadow-[0_0_10px_rgba(173,255,0,0.5)]">
+                      ⚡ Active Mesocycle 2
+                    </span>
+                  )}
+                  {m.isPhase1End && !isMonth1Completed && (
+                    <span className="inline-flex items-center rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[9px] font-bold text-emerald-400 uppercase tracking-wider whitespace-nowrap">
+                      Phase 1 End
+                    </span>
+                  )}
+                  {m.isFinalGoal && (
+                    <span className="inline-flex items-center rounded-full bg-[#ADFF00]/20 border border-[#ADFF00]/30 px-2 py-0.5 text-[9px] font-black text-[#ADFF00] uppercase tracking-wider whitespace-nowrap">
+                      Final Goal
+                    </span>
+                  )}
+                </div>
 
               {/* Estimated Weight Badge */}
               <div className="shrink-0 flex items-center gap-1.5 whitespace-nowrap pt-0.5 sm:pt-0">
@@ -603,7 +629,8 @@ export function ScientificTimeframeCard({
               {m.takeaway}
             </p>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Why 12-Week Mesocycles Coach Tip */}

@@ -17,6 +17,7 @@ interface BodyScanInsightsCardProps {
   initialHasBodyScan: boolean;
   initialIsAnalyzing?: boolean;
   goalGap?: string | null;
+  isRenew?: boolean;
 }
 
 export function BodyScanInsightsCard({
@@ -24,6 +25,7 @@ export function BodyScanInsightsCard({
   initialHasBodyScan,
   initialIsAnalyzing = false,
   goalGap: initialGoalGap,
+  isRenew = false,
 }: BodyScanInsightsCardProps) {
   const router = useRouter();
   const [insights, setInsights] = useState<BodyScanInsightsData | null>(initialInsights);
@@ -101,10 +103,10 @@ export function BodyScanInsightsCard({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="mb-1 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-            Your body scan insights
+            {isRenew ? "Month-End Check-In Insights" : "Your body scan insights"}
           </p>
           <h2 className="text-lg font-black tracking-tight text-white">
-            What the uploaded photos show
+            {isRenew ? "Month 2 Physique & Progress Check" : "What the uploaded photos show"}
           </h2>
         </div>
 
@@ -125,10 +127,10 @@ export function BodyScanInsightsCard({
         <>
           <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4 transition-all">
             <p className="mb-3 text-xs font-bold tracking-wider text-emerald-400 uppercase">
-              What I notice
+              {isRenew ? "Month 1 Progress Observation" : "What I notice"}
             </p>
             <p className="text-sm leading-relaxed text-gray-300">
-              {insights.overall_summary || "Your photos provide a useful starting point for coaching."}
+              {insights.overall_summary || (isRenew ? "Your check-in photos show solid foundation from Month 1 training." : "Your photos provide a useful starting point for coaching.")}
             </p>
             {insights.observed_strengths && insights.observed_strengths.length > 0 && (
               <ul className="mt-3 space-y-2">
@@ -145,7 +147,7 @@ export function BodyScanInsightsCard({
           {insights.priority_improvements && insights.priority_improvements.length > 0 && (
             <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4 transition-all">
               <p className="mb-2 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-                Your first priorities
+                {isRenew ? "Month 2 Training Priorities" : "Your first priorities"}
               </p>
               <ul className="space-y-2">
                 {insights.priority_improvements.map((item, index) => (

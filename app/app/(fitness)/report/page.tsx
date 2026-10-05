@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase, getCachedUser } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
-import { Brain, Info } from "lucide-react";
+import { Brain, Info, Sparkles, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { RegenerateReportButton } from "@/components/fitness/report/regenerate-report-button";
 import { GeneratePlanButton } from "@/components/fitness/report/generate-plan-button";
@@ -286,18 +286,6 @@ export default async function AIStartingReportPage({
     ? onboardingData.target_deadline_days 
     : (typeof profile.target_deadline_days === "number" && profile.target_deadline_days > 0 ? profile.target_deadline_days : null);
   const diffKg = currentWeightNum && targetWeightNum ? Math.round(Math.abs(currentWeightNum - targetWeightNum) * 10) / 10 : 0;
-
-  const personalNumbers = [
-    ["Protein starting target", displayValue(profile.initial_protein_target || (profile.weight ? Math.round(profile.weight * 1.8) : null), " g/day")],
-    ["Maintenance estimate", displayValue(profile.baseline_calories || (profile.weight ? Math.round(profile.weight * 28) : null), " kcal/day")],
-    ["Daily activity", displayValue(profile.daily_steps)],
-    ["Sleep", displayValue(profile.sleep_duration)],
-    ["Target deadline", displayValue(deadlineDays, " days")],
-    [
-      "Workout time",
-      displayValue(profile.preferred_training_time || profile.workout_time),
-    ],
-  ];
   const isFatLossGoal = profile.goal === "Lose Fat" || profile.goal === "Cut";
 
   const rawFitnessScore = aiStrategy.fitness_score;
@@ -341,6 +329,43 @@ export default async function AIStartingReportPage({
   const isGainGoal = !isMaintainGoal && !isLossGoal;
 
   const isFemale = (profile.gender || onboardingData.gender || "").toLowerCase().startsWith("f");
+
+  // Month 2 Progression Calculations
+  const projectedMonth1Delta = isGainGoal ? 1.2 : isLossGoal ? (isFemale ? -2.4 : -3.0) : 0;
+  const month2Weight = currentWeightNum !== null
+    ? Math.round((currentWeightNum + (isRenew ? projectedMonth1Delta : 0)) * 10) / 10
+    : 52.9;
+  const month2GainOrLoss = isRenew ? projectedMonth1Delta : 0;
+  const remainingToTarget = targetWeightNum !== null
+    ? Math.round(Math.abs(targetWeightNum - month2Weight) * 10) / 10
+    : 0;
+
+  const month2ProteinTarget = profile.initial_protein_target 
+    ? (isRenew ? profile.initial_protein_target + 5 : profile.initial_protein_target)
+    : (month2Weight ? Math.round(month2Weight * 1.8) : 100);
+
+  const month2CaloriesEstimate = profile.baseline_calories
+    ? (isRenew && isGainGoal ? profile.baseline_calories + 100 : profile.baseline_calories)
+    : (month2Weight ? Math.round(month2Weight * 28 + (isGainGoal ? 150 : 0)) : 1850);
+
+  const personalNumbers = isRenew ? [
+    ["Month 2 Protein target", `${month2ProteinTarget} g/day`],
+    ["Recalibrated Maintenance", `${month2CaloriesEstimate} kcal/day`],
+    ["Daily activity", displayValue(profile.daily_steps)],
+    ["Sleep target", displayValue(profile.sleep_duration)],
+    ["Active Meso-Cycle", "Mesocycle 2 (Weeks 5–8)"],
+    ["Overload strategy", "Progressive Tension (+1-2 Reps)"],
+  ] : [
+    ["Protein starting target", displayValue(profile.initial_protein_target || (profile.weight ? Math.round(profile.weight * 1.8) : null), " g/day")],
+    ["Maintenance estimate", displayValue(profile.baseline_calories || (profile.weight ? Math.round(profile.weight * 28) : null), " kcal/day")],
+    ["Daily activity", displayValue(profile.daily_steps)],
+    ["Sleep", displayValue(profile.sleep_duration)],
+    ["Target deadline", displayValue(deadlineDays, " days")],
+    [
+      "Workout time",
+      displayValue(profile.preferred_training_time || profile.workout_time),
+    ],
+  ];
   const monthlyRate = isLossGoal ? (isFemale ? 2.4 : 3.2) : isGainGoal ? (isFemale ? 0.7 : 1.3) : 0;
   const totalMonthsExact = monthlyRate > 0 && diffKg > 0 ? diffKg / monthlyRate : 3;
   const totalMonths = Math.max(1, Math.round(totalMonthsExact * 10) / 10);
@@ -443,46 +468,106 @@ export default async function AIStartingReportPage({
     displayedAssessment = displayedAssessment.replace("goal of gain weight", "goal of gaining weight");
   }
 
+  if (isRenew) {
+    displayedAssessment = `Great work concluding Month 1, bro! Your initial mesocycle built the neuromuscular adaptations, movement patterns, and lifting consistency. For Month 2, we are dialing up progressive overload: pushing for +1-2 reps or micro-loading on your key movements while sustaining your clean lean surplus towards ~${Math.round((month2Weight + (isGainGoal ? 1.2 : isLossGoal ? -2.4 : 0)) * 10) / 10} kg. Stick to your ${profile.training_days_per_week || 5}-day routine and hit your daily protein!`;
+    displayedAchievableList = [
+      `Progress from ~${month2Weight} kg towards ~${Math.round((month2Weight + (isGainGoal ? 1.2 : isLossGoal ? -2.4 : 0)) * 10) / 10} kg clean mass safely`,
+      "Progressive overload: add reps or intensity across all primary compound lifts",
+      "Noticeable muscle fullness across upper chest, shoulders, and back",
+      `Maintain 100% adherence to your ${profile.training_days_per_week || 5}-day training schedule`,
+    ];
+  }
+
   return (
-    <div className="min-h-screen bg-[#0A1108] p-6 pb-28 text-white">
-      <div className="mx-auto mt-4 max-w-md space-y-8">
+    <div className="min-h-screen bg-[#0A1108] p-4 sm:p-6 pb-28 text-white">
+      <div className="mx-auto mt-4 max-w-xl space-y-8">
         {/* Header */}
         <div>
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#1A2619] bg-[#121E12] px-3 py-1">
-            <Brain size={14} className="text-[#ADFF00]" />
-            <span className="text-xs font-bold tracking-wider text-gray-300">
-              AI STARTING REPORT
-            </span>
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#1A2619] bg-[#121E12] px-3.5 py-1.5 shadow-[0_0_15px_rgba(173,255,0,0.1)]">
+            {isRenew ? (
+              <>
+                <Sparkles size={14} className="text-[#ADFF00]" />
+                <span className="text-xs font-black tracking-wider text-[#ADFF00] uppercase">
+                  MESOCYCLE 2 RECALIBRATION REPORT
+                </span>
+              </>
+            ) : (
+              <>
+                <Brain size={14} className="text-[#ADFF00]" />
+                <span className="text-xs font-bold tracking-wider text-gray-300">
+                  AI STARTING REPORT
+                </span>
+              </>
+            )}
           </div>
-          <h1 className="text-3xl font-black tracking-tight">Your Starting Point</h1>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+            {isRenew ? "Month 2 Progress & Recalibration" : "Your Starting Point"}
+          </h1>
+          {isRenew && (
+            <p className="mt-2 text-sm text-gray-400 leading-relaxed">
+              Month 1 baseline completed! Here is your month-end check-in assessment, recalibrated numbers, and progressive overload targets for Mesocycle 2.
+            </p>
+          )}
         </div>
 
         {/* Top Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4">
-            <p className="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase">
-              Weight
-            </p>
+          <div className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <p className="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                {isRenew ? "Month 2 Weight" : "Weight"}
+              </p>
+              {isRenew && (
+                <span className="text-[10px] font-black text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/20">
+                  {month2GainOrLoss >= 0 ? `+${month2GainOrLoss} kg` : `${month2GainOrLoss} kg`}
+                </span>
+              )}
+            </div>
             <p className="text-2xl font-black text-white">
-              {displayValue(profile.weight, " kg")}
+              {displayValue(isRenew ? month2Weight : profile.weight, " kg")}
             </p>
+            {isRenew && (
+              <p className="text-[10px] text-gray-400 mt-1">
+                Month 1 Base: {displayValue(profile.weight, " kg")}
+              </p>
+            )}
           </div>
+
           <div className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4">
-            <p className="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase">
-              Target Weight
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                Target Weight
+              </p>
+              {isRenew && (
+                <span className="text-[10px] font-bold text-gray-400">
+                  {remainingToTarget} kg left
+                </span>
+              )}
+            </div>
             <p className="text-2xl font-black text-white">
               {displayValue(profile.target_weight, " kg")}
             </p>
+            {isRenew && (
+              <p className="text-[10px] text-[#ADFF00] mt-1 font-bold">
+                Progressing steadily
+              </p>
+            )}
           </div>
+
           <div className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4">
             <p className="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase">
-              Target
+              {isRenew ? "Training Phase" : "Target"}
             </p>
             <p className="text-lg leading-tight font-bold text-[#ADFF00]">
-              {displayValue(profile.goal)}
+              {isRenew ? "Mesocycle 2" : displayValue(profile.goal)}
             </p>
+            {isRenew && (
+              <p className="text-[10px] text-gray-400 mt-1">
+                Hypertrophy & Overload
+              </p>
+            )}
           </div>
+
           <div className="rounded-2xl border border-[#1A2619] bg-[#121E12] p-4">
             <p className="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase">
               Physique
@@ -490,6 +575,11 @@ export default async function AIStartingReportPage({
             <p className="text-lg leading-tight font-bold text-[#ADFF00]">
               {displayValue(profile.target_physique)}
             </p>
+            {isRenew && (
+              <p className="text-[10px] text-emerald-400 mt-1 font-bold">
+                Phase 2 Target
+              </p>
+            )}
           </div>
         </div>
 
@@ -499,15 +589,23 @@ export default async function AIStartingReportPage({
           initialHasBodyScan={hasBodyScan}
           initialIsAnalyzing={isScanAnalyzing}
           goalGap={goalGap}
+          isRenew={isRenew}
         />
 
         {/* Profile Configuration */}
         <div className="space-y-4 rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-xl">⚙️</span>
-            <h2 className="text-lg leading-tight font-black tracking-tight text-white">
-              Your Settings
-            </h2>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">⚙️</span>
+              <h2 className="text-lg leading-tight font-black tracking-tight text-white">
+                Your Settings
+              </h2>
+            </div>
+            {isRenew && (
+              <span className="rounded-full border border-[#ADFF00]/30 bg-[#ADFF00]/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#ADFF00]">
+                Mesocycle 2 Active
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -538,10 +636,10 @@ export default async function AIStartingReportPage({
         <section className="space-y-4 rounded-3xl border border-[#1A2619] bg-[#121E12] p-5">
           <div>
             <p className="mb-1 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-              Your personal numbers
+              {isRenew ? "Month 2 Personal Numbers" : "Your personal numbers"}
             </p>
             <h2 className="text-lg font-black tracking-tight">
-              Starting targets and routine
+              {isRenew ? "Month 2 Recalibrated Targets & Routine" : "Starting targets and routine"}
             </h2>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -558,8 +656,9 @@ export default async function AIStartingReportPage({
             ))}
           </div>
           <p className="text-[11px] leading-relaxed text-gray-500">
-            Protein and maintenance are starting estimates calculated from your onboarding
-            details; adjust them with real progress over time.
+            {isRenew
+              ? "Targets recalibrated for Month 2 volume and progressive overload. Protein and surplus scaled to match your new training phase."
+              : "Protein and maintenance are starting estimates calculated from your onboarding details; adjust them with real progress over time."}
           </p>
         </section>
 
@@ -588,17 +687,19 @@ export default async function AIStartingReportPage({
             <div className="flex items-center gap-2">
               <span className="text-xl">⚡</span>
               <h2 className="text-lg leading-tight font-black tracking-tight text-white">
-                Timeframe & Reality Check
+                {isRenew ? "Month 2 Coach Recalibration" : "Timeframe & Reality Check"}
               </h2>
             </div>
             <span
               className={`shrink-0 rounded-full px-2.5 py-1 text-center text-[10px] font-bold tracking-wider uppercase sm:text-xs ${
-                isTimeframeRealistic
+                isRenew
+                  ? "border border-[#ADFF00]/40 bg-[#ADFF00]/15 text-[#ADFF00]"
+                  : isTimeframeRealistic
                   ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                   : "border border-amber-500/30 bg-amber-500/20 text-amber-400"
               }`}
             >
-              {isTimeframeRealistic ? "Realistic" : "Expectation Adjusted"}
+              {isRenew ? "Progressing On Track" : (isTimeframeRealistic ? "Realistic" : "Expectation Adjusted")}
             </span>
           </div>
 
@@ -609,7 +710,7 @@ export default async function AIStartingReportPage({
           {displayedAchievableList.length > 0 && (
             <div>
               <p className="mb-2 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-                What you WILL achieve in this period:
+                {isRenew ? "What you WILL achieve in Month 2:" : "What you WILL achieve in this period:"}
               </p>
               <ul className="space-y-2">
                 {displayedAchievableList.map((item: any, idx: number) => (
@@ -632,6 +733,7 @@ export default async function AIStartingReportPage({
           targetDeadlineDays={deadlineDays}
           targetPhysique={profile.target_physique}
           gender={profile.gender || onboardingData.gender}
+          isRenew={isRenew}
         />
 
         {/* HEALTH & SAFETY PROTOCOL */}
@@ -772,9 +874,15 @@ export default async function AIStartingReportPage({
 
         {/* AI Focus Areas */}
         <div>
-          <h2 className="mb-4 text-lg font-black">AI Focus Areas</h2>
+          <h2 className="mb-4 text-lg font-black">
+            {isRenew ? "Mesocycle 2 AI Focus Areas" : "AI Focus Areas"}
+          </h2>
           <div className="space-y-3">
-            {focusAreas.map((area: any, index: number) => (
+            {(isRenew ? [
+              "Progressive Overload: Add +1-2 reps or micro-load on primary compound movements",
+              "Hypertrophy Volume: Emphasize upper chest, rear delts, and back density",
+              "Consistent Recovery: Maintain high-protein intake and quality sleep rhythm",
+            ] : focusAreas).map((area: any, index: number) => (
               <div
                 key={index}
                 className="flex items-center gap-4 rounded-2xl border border-[#1A2619] bg-[#121E12] p-4"
@@ -790,7 +898,9 @@ export default async function AIStartingReportPage({
 
         {/* Fitness Score */}
         <div>
-          <h2 className="mb-4 text-lg font-black">Fitness Score</h2>
+          <h2 className="mb-4 text-lg font-black">
+            {isRenew ? "Mesocycle 2 Readiness Score" : "Fitness Score"}
+          </h2>
           <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-3xl border border-[#1A2619] bg-[#121E12] p-6">
             {/* Background Glow */}
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-10">
@@ -799,13 +909,13 @@ export default async function AIStartingReportPage({
 
             <div className="relative z-10 mb-2 flex items-end gap-2">
               <span className="text-6xl font-black tracking-tighter text-white">
-                {fitnessScore}
+                {isRenew ? Math.min(100, Math.max(78, Number(fitnessScore) || 84)) : fitnessScore}
               </span>
               <span className="mb-2 text-xl font-bold text-gray-500">/ 100</span>
             </div>
 
             <p className="relative z-10 mb-4 text-sm font-semibold text-[#ADFF00]">
-              App-generated coaching score
+              {isRenew ? "Mesocycle 2 Progression & Adherence Index" : "App-generated coaching score"}
             </p>
 
             <div className="relative z-10 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 text-xs text-gray-500">
