@@ -9,13 +9,17 @@ import { checkUserPremiumStatusAction, markStartingReportViewedAction } from "@/
 export function GeneratePlanButton({
   isRenew,
   isSubscribed: initialSubscribed,
+  needsPayment: initialNeedsPayment,
 }: {
   isRenew?: boolean;
   isSubscribed?: boolean;
+  needsPayment?: boolean;
 }) {
   const router = useRouter();
   const [isPreparing, setIsPreparing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(initialSubscribed ?? false);
+
+  const requiresPayment = initialNeedsPayment ?? !isSubscribed;
 
   useEffect(() => {
     if (initialSubscribed !== undefined) {
@@ -23,7 +27,7 @@ export function GeneratePlanButton({
     }
     const renewSuffix = isRenew ? "&renew=true" : "";
     const renewQuery = isRenew ? "?renew=true" : "";
-    router.prefetch(`/payment?returnTo=/plan-setup${renewSuffix}&intent=generate_plan`);
+    router.prefetch(`/payment?plan=pro&returnTo=/plan-setup${renewSuffix}&intent=${isRenew ? "renew" : "generate_plan"}`);
     router.prefetch(`/plan-setup${renewQuery}`);
     if (initialSubscribed === undefined) {
       checkUserPremiumStatusAction(undefined, undefined, "fitness_os").then((res) => {
@@ -43,9 +47,9 @@ export function GeneratePlanButton({
   const handleAnimationComplete = () => {
     const renewSuffix = isRenew ? "&renew=true" : "";
     const renewQuery = isRenew ? "?renew=true" : "";
-    const targetUrl = isSubscribed
-      ? `/plan-setup${renewQuery}`
-      : `/payment?returnTo=/plan-setup${renewSuffix}&intent=generate_plan`;
+    const targetUrl = requiresPayment
+      ? `/payment?plan=pro&returnTo=/plan-setup${renewSuffix}&intent=${isRenew ? "renew" : "generate_plan"}`
+      : `/plan-setup${renewQuery}`;
     router.push(targetUrl);
   };
 
@@ -55,17 +59,19 @@ export function GeneratePlanButton({
         type="button"
         onClick={handleClick}
         disabled={isPreparing}
-        className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-[#ADFF00] py-4 text-lg font-extrabold text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] transition-transform hover:bg-[#c4ff33] active:scale-[0.98] disabled:cursor-wait disabled:opacity-90"
+        className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-[#ADFF00] py-4 text-base sm:text-lg font-black uppercase tracking-wider text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] transition-transform hover:bg-[#c4ff33] active:scale-[0.98] disabled:cursor-wait disabled:opacity-90"
       >
         <span className="relative flex items-center gap-2">
           {isPreparing ? (
             <>
-              <Loader2 size={20} className="animate-spin" />
-              Preparing your personalized plan…
+              <Loader2 size={20} className="animate-spin text-black" />
+              Preparing your Month 2 plan…
             </>
           ) : (
             <>
-              {isRenew ? "Generate Month 2 Plan" : "Generate My Plan"}
+              {isRenew 
+                ? (requiresPayment ? "Unlock Month 2 Meso-Cycle ⚡" : "Generate Month 2 Plan ⚡")
+                : (isSubscribed ? "Generate My Plan" : "Unlock My Plan ⚡")}
               <ArrowRight size={20} />
             </>
           )}

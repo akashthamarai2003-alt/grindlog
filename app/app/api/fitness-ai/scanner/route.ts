@@ -24,8 +24,23 @@ export async function POST(req: NextRequest) {
     const rateLimitRes = enforceRateLimit(req, "ai", user.id);
     if (rateLimitRes) return rateLimitRes;
 
-    // 3. Subscription authorization (server-side only)
-    if (!(await canUseFitnessFeature(user.id, "advanced_progress_analysis"))) {
+    // 3. Subscription authorization: active Pro OR prior Pro member performing renewal check-in
+    const isPro = await canUseFitnessFeature(user.id, "advanced_progress_analysis");
+    const isCheckin = req.headers.get("x-checkin") === "true" || req.nextUrl.searchParams.get("mode") === "checkin";
+    
+    let isEligibleCheckin = false;
+    if (!isPro && isCheckin) {
+      const { data: profile } = await supabase
+        .from("fitness_os_profiles")
+        .select("fitness_is_premium, fitness_premium_tier, fitness_premium_level")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (profile?.fitness_is_premium || profile?.fitness_premium_tier || profile?.fitness_premium_level === "pro") {
+        isEligibleCheckin = true;
+      }
+    }
+
+    if (!isPro && !isEligibleCheckin) {
       return NextResponse.json(
         {
           success: false,

@@ -171,7 +171,12 @@ export default function FitnessPaymentClient({
       new Date(renewalExpiresAt).getTime() < Date.now()
     )
   );
-  const isRenewal = searchParams.get("intent") === "renew_monthly" || isExpiredSubscriber;
+  const isRenewal = 
+    searchParams.get("intent") === "renew_monthly" || 
+    searchParams.get("intent") === "renew" || 
+    searchParams.get("renew") === "true" || 
+    (searchParams.get("returnTo") || "").includes("renew=true") || 
+    isExpiredSubscriber;
   const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
   // Plan purchases and monthly renewals go straight to setup
   const returnTo = isPlanGenerationIntent

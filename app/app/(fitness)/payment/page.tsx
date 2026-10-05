@@ -46,9 +46,11 @@ export default async function FitnessPaymentPage({
   );
 
   const daysRemaining = subscriptionState?.daysRemaining ?? 30;
-  const isEarlyRenewalWindow = daysRemaining <= 5 || Boolean(subscriptionState?.isGracePeriod);
+  const returnToParam = typeof resolvedParams.returnTo === "string" ? resolvedParams.returnTo : "";
+  const isRenewalIntent = intent === "renew" || intent === "renew_monthly" || returnToParam.includes("renew=true") || resolvedParams.renew === "true";
+  const isEarlyRenewalWindow = daysRemaining <= 7 || Boolean(subscriptionState?.isGracePeriod) || isRenewalIntent;
 
-  // If user is already active Pro with plenty of time left (>5 days) and NO renewal/setup intent, return to dashboard
+  // If user is already active Pro with plenty of time left (>7 days) and NO renewal/setup intent, return to dashboard
   if (user && isActivePro && !isEarlyRenewalWindow && !intent) {
     redirect("/");
   }

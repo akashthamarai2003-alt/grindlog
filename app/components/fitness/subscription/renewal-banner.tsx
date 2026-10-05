@@ -99,7 +99,7 @@ export function RenewalBanner({ state }: { state: FitnessSubscriptionState }) {
             </div>
           </div>
           <Link
-            href={`/payment?intent=renew_monthly&plan=${targetPlanId}&returnTo=${encodeURIComponent("/plan-setup?renew=true")}`}
+            href="/scanner?mode=checkin&renew=true"
             className="fitness-renewal-action px-4 py-2.5 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black uppercase tracking-wider text-xs rounded-xl text-center shadow-[0_0_15px_rgba(173,255,0,0.3)] shrink-0 active:scale-95 transition-all flex items-center justify-center gap-1.5"
           >
             <span>Renew Early ⚡</span>

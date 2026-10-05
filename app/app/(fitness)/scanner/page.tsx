@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function ScannerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ mode?: string; refresh?: string }>;
+  searchParams?: Promise<{ mode?: string; refresh?: string; renew?: string }>;
 }) {
   const resolvedParams = searchParams ? await searchParams : {};
   const supabase = await createServerSupabase();
@@ -28,7 +28,7 @@ export default async function ScannerPage({
     .limit(1)
     .maybeSingle();
 
-  const isCheckin = resolvedParams.mode === "checkin" || resolvedParams.mode === "renew" || resolvedParams.mode === "update";
+  const isCheckin = resolvedParams.mode === "checkin" || resolvedParams.mode === "renew" || resolvedParams.mode === "update" || resolvedParams.renew === "true";
   const planCreatedAt = plan?.created_at ? new Date(plan.created_at) : null;
   const daysOnPlan = planCreatedAt
     ? Math.max(1, Math.floor((Date.now() - planCreatedAt.getTime()) / (1000 * 60 * 60 * 24)))
@@ -40,9 +40,9 @@ export default async function ScannerPage({
   }
 
   return (
-    <FitnessGuard requirePro featureName="advanced body-scan analysis">
-      <div className="min-h-screen bg-gray-50/50 flex flex-col pt-12 pb-24">
-        <ScannerFlow />
+    <FitnessGuard requirePro={!isCheckin} featureName="advanced body-scan analysis">
+      <div className="min-h-screen bg-[#0A1108] text-white flex flex-col pt-6 pb-24">
+        <ScannerFlow isRenew={isCheckin} />
       </div>
     </FitnessGuard>
   );

@@ -198,10 +198,14 @@ export async function POST(req: Request) {
     // Workout plan generation for plan-setup: meals and grocery are empty arrays
     const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount, "starter");
 
-    if (!allowRenewal && cachedDraft?.response) {
+    const draftAgeMs = cachedDraft?.created_at ? Date.now() - new Date(cachedDraft.created_at).getTime() : Infinity;
+    const isRecentRenewalDraft = isRenew && draftAgeMs < 2 * 60 * 60 * 1000;
+    const shouldCheckCache = !isRetry && cachedDraft?.response && (!allowRenewal || isRecentRenewalDraft);
+
+    if (shouldCheckCache) {
       try {
         const cachedPlan = GeneratedPlanSchema.safeParse(
-          JSON.parse(cachedDraft.response),
+          JSON.parse(cachedDraft!.response),
         );
         const safetyCheck = cachedPlan.success
           ? runFitnessAISafetyCheck(cachedPlan.data, profile)

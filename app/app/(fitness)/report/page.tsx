@@ -817,7 +817,11 @@ export default async function AIStartingReportPage({
 
         {/* Continue Button */}
         <div className="pt-4">
-          <GeneratePlanButton isRenew={isRenew} isSubscribed={isPaidUser} />
+          <GeneratePlanButton
+            isRenew={isRenew}
+            isSubscribed={isPaidUser}
+            needsPayment={!isPaidUser || (isRenew && (subscriptionState.daysRemaining <= 7 || subscriptionState.isGracePeriod || subscriptionState.isExpired))}
+          />
         </div>
       </div>
     </div>
