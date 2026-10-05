@@ -790,6 +790,21 @@ export default function FitnessPaymentClient({
           </div>
         )}
 
+        {/* Expired Subscriber Reactivation Alert */}
+        {isRenewal && isExpiredSubscriber && (
+          <div className="mb-6 p-4 rounded-2xl border border-purple-500/40 bg-gradient-to-r from-[#1c0f24] via-[#120817] to-[#1c0f24] flex items-start gap-3 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+            <Sparkles className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-black uppercase tracking-wider text-purple-300">
+                Reactivate Your Membership
+              </p>
+              <p className="text-xs text-white/80 mt-1 leading-relaxed">
+                Your previous month has concluded. Renew at your locked-in rate to lift Read-Only mode, resume live workout logging, and activate your Month 2 meso-cycle!
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Hero Section */}
         <div className="text-center mb-10">
           <motion.div 
