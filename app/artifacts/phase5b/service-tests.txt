@@ -1,0 +1,395 @@
+
+> grindlog@1.0.0 test:nutrition:phase4
+> node --import ./scripts/register-ts-loader.mjs scripts/test-phase4-service.mjs
+
+═════════════════════════════════════════════════════════════════
+GRINDLOG NUTRITION V2.0 - PHASE 4 SERVICE LAYER & API INTEGRATION
+Validated against GrindLog deterministic nutrition rules and automated acceptance tests.
+═════════════════════════════════════════════════════════════════
+
+▶ [TEST SUITE 1] Feature Flag & Controlled Rollout Evaluation
+  ✅ PASS: Default user without flag does NOT get V2 automatically
+  ✅ PASS: User with nutrition_engine_v2 === true has V2 enabled
+  ✅ PASS: Developer/testing override forceV2: true successfully activates V2
+
+▶ [TEST SUITE 2] Profile Mapping & Target Calculations
+  ✅ PASS: Profile userId mapped correctly
+  ✅ PASS: Diet preference correctly mapped to 'vegetarian'
+  ✅ PASS: Food environment mapped to 'Hostel'
+  ✅ PASS: Mess is correctly marked available for Hostel
+  ✅ PASS: Equipment includes kettle
+  ✅ PASS: Budget ₹0–1,000 correctly flagged as STRICT budget policy
+  ✅ PASS: Hostel bulking calories target sensible: 2906 kcal
+  ✅ PASS: Hostel bulking protein target sensible: 117g
+
+▶ [TEST SUITE 3] Plan Generation & Deterministic Validation
+  ✅ PASS: Generated exactly 21 meals for 7 days (3 meals/day): got 21
+  ✅ PASS: Plan passed all hard constraints
+  ✅ PASS: Plan scored >= 75/100: got 79/100
+  ✅ PASS: Weekly spend ₹581 within strict budget target ₹1125
+
+▶ [TEST SUITE 4] Persistence Payload Compatibility (getTodaySummaryAndDetails schema)
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::7 piece
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 7 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::150g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::100g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::50g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 50g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::6 piece
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 6 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::150g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::100g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::75g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 75g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::5 piece
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 5 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::150g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::7 piece
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 7 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::150g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::100g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::50g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 50g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::6 piece
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 6 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::150g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::100g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::75g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 75g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::5 piece
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 5 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::150g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::7 piece
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 7 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::150g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::100g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::50g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 50g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::6 piece
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 6 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::150g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::100g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::75g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 75g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::5 piece
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 5 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::150g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::7 piece
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 7 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::150g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::100g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::50g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 50g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::6 piece
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 6 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::150g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::100g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::75g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 75g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::5 piece
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 5 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::150g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::7 piece
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 7 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::150g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::100g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::50g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 50g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::6 piece
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 6 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::150g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::100g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::75g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 75g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::5 piece
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 5 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::150g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::7 piece
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 7 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::150g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::100g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::50g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 50g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::6 piece
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 6 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::150g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::100g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::75g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 75g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::5 piece
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 5 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::150g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::7 piece
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 7 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::150g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::100g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: breakfast::Hostel Mess breakfast::50g
+  ✅ PASS: First part matches slot: breakfast
+  ✅ PASS: Title is populated: Hostel Mess breakfast
+  ✅ PASS: Serving portion is populated: 50g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::6 piece
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 6 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::150g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::100g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: lunch::Hostel Mess lunch::75g
+  ✅ PASS: First part matches slot: lunch
+  ✅ PASS: Title is populated: Hostel Mess lunch
+  ✅ PASS: Serving portion is populated: 75g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::5 piece
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 5 piece
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::150g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 150g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Serving size properly formatted with 3 parts: dinner::Hostel Mess dinner::100g
+  ✅ PASS: First part matches slot: dinner
+  ✅ PASS: Title is populated: Hostel Mess dinner
+  ✅ PASS: Serving portion is populated: 100g
+  ✅ PASS: Successfully verified 84 formatted meal items for backward compatibility
+
+▶ [TEST SUITE 5] Meal Swap Candidate Engine
+  ✅ PASS: Swap engine generated at least 3 candidates: got 13
+  ✅ PASS: Optimized swap calories positive: 744 kcal
+  ✅ PASS: Optimized swap protein positive: 46.9g
+  ✅ PASS: Optimized swap in sensible calorie range: 744 kcal
+
+▶ [TEST SUITE 6] Smart Grocery List Engine
+  ✅ PASS: Grocery list identified 3 mess-provided items (₹0 cost)
+  ✅ PASS: Grocery list identified 1 items already in pantry
+  ✅ PASS: Grocery list identified 1 items to purchase
+
+▶ [TEST SUITE 7] Food Logging & Adaptive Day Tracking
+  ✅ PASS: Adaptive remaining calories accurately computed: 1650 kcal
+  ✅ PASS: Adaptive remaining protein accurately computed: 95g
+  ✅ PASS: Adaptive remaining carbs accurately computed: 195g
+  ✅ PASS: Adaptive remaining fat accurately computed: 50g
+
+▶ [TEST SUITE 8] Failure Safety & Invariant Protection
+  ✅ PASS: Clinical safety guard: profiles with age < 18 require professional clinical review and must never generate automatic adult diet plans
+  ✅ PASS: Incomplete profile fails gracefully with descriptive error before plan generation
+
+═════════════════════════════════════════════════════════════════
+PHASE 4 TEST SUMMARY: 365 / 365 TESTS PASSED
+Validated against GrindLog deterministic nutrition rules and automated acceptance tests.
+═════════════════════════════════════════════════════════════════
+

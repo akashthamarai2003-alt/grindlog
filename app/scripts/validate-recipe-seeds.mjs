@@ -81,8 +81,8 @@ for (const img of recipeImages) {
   if (!versionById.has(img.recipe_version_id)) {
     errors.push(`RecipeImage ${img.id} references non-existent recipe_version ${img.recipe_version_id}`);
   }
-  if (img.status !== "APPROVED") {
-    warnings.push(`RecipeImage ${img.id} has status ${img.status}, expected APPROVED`);
+  if (!["DRAFT", "APPROVED", "REJECTED"].includes(img.status)) {
+    errors.push(`RecipeImage ${img.id} has invalid status ${img.status}`);
   }
 }
 

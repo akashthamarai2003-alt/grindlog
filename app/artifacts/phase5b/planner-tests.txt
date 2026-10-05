@@ -1,0 +1,66 @@
+
+> grindlog@1.0.0 test:nutrition:phase3
+> node --import ./scripts/register-ts-loader.mjs scripts/test-unified-planner-simulation.mjs
+
+==================================================
+GRINDLOG NUTRITION V2: 7-DAY PLANNER SIMULATION
+==================================================
+
+--------------------------------------------------
+Testing: 1. Strict Vegan Bulker (4 meals/day)
+  Plan ID: 403dba69-e094-46b6-b77e-5200bb288f04
+  Date Range: 2026-10-05 to 2026-10-11
+  Daily Targets: 3063 kcal | 150g P | 425g C | 85g F
+  Total Planned Meals: 28 (7 days x 4 meals)
+  Composite Quality Score: 83/100 (Pass: true)
+  Day 1 Summary (2026-10-05):
+    Total: 3132 kcal, 158.7g P, 453.6g C, 78.2g F (Est. Cost: ₹352)
+    - [BREAKFAST] 3piece Besan Cheela, 1piece Fresh Cucumber, 1piece Fresh Tomato, 1piece Banana (Energy Side) -> 770 kcal, 39.2g P
+    - [LUNCH] 50g Soya Chunks (Raw / Dry), 6piece Multigrain Roti, 20g Roasted Peanuts, 1piece Banana (Energy Side) -> 1082 kcal, 56.6g P
+    - [SNACK] 150g Masala Oats, 300ml Soy Milk (Unsweetened), 25g Roasted Peanuts, 15g Chia Seeds -> 480 kcal, 24g P
+    - [DINNER] 325g Chole / Chana Masala, 2piece Multigrain Roti, 30g Roasted Chana (Dry Chickpeas) -> 800 kcal, 38.9g P
+
+--------------------------------------------------
+Testing: 2. Vegetarian Jain Fat Loss (3 meals/day)
+  Plan ID: 9747258d-43bb-4d14-992d-56180192b1e2
+  Date Range: 2026-10-05 to 2026-10-11
+  Daily Targets: 1482 kcal | 122g P | 156g C | 41g F
+  Total Planned Meals: 21 (7 days x 3 meals)
+  Composite Quality Score: 86/100 (Pass: true)
+  Day 1 Summary (2026-10-05):
+    Total: 1438 kcal, 119.2g P, 154.3g C, 38.2g F (Est. Cost: ₹267)
+    - [BREAKFAST] 220g Curd Rice, 100g Low Fat Paneer, 1piece Fresh Cucumber -> 447 kcal, 33.2g P
+    - [LUNCH] 275g Soya Chunks Curry (Cooked), 1piece Multigrain Roti, 100g Green Salad with Lemon -> 508 kcal, 45.5g P
+    - [DINNER] 125g Low Fat Paneer, 2piece Multigrain Roti, 100g Green Salad with Lemon -> 483 kcal, 40.5g P
+
+--------------------------------------------------
+Testing: 3. Dairy-Free Non-Veg High-Protein Athlete (4 meals/day)
+  Plan ID: 5996d3e1-529d-4c45-895e-4c6edae3efbd
+  Date Range: 2026-10-05 to 2026-10-11
+  Daily Targets: 3528 kcal | 164g P | 498g C | 98g F
+  Total Planned Meals: 28 (7 days x 4 meals)
+  Composite Quality Score: 83/100 (Pass: true)
+  Day 1 Summary (2026-10-05):
+    Total: 3564 kcal, 173.6g P, 549g C, 80.9g F (Est. Cost: ₹411)
+    - [BREAKFAST] 3piece Moong Dal Cheela, 1piece Fresh Tomato, 1piece Fresh Cucumber, 2piece Banana (Energy Side) -> 896 kcal, 46.5g P
+    - [LUNCH] 75g Chole / Chana Masala, 3piece Boiled Egg (Whole), 2piece Boiled Egg White, 6piece Multigrain Roti, 2piece Banana (Energy Side) -> 1255 kcal, 58.3g P
+    - [SNACK] 2piece Bread Omelette, 1piece Banana -> 580 kcal, 25.3g P
+    - [DINNER] 180g Toor Dal (Arhar Dal), 3piece Boiled Egg (Whole), 2piece Boiled Egg White, 220g White Rice (Steamed), 1piece Banana (Energy Side) -> 833 kcal, 43.5g P
+
+--------------------------------------------------
+Testing: 4. Hostel Student Kettle-Only (4 meals/day)
+  Plan ID: 6362dbb5-25bf-4373-9fce-b2c61d03b9f6
+  Date Range: 2026-10-05 to 2026-10-11
+  Daily Targets: 2527 kcal | 117g P | 357g C | 70g F
+  Total Planned Meals: 28 (7 days x 4 meals)
+  Composite Quality Score: 87/100 (Pass: true)
+  Day 1 Summary (2026-10-05):
+    Total: 2559 kcal, 113.9g P, 379.2g C, 55.2g F (Est. Cost: ₹148)
+    - [BREAKFAST] 4slice Whole Wheat Bread, 15g Natural Peanut Butter, 1piece Banana -> 511 kcal, 17.1g P
+    - [LUNCH] 5piece Mess Chapati / Phulka, 250g Mess Dal Tadka, 100g Mess Mixed Vegetable Sabzi, 75g Low Fat Paneer (Protein Booster) -> 1012 kcal, 51.3g P
+    - [SNACK] 250ml Indian Chai with Milk, 2slice Whole Wheat Bread, 35g Roasted Chana (Dry Chickpeas) -> 400 kcal, 18.6g P
+    - [DINNER] 3piece Mess Chapati / Phulka, 150g Mess Dal Tadka, 100g Mess Mixed Vegetable Sabzi, 150g Low Fat Curd / Dahi (Protein Booster) -> 636 kcal, 26.9g P
+
+==================================================
+PHASE 3 PLANNER: 20 ASSERTIONS PASSED
+==================================================

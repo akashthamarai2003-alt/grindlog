@@ -212,7 +212,8 @@ export function buildRecipeRecord(def) {
     recipe_version_id: versionId,
     storage_path: `recipe-images/${def.slug}-v1.webp`,
     url: `https://images.grindlog.in/recipes/${def.slug}.webp`,
-    status: "APPROVED",
+    // A seed record is a production brief, not proof of a reviewed image file.
+    status: "DRAFT",
     alt_text: `Plate of ${def.name}`,
     dominant_foods: def.dominant_foods || [primaryFood.name],
     is_primary: true

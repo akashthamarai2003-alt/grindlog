@@ -1,0 +1,26 @@
+==================================================
+GRINDLOG NUTRITION V2: SEED DATA INTEGRITY VALIDATOR
+==================================================
+Loaded Entities:
+  - Foods: 147
+  - Portion Rules: 147
+  - Food Prices: 147
+  - Recipes: 220
+  - Recipe Versions: 220
+  - Recipe Variants: 880
+  - Variant Ingredients: 2642
+  - Recipe Images: 220
+
+Test 1: Validating Foreign Key Relationships & Composite Ownership...
+  -> FK validation complete. Errors so far: 0
+Test 2: Validating Discrete Food Integer Enforcement...
+  -> Checked 902 discrete ingredient allocations. All strictly integer!
+Test 3: Validating Pure Mathematical Macro Consistency...
+  -> Checked macro derivation across all 880 variants.
+Test 4: Validating Diet Integrity & Forbidden Food Constraints...
+  -> Diet compliance verified for all 220 recipes.
+Test 5: Validating Variant Tier Progression (LIGHT <= REGULAR <= HIGH_ENERGY)...
+  -> Variant progression verified across all 220 recipes.
+==================================================
+PASSED: ALL DATA INTEGRITY CHECKS PASSED WITH 0 ERRORS!
+==================================================

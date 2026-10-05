@@ -31,9 +31,10 @@ function displayValue(value: unknown, suffix = ""): string {
 export default async function AIStartingReportPage({
   searchParams,
 }: {
-  searchParams?: { renew?: string };
+  searchParams?: Promise<{ renew?: string }>;
 }) {
-  const isRenew = searchParams?.renew === "true";
+  const resolvedParams = searchParams ? await searchParams : {};
+  const isRenew = resolvedParams.renew === "true";
   const supabase = await createServerSupabase();
   const {
     data: { user },

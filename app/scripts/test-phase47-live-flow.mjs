@@ -144,7 +144,7 @@ try {
     .in("id", [...new Set(meals.map(m => m.recipe_variant_id).filter(Boolean))]), "verify recipe variants");
   const templates = data(await db.from("meal_templates").select("id")
     .in("id", [...new Set(meals.map(m => m.meal_template_id).filter(Boolean))]), "verify templates");
-  const images = data(await db.from("recipe_images").select("id")
+  const images = data(await db.from("recipe_images").select("id,recipe_version_id,url,status")
     .in("id", [...new Set(meals.map(m => m.image_asset_id).filter(Boolean))]), "verify image identities");
   const versionIds = new Set(versions.map(row => row.id));
   const templateIds = new Set(templates.map(row => row.id));
@@ -154,8 +154,10 @@ try {
     versionIds.has(m.recipe_version_id) && variantById.get(m.recipe_variant_id)?.recipe_version_id === m.recipe_version_id :
     m.source_type === "TEMPLATE" && templateIds.has(m.meal_template_id)), "recipe, variant, and template references valid");
   ok(meals.every(m => !m.image_asset_id || imageIds.has(m.image_asset_id)), "image metadata IDs valid");
-  ok(meals.every(m => m.image_url_snapshot?.startsWith("data:image/svg+xml;utf8,")),
-    "missing image assets use resolvable offline fallback");
+  ok(meals.every(m => m.image_url_snapshot?.startsWith("data:image/svg+xml;utf8,") ||
+    images.some(image => image.id === m.image_asset_id && image.recipe_version_id === m.recipe_version_id &&
+      image.status === "APPROVED" && image.url === m.image_url_snapshot)),
+    "meals use an owned approved image or resolvable offline fallback");
   for (const date of dates) {
     const daily = meals.filter(m => m.local_date === date);
     const container = plans.find(p => p.date === date);

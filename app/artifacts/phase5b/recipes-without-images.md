@@ -1,0 +1,216 @@
+# Recipes using the GrindLog fallback
+
+- Aloo Gobi with Low Fat Paneer & Phulkas — `aloo-gobi-paneer-phulka`
+- Aloo Gobi Homestyle with Phulkas & Yellow Dal — `aloo-gobi-phulka`
+- Punjabi Aloo Paratha with Plain Dahi — `aloo-paratha-dahi`
+- Baingan Bharta with Curd & Chapati with Ghee — `baingan-bharta-dahi-phulka`
+- Baingan Bharta with Multigrain Roti & Chana — `baingan-bharta-phulka`
+- Besan Cheela with Fresh Cucumber — `besan-cheela-cucumber`
+- Besan Cheela with Grated Low Fat Paneer — `besan-cheela-paneer-stuffing`
+- Homestyle Bhindi Masala with Phulkas & Dal — `bhindi-masala-phulka`
+- Bhindi Masala with Yellow Dal & Chapati with Ghee — `bhindi-masala-yellow-dal-phulka`
+- Boiled Chicken Breast Slices with Crisp Apple — `boiled-chicken-apple-snack`
+- Boiled Chicken Breast with Brown Bread Toast — `boiled-chicken-brown-toast`
+- Boiled Chicken Breast with Sweet Potato — `boiled-chicken-sweet-potato`
+- Boiled Eggs with Roasted Peanuts — `boiled-egg-roasted-peanuts`
+- Boiled Egg Whites with Chaat Masala & Green Tea — `boiled-egg-whites-green-tea`
+- Boiled Eggs with Hot Phulkas & Salad — `boiled-egg-whites-phulka`
+- Boiled Egg Whites with Homestyle Poha — `boiled-egg-whites-poha`
+- Boiled Egg Whites with Sweet Potato & Cucumber Salad — `boiled-egg-whites-sweet-potato-salad`
+- Hard Boiled Eggs with Crisp Apple — `boiled-eggs-apple-snack`
+- Boiled Eggs with Banana & Peanut Butter — `boiled-eggs-banana-pb`
+- Hard Boiled Eggs with Black Coffee — `boiled-eggs-black-coffee`
+- Boiled Eggs with Chana Dal Curry & Phulkas — `boiled-eggs-chana-dal-phulka`
+- Boiled Eggs with Chole Masala & Multigrain Roti — `boiled-eggs-chole-masala-phulka`
+- Boiled Eggs with Chole Masala & Steamed Rice — `boiled-eggs-chole-masala-rice`
+- Boiled Eggs with Dal Fry & Steamed White Rice — `boiled-eggs-dal-fry-rice`
+- Boiled Eggs with Dal Tadka & Hot Phulkas — `boiled-eggs-dal-tadka-phulka`
+- Boiled Eggs with Kala Chana Curry & Phulkas — `boiled-eggs-kala-chana-phulka`
+- Boiled Eggs with Kala Chana Curry & Brown Rice — `boiled-eggs-kala-chana-rice`
+- Boiled Eggs with Lobia Masala & Steamed Rice — `boiled-eggs-lobia-masala-rice`
+- Boiled Eggs with Savory Masala Oats — `boiled-eggs-masala-oats`
+- Boiled Eggs with Masoor Dal & Multigrain Roti — `boiled-eggs-masoor-dal-phulka`
+- Boiled Eggs with Punjabi Rajma & Hot Phulkas — `boiled-eggs-punjabi-rajma-phulka`
+- Boiled Eggs with Punjabi Rajma & Steamed Rice — `boiled-eggs-punjabi-rajma-rice`
+- Boiled Eggs with South Indian Rasam Rice — `boiled-eggs-rasam-rice`
+- Boiled Eggs with South Indian Sambar Rice — `boiled-eggs-sambar-rice`
+- Boiled Eggs with Boiled Sweet Potato — `boiled-eggs-sweet-potato`
+- Boiled Eggs with Toor Dal & Hot Phulkas — `boiled-eggs-toor-dal-phulka`
+- Boiled Eggs with Toor Dal & Steamed Rice — `boiled-eggs-toor-dal-rice`
+- Indian Street-Style Bread Omelette — `bread-omelette-homestyle`
+- Tuna & Boiled Egg Whites on Toast — `canned-tuna-boiled-eggs-toast`
+- Tuna & Brown Rice Fitness Bowl — `canned-tuna-brown-rice-salad`
+- High-Protein Tuna on Brown Bread Toast — `canned-tuna-brown-toast`
+- Quick Tuna & Basmati Rice Bowl — `canned-tuna-rice-bowl`
+- Salted Chaas (Buttermilk) with Roasted Chana — `chaas-roasted-chana`
+- Chana Dal Curry with Fresh Paneer & Phulkas — `chana-dal-paneer-phulka`
+- Chana Dal Curry with Multigrain Roti — `chana-dal-phulka`
+- Whole Wheat Cheese Toast with Indian Masala Chai — `cheese-toast-chai`
+- Homestyle Chicken Biryani with Cucumber Salad — `chicken-biryani-homestyle`
+- Grilled Chicken Breast with Chole & Multigrain Roti — `chicken-breast-chole-phulka`
+- Grilled Chicken Breast with Dal Tadka & Phulkas — `chicken-breast-dal-tadka-phulka`
+- Grilled Chicken Breast with Dal Tadka & Rice — `chicken-breast-dal-tadka-rice`
+- Chicken Breast & Egg White Power Bowl with Rice — `chicken-breast-egg-whites-power-bowl`
+- Chicken & Egg White Comp Prep Bowl with Sweet Potato — `chicken-breast-egg-whites-sweet-potato`
+- Boiled Chicken Breast with Moong Dal Khichdi — `chicken-breast-moong-khichdi`
+- Grilled Chicken Breast with Steamed Quinoa & Broccoli — `chicken-breast-quinoa-broccoli`
+- Grilled Chicken Breast with Punjabi Rajma & Rice — `chicken-breast-rajma-rice`
+- Chicken Curry with Fragrant Jeera Rice — `chicken-curry-jeera-rice`
+- Chicken Curry with Multigrain Roti — `chicken-curry-multigrain-roti`
+- Chicken Keema on Brown Bread Toast — `chicken-keema-brown-toast`
+- Chicken Keema with Fragrant Jeera Rice — `chicken-keema-jeera-rice`
+- Indian Chicken Keema with Hot Phulkas — `chicken-keema-phulka`
+- Chicken Tikka with Steamed Brown Rice — `chicken-tikka-brown-rice`
+- Chicken Tikka Skewers with Lemon & Green Tea — `chicken-tikka-green-tea-snack`
+- Chicken Tikka Platter with Phulkas & Salad — `chicken-tikka-platter-phulka`
+- Chicken Tikka with Steamed Basmati Rice — `chicken-tikka-steamed-rice`
+- Chole Masala with Steamed Rice & Salted Chaas — `chole-masala-curd-rice`
+- Chole Masala with Multigrain Roti — `chole-masala-phulka`
+- Chole Masala with Steamed Basmati Rice — `chole-masala-rice`
+- Chole Masala with Paneer Paratha & Curd — `chole-paneer-paratha`
+- Plain Curd Bowl with Sliced Banana & Walnuts — `curd-banana-walnuts`
+- South Indian Curd Rice with Grilled Paneer Tikka — `curd-rice-paneer-tikka`
+- South Indian Curd Rice with Tadka & Cucumber Salad — `curd-rice-tadka-cucumber`
+- Dal Fry with Ghee Phulka & Plain Curd — `dal-fry-ghee-phulka-dahi`
+- Dal Fry with Steamed Rice & Fresh Paneer — `dal-fry-paneer-rice`
+- Dal Tadka with Paneer Bhurji & Phulkas — `dal-tadka-paneer-bhurji-phulka`
+- Dal Tadka with Steamed Rice & Low Fat Paneer — `dal-tadka-paneer-rice`
+- Double Toned Skimmed Milk with Medjool Dates — `double-toned-milk-dates`
+- Egg Bhurji with Aloo Gobi & Hot Phulkas — `egg-bhurji-aloo-gobi-phulka`
+- Egg Bhurji with Homestyle Bhindi Masala & Phulkas — `egg-bhurji-bhindi-masala-phulka`
+- Egg Bhurji with Dal Fry & Steamed Basmati Rice — `egg-bhurji-dal-fry-rice`
+- Egg Bhurji with Yellow Dal Tadka & Phulkas — `egg-bhurji-dal-tadka-phulka`
+- Egg Bhurji with Mixed Veg Sabzi & Phulkas — `egg-bhurji-mixed-veg-phulka`
+- Indian Egg Bhurji with Multigrain Roti — `egg-bhurji-multigrain-roti`
+- Spiced Egg Bhurji with Homestyle Poha — `egg-bhurji-poha`
+- Spicy Egg Bhurji with Vegetable Upma — `egg-bhurji-upma`
+- Homestyle Egg Biryani with Cucumber Salad — `egg-biryani-homestyle`
+- Egg Curry with Steamed Brown Rice — `egg-curry-brown-rice`
+- Egg Curry with Fragrant Jeera Rice — `egg-curry-jeera-rice`
+- Masala Egg Omelette with Brown Bread Toast — `egg-omelette-brown-toast`
+- Boiled Egg White Chaat with Cucumber & Lemon — `egg-white-cucumber-chaat`
+- Egg White Omelette with Steamed Broccoli & Toast — `egg-white-omelette-broccoli`
+- Egg White Scramble with Steamed Quinoa & Broccoli — `egg-white-scramble-quinoa-broccoli`
+- Filter Coffee with Milk & Roasted Makhana — `filter-coffee-milk-makhana`
+- Fish Curry with Steamed Brown Rice — `fish-curry-brown-rice`
+- Fish Curry with Chole Masala & Rice — `fish-curry-chole-rice`
+- Fish Curry with Dal Tadka & Rice — `fish-curry-dal-tadka-rice`
+- Fish Curry with Fragrant Jeera Rice — `fish-curry-jeera-rice`
+- Homestyle Fish Curry with Hot Phulkas — `fish-curry-phulka`
+- Homestyle Fish Curry with Steamed Rice — `fish-curry-steamed-rice`
+- Fresh Indian Fruit Platter with Chia Seeds — `fresh-fruit-platter-chia`
+- Gluten-Free Egg Curry with Steamed Rice — `gluten-free-egg-curry-rice`
+- Gobi Paratha with Salted Chaas (Buttermilk) — `gobi-paratha-chaas`
+- Greek Yogurt with Apple Slices & Chia Seeds — `greek-yogurt-apple-chia`
+- Greek Yogurt Bowl with Banana & Walnuts — `greek-yogurt-banana-walnuts`
+- Grilled Chicken Breast with Brown Rice & Broccoli — `grilled-chicken-brown-rice`
+- Grilled Chicken Breast with Brown Rice & Dal — `grilled-chicken-brown-rice-dal`
+- Grilled Chicken Breast with Hot Phulkas & Salad — `grilled-chicken-phulka-salad`
+- Grilled Chicken Breast with Steamed Basmati Rice — `grilled-chicken-steamed-rice`
+- Grilled Chicken Breast with Sweet Corn & Cucumber — `grilled-chicken-sweet-corn-salad`
+- Grilled Fish with Brown Rice & Broccoli — `grilled-fish-brown-rice-broccoli`
+- Grilled Fish Fry with Hot Phulkas & Salad — `grilled-fish-phulka-salad`
+- Grilled Fish Fry with Steamed Basmati Rice — `grilled-fish-steamed-rice`
+- Grilled Paneer Tikka with Boiled Sweet Potato — `grilled-paneer-sweet-potato`
+- Grilled Paneer Tikka with Green Mint Salad — `grilled-paneer-tikka-salad`
+- Grilled Salmon with Brown Rice & Broccoli — `grilled-salmon-brown-rice-veggies`
+- Grilled Salmon with Steamed Rice & Salad — `grilled-salmon-steamed-rice`
+- Grilled Salmon with Sweet Potato & Salad — `grilled-salmon-sweet-potato`
+- High-Protein Veg Thali (Dal, Paneer Bhurji, Phulkas & Dahi) — `high-protein-veg-thali`
+- Homestyle Chicken Curry with Hot Phulkas — `homestyle-chicken-curry-phulka`
+- Homestyle Chicken Curry with Steamed White Rice — `homestyle-chicken-curry-rice`
+- Homestyle Egg Curry with Hot Phulkas & Salad — `homestyle-egg-curry-phulka`
+- Homestyle Egg Curry with Steamed White Rice — `homestyle-egg-curry-rice`
+- Homestyle Mutton Curry with Jeera Rice — `homestyle-mutton-curry-jeera-rice`
+- Homestyle Mutton Curry with Hot Phulkas — `homestyle-mutton-curry-phulka`
+- Homestyle Mutton Curry with Steamed Rice — `homestyle-mutton-curry-rice`
+- Hostel Boiled Eggs with Brown Bread & Chai — `hostel-kettle-boiled-eggs-bread`
+- Hostel Kettle Boiled Eggs with Masala Oats — `hostel-kettle-boiled-eggs-oats`
+- Jain Moong Dal Khichdi with Ghee & Low Fat Curd — `jain-khichdi-ghee-curd`
+- Jain Fresh Paneer Curry with Phulkas & Curd — `jain-paneer-curry-phulka`
+- Jain Steamed Idlis with Fresh Low Fat Curd — `jain-steamed-idli-curd`
+- Jain Yellow Moong Dal with Jeera Rice — `jain-yellow-dal-jeera-rice`
+- Kadai Paneer with Fresh Phulkas — `kadai-paneer-phulka`
+- Kadai Paneer with Jeera Rice — `kadai-paneer-rice`
+- Kala Chana Curry with Phulkas & Salad — `kala-chana-curry-phulka`
+- Kala Chana Curry with Steamed Brown Rice — `kala-chana-curry-rice`
+- Kala Chana Curry with Fresh Paneer & Multigrain Roti — `kala-chana-paneer-phulka`
+- Tangy Lemon Peanut Rice with Steamed Carrots — `lemon-peanut-rice`
+- Lobia Masala with Hot Phulkas — `lobia-masala-phulka`
+- Lobia (Black Eyed Peas) with Steamed Rice — `lobia-masala-rice`
+- Low Fat Curd with Fresh Pomegranate Seeds — `low-fat-curd-pomegranate`
+- Low Fat Paneer Bhurji with Multigrain Roti — `low-fat-paneer-bhurji-roti`
+- Low Fat Paneer with Steamed Quinoa & Broccoli — `low-fat-paneer-quinoa-broccoli`
+- Indian Chai with Milk & Whole Wheat Bread — `masala-chai-wheat-toast`
+- Masala Dosa with Fresh Curd — `masala-dosa-curd`
+- Savory Masala Oats with Steamed Broccoli — `masala-oats-veggies`
+- Masoor Dal Tadka with Multigrain Roti — `masoor-dal-phulka`
+- Masoor Dal with Steamed Brown Rice — `masoor-dal-rice`
+- Matar Paneer with Multigrain Roti — `matar-paneer-phulka`
+- Matar Paneer with Steamed Basmati Rice — `matar-paneer-steamed-rice`
+- Mixed Vegetable Sabzi with Paneer Bhurji & Phulka — `mixed-veg-paneer-bhurji-phulka`
+- Mixed Vegetable Sabzi with Phulkas & Moong Sprouts — `mixed-veg-sabzi-phulka`
+- Moong Dal Cheela with Fresh Paneer — `moong-dal-cheela-paneer`
+- Moong Dal Cheela with Fresh Tomato & Salad — `moong-dal-cheela-tomato`
+- Moong Dal Khichdi with Desi Ghee & Fresh Curd — `moong-dal-khichdi-ghee-dahi`
+- Fresh Moong Sprouts Salad with Lemon & Tomato — `moong-sprouts-chaat`
+- Mushroom Masala with Steamed Rice & Plain Curd — `mushroom-masala-curd-rice`
+- Mushroom Masala with Low Fat Paneer & Multigrain Roti — `mushroom-masala-paneer-roti`
+- Mushroom Masala with Steamed White Rice — `mushroom-masala-rice`
+- Oats Cooked in Toned Milk with Raw Almonds — `oats-milk-almonds`
+- Overnight Oats in Milk with Chia & Banana — `overnight-oats-milk-chia`
+- Overnight Oats with Soy Milk & Chia — `overnight-oats-soy-milk`
+- Palak Paneer with Fragrant Jeera Rice — `palak-paneer-jeera-rice`
+- Fresh Paneer Bhurji with Hot Phulkas — `paneer-bhurji-phulka`
+- Homestyle Paneer Butter Masala with Hot Phulkas — `paneer-butter-masala-phulka`
+- Minced Low Fat Paneer Curry with Hot Phulkas — `paneer-keema-style-phulka`
+- Homestyle Paneer Paratha with Low Fat Curd — `paneer-paratha-curd`
+- Peanut Butter Toast with Banana — `pb-toast-banana`
+- Crisp Plain Dosa with Sambar — `plain-dosa-sambar`
+- Homestyle Poha with Roasted Peanuts — `poha-roasted-peanuts`
+- Prawns Masala with Steamed Brown Rice — `prawns-masala-brown-rice`
+- Prawns Masala with Jeera Rice & Salad — `prawns-masala-jeera-rice`
+- Homestyle Prawns Masala with Hot Phulkas — `prawns-masala-phulka`
+- Spicy Prawns Masala with Steamed Rice — `prawns-masala-steamed-rice`
+- Punjabi Rajma with Phulkas & Low Fat Curd — `punjabi-rajma-curd-phulka`
+- Punjabi Rajma with Steamed Rice & Low Fat Paneer — `punjabi-rajma-paneer-rice`
+- Punjabi Rajma Masala with Hot Phulkas — `punjabi-rajma-phulka`
+- South Indian Rasam Rice with Paneer Bhurji — `rasam-rice-paneer-bhurji`
+- South Indian Rasam Rice with Boiled Potato — `rasam-rice-potato`
+- Crisp Rava Dosa with Dahi & Sambar — `rava-dosa-curd`
+- Fresh Raw Paneer Cubes with Chaat Masala & Lemon — `raw-paneer-chaat`
+- Roasted Chana & Green Tea Fitness Snack — `roasted-chana-green-tea`
+- Roasted Makhana with Black Coffee — `roasted-makhana-black-coffee`
+- South Indian Sambar Rice with Roasted Chana — `sambar-rice-bowl`
+- Sambar Rice with Plain Curd & Green Salad — `sambar-rice-curd-salad`
+- Fluffy Scrambled Eggs with Brown Bread Toast — `scrambled-eggs-brown-toast`
+- Scrambled Eggs with Steamed Sweet Corn & Cucumber — `scrambled-eggs-sweet-corn`
+- Set Dosa with Plain Curd & Sambar — `set-dosa-dahi-sambar`
+- Soy Milk & Chia Power Smoothie — `soy-milk-chia-smoothie`
+- Soya Chaap Masala with Hot Phulkas — `soya-chaap-curry-phulka`
+- Soya Chunks Bhurji with Multigrain Roti — `soya-chunks-bhurji-roti`
+- Soya Chunks Curry with Steamed Rice — `soya-chunks-curry-rice`
+- Soya Chunks Curry with Multigrain Roti — `soya-chunks-curry-roti`
+- Dhaba-Style Egg Curry with Multigrain Roti — `spicy-egg-curry-multigrain-roti`
+- Steamed Idlis with Sambar — `steamed-idli-sambar`
+- Steamed Sweet Corn with Lemon & Chaat Masala — `steamed-sweet-corn-chaat`
+- Sweet Lassi with Roasted Almonds — `sweet-lassi-almonds`
+- Boiled Sweet Potato Chaat with Roasted Peanuts — `sweet-potato-chaat`
+- Tandoori Chicken Breast with Black Coffee — `tandoori-chicken-black-coffee`
+- Tandoori Chicken with Fragrant Jeera Rice — `tandoori-chicken-jeera-rice`
+- Tandoori Chicken Breast with Boiled Sweet Potato — `tandoori-chicken-sweet-potato`
+- Tempeh Stir Fry with Steamed Brown Rice & Spinach — `tempeh-tikka-brown-rice`
+- Tofu & Green Peas Curry with Steamed Rice — `tofu-matar-curry-rice`
+- Spiced Tofu Scramble with Brown Bread Toast — `tofu-scramble-brown-bread`
+- Indian Tofu Bhurji with Hot Phulkas — `tofu-scramble-phulka`
+- Warm Toned Milk with Raw Almonds & Dates — `toned-milk-raw-almonds`
+- Toor Dal with Fragrant Jeera Rice — `toor-dal-jeera-rice`
+- Toor Dal with Steamed Rice & Paneer Tikka — `toor-dal-paneer-tikka-rice`
+- Toor Dal with Hot Phulkas & Green Salad — `toor-dal-phulka`
+- Homestyle Vegetable Daliya Bowl — `vegetable-daliya-bowl`
+- Vegetable Daliya with Desi Ghee & Curd — `vegetable-daliya-ghee`
+- Vegetable Upma with Steamed Peas — `vegetable-upma`
+- South Indian Ven Pongal with Sambar — `ven-pongal-sambar`
+- Yellow Moong Dal with Paneer Bhurji & Multigrain Roti — `yellow-dal-paneer-bhurji-roti`
+- Yellow Moong Dal with Phulkas & Cucumber Salad — `yellow-moong-dal-phulka`
+- Yellow Moong Dal with Steamed White Rice — `yellow-moong-dal-rice`

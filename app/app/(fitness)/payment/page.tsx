@@ -45,8 +45,11 @@ export default async function FitnessPaymentPage({
     (subscriptionState?.plan?.id === "pro" || premiumDetails?.premium_level === "pro" || subscription?.plan === "pro")
   );
 
-  // If user is already active Pro, visiting renewal intent is obsolete — return to dashboard
-  if (user && isActivePro && intent === "renew_monthly") {
+  const daysRemaining = subscriptionState?.daysRemaining ?? 30;
+  const isEarlyRenewalWindow = daysRemaining <= 5 || Boolean(subscriptionState?.isGracePeriod);
+
+  // If user is already active Pro with plenty of time left (>5 days) and NO renewal/setup intent, return to dashboard
+  if (user && isActivePro && !isEarlyRenewalWindow && !intent) {
     redirect("/");
   }
   const renewalLevel: "core" | "pro" = isExpired

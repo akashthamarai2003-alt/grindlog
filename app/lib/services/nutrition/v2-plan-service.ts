@@ -48,6 +48,7 @@ import { createLiveFoodIdResolver } from "@/lib/services/nutrition/live-food-id"
 import { groceryPortionAmount, selectGroceryPlanItems } from "@/lib/services/nutrition/v2-grocery-items";
 import { calculateDailyBudget } from "@/lib/fitness/nutrition/user-context";
 import { getFoodSvgAvatar } from "@/lib/utils/food-images";
+import { approvedImageForReference, type RecipeImageRow } from "@/lib/fitness/nutrition/image-policy";
 
 /** Keep the catalog asset identity while avoiding the currently unreachable image host. */
 export function resolveV2ImageSnapshot(url: string | null | undefined, mealName: string): string {
@@ -517,6 +518,27 @@ export class V2PlanService {
         })),
       }));
 
+      // Recheck current image approval; the bundled catalog can outlive a review.
+      const imageIds = [...new Set(plannedMealsPayload.map((meal) => meal.image_asset_id)
+        .filter((id): id is string => Boolean(id)))];
+      if (imageIds.length) {
+        const imagesResult = await supabase.from("recipe_images")
+          .select("id,recipe_version_id,storage_path,url,status,is_primary").in("id", imageIds)
+          .eq("status", "APPROVED").eq("is_primary", true);
+        const images = (imagesResult.error ? [] : imagesResult.data || []) as RecipeImageRow[];
+        for (const meal of plannedMealsPayload) {
+          const image = approvedImageForReference({ imageAssetId: meal.image_asset_id,
+            recipeVersionId: meal.recipe_version_id, storagePath: meal.image_storage_path_snapshot,
+            url: meal.image_url_snapshot }, images);
+          if (meal.image_asset_id && !image) {
+            meal.image_asset_id = null;
+            meal.image_storage_path_snapshot = null;
+            meal.image_url_snapshot = resolveV2ImageSnapshot(null,
+              meal.recipe_version_id ? versionById.get(meal.recipe_version_id)?.name || meal.meal_slot : meal.meal_slot);
+          }
+        }
+      }
+
       // Call authoritative PostgreSQL RPC with pg_advisory_xact_lock
       const { error: atomicSaveError } = await supabase.rpc(
         "persist_v2_meal_plan_atomic",
@@ -712,7 +734,9 @@ export class V2PlanService {
     for (const cand of topCandidates) {
       const rv = cand.catalogItem.recipeVersion;
       const variant = cand.selectedVariant;
-      const img = cand.catalogItem.image;
+      const candidateImage = cand.catalogItem.image;
+      const img = candidateImage.status === "APPROVED" && candidateImage.isPrimary &&
+        candidateImage.recipeVersionId === cand.catalogItem.recipeVersion.id ? candidateImage : null;
 
       // Optimize portions for this candidate to target slot macros
       const foodLookup = (foodIdOrName: string) => catalog.foodById.get(foodIdOrName);
@@ -770,6 +794,24 @@ export class V2PlanService {
       });
     }
 
+    const imageIds = [...new Set(results.map((option) => option.image_asset_id)
+      .filter((id): id is string => Boolean(id)))];
+    if (imageIds.length) {
+      const imagesResult = await supabase.from("recipe_images")
+        .select("id,recipe_version_id,storage_path,url,status,is_primary").in("id", imageIds)
+        .eq("status", "APPROVED").eq("is_primary", true);
+      const images = (imagesResult.error ? [] : imagesResult.data || []) as RecipeImageRow[];
+      for (const option of results) {
+        const image = approvedImageForReference({ imageAssetId: option.image_asset_id,
+          recipeVersionId: option.recipe_version_id, storagePath: option.image_storage_path,
+          url: option.image_url || null }, images);
+        if (option.image_asset_id && !image) {
+          option.image_asset_id = null;
+          option.image_storage_path = null;
+          option.image_url = resolveV2ImageSnapshot(null, option.name);
+        }
+      }
+    }
     return results;
   }
 

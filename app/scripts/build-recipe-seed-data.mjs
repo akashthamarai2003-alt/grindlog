@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { createHash } from "node:crypto";
 import {
   CATALOG_FOODS,
   generateDeterministicUuid,
@@ -107,6 +108,12 @@ const recipeVariantIngredientsRows = [];
 const recipeImagesRows = [];
 
 const seenSlugs = new Set();
+// Preserve previously reviewed images when rebuilding recipe metadata. New
+// image placeholders remain DRAFT; a matching record alone cannot approve one.
+const priorImageFile = path.join(seedOutputDir, "recipe_images.json");
+const priorImages = fs.existsSync(priorImageFile) ? JSON.parse(fs.readFileSync(priorImageFile, "utf8")) : [];
+const reviewsFile = path.resolve("artifacts/phase5b/image-reviews.json");
+const reviews = fs.existsSync(reviewsFile) ? JSON.parse(fs.readFileSync(reviewsFile, "utf8")) : [];
 
 for (const def of allRecipeDefs) {
   if (seenSlugs.has(def.slug)) {
@@ -115,6 +122,14 @@ for (const def of allRecipeDefs) {
   seenSlugs.add(def.slug);
 
   const built = buildRecipeRecord(def);
+  const prior = priorImages.find((image) => image.recipe_version_id === built.recipeVersion.id && image.status === "APPROVED");
+  const review = prior && reviews.find((entry) => entry.image_asset_id === prior.id &&
+    entry.recipe_version_id === prior.recipe_version_id && entry.storage_path === prior.storage_path && entry.status === "APPROVED");
+  const assetFile = prior && path.resolve("artifacts/phase5b/assets", prior.storage_path);
+  if (review && fs.existsSync(assetFile) &&
+    createHash("sha256").update(fs.readFileSync(assetFile)).digest("hex") === review.sha256) {
+    built.recipeImage = prior;
+  }
   recipesRows.push(built.recipe);
   recipeVersionsRows.push(built.recipeVersion);
   recipeVariantsRows.push(...built.variants);

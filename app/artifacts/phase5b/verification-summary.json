@@ -1,0 +1,64 @@
+{
+  "phase": "5B",
+  "date": "2026-10-05",
+  "status": "SAFE_IMAGE_DELIVERY_IMPLEMENTED_PHOTO_COVERAGE_PARTIAL",
+  "live_audit_generated_at": "2026-10-05T04:37:42.320Z",
+  "canonical_recipes": 220,
+  "verified_approved_recipe_photos": 6,
+  "fallback_only_recipes": 214,
+  "image_rows": { "APPROVED": 6, "DRAFT": 220, "REJECTED": 0 },
+  "storage_objects": { "recipe_photos": 6, "legacy_food_objects": 40 },
+  "retained_draft_rows_with_missing_objects_and_unreachable_urls": 220,
+  "approved_broken_assets": 0,
+  "ownership_mismatches": 0,
+  "duplicate_approved_primaries": 0,
+  "earlier_transient_delivery_timeouts_cleared_on_recheck": 3,
+  "type_check": { "exit_code": 0, "errors": 0 },
+  "local_tests": {
+    "phase3_planner_assertions_passed": 20,
+    "phase4_service_assertions_passed": 365,
+    "phase47_backend_tests_passed": 9,
+    "image_coverage_tests_passed": 4,
+    "seed_validation_errors": 0
+  },
+  "browser_tests": {
+    "scope": "Local planner-generated fixtures and mocked presentation APIs; actual optimized image bytes independently checked against live Storage",
+    "viewports": ["Desktop Chrome", "Pixel 7 Chrome"],
+    "personas": ["nonveg-cook", "vegetarian-home", "eggetarian-pg", "vegan-hostel", "office-canteen", "low-budget"],
+    "days_per_persona": 7,
+    "day_views": 84,
+    "meal_card_image_checks": 266,
+    "image_suite": {
+      "initial_passed": 13,
+      "initial_failed": 1,
+      "cause": "Mobile PG test clicked before hydration",
+      "fix": "Wait for existing data-v2-ready marker",
+      "corrected_case_rerun_passed": 1,
+      "distinct_cases_passed_across_runs": 14
+    },
+    "nutrition_ui_suite": {
+      "initial_passed": 11,
+      "initial_failed": 1,
+      "cause": "Mobile day-switch test clicked before hydration",
+      "fix": "Both day-switch tests wait for existing data-v2-ready marker",
+      "desktop_and_mobile_day_switch_rerun_passed": 4,
+      "rerun_exit_code": 0,
+      "distinct_cases_passed_across_runs": 12
+    },
+    "photo_gallery_checked": ["all six approved photos readable", "matching recipe names", "square mobile and desktop crops", "no horizontal overflow", "swap updates photo", "logged image retained", "failed photo resolves to SVG fallback"]
+  },
+  "phase45_legacy_runner": "Not run: automatic approval review rejected the file because it contains account-write code. Dedicated read-only image audit passed instead.",
+  "production_changes": {
+    "immutable_recipe_assets_uploaded": 6,
+    "new_reviewed_image_rows_approved": 6,
+    "unbacked_image_rows_downgraded_to_draft": 220,
+    "schema_migrations_applied": 0,
+    "profile_writes": 0,
+    "plan_or_food_log_writes": 0,
+    "feature_flag_writes": 0,
+    "enabled_v2_profiles_in_final_audit": 0,
+    "application_deployed": false,
+    "phase5c_started": false
+  },
+  "remaining_work": ["214 recipe photos still need production and review", "Application image integration source changes await normal deployment", "Agree acceptable image coverage before Phase 5C"]
+}

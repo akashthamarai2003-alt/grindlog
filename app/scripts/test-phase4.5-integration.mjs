@@ -63,7 +63,7 @@ async function runPhase45SmokeTests() {
   assert(ingredientsCount === 2642, "Variant ingredients populated in real database", `Total allocations: ${ingredientsCount}`);
 
   const { count: imagesCount } = await adminSupabase.from("recipe_images").select("*", { count: "exact", head: true });
-  assert(imagesCount === 220, "Recipe images populated in real database", `Total images: ${imagesCount}`);
+  assert(imagesCount >= 220, "Versioned recipe image records populated, including retained DRAFT history", `Total rows: ${imagesCount}`);
 
   // =========================================================================
   // TEST SUITE 2: Feature Flag Schema & Security Verification
@@ -127,6 +127,32 @@ async function runPhase45SmokeTests() {
   // RPC smoke runner replaces those unsafe direct-write suites.
   if (process.argv.includes("--live-smoke")) {
     throw new Error("The old direct-write smoke flow is disabled. Use a designated Phase 4.7 test account and RPC flow.");
+  }
+  // Read-only image coverage check: a database status alone is not a photo.
+  const imageCatalog = loadNutritionCatalog();
+  const { data: imageRows, error: imageRowsError } = await adminSupabase.from("recipe_images")
+    .select("id,recipe_version_id,status,url,storage_path,is_primary").range(0, 999);
+  assert(!imageRowsError, "Image catalog can be inspected without account writes");
+  const imageById = new Map((imageRows || []).map((row) => [row.id, row]));
+  for (const recipe of imageCatalog.recipes) {
+    const image = recipe.image;
+    const live = imageById.get(image.id);
+    assert(live && live.recipe_version_id === recipe.recipeVersion.id && live.status === image.status,
+      `Image ownership and status match for ${recipe.recipe.slug}`);
+    if (image.status === "APPROVED") {
+      assert(live.is_primary && live.url === image.url && live.storage_path === image.storagePath,
+        "Approved primary identity matches the live image record");
+      const response = await fetch(live.url, { signal: AbortSignal.timeout(15000) });
+      assert(response.ok && response.headers.get("content-type")?.startsWith("image/"), "Approved delivery is an actual image response");
+      const sharp = (await import("sharp")).default;
+      const bytes = Buffer.from(await response.arrayBuffer());
+      const metadata = await sharp(bytes).metadata();
+      await sharp(bytes).resize(1, 1).raw().toBuffer();
+      assert(metadata.width >= 512 && metadata.height >= 512, "Approved image decodes at card-ready dimensions");
+    } else {
+      assert(getFoodImage(recipe.recipeVersion.name).startsWith("data:image/svg+xml"),
+        "Recipe without an approved photo has the GrindLog fallback");
+    }
   }
   console.log(`\nPHASE 4.5 READ-ONLY SUMMARY: ${passedTests} / ${totalTests} ASSERTIONS PASSED`);
   return;
@@ -497,20 +523,28 @@ async function runPhase45SmokeTests() {
 
   for (let i = 0; i < sampleRecipes.length; i++) {
     const r = sampleRecipes[i];
-    const { data: imgRow } = await adminSupabase
+    const { data: imgRow, error: imageError } = await adminSupabase
       .from("recipe_images")
       .select("*")
       .eq("recipe_version_id", r.recipeVersion.id)
       .eq("status", "APPROVED")
+      .eq("is_primary", true)
       .maybeSingle();
 
-    assert(imgRow != null, `Recipe ${i + 1} (${r.recipe.slug}) has APPROVED database row in recipe_images`);
-    assert(imgRow.storage_path.startsWith("recipe-images/"), `Storage path formatted cleanly: ${imgRow.storage_path}`);
-    assert(imgRow.is_primary === true, "Marked as primary image");
+    assert(!imageError, `Image ownership lookup succeeded for ${r.recipe.slug}`);
+    if (imgRow) {
+      assert(imgRow.storage_path.startsWith("recipe-images/"), `Immutable recipe image path: ${imgRow.storage_path}`);
+      const response = await fetch(imgRow.url, { signal: AbortSignal.timeout(15000) });
+      assert(response.ok && response.headers.get("content-type")?.startsWith("image/"), "Approved image delivery resolves");
+      assert((await response.arrayBuffer()).byteLength > 0, "Approved image has actual readable delivery bytes");
+    } else {
+      assert(r.image.status !== "APPROVED", `Unimaged recipe ${r.recipe.slug} uses an explicit fallback`);
+    }
 
     // Test URL resolution with fallback
-    const resolvedUrl = getFoodImage(r.recipeVersion.name, "Curry", imgRow.url);
+    const resolvedUrl = getFoodImage(r.recipeVersion.name, "Curry", imgRow?.url);
     assert(resolvedUrl && resolvedUrl.length > 0, `Displayable URL resolved for ${r.recipe.slug}`);
+    if (!imgRow) assert(resolvedUrl.startsWith("data:image/svg+xml"), "No unapproved photo substituted for fallback");
   }
 
   // =========================================================================

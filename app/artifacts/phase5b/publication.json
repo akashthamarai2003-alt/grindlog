@@ -1,0 +1,50 @@
+{
+  "project": "saoesvkicojsvuytcfid.supabase.co",
+  "applied_at": "2026-10-04T16:07:32.816Z",
+  "downgraded_unbacked_rows": 220,
+  "published": [
+    {
+      "id": "2c06a8a6-18a0-4240-a716-1862a5b115c3",
+      "slug": "tandoori-chicken-phulka",
+      "storage_path": "recipe-images/tandoori-chicken-phulka/v1/f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/tandoori-chicken-phulka/v1/f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b.webp",
+      "sha256": "f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b"
+    },
+    {
+      "id": "53aaae7c-5225-454c-a8c5-79b856602431",
+      "slug": "palak-paneer-phulka",
+      "storage_path": "recipe-images/palak-paneer-phulka/v1/43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/palak-paneer-phulka/v1/43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0.webp",
+      "sha256": "43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0"
+    },
+    {
+      "id": "52bb98d8-87fa-4467-b113-7c962b6f0b31",
+      "slug": "egg-bhurji-chapati",
+      "storage_path": "recipe-images/egg-bhurji-chapati/v1/043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/egg-bhurji-chapati/v1/043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588.webp",
+      "sha256": "043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588"
+    },
+    {
+      "id": "e5fdc8a4-f960-45b6-8eb4-90f8d5b878df",
+      "slug": "tofu-quinoa-broccoli-bowl",
+      "storage_path": "recipe-images/tofu-quinoa-broccoli-bowl/v1/9ee1db7504f00538f1974e04a516f1d39cad9792e1ca11a7ac463645806ad872.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/tofu-quinoa-broccoli-bowl/v1/9ee1db7504f00538f1974e04a516f1d39cad9792e1ca11a7ac463645806ad872.webp",
+      "sha256": "9ee1db7504f00538f1974e04a516f1d39cad9792e1ca11a7ac463645806ad872"
+    },
+    {
+      "id": "aebddad0-8280-4e10-8da1-03969d25767d",
+      "slug": "chana-chaat-lemon",
+      "storage_path": "recipe-images/chana-chaat-lemon/v1/4f911c78a94e653da29b35fd3212b60d82718d2602cc4cdfb611c7bd6dcc3604.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/chana-chaat-lemon/v1/4f911c78a94e653da29b35fd3212b60d82718d2602cc4cdfb611c7bd6dcc3604.webp",
+      "sha256": "4f911c78a94e653da29b35fd3212b60d82718d2602cc4cdfb611c7bd6dcc3604"
+    },
+    {
+      "id": "68d4c4c3-7523-4679-b10b-b0b8686f4a48",
+      "slug": "punjabi-rajma-chawal",
+      "storage_path": "recipe-images/punjabi-rajma-chawal/v1/f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/punjabi-rajma-chawal/v1/f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4.webp",
+      "sha256": "f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4"
+    }
+  ],
+  "profile_changes": 0
+}

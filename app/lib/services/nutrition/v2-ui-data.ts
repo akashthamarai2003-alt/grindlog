@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { resolveV2ImageSnapshot } from "@/lib/services/nutrition/v2-plan-service";
+import { approvedImageForReference, type RecipeImageRow } from "@/lib/fitness/nutrition/image-policy";
 
 export interface V2NutritionLog {
   id: string;
@@ -60,6 +61,7 @@ interface PlannedRow {
   id: string; meal_slot: string; meal_sequence: number; scheduled_time: string | null;
   status: V2NutritionMeal["status"]; source_type: V2NutritionMeal["sourceType"];
   recipe_version_id: string | null; meal_template_id: string | null;
+  image_asset_id: string | null; image_storage_path_snapshot: string | null;
   image_url_snapshot: string | null; calories_snapshot: number; protein_snapshot: number;
   carbs_snapshot: number; fat_snapshot: number; cost_snapshot: number;
 }
@@ -133,7 +135,7 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
     meals: [], logs, consumed, targets: targetValues };
 
   const mealsRes = await supabase.from("planned_meals")
-    .select("id,meal_slot,meal_sequence,scheduled_time,status,source_type,recipe_version_id,meal_template_id,image_url_snapshot,calories_snapshot,protein_snapshot,carbs_snapshot,fat_snapshot,cost_snapshot")
+    .select("id,meal_slot,meal_sequence,scheduled_time,status,source_type,recipe_version_id,meal_template_id,image_asset_id,image_storage_path_snapshot,image_url_snapshot,calories_snapshot,protein_snapshot,carbs_snapshot,fat_snapshot,cost_snapshot")
     .eq("user_id", userId).eq("meal_plan_id", plan.id).eq("local_date", localDate)
     .order("meal_sequence");
   if (mealsRes.error) throw mealsRes.error;
@@ -143,7 +145,8 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
 
   const versionIds = [...new Set(rows.map((row) => row.recipe_version_id).filter((id): id is string => Boolean(id)))];
   const templateIds = [...new Set(rows.map((row) => row.meal_template_id).filter((id): id is string => Boolean(id)))];
-  const [itemsRes, versionsRes, templatesRes] = await Promise.all([
+  const imageIds = [...new Set(rows.map((row) => row.image_asset_id).filter((id): id is string => Boolean(id)))];
+  const [itemsRes, versionsRes, templatesRes, imagesRes] = await Promise.all([
     supabase.from("meal_plan_items").select("id,planned_meal_id,serving_size,quantity,unit,is_provided,foods(name)")
       .in("planned_meal_id", rows.map((row) => row.id)),
     versionIds.length ? supabase.from("recipe_versions")
@@ -152,6 +155,10 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
     templateIds.length ? supabase.from("meal_templates")
       .select("id,name,description,environment").in("id", templateIds)
       : Promise.resolve({ data: [], error: null }),
+    imageIds.length ? supabase.from("recipe_images")
+      .select("id,recipe_version_id,storage_path,url,status,is_primary").in("id", imageIds)
+      .eq("status", "APPROVED").eq("is_primary", true)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (itemsRes.error) throw itemsRes.error;
   if (versionsRes.error) throw versionsRes.error;
@@ -159,10 +166,15 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
   const items = (itemsRes.data || []) as ItemRow[];
   const versions = new Map(((versionsRes.data || []) as RecipeRow[]).map((row) => [row.id, row]));
   const templates = new Map(((templatesRes.data || []) as TemplateRow[]).map((row) => [row.id, row]));
+  // An unavailable approval lookup uses the fallback; it must not block meals.
+  const images = (imagesRes.error ? [] : imagesRes.data || []) as RecipeImageRow[];
   const meals: V2NutritionMeal[] = rows.map((row) => {
     const version = row.recipe_version_id ? versions.get(row.recipe_version_id) : undefined;
     const template = row.meal_template_id ? templates.get(row.meal_template_id) : undefined;
     const name = version?.name || template?.name || row.meal_slot.replaceAll("_", " ");
+    const image = approvedImageForReference({ imageAssetId: row.image_asset_id,
+      recipeVersionId: row.recipe_version_id, storagePath: row.image_storage_path_snapshot,
+      url: row.image_url_snapshot }, images);
     const ingredients = items.filter((item) => item.planned_meal_id === row.id).map((item) => ({
       id: item.id, name: relatedFood(item.foods)?.name || "Food", quantity: item.serving_size ||
         `${numeric(item.quantity)} ${item.unit || "servings"}`, isProvided: item.is_provided === true,
@@ -175,7 +187,7 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
       prepInstructions: version?.prep_instructions || (template ?
         "Serve the listed foods in their planned portions. Add any optional sides separately." : null),
       prepTimeMin: version?.cooking_time_min ?? null,
-      imageUrl: resolveV2ImageSnapshot(row.image_url_snapshot, name),
+      imageUrl: resolveV2ImageSnapshot(image?.url, name),
       calories: numeric(row.calories_snapshot), protein: numeric(row.protein_snapshot),
       carbs: numeric(row.carbs_snapshot), fat: numeric(row.fat_snapshot),
       cost: numeric(row.cost_snapshot), ingredients,

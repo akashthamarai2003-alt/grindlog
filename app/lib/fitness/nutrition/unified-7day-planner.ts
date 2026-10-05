@@ -403,13 +403,13 @@ export function loadNutritionCatalog(): {
 
     const img = imageByVersionId.get(v.id) || {
       id: generateDeterministicUuid("recipe_image", `${r.slug}:v1:img`),
-      recipeVersionId: v.id,
-      storagePath: `recipe-images/${r.slug}-v1.webp`,
+      recipe_version_id: v.id,
+      storage_path: `recipe-images/${r.slug}-v1.webp`,
       url: `https://images.grindlog.in/recipes/${r.slug}.webp`,
-      status: "APPROVED",
-      altText: v.name,
-      dominantFoods: [v.primary_protein],
-      isPrimary: true,
+      status: "DRAFT",
+      alt_text: v.name,
+      dominant_foods: [v.primary_protein],
+      is_primary: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -1080,9 +1080,9 @@ export function generateUnified7DayPlan(
         recipeVersionId: rv.id,
         recipeVariantId: variant.id,
         mealTemplateId: null,
-        imageAssetId: img.id,
-        imageStoragePathSnapshot: img.storagePath,
-        imageUrlSnapshot: img.url,
+        imageAssetId: img.status === "APPROVED" && img.recipeVersionId === rv.id && img.isPrimary ? img.id : null,
+        imageStoragePathSnapshot: img.status === "APPROVED" && img.recipeVersionId === rv.id && img.isPrimary ? img.storagePath : null,
+        imageUrlSnapshot: img.status === "APPROVED" && img.recipeVersionId === rv.id && img.isPrimary ? img.url : null,
         caloriesSnapshot: mealCal,
         proteinSnapshot: mealP,
         carbsSnapshot: mealC,

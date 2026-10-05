@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function ScannerPage({
   searchParams,
 }: {
-  searchParams?: { mode?: string; refresh?: string };
+  searchParams?: Promise<{ mode?: string; refresh?: string }>;
 }) {
+  const resolvedParams = searchParams ? await searchParams : {};
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -27,7 +28,7 @@ export default async function ScannerPage({
     .limit(1)
     .maybeSingle();
 
-  const isCheckin = searchParams?.mode === "checkin" || searchParams?.mode === "renew" || searchParams?.mode === "update";
+  const isCheckin = resolvedParams.mode === "checkin" || resolvedParams.mode === "renew" || resolvedParams.mode === "update";
   const planCreatedAt = plan?.created_at ? new Date(plan.created_at) : null;
   const daysOnPlan = planCreatedAt
     ? Math.max(1, Math.floor((Date.now() - planCreatedAt.getTime()) / (1000 * 60 * 60 * 24)))

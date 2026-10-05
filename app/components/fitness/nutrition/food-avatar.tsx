@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getFoodImage, getFoodSvgAvatar } from "@/lib/utils/food-images";
 
 interface FoodAvatarProps {
@@ -20,33 +20,31 @@ export function FoodAvatar({
 }: FoodAvatarProps) {
   const photoUrl = getFoodImage(name, category, imageUrl);
   const fallbackSvg = getFoodSvgAvatar(name, category);
-  const [imgSrc, setImgSrc] = useState(photoUrl);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  // Derive the source from current props so a day switch or swap never paints
+  // the previous meal image while an effect catches up.
+  const imgSrc = failedUrl === photoUrl ? fallbackSvg : photoUrl;
 
-  useEffect(() => {
-    setImgSrc(getFoodImage(name, category, imageUrl));
-  }, [name, category, imageUrl]);
-
-  // A failed request can finish before hydration attaches React's onError.
+  // The browser can fail an SSR image before hydration attaches onError.
   useEffect(() => {
     const image = imageRef.current;
     if (image?.complete && image.naturalWidth === 0 && imgSrc !== fallbackSvg) {
-      setImgSrc(fallbackSvg);
+      setFailedUrl(photoUrl);
     }
-  }, [imgSrc, fallbackSvg]);
+  }, [photoUrl, imgSrc, fallbackSvg]);
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
+      key={photoUrl}
       ref={imageRef}
       src={imgSrc}
       alt={name || "Food"}
       loading="lazy"
       decoding="async"
       onError={() => {
-        if (imgSrc !== fallbackSvg) {
-          setImgSrc(fallbackSvg);
-        }
+        if (photoUrl !== fallbackSvg) setFailedUrl(photoUrl);
       }}
       className={className}
       style={style}

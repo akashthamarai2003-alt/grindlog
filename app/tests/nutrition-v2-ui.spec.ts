@@ -66,11 +66,30 @@ test("switching days loads that date's persisted V2 response", async ({ page }) 
     body: JSON.stringify({ success: true, data: { ...day([{ ...baseMeal, id: "monday", slot: "lunch", name: "Monday Dal Plate", status: "SKIPPED" }]), date: "2026-10-05" } }),
   }));
   await page.goto("/test-nutrition-v2");
+  await expect(page.locator('[data-v2-ready="true"]')).toBeVisible();
   await page.getByRole("button", { name: "Next week" }).click();
   await page.getByRole("region", { name: "Choose plan day" }).getByRole("button", { name: /Mon.*05/ }).click();
   await expect(page.getByRole("heading", { name: "Monday Dal Plate" })).toBeVisible();
   await expect(page.getByRole("article").getByText("SKIPPED", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /Mon.*05/ }).last()).toHaveAttribute("aria-pressed", "true");
+});
+
+test("a day switch replaces a missing prior meal image with the new meal or fallback", async ({ page }) => {
+  await page.route("**/api/nutrition/v2-day?date=2026-10-05", (route) => route.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({ success: true, data: { ...day([{
+      ...baseMeal, id: "monday-image", slot: "lunch", name: "Monday Rajma Bowl",
+      imageUrl: "https://images.grindlog.in/monday-rajma.webp",
+    }]), date: "2026-10-05" } }),
+  }));
+  await page.goto("/test-nutrition-v2");
+  await expect(page.locator('[data-v2-ready="true"]')).toBeVisible();
+  await page.getByRole("button", { name: "Next week" }).click();
+  await page.getByRole("region", { name: "Choose plan day" }).getByRole("button", { name: /Mon.*05/ }).click();
+  await expect(page.getByRole("heading", { name: "Monday Rajma Bowl" })).toBeVisible();
+  const image = page.getByRole("article").locator("img").first();
+  await expect(image).not.toHaveAttribute("src", /missing-lunch\.jpg/);
+  await expect.poll(() => image.evaluate((node) => node instanceof HTMLImageElement && node.complete && node.naturalWidth > 0)).toBe(true);
 });
 
 test("client controls hydrate again after a fresh navigation", async ({ page }) => {

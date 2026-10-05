@@ -1,0 +1,39 @@
+{
+  "observed_at": "2026-10-04T16:31:13.949Z",
+  "failures": [
+    {
+      "id": "2c06a8a6-18a0-4240-a716-1862a5b115c3",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/tandoori-chicken-phulka/v1/f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b.webp",
+      "status": {
+        "ok": false,
+        "status": "FETCH_OR_DECODE_ERROR",
+        "error": "fetch failed",
+        "cause": "UND_ERR_CONNECT_TIMEOUT"
+      },
+      "storage_object_listed": true
+    },
+    {
+      "id": "52bb98d8-87fa-4467-b113-7c962b6f0b31",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/egg-bhurji-chapati/v1/043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588.webp",
+      "status": {
+        "ok": false,
+        "status": "FETCH_OR_DECODE_ERROR",
+        "error": "fetch failed",
+        "cause": "UND_ERR_CONNECT_TIMEOUT"
+      },
+      "storage_object_listed": true
+    },
+    {
+      "id": "53aaae7c-5225-454c-a8c5-79b856602431",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/palak-paneer-phulka/v1/43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0.webp",
+      "status": {
+        "ok": false,
+        "status": "FETCH_OR_DECODE_ERROR",
+        "error": "fetch failed",
+        "cause": "UND_ERR_CONNECT_TIMEOUT"
+      },
+      "storage_object_listed": true
+    }
+  ],
+  "note": "Initial probes timed out; object existence was independently confirmed. See final manifest for subsequent delivery verification."
+}

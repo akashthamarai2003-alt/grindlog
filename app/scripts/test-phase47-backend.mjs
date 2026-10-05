@@ -4,6 +4,21 @@ import { selectGroceryPlanItems, groceryPortionAmount } from "../lib/services/nu
 import { createLiveFoodIdResolver } from "../lib/services/nutrition/live-food-id.ts";
 import { persistedV2MealSlots, selectDisplayPlanItems } from "../lib/services/nutrition/v2-display-items.ts";
 import { V2PlanService, resolveV2ImageSnapshot } from "../lib/services/nutrition/v2-plan-service.ts";
+import { approvedImageForReference } from "../lib/fitness/nutrition/image-policy.ts";
+
+test("image delivery requires current approval and exact immutable recipe ownership", () => {
+  const image = { id: "image-1", recipe_version_id: "version-1", status: "APPROVED", is_primary: true,
+    storage_path: "recipe-images/dish/v1/hash.webp", url: "https://storage.test/dish/v1/hash.webp" };
+  const reference = { imageAssetId: image.id, recipeVersionId: image.recipe_version_id,
+    storagePath: image.storage_path, url: image.url };
+  assert.equal(approvedImageForReference(reference, [image]), image);
+  for (const changed of [{ status: "DRAFT" }, { status: "REJECTED" }, { is_primary: false },
+    { recipe_version_id: "other-version" }, { storage_path: "other-object.webp" }, { url: "https://storage.test/unrelated.webp" }]) {
+    assert.equal(approvedImageForReference(reference, [{ ...image, ...changed }]), null);
+  }
+  assert.equal(approvedImageForReference(reference, []), null);
+  assert.equal(approvedImageForReference({ ...reference, imageAssetId: null }, [image]), null);
+});
 
 test("V2 grocery rows prefer authoritative details over compatibility projections", () => {
   const items = [

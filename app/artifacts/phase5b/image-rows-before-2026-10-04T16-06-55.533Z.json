@@ -1,0 +1,3082 @@
+[
+  {
+    "id": "016cb392-cb7a-44ec-b0c3-1e764c9c1caf",
+    "recipe_version_id": "04277c91-1fce-4eb1-a4be-fdf09f91520d",
+    "storage_path": "recipe-images/boiled-eggs-dal-fry-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-dal-fry-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Dal Fry & Steamed White Rice",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "02b573f4-d4bc-4314-9a91-e0cfd16cb9ae",
+    "recipe_version_id": "11015405-7a8a-4dbb-a427-fa5fe529dc41",
+    "storage_path": "recipe-images/jain-khichdi-ghee-curd-v1.webp",
+    "url": "https://images.grindlog.in/recipes/jain-khichdi-ghee-curd.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Jain Moong Dal Khichdi with Ghee & Low Fat Curd",
+    "dominant_foods": [
+      "Moong Dal Khichdi"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "05d3c931-1933-40c6-b56b-0d28b742914d",
+    "recipe_version_id": "cb6c530c-35d9-4ab8-aae5-2e9734e968c2",
+    "storage_path": "recipe-images/boiled-eggs-kala-chana-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-kala-chana-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Kala Chana Curry & Phulkas",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "05d71971-0c4f-4f0b-acf6-a8120cb54c7c",
+    "recipe_version_id": "cb605a54-cade-46e1-892a-a04b48422b30",
+    "storage_path": "recipe-images/soya-chunks-bhurji-roti-v1.webp",
+    "url": "https://images.grindlog.in/recipes/soya-chunks-bhurji-roti.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Soya Chunks Bhurji with Multigrain Roti",
+    "dominant_foods": [
+      "Soya Chunks (Raw / Dry)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "06a282a7-b69d-4ba2-8041-35b48b0f2465",
+    "recipe_version_id": "8de44b41-7dd6-4e98-986a-23c20175f991",
+    "storage_path": "recipe-images/lemon-peanut-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/lemon-peanut-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tangy Lemon Peanut Rice with Steamed Carrots",
+    "dominant_foods": [
+      "Roasted Peanuts"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "06e8e2a4-2fff-448f-9a3c-e7612540ebf1",
+    "recipe_version_id": "3f46a517-2168-4f02-a843-a31a2cfe88b1",
+    "storage_path": "recipe-images/grilled-chicken-phulka-salad-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-chicken-phulka-salad.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Hot Phulkas & Salad",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "09650567-759f-4d39-a553-eb3ddafbc080",
+    "recipe_version_id": "cf07ac06-dfcf-46a3-9818-9679cf75ceb1",
+    "storage_path": "recipe-images/greek-yogurt-apple-chia-v1.webp",
+    "url": "https://images.grindlog.in/recipes/greek-yogurt-apple-chia.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Greek Yogurt with Apple Slices & Chia Seeds",
+    "dominant_foods": [
+      "Greek Yogurt (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "0a863bd9-4671-4d2a-a30d-9225e19aff2e",
+    "recipe_version_id": "e2da919c-5632-4348-bf88-9d350623864c",
+    "storage_path": "recipe-images/grilled-chicken-sweet-corn-salad-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-chicken-sweet-corn-salad.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Sweet Corn & Cucumber",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "0bc1e5cb-106d-4952-8c3c-a47a63d23eb1",
+    "recipe_version_id": "9791e9c8-124e-44f9-b512-4ece663d88e4",
+    "storage_path": "recipe-images/moong-dal-cheela-paneer-v1.webp",
+    "url": "https://images.grindlog.in/recipes/moong-dal-cheela-paneer.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Moong Dal Cheela with Fresh Paneer",
+    "dominant_foods": [
+      "Fresh Paneer (Raw)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "0c41cecf-a897-4056-ab2f-3d11a8c623b0",
+    "recipe_version_id": "9ee0ef17-d0ef-4406-9ad1-d892eae57118",
+    "storage_path": "recipe-images/paneer-keema-style-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/paneer-keema-style-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Minced Low Fat Paneer Curry with Hot Phulkas",
+    "dominant_foods": [
+      "Low Fat Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "0c5d38e2-2142-411e-a6de-af1eba15beae",
+    "recipe_version_id": "99c372cf-2c38-4d83-907d-5a716e05d711",
+    "storage_path": "recipe-images/vegetable-upma-v1.webp",
+    "url": "https://images.grindlog.in/recipes/vegetable-upma.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Vegetable Upma with Steamed Peas",
+    "dominant_foods": [
+      "Green Peas (Matar)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "0cedefc0-cd26-41c9-8248-bae9a0736e18",
+    "recipe_version_id": "e7a78661-efec-4503-a081-8aea9d3d942d",
+    "storage_path": "recipe-images/curd-banana-walnuts-v1.webp",
+    "url": "https://images.grindlog.in/recipes/curd-banana-walnuts.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Plain Curd Bowl with Sliced Banana & Walnuts",
+    "dominant_foods": [
+      "Curd / Dahi (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "0d80dab0-94d2-4ff2-8d7b-8e1234c93771",
+    "recipe_version_id": "260c22e8-2792-47f2-a07e-1a5f45f227f6",
+    "storage_path": "recipe-images/masala-oats-veggies-v1.webp",
+    "url": "https://images.grindlog.in/recipes/masala-oats-veggies.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Savory Masala Oats with Steamed Broccoli",
+    "dominant_foods": [
+      "Masala Oats"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "1017e096-8fc4-498a-a113-5d717acee2cc",
+    "recipe_version_id": "7a89d6ac-2977-4d61-8e34-76931e8c33a3",
+    "storage_path": "recipe-images/chicken-curry-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-curry-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken Curry with Fragrant Jeera Rice",
+    "dominant_foods": [
+      "Chicken Curry (Home Style)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "108866c1-b48b-41c3-8410-ddeaa8ca9a30",
+    "recipe_version_id": "3154fb5d-b682-4c61-8b2e-a9dda54fc5c5",
+    "storage_path": "recipe-images/chicken-keema-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-keema-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken Keema with Fragrant Jeera Rice",
+    "dominant_foods": [
+      "Chicken Keema"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "124d5c46-41ed-48f2-8d3f-04995c74ac15",
+    "recipe_version_id": "3de3ffef-692d-487f-8377-5d9ca268d53f",
+    "storage_path": "recipe-images/boiled-chicken-apple-snack-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-chicken-apple-snack.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Chicken Breast Slices with Crisp Apple",
+    "dominant_foods": [
+      "Boiled Chicken Breast"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "148184f8-f327-4b09-9f2d-7ac822840524",
+    "recipe_version_id": "1347efe9-5da4-49eb-95f0-bc106f149b0a",
+    "storage_path": "recipe-images/sambar-rice-bowl-v1.webp",
+    "url": "https://images.grindlog.in/recipes/sambar-rice-bowl.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of South Indian Sambar Rice with Roasted Chana",
+    "dominant_foods": [
+      "Roasted Chana (Dry Chickpeas)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "15629e03-2294-4373-abf2-af26ad36e0ee",
+    "recipe_version_id": "3db53ee8-be3a-40bd-9fb0-1c0a908ea145",
+    "storage_path": "recipe-images/chole-masala-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chole-masala-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chole Masala with Multigrain Roti",
+    "dominant_foods": [
+      "Chole / Chana Masala"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "18000b5d-ac2e-4c8f-aacb-35f031f8696d",
+    "recipe_version_id": "5d048d5a-6806-40cf-b6be-ef93123cd121",
+    "storage_path": "recipe-images/toor-dal-paneer-tikka-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/toor-dal-paneer-tikka-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Toor Dal with Steamed Rice & Paneer Tikka",
+    "dominant_foods": [
+      "Grilled Paneer / Paneer Tikka"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "18635e23-7bfe-42b4-96d9-d38cbea11e2b",
+    "recipe_version_id": "e4573772-1621-47ad-b9b2-9707780dc3f2",
+    "storage_path": "recipe-images/baingan-bharta-dahi-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/baingan-bharta-dahi-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Baingan Bharta with Curd & Chapati with Ghee",
+    "dominant_foods": [
+      "Curd / Dahi (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "18cd90d9-d513-45d6-b309-9706c404db46",
+    "recipe_version_id": "5fefa227-b7af-4482-807f-d671147bbb13",
+    "storage_path": "recipe-images/grilled-chicken-brown-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-chicken-brown-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Brown Rice & Broccoli",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "19365b71-183a-4724-a509-aada4b5b6b01",
+    "recipe_version_id": "8cd57c7a-af42-4843-9c59-b9c254f729f9",
+    "storage_path": "recipe-images/boiled-eggs-toor-dal-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-toor-dal-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Toor Dal & Steamed Rice",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "1a0e8a77-b799-400a-836e-1c6b57500302",
+    "recipe_version_id": "17c079a0-5eb3-42d2-b015-6abf83e4aabb",
+    "storage_path": "recipe-images/palak-paneer-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/palak-paneer-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Palak Paneer with Hot Phulkas",
+    "dominant_foods": [
+      "Palak Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "1aa36128-3eb7-4a4d-824c-2f0a80ad955b",
+    "recipe_version_id": "6cc27632-feb3-4290-be82-2cc5e0de6330",
+    "storage_path": "recipe-images/egg-bhurji-chapati-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-bhurji-chapati.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Indian Egg Bhurji with Hot Phulkas",
+    "dominant_foods": [
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "1ad5b23f-0835-4997-a64c-838ca755399f",
+    "recipe_version_id": "d1e88da7-49ab-4ce6-bcb0-e19aa0fc04d1",
+    "storage_path": "recipe-images/chicken-tikka-platter-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-tikka-platter-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken Tikka Platter with Phulkas & Salad",
+    "dominant_foods": [
+      "Chicken Tikka"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "1d119ecf-120e-46d9-88e0-2b5d3e54b8fc",
+    "recipe_version_id": "e23401f2-be7c-4bd9-9839-22766a6f3d25",
+    "storage_path": "recipe-images/yellow-dal-paneer-bhurji-roti-v1.webp",
+    "url": "https://images.grindlog.in/recipes/yellow-dal-paneer-bhurji-roti.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Yellow Moong Dal with Paneer Bhurji & Multigrain Roti",
+    "dominant_foods": [
+      "Paneer Bhurji"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "1da46c64-f58d-45dc-b754-dfa02a691491",
+    "recipe_version_id": "a2b8fd75-6548-460f-9ff8-d16d836a5a4d",
+    "storage_path": "recipe-images/pb-toast-banana-v1.webp",
+    "url": "https://images.grindlog.in/recipes/pb-toast-banana.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Peanut Butter Toast with Banana",
+    "dominant_foods": [
+      "Natural Peanut Butter"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "1e13d82d-535e-459a-8c59-fe3359e35854",
+    "recipe_version_id": "bacb692e-061b-40e4-af9b-a8d91566344f",
+    "storage_path": "recipe-images/boiled-eggs-kala-chana-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-kala-chana-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Kala Chana Curry & Brown Rice",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "1e7dc298-4d70-40e6-8f1c-12c5b1c98fb1",
+    "recipe_version_id": "0fc38ae0-c5c0-4ae4-b572-09f0f0ab7a1a",
+    "storage_path": "recipe-images/fish-curry-steamed-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/fish-curry-steamed-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Fish Curry with Steamed Rice",
+    "dominant_foods": [
+      "Fish Curry (Rohu / Indian Carp)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "20a94b01-a202-4b11-b3b2-ab721e700ca0",
+    "recipe_version_id": "a7a03929-a449-4e70-b8a4-ca19ae30ad9b",
+    "storage_path": "recipe-images/chicken-breast-chole-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-breast-chole-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Chole & Multigrain Roti",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "20b7dabb-7d13-437f-9148-3c1a99ee6763",
+    "recipe_version_id": "210a3952-8b7f-400c-897d-ecab6ab6fb2e",
+    "storage_path": "recipe-images/chicken-tikka-brown-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-tikka-brown-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken Tikka with Steamed Brown Rice",
+    "dominant_foods": [
+      "Chicken Tikka"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "21145d7c-e962-4144-8a2d-1c6e3a1173d8",
+    "recipe_version_id": "9c35f3ce-ee3d-43bc-9417-ba1f92ad8389",
+    "storage_path": "recipe-images/sweet-potato-chaat-v1.webp",
+    "url": "https://images.grindlog.in/recipes/sweet-potato-chaat.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Sweet Potato Chaat with Roasted Peanuts",
+    "dominant_foods": [
+      "Roasted Peanuts"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "22c578ce-d18a-4566-ae42-190704c266d0",
+    "recipe_version_id": "29b70919-783a-49ab-a57c-088e162bbe49",
+    "storage_path": "recipe-images/boiled-egg-whites-green-tea-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-egg-whites-green-tea.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Egg Whites with Chaat Masala & Green Tea",
+    "dominant_foods": [
+      "Boiled Egg White"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "231ccb5d-1160-4db4-9060-a02bdef327d0",
+    "recipe_version_id": "d1df7229-103d-405f-878f-9a501f2861b9",
+    "storage_path": "recipe-images/kadai-paneer-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/kadai-paneer-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Kadai Paneer with Jeera Rice",
+    "dominant_foods": [
+      "Kadai Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "25454108-905d-46b9-bb31-1adec235e7b3",
+    "recipe_version_id": "762fe4f1-2698-406b-b8a2-8f8ee73d8472",
+    "storage_path": "recipe-images/boiled-eggs-punjabi-rajma-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-punjabi-rajma-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Punjabi Rajma & Steamed Rice",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "25b7fe50-f532-44eb-8262-284e25acfae4",
+    "recipe_version_id": "d35dd989-234e-48a6-a0f0-d03a8b70bfb4",
+    "storage_path": "recipe-images/chole-masala-curd-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chole-masala-curd-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chole Masala with Steamed Rice & Salted Chaas",
+    "dominant_foods": [
+      "Chole / Chana Masala"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "26ebc1ef-1501-47c5-ad42-3b2ed1fb9c54",
+    "recipe_version_id": "1b088bf6-d816-4df9-af4f-87fb0908ddb1",
+    "storage_path": "recipe-images/bread-omelette-homestyle-v1.webp",
+    "url": "https://images.grindlog.in/recipes/bread-omelette-homestyle.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Indian Street-Style Bread Omelette",
+    "dominant_foods": [
+      "Bread Omelette"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "272b893b-5bc6-458d-8832-69085a86b557",
+    "recipe_version_id": "9ace69b8-1a55-4016-afa6-5e822efb79e7",
+    "storage_path": "recipe-images/boiled-egg-whites-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-egg-whites-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Hot Phulkas & Salad",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "2911bf30-b29f-447e-a1f1-0803f7851536",
+    "recipe_version_id": "8d6383c5-74b8-4cdc-b044-d04b60223bb9",
+    "storage_path": "recipe-images/dal-fry-ghee-phulka-dahi-v1.webp",
+    "url": "https://images.grindlog.in/recipes/dal-fry-ghee-phulka-dahi.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Dal Fry with Ghee Phulka & Plain Curd",
+    "dominant_foods": [
+      "Dal Fry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "294ae6d9-a412-4fef-8bf9-079f1952be09",
+    "recipe_version_id": "55fe46dc-e765-4a2c-8f83-da40befd1c8e",
+    "storage_path": "recipe-images/homestyle-mutton-curry-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/homestyle-mutton-curry-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Mutton Curry with Jeera Rice",
+    "dominant_foods": [
+      "Mutton Curry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "2c25d52e-1a74-4ea1-b9b0-a91d827c4ea7",
+    "recipe_version_id": "b54b660a-a843-42ff-8056-ca4b749b91dc",
+    "storage_path": "recipe-images/mixed-veg-sabzi-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/mixed-veg-sabzi-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Mixed Vegetable Sabzi with Phulkas & Moong Sprouts",
+    "dominant_foods": [
+      "Moong Sprouts Salad"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "2ddd3e26-8fde-4eb9-91df-a467f25d9007",
+    "recipe_version_id": "f669c25c-3f7f-46e1-8f35-14d57d74ffc9",
+    "storage_path": "recipe-images/chicken-keema-brown-toast-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-keema-brown-toast.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken Keema on Brown Bread Toast",
+    "dominant_foods": [
+      "Chicken Keema"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "2e388404-450d-4e87-834b-ee98b025edd7",
+    "recipe_version_id": "9eccabb2-0a6c-47c1-ae67-333c3f419196",
+    "storage_path": "recipe-images/spicy-egg-curry-multigrain-roti-v1.webp",
+    "url": "https://images.grindlog.in/recipes/spicy-egg-curry-multigrain-roti.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Dhaba-Style Egg Curry with Multigrain Roti",
+    "dominant_foods": [
+      "Egg Curry (2 Eggs)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "2e80a43e-e73d-423d-9928-adf386a16e64",
+    "recipe_version_id": "8136e867-a752-4951-9861-4f7ea32b94db",
+    "storage_path": "recipe-images/baingan-bharta-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/baingan-bharta-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Baingan Bharta with Multigrain Roti & Chana",
+    "dominant_foods": [
+      "Roasted Chana (Dry Chickpeas)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "2ec86584-bdce-4456-9fd2-5295a98c47eb",
+    "recipe_version_id": "6f89bcfa-6805-46d9-a423-0774c84afaa4",
+    "storage_path": "recipe-images/tandoori-chicken-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/tandoori-chicken-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tandoori Chicken Breast with Hot Phulkas",
+    "dominant_foods": [
+      "Tandoori Chicken"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "30266830-95fb-4b2e-8cd1-85ece5820de3",
+    "recipe_version_id": "887baf09-872b-425c-9f41-1b72ef1aa634",
+    "storage_path": "recipe-images/chicken-breast-egg-whites-power-bowl-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-breast-egg-whites-power-bowl.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken Breast & Egg White Power Bowl with Rice",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "31d97398-ecf3-4042-b2e2-92b37d65148e",
+    "recipe_version_id": "35a235fa-6b87-4e9e-9f0e-0004d7050f48",
+    "storage_path": "recipe-images/boiled-eggs-sambar-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-sambar-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with South Indian Sambar Rice",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "3220aaa7-5d97-4b21-9953-c3c1db4b1a8e",
+    "recipe_version_id": "60f08d3c-4af2-498e-917c-23524fab869b",
+    "storage_path": "recipe-images/oats-milk-almonds-v1.webp",
+    "url": "https://images.grindlog.in/recipes/oats-milk-almonds.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Oats Cooked in Toned Milk with Raw Almonds",
+    "dominant_foods": [
+      "Oats with Milk"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "32f10070-06f9-4ff9-904d-248541419918",
+    "recipe_version_id": "89a4cfe2-309c-40e8-9b0e-60864e759944",
+    "storage_path": "recipe-images/hostel-kettle-boiled-eggs-bread-v1.webp",
+    "url": "https://images.grindlog.in/recipes/hostel-kettle-boiled-eggs-bread.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Hostel Boiled Eggs with Brown Bread & Chai",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "33f4e9b9-7de2-4181-ad54-de98090c2aac",
+    "recipe_version_id": "ad98afd4-4f71-47fb-8034-ef7e17512b9d",
+    "storage_path": "recipe-images/paneer-paratha-curd-v1.webp",
+    "url": "https://images.grindlog.in/recipes/paneer-paratha-curd.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Paneer Paratha with Low Fat Curd",
+    "dominant_foods": [
+      "Paneer Paratha"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "350e49e4-5033-49ae-985d-bfbefa857594",
+    "recipe_version_id": "269a0eb9-b3a2-49a2-8ab3-687880580187",
+    "storage_path": "recipe-images/boiled-eggs-punjabi-rajma-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-punjabi-rajma-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Punjabi Rajma & Hot Phulkas",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "35b2c343-63a4-4ad3-8a34-f9768a1fb396",
+    "recipe_version_id": "5b955fa2-209a-495e-abd0-f79d1f9f4d63",
+    "storage_path": "recipe-images/boiled-eggs-lobia-masala-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-lobia-masala-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Lobia Masala & Steamed Rice",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "3634ff47-51d5-427a-98cc-19f7ca393e74",
+    "recipe_version_id": "fbdc86f8-f81c-4eba-a3d2-8cb37a319021",
+    "storage_path": "recipe-images/grilled-paneer-tikka-salad-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-paneer-tikka-salad.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Paneer Tikka with Green Mint Salad",
+    "dominant_foods": [
+      "Grilled Paneer / Paneer Tikka"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "38804a14-6b98-4c16-b41c-286dbb8e29ef",
+    "recipe_version_id": "c6bcc33c-5501-45f1-93ff-2effb40b6492",
+    "storage_path": "recipe-images/homestyle-mutton-curry-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/homestyle-mutton-curry-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Mutton Curry with Steamed Rice",
+    "dominant_foods": [
+      "Mutton Curry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "3b3c8cd3-4237-42c4-b0f1-9ea5313c3cb5",
+    "recipe_version_id": "842620db-22d7-4d11-8c37-2141b1d1ee68",
+    "storage_path": "recipe-images/toor-dal-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/toor-dal-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Toor Dal with Hot Phulkas & Green Salad",
+    "dominant_foods": [
+      "Toor Dal (Arhar Dal)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "3b97b1f1-ac7b-4f0a-8142-f444608edb5d",
+    "recipe_version_id": "92e094dd-185a-4317-84a9-afbad38c1fd5",
+    "storage_path": "recipe-images/overnight-oats-milk-chia-v1.webp",
+    "url": "https://images.grindlog.in/recipes/overnight-oats-milk-chia.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Overnight Oats in Milk with Chia & Banana",
+    "dominant_foods": [
+      "Overnight Oats with Chia"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "3c3e9f2e-246c-46c1-9ba1-a633b4359836",
+    "recipe_version_id": "c8ae1d5f-b04a-47df-ac60-7a85f947a843",
+    "storage_path": "recipe-images/yellow-moong-dal-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/yellow-moong-dal-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Yellow Moong Dal with Steamed White Rice",
+    "dominant_foods": [
+      "Yellow Moong Dal"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "3c4625d1-b7e8-4be9-b0aa-9cd17e5c2bcb",
+    "recipe_version_id": "0a2f0c6f-3f10-4f3d-994e-a128927f57a5",
+    "storage_path": "recipe-images/egg-white-omelette-broccoli-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-white-omelette-broccoli.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Egg White Omelette with Steamed Broccoli & Toast",
+    "dominant_foods": [
+      "Egg Omelette"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "3dd72a78-7a9e-46d7-9500-ed299a1d589e",
+    "recipe_version_id": "42e11ba7-1c00-4cac-8542-9406ec37da9b",
+    "storage_path": "recipe-images/egg-bhurji-bhindi-masala-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-bhurji-bhindi-masala-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Egg Bhurji with Homestyle Bhindi Masala & Phulkas",
+    "dominant_foods": [
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "3eea4711-a4d6-4b56-8892-57eaf8268f42",
+    "recipe_version_id": "2472ed1e-b51e-45e6-9429-a14c5aedc0dc",
+    "storage_path": "recipe-images/masoor-dal-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/masoor-dal-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Masoor Dal Tadka with Multigrain Roti",
+    "dominant_foods": [
+      "Masoor Dal (Red Lentil)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "3fbcd339-5a9b-491c-a300-1f9148b9a3d6",
+    "recipe_version_id": "c5fa4edd-a6f4-4413-97ab-d9cbf024ca29",
+    "storage_path": "recipe-images/punjabi-rajma-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/punjabi-rajma-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Punjabi Rajma Masala with Hot Phulkas",
+    "dominant_foods": [
+      "Rajma (Kidney Beans Curry)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "41d8b965-f6bd-4dfd-894d-a1d4c88e19d9",
+    "recipe_version_id": "38a0d74e-bb18-4651-9ede-2fdfba0811ad",
+    "storage_path": "recipe-images/egg-bhurji-aloo-gobi-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-bhurji-aloo-gobi-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Egg Bhurji with Aloo Gobi & Hot Phulkas",
+    "dominant_foods": [
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "43debe1a-dd06-4284-a402-6067b9c12b13",
+    "recipe_version_id": "b8ecc53d-3405-4c7b-8b96-166e0968eb36",
+    "storage_path": "recipe-images/tempeh-tikka-brown-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/tempeh-tikka-brown-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tempeh Stir Fry with Steamed Brown Rice & Spinach",
+    "dominant_foods": [
+      "Tempeh"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "444d6565-bb70-4cf3-82e9-de74001e82d1",
+    "recipe_version_id": "8056f3bf-2abd-47d9-a1df-b7d093f7240e",
+    "storage_path": "recipe-images/egg-white-scramble-quinoa-broccoli-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-white-scramble-quinoa-broccoli.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Egg White Scramble with Steamed Quinoa & Broccoli",
+    "dominant_foods": [
+      "Boiled Egg White"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4452666e-a296-45ac-9e6c-0f74117919c3",
+    "recipe_version_id": "8adec2ac-bd4a-457f-9b79-94b23a407a8f",
+    "storage_path": "recipe-images/poha-roasted-peanuts-v1.webp",
+    "url": "https://images.grindlog.in/recipes/poha-roasted-peanuts.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Poha with Roasted Peanuts",
+    "dominant_foods": [
+      "Roasted Peanuts"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "470f70c0-557f-4ca4-b06b-7cf1597eff30",
+    "recipe_version_id": "64f8b641-e0b3-4767-b967-63ce223afba2",
+    "storage_path": "recipe-images/chaas-roasted-chana-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chaas-roasted-chana.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Salted Chaas (Buttermilk) with Roasted Chana",
+    "dominant_foods": [
+      "Roasted Chana (Dry Chickpeas)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4728b039-0e0c-4401-a2e0-89b095d4a611",
+    "recipe_version_id": "e1f2417c-f7da-4b2a-8c6c-7026dd394b57",
+    "storage_path": "recipe-images/tofu-matar-curry-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/tofu-matar-curry-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tofu & Green Peas Curry with Steamed Rice",
+    "dominant_foods": [
+      "Tofu (Firm)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "491725cf-b663-443e-bace-9e913eade895",
+    "recipe_version_id": "5fea0794-09a7-4098-903e-513501e332f3",
+    "storage_path": "recipe-images/mushroom-masala-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/mushroom-masala-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Mushroom Masala with Steamed White Rice",
+    "dominant_foods": [
+      "Mushroom Masala"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4b7aa75e-b5a8-4183-a34d-7817cb2f97cc",
+    "recipe_version_id": "d5eb654f-05b8-4d3b-9872-e73928af3445",
+    "storage_path": "recipe-images/boiled-egg-roasted-peanuts-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-egg-roasted-peanuts.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Roasted Peanuts",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4be50deb-8359-435f-8586-ce1931182fc2",
+    "recipe_version_id": "1405fb4e-cbcb-4b09-a634-8bcd7aa478a7",
+    "storage_path": "recipe-images/boiled-eggs-apple-snack-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-apple-snack.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Hard Boiled Eggs with Crisp Apple",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4c7f9b5f-079b-4cb4-862f-141e81714dbb",
+    "recipe_version_id": "378193a1-30af-466e-8131-173d3a68bcc5",
+    "storage_path": "recipe-images/homestyle-egg-curry-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/homestyle-egg-curry-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Egg Curry with Hot Phulkas & Salad",
+    "dominant_foods": [
+      "Egg Curry (2 Eggs)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4d57d928-f70c-4713-9ef4-8b0c77dea550",
+    "recipe_version_id": "381d8e97-aaf5-4b77-b411-ead97b3bac77",
+    "storage_path": "recipe-images/rava-dosa-curd-v1.webp",
+    "url": "https://images.grindlog.in/recipes/rava-dosa-curd.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Crisp Rava Dosa with Dahi & Sambar",
+    "dominant_foods": [
+      "Curd / Dahi (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4e4755a8-ff39-4e73-868f-59ff1dab2be1",
+    "recipe_version_id": "48920f74-d8d9-4126-b807-e3683ab6a97b",
+    "storage_path": "recipe-images/dal-fry-paneer-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/dal-fry-paneer-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Dal Fry with Steamed Rice & Fresh Paneer",
+    "dominant_foods": [
+      "Fresh Paneer (Raw)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4e905183-e64f-4e8b-8ba2-b00d95a002d8",
+    "recipe_version_id": "3abffda3-295b-4d40-818d-cc6ca0e4fa9b",
+    "storage_path": "recipe-images/masala-chai-wheat-toast-v1.webp",
+    "url": "https://images.grindlog.in/recipes/masala-chai-wheat-toast.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Indian Chai with Milk & Whole Wheat Bread",
+    "dominant_foods": [
+      "Indian Chai with Milk"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4f5618a7-6fb8-4d6f-8a0b-88abec7e8b81",
+    "recipe_version_id": "45827f20-a059-4074-a09c-009dc023b36d",
+    "storage_path": "recipe-images/chicken-breast-rajma-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-breast-rajma-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Punjabi Rajma & Rice",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "4fd80977-b1bc-48af-a626-534d647f4706",
+    "recipe_version_id": "7dbbd49a-96c3-4dc3-9460-4be1f9c0a472",
+    "storage_path": "recipe-images/chicken-biryani-homestyle-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-biryani-homestyle.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Chicken Biryani with Cucumber Salad",
+    "dominant_foods": [
+      "Chicken Biryani"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "507a09b2-afdb-45ed-b182-88677f023028",
+    "recipe_version_id": "745c1120-5645-4b4f-8524-ac0796e72490",
+    "storage_path": "recipe-images/boiled-eggs-chole-masala-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-chole-masala-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Chole Masala & Multigrain Roti",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5131f71e-2ac4-4ce6-bddb-3c171845eca9",
+    "recipe_version_id": "a1fc51b8-3d6a-4722-b092-ce17ed3ba5b1",
+    "storage_path": "recipe-images/gobi-paratha-chaas-v1.webp",
+    "url": "https://images.grindlog.in/recipes/gobi-paratha-chaas.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Gobi Paratha with Salted Chaas (Buttermilk)",
+    "dominant_foods": [
+      "Gobi Paratha"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "528c206e-252f-4246-8859-68aff62072a0",
+    "recipe_version_id": "727c5142-463c-4d04-a42f-56f9ae328fa5",
+    "storage_path": "recipe-images/boiled-eggs-chana-dal-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-chana-dal-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Chana Dal Curry & Phulkas",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "560d392d-05f3-4cd0-88f7-55dfc445d8db",
+    "recipe_version_id": "55908f07-dab9-49f9-aa2b-0ea4b928b499",
+    "storage_path": "recipe-images/fish-curry-chole-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/fish-curry-chole-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Fish Curry with Chole Masala & Rice",
+    "dominant_foods": [
+      "Fish Curry (Rohu / Indian Carp)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5659f7e7-f332-4116-80b6-8c0362e45f3c",
+    "recipe_version_id": "75452dd5-cb3d-4909-9f3e-1bf2955df335",
+    "storage_path": "recipe-images/tandoori-chicken-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/tandoori-chicken-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tandoori Chicken with Fragrant Jeera Rice",
+    "dominant_foods": [
+      "Tandoori Chicken"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "567e542c-647c-42c6-8a3b-7d00ff5a3e27",
+    "recipe_version_id": "63dc2ad3-ad0e-4907-937f-6da31c3efff7",
+    "storage_path": "recipe-images/prawns-masala-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/prawns-masala-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Prawns Masala with Jeera Rice & Salad",
+    "dominant_foods": [
+      "Prawns Masala"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "57cd5d38-8ec6-4d98-a03f-98cf6bdf200a",
+    "recipe_version_id": "d1cc089d-10d6-4fa4-aad4-d71f85343ae2",
+    "storage_path": "recipe-images/tandoori-chicken-black-coffee-v1.webp",
+    "url": "https://images.grindlog.in/recipes/tandoori-chicken-black-coffee.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tandoori Chicken Breast with Black Coffee",
+    "dominant_foods": [
+      "Tandoori Chicken"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "585166d5-40ca-4eec-a483-18fbbd800c6d",
+    "recipe_version_id": "ed551a00-6c63-4755-9cd7-2bf2d9a3701f",
+    "storage_path": "recipe-images/kala-chana-paneer-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/kala-chana-paneer-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Kala Chana Curry with Fresh Paneer & Multigrain Roti",
+    "dominant_foods": [
+      "Fresh Paneer (Raw)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5999f170-d19e-48d3-829b-1b99be6c686c",
+    "recipe_version_id": "103003e7-2069-4bd2-adee-896ea039ca0f",
+    "storage_path": "recipe-images/kala-chana-curry-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/kala-chana-curry-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Kala Chana Curry with Phulkas & Salad",
+    "dominant_foods": [
+      "Kala Chana Curry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "59ca1743-713d-462e-a136-5cdcc6922b3b",
+    "recipe_version_id": "14d1b76f-485a-4f73-a88e-be5da6733a38",
+    "storage_path": "recipe-images/fish-curry-brown-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/fish-curry-brown-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Fish Curry with Steamed Brown Rice",
+    "dominant_foods": [
+      "Fish Curry (Rohu / Indian Carp)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5a2c2a66-89bb-4f45-94a7-9e63a154989a",
+    "recipe_version_id": "540a407d-e413-488a-9b1c-6d28732180ef",
+    "storage_path": "recipe-images/chicken-breast-dal-tadka-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-breast-dal-tadka-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Dal Tadka & Phulkas",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5ab10a6d-02a4-4120-8645-94701f0e9ffa",
+    "recipe_version_id": "6ab3c434-bcb5-402d-a4fe-47b18e805a1e",
+    "storage_path": "recipe-images/chole-masala-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chole-masala-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chole Masala with Steamed Basmati Rice",
+    "dominant_foods": [
+      "Chole / Chana Masala"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5b38ccd4-844d-4255-8b84-53d50ba7c5ef",
+    "recipe_version_id": "c69f75b3-e602-49bc-9e13-debcf91f4385",
+    "storage_path": "recipe-images/fish-curry-dal-tadka-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/fish-curry-dal-tadka-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Fish Curry with Dal Tadka & Rice",
+    "dominant_foods": [
+      "Fish Curry (Rohu / Indian Carp)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5df837b7-7b47-429e-b35a-0b643d71a387",
+    "recipe_version_id": "0b26c074-4768-4c16-a0b6-726526e4c93c",
+    "storage_path": "recipe-images/boiled-eggs-masala-oats-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-masala-oats.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Savory Masala Oats",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5e46420c-d531-40eb-97ba-b80f7a133a46",
+    "recipe_version_id": "05be5e2c-0e57-4efd-b513-97e1a635c201",
+    "storage_path": "recipe-images/boiled-eggs-banana-pb-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-banana-pb.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Banana & Peanut Butter",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5f58505e-b681-4ca0-82cf-9ce007a9defd",
+    "recipe_version_id": "87a8800b-b2cd-4f53-b6f3-fd7d6cb35b0c",
+    "storage_path": "recipe-images/mushroom-masala-paneer-roti-v1.webp",
+    "url": "https://images.grindlog.in/recipes/mushroom-masala-paneer-roti.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Mushroom Masala with Low Fat Paneer & Multigrain Roti",
+    "dominant_foods": [
+      "Low Fat Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "5fec1482-9ffe-425e-8812-30bf5a122c12",
+    "recipe_version_id": "2235cfbd-3cd3-4e83-ad74-d4d29bc5a5f4",
+    "storage_path": "recipe-images/boiled-eggs-black-coffee-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-black-coffee.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Hard Boiled Eggs with Black Coffee",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "604f9098-515d-4d68-b89c-aa7c0b8fdec9",
+    "recipe_version_id": "c087965c-5c5a-4eae-afa3-01f11fe866b7",
+    "storage_path": "recipe-images/boiled-egg-whites-sweet-potato-salad-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-egg-whites-sweet-potato-salad.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Egg Whites with Sweet Potato & Cucumber Salad",
+    "dominant_foods": [
+      "Boiled Egg White"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "616bc5b5-5435-42d1-bfa7-a4c250b00682",
+    "recipe_version_id": "0b69b2ec-43b0-4aee-8a75-e9fe816f149b",
+    "storage_path": "recipe-images/jain-steamed-idli-curd-v1.webp",
+    "url": "https://images.grindlog.in/recipes/jain-steamed-idli-curd.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Jain Steamed Idlis with Fresh Low Fat Curd",
+    "dominant_foods": [
+      "Low Fat Curd / Dahi"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "66bc4332-a0b3-4517-88e3-3634d9a809b8",
+    "recipe_version_id": "a71cad5f-546e-4078-85a3-e40979beb383",
+    "storage_path": "recipe-images/mixed-veg-paneer-bhurji-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/mixed-veg-paneer-bhurji-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Mixed Vegetable Sabzi with Paneer Bhurji & Phulka",
+    "dominant_foods": [
+      "Paneer Bhurji"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "67345918-fe46-4cda-8923-3d73cc907146",
+    "recipe_version_id": "8d727fb7-7e00-4ae9-b5bb-9ee627d43adb",
+    "storage_path": "recipe-images/hostel-kettle-boiled-eggs-oats-v1.webp",
+    "url": "https://images.grindlog.in/recipes/hostel-kettle-boiled-eggs-oats.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Hostel Kettle Boiled Eggs with Masala Oats",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "6737c6c7-9309-456a-a100-560896d02343",
+    "recipe_version_id": "17739669-94c3-4c10-900e-b7c88846e53a",
+    "storage_path": "recipe-images/filter-coffee-milk-makhana-v1.webp",
+    "url": "https://images.grindlog.in/recipes/filter-coffee-milk-makhana.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Filter Coffee with Milk & Roasted Makhana",
+    "dominant_foods": [
+      "Roasted Makhana (Fox Nuts)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "679b1159-4ace-4a20-bb56-c8a39b8c96ca",
+    "recipe_version_id": "16a32f61-fbeb-41b1-80ed-fa82a9e5616d",
+    "storage_path": "recipe-images/chicken-breast-dal-tadka-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-breast-dal-tadka-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Dal Tadka & Rice",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "68546308-8378-4bd1-90e5-91008c07cbff",
+    "recipe_version_id": "afd2885e-4a3f-4878-8b70-da6997e8e153",
+    "storage_path": "recipe-images/sweet-lassi-almonds-v1.webp",
+    "url": "https://images.grindlog.in/recipes/sweet-lassi-almonds.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Sweet Lassi with Roasted Almonds",
+    "dominant_foods": [
+      "Sweet Lassi"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "6a8338c1-f1bf-4925-8c22-e3a677606900",
+    "recipe_version_id": "d0da04ea-5d08-407c-9a6d-88f775c61e93",
+    "storage_path": "recipe-images/chana-chaat-lemon-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chana-chaat-lemon.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tangy Chana Chaat with Fresh Cucumber & Lemon",
+    "dominant_foods": [
+      "Chana Chaat"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "6ab30485-4e9d-49df-b1e6-e9455b8e5332",
+    "recipe_version_id": "7898fd47-e6b3-4b52-aed5-47d8290745ba",
+    "storage_path": "recipe-images/egg-bhurji-dal-fry-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-bhurji-dal-fry-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Egg Bhurji with Dal Fry & Steamed Basmati Rice",
+    "dominant_foods": [
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "6bd0e5cd-7de7-4e9f-b7f0-15eb4f34f7e6",
+    "recipe_version_id": "acf8d601-6c0f-4a9e-9e62-ab1b4482e192",
+    "storage_path": "recipe-images/soya-chunks-curry-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/soya-chunks-curry-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Soya Chunks Curry with Steamed Rice",
+    "dominant_foods": [
+      "Soya Chunks Curry (Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "6dbddb18-cd9c-46b1-8302-6d19f7a4c9d2",
+    "recipe_version_id": "d9712365-c0c3-4435-81db-3b3a3ac8983d",
+    "storage_path": "recipe-images/lobia-masala-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/lobia-masala-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Lobia (Black Eyed Peas) with Steamed Rice",
+    "dominant_foods": [
+      "Lobia (Black Eyed Peas Curry)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "6dc91943-5416-4017-95b7-46e87b252519",
+    "recipe_version_id": "0fc3419a-e87a-4dca-a569-46ad96879fc5",
+    "storage_path": "recipe-images/egg-bhurji-upma-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-bhurji-upma.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Spicy Egg Bhurji with Vegetable Upma",
+    "dominant_foods": [
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "6f89b486-5c87-4dd3-96d7-881caf2cd5f7",
+    "recipe_version_id": "357db1bb-ebc7-489b-99d0-d81ef1f1e841",
+    "storage_path": "recipe-images/boiled-eggs-dal-tadka-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-dal-tadka-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Dal Tadka & Hot Phulkas",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "7411fb3a-8624-49a6-83c0-916551b4eb65",
+    "recipe_version_id": "0abc4f02-f00d-4416-9970-dd4554803088",
+    "storage_path": "recipe-images/yellow-moong-dal-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/yellow-moong-dal-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Yellow Moong Dal with Phulkas & Cucumber Salad",
+    "dominant_foods": [
+      "Yellow Moong Dal"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "75d09232-f2cd-4ad4-867c-497482d2d64d",
+    "recipe_version_id": "06b40c0d-cd95-4b9b-92f4-09836acc3fe9",
+    "storage_path": "recipe-images/tofu-quinoa-broccoli-bowl-v1.webp",
+    "url": "https://images.grindlog.in/recipes/tofu-quinoa-broccoli-bowl.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tofu Stir Fry with Steamed Quinoa & Broccoli",
+    "dominant_foods": [
+      "Tofu (Firm)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "7723370b-7b74-49cc-8d71-655ff507da08",
+    "recipe_version_id": "2381b5b0-419b-4990-acdd-8f6013640daf",
+    "storage_path": "recipe-images/toned-milk-raw-almonds-v1.webp",
+    "url": "https://images.grindlog.in/recipes/toned-milk-raw-almonds.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Warm Toned Milk with Raw Almonds & Dates",
+    "dominant_foods": [
+      "Toned Milk (3% Fat)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "77c76e1c-25c6-46bb-a660-47898411b255",
+    "recipe_version_id": "5df56b77-c1ba-453b-82f9-274244500c01",
+    "storage_path": "recipe-images/besan-cheela-paneer-stuffing-v1.webp",
+    "url": "https://images.grindlog.in/recipes/besan-cheela-paneer-stuffing.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Besan Cheela with Grated Low Fat Paneer",
+    "dominant_foods": [
+      "Low Fat Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "786e2235-2fa8-4fab-98cf-0bdcac9cf9e7",
+    "recipe_version_id": "c2c56d2c-aca2-4391-9231-5d380a8f2b42",
+    "storage_path": "recipe-images/homestyle-chicken-curry-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/homestyle-chicken-curry-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Chicken Curry with Hot Phulkas",
+    "dominant_foods": [
+      "Chicken Curry (Home Style)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "78b7d872-1dba-4533-973c-fd16f80b30de",
+    "recipe_version_id": "ee694d24-83df-4871-a8ff-5e596b4f7484",
+    "storage_path": "recipe-images/low-fat-paneer-bhurji-roti-v1.webp",
+    "url": "https://images.grindlog.in/recipes/low-fat-paneer-bhurji-roti.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Low Fat Paneer Bhurji with Multigrain Roti",
+    "dominant_foods": [
+      "Low Fat Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "7a72e10e-8ba0-458b-a19e-6abf36f18b7f",
+    "recipe_version_id": "d4a5693c-b73f-48c0-a0e8-c61ed1061930",
+    "storage_path": "recipe-images/jain-yellow-dal-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/jain-yellow-dal-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Jain Yellow Moong Dal with Jeera Rice",
+    "dominant_foods": [
+      "Yellow Moong Dal"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "7aecb67e-b414-4698-9e36-64cf2391d1bc",
+    "recipe_version_id": "7eb896bd-590a-45bb-a476-cd0a3daf5303",
+    "storage_path": "recipe-images/masala-dosa-curd-v1.webp",
+    "url": "https://images.grindlog.in/recipes/masala-dosa-curd.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Masala Dosa with Fresh Curd",
+    "dominant_foods": [
+      "Curd / Dahi (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "7db80f16-c13c-42b5-a68c-3c26aa6e6bc5",
+    "recipe_version_id": "783b5933-5eec-435f-8f97-5878d8e0259b",
+    "storage_path": "recipe-images/boiled-chicken-brown-toast-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-chicken-brown-toast.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Chicken Breast with Brown Bread Toast",
+    "dominant_foods": [
+      "Boiled Chicken Breast"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "7eaee4f3-bd00-48e2-a93d-7bfd143c87fe",
+    "recipe_version_id": "ecfd43cb-59c8-4485-b3ac-a33379d3a10b",
+    "storage_path": "recipe-images/chicken-breast-moong-khichdi-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-breast-moong-khichdi.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Chicken Breast with Moong Dal Khichdi",
+    "dominant_foods": [
+      "Boiled Chicken Breast"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "7fdf9c35-864d-4fed-bb8b-fcd93a9d1e6f",
+    "recipe_version_id": "d96234d6-eee4-4795-9328-86d4f55c333b",
+    "storage_path": "recipe-images/grilled-fish-steamed-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-fish-steamed-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Fish Fry with Steamed Basmati Rice",
+    "dominant_foods": [
+      "Grilled Fish / Fish Fry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "8037014d-8108-4f13-b246-2dd426e669c5",
+    "recipe_version_id": "4b6ce4e7-052a-4301-82d7-530d55708899",
+    "storage_path": "recipe-images/dal-tadka-paneer-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/dal-tadka-paneer-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Dal Tadka with Steamed Rice & Low Fat Paneer",
+    "dominant_foods": [
+      "Low Fat Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "8296ee83-82b2-4c35-b78d-9a11c2510951",
+    "recipe_version_id": "1b6a27fc-0df2-4fe9-a92a-38deb938d9cc",
+    "storage_path": "recipe-images/raw-paneer-chaat-v1.webp",
+    "url": "https://images.grindlog.in/recipes/raw-paneer-chaat.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Fresh Raw Paneer Cubes with Chaat Masala & Lemon",
+    "dominant_foods": [
+      "Fresh Paneer (Raw)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "84a2ab5a-2282-4441-9c5c-11f9ccd4cb0b",
+    "recipe_version_id": "b3251625-136f-4818-865a-2ac16a32cae4",
+    "storage_path": "recipe-images/chicken-keema-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-keema-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Indian Chicken Keema with Hot Phulkas",
+    "dominant_foods": [
+      "Chicken Keema"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "87bffe3c-20be-48b3-a681-7d2d0122d279",
+    "recipe_version_id": "e2b70e90-fc8b-4335-be5f-b1b5ec010f4b",
+    "storage_path": "recipe-images/bhindi-masala-yellow-dal-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/bhindi-masala-yellow-dal-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Bhindi Masala with Yellow Dal & Chapati with Ghee",
+    "dominant_foods": [
+      "Yellow Moong Dal"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "87e2e32c-77c7-403c-92c9-1b7f8979b19a",
+    "recipe_version_id": "51f432e3-179d-4a4b-a47f-1acad6d90219",
+    "storage_path": "recipe-images/fish-curry-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/fish-curry-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Fish Curry with Fragrant Jeera Rice",
+    "dominant_foods": [
+      "Fish Curry (Rohu / Indian Carp)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "889bce7a-1579-40a4-8c88-b0a7b1c44233",
+    "recipe_version_id": "c9c444de-5f0c-42cf-a51b-ec3eb21e790d",
+    "storage_path": "recipe-images/cheese-toast-chai-v1.webp",
+    "url": "https://images.grindlog.in/recipes/cheese-toast-chai.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Whole Wheat Cheese Toast with Indian Masala Chai",
+    "dominant_foods": [
+      "Cheese Slice (Amul / Britannia)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "896c9b10-2716-4eff-bc9e-e5689b3fa566",
+    "recipe_version_id": "bfc24a9a-aab2-461e-b2d6-d32cc8669a6c",
+    "storage_path": "recipe-images/matar-paneer-steamed-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/matar-paneer-steamed-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Matar Paneer with Steamed Basmati Rice",
+    "dominant_foods": [
+      "Matar Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "8bbfd3ca-0c2e-4a5d-8a44-813fe9882f43",
+    "recipe_version_id": "008bd223-7a46-45cc-a9bf-a588e9520a07",
+    "storage_path": "recipe-images/chicken-tikka-green-tea-snack-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-tikka-green-tea-snack.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken Tikka Skewers with Lemon & Green Tea",
+    "dominant_foods": [
+      "Chicken Tikka"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "8bd91b45-b9b4-4329-84db-275174adb981",
+    "recipe_version_id": "b9d68049-5a5b-4e33-8930-2ece9e7db4d8",
+    "storage_path": "recipe-images/chana-dal-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chana-dal-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chana Dal Curry with Multigrain Roti",
+    "dominant_foods": [
+      "Chana Dal Curry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "8bd9d998-8fbe-4ef0-8c94-d1a3cd0666e5",
+    "recipe_version_id": "eb36bd81-1fe7-4385-880d-f5b3d7079f5c",
+    "storage_path": "recipe-images/kadai-paneer-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/kadai-paneer-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Kadai Paneer with Fresh Phulkas",
+    "dominant_foods": [
+      "Kadai Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "8dbdfb13-7656-4c28-ab34-a26eb10f925c",
+    "recipe_version_id": "f56923d2-1eb3-4602-bef1-b5c03c71489a",
+    "storage_path": "recipe-images/chicken-breast-quinoa-broccoli-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-breast-quinoa-broccoli.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Steamed Quinoa & Broccoli",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "8eb711f3-9f94-4896-8769-bafb1427f5ad",
+    "recipe_version_id": "e6d2a0a1-d350-4b9f-adf3-c6ab14a3977f",
+    "storage_path": "recipe-images/canned-tuna-brown-toast-v1.webp",
+    "url": "https://images.grindlog.in/recipes/canned-tuna-brown-toast.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of High-Protein Tuna on Brown Bread Toast",
+    "dominant_foods": [
+      "Canned Tuna (in Water)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "8fe0df27-dd52-42f8-adfc-23334c7a9f8f",
+    "recipe_version_id": "1d6809c2-b4fc-4180-8b01-319073785eb8",
+    "storage_path": "recipe-images/egg-white-cucumber-chaat-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-white-cucumber-chaat.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Egg White Chaat with Cucumber & Lemon",
+    "dominant_foods": [
+      "Boiled Egg White"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "933158cd-f25c-418a-b3f9-da5dd088c552",
+    "recipe_version_id": "c204d1d0-1fb0-4922-8b49-bb87f909be7f",
+    "storage_path": "recipe-images/scrambled-eggs-brown-toast-v1.webp",
+    "url": "https://images.grindlog.in/recipes/scrambled-eggs-brown-toast.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Fluffy Scrambled Eggs with Brown Bread Toast",
+    "dominant_foods": [
+      "Scrambled Eggs"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9457ba08-7295-4239-a06c-ff6c203aa665",
+    "recipe_version_id": "a650729c-a081-492e-976a-b59f03c632ac",
+    "storage_path": "recipe-images/tandoori-chicken-sweet-potato-v1.webp",
+    "url": "https://images.grindlog.in/recipes/tandoori-chicken-sweet-potato.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tandoori Chicken Breast with Boiled Sweet Potato",
+    "dominant_foods": [
+      "Tandoori Chicken"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "94b4932f-4101-457f-987a-56019484a0e1",
+    "recipe_version_id": "0e901929-957e-4c22-9d37-266a623fcba2",
+    "storage_path": "recipe-images/moong-dal-khichdi-ghee-dahi-v1.webp",
+    "url": "https://images.grindlog.in/recipes/moong-dal-khichdi-ghee-dahi.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Moong Dal Khichdi with Desi Ghee & Fresh Curd",
+    "dominant_foods": [
+      "Moong Dal Khichdi"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "94d4bdca-6a63-4f69-a979-679753fde2b4",
+    "recipe_version_id": "e7dd24dc-40e3-43e1-aaa9-6ca655a5c0e3",
+    "storage_path": "recipe-images/egg-bhurji-dal-tadka-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-bhurji-dal-tadka-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Egg Bhurji with Yellow Dal Tadka & Phulkas",
+    "dominant_foods": [
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9577c451-7a18-42c9-9809-9ef58f2893aa",
+    "recipe_version_id": "394650d7-54b7-4a04-bbc6-564b202c84fa",
+    "storage_path": "recipe-images/paneer-bhurji-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/paneer-bhurji-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Fresh Paneer Bhurji with Hot Phulkas",
+    "dominant_foods": [
+      "Paneer Bhurji"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9590a683-1c5b-4478-ba63-c39a8a9244f6",
+    "recipe_version_id": "64c4bcf8-8061-4c65-bbeb-535025e393f2",
+    "storage_path": "recipe-images/kala-chana-curry-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/kala-chana-curry-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Kala Chana Curry with Steamed Brown Rice",
+    "dominant_foods": [
+      "Kala Chana Curry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9812be0d-48a4-4d2d-9fd5-c1b0bc4419fd",
+    "recipe_version_id": "d7db9a43-35b7-4345-a84d-f364314e043a",
+    "storage_path": "recipe-images/canned-tuna-brown-rice-salad-v1.webp",
+    "url": "https://images.grindlog.in/recipes/canned-tuna-brown-rice-salad.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tuna & Brown Rice Fitness Bowl",
+    "dominant_foods": [
+      "Canned Tuna (in Water)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9a38b509-d2ee-499a-98a1-0be30305d6ce",
+    "recipe_version_id": "22d032e0-d131-4ca2-9370-394bc585487a",
+    "storage_path": "recipe-images/dal-tadka-paneer-bhurji-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/dal-tadka-paneer-bhurji-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Dal Tadka with Paneer Bhurji & Phulkas",
+    "dominant_foods": [
+      "Paneer Bhurji"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9a8c9e71-f573-424f-8ba8-7631fa6150f3",
+    "recipe_version_id": "bf7b4d42-eb06-4703-abe7-1db5414644f2",
+    "storage_path": "recipe-images/soya-chunks-curry-roti-v1.webp",
+    "url": "https://images.grindlog.in/recipes/soya-chunks-curry-roti.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Soya Chunks Curry with Multigrain Roti",
+    "dominant_foods": [
+      "Soya Chunks Curry (Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9bb2920d-9cac-48b3-ba59-8639ccd6b5a6",
+    "recipe_version_id": "620cbd92-cb6d-45b0-841b-488e0b3f3059",
+    "storage_path": "recipe-images/low-fat-paneer-quinoa-broccoli-v1.webp",
+    "url": "https://images.grindlog.in/recipes/low-fat-paneer-quinoa-broccoli.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Low Fat Paneer with Steamed Quinoa & Broccoli",
+    "dominant_foods": [
+      "Low Fat Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9bbb78d0-df1b-42d2-83e7-a1cfbdcfb207",
+    "recipe_version_id": "edb9dc6e-8aaf-48e1-8948-87a2f91bc884",
+    "storage_path": "recipe-images/chana-dal-paneer-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chana-dal-paneer-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chana Dal Curry with Fresh Paneer & Phulkas",
+    "dominant_foods": [
+      "Fresh Paneer (Raw)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9c4c4023-4ebe-4256-a7eb-e5a296035d38",
+    "recipe_version_id": "3e5f93e6-f593-4f90-aecf-b53574a6cf2d",
+    "storage_path": "recipe-images/aloo-gobi-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/aloo-gobi-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Aloo Gobi Homestyle with Phulkas & Yellow Dal",
+    "dominant_foods": [
+      "Yellow Moong Dal"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9c6e1384-c6c8-415f-9cdb-7e9418b45bfe",
+    "recipe_version_id": "bc0f3998-7eaa-4e1d-8cce-66d965fb70aa",
+    "storage_path": "recipe-images/prawns-masala-steamed-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/prawns-masala-steamed-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Spicy Prawns Masala with Steamed Rice",
+    "dominant_foods": [
+      "Prawns Masala"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9e72bee4-c83c-4579-8fb9-1f3a06a6f1f2",
+    "recipe_version_id": "2a62f802-af8f-4292-8210-309ba5eb7dac",
+    "storage_path": "recipe-images/egg-bhurji-multigrain-roti-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-bhurji-multigrain-roti.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Indian Egg Bhurji with Multigrain Roti",
+    "dominant_foods": [
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "9f868153-a6ec-45b9-a788-b9018d839ea4",
+    "recipe_version_id": "d6e0e109-4393-4d2f-8275-757f8414e821",
+    "storage_path": "recipe-images/moong-dal-cheela-tomato-v1.webp",
+    "url": "https://images.grindlog.in/recipes/moong-dal-cheela-tomato.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Moong Dal Cheela with Fresh Tomato & Salad",
+    "dominant_foods": [
+      "Moong Dal Cheela"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a1ab6255-3196-4b8e-b025-fd56e0d05096",
+    "recipe_version_id": "ed7c03d3-5fe8-4a84-81d8-adf3b88fb98b",
+    "storage_path": "recipe-images/egg-bhurji-poha-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-bhurji-poha.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Spiced Egg Bhurji with Homestyle Poha",
+    "dominant_foods": [
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a1ac4496-e023-4288-b3f4-f1e43e9c319a",
+    "recipe_version_id": "a564f6e5-09ec-4e63-9356-9edbc6ff8ecc",
+    "storage_path": "recipe-images/boiled-egg-whites-poha-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-egg-whites-poha.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Egg Whites with Homestyle Poha",
+    "dominant_foods": [
+      "Boiled Egg White"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a1cdc9f8-39e5-4277-bb69-f70a2b5c943f",
+    "recipe_version_id": "2b81dbfc-9d5e-48d4-88ed-77acbc4f8010",
+    "storage_path": "recipe-images/greek-yogurt-banana-walnuts-v1.webp",
+    "url": "https://images.grindlog.in/recipes/greek-yogurt-banana-walnuts.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Greek Yogurt Bowl with Banana & Walnuts",
+    "dominant_foods": [
+      "Greek Yogurt (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a219ca2c-2d5d-4817-9fc2-ff93f93bcbb3",
+    "recipe_version_id": "a2c9b25c-13cf-461f-bef6-73d6ba69fae4",
+    "storage_path": "recipe-images/boiled-eggs-rasam-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-rasam-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with South Indian Rasam Rice",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a2d5a1fd-7b68-481b-aa82-f63390d356f1",
+    "recipe_version_id": "0f9d849f-0714-4bda-9fe1-d183b49f7a37",
+    "storage_path": "recipe-images/soya-chaap-curry-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/soya-chaap-curry-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Soya Chaap Masala with Hot Phulkas",
+    "dominant_foods": [
+      "Soya Chaap (Grilled / Masala)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a336727b-d892-4ad3-9db5-fa5bc05fa423",
+    "recipe_version_id": "930c00cd-8014-47e0-8088-6e3cb6c7cd0b",
+    "storage_path": "recipe-images/bhindi-masala-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/bhindi-masala-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Bhindi Masala with Phulkas & Dal",
+    "dominant_foods": [
+      "Yellow Moong Dal"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a3f90440-d815-4cd1-9789-1ea10f6dd8d7",
+    "recipe_version_id": "4a12c1f3-45f0-4bda-b96e-2b077a927397",
+    "storage_path": "recipe-images/plain-dosa-sambar-v1.webp",
+    "url": "https://images.grindlog.in/recipes/plain-dosa-sambar.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Crisp Plain Dosa with Sambar",
+    "dominant_foods": [
+      "Sambar"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a467ec14-974e-44a5-a92f-ca7458a71bb1",
+    "recipe_version_id": "7881fb91-23ae-4195-b110-82a47ad54d2d",
+    "storage_path": "recipe-images/set-dosa-dahi-sambar-v1.webp",
+    "url": "https://images.grindlog.in/recipes/set-dosa-dahi-sambar.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Set Dosa with Plain Curd & Sambar",
+    "dominant_foods": [
+      "Curd / Dahi (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a516af17-04c7-413d-909d-b455bd52302f",
+    "recipe_version_id": "e49690cb-e280-454a-9f86-a3372782c448",
+    "storage_path": "recipe-images/aloo-gobi-paneer-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/aloo-gobi-paneer-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Aloo Gobi with Low Fat Paneer & Phulkas",
+    "dominant_foods": [
+      "Low Fat Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "a66a7851-67c7-43b0-83ed-4521824a30bf",
+    "recipe_version_id": "9fa691f3-8b17-476d-a430-1815fa6a0fd1",
+    "storage_path": "recipe-images/boiled-eggs-masoor-dal-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-masoor-dal-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Masoor Dal & Multigrain Roti",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "aa35016d-211f-4fb7-9cdf-92e106565884",
+    "recipe_version_id": "5441aba5-557e-4621-ba49-f822d16bd746",
+    "storage_path": "recipe-images/tofu-scramble-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/tofu-scramble-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Indian Tofu Bhurji with Hot Phulkas",
+    "dominant_foods": [
+      "Tofu Bhurji / Scramble"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "aa49c160-a6e0-44d3-848c-6e9eaef48849",
+    "recipe_version_id": "9da2239f-04da-41c2-8ac5-f069b537a81c",
+    "storage_path": "recipe-images/paneer-butter-masala-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/paneer-butter-masala-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Paneer Butter Masala with Hot Phulkas",
+    "dominant_foods": [
+      "Paneer Butter Masala"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "aa7ec77d-e3b1-4d71-a387-1db54c4a2068",
+    "recipe_version_id": "c7d2da25-e9bb-4bb5-8b5d-fe2bda5afba5",
+    "storage_path": "recipe-images/steamed-sweet-corn-chaat-v1.webp",
+    "url": "https://images.grindlog.in/recipes/steamed-sweet-corn-chaat.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Steamed Sweet Corn with Lemon & Chaat Masala",
+    "dominant_foods": [
+      "Boiled Sweet Corn"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "ac2ee8c1-1cbc-4294-ae2b-18b65e1175b8",
+    "recipe_version_id": "46b75803-d792-4d5c-986e-ce32e87ba279",
+    "storage_path": "recipe-images/homestyle-egg-curry-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/homestyle-egg-curry-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Egg Curry with Steamed White Rice",
+    "dominant_foods": [
+      "Egg Curry (2 Eggs)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "af2d0e31-4d89-4c96-b767-21f8551b3524",
+    "recipe_version_id": "a6e6a2da-9375-4a22-94fc-6a34eede16d4",
+    "storage_path": "recipe-images/roasted-chana-green-tea-v1.webp",
+    "url": "https://images.grindlog.in/recipes/roasted-chana-green-tea.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Roasted Chana & Green Tea Fitness Snack",
+    "dominant_foods": [
+      "Roasted Chana (Dry Chickpeas)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "b248760d-a334-4d8d-bccc-a99c0506bdb0",
+    "recipe_version_id": "ade15918-e534-4f3f-aa14-730c72c637dc",
+    "storage_path": "recipe-images/ven-pongal-sambar-v1.webp",
+    "url": "https://images.grindlog.in/recipes/ven-pongal-sambar.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of South Indian Ven Pongal with Sambar",
+    "dominant_foods": [
+      "Ven Pongal"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "b82943a2-e4e8-4557-9e82-2e34258a8f7f",
+    "recipe_version_id": "bd07dfb0-c170-45f2-aad3-5512651d5c31",
+    "storage_path": "recipe-images/palak-paneer-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/palak-paneer-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Palak Paneer with Fragrant Jeera Rice",
+    "dominant_foods": [
+      "Palak Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "b82e193e-d161-41ad-8b92-02a54f13132f",
+    "recipe_version_id": "58e94ded-8010-4768-958e-05af1372a5ed",
+    "storage_path": "recipe-images/curd-rice-paneer-tikka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/curd-rice-paneer-tikka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of South Indian Curd Rice with Grilled Paneer Tikka",
+    "dominant_foods": [
+      "Grilled Paneer / Paneer Tikka"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "ba69e0d1-c5ef-4706-9b41-f94378393465",
+    "recipe_version_id": "fa86eab6-d0be-4812-8e33-ff35d13a5166",
+    "storage_path": "recipe-images/egg-bhurji-mixed-veg-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-bhurji-mixed-veg-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Egg Bhurji with Mixed Veg Sabzi & Phulkas",
+    "dominant_foods": [
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "bb181d15-cb32-4e9b-ada4-214b8bb18100",
+    "recipe_version_id": "25f5aa25-a2c8-400b-8871-d39115a40258",
+    "storage_path": "recipe-images/jain-paneer-curry-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/jain-paneer-curry-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Jain Fresh Paneer Curry with Phulkas & Curd",
+    "dominant_foods": [
+      "Fresh Paneer (Raw)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "bb8de902-8185-4317-be95-215c73df58d8",
+    "recipe_version_id": "91ea2c84-a430-418e-9a54-b61120d2bdfb",
+    "storage_path": "recipe-images/high-protein-veg-thali-v1.webp",
+    "url": "https://images.grindlog.in/recipes/high-protein-veg-thali.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of High-Protein Veg Thali (Dal, Paneer Bhurji, Phulkas & Dahi)",
+    "dominant_foods": [
+      "Paneer Bhurji"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "bca7023e-61eb-4909-9ccd-7f0d7ac27962",
+    "recipe_version_id": "8d78896c-be4d-4cf2-b4a2-8a5efca3915a",
+    "storage_path": "recipe-images/prawns-masala-brown-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/prawns-masala-brown-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Prawns Masala with Steamed Brown Rice",
+    "dominant_foods": [
+      "Prawns Masala"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "bd6c0d05-8008-492d-8476-56e189c8130c",
+    "recipe_version_id": "103efb9c-32f9-4701-b9ff-1e0cf041ec2b",
+    "storage_path": "recipe-images/lobia-masala-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/lobia-masala-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Lobia Masala with Hot Phulkas",
+    "dominant_foods": [
+      "Lobia (Black Eyed Peas Curry)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "bdf57c30-aee0-4a51-a249-c5fe40ae0d06",
+    "recipe_version_id": "f7267782-7d1f-46a7-bec0-18b2710896f2",
+    "storage_path": "recipe-images/egg-curry-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-curry-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Egg Curry with Fragrant Jeera Rice",
+    "dominant_foods": [
+      "Egg Curry (2 Eggs)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "be65319a-f046-477a-8a22-0713d803a1d5",
+    "recipe_version_id": "0d2482c8-7648-4220-911d-e8b00129cab6",
+    "storage_path": "recipe-images/curd-rice-tadka-cucumber-v1.webp",
+    "url": "https://images.grindlog.in/recipes/curd-rice-tadka-cucumber.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of South Indian Curd Rice with Tadka & Cucumber Salad",
+    "dominant_foods": [
+      "Curd Rice"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "bf89202b-80fb-43ae-bc73-323a5dceda3f",
+    "recipe_version_id": "5df3d746-26d0-4a8a-887e-749f81a0d3ce",
+    "storage_path": "recipe-images/double-toned-milk-dates-v1.webp",
+    "url": "https://images.grindlog.in/recipes/double-toned-milk-dates.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Double Toned Skimmed Milk with Medjool Dates",
+    "dominant_foods": [
+      "Double Toned / Skimmed Milk"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "c0154af0-e65a-4fcf-8393-7a633d8ea75f",
+    "recipe_version_id": "20583283-157e-43a9-967a-169953903e15",
+    "storage_path": "recipe-images/rasam-rice-potato-v1.webp",
+    "url": "https://images.grindlog.in/recipes/rasam-rice-potato.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of South Indian Rasam Rice with Boiled Potato",
+    "dominant_foods": [
+      "Rasam"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "c03e7699-89e5-4d51-bb77-4a30f93596b9",
+    "recipe_version_id": "3e8880e4-4656-45ff-851b-afcd7870b5e0",
+    "storage_path": "recipe-images/overnight-oats-soy-milk-v1.webp",
+    "url": "https://images.grindlog.in/recipes/overnight-oats-soy-milk.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Overnight Oats with Soy Milk & Chia",
+    "dominant_foods": [
+      "Soy Milk (Unsweetened)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "c0a76277-02e1-4ad3-9325-dac117540472",
+    "recipe_version_id": "6785b187-e554-4e63-b2ea-66af360b1896",
+    "storage_path": "recipe-images/canned-tuna-rice-bowl-v1.webp",
+    "url": "https://images.grindlog.in/recipes/canned-tuna-rice-bowl.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Quick Tuna & Basmati Rice Bowl",
+    "dominant_foods": [
+      "Canned Tuna (in Water)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "c491c7bc-ba14-4617-882a-6c5d6e75b967",
+    "recipe_version_id": "0cdb00dd-b5bb-4ad8-9497-2f7c7c53de2f",
+    "storage_path": "recipe-images/rasam-rice-paneer-bhurji-v1.webp",
+    "url": "https://images.grindlog.in/recipes/rasam-rice-paneer-bhurji.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of South Indian Rasam Rice with Paneer Bhurji",
+    "dominant_foods": [
+      "Paneer Bhurji"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "c4966744-78c6-4ae1-8c94-ce3acd9e3eac",
+    "recipe_version_id": "f6084808-09d6-4375-8119-e15958aefdfa",
+    "storage_path": "recipe-images/chicken-tikka-steamed-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-tikka-steamed-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken Tikka with Steamed Basmati Rice",
+    "dominant_foods": [
+      "Chicken Tikka"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "c5963dd0-1132-4575-a414-fb1bd515ce51",
+    "recipe_version_id": "fec7d491-5687-49ad-9c07-4c5e08409d73",
+    "storage_path": "recipe-images/homestyle-chicken-curry-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/homestyle-chicken-curry-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Chicken Curry with Steamed White Rice",
+    "dominant_foods": [
+      "Chicken Curry (Home Style)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "c6b5d7f6-cbfd-4d06-895b-fa4647a12afb",
+    "recipe_version_id": "1f8410c6-b240-46ee-98ef-5a378e7e2a84",
+    "storage_path": "recipe-images/punjabi-rajma-curd-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/punjabi-rajma-curd-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Punjabi Rajma with Phulkas & Low Fat Curd",
+    "dominant_foods": [
+      "Rajma (Kidney Beans Curry)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "ca00365d-158d-4364-9d56-e26d3d871af8",
+    "recipe_version_id": "8bb597b0-8031-4d5d-a539-aa409401f8e4",
+    "storage_path": "recipe-images/grilled-chicken-brown-rice-dal-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-chicken-brown-rice-dal.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Brown Rice & Dal",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "cabf1daa-6b6c-4ee7-84dd-defbd6a53e4a",
+    "recipe_version_id": "09aa758b-01c3-43c3-8c73-e9e61a0ab7d5",
+    "storage_path": "recipe-images/soy-milk-chia-smoothie-v1.webp",
+    "url": "https://images.grindlog.in/recipes/soy-milk-chia-smoothie.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Soy Milk & Chia Power Smoothie",
+    "dominant_foods": [
+      "Soy Milk (Unsweetened)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "cd3edac4-a211-40fb-a9cc-9c83c99fd93f",
+    "recipe_version_id": "2a23136f-9e40-482d-93fa-49f41d3370b9",
+    "storage_path": "recipe-images/grilled-paneer-sweet-potato-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-paneer-sweet-potato.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Paneer Tikka with Boiled Sweet Potato",
+    "dominant_foods": [
+      "Grilled Paneer / Paneer Tikka"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "cd843ec3-3a89-4c64-8d1d-43bdd308e36c",
+    "recipe_version_id": "b05ee640-3c90-4748-a6b3-d2a2ddc6b963",
+    "storage_path": "recipe-images/tofu-scramble-brown-bread-v1.webp",
+    "url": "https://images.grindlog.in/recipes/tofu-scramble-brown-bread.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Spiced Tofu Scramble with Brown Bread Toast",
+    "dominant_foods": [
+      "Tofu Bhurji / Scramble"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "cf8211f2-6698-4803-a388-01ac6df13262",
+    "recipe_version_id": "d1c9de03-0803-4352-8b14-b486a68768a1",
+    "storage_path": "recipe-images/fresh-fruit-platter-chia-v1.webp",
+    "url": "https://images.grindlog.in/recipes/fresh-fruit-platter-chia.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Fresh Indian Fruit Platter with Chia Seeds",
+    "dominant_foods": [
+      "Chia Seeds"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "d0eb7fb7-3861-42a8-bd47-cc4eb10f6010",
+    "recipe_version_id": "1475d216-a25f-4a06-a6ce-adc8e59201d9",
+    "storage_path": "recipe-images/aloo-paratha-dahi-v1.webp",
+    "url": "https://images.grindlog.in/recipes/aloo-paratha-dahi.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Punjabi Aloo Paratha with Plain Dahi",
+    "dominant_foods": [
+      "Curd / Dahi (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "d2790bf6-11bc-4f24-83d8-2d0ffd076d2b",
+    "recipe_version_id": "264726f6-1b32-4eba-a5d1-de8a6076d787",
+    "storage_path": "recipe-images/prawns-masala-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/prawns-masala-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Prawns Masala with Hot Phulkas",
+    "dominant_foods": [
+      "Prawns Masala"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "d27b9a57-f94a-4258-a853-8e5d5df82b10",
+    "recipe_version_id": "b2bf6c61-0173-4c7f-9485-d0979638958f",
+    "storage_path": "recipe-images/egg-omelette-brown-toast-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-omelette-brown-toast.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Masala Egg Omelette with Brown Bread Toast",
+    "dominant_foods": [
+      "Egg Omelette"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "d2cd8921-f3d9-4e63-bf37-65e5b244d785",
+    "recipe_version_id": "74d63b7c-a470-4c7a-b5b7-58a29d7cd150",
+    "storage_path": "recipe-images/besan-cheela-cucumber-v1.webp",
+    "url": "https://images.grindlog.in/recipes/besan-cheela-cucumber.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Besan Cheela with Fresh Cucumber",
+    "dominant_foods": [
+      "Besan Cheela"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "d340c1fb-2e87-492e-b099-6d0ef3273a69",
+    "recipe_version_id": "829a2301-3171-4c02-acde-9ff921f17217",
+    "storage_path": "recipe-images/matar-paneer-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/matar-paneer-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Matar Paneer with Multigrain Roti",
+    "dominant_foods": [
+      "Matar Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "d5049136-6a4d-42a6-9fdb-0e0f9e0b16f5",
+    "recipe_version_id": "7266dc1a-0a7b-4760-ab2f-6aee176b1a0c",
+    "storage_path": "recipe-images/toor-dal-jeera-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/toor-dal-jeera-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Toor Dal with Fragrant Jeera Rice",
+    "dominant_foods": [
+      "Toor Dal (Arhar Dal)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "d5b55a90-52ae-475e-8923-883d225f35d9",
+    "recipe_version_id": "ad157a10-d55e-4bd4-960a-c3e9d286f37b",
+    "storage_path": "recipe-images/canned-tuna-boiled-eggs-toast-v1.webp",
+    "url": "https://images.grindlog.in/recipes/canned-tuna-boiled-eggs-toast.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Tuna & Boiled Egg Whites on Toast",
+    "dominant_foods": [
+      "Canned Tuna (in Water)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "d77787bc-bd84-4653-93eb-4b4032c26f97",
+    "recipe_version_id": "aa7e8abc-c31e-468a-b74f-4d70a2f4b824",
+    "storage_path": "recipe-images/boiled-eggs-chole-masala-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-chole-masala-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Chole Masala & Steamed Rice",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "d832593d-24c0-4572-a8fd-1003094771a3",
+    "recipe_version_id": "4622edd2-77c8-43a8-8bde-1caa6d3a7b43",
+    "storage_path": "recipe-images/fish-curry-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/fish-curry-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Fish Curry with Hot Phulkas",
+    "dominant_foods": [
+      "Fish Curry (Rohu / Indian Carp)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "dabffa7a-d2c0-4552-8037-2193fab936f0",
+    "recipe_version_id": "e9eb3f5a-a34f-4b0c-8bf6-95f5606bf944",
+    "storage_path": "recipe-images/vegetable-daliya-bowl-v1.webp",
+    "url": "https://images.grindlog.in/recipes/vegetable-daliya-bowl.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Vegetable Daliya Bowl",
+    "dominant_foods": [
+      "Vegetable Daliya"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "ddb2b92b-ed9d-4d3f-8f71-517835d35cc9",
+    "recipe_version_id": "3a8077e5-ca8d-43b7-8fa9-57ed7b9669c3",
+    "storage_path": "recipe-images/scrambled-eggs-sweet-corn-v1.webp",
+    "url": "https://images.grindlog.in/recipes/scrambled-eggs-sweet-corn.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Scrambled Eggs with Steamed Sweet Corn & Cucumber",
+    "dominant_foods": [
+      "Scrambled Eggs"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "dea8524c-5893-4c3e-bc65-07da7906453e",
+    "recipe_version_id": "727e5f8f-d697-4a67-b60e-952c65d75862",
+    "storage_path": "recipe-images/gluten-free-egg-curry-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/gluten-free-egg-curry-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Gluten-Free Egg Curry with Steamed Rice",
+    "dominant_foods": [
+      "Egg Curry (2 Eggs)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "e130b358-9e92-484c-a884-5c9493a28511",
+    "recipe_version_id": "1aff5380-da5e-4156-a0c9-4ec17e474286",
+    "storage_path": "recipe-images/chicken-breast-egg-whites-sweet-potato-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-breast-egg-whites-sweet-potato.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken & Egg White Comp Prep Bowl with Sweet Potato",
+    "dominant_foods": [
+      "Boiled Chicken Breast"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "e1635b4f-3c6b-4a49-8d0e-9ec4e46ea46e",
+    "recipe_version_id": "e0bfc320-192c-4714-907a-74767dc34ba0",
+    "storage_path": "recipe-images/homestyle-mutton-curry-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/homestyle-mutton-curry-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Mutton Curry with Hot Phulkas",
+    "dominant_foods": [
+      "Mutton Curry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "e2d6592a-91e5-4a96-992c-670b7d377001",
+    "recipe_version_id": "715720ef-8919-4b98-aaf6-5051c9e9ac9a",
+    "storage_path": "recipe-images/punjabi-rajma-chawal-v1.webp",
+    "url": "https://images.grindlog.in/recipes/punjabi-rajma-chawal.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Punjabi Rajma with Steamed White Rice",
+    "dominant_foods": [
+      "Rajma (Kidney Beans Curry)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "e40ef3b3-35d4-4b74-b509-c0f7bd2131ec",
+    "recipe_version_id": "5abd0285-6c10-4e58-ade8-2bd40f0c3758",
+    "storage_path": "recipe-images/punjabi-rajma-paneer-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/punjabi-rajma-paneer-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Punjabi Rajma with Steamed Rice & Low Fat Paneer",
+    "dominant_foods": [
+      "Low Fat Paneer"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "e4f05ce0-cdfe-4c8c-8a5c-bfcb73033692",
+    "recipe_version_id": "afb0faad-8d9a-4dc8-a246-58a50ce61257",
+    "storage_path": "recipe-images/chole-paneer-paratha-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chole-paneer-paratha.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chole Masala with Paneer Paratha & Curd",
+    "dominant_foods": [
+      "Paneer Paratha"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "e5494def-eb3b-48b8-891b-e8c1e1e4ec6e",
+    "recipe_version_id": "325cffe1-662a-47b1-8bb8-27d8e5add8c8",
+    "storage_path": "recipe-images/grilled-fish-phulka-salad-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-fish-phulka-salad.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Fish Fry with Hot Phulkas & Salad",
+    "dominant_foods": [
+      "Grilled Fish / Fish Fry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "e6e5f615-2d0f-4c73-85b5-725ae749d141",
+    "recipe_version_id": "0aba2b0e-35ca-4fa4-9a61-b5d1b8bbdc04",
+    "storage_path": "recipe-images/low-fat-curd-pomegranate-v1.webp",
+    "url": "https://images.grindlog.in/recipes/low-fat-curd-pomegranate.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Low Fat Curd with Fresh Pomegranate Seeds",
+    "dominant_foods": [
+      "Low Fat Curd / Dahi"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "e708d52f-24d9-4605-b471-fad483742612",
+    "recipe_version_id": "846ef0be-06f7-4282-a7f1-6203e606ef48",
+    "storage_path": "recipe-images/grilled-salmon-sweet-potato-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-salmon-sweet-potato.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Salmon with Sweet Potato & Salad",
+    "dominant_foods": [
+      "Grilled Salmon"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "e7b85f68-f023-46dc-8cbe-1a71c8e00a97",
+    "recipe_version_id": "54bb00a9-915d-4186-addb-e29a1e1b9bbf",
+    "storage_path": "recipe-images/boiled-chicken-sweet-potato-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-chicken-sweet-potato.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Chicken Breast with Sweet Potato",
+    "dominant_foods": [
+      "Boiled Chicken Breast"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "eda0b643-3694-4bf7-8e56-26e3bd770561",
+    "recipe_version_id": "7f73b7b4-109f-43ec-8912-f553214e5cb7",
+    "storage_path": "recipe-images/grilled-fish-brown-rice-broccoli-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-fish-brown-rice-broccoli.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Fish with Brown Rice & Broccoli",
+    "dominant_foods": [
+      "Grilled Fish / Fish Fry"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "edd43183-b95d-46d0-ad91-02a031a339f5",
+    "recipe_version_id": "6029a8b0-fa6e-41ad-852e-6144021b03c4",
+    "storage_path": "recipe-images/chicken-curry-multigrain-roti-v1.webp",
+    "url": "https://images.grindlog.in/recipes/chicken-curry-multigrain-roti.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Chicken Curry with Multigrain Roti",
+    "dominant_foods": [
+      "Chicken Curry (Home Style)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "f0339187-dafd-4fc6-95e9-7bfd79af9501",
+    "recipe_version_id": "227a7ed5-3466-477e-99a5-47488962783b",
+    "storage_path": "recipe-images/egg-curry-brown-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-curry-brown-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Egg Curry with Steamed Brown Rice",
+    "dominant_foods": [
+      "Egg Curry (2 Eggs)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "f19c5ec2-2c82-4ded-80a7-aadfe85f9bd3",
+    "recipe_version_id": "7cf45a45-eee9-4c47-b817-9f9689016619",
+    "storage_path": "recipe-images/steamed-idli-sambar-v1.webp",
+    "url": "https://images.grindlog.in/recipes/steamed-idli-sambar.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Steamed Idlis with Sambar",
+    "dominant_foods": [
+      "Sambar"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "f1f3d018-7e0a-4740-bd27-04b7e062cea7",
+    "recipe_version_id": "3728e0a8-1a51-44dd-ba31-4facf8e42de2",
+    "storage_path": "recipe-images/vegetable-daliya-ghee-v1.webp",
+    "url": "https://images.grindlog.in/recipes/vegetable-daliya-ghee.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Vegetable Daliya with Desi Ghee & Curd",
+    "dominant_foods": [
+      "Curd / Dahi (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "f5a7ef10-ccfe-443b-8208-3e27b64cee59",
+    "recipe_version_id": "7ee586f0-4902-4894-836e-f988e79018a0",
+    "storage_path": "recipe-images/grilled-salmon-steamed-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-salmon-steamed-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Salmon with Steamed Rice & Salad",
+    "dominant_foods": [
+      "Grilled Salmon"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "f72a407c-1031-4473-9595-44e710241f05",
+    "recipe_version_id": "1d60e54c-8818-4bea-bd9d-43daa02606c9",
+    "storage_path": "recipe-images/grilled-salmon-brown-rice-veggies-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-salmon-brown-rice-veggies.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Salmon with Brown Rice & Broccoli",
+    "dominant_foods": [
+      "Grilled Salmon"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "f776d9e8-f116-4dfa-84e4-1f163dc19d2a",
+    "recipe_version_id": "d55da81f-858a-41c0-b017-f28ec8b8f916",
+    "storage_path": "recipe-images/moong-sprouts-chaat-v1.webp",
+    "url": "https://images.grindlog.in/recipes/moong-sprouts-chaat.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Fresh Moong Sprouts Salad with Lemon & Tomato",
+    "dominant_foods": [
+      "Moong Sprouts Salad"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "f82fd9b6-d182-4e49-a286-f9d092ed72d9",
+    "recipe_version_id": "87f391ba-2329-4e60-8627-db3acf7d62e1",
+    "storage_path": "recipe-images/egg-biryani-homestyle-v1.webp",
+    "url": "https://images.grindlog.in/recipes/egg-biryani-homestyle.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Homestyle Egg Biryani with Cucumber Salad",
+    "dominant_foods": [
+      "Egg Biryani"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "f8e546cd-a71b-459b-865c-2f93c43f9956",
+    "recipe_version_id": "cc38f66a-e73a-4276-b4fa-16b26a999e2f",
+    "storage_path": "recipe-images/boiled-eggs-toor-dal-phulka-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-toor-dal-phulka.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Toor Dal & Hot Phulkas",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "f94dd70f-2bbb-4cd7-85af-f4d1dd7c83ce",
+    "recipe_version_id": "9b18ccd4-2266-4d41-89f4-d17fbbf58276",
+    "storage_path": "recipe-images/grilled-chicken-steamed-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/grilled-chicken-steamed-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Grilled Chicken Breast with Steamed Basmati Rice",
+    "dominant_foods": [
+      "Chicken Breast (Grilled / Cooked)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "fa1e43c9-379c-4894-bea0-ee3d5f1e9298",
+    "recipe_version_id": "c7f3fd03-06da-49d6-a2b9-a6a476b1c5eb",
+    "storage_path": "recipe-images/masoor-dal-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/masoor-dal-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Masoor Dal with Steamed Brown Rice",
+    "dominant_foods": [
+      "Masoor Dal (Red Lentil)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "fb785811-2be3-41cc-9210-b257bd3efb6e",
+    "recipe_version_id": "3515578c-d56d-4aaf-8fe1-35315cf662f2",
+    "storage_path": "recipe-images/mushroom-masala-curd-rice-v1.webp",
+    "url": "https://images.grindlog.in/recipes/mushroom-masala-curd-rice.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Mushroom Masala with Steamed Rice & Plain Curd",
+    "dominant_foods": [
+      "Curd / Dahi (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "fc0992b8-0238-4fc8-b25e-9190e9d96cf1",
+    "recipe_version_id": "657399ed-af82-4478-8755-fc5582cdb27c",
+    "storage_path": "recipe-images/sambar-rice-curd-salad-v1.webp",
+    "url": "https://images.grindlog.in/recipes/sambar-rice-curd-salad.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Sambar Rice with Plain Curd & Green Salad",
+    "dominant_foods": [
+      "Curd / Dahi (Plain)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "fc487153-8442-4e1e-917b-ebecc2b5323a",
+    "recipe_version_id": "fbd2dbba-e4eb-4b10-bd1c-6b62e0d9c2ad",
+    "storage_path": "recipe-images/boiled-eggs-sweet-potato-v1.webp",
+    "url": "https://images.grindlog.in/recipes/boiled-eggs-sweet-potato.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Boiled Eggs with Boiled Sweet Potato",
+    "dominant_foods": [
+      "Boiled Egg (Whole)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  },
+  {
+    "id": "fce388e6-3838-4823-93a9-0a7b25b6afa6",
+    "recipe_version_id": "1c2e36de-952c-4f01-beb3-22b15fc1e690",
+    "storage_path": "recipe-images/roasted-makhana-black-coffee-v1.webp",
+    "url": "https://images.grindlog.in/recipes/roasted-makhana-black-coffee.webp",
+    "status": "APPROVED",
+    "alt_text": "Plate of Roasted Makhana with Black Coffee",
+    "dominant_foods": [
+      "Roasted Makhana (Fox Nuts)"
+    ],
+    "is_primary": true,
+    "created_at": "2026-10-03T13:25:21.328277+00:00",
+    "updated_at": "2026-10-03T13:25:21.328277+00:00"
+  }
+]

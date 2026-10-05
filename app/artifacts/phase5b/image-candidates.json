@@ -1,0 +1,195 @@
+[
+  {
+    "id": "2c06a8a6-18a0-4240-a716-1862a5b115c3",
+    "recipe_id": "8e5608f4-1f6a-45ad-a640-f4255a250411",
+    "recipe_version_id": "6f89bcfa-6805-46d9-a423-0774c84afaa4",
+    "slug": "tandoori-chicken-phulka",
+    "name": "Tandoori Chicken Breast with Hot Phulkas",
+    "status": "APPROVED",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "783471dccf54e97d2cc0be1c0a4f3ba02ceabe5320c9a615938cf19987c415f8",
+    "sha256": "f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b",
+    "storage_path": "recipe-images/tandoori-chicken-phulka/v1/f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/tandoori-chicken-phulka/v1/f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 244556,
+    "alt_text": "Tandoori Chicken Breast with Hot Phulkas",
+    "dominant_foods": [
+      "Green Salad with Lemon",
+      "Chapati / Phulka",
+      "Tandoori Chicken"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-04T16:01:28.224Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Visible charred tandoori chicken breast, thin phulkas, green salad and lemon match all shared recipe components. No rice or unrelated protein."
+    },
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/tandoori-chicken-phulka/v1/f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b.webp"
+  },
+  {
+    "id": "53aaae7c-5225-454c-a8c5-79b856602431",
+    "recipe_id": "9d71cd65-1e4a-458d-95ce-22b7c46f152b",
+    "recipe_version_id": "17c079a0-5eb3-42d2-b015-6abf83e4aabb",
+    "slug": "palak-paneer-phulka",
+    "name": "Homestyle Palak Paneer with Hot Phulkas",
+    "status": "APPROVED",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "a6dfc22a5700e8dbf6822f3396651d0c5a0aeb0481eec2585c0e7692087d6a7e",
+    "sha256": "43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0",
+    "storage_path": "recipe-images/palak-paneer-phulka/v1/43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/palak-paneer-phulka/v1/43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 198098,
+    "alt_text": "Homestyle Palak Paneer with Hot Phulkas",
+    "dominant_foods": [
+      "Chapati / Phulka",
+      "Palak Paneer"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-04T16:01:28.225Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Spinach-green palak paneer with visible paneer cubes and thin phulkas. Variable salad, cucumber and curd sides are intentionally omitted."
+    },
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/palak-paneer-phulka/v1/43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0.webp"
+  },
+  {
+    "id": "52bb98d8-87fa-4467-b113-7c962b6f0b31",
+    "recipe_id": "556dff9a-61f8-478a-9846-24ff92378848",
+    "recipe_version_id": "6cc27632-feb3-4290-be82-2cc5e0de6330",
+    "slug": "egg-bhurji-chapati",
+    "name": "Indian Egg Bhurji with Hot Phulkas",
+    "status": "APPROVED",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "ca198112963de16616ab4a64f15159491dd7f6194d7f2bdb2c4b76ca8d695b54",
+    "sha256": "043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588",
+    "storage_path": "recipe-images/egg-bhurji-chapati/v1/043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/egg-bhurji-chapati/v1/043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 206144,
+    "alt_text": "Indian Egg Bhurji with Hot Phulkas",
+    "dominant_foods": [
+      "Chapati / Phulka",
+      "Egg Bhurji (Indian Scramble)"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-04T16:01:28.225Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Cooked Indian egg scramble with phulkas. No whole fried egg, separate egg-white side, rice or meat."
+    },
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/egg-bhurji-chapati/v1/043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588.webp"
+  },
+  {
+    "id": "e5fdc8a4-f960-45b6-8eb4-90f8d5b878df",
+    "recipe_id": "5b5395dd-8d2d-4f19-b205-2a2966c57663",
+    "recipe_version_id": "06b40c0d-cd95-4b9b-92f4-09836acc3fe9",
+    "slug": "tofu-quinoa-broccoli-bowl",
+    "name": "Tofu Stir Fry with Steamed Quinoa & Broccoli",
+    "status": "APPROVED",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "d2494203f18a1d4fda2b4e05f4e28679efe9d6df0ec6ceda22f9da92e4ef0f77",
+    "sha256": "9ee1db7504f00538f1974e04a516f1d39cad9792e1ca11a7ac463645806ad872",
+    "storage_path": "recipe-images/tofu-quinoa-broccoli-bowl/v1/9ee1db7504f00538f1974e04a516f1d39cad9792e1ca11a7ac463645806ad872.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/tofu-quinoa-broccoli-bowl/v1/9ee1db7504f00538f1974e04a516f1d39cad9792e1ca11a7ac463645806ad872.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 226690,
+    "alt_text": "Tofu Stir Fry with Steamed Quinoa & Broccoli",
+    "dominant_foods": [
+      "Boiled Broccoli",
+      "Tofu (Firm)",
+      "Quinoa (Cooked)"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-04T16:01:28.225Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Tofu cubes, small cooked quinoa grains and broccoli are clearly visible. No rice, dairy, egg or meat."
+    },
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/tofu-quinoa-broccoli-bowl/v1/9ee1db7504f00538f1974e04a516f1d39cad9792e1ca11a7ac463645806ad872.webp"
+  },
+  {
+    "id": "aebddad0-8280-4e10-8da1-03969d25767d",
+    "recipe_id": "0eacfbb7-5b15-419b-ac46-b17ba17bc70d",
+    "recipe_version_id": "d0da04ea-5d08-407c-9a6d-88f775c61e93",
+    "slug": "chana-chaat-lemon",
+    "name": "Tangy Chana Chaat with Fresh Cucumber & Lemon",
+    "status": "APPROVED",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "f72d9e24aa75ed90bd509079525acb98c1475ce9716c005c336aa0040d513e80",
+    "sha256": "4f911c78a94e653da29b35fd3212b60d82718d2602cc4cdfb611c7bd6dcc3604",
+    "storage_path": "recipe-images/chana-chaat-lemon/v1/4f911c78a94e653da29b35fd3212b60d82718d2602cc4cdfb611c7bd6dcc3604.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/chana-chaat-lemon/v1/4f911c78a94e653da29b35fd3212b60d82718d2602cc4cdfb611c7bd6dcc3604.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 166598,
+    "alt_text": "Tangy Chana Chaat with Fresh Cucumber & Lemon",
+    "dominant_foods": [
+      "Chana Chaat"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-04T16:01:28.225Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Chickpea chaat is the common composed food in every variant. No potato, peanuts, sprouts or separate salad side. Photo uses typical chaat dressing; composite food sub-ingredients are not separately modeled in the catalog."
+    },
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/chana-chaat-lemon/v1/4f911c78a94e653da29b35fd3212b60d82718d2602cc4cdfb611c7bd6dcc3604.webp"
+  },
+  {
+    "id": "68d4c4c3-7523-4679-b10b-b0b8686f4a48",
+    "recipe_id": "85da334b-eca4-4765-ad61-6c841df9b805",
+    "recipe_version_id": "715720ef-8919-4b98-aaf6-5051c9e9ac9a",
+    "slug": "punjabi-rajma-chawal",
+    "name": "Punjabi Rajma with Steamed White Rice",
+    "status": "APPROVED",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "ac2dea7c7835b78f5d8f72dbbbcf70dd1739f0c398f89ed1937270ac9f014ab9",
+    "sha256": "f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4",
+    "storage_path": "recipe-images/punjabi-rajma-chawal/v1/f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/punjabi-rajma-chawal/v1/f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 186214,
+    "alt_text": "Punjabi Rajma with Steamed White Rice",
+    "dominant_foods": [
+      "Rajma (Kidney Beans Curry)",
+      "White Rice (Steamed)"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-04T16:01:28.225Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Identifiable kidney beans in rajma gravy with steamed white rice. No breads, unrelated protein or variant-specific salad/sprouts."
+    },
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/punjabi-rajma-chawal/v1/f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4.webp"
+  }
+]

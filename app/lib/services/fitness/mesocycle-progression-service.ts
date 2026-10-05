@@ -54,7 +54,9 @@ export async function getMesocycleProgressionContext(
 
     // Determine current mesocycle number
     const completedCount = completedPlans.length;
-    const mesocycleNumber = isRenewal ? completedCount + 1 : Math.max(1, completedCount);
+    const mesocycleNumber = isRenewal
+      ? (activePlan ? completedCount + 2 : completedCount + 1)
+      : Math.max(1, completedCount + (activePlan ? 1 : 0));
 
     // If it's pure Month 1 initial creation with no prior plan, return null
     if (mesocycleNumber <= 1 && !activePlan && completedPlans.length === 0) {

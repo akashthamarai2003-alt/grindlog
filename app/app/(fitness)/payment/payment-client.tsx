@@ -392,12 +392,6 @@ export default function FitnessPaymentClient({
     }
   }, [currentPremiumInfo, isPlanGenerationIntent, isUpgradeIntent, premiumStatusLoaded]);
 
-  // If user is already active and arrives at monthly renewal checkout (and not celebrating a new payment), redirect to dashboard
-  useEffect(() => {
-    if (!isSuccess && !showCelebration && isRenewal && !isExpiredSubscriber && currentPremiumInfo && (currentPremiumInfo as any).is_premium && !isUpgradeIntent) {
-      router.replace("/");
-    }
-  }, [isSuccess, showCelebration, isRenewal, isExpiredSubscriber, currentPremiumInfo, isUpgradeIntent, router]);
 
   const handleFinishCelebration = useCallback(() => {
     sessionStorage.removeItem("fitness_pending_order");
@@ -773,6 +767,21 @@ export default function FitnessPaymentClient({
             >
               Manage →
             </Link>
+          </div>
+        )}
+
+        {/* Early Renewal Alert */}
+        {isRenewal && !isExpiredSubscriber && (
+          <div className="mb-6 p-4 rounded-2xl border border-[#ADFF00]/40 bg-[#121E12] flex items-start gap-3 shadow-[0_0_15px_rgba(173,255,0,0.1)]">
+            <Flame className="w-5 h-5 text-[#ADFF00] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-black uppercase tracking-wider text-[#ADFF00]">
+                Early Renewal — Stack Your Remaining Days
+              </p>
+              <p className="text-xs text-white/80 mt-1 leading-relaxed">
+                Your new 30-day month will stack directly on top of your existing period so you don't lose any remaining days. Your Month 2 progression plan is ready to unlock!
+              </p>
+            </div>
           </div>
         )}
 

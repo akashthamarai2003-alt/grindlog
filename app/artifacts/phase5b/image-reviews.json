@@ -1,0 +1,80 @@
+[
+  {
+    "image_asset_id": "2c06a8a6-18a0-4240-a716-1862a5b115c3",
+    "recipe_version_id": "6f89bcfa-6805-46d9-a423-0774c84afaa4",
+    "storage_path": "recipe-images/tandoori-chicken-phulka/v1/f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b.webp",
+    "sha256": "f97c1434f4da1a4a10aa3cd584905a6159776b2ae6c01127485a74b8ada1450b",
+    "status": "APPROVED",
+    "reviewer": "Codex visual inspection of generated image",
+    "reviewed_at": "2026-10-04T16:01:28.224Z",
+    "ingredients_match": true,
+    "no_unrelated_ingredients": true,
+    "no_text_or_watermark": true,
+    "notes": "Visible charred tandoori chicken breast, thin phulkas, green salad and lemon match all shared recipe components. No rice or unrelated protein."
+  },
+  {
+    "image_asset_id": "53aaae7c-5225-454c-a8c5-79b856602431",
+    "recipe_version_id": "17c079a0-5eb3-42d2-b015-6abf83e4aabb",
+    "storage_path": "recipe-images/palak-paneer-phulka/v1/43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0.webp",
+    "sha256": "43f1d54facf0754e0c79f33a4c13380d84925aac35e0d746b520bb553bf69cb0",
+    "status": "APPROVED",
+    "reviewer": "Codex visual inspection of generated image",
+    "reviewed_at": "2026-10-04T16:01:28.225Z",
+    "ingredients_match": true,
+    "no_unrelated_ingredients": true,
+    "no_text_or_watermark": true,
+    "notes": "Spinach-green palak paneer with visible paneer cubes and thin phulkas. Variable salad, cucumber and curd sides are intentionally omitted."
+  },
+  {
+    "image_asset_id": "52bb98d8-87fa-4467-b113-7c962b6f0b31",
+    "recipe_version_id": "6cc27632-feb3-4290-be82-2cc5e0de6330",
+    "storage_path": "recipe-images/egg-bhurji-chapati/v1/043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588.webp",
+    "sha256": "043d7d357035089555df4fcedb1bd377522da94db257e67f2cab99bf7ce5c588",
+    "status": "APPROVED",
+    "reviewer": "Codex visual inspection of generated image",
+    "reviewed_at": "2026-10-04T16:01:28.225Z",
+    "ingredients_match": true,
+    "no_unrelated_ingredients": true,
+    "no_text_or_watermark": true,
+    "notes": "Cooked Indian egg scramble with phulkas. No whole fried egg, separate egg-white side, rice or meat."
+  },
+  {
+    "image_asset_id": "e5fdc8a4-f960-45b6-8eb4-90f8d5b878df",
+    "recipe_version_id": "06b40c0d-cd95-4b9b-92f4-09836acc3fe9",
+    "storage_path": "recipe-images/tofu-quinoa-broccoli-bowl/v1/9ee1db7504f00538f1974e04a516f1d39cad9792e1ca11a7ac463645806ad872.webp",
+    "sha256": "9ee1db7504f00538f1974e04a516f1d39cad9792e1ca11a7ac463645806ad872",
+    "status": "APPROVED",
+    "reviewer": "Codex visual inspection of generated image",
+    "reviewed_at": "2026-10-04T16:01:28.225Z",
+    "ingredients_match": true,
+    "no_unrelated_ingredients": true,
+    "no_text_or_watermark": true,
+    "notes": "Tofu cubes, small cooked quinoa grains and broccoli are clearly visible. No rice, dairy, egg or meat."
+  },
+  {
+    "image_asset_id": "aebddad0-8280-4e10-8da1-03969d25767d",
+    "recipe_version_id": "d0da04ea-5d08-407c-9a6d-88f775c61e93",
+    "storage_path": "recipe-images/chana-chaat-lemon/v1/4f911c78a94e653da29b35fd3212b60d82718d2602cc4cdfb611c7bd6dcc3604.webp",
+    "sha256": "4f911c78a94e653da29b35fd3212b60d82718d2602cc4cdfb611c7bd6dcc3604",
+    "status": "APPROVED",
+    "reviewer": "Codex visual inspection of generated image",
+    "reviewed_at": "2026-10-04T16:01:28.225Z",
+    "ingredients_match": true,
+    "no_unrelated_ingredients": true,
+    "no_text_or_watermark": true,
+    "notes": "Chickpea chaat is the common composed food in every variant. No potato, peanuts, sprouts or separate salad side. Photo uses typical chaat dressing; composite food sub-ingredients are not separately modeled in the catalog."
+  },
+  {
+    "image_asset_id": "68d4c4c3-7523-4679-b10b-b0b8686f4a48",
+    "recipe_version_id": "715720ef-8919-4b98-aaf6-5051c9e9ac9a",
+    "storage_path": "recipe-images/punjabi-rajma-chawal/v1/f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4.webp",
+    "sha256": "f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4",
+    "status": "APPROVED",
+    "reviewer": "Codex visual inspection of generated image",
+    "reviewed_at": "2026-10-04T16:01:28.225Z",
+    "ingredients_match": true,
+    "no_unrelated_ingredients": true,
+    "no_text_or_watermark": true,
+    "notes": "Identifiable kidney beans in rajma gravy with steamed white rice. No breads, unrelated protein or variant-specific salad/sprouts."
+  }
+]

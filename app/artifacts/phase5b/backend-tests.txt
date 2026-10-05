@@ -1,0 +1,21 @@
+
+> grindlog@1.0.0 test:nutrition:phase4.7
+> node --import ./scripts/register-ts-loader.mjs --test scripts/test-phase47-backend.mjs
+
+✔ image delivery requires current approval and exact immutable recipe ownership (5.7509ms)
+✔ V2 grocery rows prefer authoritative details over compatibility projections (2.2046ms)
+✔ V2 grocery quantities use grams for continuous portions and pieces for discrete portions (1.2558ms)
+✔ catalog food IDs resolve to the live UUID by canonical name (0.7753ms)
+✔ Day 1 display uses frozen details before and after swaps, preserving titles (1.0845ms)
+✔ V2 reload preserves persisted snack and meal sequence instead of legacy workout slots (1.5775ms)
+✔ legacy display rows stay unchanged when no V2 details exist (0.7969ms)
+✔ V2 budget mapping uses established tiers and preserves exact custom budgets (3.7908ms)
+✔ missing catalog assets use the existing offline image badge (4.5561ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6443.1403
