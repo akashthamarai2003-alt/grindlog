@@ -228,6 +228,20 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
   return { success: true };
 }
 
+export async function getFitnessUserProfileAction() {
+  const supabase = await createServerSupabase();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    return null;
+  }
+  const { data: profile } = await supabase
+    .from("fitness_os_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  return profile;
+}
+
 const UpdateBaselineProfileSchema = z.object({
   name: z.string().trim().max(100).nullable().optional(),
   weight: z.number().min(20).max(400).nullable().optional(),

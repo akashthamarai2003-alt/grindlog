@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseBudget } from '@/lib/fitness/nutrition/constants';
-import { AIPlanAnimation } from '@/components/fitness/plan-animation';
+import { getFitnessUserProfileAction } from '@/app/actions/fitness';
+import { getPlanNutritionTargets } from '@/lib/fitness/validation/fitness-plan-profile';
 
 type PlanGenerationError = Error & {
   errorType: "SAFETY" | "SYSTEM" | "PLAN_ACTIVE" | "PAYMENT_REQUIRED";
@@ -269,6 +270,7 @@ function GroceryShowcasePreview({
 
 export default function PlanSetupPage() {
   const router = useRouter();
+  const [profile, setProfile] = useState<any>(null);
   const [planData, setPlanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -292,8 +294,15 @@ export default function PlanSetupPage() {
   });
 
   useEffect(() => {
-    // Generate draft on mount
     let isMounted = true;
+
+    // Immediately fetch profile from DB in < 15ms so code-based metrics render instantly
+    getFitnessUserProfileAction().then((p) => {
+      if (isMounted && p) {
+        setProfile(p);
+      }
+    });
+
     const isRenew = typeof window !== "undefined" && window.location.search.includes("renew=true");
     
     // Never force retry: true on initial mount; allow in-flight background generation from payment or cached draft to resolve cleanly without double API calls
@@ -301,11 +310,9 @@ export default function PlanSetupPage() {
       .then((res) => {
         if (!isMounted) return;
         setPlanData(res.data);
-        if (isReturningFromUpgrade) {
-          setLoading(false);
-          if (res.data?._subscriptionPlan === "pro") {
-            toast.success("Upgraded to Pro! Your personalized plan is ready.");
-          }
+        setLoading(false);
+        if (isReturningFromUpgrade && res.data?._subscriptionPlan === "pro") {
+          toast.success("Upgraded to Pro! Your personalized plan is ready.");
         }
       })
       .catch((err: unknown) => {
@@ -337,7 +344,7 @@ export default function PlanSetupPage() {
       isMounted = false; 
       clearTimeout(safetyTimer);
     };
-  }, [router]);
+  }, [router, isReturningFromUpgrade]);
 
   const handleModulate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -370,6 +377,10 @@ export default function PlanSetupPage() {
   };
 
   const handleSave = async () => {
+    if (!planData) {
+      toast.error("Please wait a moment while your workout plan finishes engineering.");
+      return;
+    }
     setSaving(true);
     const isRenew = typeof window !== "undefined" && window.location.search.includes("renew=true");
     try {
@@ -393,7 +404,29 @@ export default function PlanSetupPage() {
     }
   };
 
-  if (!loading && !planData) {
+  const effectiveProfile = planData?._profile || profile;
+  const defaultNutritionTargets = effectiveProfile ? getPlanNutritionTargets(effectiveProfile) : null;
+  const fallbackNutrition = {
+    daily_calories: defaultNutritionTargets?.calories || effectiveProfile?.target_calories || effectiveProfile?.baseline_calories || 2000,
+    protein_grams: defaultNutritionTargets?.protein || effectiveProfile?.target_protein_g || 140,
+    carbs_grams: defaultNutritionTargets?.carbs || 220,
+    fat_grams: defaultNutritionTargets?.fat || 60,
+    meals_per_day: defaultNutritionTargets?.mealsPerDay || 3,
+    meals: [],
+  };
+
+  const currentPlan = planData || (effectiveProfile ? {
+    plan: {
+      title: "Your Personalised Plan",
+      description: "A weekly workout plan shaped around your goals, time, and equipment.",
+      goal: effectiveProfile.goal,
+    },
+    workouts: [],
+    nutrition: fallbackNutrition,
+    _profile: effectiveProfile,
+  } : null);
+
+  if (generationError && !planData) {
     const isSafetyError = generationErrorType === "SAFETY";
     
     return (
@@ -420,11 +453,10 @@ export default function PlanSetupPage() {
             setGenerationError(null);
             setGenerationErrorType(null);
             const isRenew = typeof window !== "undefined" && window.location.search.includes("renew=true");
-            // Retry only after a failed generation. The server reuses any
-            // valid saved draft and never bypasses safety or duplicate guards.
             requestPlanDraft({ retry: true, renew: isRenew })
               .then(res => {
                 setPlanData(res.data);
+                setLoading(false);
               })
               .catch((err: unknown) => {
                 if (getPlanGenerationErrorType(err) === "PLAN_ACTIVE") {
@@ -452,21 +484,16 @@ export default function PlanSetupPage() {
   }
 
   // Workouts logic
-  // Plans made before the current schema can still be in a browser/server
-  // cache. Treat malformed legacy lists as empty rather than crashing the
-  // entire final-plan screen during render.
   const workouts = Array.isArray(planData?.workouts)
     ? planData.workouts.filter((workout: unknown) => workout && typeof workout === "object")
     : [];
-  const meals = Array.isArray(planData?.nutrition?.meals) ? planData.nutrition.meals : [];
+  const meals = Array.isArray(currentPlan?.nutrition?.meals) ? currentPlan.nutrition.meals : [];
   const planStartDate = planAnchorDate(workouts);
   const days = Array.from({ length: 7 }, (_, index) => weekDayLabel(index, planStartDate));
   const workoutForDay = (dayIndex: number) => {
     const datedWorkout = workouts.find(
       (workout: any) => workoutDayOffset(workout?.workout_date, planStartDate) === dayIndex,
     );
-    // Older cached plans may not contain dates. Keep their original positional
-    // behaviour as a compatibility fallback.
     return datedWorkout || (workouts.some((workout: any) => workout?.workout_date) ? null : workouts[dayIndex]) || null;
   };
   const activeWorkout = planData ? workoutForDay(selectedDay) : null;
@@ -478,8 +505,8 @@ export default function PlanSetupPage() {
       Number(workout?.duration_minutes || 0) <= 30 &&
       workout.exercises.length <= 3);
   const hasTrainingSessions = workouts.some((workout: any) => !isRestOrRecoveryWorkout(workout));
-  const safetyAcknowledgment = String(planData?.safety_acknowledgment || "").trim();
-  const trainingPausedForSafety = Boolean(safetyAcknowledgment) && !hasTrainingSessions;
+  const safetyAcknowledgment = String(currentPlan?.safety_acknowledgment || "").trim();
+  const trainingPausedForSafety = Boolean(safetyAcknowledgment) && !hasTrainingSessions && Boolean(planData);
   const tabTitle = trainingPausedForSafety && activeTab === "workout"
     ? "Your Recovery Plan"
     : activeTab === "workout"
@@ -490,20 +517,20 @@ export default function PlanSetupPage() {
   const tabDescription = activeTab === "workout"
     ? (trainingPausedForSafety
         ? "Your safety comes first. Keep the recovery guidance below while you arrange professional guidance."
-        : String(planData?.plan?.description || "A weekly workout plan shaped around your goals, time, and equipment."))
+        : String(currentPlan?.plan?.description || "A weekly workout plan shaped around your goals, time, and equipment."))
     : activeTab === "diet"
       ? "Generated by Luna from the goal, food availability, budget, and routine you saved."
       : "A monthly shopping list based on your saved food preferences and budget.";
 
   return (
     <>
-      {planData && (
+      {currentPlan && (
         <div className="min-h-[100dvh] bg-[#0A1108] text-white pb-[220px]">
           <div className="mx-auto max-w-md pt-10 px-6 pb-6">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#233522] bg-[#121E12] px-3 py-1.5 text-[10px] font-extrabold tracking-[0.14em] text-[#ADFF00] uppercase">
-              {planData?._progression && planData._progression.mesocycleNumber >= 2 ? (
+              {currentPlan?._progression && currentPlan._progression.mesocycleNumber >= 2 ? (
                 <>
-                  <Flame size={13} className="text-[#ADFF00]" /> Mesocycle {planData._progression.mesocycleNumber}: Progression Plan
+                  <Flame size={13} className="text-[#ADFF00]" /> Mesocycle {currentPlan._progression.mesocycleNumber}: Progression Plan
                 </>
               ) : (
                 <>
@@ -514,7 +541,7 @@ export default function PlanSetupPage() {
             <h1 className="text-3xl font-black tracking-tight">{tabTitle}</h1>
             <p className="mt-2 text-sm leading-relaxed text-gray-400">{tabDescription}</p>
 
-            {planData?._progression && planData._progression.mesocycleNumber >= 2 && (
+            {currentPlan?._progression && currentPlan._progression.mesocycleNumber >= 2 && (
               <div className="mt-4 rounded-2xl border border-[#ADFF00]/30 bg-gradient-to-r from-[#1A2619] via-[#121E12] to-[#1A2619] p-3.5 flex items-start gap-3 shadow-[0_0_15px_rgba(173,255,0,0.1)]">
                 <div className="w-8 h-8 rounded-xl bg-[#ADFF00]/15 border border-[#ADFF00]/30 flex items-center justify-center text-[#ADFF00] shrink-0 mt-0.5">
                   <Sparkles size={16} />
@@ -522,15 +549,15 @@ export default function PlanSetupPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black uppercase tracking-wider bg-[#ADFF00] text-black px-2 py-0.5 rounded-full">
-                      Month {planData._progression.mesocycleNumber}
+                      Month {currentPlan._progression.mesocycleNumber}
                     </span>
                     <span className="text-xs font-bold text-[#ADFF00]">
-                      {planData._progression.progressionFocus || "Progressive Overload"}
+                      {currentPlan._progression.progressionFocus || "Progressive Overload"}
                     </span>
                   </div>
                   <p className="text-xs text-white/80 mt-1 leading-relaxed">
-                    {planData._progression.completedWorkoutsCount > 0
-                      ? `Calibrated from ${planData._progression.completedWorkoutsCount} completed workouts in Cycle 1. Secondary movements rotated and progressive overload targets active.`
+                    {currentPlan._progression.completedWorkoutsCount > 0
+                      ? `Calibrated from ${currentPlan._progression.completedWorkoutsCount} completed workouts in Cycle 1. Secondary movements rotated and progressive overload targets active.`
                       : "Secondary movements rotated and progressive overload cues enabled for your next training block."}
                   </p>
                 </div>
@@ -538,250 +565,285 @@ export default function PlanSetupPage() {
             )}
           </div>
 
-      {/* Tab Toggle */}
-      <div className="mx-auto mb-5 max-w-md px-6">
-        <div className="flex bg-[#121E12] rounded-full p-1 border border-[#1A2619]">
-          <button 
-            onClick={() => setActiveTab("workout")}
-            aria-pressed={activeTab === "workout"}
-            className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "workout" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
-          >
-            <Dumbbell size={15} /> Workout
-          </button>
-          <button 
-            onClick={() => setActiveTab("diet")}
-            aria-pressed={activeTab === "diet"}
-            className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "diet" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
-          >
-            <Apple size={15} /> Diet
-          </button>
-          <button 
-            onClick={() => setActiveTab("grocery")}
-            aria-pressed={activeTab === "grocery"}
-            className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "grocery" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
-          >
-            <ShoppingCart size={15} /> Grocery
-          </button>
-        </div>
-      </div>
-
-      {activeTab === "workout" ? (
-        trainingPausedForSafety ? (
-          <div className="mx-auto max-w-md px-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
-            <section className="overflow-hidden rounded-3xl border border-amber-400/30 bg-[#121E12]">
-              <div className="border-b border-amber-400/15 bg-amber-400/[0.06] p-5">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300">
-                    <ShieldAlert size={22} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-extrabold tracking-wider text-amber-300 uppercase">Training paused for safety</p>
-                    <h2 className="mt-1 text-xl font-black">Take care first, then train with confidence.</h2>
-                  </div>
-                </div>
-                <p className="mt-4 text-sm leading-relaxed text-gray-300">{safetyAcknowledgment}</p>
-              </div>
-
-              <div className="space-y-3 p-5">
-                <div className="flex gap-3 rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-                  <HeartPulse size={18} className="mt-0.5 shrink-0 text-[#ADFF00]" />
-                  <div>
-                    <p className="text-sm font-bold text-white">Your next best step</p>
-                    <p className="mt-1 text-xs leading-relaxed text-gray-400">Arrange a qualified medical or physiotherapy assessment before returning to resistance training.</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-                  <CalendarDays size={18} className="mt-0.5 shrink-0 text-[#ADFF00]" />
-                  <div>
-                    <p className="text-sm font-bold text-white">What remains active today</p>
-                    <p className="mt-1 text-xs leading-relaxed text-gray-400">Your food, hydration, sleep, and recovery guidance are ready. Use them to support your next step.</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("diet")}
-                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl border border-[#ADFF00]/25 bg-[#ADFF00]/10 py-3 text-sm font-extrabold text-[#ADFF00] transition-colors hover:bg-[#ADFF00]/15"
-                >
-                  View nutrition & recovery support <ArrowRight size={16} />
-                </button>
-              </div>
-            </section>
-          </div>
-        ) : (
-        <>
-          {safetyAcknowledgment && (
-            <div className="mx-auto mb-5 max-w-md px-6">
-              <div className="flex gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-4">
-                <ShieldAlert size={18} className="mt-0.5 shrink-0 text-amber-300" />
-                <p className="text-xs leading-relaxed text-gray-300">{safetyAcknowledgment}</p>
-              </div>
-            </div>
-          )}
-          {/* Nutrition notice banner */}
-          <div className="mx-auto mb-4 max-w-md px-6">
-            <div className="flex items-center gap-2.5 rounded-2xl border border-[#ADFF00]/20 bg-[#121E12] px-4 py-3 text-xs text-gray-300">
-              <Sparkles size={16} className="shrink-0 text-[#ADFF00]" />
-              <span>Your full personalized diet and grocery plan will be ready in the <strong className="text-white">Nutrition</strong> page once you lock in this plan.</span>
+          {/* Tab Toggle */}
+          <div className="mx-auto mb-5 max-w-md px-6">
+            <div className="flex bg-[#121E12] rounded-full p-1 border border-[#1A2619]">
+              <button 
+                onClick={() => setActiveTab("workout")}
+                aria-pressed={activeTab === "workout"}
+                className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "workout" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+              >
+                <Dumbbell size={15} /> Workout
+              </button>
+              <button 
+                onClick={() => setActiveTab("diet")}
+                aria-pressed={activeTab === "diet"}
+                className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "diet" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+              >
+                <Apple size={15} /> Diet
+              </button>
+              <button 
+                onClick={() => setActiveTab("grocery")}
+                aria-pressed={activeTab === "grocery"}
+                className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 ${activeTab === "grocery" ? 'bg-[#ADFF00] text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+              >
+                <ShoppingCart size={15} /> Grocery
+              </button>
             </div>
           </div>
-      {/* Week Selector */}
-      <div className="mx-auto flex max-w-md overflow-x-auto gap-3 pb-4 scrollbar-hide snap-x">
-        <div className="w-3 shrink-0" /> {/* Left Spacer (3 + 3 gap = 6) */}
-        {days.map((day, i) => {
-          const isSelected = selectedDay === i;
-          const wo = workoutForDay(i);
-          const hasWorkout = Boolean(wo);
-          const workoutTitle = typeof wo?.title === "string" ? wo.title : "Workout";
-          
-          return (
-            <button
-              key={day}
-              onClick={() => setSelectedDay(i)}
-              className={`snap-start shrink-0 w-28 p-3 rounded-2xl border-2 transition-all flex flex-col items-start gap-1 ${
-                isSelected 
-                  ? 'border-[#ADFF00] bg-[#ADFF00]/10' 
-                  : 'border-[#1A2619] bg-[#121E12] hover:border-gray-700'
-              }`}
-            >
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-[#ADFF00]' : 'text-gray-500'}`}>{day}</span>
-              {hasWorkout && isLightRecoveryWorkout(wo) ? (
-                <span className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-gray-400'}`}>Recovery</span>
-              ) : hasWorkout ? (
-                <span className={`text-xs font-bold leading-tight text-left ${isSelected ? 'text-white' : 'text-gray-300'}`}>
-                  {workoutTitle.substring(0, 18)}{workoutTitle.length > 18 ? '...' : ''}
-                </span>
-              ) : (
-                <span className="text-xs font-semibold text-gray-500">Rest</span>
-              )}
-            </button>
-          );
-        })}
-        <div className="w-3 shrink-0" /> {/* Right Spacer */}
-      </div>
 
-      {/* Selected Workout Details */}
-      <div className="mx-auto mt-4 max-w-md px-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedDay}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeWorkout ? (
-              <>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-full bg-[#1A2619] flex items-center justify-center shrink-0">
-                    <Dumbbell size={20} className="text-[#ADFF00]" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black">{typeof activeWorkout.title === "string" ? activeWorkout.title : "Workout"}</h2>
-                    <p className="text-sm text-gray-400">{Number(activeWorkout.duration_minutes) || 45} min</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {activeExercises.map((ex: any, i: number) => (
-                    <div key={i} className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex justify-between items-center">
-                      <div className="flex-1 pr-4">
-                        <h3 className="font-bold text-gray-200">{ex.name}</h3>
-                        {ex.notes && <p className="text-[11px] text-gray-500 mt-1 leading-snug">{ex.notes}</p>}
+          {activeTab === "workout" ? (
+            trainingPausedForSafety ? (
+              <div className="mx-auto max-w-md px-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
+                <section className="overflow-hidden rounded-3xl border border-amber-400/30 bg-[#121E12]">
+                  <div className="border-b border-amber-400/15 bg-amber-400/[0.06] p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300">
+                        <ShieldAlert size={22} />
                       </div>
-                      <div className="text-right shrink-0">
-                        <span className="block font-black text-[#ADFF00] text-lg">
-                          {ex.sets} x {String(ex.reps_string || "").replace(/^\d+\s*[xX×*]\s*/, '').replace(/^\d+\s*x-\s*/, '')}
-                        </span>
+                      <div>
+                        <p className="text-xs font-extrabold tracking-wider text-amber-300 uppercase">Training paused for safety</p>
+                        <h2 className="mt-1 text-xl font-black">Take care first, then train with confidence.</h2>
                       </div>
                     </div>
-                  ))}
-                  {activeExercises.length === 0 && (
-                    <div className="text-center p-8 bg-[#121E12] border border-[#1A2619] rounded-2xl text-gray-500">
-                      Active Recovery / Rest Day
+                    <p className="mt-4 text-sm leading-relaxed text-gray-300">{safetyAcknowledgment}</p>
+                  </div>
+
+                  <div className="space-y-3 p-5">
+                    <div className="flex gap-3 rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                      <HeartPulse size={18} className="mt-0.5 shrink-0 text-[#ADFF00]" />
+                      <div>
+                        <p className="text-sm font-bold text-white">Your next best step</p>
+                        <p className="mt-1 text-xs leading-relaxed text-gray-400">Arrange a qualified medical or physiotherapy assessment before returning to resistance training.</p>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </>
+                    <div className="flex gap-3 rounded-2xl border border-white/5 bg-[#0D150D] p-4">
+                      <CalendarDays size={18} className="mt-0.5 shrink-0 text-[#ADFF00]" />
+                      <div>
+                        <p className="text-sm font-bold text-white">What remains active today</p>
+                        <p className="mt-1 text-xs leading-relaxed text-gray-400">Your food, hydration, sleep, and recovery guidance are ready. Use them to support your next step.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("diet")}
+                      className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl border border-[#ADFF00]/25 bg-[#ADFF00]/10 py-3 text-sm font-extrabold text-[#ADFF00] transition-colors hover:bg-[#ADFF00]/15"
+                    >
+                      View nutrition & recovery support <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </section>
+              </div>
             ) : (
-              <div className="text-center p-8 bg-[#121E12] border border-[#1A2619] rounded-2xl text-gray-500">
-                Rest Day
+            <>
+              {safetyAcknowledgment && (
+                <div className="mx-auto mb-5 max-w-md px-6">
+                  <div className="flex gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-4">
+                    <ShieldAlert size={18} className="mt-0.5 shrink-0 text-amber-300" />
+                    <p className="text-xs leading-relaxed text-gray-300">{safetyAcknowledgment}</p>
+                  </div>
+                </div>
+              )}
+              {/* Nutrition notice banner */}
+              <div className="mx-auto mb-4 max-w-md px-6">
+                <div className="flex items-center gap-2.5 rounded-2xl border border-[#ADFF00]/20 bg-[#121E12] px-4 py-3 text-xs text-gray-300">
+                  <Sparkles size={16} className="shrink-0 text-[#ADFF00]" />
+                  <span>Your full personalized diet and grocery plan will be ready in the <strong className="text-white">Nutrition</strong> page once you lock in this plan.</span>
+                </div>
               </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+              {/* Week Selector */}
+              <div className="mx-auto flex max-w-md overflow-x-auto gap-3 pb-4 scrollbar-hide snap-x">
+                <div className="w-3 shrink-0" />
+                {days.map((day, i) => {
+                  const isSelected = selectedDay === i;
+                  const wo = workoutForDay(i);
+                  const hasWorkout = Boolean(wo);
+                  const workoutTitle = typeof wo?.title === "string" ? wo.title : "Workout";
+                  
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => setSelectedDay(i)}
+                      className={`snap-start shrink-0 w-28 p-3 rounded-2xl border-2 transition-all flex flex-col items-start gap-1 ${
+                        isSelected 
+                          ? 'border-[#ADFF00] bg-[#ADFF00]/10' 
+                          : 'border-[#1A2619] bg-[#121E12] hover:border-gray-700'
+                      }`}
+                    >
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-[#ADFF00]' : 'text-gray-500'}`}>{day}</span>
+                      {loading && !planData ? (
+                        <span className="text-[11px] font-medium text-gray-400 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF00] animate-pulse" />
+                          Day {i + 1}
+                        </span>
+                      ) : hasWorkout && isLightRecoveryWorkout(wo) ? (
+                        <span className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-gray-400'}`}>Recovery</span>
+                      ) : hasWorkout ? (
+                        <span className={`text-xs font-bold leading-tight text-left ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                          {workoutTitle.substring(0, 18)}{workoutTitle.length > 18 ? '...' : ''}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold text-gray-500">Rest</span>
+                      )}
+                    </button>
+                  );
+                })}
+                <div className="w-3 shrink-0" />
+              </div>
 
+              {/* Selected Workout Details */}
+              <div className="mx-auto mt-4 max-w-md px-6">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={selectedDay + (planData ? "-loaded" : "-loading")}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {activeWorkout ? (
+                      <>
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="w-10 h-10 rounded-full bg-[#1A2619] flex items-center justify-center shrink-0">
+                            <Dumbbell size={20} className="text-[#ADFF00]" />
+                          </div>
+                          <div>
+                            <h2 className="text-xl font-black">{typeof activeWorkout.title === "string" ? activeWorkout.title : "Workout"}</h2>
+                            <p className="text-sm text-gray-400">{Number(activeWorkout.duration_minutes) || 45} min</p>
+                          </div>
+                        </div>
 
-        </>
-        )
-      ) : activeTab === "diet" ? (
-        <DietShowcasePreview
-          planData={planData}
-          onReviewWorkouts={() => setActiveTab("workout")}
-        />
-      ) : (
-        <GroceryShowcasePreview
-          planData={planData}
-          onReviewWorkouts={() => setActiveTab("workout")}
-        />
-      )}
+                        <div className="space-y-3">
+                          {activeExercises.map((ex: any, i: number) => (
+                            <div key={i} className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex justify-between items-center">
+                              <div className="flex-1 pr-4">
+                                <h3 className="font-bold text-gray-200">{ex.name}</h3>
+                                {ex.notes && <p className="text-[11px] text-gray-500 mt-1 leading-snug">{ex.notes}</p>}
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="block font-black text-[#ADFF00] text-lg">
+                                  {ex.sets} x {String(ex.reps_string || "").replace(/^\d+\s*[xX×*]\s*/, '').replace(/^\d+\s*x-\s*/, '')}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                          {activeExercises.length === 0 && (
+                            <div className="text-center p-8 bg-[#121E12] border border-[#1A2619] rounded-2xl text-gray-500">
+                              Active Recovery / Rest Day
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : loading && !planData ? (
+                      <div className="space-y-4 animate-in fade-in duration-300">
+                        {/* High-tech AI Status Card */}
+                        <div className="rounded-3xl border border-[#ADFF00]/30 bg-gradient-to-br from-[#122312] via-[#0E1B0E] to-[#0A120A] p-5 shadow-[0_0_25px_rgba(173,255,0,0.12)]">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF00] opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ADFF00]" />
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#ADFF00]">
+                                Loki AI Workout Engine
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-mono font-bold text-gray-400 bg-black/40 border border-[#ADFF00]/20 px-2 py-0.5 rounded-full">
+                              Engineering Split
+                            </span>
+                          </div>
+                          
+                          <h3 className="text-base font-black text-white">
+                            Personalizing Your Workout Session...
+                          </h3>
+                          <p className="text-xs text-gray-300 mt-1 leading-relaxed">
+                            Synthesizing progressive overload, rep targets, and exercise biomechanics for your {effectiveProfile?.goal || "fitness"} goal.
+                          </p>
+                        </div>
 
-        {/* Explicit bottom spacer to ensure content clears the floating footer */}
-        <div className="h-56 shrink-0 w-full" />
+                        {/* Pulsing Skeleton Exercise Cards */}
+                        <div className="space-y-3">
+                          {[1, 2, 3, 4].map((idx) => (
+                            <div
+                              key={idx}
+                              className="bg-[#121E12] border border-[#1A2619] p-4 rounded-2xl flex justify-between items-center animate-pulse"
+                              style={{ animationDelay: `${idx * 150}ms` }}
+                            >
+                              <div className="flex-1 pr-4 space-y-2">
+                                <div className="h-4 bg-white/10 rounded-md w-3/4" />
+                                <div className="h-2.5 bg-white/5 rounded-md w-1/2" />
+                              </div>
+                              <div className="shrink-0 space-y-1 text-right">
+                                <div className="h-5 bg-[#ADFF00]/20 rounded-md w-16" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center p-8 bg-[#121E12] border border-[#1A2619] rounded-2xl text-gray-500">
+                        Rest Day
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </>
+            )
+          ) : activeTab === "diet" ? (
+            <DietShowcasePreview
+              planData={currentPlan}
+              onReviewWorkouts={() => setActiveTab("workout")}
+            />
+          ) : (
+            <GroceryShowcasePreview
+              planData={currentPlan}
+              onReviewWorkouts={() => setActiveTab("workout")}
+            />
+          )}
 
-        {/* Floating Modulator & Save */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pt-16 pb-6 z-50 pointer-events-none backdrop-blur-[2px]">
+          {/* Explicit bottom spacer to ensure content clears the floating footer */}
+          <div className="h-56 shrink-0 w-full" />
+
+          {/* Floating Modulator & Save */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pt-16 pb-6 z-50 pointer-events-none backdrop-blur-[2px]">
             <div className="max-w-md mx-auto space-y-3 pointer-events-auto">
               <p className="px-4 text-center text-xs text-gray-500">
                 You can refine this plan later from your dashboard.
               </p>
               
-              <button 
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#c4ff33] disabled:opacity-70 transition-colors"
-              >
-                {saving ? (
-                  <><Loader2 size={20} className="animate-spin" /> <span>Locking In Your Plan...</span></>
-                ) : (
-                  <>
-                    <span>
-                      {trainingPausedForSafety
-                        ? "Save Recovery Plan"
-                        : planData?._progression && planData._progression.mesocycleNumber >= 2
-                          ? `Lock In Month ${planData._progression.mesocycleNumber} Plan ⚡`
-                          : "Lock In My Plan"}
-                    </span>
-                    <ArrowRight size={20} />
-                  </>
-                )}
-              </button>
+              {loading && !planData ? (
+                <button 
+                  disabled
+                  className="w-full py-4 bg-[#142314] text-gray-400 border border-[#233822] rounded-full font-extrabold text-base flex items-center justify-center gap-2 cursor-not-allowed opacity-90 shadow-[0_0_15px_rgba(173,255,0,0.08)]"
+                >
+                  <Loader2 size={18} className="animate-spin text-[#ADFF00]" />
+                  <span>Finalizing AI Plan Blueprint...</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full py-4 bg-[#ADFF00] text-black rounded-full font-extrabold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.2)] hover:bg-[#c4ff33] disabled:opacity-70 transition-colors cursor-pointer"
+                >
+                  {saving ? (
+                    <><Loader2 size={20} className="animate-spin" /> <span>Locking In Your Plan...</span></>
+                  ) : (
+                    <>
+                      <span>
+                        {trainingPausedForSafety
+                          ? "Save Recovery Plan"
+                          : currentPlan?._progression && currentPlan._progression.mesocycleNumber >= 2
+                            ? `Lock In Month ${currentPlan._progression.mesocycleNumber} Plan ⚡`
+                            : "Lock In My Plan"}
+                      </span>
+                      <ArrowRight size={20} />
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
-        </div>
-      )}
-
-      {loading && !isReturningFromUpgrade && (
-        <AIPlanAnimation
-          isReady={Boolean(planData || generationError)}
-          hasError={Boolean(generationError)}
-          minDurationMs={2000}
-          onAnimationComplete={() => setLoading(false)}
-        />
-      )}
-
-      {loading && isReturningFromUpgrade && (
-        <div className="fixed inset-0 z-50 bg-[#0A1108] flex flex-col items-center justify-center p-6 text-white animate-in fade-in duration-200">
-          <div className="relative flex items-center justify-center mb-4">
-            <div className="absolute inset-0 bg-[#ADFF00]/20 blur-2xl rounded-full" />
-            <Brain className="w-12 h-12 text-[#ADFF00] animate-pulse relative z-10" />
-          </div>
-          <h2 className="text-xl font-black tracking-tight text-white mb-1">
-            Revealing Your Master Plan...
-          </h2>
-          <p className="text-xs text-gray-400">
-            Personalizing workouts and natural food nutrition
-          </p>
         </div>
       )}
     </>

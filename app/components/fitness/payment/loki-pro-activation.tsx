@@ -25,8 +25,7 @@ interface LokiProActivationProps {
   isReady?: boolean;
 }
 
-const BASE_DURATION_MS = 10000; // 10 seconds minimum celebration
-const MAX_WAIT_MS = 16000; // 16 seconds maximum safety timeout
+const BASE_DURATION_MS = 10000; // 10 seconds exact celebration
 
 export function LokiProActivation({
   onComplete,
@@ -102,7 +101,7 @@ export function LokiProActivation({
     isReadyRef.current = isReady;
   }, [isReady]);
 
-  // 2. 10-second+ intelligent ticker synchronized with AI background pre-generation
+  // 2. Exact 10-second timer synchronized with AI background pre-generation
   useEffect(() => {
     const startTime = Date.now();
     let finished = false;
@@ -112,10 +111,8 @@ export function LokiProActivation({
       const elapsed = Date.now() - startTime;
       setElapsedMs(elapsed);
 
-      // Auto-finish if:
-      // 1. Minimum 10 seconds elapsed AND the AI plan generation is ready
-      // 2. OR max safety timeout (16s) is reached
-      if ((elapsed >= BASE_DURATION_MS && isReadyRef.current) || elapsed >= MAX_WAIT_MS) {
+      // Auto-finish at exactly 10 seconds (10,000ms)
+      if (elapsed >= BASE_DURATION_MS) {
         finished = true;
         clearInterval(interval);
         handleFinish();
@@ -126,9 +123,7 @@ export function LokiProActivation({
   }, [handleFinish]);
 
   const isBaseTimeComplete = elapsedMs >= BASE_DURATION_MS;
-  const progress = isReady && isBaseTimeComplete
-    ? 100
-    : Math.min(96, (elapsedMs / BASE_DURATION_MS) * 96);
+  const progress = Math.min(100, (elapsedMs / BASE_DURATION_MS) * 100);
   const remainingSeconds = Math.max(0, Math.ceil((BASE_DURATION_MS - elapsedMs) / 1000));
 
   // Determine active stage

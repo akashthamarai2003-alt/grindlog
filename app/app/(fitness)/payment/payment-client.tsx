@@ -403,13 +403,22 @@ export default function FitnessPaymentClient({
     sessionStorage.removeItem("payment_in_progress");
     const targetPath = isRenewal ? "/plan-setup?renew=true" : returnTo;
     const separator = targetPath.includes("?") ? "&" : "?";
-    window.location.replace(`${targetPath}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`);
-  }, [returnTo, isRenewal, paymentOrderId]);
+    const targetUrl = `${targetPath}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`;
+    router.push(targetUrl);
+    setTimeout(() => {
+      const cleanPath = targetPath.split("?")[0];
+      if (typeof window !== "undefined" && window.location.pathname !== cleanPath) {
+        window.location.replace(targetUrl);
+      }
+    }, 1500);
+  }, [returnTo, isRenewal, paymentOrderId, router]);
 
   // Background pre-fetch AI draft plan while the 10-second Loki celebration is active
   useEffect(() => {
     const willGoToPlanSetup = returnTo.includes("/plan-setup") || isRenewal;
     if (showCelebration && willGoToPlanSetup) {
+      const targetPath = isRenewal ? "/plan-setup?renew=true" : returnTo;
+      router.prefetch(targetPath);
       const isRenew = isRenewal || returnTo.includes("renew=true");
       fetch("/api/fitness-ai/generate-draft", {
         method: "POST",
@@ -426,7 +435,7 @@ export default function FitnessPaymentClient({
           console.warn("Background draft pre-generation failed to initiate:", err);
         });
     }
-  }, [showCelebration, returnTo, isRenewal]);
+  }, [showCelebration, returnTo, isRenewal, router]);
 
   // Reliable redirect effect for instant cases without celebration (e.g. already active subscription returning)
   useEffect(() => {
