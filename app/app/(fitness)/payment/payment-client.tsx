@@ -173,12 +173,14 @@ export default function FitnessPaymentClient({
   );
   const isRenewal = searchParams.get("intent") === "renew_monthly" || isExpiredSubscriber;
   const isPlanGenerationIntent = searchParams.get("intent") === "generate_plan";
-  // Plan purchases go straight to setup, including older links with returnTo=/.
+  // Plan purchases and monthly renewals go straight to setup
   const returnTo = isPlanGenerationIntent
     ? "/plan-setup"
+    : isRenewal
+    ? "/plan-setup?renew=true"
     : searchParams.get("returnTo")
     ? getSafeRedirect(searchParams.get("returnTo"))
-    : (isRenewal ? "/" : getSafeRedirect(searchParams.get("returnTo")));
+    : "/";
   
   // In Fitness OS, the duration is always monthly, but we let them choose the tier
   const selectedPlan = "monthly";
@@ -390,27 +392,30 @@ export default function FitnessPaymentClient({
     }
   }, [currentPremiumInfo, isPlanGenerationIntent, isUpgradeIntent, premiumStatusLoaded]);
 
-  // If user is already active and arrives at monthly renewal checkout, redirect to dashboard
+  // If user is already active and arrives at monthly renewal checkout (and not celebrating a new payment), redirect to dashboard
   useEffect(() => {
-    if (isRenewal && !isExpiredSubscriber && currentPremiumInfo && (currentPremiumInfo as any).is_premium && !isUpgradeIntent) {
+    if (!isSuccess && !showCelebration && isRenewal && !isExpiredSubscriber && currentPremiumInfo && (currentPremiumInfo as any).is_premium && !isUpgradeIntent) {
       router.replace("/");
     }
-  }, [isRenewal, isExpiredSubscriber, currentPremiumInfo, isUpgradeIntent, router]);
+  }, [isSuccess, showCelebration, isRenewal, isExpiredSubscriber, currentPremiumInfo, isUpgradeIntent, router]);
 
   const handleFinishCelebration = useCallback(() => {
     sessionStorage.removeItem("fitness_pending_order");
     sessionStorage.removeItem("payment_in_progress");
-    const separator = returnTo.includes("?") ? "&" : "?";
-    window.location.replace(`${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`);
-  }, [returnTo, paymentOrderId]);
+    const targetPath = isRenewal ? "/plan-setup?renew=true" : returnTo;
+    const separator = targetPath.includes("?") ? "&" : "?";
+    window.location.replace(`${targetPath}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`);
+  }, [returnTo, isRenewal, paymentOrderId]);
 
   // Background pre-fetch AI draft plan while the 10-second Loki celebration is active
   useEffect(() => {
-    if (showCelebration && returnTo.includes("/plan-setup")) {
+    const willGoToPlanSetup = returnTo.includes("/plan-setup") || isRenewal;
+    if (showCelebration && willGoToPlanSetup) {
+      const isRenew = isRenewal || returnTo.includes("renew=true");
       fetch("/api/fitness-ai/generate-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ retry: false }),
+        body: JSON.stringify({ retry: false, renew: Boolean(isRenew) }),
       })
         .then((res) => res.json())
         .then((data) => {
@@ -422,16 +427,17 @@ export default function FitnessPaymentClient({
           console.warn("Background draft pre-generation failed to initiate:", err);
         });
     }
-  }, [showCelebration, returnTo]);
+  }, [showCelebration, returnTo, isRenewal]);
 
   // Reliable redirect effect for instant cases without celebration (e.g. already active subscription returning)
   useEffect(() => {
     if (isSuccess && !showCelebration) {
       sessionStorage.removeItem("fitness_pending_order");
-      const separator = returnTo.includes("?") ? "&" : "?";
-      window.location.replace(`${returnTo}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`);
+      const targetPath = isRenewal ? "/plan-setup?renew=true" : returnTo;
+      const separator = targetPath.includes("?") ? "&" : "?";
+      window.location.replace(`${targetPath}${separator}success=true${paymentOrderId ? `&order=${encodeURIComponent(paymentOrderId)}` : ""}&t=${Date.now()}`);
     }
-  }, [isSuccess, showCelebration, returnTo, paymentOrderId]);
+  }, [isSuccess, showCelebration, returnTo, isRenewal, paymentOrderId]);
 
   // Robust polling that survives modal dismissal or external redirect
   useEffect(() => {

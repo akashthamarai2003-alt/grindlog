@@ -25,7 +25,7 @@ export function ProUpgradeModal({
   corePrice = 19,
 }: ProUpgradeModalProps) {
   const pathname = usePathname();
-  const returnTo = pathname || "/";
+  const returnTo = isExpired ? "/plan-setup?renew=true" : (pathname || "/");
   const isAnyTier = planRequired === "any";
 
   return (

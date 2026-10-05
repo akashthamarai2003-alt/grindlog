@@ -158,7 +158,7 @@ export function WorkoutView({ initialData }: WorkoutViewProps) {
                   </p>
                 </div>
                 <Link
-                  href="/payment?intent=renew_monthly&plan=pro"
+                  href={`/payment?intent=renew_monthly&plan=pro&returnTo=${encodeURIComponent("/plan-setup?renew=true")}`}
                   className="py-3 px-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-center font-black uppercase tracking-wider text-xs rounded-xl transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)]"
                 >
                   Renew Subscription to Continue ⚡
