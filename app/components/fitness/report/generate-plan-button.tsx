@@ -42,6 +42,25 @@ export function GeneratePlanButton({
     markStartingReportViewedAction().catch((err) => {
       console.warn("Failed to mark starting report as viewed on click:", err);
     });
+
+    const renewSuffix = isRenew ? "&renew=true" : "";
+    const renewQuery = isRenew ? "?renew=true" : "";
+    const targetUrl = requiresPayment
+      ? `/payment?plan=pro&returnTo=/plan-setup${renewSuffix}&intent=${isRenew ? "renew" : "generate_plan"}`
+      : `/plan-setup${renewQuery}`;
+    router.prefetch(targetUrl);
+
+    // Preload Razorpay checkout script in background so payment page mounts instantly
+    if (requiresPayment && typeof window !== "undefined") {
+      const scriptId = "razorpay-checkout-preload";
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement("script");
+        script.id = scriptId;
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        document.body.appendChild(script);
+      }
+    }
   };
 
   const handleAnimationComplete = () => {
@@ -81,7 +100,7 @@ export function GeneratePlanButton({
       {isPreparing && (
         <AIPlanAnimation
           isReady={true}
-          minDurationMs={5000}
+          minDurationMs={14000}
           exitMode="hold"
           onAnimationComplete={handleAnimationComplete}
         />

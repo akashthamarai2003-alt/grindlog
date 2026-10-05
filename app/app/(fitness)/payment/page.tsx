@@ -9,13 +9,7 @@ import FitnessPaymentClient from "./payment-client";
 
 export const dynamic = "force-dynamic";
 
-function PaymentLoadingFallback() {
-  return (
-    <div className="min-h-[100dvh] bg-[#0A1108] text-white flex flex-col items-center justify-center">
-      <div className="w-10 h-10 rounded-full border-2 border-[#ADFF00] border-t-transparent animate-spin" />
-    </div>
-  );
-}
+import PaymentLoading from "./loading";
 
 export default async function FitnessPaymentPage({
   searchParams,
@@ -25,18 +19,23 @@ export default async function FitnessPaymentPage({
   const resolvedParams = searchParams ? await searchParams : {};
   const intent = typeof resolvedParams.intent === "string" ? resolvedParams.intent : undefined;
 
-  const [pricingConfig, premiumDetails] = await Promise.all([
+  // Step 1: Concurrently fetch user authentication, plan pricing, and premium details
+  const [userResult, pricingConfig, premiumDetails] = await Promise.all([
+    getCachedUser().catch(() => ({ data: { user: null } })),
     getPlanPricesAction("fitness").catch(() => null),
     getUserPremiumDetailsAction("fitness_os").catch(() => null),
   ]);
 
-  const { data: { user } } = await getCachedUser();
-  const [subscription, subscriptionState] = user
+  const user = userResult?.data?.user ?? null;
+
+  // Step 2: Concurrently fetch subscription and locked renewal rate
+  const [subscription, subscriptionState, initialLockedRate] = user
     ? await Promise.all([
         getFitnessSubscription(user.id).catch(() => null),
         getFitnessSubscriptionState(user.id).catch(() => null),
+        getLockedFitnessRate(user.id, "pro").catch(() => null),
       ])
-    : [null, null];
+    : [null, null, null];
 
   const isExpired = Boolean(subscriptionState?.isExpired);
   const isActivePro = Boolean(
@@ -63,18 +62,18 @@ export default async function FitnessPaymentPage({
   const renewalExpiresAt =
     subscription?.current_period_end || subscriptionState?.expiresAt || premiumDetails?.premium_expires_at || null;
 
-  let lockedRatePaise: number | null = null;
+  let lockedRatePaise: number | null = initialLockedRate ?? null;
   let rateCheckFailed = false;
-  if (user && (renewalLevel === "core" || renewalLevel === "pro")) {
+  if (user && renewalLevel === "core" && initialLockedRate === null) {
     try {
-      lockedRatePaise = await getLockedFitnessRate(user.id, renewalLevel);
+      lockedRatePaise = await getLockedFitnessRate(user.id, "core");
     } catch {
       rateCheckFailed = true;
     }
   }
 
   return (
-    <Suspense fallback={<PaymentLoadingFallback />}>
+    <Suspense fallback={<PaymentLoading />}>
       <FitnessPaymentClient
         initialPricing={pricingConfig || undefined}
         renewalPlan={renewalLevel}
