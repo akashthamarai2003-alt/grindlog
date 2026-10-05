@@ -112,26 +112,26 @@ export function RoadmapIntroAnimation({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20, filter: "blur(10px)" }}
             transition={{ duration: 0.6 }}
-            className="flex-1 flex flex-col px-5 pt-10 pb-8 z-10 max-w-md mx-auto w-full justify-between"
+            className="flex-1 flex flex-col px-4 py-4 sm:px-5 sm:py-6 z-10 max-w-md mx-auto w-full justify-between"
           >
             {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-center mb-6"
+              className="text-center mb-3 sm:mb-5"
             >
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#233522] bg-[#121E12] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#ADFF00] mb-2 shadow-[0_0_12px_rgba(173,255,0,0.15)]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#233522] bg-[#121E12] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#ADFF00] mb-1.5 shadow-[0_0_12px_rgba(173,255,0,0.15)]">
                 <Target size={12} /> Transformation Roadmap
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">The Journey Ahead</h1>
-              <p className="text-gray-400 mt-1.5 text-xs sm:text-sm max-w-xs mx-auto leading-relaxed">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">The Journey Ahead</h1>
+              <p className="text-gray-400 mt-1 text-xs max-w-xs mx-auto leading-relaxed">
                 Building progressive overload & sustainable habits over your 8-week block.
               </p>
             </motion.div>
 
             {/* Timeline Vertical Path */}
-            <div className="relative flex justify-center max-w-sm mx-auto w-full py-4 my-auto">
+            <div className="relative flex justify-center max-w-sm mx-auto w-full py-2 my-auto">
               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-[#1A2619]" />
               <motion.div
                 initial={{ height: 0 }}
@@ -156,7 +156,7 @@ export function RoadmapIntroAnimation({
                 </motion.div>
 
                 {/* Weeks Grid */}
-                <div className="flex flex-col items-center justify-center gap-3.5 my-6 z-10 relative">
+                <div className="flex flex-col items-center justify-center gap-2.5 sm:gap-3.5 my-3 sm:my-5 z-10 relative">
                   {milestoneWeeks.map((w, i) => (
                     <motion.div
                       key={w}
@@ -205,39 +205,39 @@ export function RoadmapIntroAnimation({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.2 }}
-              className="grid grid-cols-2 gap-2.5 my-3"
+              className="grid grid-cols-2 gap-2 my-2 sm:my-3"
             >
-              <div className="bg-[#121E12] border border-[#1A2619] p-2.5 rounded-2xl flex items-center gap-2.5">
-                <div className="bg-[#1A2619] p-2 rounded-xl text-[#ADFF00]">
-                  <Target size={15} />
+              <div className="bg-[#121E12] border border-[#1A2619] p-2 sm:p-2.5 rounded-xl sm:rounded-2xl flex items-center gap-2">
+                <div className="bg-[#1A2619] p-1.5 sm:p-2 rounded-lg sm:rounded-xl text-[#ADFF00]">
+                  <Target size={14} />
                 </div>
                 <div>
                   <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Workout</p>
-                  <p className="text-xs font-bold text-gray-200">
+                  <p className="text-[11px] sm:text-xs font-bold text-gray-200">
                     {workoutsPerWeek ? `${workoutsPerWeek} sessions/wk` : "Custom Split"}
                   </p>
                 </div>
               </div>
 
-              <div className="bg-[#121E12] border border-[#1A2619] p-2.5 rounded-2xl flex items-center gap-2.5">
-                <div className="bg-[#1A2619] p-2 rounded-xl text-[#ADFF00]">
-                  <Flame size={15} />
+              <div className="bg-[#121E12] border border-[#1A2619] p-2 sm:p-2.5 rounded-xl sm:rounded-2xl flex items-center gap-2">
+                <div className="bg-[#1A2619] p-1.5 sm:p-2 rounded-lg sm:rounded-xl text-[#ADFF00]">
+                  <Flame size={14} />
                 </div>
                 <div>
                   <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Nutrition</p>
-                  <p className="text-xs font-bold text-gray-200">
+                  <p className="text-[11px] sm:text-xs font-bold text-gray-200">
                     {nutritionTarget?.daily_calories ? `${nutritionTarget.daily_calories} kcal` : "Calibrated"}
                   </p>
                 </div>
               </div>
 
-              <div className="bg-[#121E12] border border-[#1A2619] p-2.5 rounded-2xl flex items-center gap-2.5">
-                <div className="bg-[#1A2619] p-2 rounded-xl text-[#ADFF00]">
-                  <Activity size={15} />
+              <div className="bg-[#121E12] border border-[#1A2619] p-2 sm:p-2.5 rounded-xl sm:rounded-2xl flex items-center gap-2">
+                <div className="bg-[#1A2619] p-1.5 sm:p-2 rounded-lg sm:rounded-xl text-[#ADFF00]">
+                  <Activity size={14} />
                 </div>
                 <div>
                   <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Steps</p>
-                  <p className="text-xs font-bold text-gray-200">
+                  <p className="text-[11px] sm:text-xs font-bold text-gray-200">
                     {lifestyleTarget?.daily_steps_target
                       ? `${lifestyleTarget.daily_steps_target.toLocaleString()} steps`
                       : "8,000 steps"}
@@ -245,13 +245,13 @@ export function RoadmapIntroAnimation({
                 </div>
               </div>
 
-              <div className="bg-[#121E12] border border-[#1A2619] p-2.5 rounded-2xl flex items-center gap-2.5">
-                <div className="bg-[#1A2619] p-2 rounded-xl text-[#ADFF00]">
-                  <TrendingDown size={15} />
+              <div className="bg-[#121E12] border border-[#1A2619] p-2 sm:p-2.5 rounded-xl sm:rounded-2xl flex items-center gap-2">
+                <div className="bg-[#1A2619] p-1.5 sm:p-2 rounded-lg sm:rounded-xl text-[#ADFF00]">
+                  <TrendingDown size={14} />
                 </div>
                 <div>
                   <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Weight Goal</p>
-                  <p className="text-xs font-bold text-gray-200">
+                  <p className="text-[11px] sm:text-xs font-bold text-gray-200">
                     {profile?.target_weight ? `${profile.target_weight} kg` : "Target"}
                   </p>
                 </div>
@@ -259,11 +259,11 @@ export function RoadmapIntroAnimation({
             </motion.div>
 
             {/* Skip to Protocol CTA */}
-            <div className="pt-2 text-center">
+            <div className="pt-1.5 sm:pt-2 text-center">
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="w-full py-3.5 px-5 rounded-2xl bg-[#142614] hover:bg-[#1A331A] border border-[#ADFF00]/30 text-[#ADFF00] font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(173,255,0,0.15)] transition-all cursor-pointer active:scale-98"
+                className="w-full py-3 px-4 sm:py-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-[#142614] hover:bg-[#1A331A] border border-[#ADFF00]/30 text-[#ADFF00] font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(173,255,0,0.15)] transition-all cursor-pointer active:scale-98"
               >
                 <span>View Activated Protocol</span>
                 <ArrowRight size={15} strokeWidth={2.5} />
@@ -278,9 +278,9 @@ export function RoadmapIntroAnimation({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ type: "spring", damping: 25, stiffness: 280 }}
-            className="flex-1 flex flex-col justify-center px-5 py-8 z-10 max-w-md mx-auto w-full my-auto"
+            className="flex-1 flex flex-col justify-center px-3.5 py-3 sm:px-5 sm:py-6 z-10 max-w-md mx-auto w-full my-auto"
           >
-            <div className="bg-[#121E12] border border-[#1A2619] rounded-[2.2rem] p-6 sm:p-8 relative overflow-hidden shadow-2xl">
+            <div className="bg-[#121E12] border border-[#1A2619] rounded-[1.8rem] sm:rounded-[2.2rem] p-4 sm:p-6 relative overflow-hidden shadow-2xl">
               <div className="absolute top-0 right-0 w-36 h-36 bg-[#ADFF00]/12 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-36 h-36 bg-[#10B981]/12 rounded-full blur-3xl pointer-events-none" />
 
@@ -289,37 +289,37 @@ export function RoadmapIntroAnimation({
                 initial={{ scale: 0, rotate: -45 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: "spring", bounce: 0.45, duration: 0.7 }}
-                className="w-16 h-16 bg-[#ADFF00] rounded-2xl flex items-center justify-center mb-5 mx-auto shadow-[0_0_35px_rgba(173,255,0,0.4)]"
+                className="w-12 h-12 sm:w-14 sm:h-14 bg-[#ADFF00] rounded-xl sm:rounded-2xl flex items-center justify-center mb-2.5 sm:mb-3.5 mx-auto shadow-[0_0_25px_rgba(173,255,0,0.35)]"
               >
-                <Zap className="text-black" size={32} />
+                <Zap className="text-black" size={24} />
               </motion.div>
 
-              <div className="text-center mb-6">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ADFF00] block mb-1">
+              <div className="text-center mb-3 sm:mb-4">
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-[#ADFF00] block mb-0.5">
                   Master Protocol Generated
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-black mb-1.5 tracking-tight text-white">
+                <h2 className="text-xl sm:text-2xl font-black mb-1 tracking-tight text-white">
                   {isPro ? "Pro Plan Ready" : "Core Plan Ready"}
                 </h2>
-                <p className="text-gray-400 text-xs sm:text-sm">
+                <p className="text-gray-400 text-[11px] sm:text-xs">
                   Your AI transformation protocol is generated and active.
                 </p>
               </div>
 
               {/* Unlocked Features List */}
-              <div className="space-y-3 mb-8">
+              <div className="space-y-1.5 sm:space-y-2 mb-3.5 sm:mb-5">
                 {activatedFeatures.map((item, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.15 + idx * 0.07 }}
-                    className="flex items-center gap-3 bg-[#0D150D] border border-white/5 p-2.5 rounded-xl"
+                    transition={{ delay: 0.15 + idx * 0.05 }}
+                    className="flex items-center gap-2.5 bg-[#0D150D] border border-white/5 py-1.5 px-3 rounded-lg sm:rounded-xl"
                   >
-                    <div className="w-5 h-5 rounded-full bg-[#1A2619] flex items-center justify-center shrink-0">
-                      <CheckCircle2 size={13} className="text-[#ADFF00]" />
+                    <div className="w-4 h-4 rounded-full bg-[#1A2619] flex items-center justify-center shrink-0">
+                      <CheckCircle2 size={11} className="text-[#ADFF00]" />
                     </div>
-                    <span className="text-xs font-semibold text-gray-200">{item.label}</span>
+                    <span className="text-[11px] sm:text-xs font-semibold text-gray-200">{item.label}</span>
                   </motion.div>
                 ))}
               </div>
@@ -328,12 +328,12 @@ export function RoadmapIntroAnimation({
               <motion.button
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
+                transition={{ delay: 0.6 }}
                 onClick={handleStart}
-                className="w-full bg-[#ADFF00] hover:bg-[#bfff2e] active:scale-[0.98] text-black font-black py-4 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(173,255,0,0.35)] transition-all cursor-pointer text-xs sm:text-sm uppercase tracking-wider"
+                className="w-full bg-[#ADFF00] hover:bg-[#bfff2e] active:scale-[0.98] text-black font-black py-3 px-5 sm:py-3.5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(173,255,0,0.3)] transition-all cursor-pointer text-xs sm:text-sm uppercase tracking-wider"
               >
                 <span>Start My Transformation</span>
-                <ArrowRight size={18} strokeWidth={2.5} />
+                <ArrowRight size={16} strokeWidth={2.5} />
               </motion.button>
             </div>
           </motion.div>
