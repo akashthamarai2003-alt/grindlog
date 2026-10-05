@@ -392,7 +392,12 @@ export default function PlanSetupPage() {
       const data = await res.json();
       if (data.success) {
         toast.success(isRenew ? "Month 2 plan activated!" : "Plan activated!");
-        router.push("/roadmap");
+        try {
+          sessionStorage.setItem("fitness_new_plan_locked", "true");
+        } catch {
+          // safe ignore
+        }
+        router.push("/roadmap?new=true");
         router.refresh();
       } else {
         toast.error(data.error || "Failed to save plan");

@@ -25,12 +25,16 @@ import type {
 } from "@/types/fitness/roadmap";
 import { OnboardingData } from "@/types/fitness/onboarding";
 import { BottomNav } from "@/components/fitness/dashboard/bottom-nav";
+import { RoadmapIntroAnimation } from "./roadmap-intro-animation";
+import { useRouter } from "next/navigation";
 
 interface RoadmapViewProps {
   roadmapData: TransformationRoadmapData | null;
   profile: Partial<OnboardingData>;
   premiumLevel?: string;
   hasPlan?: boolean;
+  plan?: any;
+  initialIsNewPlan?: boolean;
 }
 
 // ── 60fps Mobile-Optimized Animation Variants ──
@@ -63,9 +67,31 @@ export function RoadmapView({
   profile,
   premiumLevel = "core",
   hasPlan = true,
+  plan,
+  initialIsNewPlan = false,
 }: RoadmapViewProps) {
+  const router = useRouter();
   const isPro = premiumLevel === "pro";
   const isFree = premiumLevel === "free";
+
+  // Check if new user just locked in plan and needs the celebration & journey animation
+  const [showIntroAnimation, setShowIntroAnimation] = useState(() => {
+    if (initialIsNewPlan) return true;
+    if (typeof window !== "undefined") {
+      return (
+        window.location.search.includes("new=true") ||
+        sessionStorage.getItem("fitness_new_plan_locked") === "true"
+      );
+    }
+    return false;
+  });
+
+  const handleDismissIntro = () => {
+    try {
+      sessionStorage.removeItem("fitness_new_plan_locked");
+    } catch {}
+    router.replace("/");
+  };
 
   // State to track which month node is expanded for deep drill-down
   const [expandedMonth, setExpandedMonth] = useState<number | null>(
@@ -75,6 +101,17 @@ export function RoadmapView({
   const toggleMonth = (mNum: number) => {
     setExpandedMonth((prev) => (prev === mNum ? null : mNum));
   };
+
+  if (showIntroAnimation) {
+    return (
+      <RoadmapIntroAnimation
+        profile={profile}
+        plan={plan}
+        premiumLevel={premiumLevel}
+        onComplete={handleDismissIntro}
+      />
+    );
+  }
 
   if (!roadmapData) {
     return (

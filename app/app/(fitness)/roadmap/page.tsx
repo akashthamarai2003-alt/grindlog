@@ -7,7 +7,14 @@ import { RoadmapView } from "@/components/fitness/roadmap/roadmap-view";
 
 export const dynamic = "force-dynamic";
 
-export default async function RoadmapPage() {
+export default async function RoadmapPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ new?: string; [key: string]: string | undefined }>;
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const isNewPlan = resolvedSearchParams?.new === "true";
+
   const {
     data: { user },
   } = await getCachedUser();
@@ -84,6 +91,8 @@ export default async function RoadmapPage() {
       profile={mergedProfile}
       premiumLevel={premiumLevel}
       hasPlan={Boolean(plan)}
+      plan={plan}
+      initialIsNewPlan={isNewPlan}
     />
   );
 }
