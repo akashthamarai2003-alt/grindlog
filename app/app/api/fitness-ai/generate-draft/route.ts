@@ -154,16 +154,13 @@ export async function POST(req: Request) {
     // ──────────────────────────────────────────────────────────
     const todayStr = new Date().toISOString().split("T")[0];
 
-    let cachedDraftQuery = supabase
+    const cachedDraftQuery = supabase
       .from("fitness_os_ai_sessions")
       .select("id, prompt, response, created_at")
       .eq("user_id", user.id)
       .eq("session_type", "plan_generation")
       .order("created_at", { ascending: false })
       .limit(1);
-    if (!isRenew && typeof profile.updated_at === "string" && profile.updated_at) {
-      cachedDraftQuery = cachedDraftQuery.gte("created_at", profile.updated_at);
-    }
 
     const [foodCatalogResult, { data: cachedDraft }, progressionContext] = await Promise.all([
       subscriptionPlan.id === "pro"
@@ -199,8 +196,9 @@ export async function POST(req: Request) {
     const planJsonSchema = buildFitnessPlanJsonSchema(exactWorkoutCount, "starter");
 
     const draftAgeMs = cachedDraft?.created_at ? Date.now() - new Date(cachedDraft.created_at).getTime() : Infinity;
-    const isRecentRenewalDraft = isRenew && draftAgeMs < 2 * 60 * 60 * 1000;
-    const shouldCheckCache = !isRetry && cachedDraft?.response && (!allowRenewal || isRecentRenewalDraft);
+    // Any draft generated within the last 2 hours is safely reused on page refresh/reload (0 tokens consumed)
+    const isRecentDraft = draftAgeMs < 2 * 60 * 60 * 1000;
+    const shouldCheckCache = !isRetry && Boolean(cachedDraft?.response) && isRecentDraft;
 
     if (shouldCheckCache) {
       try {
@@ -267,7 +265,7 @@ export async function POST(req: Request) {
               );
 
               // Update the session cache with the merged Pro plan
-              if (cachedDraft.id) {
+              if (cachedDraft && cachedDraft.id) {
                 await supabase
                   .from("fitness_os_ai_sessions")
                   .update({
@@ -308,16 +306,13 @@ export async function POST(req: Request) {
         console.log(`Generation already in progress for user ${user.id}. Polling briefly...`);
         for (let i = 0; i < 6; i++) {
           await new Promise((resolve) => setTimeout(resolve, 2500));
-          let latestCachedDraftQuery = supabase
+          const latestCachedDraftQuery = supabase
             .from("fitness_os_ai_sessions")
             .select("prompt, response, created_at")
             .eq("user_id", user.id)
             .eq("session_type", "plan_generation")
             .order("created_at", { ascending: false })
             .limit(1);
-          if (!isRenew && typeof profile.updated_at === "string" && profile.updated_at) {
-            latestCachedDraftQuery = latestCachedDraftQuery.gte("created_at", profile.updated_at);
-          }
           const { data: latestCachedDraft } = await latestCachedDraftQuery.maybeSingle();
 
           if (latestCachedDraft?.response) {

@@ -55,7 +55,7 @@ export default async function AIStartingReportPage({
       .maybeSingle(),
     supabase
       .from("fitness_os_scans")
-      .select("gemini_analysis")
+      .select("gemini_analysis, updated_at")
       .eq("user_id", user.id)
       .maybeSingle(),
     getFitnessSubscriptionState(user.id),
@@ -83,7 +83,7 @@ export default async function AIStartingReportPage({
       !scan
         ? admin
             .from("fitness_os_scans")
-            .select("gemini_analysis")
+            .select("gemini_analysis, updated_at")
             .eq("user_id", user.id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
