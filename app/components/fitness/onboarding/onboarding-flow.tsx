@@ -280,7 +280,12 @@ export function OnboardingFlow({
         }
       }
     } catch {}
-    window.location.href = targetUrl;
+    router.push(targetUrl);
+    setTimeout(() => {
+      if (typeof window !== "undefined" && window.location.pathname !== targetUrl) {
+        window.location.href = targetUrl;
+      }
+    }, 1500);
   };
 
   const variants = {
@@ -2792,6 +2797,8 @@ const AIAnalysisScreen = ({
   const [phase, setPhase] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isCompiling, setIsCompiling] = useState(false);
+  const [compilingSeconds, setCompilingSeconds] = useState(5);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -2881,12 +2888,34 @@ const AIAnalysisScreen = ({
   }, [data, router, sessionId, retryCount]);
 
   const handleCompleteClick = () => {
-    if (isNavigating) return;
-    setIsNavigating(true);
+    if (isNavigating || isCompiling) return;
+    setIsCompiling(true);
+    setCompilingSeconds(5);
+
+    // 1. Immediately prefetch report page so client-side transition is instantaneous
+    router.prefetch("/report");
+
+    // 2. Persist profile onboarding state atomically in background
     void saveFitnessOnboardingAction(data).catch((e) => {
       console.warn("[Onboarding] Background save error on complete click:", e);
     });
-    onComplete();
+
+    // 3. Countdown timer every 1000ms
+    const intervalId = setInterval(() => {
+      setCompilingSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // 4. At exactly 5000ms (5 seconds), navigate to /report
+    setTimeout(() => {
+      setIsNavigating(true);
+      onComplete();
+    }, 5000);
   };
 
   const progressPercent = phase === 0 ? 25 : phase === 1 ? 55 : phase === 2 ? 80 : 100;
@@ -2913,34 +2942,34 @@ const AIAnalysisScreen = ({
       >
         {/* Top Scanner & Checkmark Animation */}
         <div className="flex justify-center mb-6 h-20 relative items-center">
-          {phase < 4 ? (
+          {phase < 4 || isCompiling ? (
             <div className="relative flex items-center justify-center w-20 h-20">
               {/* Outer pulsing glow */}
               <motion.div
-                animate={{ scale: [1, 1.45, 1], opacity: [0.25, 0.65, 0.25] }}
-                transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+                animate={{ scale: isCompiling ? [1, 1.6, 1] : [1, 1.45, 1], opacity: isCompiling ? [0.4, 0.85, 0.4] : [0.25, 0.65, 0.25] }}
+                transition={{ repeat: Infinity, duration: isCompiling ? 1.4 : 2.2, ease: "easeInOut" }}
                 className="absolute inset-0 rounded-full bg-[#ADFF00] blur-xl"
               />
 
               {/* Outer dashed rotating ring */}
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                className="absolute inset-0 rounded-full border-2 border-dashed border-[#ADFF00]/50"
+                transition={{ repeat: Infinity, duration: isCompiling ? 2 : 4, ease: "linear" }}
+                className="absolute inset-0 rounded-full border-2 border-dashed border-[#ADFF00]/60"
               />
 
               {/* Inner counter-rotating neon ring */}
               <motion.div
                 animate={{ rotate: -360 }}
-                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                className="absolute inset-2 rounded-full border-2 border-transparent border-t-[#ADFF00] border-b-[#ADFF00]/40"
+                transition={{ repeat: Infinity, duration: isCompiling ? 1.2 : 2, ease: "linear" }}
+                className="absolute inset-2 rounded-full border-2 border-transparent border-t-[#ADFF00] border-b-[#ADFF00]/50"
               />
 
               {/* Center pulsing core with sparkles */}
               <motion.div
-                animate={{ scale: [0.88, 1.1, 0.88] }}
-                transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
-                className="relative w-10 h-10 rounded-full bg-[#121E12] border border-[#ADFF00]/70 flex items-center justify-center shadow-[0_0_20px_rgba(173,255,0,0.6)]"
+                animate={{ scale: [0.88, 1.15, 0.88] }}
+                transition={{ repeat: Infinity, duration: isCompiling ? 1.0 : 1.6, ease: "easeInOut" }}
+                className="relative w-10 h-10 rounded-full bg-[#121E12] border border-[#ADFF00]/80 flex items-center justify-center shadow-[0_0_25px_rgba(173,255,0,0.7)]"
               >
                 <Sparkles className="w-5 h-5 text-[#ADFF00] animate-pulse" />
               </motion.div>
@@ -2976,7 +3005,7 @@ const AIAnalysisScreen = ({
 
         {/* Phase Pill Badge */}
         <motion.div
-          key={`pill-${analysisError ? 'err' : phase}`}
+          key={`pill-${analysisError ? 'err' : isCompiling ? 'compiling' : phase}`}
           initial={{ opacity: 0, y: -6, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.3 }}
@@ -2990,26 +3019,38 @@ const AIAnalysisScreen = ({
           <span className={`text-[11px] font-extrabold tracking-widest uppercase ${analysisError ? "text-red-400" : "text-[#ADFF00]"}`}>
             {analysisError
               ? "Strategy Generation Paused"
-              : phase === 0
-                ? "Step 1 of 3 • Analyzing Profile"
-                : phase === 1
-                  ? "Step 2 of 3 • Visual Assessment"
-                  : phase === 2
-                    ? "Step 3 of 3 • Engineering Strategy"
-                    : !isDone
-                      ? "Finalizing Strategy..."
-                      : "Transformation Ready"}
+              : isCompiling
+                ? `Compiling Plan • ${compilingSeconds}s`
+                : phase === 0
+                  ? "Step 1 of 3 • Analyzing Profile"
+                  : phase === 1
+                    ? "Step 2 of 3 • Visual Assessment"
+                    : phase === 2
+                      ? "Step 3 of 3 • Engineering Strategy"
+                      : !isDone
+                        ? "Finalizing Strategy..."
+                        : "Transformation Ready"}
           </span>
         </motion.div>
 
         {/* Slim Neon Progress Bar */}
         <div className="w-full max-w-[280px] mx-auto mb-6 h-1.5 bg-[#1A2619] rounded-full overflow-hidden border border-[#ADFF00]/20 relative">
-          <motion.div
-            className="h-full bg-gradient-to-r from-[#ADFF00]/70 via-[#ADFF00] to-[#ADFF00] shadow-[0_0_10px_#ADFF00]"
-            initial={{ width: "20%" }}
-            animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          />
+          {isCompiling ? (
+            <motion.div
+              key="compiling-bar"
+              className="h-full bg-gradient-to-r from-[#ADFF00]/80 via-[#ADFF00] to-[#ADFF00] shadow-[0_0_12px_#ADFF00]"
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 5, ease: "linear" }}
+            />
+          ) : (
+            <motion.div
+              className="h-full bg-gradient-to-r from-[#ADFF00]/70 via-[#ADFF00] to-[#ADFF00] shadow-[0_0_10px_#ADFF00]"
+              initial={{ width: "20%" }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          )}
         </div>
 
         {/* Glassmorphism Analysis Content Card or Error View */}
@@ -3041,6 +3082,38 @@ const AIAnalysisScreen = ({
               )}
             </div>
           </div>
+        ) : isCompiling ? (
+          <div className="relative rounded-3xl border border-[#ADFF00]/35 bg-[#0A130B]/85 backdrop-blur-md p-5 shadow-[0_0_40px_rgba(0,0,0,0.7)] space-y-4 text-left">
+            <div className="absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#ADFF00]/70 to-transparent" />
+            <div className="flex items-center gap-2.5 text-[#ADFF00]">
+              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              <span className="text-xs font-black tracking-wider uppercase">
+                {compilingSeconds >= 4
+                  ? "Compiling Biometric Baseline..."
+                  : compilingSeconds >= 3
+                    ? "Synthesizing Progressive Overload Model..."
+                    : compilingSeconds >= 2
+                      ? "Assembling Macro & Nutrition Blueprints..."
+                      : compilingSeconds >= 1
+                        ? "Finalizing Safety Protocol & Periodization..."
+                        : "Opening Transformation Report..."}
+              </span>
+            </div>
+            <div className="space-y-2.5 pt-2 text-xs text-gray-300 font-medium">
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#ADFF00] shrink-0" />
+                <span>Profile biometrics & target weight configured</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#ADFF00] shrink-0" />
+                <span>Rate of progress & mesocycle roadmap mapped</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-[#ADFF00] shrink-0" />
+                <span>Nutrition targets & caloric trajectory engineered</span>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="relative rounded-3xl border border-[#ADFF00]/30 bg-[#0A130B]/65 backdrop-blur-md p-5 shadow-[0_0_40px_rgba(0,0,0,0.7)] space-y-6 text-left">
             {/* Subtle top neon glow accent line */}
@@ -3070,13 +3143,29 @@ const AIAnalysisScreen = ({
         {/* Bottom Actions with Shimmering Glow */}
         <div className="mt-6 sm:mt-8 h-16">
           <AnimatePresence>
-            {!analysisError && phase >= 3 && (
+            {!analysisError && (phase >= 3 || isCompiling) && (
               <motion.div
                 initial={{ opacity: 0, y: 14, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               >
-                {!isDone ? (
+                {isCompiling ? (
+                  <motion.button
+                    type="button"
+                    disabled
+                    className="relative w-full py-4 rounded-full font-black text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_35px_rgba(173,255,0,0.5)] opacity-95 cursor-wait overflow-hidden"
+                  >
+                    <motion.div
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-12 pointer-events-none"
+                    />
+                    <div className="relative z-10 flex items-center gap-2.5">
+                      <Loader2 className="animate-spin w-5 h-5 text-black" />
+                      <span>Opening Report ({compilingSeconds}s)...</span>
+                    </div>
+                  </motion.button>
+                ) : !isDone ? (
                   <button 
                     disabled
                     className="w-full py-4 rounded-full font-extrabold text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_30px_rgba(173,255,0,0.35)] opacity-85 cursor-not-allowed"
@@ -3090,7 +3179,7 @@ const AIAnalysisScreen = ({
                   <motion.button
                     type="button"
                     onClick={handleCompleteClick}
-                    disabled={isNavigating}
+                    disabled={isNavigating || isCompiling}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="relative w-full py-4 rounded-full font-black text-lg transition-all flex items-center justify-center bg-[#ADFF00] text-black shadow-[0_0_35px_rgba(173,255,0,0.5)] hover:shadow-[0_0_55px_rgba(173,255,0,0.85)] hover:bg-[#c4ff33] active:scale-[0.99] cursor-pointer disabled:opacity-80 overflow-hidden group"

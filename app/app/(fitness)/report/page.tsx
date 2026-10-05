@@ -5,7 +5,7 @@ import { Brain, Info, Sparkles, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { RegenerateReportButton } from "@/components/fitness/report/regenerate-report-button";
 import { GeneratePlanButton } from "@/components/fitness/report/generate-plan-button";
-import { hasGeneratedStartingReport, generateStartingReport } from "@/lib/services/fitness/starting-report-service";
+import { hasGeneratedStartingReport, generateStartingReport, buildDeterministicStartingReport } from "@/lib/services/fitness/starting-report-service";
 import { OnboardingSchema } from "@/types/fitness/onboarding";
 import { parseBodyScanAnalysis, buildFallbackBodyScan } from "@/lib/fitness/body-scan";
 import { getFitnessSubscriptionState } from "@/lib/fitness/subscription/access";
@@ -129,10 +129,10 @@ export default async function AIStartingReportPage({
         visualObservations = scan.gemini_analysis;
       }
 
-      const generated = await generateStartingReport({
-        onboarding: validatedOnboarding,
-        bmi: typeof profile.bmi === "number" ? profile.bmi : null,
-        estimatedBodyFat: typeof (profile as any).estimated_body_fat === "number" 
+      const generated = buildDeterministicStartingReport(
+        validatedOnboarding,
+        typeof profile.bmi === "number" ? profile.bmi : null,
+        typeof (profile as any).estimated_body_fat === "number" 
           ? (profile as any).estimated_body_fat 
           : (typeof (aiStrategy as any)?.estimated_body_fat === "number" 
               ? (aiStrategy as any).estimated_body_fat 
@@ -140,7 +140,7 @@ export default async function AIStartingReportPage({
                   ? (profile.onboarding_data as any).estimated_body_fat 
                   : null)),
         visualObservations,
-      });
+      );
 
       const admin = createAdminClient();
       await admin
@@ -215,17 +215,16 @@ export default async function AIStartingReportPage({
   const directBodyScan = parseBodyScanAnalysis(scan?.gemini_analysis);
   // A structured Gemini result is the source of truth for photo observations.
   // Older reports still fall back to their stored coaching summary.
-  let bodyScanInsights = directBodyScan || reportBodyScanInsights;
-  let hasBodyScan =
-    directBodyScan !== null || reportBodyScanInsights?.has_body_scan === true;
+  let bodyScanInsights = directBodyScan || (reportBodyScanInsights?.has_body_scan ? reportBodyScanInsights : null);
+  let hasBodyScan = Boolean(directBodyScan || (reportBodyScanInsights?.has_body_scan && reportBodyScanInsights.overall_summary));
 
-  // Self-heal: If user uploaded photos or selected Custom Photo, but structured scan is missing or pending
-  if (
-    !hasBodyScan &&
-    (Boolean(onboardingData.has_uploaded_photos) ||
-      profile.target_physique === "Custom Photo" ||
-      scan?.gemini_analysis === "ANALYZING")
-  ) {
+  // Check if photos were uploaded and analysis is actively running
+  const hasPhotosUploaded = Boolean(onboardingData.has_uploaded_photos) || profile.target_physique === "Custom Photo";
+  const isActivelyAnalyzing = scan?.gemini_analysis === "ANALYZING" || (hasPhotosUploaded && !hasBodyScan);
+
+  // Self-heal ONLY if the scan has timed out (> 25 seconds) and still has not finished
+  const scanAgeMs = scan?.updated_at ? Date.now() - new Date(scan.updated_at).getTime() : 0;
+  if (!hasBodyScan && isActivelyAnalyzing && scanAgeMs > 25000) {
     const fallbackScan = buildFallbackBodyScan(
       onboardingData || profile,
       profile.bmi,
@@ -249,6 +248,8 @@ export default async function AIStartingReportPage({
         )
     ).catch(() => {});
   }
+  const isScanAnalyzing = !hasBodyScan && isActivelyAnalyzing;
+
   const bodyScanStrengths = bodyScanInsights && Array.isArray(bodyScanInsights.observed_strengths)
     ? bodyScanInsights.observed_strengths.filter((item: unknown): item is string => typeof item === "string" && Boolean(item.trim()))
     : [];
@@ -262,13 +263,6 @@ export default async function AIStartingReportPage({
     Boolean((bodyScanInsights as Record<string, unknown>).goal_gap)
       ? String((bodyScanInsights as Record<string, unknown>).goal_gap).trim()
       : null;
-
-  const isScanAnalyzing =
-    !hasBodyScan &&
-    (scan?.gemini_analysis === "ANALYZING" ||
-      Boolean(onboardingData.has_uploaded_photos) ||
-      profile.target_physique === "Custom Photo" ||
-      Boolean(scan && !scan.gemini_analysis));
 
   const initialInsightsData: BodyScanInsightsData | null =
     hasBodyScan && bodyScanInsights

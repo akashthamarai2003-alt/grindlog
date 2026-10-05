@@ -5,6 +5,7 @@ import { getOnboardingCompletionIssues, OnboardingSchema } from "@/types/fitness
 import {
   generateStartingReport,
   hasGeneratedStartingReport,
+  buildDeterministicStartingReport,
 } from "@/lib/services/fitness/starting-report-service";
 import {
   getGenerationRetryAfterSeconds,
@@ -307,6 +308,12 @@ export async function POST(req: Request) {
       baseline_calories,
       initial_protein_target,
       weight_trend_baseline,
+      ai_strategy: buildDeterministicStartingReport(
+        data,
+        bmi,
+        estimated_body_fat,
+        images.length > 0 ? "ANALYZING" : "No photos provided."
+      ),
       onboarding_data: {
         ...(safeData && typeof safeData === "object" ? safeData : {}),
         has_uploaded_photos: images.length > 0,
