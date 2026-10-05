@@ -16,6 +16,7 @@ import {
 import { WorkoutService } from "@/lib/services/fitness/workout-service";
 import { revalidatePath } from "next/cache";
 import { invalidateProgressServerCache } from "@/lib/services/analytics/progress-service";
+import { buildDeterministicStartingReport } from "@/lib/services/fitness/starting-report-service";
 
 export async function saveFitnessOnboardingAction(payload: Partial<OnboardingData>) {
   const supabase = await createServerSupabase();
@@ -116,6 +117,12 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     baseline_calories,
     initial_protein_target,
     weight_trend_baseline,
+    ai_strategy: buildDeterministicStartingReport(
+      validData,
+      bmi,
+      estimated_body_fat,
+      hasPhotos ? "ANALYZING" : "No photos provided."
+    ),
     onboarding_data: {
       ...profileData,
       has_uploaded_photos: hasPhotos,
@@ -151,7 +158,7 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
     return { success: false, error: upsertError.message || "Failed to save profile. Please try again." };
   }
 
-  // If photos were provided, ensure fitness_os_scans is populated so /report immediately shows insights
+  // If photos were provided, ensure fitness_os_scans is marked as ANALYZING so /report immediately shows the vision loading state
   if (hasPhotos) {
     try {
       const { createAdminClient } = await import("@/lib/services/supabase/admin");
@@ -162,13 +169,11 @@ export async function saveFitnessOnboardingAction(payload: Partial<OnboardingDat
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!existingScan || !existingScan.gemini_analysis || existingScan.gemini_analysis === "ANALYZING") {
-        const { buildFallbackBodyScan } = await import("@/lib/fitness/body-scan");
-        const fallbackScan = buildFallbackBodyScan(validData, bmi, estimated_body_fat);
+      if (!existingScan) {
         await admin.from("fitness_os_scans").upsert(
           {
             user_id: user.id,
-            gemini_analysis: JSON.stringify(fallbackScan),
+            gemini_analysis: "ANALYZING",
             updated_at: new Date().toISOString(),
           },
           { onConflict: "user_id" },

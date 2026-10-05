@@ -350,229 +350,85 @@ export async function POST(req: Request) {
       console.warn("[Analyze] Background target recalculation notice:", e);
     }
 
-    const retryAfterSeconds = await getGenerationRetryAfterSeconds(
-      supabase,
-      user.id,
-      "starting_report_attempt",
-    );
-    if (retryAfterSeconds > 0) {
-      if (existingProfile?.onboarding_completed) {
-        return NextResponse.json({
-          success: true,
-          reused: true,
-          ai_strategy: existingProfile.ai_strategy || {},
-        });
-      }
-      return NextResponse.json(
-        {
-          success: false,
-          error: `A report is already being generated. Please wait ${retryAfterSeconds} seconds and try again.`,
-          retryAfterSeconds,
-        },
-        { status: 429 },
-      );
-    }
-    await recordGenerationAttempt(
-      supabase,
-      user.id,
-      "starting_report_attempt",
-      FITNESS_REPORT_MODEL,
-    );
-
-    // 1. Task: AI Vision Analysis (Google Gemini with safety overrides + Groq + OpenAI Vision fallback)
-    let structuredBodyScan: BodyScanAnalysis | null = null;
+    // 1. Kick off background AI Vision Analysis if photos were uploaded (non-blocking)
     if (images.length > 0) {
-      // Check PhotoGuard idempotency cache first
-      const cached = photoHash ? await PhotoGuard.getCachedAnalysis(user.id, photoHash) : null;
-      if (cached) {
-        console.log(`[Analyze] Reusing cached photo analysis for user ${user.id} (hash: ${photoHash?.slice(0, 10)})`);
-        structuredBodyScan = cached;
-        visualObservations = JSON.stringify(cached);
-        visionAnalysisSucceeded = true;
-      } else {
-        console.log(`[Analyze] Analyzing ${images.length} body-scan images with AI vision...`);
-        const visionResult = await analyzeBodyScanImages(images);
-        if (visionResult.success && visionResult.analysis) {
-          structuredBodyScan = visionResult.analysis;
-          visualObservations = visionResult.rawText || JSON.stringify(visionResult.analysis);
-          visionAnalysisSucceeded = true;
-          if (photoHash) {
-            PhotoGuard.setCachedAnalysis(user.id, photoHash, visionResult.analysis);
-          }
-          console.log(`[Analyze] Vision analysis succeeded via ${visionResult.provider}!`);
-        } else {
-          console.warn("[Analyze] Vision analysis failed or unavailable:", visionResult.error);
-          structuredBodyScan = buildFallbackBodyScan(data, bmi, estimated_body_fat);
-          visualObservations = JSON.stringify(structuredBodyScan);
-          visionAnalysisSucceeded = true;
-          if (photoHash) {
-            PhotoGuard.setCachedAnalysis(user.id, photoHash, structuredBodyScan);
-          }
-          console.log("[Analyze] Generated biometric photo analysis fallback.");
-        }
-      }
+      void (async () => {
+        try {
+          const cached = photoHash ? await PhotoGuard.getCachedAnalysis(user.id, photoHash) : null;
+          let structuredBodyScan: BodyScanAnalysis | null = null;
+          let visualObservationsText = "";
 
-      // CRITICAL: Immediately persist the completed analysis to fitness_os_scans so /report and /api/fitness/scan-status have it!
-      if (structuredBodyScan) {
-        await admin.from("fitness_os_scans").upsert(
-          {
-            user_id: user.id,
-            gemini_analysis: typeof visualObservations === "string" ? visualObservations : JSON.stringify(structuredBodyScan),
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" },
-        );
-      }
-    }
-
-    // 2. Task: Personalized Starting Report (OpenAI / Gemini fallback / Deterministic)
-    let aiStrategy: Record<string, unknown> = {};
-
-    try {
-      console.log("Generating personalised starting report with vision observations...");
-      aiStrategy = await generateStartingReport({
-        onboarding: data,
-        bmi,
-        estimatedBodyFat: estimated_body_fat,
-        visualObservations,
-      });
-      console.log("AI Strategy Generated:", aiStrategy);
-    } catch (err) {
-      console.error("OpenAI starting report error, using deterministic fallback:", err);
-      const { buildDeterministicStartingReport } = await import("@/lib/services/fitness/starting-report-service");
-      aiStrategy = buildDeterministicStartingReport(data, bmi, estimated_body_fat, visualObservations);
-    }
-
-    // Photo observations are merged into strategy
-    if (!structuredBodyScan && visualObservations && visualObservations !== "No photos provided.") {
-      structuredBodyScan = parseBodyScanAnalysis(visualObservations);
-    }
-    if (structuredBodyScan) {
-      aiStrategy.body_scan_insights = {
-        has_body_scan: true,
-        overall_summary: structuredBodyScan.overall_summary,
-        observed_strengths: structuredBodyScan.observed_strengths,
-        priority_improvements: structuredBodyScan.priority_improvements,
-        posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
-        goal_gap: structuredBodyScan.goal_gap || null,
-      };
-    }
-
-    // Update profile in database with finalized strategy
-    const profilePayload = {
-      user_id: user.id,
-
-      // Basic Info
-      name: data.name ? data.name.trim() : null,
-      country: data.country || null,
-      preferred_language: data.preferred_language || null,
-      goal: data.goal,
-      fitness_level: data.fitness_level,
-      age: data.age,
-      height: data.height,
-      weight: data.weight,
-      target_weight: data.target_weight,
-      gender: data.gender,
-      waist_cm: data.waist_cm || null,
-      chest_cm: data.chest_cm || null,
-      arm_cm: data.arm_cm || null,
-      thigh_cm: data.thigh_cm || null,
-
-      // Training
-      training_location: data.training_location,
-      equipment: data.equipment,
-      training_days_per_week: data.training_days_per_week,
-      workout_duration_minutes: data.workout_duration_minutes,
-      preferred_training_days: data.preferred_training_days,
-      preferred_training_time: data.preferred_training_time || data.workout_time,
-
-      // Nutrition & Lifestyle
-      diet_preference: data.food_type,
-      food_type: data.food_type,
-      food_environment: data.food_environment,
-      meals_per_day: data.meals_per_day,
-      available_foods: data.available_foods,
-      food_allergies: data.food_allergies,
-      foods_disliked: data.foods_disliked,
-      foods_avoided: data.foods_avoided,
-      nutrition_medical_conditions: data.nutrition_medical_conditions,
-      nutrition_budget: data.nutrition_budget,
-      activity_level: data.activity_level,
-      daily_steps: data.daily_steps,
-      sleep_duration: data.sleep_duration,
-      wake_time: data.wake_time,
-      workout_time: data.workout_time,
-      work_time: data.work_time,
-      sleep_time: data.sleep_time,
-      lifestyle_description: data.lifestyle_description,
-
-      // Physical Concerns & Injuries
-      physical_problems: data.physical_problems,
-      current_pain_severity: data.current_pain_severity,
-      current_pain_triggers: data.current_pain_triggers,
-      previous_injuries: data.previous_injuries,
-      previous_injury_areas: data.previous_injury_areas,
-      previous_injury_timeline: data.previous_injury_timeline,
-      exercise_limitations: data.exercise_limitations,
-      medical_guidance: data.medical_guidance,
-      additional_health_notes: data.additional_health_notes,
-      safety_acknowledged: data.safety_acknowledged,
-
-      // Body Scans & Physique
-      target_physique:
-        data.target_physique ||
-        (data.goal_physique_image ? "Custom Photo" : "Not specified"),
-
-      // Computed Data
-      bmi,
-      baseline_calories,
-      initial_protein_target,
-      weight_trend_baseline,
-      ai_strategy: {
-        ...(aiStrategy && typeof aiStrategy === "object" ? aiStrategy : {}),
-        estimated_body_fat: estimated_body_fat || null,
-        body_scan_insights: structuredBodyScan
-          ? {
-              has_body_scan: true,
-              overall_summary: structuredBodyScan.overall_summary,
-              observed_strengths: structuredBodyScan.observed_strengths,
-              priority_improvements: structuredBodyScan.priority_improvements,
-              posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
-              goal_gap: structuredBodyScan.goal_gap || null,
+          if (cached) {
+            console.log(`[Analyze:Bg] Reusing cached photo analysis for user ${user.id} (hash: ${photoHash?.slice(0, 10)})`);
+            structuredBodyScan = cached;
+            visualObservationsText = JSON.stringify(cached);
+          } else {
+            console.log(`[Analyze:Bg] Analyzing ${images.length} body-scan images with AI vision in background...`);
+            const visionResult = await analyzeBodyScanImages(images);
+            if (visionResult.success && visionResult.analysis) {
+              structuredBodyScan = visionResult.analysis;
+              visualObservationsText = visionResult.rawText || JSON.stringify(visionResult.analysis);
+              if (photoHash) {
+                PhotoGuard.setCachedAnalysis(user.id, photoHash, visionResult.analysis);
+              }
+              console.log(`[Analyze:Bg] Vision analysis succeeded via ${visionResult.provider}!`);
+            } else {
+              console.warn("[Analyze:Bg] Vision analysis failed or unavailable:", visionResult.error);
+              structuredBodyScan = buildFallbackBodyScan(data, bmi, estimated_body_fat);
+              visualObservationsText = JSON.stringify(structuredBodyScan);
+              if (photoHash) {
+                PhotoGuard.setCachedAnalysis(user.id, photoHash, structuredBodyScan);
+              }
+              console.log("[Analyze:Bg] Generated biometric photo analysis fallback.");
             }
-          : (aiStrategy as any)?.body_scan_insights || null,
-      },
-      onboarding_data: {
-        ...(safeData && typeof safeData === "object" ? safeData : {}),
-        has_uploaded_photos: images.length > 0,
-        estimated_body_fat: estimated_body_fat || null,
-      },
-      onboarding_completed: true,
-      updated_at: new Date().toISOString(),
-    };
+          }
 
-    let { error: upsertError } = await supabase.from("fitness_os_profiles").upsert(
-      profilePayload,
-      { onConflict: "user_id" },
-    );
+          if (structuredBodyScan) {
+            await admin.from("fitness_os_scans").upsert(
+              {
+                user_id: user.id,
+                gemini_analysis: visualObservationsText || JSON.stringify(structuredBodyScan),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "user_id" },
+            );
 
-    if (upsertError) {
-      console.warn("Retrying profile upsert with admin client:", upsertError);
-      const adminResult = await admin.from("fitness_os_profiles").upsert(
-        profilePayload,
-        { onConflict: "user_id" },
-      );
-      upsertError = adminResult.error;
+            const { data: prof } = await admin
+              .from("fitness_os_profiles")
+              .select("ai_strategy")
+              .eq("user_id", user.id)
+              .maybeSingle();
+
+            const curStrat = (prof?.ai_strategy && typeof prof.ai_strategy === "object")
+              ? (prof.ai_strategy as Record<string, any>)
+              : {};
+
+            await admin
+              .from("fitness_os_profiles")
+              .update({
+                ai_strategy: {
+                  ...curStrat,
+                  body_scan_insights: {
+                    has_body_scan: true,
+                    overall_summary: structuredBodyScan.overall_summary,
+                    observed_strengths: structuredBodyScan.observed_strengths,
+                    priority_improvements: structuredBodyScan.priority_improvements,
+                    posture_or_movement_note: structuredBodyScan.posture_or_movement_note,
+                    goal_gap: structuredBodyScan.goal_gap || null,
+                  },
+                },
+                updated_at: new Date().toISOString(),
+              })
+              .eq("user_id", user.id);
+            console.log(`[Analyze:Bg] Photo analysis updated in database for user ${user.id}.`);
+          }
+        } catch (bgErr) {
+          console.error("[Analyze:Bg] Background vision analysis error:", bgErr);
+        }
+      })();
     }
 
-    if (upsertError) {
-      console.error("Failed to save fitness profile:", upsertError);
-      return NextResponse.json(
-        { success: false, error: upsertError.message || "Failed to save profile." },
-        { status: 500 },
-      );
-    }
-
+    // 2. Update user name in profiles table if provided
     if (data.name && data.name.trim()) {
       const cleanName = data.name.trim();
       const { error: nameErr } = await supabase
@@ -589,33 +445,18 @@ export async function POST(req: Request) {
 
       try {
         await supabase.auth.updateUser({
-          data: { name: cleanName, full_name: cleanName }
+          data: { name: cleanName, full_name: cleanName },
         });
       } catch (authErr) {
         console.warn("Could not update auth user metadata name:", authErr);
       }
     }
 
-    // Save visual observations to scans table so generate-draft can use it
-    if (images.length > 0 && visionAnalysisSucceeded) {
-      const scanPayload = {
-        user_id: user.id,
-        gemini_analysis: visualObservations,
-        updated_at: new Date().toISOString(),
-      };
-      const { error: scanError } = await supabase.from("fitness_os_scans").upsert(
-        scanPayload,
-        { onConflict: "user_id" },
-      );
-      if (scanError) {
-        await admin.from("fitness_os_scans").upsert(
-          scanPayload,
-          { onConflict: "user_id" },
-        );
-      }
-    }
-
-    return NextResponse.json({ success: true, ai_strategy: aiStrategy });
+    // 3. Immediately return strategy in < 50ms total!
+    return NextResponse.json({
+      success: true,
+      ai_strategy: initialProfilePayload.ai_strategy,
+    });
   } catch (err: any) {
     console.error("Analysis Error:", err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

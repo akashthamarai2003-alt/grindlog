@@ -72,8 +72,8 @@ export async function GET() {
 
     if (isAnalyzing) {
       const scanAgeMs = scan?.updated_at ? Date.now() - new Date(scan.updated_at).getTime() : 0;
-      // If scan has been analyzing or pending for > 10s, self-heal immediately with biometric visual analysis
-      if (scanAgeMs > 10000 || !scan?.updated_at) {
+      // If scan has been analyzing or pending for > 25s, self-heal immediately with biometric visual analysis
+      if (scanAgeMs > 25000 || !scan?.updated_at) {
         const { buildFallbackBodyScan } = await import("@/lib/fitness/body-scan");
         const fallbackScan = buildFallbackBodyScan(
           (onboardingData || profile || {}) as Record<string, any>,
