@@ -12,7 +12,8 @@ import {
   AlertCircle, 
   Sparkles, 
   Upload,
-  Info
+  Info,
+  Loader2
 } from "lucide-react";
 
 interface BodyScanCameraModalProps {
@@ -22,6 +23,8 @@ interface BodyScanCameraModalProps {
   title?: string;
   viewType?: "front" | "side" | "left" | "right" | "back" | "goal" | "inspiration";
 }
+
+type CameraState = "loading" | "ready" | "error" | "unsupported";
 
 export function BodyScanCameraModal({
   isOpen,
@@ -34,7 +37,7 @@ export function BodyScanCameraModal({
   const nativeInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [cameraState, setCameraState] = useState<CameraState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [timerDuration, setTimerDuration] = useState<number>(3); // default 3s countdown
@@ -53,49 +56,91 @@ export function BodyScanCameraModal({
     }
   }, []);
 
+  // Multi-tier resilient media stream acquisition for mobile compatibility
+  const requestCameraStream = useCallback(async (facing: "environment" | "user"): Promise<MediaStream> => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      throw new Error("UNSUPPORTED_CONTEXT");
+    }
+
+    // Tier 1: Flexible mobile constraints with ideal facingMode
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facing },
+          width: { min: 480, ideal: 1080 },
+          height: { min: 480, ideal: 1080 },
+        },
+        audio: false,
+      });
+    } catch (err1: any) {
+      console.warn("[Camera] Tier 1 rejected, attempting Tier 2:", err1?.name || err1);
+    }
+
+    // Tier 2: Pure facingMode without resolution locks (prevents OverconstrainedError)
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: facing } },
+        audio: false,
+      });
+    } catch (err2: any) {
+      console.warn("[Camera] Tier 2 rejected, attempting Tier 3:", err2?.name || err2);
+    }
+
+    // Tier 3: Direct facingMode
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing },
+        audio: false,
+      });
+    } catch (err3: any) {
+      console.warn("[Camera] Tier 3 rejected, attempting Tier 4 (any video):", err3?.name || err3);
+    }
+
+    // Tier 4: Fallback to any video hardware
+    return await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: false,
+    });
+  }, []);
+
   // Start camera stream
   const startCamera = useCallback(async (facing: "environment" | "user") => {
     stopStream();
+    setCameraState("loading");
     setErrorMessage(null);
     setCapturedImage(null);
 
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setHasPermission(false);
-      setErrorMessage("Live camera is not supported on this browser. You can use your device camera directly.");
-      return;
-    }
-
     try {
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: { ideal: facing },
-          width: { ideal: 1280 },
-          height: { ideal: 1920 },
-        },
-        audio: false,
-      };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await requestCameraStream(facing);
       streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        try {
+          await videoRef.current.play();
+        } catch (playErr) {
+          console.warn("[Camera] video.play() warning (will autoPlay):", playErr);
+        }
       }
 
-      setHasPermission(true);
+      setCameraState("ready");
     } catch (err: any) {
-      console.warn("Camera access error:", err);
-      setHasPermission(false);
+      console.warn("[Camera] Camera initialization error:", err);
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        setErrorMessage("Camera permission was denied. Please allow camera access in your browser settings or use device camera.");
+        setErrorMessage("Camera permission was denied. Tap below to launch your phone's camera app directly or allow access in browser site settings.");
+        setCameraState("error");
+      } else if (err.message === "UNSUPPORTED_CONTEXT") {
+        setErrorMessage("Live camera streaming requires HTTPS or browser camera permission. You can launch your phone's camera app directly below.");
+        setCameraState("unsupported");
       } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
         setErrorMessage("No camera hardware found on this device. You can choose a photo from your gallery.");
+        setCameraState("error");
       } else {
-        setErrorMessage("Could not start live camera feed. You can use your device's built-in camera.");
+        setErrorMessage("Could not start live camera feed. You can use your device's built-in camera app directly.");
+        setCameraState("error");
       }
     }
-  }, [stopStream]);
+  }, [stopStream, requestCameraStream]);
 
   // Lifecycle when modal opens / closes or facing mode changes
   useEffect(() => {
@@ -219,24 +264,29 @@ export function BodyScanCameraModal({
   const handleConfirm = () => {
     if (capturedImage) {
       onCapture(capturedImage);
+      stopStream();
       onClose();
     }
   };
 
-  // Retake
+  // Retake photo
   const handleRetake = () => {
     setCapturedImage(null);
-    setCountingDown(null);
-    if (!streamRef.current) {
+    if (cameraState !== "ready") {
       startCamera(facingMode);
     }
   };
 
   if (!isOpen) return null;
 
-  // View guide labels
   const viewLabel =
-    viewType === "side" || viewType === "left" || viewType === "right"
+    viewType === "front"
+      ? "Front View"
+      : viewType === "left"
+      ? "Left Profile View"
+      : viewType === "right"
+      ? "Right Profile View"
+      : viewType === "side"
       ? "Side Profile View"
       : viewType === "back"
       ? "Back View"
@@ -277,7 +327,7 @@ export function BodyScanCameraModal({
 
           <div className="flex items-center gap-2">
             {/* Timer Toggle Button */}
-            {!capturedImage && hasPermission && (
+            {!capturedImage && cameraState === "ready" && (
               <button
                 type="button"
                 onClick={() => {
@@ -296,7 +346,7 @@ export function BodyScanCameraModal({
             )}
 
             {/* Flip Camera */}
-            {!capturedImage && hasPermission && (
+            {!capturedImage && cameraState === "ready" && (
               <button
                 type="button"
                 onClick={handleToggleFacingMode}
@@ -309,7 +359,7 @@ export function BodyScanCameraModal({
           </div>
         </div>
 
-        {/* Center Viewfinder / Preview */}
+        {/* Center Viewfinder / Preview Container */}
         <div className="relative flex-1 flex items-center justify-center overflow-hidden my-auto w-full max-w-md mx-auto px-4">
           {capturedImage ? (
             /* Captured Snapshot Preview */
@@ -320,48 +370,54 @@ export function BodyScanCameraModal({
                 Photo Captured
               </div>
             </div>
-          ) : hasPermission ? (
-            /* Live Camera Feed with Pose Silhouette Guide */
+          ) : (
+            /* Live Camera Viewport (Always kept in DOM so videoRef is ready) */
             <div className="relative w-full aspect-[3/4] max-h-[70vh] rounded-3xl overflow-hidden border-2 border-white/20 bg-black shadow-2xl flex items-center justify-center">
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className={`w-full h-full object-cover ${facingMode === "user" ? "-scale-x-100" : ""}`}
+                className={`w-full h-full object-cover ${facingMode === "user" ? "-scale-x-100" : ""} ${cameraState === "ready" ? "opacity-100" : "opacity-0"}`}
               />
 
               {/* High-Tech Corner Viewfinder Reticles */}
-              <div className="absolute inset-4 pointer-events-none border border-white/15 rounded-2xl">
-                <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#ADFF00] rounded-tl-lg" />
-                <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#ADFF00] rounded-tr-lg" />
-                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-[#ADFF00] rounded-bl-lg" />
-                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#ADFF00] rounded-br-lg" />
-              </div>
+              {cameraState === "ready" && (
+                <div className="absolute inset-4 pointer-events-none border border-white/15 rounded-2xl">
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#ADFF00] rounded-tl-lg" />
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#ADFF00] rounded-tr-lg" />
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-[#ADFF00] rounded-bl-lg" />
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#ADFF00] rounded-br-lg" />
+                </div>
+              )}
 
               {/* Dynamic Body Pose Silhouette Outline */}
-              <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-30">
-                <svg viewBox="0 0 200 320" className="w-3/4 h-3/4 text-[#ADFF00]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeDasharray="4 4">
-                  {/* Head Oval */}
-                  <ellipse cx="100" cy="45" rx="22" ry="26" />
-                  {/* Shoulders & Torso */}
-                  <path d="M 60 90 Q 100 80 140 90 L 132 180 Q 100 185 68 180 Z" />
-                  {/* Arms */}
-                  <path d="M 58 92 L 40 170 L 36 210" />
-                  <path d="M 142 92 L 160 170 L 164 210" />
-                  {/* Legs */}
-                  <path d="M 72 182 L 68 280 L 64 310" />
-                  <path d="M 128 182 L 132 280 L 136 310" />
-                </svg>
-              </div>
+              {cameraState === "ready" && (
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-30">
+                  <svg viewBox="0 0 200 320" className="w-3/4 h-3/4 text-[#ADFF00]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeDasharray="4 4">
+                    {/* Head Oval */}
+                    <ellipse cx="100" cy="45" rx="22" ry="26" />
+                    {/* Shoulders & Torso */}
+                    <path d="M 60 90 Q 100 80 140 90 L 132 180 Q 100 185 68 180 Z" />
+                    {/* Arms */}
+                    <path d="M 58 92 L 40 170 L 36 210" />
+                    <path d="M 142 92 L 160 170 L 164 210" />
+                    {/* Legs */}
+                    <path d="M 72 182 L 68 280 L 64 310" />
+                    <path d="M 128 182 L 132 280 L 136 310" />
+                  </svg>
+                </div>
+              )}
 
               {/* Pose Guidance Badge */}
-              <div className="absolute bottom-3 inset-x-4 pointer-events-none text-center">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-[11px] text-gray-300">
-                  <Info size={12} className="text-[#ADFF00]" />
-                  <span>Step back 2-3 meters. Keep full body inside frame.</span>
+              {cameraState === "ready" && (
+                <div className="absolute bottom-3 inset-x-4 pointer-events-none text-center">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-[11px] text-gray-300">
+                    <Info size={12} className="text-[#ADFF00]" />
+                    <span>Step back 2-3 meters. Keep full body inside frame.</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Big Countdown Overlay */}
               <AnimatePresence>
@@ -380,37 +436,57 @@ export function BodyScanCameraModal({
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
-          ) : (
-            /* Permission Denied or Fallback Card */
-            <div className="w-full max-w-sm bg-[#121E12] border border-[#1A2619] rounded-3xl p-6 text-center space-y-4 shadow-2xl">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
-                <AlertCircle size={28} />
-              </div>
-              <h3 className="text-lg font-black text-white">Camera Permission Needed</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                {errorMessage || "Please enable camera permissions to take live photos inside the app, or launch your phone's camera directly."}
-              </p>
 
-              <div className="pt-2 space-y-2.5">
-                <button
-                  type="button"
-                  onClick={() => nativeInputRef.current?.click()}
-                  className="w-full py-3.5 px-4 bg-[#ADFF00] text-black font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.3)] hover:bg-[#c4ff33] transition-all cursor-pointer"
-                >
-                  <Camera size={16} />
-                  <span>Open Phone Camera App</span>
-                </button>
+              {/* Loading State Overlay */}
+              {cameraState === "loading" && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0D150D] space-y-3 z-20">
+                  <div className="relative w-16 h-16 flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full border-2 border-dashed border-[#ADFF00]/40 animate-spin [animation-duration:8s]" />
+                    <div className="w-10 h-10 rounded-full bg-[#ADFF00]/20 flex items-center justify-center text-[#ADFF00]">
+                      <Camera size={20} className="animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="text-center px-4">
+                    <p className="text-xs font-black uppercase tracking-wider text-white">Connecting Camera</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Please allow camera permissions if prompted</p>
+                  </div>
+                </div>
+              )}
 
-                <button
-                  type="button"
-                  onClick={() => startCamera(facingMode)}
-                  className="w-full py-3 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
-                >
-                  <RefreshCw size={14} />
-                  <span>Try Again</span>
-                </button>
-              </div>
+              {/* Fallback / Permission Restricted State */}
+              {(cameraState === "error" || cameraState === "unsupported") && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0D150D] p-6 text-center space-y-4 z-20">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto shadow-lg">
+                    <AlertCircle size={28} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">Camera Access Notice</h3>
+                    <p className="text-xs text-gray-400 mt-1 leading-relaxed max-w-xs mx-auto">
+                      {errorMessage || "Live in-browser feed is restricted. Tap below to launch your phone camera app directly."}
+                    </p>
+                  </div>
+
+                  <div className="w-full space-y-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => nativeInputRef.current?.click()}
+                      className="w-full py-3.5 px-4 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(173,255,0,0.3)] transition-all cursor-pointer active:scale-95"
+                    >
+                      <Camera size={16} />
+                      <span>Open Phone Camera App</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => startCamera(facingMode)}
+                      className="w-full py-2.5 px-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+                    >
+                      <RefreshCw size={13} />
+                      <span>Try Again</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -439,7 +515,7 @@ export function BodyScanCameraModal({
                   <span>Use Photo</span>
                 </button>
               </div>
-            ) : hasPermission ? (
+            ) : cameraState === "ready" ? (
               /* Live Camera Shutter Controls */
               <div className="w-full flex items-center justify-between">
                 {/* Device Camera Fallback */}
@@ -482,12 +558,12 @@ export function BodyScanCameraModal({
                 </button>
               </div>
             ) : (
-              /* In permission-failed state: cancel button */
+              /* While loading or fallback: close/cancel button */
               <div className="w-full text-center">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="text-xs text-gray-400 hover:text-white transition-colors py-2"
+                  className="text-xs text-gray-400 hover:text-white transition-colors py-2 cursor-pointer"
                 >
                   Cancel
                 </button>
