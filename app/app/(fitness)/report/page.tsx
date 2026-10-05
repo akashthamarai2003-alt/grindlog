@@ -783,9 +783,16 @@ export default async function AIStartingReportPage({
 
         {/* TIMELINE PROJECTION */}
         <div>
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-black">
-            <span>📅</span> Expected Progress Roadmap
-          </h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-black text-white">
+              <span>📅</span> {isRenew ? "Mesocycle Progression Roadmap" : "Expected Progress Roadmap"}
+            </h2>
+            {isRenew && (
+              <span className="rounded-full border border-[#ADFF00]/30 bg-[#ADFF00]/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#ADFF00]">
+                Mesocycle 2 Active
+              </span>
+            )}
+          </div>
           <div className="space-y-3">
             {timelineProjection.map((phase: any, index: number) => {
               const cWeight = typeof profile.weight === "number" && profile.weight > 20 ? profile.weight : 70;
@@ -823,7 +830,12 @@ export default async function AIStartingReportPage({
               const estimatedWeight = (() => {
                 if (typeof phase.target_weight_kg === "number" && phase.target_weight_kg > 20) {
                   const impliedMonthlyChange = Math.abs(cWeight - phase.target_weight_kg) / (index + 1);
+                  const isDirectionInverted =
+                    (isGain && phase.target_weight_kg < cWeight) ||
+                    (isLoss && phase.target_weight_kg > cWeight) ||
+                    (isMaintain && Math.abs(phase.target_weight_kg - cWeight) > 1.5);
                   const isImplausible =
+                    isDirectionInverted ||
                     (isLoss && impliedMonthlyChange > (isFemale ? 3.2 : 4.2)) ||
                     (isGain && impliedMonthlyChange > (isFemale ? 1.0 : 1.8));
                   if (!isImplausible) {
@@ -839,24 +851,60 @@ export default async function AIStartingReportPage({
               const isMultiPhase = totalMonthsNeeded > 3.5;
 
               let timeframeLabel = String(phase.timeframe || `Month ${index + 1}`);
-              if (index === 2 && isMultiPhase && !timeframeLabel.includes("Phase 1")) {
-                timeframeLabel = `${timeframeLabel} (Phase 1 End)`;
+              let badgeLabel = "";
+              let cardStyle = "border-[#1A2619] bg-[#121E12]";
+
+              if (isRenew) {
+                if (index === 0) {
+                  timeframeLabel = "MONTH 1 • PHASE 1 COMPLETED";
+                  badgeLabel = "✓ Baseline Done";
+                  cardStyle = "border-[#1A2619] bg-[#0A1108]/90 opacity-80";
+                } else if (index === 1) {
+                  timeframeLabel = "MONTH 2 • CURRENT MESOCYCLE";
+                  badgeLabel = "⚡ Active Focus";
+                  cardStyle = "border-[#ADFF00]/40 bg-[#121E12] shadow-[0_0_20px_rgba(173,255,0,0.06)] ring-1 ring-[#ADFF00]/20";
+                } else if (index === 2) {
+                  timeframeLabel = isMultiPhase ? "MONTH 3 (PHASE 1 END)" : "MONTH 3 (GOAL TARGET)";
+                  badgeLabel = "Upcoming";
+                  cardStyle = "border-[#1A2619] bg-[#121E12]";
+                }
+              } else {
+                if (index === 2 && isMultiPhase && !timeframeLabel.includes("Phase 1")) {
+                  timeframeLabel = `${timeframeLabel} (Phase 1 End)`;
+                }
               }
 
               let expectedChanges = String(phase.expected_changes || "");
-              if (isMultiPhase && index === 2 && (expectedChanges.includes("Dramatic transformation in physical shape") || expectedChanges.includes("Full milestone achievement"))) {
+              if (isRenew) {
+                if (index === 0) {
+                  expectedChanges = "Foundation established: Neurological adaptations, exercise form mastery, and baseline work capacity locked in.";
+                } else if (index === 1) {
+                  expectedChanges = "Hypertrophy escalation: Increasing training volume, progressive overload on compound lifts, and targeted muscular density.";
+                } else if (index === 2) {
+                  expectedChanges = isMultiPhase
+                    ? "End of Phase 1: Noticeable muscular hypertrophy with progressive tension, laying the groundwork for Phase 2."
+                    : `Goal physique reached: Lock in your target ${tWeight} kg physique with high muscular retention.`;
+                }
+              } else if (isMultiPhase && index === 2 && (expectedChanges.includes("Dramatic transformation in physical shape") || expectedChanges.includes("Full milestone achievement"))) {
                 expectedChanges = "End of Phase 1: Noticeable body recomposition and steady habit formation, laying the groundwork for Phase 2.";
               }
 
               return (
                 <div
                   key={index}
-                  className="space-y-1 rounded-2xl border border-[#1A2619] bg-[#121E12] p-4"
+                  className={`space-y-1.5 rounded-2xl border p-4 transition-all ${cardStyle}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-                      {timeframeLabel}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold tracking-wider uppercase ${isRenew && index === 1 ? "text-[#ADFF00]" : isRenew && index === 0 ? "text-gray-400" : "text-[#ADFF00]"}`}>
+                        {timeframeLabel}
+                      </span>
+                      {badgeLabel && (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${isRenew && index === 1 ? "border border-[#ADFF00]/30 bg-[#ADFF00]/10 text-[#ADFF00]" : isRenew && index === 0 ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border border-white/10 bg-white/5 text-gray-300"}`}>
+                          {badgeLabel}
+                        </span>
+                      )}
+                    </div>
                     {estimatedWeight && (
                       <span className="rounded-full bg-black/40 px-2.5 py-0.5 text-xs font-extrabold text-white">
                         {estimatedWeight}

@@ -12,6 +12,15 @@ export interface PlanProgressionContext {
   currentWeightKg: number;
   weightDeltaKg: number;
   progressionFocus: string;
+  latestMeasurements?: {
+    waist_cm?: number;
+    chest_cm?: number;
+    arms_cm?: number;
+    thighs_cm?: number;
+    hips_cm?: number;
+    neck_cm?: number;
+    recorded_at?: string;
+  };
 }
 
 /**
@@ -97,22 +106,78 @@ export async function getMesocycleProgressionContext(
     const adherencePercentage =
       totalWorkoutsCount > 0 ? Math.round((completedWorkoutsCount / totalWorkoutsCount) * 100) : 100;
 
-    // 4. Query latest body metrics vs baseline weight
+    // 4. Query latest body metrics vs baseline weight and latest tape measurements
     const baselineWeightKg = Number(
       profile?.weight_trend_baseline || profile?.weight || 70,
     );
 
-    const { data: latestMetric } = await supabase
-      .from("fitness_os_body_metrics")
-      .select("weight, recorded_at")
-      .eq("user_id", userId)
-      .not("weight", "is", null)
-      .order("recorded_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const [{ data: latestWeightMetric }, { data: latestTapeMetric }] = await Promise.all([
+      supabase
+        .from("fitness_os_body_metrics")
+        .select("weight, recorded_at")
+        .eq("user_id", userId)
+        .not("weight", "is", null)
+        .order("recorded_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("fitness_os_body_metrics")
+        .select("waist, chest, hip, neck, left_arm, right_arm, left_thigh, right_thigh, recorded_at")
+        .eq("user_id", userId)
+        .or("waist.not.is.null,chest.not.is.null,hip.not.is.null,neck.not.is.null,left_arm.not.is.null,right_arm.not.is.null,left_thigh.not.is.null,right_thigh.not.is.null")
+        .order("recorded_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-    const currentWeightKg = latestMetric?.weight ? Number(latestMetric.weight) : baselineWeightKg;
+    const currentWeightKg = latestWeightMetric?.weight ? Number(latestWeightMetric.weight) : baselineWeightKg;
     const weightDeltaKg = Math.round((currentWeightKg - baselineWeightKg) * 10) / 10;
+
+    let latestMeasurements: PlanProgressionContext["latestMeasurements"] = undefined;
+    if (latestTapeMetric) {
+      const armValues = [latestTapeMetric.left_arm, latestTapeMetric.right_arm]
+        .map(Number)
+        .filter((v) => !isNaN(v) && v >= 12 && v <= 90);
+      const avgArm = armValues.length > 0
+        ? Math.round((armValues.reduce((a, b) => a + b, 0) / armValues.length) * 10) / 10
+        : undefined;
+
+      const thighValues = [latestTapeMetric.left_thigh, latestTapeMetric.right_thigh]
+        .map(Number)
+        .filter((v) => !isNaN(v) && v >= 20 && v <= 140);
+      const avgThigh = thighValues.length > 0
+        ? Math.round((thighValues.reduce((a, b) => a + b, 0) / thighValues.length) * 10) / 10
+        : undefined;
+
+      const waistVal = Number(latestTapeMetric.waist);
+      const chestVal = Number(latestTapeMetric.chest);
+      const hipVal = Number(latestTapeMetric.hip);
+      const neckVal = Number(latestTapeMetric.neck);
+
+      const mObj: NonNullable<PlanProgressionContext["latestMeasurements"]> = {};
+      if (!isNaN(waistVal) && waistVal >= 35 && waistVal <= 250) mObj.waist_cm = Math.round(waistVal * 10) / 10;
+      if (!isNaN(chestVal) && chestVal >= 40 && chestVal <= 250) mObj.chest_cm = Math.round(chestVal * 10) / 10;
+      if (avgArm !== undefined) mObj.arms_cm = avgArm;
+      if (avgThigh !== undefined) mObj.thighs_cm = avgThigh;
+      if (!isNaN(hipVal) && hipVal >= 40 && hipVal <= 250) mObj.hips_cm = Math.round(hipVal * 10) / 10;
+      if (!isNaN(neckVal) && neckVal >= 15 && neckVal <= 80) mObj.neck_cm = Math.round(neckVal * 10) / 10;
+      if (latestTapeMetric.recorded_at) mObj.recorded_at = String(latestTapeMetric.recorded_at).split("T")[0];
+
+      if (Object.keys(mObj).length > 0) {
+        latestMeasurements = mObj;
+      }
+    }
+
+    if (!latestMeasurements) {
+      const fallbackObj: NonNullable<PlanProgressionContext["latestMeasurements"]> = {};
+      if (typeof profile.waist_cm === "number" && profile.waist_cm >= 35) fallbackObj.waist_cm = profile.waist_cm;
+      if (typeof profile.chest_cm === "number" && profile.chest_cm >= 40) fallbackObj.chest_cm = profile.chest_cm;
+      if (typeof profile.arm_cm === "number" && profile.arm_cm >= 12) fallbackObj.arms_cm = profile.arm_cm;
+      if (typeof profile.thigh_cm === "number" && profile.thigh_cm >= 20) fallbackObj.thighs_cm = profile.thigh_cm;
+      if (Object.keys(fallbackObj).length > 0) {
+        latestMeasurements = fallbackObj;
+      }
+    }
 
     // 5. Progression Focus description across 3-month phase blocks
     const progressionFocus =
@@ -140,6 +205,7 @@ export async function getMesocycleProgressionContext(
       currentWeightKg,
       weightDeltaKg,
       progressionFocus,
+      latestMeasurements,
     };
   } catch (err) {
     console.warn("Failed to generate mesocycle progression context:", err);

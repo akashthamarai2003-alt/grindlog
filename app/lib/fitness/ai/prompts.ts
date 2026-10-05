@@ -69,6 +69,7 @@ When profile.progression is present (e.g. mesocycle >= 2, Month 2, 3, 4+ renewal
   * Month 7+ (Phase 3 - Final Push & Set Point): Approach final goal weight. Transition volume toward joint preservation, peak muscular density, and preparing for sustainable reverse dieting / maintenance.
 - Progressive Overload Directives: In exercises[].notes, write specific progressive overload cues comparing against prior cycles (e.g., 'Mesocycle 2 Overload: Target +2.5kg or +1 rep over Cycle 1 while maintaining strict form at RIR 1-2').
 - Body Weight & Nutrition Adaptation: Acknowledge the user's progress in nutrition.guidance based on profile.progression.weight_delta_from_baseline_kg. If gaining or losing on pace, encourage consistency; if stalled, note surplus/deficit reinforcement.
+- Body Measurements Adaptation: If profile.progression.latest_measurements or profile.body.measurements_cm are present (waist, chest, arms, thighs), factor them into volume and specialization (e.g., increase direct arm or chest hypertrophy volume if those areas require growth; acknowledge waist reduction or recomposition).
 
 EQUIPMENT & LOCATION ENFORCEMENT:
 - Use ONLY equipment listed in profile.training.equipment at profile.training.location.
@@ -361,10 +362,10 @@ function buildCompactPlanProfile(
       weight_kg: profile.weight,
       target_weight_kg: profile.target_weight,
       measurements_cm: {
-        waist: profile.waist_cm,
-        chest: profile.chest_cm,
-        arm: profile.arm_cm,
-        thigh: profile.thigh_cm,
+        waist: progressionContext?.latestMeasurements?.waist_cm ?? profile.waist_cm,
+        chest: progressionContext?.latestMeasurements?.chest_cm ?? profile.chest_cm,
+        arm: progressionContext?.latestMeasurements?.arms_cm ?? profile.arm_cm,
+        thigh: progressionContext?.latestMeasurements?.thighs_cm ?? profile.thigh_cm,
       },
     },
     training: {
@@ -433,6 +434,7 @@ function buildCompactPlanProfile(
       current_weight_kg: progressionContext.currentWeightKg,
       weight_delta_from_baseline_kg: progressionContext.weightDeltaKg,
       progression_focus: progressionContext.progressionFocus,
+      latest_measurements: progressionContext.latestMeasurements,
     } : undefined,
   }) || {}) as Record<string, unknown>;
 }
