@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/services/supabase/client";
-import { Camera, Image as ImageIcon, Loader2, ArrowRight, X, Sparkles, ChevronLeft, ShieldCheck, Upload } from "lucide-react";
+import { Camera, Image as ImageIcon, Loader2, ArrowRight, X, Sparkles, ChevronLeft, ShieldCheck, Upload, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { BodyScanCameraModal } from "./body-scan-camera-modal";
@@ -167,61 +167,104 @@ export function ScannerFlow({ isRenew: propIsRenew }: ScannerFlowProps) {
 
   const ViewUploader = ({ view, label, optional }: { view: keyof typeof images, label: string, optional?: boolean }) => {
     const img = images[view];
+    const isReady = !!img;
+
     return (
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center justify-between">
-          <span>{label}</span>
+          <span className="flex items-center gap-1.5">
+            {label}
+            {isReady && <span className="text-[10px] text-[#ADFF00] font-mono font-normal">✓ Ready</span>}
+          </span>
           {optional && <span className="text-[10px] text-gray-500 lowercase font-normal">(optional)</span>}
         </label>
-        {img ? (
-          <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden border border-[#ADFF00]/40 shadow-[0_0_15px_rgba(173,255,0,0.15)] bg-[#121E12]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img.previewUrl} alt={view} className="w-full h-full object-cover" />
-            <div className="absolute top-2 right-2 flex items-center gap-1.5">
-              <button 
-                type="button"
-                onClick={() => setCameraModalView(view)}
-                className="p-1.5 bg-black/75 hover:bg-black/90 backdrop-blur-md rounded-full text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all border border-white/10 shadow-md cursor-pointer"
-                title="Retake with Camera"
-              >
-                <Camera size={13} />
-              </button>
-              <button 
-                type="button"
-                onClick={() => removeImage(view)}
-                className="p-1.5 bg-black/75 hover:bg-black/90 backdrop-blur-md rounded-full text-white/80 hover:bg-red-500 hover:text-white transition-all border border-white/10 shadow-md cursor-pointer"
-                title="Remove photo"
-              >
-                <X size={13} />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="relative w-full aspect-[3/4] rounded-2xl border-2 border-dashed border-[#1A2619] hover:border-[#ADFF00]/50 bg-[#121E12]/40 transition-all flex flex-col items-center justify-center p-3 text-center">
-            <div 
-              onClick={() => setCameraModalView(view)}
-              className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#ADFF00]/15 flex items-center justify-center text-gray-400 hover:text-[#ADFF00] transition-colors mb-1.5 border border-white/5 hover:border-[#ADFF00]/30 cursor-pointer"
-            >
-              <Camera className="w-5 h-5" />
-            </div>
-            <span className="text-xs font-bold text-gray-300">{label}</span>
-            <div className="mt-2.5 flex items-center gap-1 w-full">
-              <button
-                type="button"
-                onClick={() => setCameraModalView(view)}
-                className="flex-1 py-1.5 px-1.5 bg-[#ADFF00] hover:bg-[#c4ff33] text-black font-black text-[10px] uppercase tracking-wider rounded-lg flex items-center justify-center gap-1 shadow-[0_0_10px_rgba(173,255,0,0.3)] transition-all cursor-pointer"
-              >
-                <Camera size={11} />
-                <span>Camera</span>
-              </button>
-              <label className="flex-1 py-1.5 px-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer">
-                <Upload size={11} />
-                <span>Upload</span>
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, view)} />
-              </label>
-            </div>
-          </div>
-        )}
+
+        <div className={`relative w-full aspect-[3/4] rounded-2xl overflow-hidden border transition-all ${
+          isReady
+            ? "border-[#ADFF00]/50 shadow-[0_0_20px_rgba(173,255,0,0.18)] bg-[#0A100A]"
+            : "border-white/10 hover:border-white/20 bg-gradient-to-b from-[#111611] to-[#0A0D0A]"
+        }`}>
+          {isReady ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img.previewUrl} alt={view} className="w-full h-full object-cover" />
+              
+              {/* Top-Right Floating Retake/Delete Controls */}
+              <div className="absolute top-2.5 right-2.5 z-30 flex items-center gap-1 bg-black/80 backdrop-blur-md border border-white/15 p-1 rounded-full shadow-lg">
+                <button 
+                  type="button"
+                  onClick={() => setCameraModalView(view)}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all cursor-pointer"
+                  title="Retake photo with camera"
+                >
+                  <Camera size={11} strokeWidth={2.5} />
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => removeImage(view)}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer"
+                  title="Remove photo"
+                >
+                  <X size={11} strokeWidth={2.5} />
+                </button>
+              </div>
+
+              {/* Ready Badge bottom indicator */}
+              <div className="absolute bottom-2 left-2 z-20 pointer-events-none">
+                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-black bg-[#ADFF00] px-2 py-0.5 rounded-md shadow-md">
+                  <CheckCircle2 size={10} strokeWidth={3} />
+                  Captured
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Viewfinder Corner Reticles */}
+              <div className="absolute inset-2 pointer-events-none border border-white/5 rounded-xl">
+                <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-[#ADFF00]/40 rounded-tl-sm" />
+                <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-[#ADFF00]/40 rounded-tr-sm" />
+                <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-[#ADFF00]/40 rounded-bl-sm" />
+                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-[#ADFF00]/40 rounded-br-sm" />
+              </div>
+
+              {/* Center subtle scan icon placeholder */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-7">
+                <div className="w-11 h-11 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-gray-500 mb-2 shadow-inner">
+                  <Camera size={20} strokeWidth={1.75} className="text-gray-400" />
+                </div>
+                <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+                <span className="text-[9px] text-gray-600 font-mono mt-0.5">TAP TO CAPTURE</span>
+              </div>
+
+              {/* Floating Glass Capsule Action Dock */}
+              <div className="absolute bottom-2.5 inset-x-2 z-10 flex items-center justify-center">
+                <div className="flex items-center gap-1 bg-black/85 backdrop-blur-xl border border-white/15 p-1 rounded-xl shadow-xl w-full">
+                  <button
+                    type="button"
+                    onClick={() => setCameraModalView(view)}
+                    className="flex-1 py-1.5 px-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black transition-all cursor-pointer active:scale-95 group"
+                  >
+                    <Camera size={12} className="shrink-0 transition-transform group-hover:scale-110" />
+                    <span>Camera</span>
+                  </button>
+
+                  <div className="w-px h-3.5 bg-white/10 shrink-0" />
+
+                  <label className="flex-1 py-1.5 px-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95 group">
+                    <Upload size={12} className="shrink-0 text-gray-400 group-hover:text-white" />
+                    <span>Upload</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleFileChange(e, view)}
+                    />
+                  </label>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     );
   };

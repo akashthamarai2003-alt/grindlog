@@ -2522,35 +2522,41 @@ export function OnboardingFlow({
                                 className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
                               />
                             </div>
-                            <div className="absolute bottom-2.5 z-10 flex flex-wrap items-center justify-center gap-1.5 px-1 w-full max-w-[95%]">
-                              <button
-                                type="button"
-                                onClick={() => setCameraModalField(item.field)}
-                                className="flex-1 min-w-[68px] py-1.5 px-2 bg-[#ADFF00] hover:bg-[#c4ff33] active:scale-95 text-black rounded-lg font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-[0_0_12px_rgba(173,255,0,0.4)] transition-all cursor-pointer"
-                              >
-                                <Camera size={12} />
-                                <span>Camera</span>
-                              </button>
-                              <label className="flex-1 min-w-[68px] py-1.5 px-2 bg-black/70 hover:bg-black/90 active:scale-95 text-gray-200 border border-white/20 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer">
-                                <Upload size={12} />
-                                <span>Upload</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      try {
-                                        const compressedBase64 = await compressImage(file);
-                                        handleUpdate({ [item.field]: compressedBase64 });
-                                      } catch (err) {
-                                        console.error("Compression failed", err);
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none" />
+                            <div className="absolute bottom-2.5 inset-x-2 z-10 flex items-center justify-center">
+                              <div className="flex items-center gap-1 bg-black/85 backdrop-blur-xl border border-white/15 p-1 rounded-xl shadow-xl w-full max-w-[96%]">
+                                <button
+                                  type="button"
+                                  onClick={() => setCameraModalField(item.field)}
+                                  className="flex-1 py-1.5 px-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black transition-all cursor-pointer active:scale-95 group"
+                                >
+                                  <Camera size={12} className="shrink-0 transition-transform group-hover:scale-110" />
+                                  <span>Camera</span>
+                                </button>
+
+                                <div className="w-px h-3.5 bg-white/10 shrink-0" />
+
+                                <label className="flex-1 py-1.5 px-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95 group">
+                                  <Upload size={11} className="shrink-0 text-gray-400 group-hover:text-white transition-colors" />
+                                  <span>Upload</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        try {
+                                          const compressedBase64 = await compressImage(file);
+                                          handleUpdate({ [item.field]: compressedBase64 });
+                                        } catch (err) {
+                                          console.error("Compression failed", err);
+                                        }
                                       }
-                                    }
-                                  }}
-                                />
-                              </label>
+                                    }}
+                                  />
+                                </label>
+                              </div>
                             </div>
                           </>
                         )}
@@ -2623,40 +2629,46 @@ export function OnboardingFlow({
                             alt="Goal Reference"
                             className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none" />
                         </div>
-                        <div className="absolute bottom-3 z-10 flex items-center justify-center gap-2 px-2 w-full max-w-[90%]">
-                          <button
-                            type="button"
-                            onClick={() => setCameraModalField("body_scan_inspiration")}
-                            className="flex-1 py-2 px-3 bg-[#ADFF00] hover:bg-[#c4ff33] active:scale-95 text-black rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(173,255,0,0.4)] transition-all cursor-pointer"
-                          >
-                            <Camera size={14} />
-                            <span>Camera</span>
-                          </button>
-                          <label className="flex-1 py-2 px-3 bg-black/70 hover:bg-black/90 active:scale-95 text-gray-200 border border-white/20 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer">
-                            <Upload size={14} />
-                            <span>Upload</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  try {
-                                    const compressedBase64 = await compressImage(file);
-                                    handleUpdate({ 
-                                      body_scan_inspiration: compressedBase64, 
-                                      goal_physique_image: compressedBase64, 
-                                      target_physique: data.target_physique || "Custom Photo" 
-                                    });
-                                  } catch (err) {
-                                    console.error("Compression failed", err);
+                        <div className="absolute bottom-3 inset-x-3 z-10 flex items-center justify-center">
+                          <div className="flex items-center gap-1.5 bg-black/85 backdrop-blur-xl border border-white/15 p-1.5 rounded-xl shadow-xl w-full max-w-[94%]">
+                            <button
+                              type="button"
+                              onClick={() => setCameraModalField("body_scan_inspiration")}
+                              className="flex-1 py-2 px-2.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black transition-all cursor-pointer active:scale-95 group"
+                            >
+                              <Camera size={13} className="shrink-0 transition-transform group-hover:scale-110" />
+                              <span>Camera</span>
+                            </button>
+
+                            <div className="w-px h-4 bg-white/10 shrink-0" />
+
+                            <label className="flex-1 py-2 px-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95 group">
+                              <Upload size={13} className="shrink-0 text-gray-400 group-hover:text-white transition-colors" />
+                              <span>Upload</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    try {
+                                      const compressedBase64 = await compressImage(file);
+                                      handleUpdate({ 
+                                        body_scan_inspiration: compressedBase64, 
+                                        goal_physique_image: compressedBase64, 
+                                        target_physique: data.target_physique || "Custom Photo" 
+                                      });
+                                    } catch (err) {
+                                      console.error("Compression failed", err);
+                                    }
                                   }
-                                }
-                              }}
-                            />
-                          </label>
+                                }}
+                              />
+                            </label>
+                          </div>
                         </div>
                       </>
                     )}
