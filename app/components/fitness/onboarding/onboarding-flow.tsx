@@ -2831,34 +2831,34 @@ const AIAnalysisScreen = ({
       console.warn("[Onboarding] Atomic profile save warning:", err);
     });
 
-    // 3. Exact 5.0-second choreographed animation timeline:
-    // Phase 0: 0.0s – 1.6s -> Step 1 active (Understanding profile)
-    // Phase 1: 1.6s – 3.3s -> Step 2 active (Analyzing photos)
-    // Phase 2: 3.3s – 4.8s -> Step 3 active (Engineering strategy)
-    // Phase 3/4: 4.8s – 5.0s -> All steps complete with checkmarks & glowing radar success
-    // At 5.0s (5000ms): Automatically transition to /report instantly
+    // 3. Exact 10.0-second choreographed animation timeline:
+    // Phase 0: 0.0s – 3.3s -> Step 1 active (Understanding profile)
+    // Phase 1: 3.3s – 6.6s -> Step 2 active (Analyzing photos)
+    // Phase 2: 6.6s – 9.6s -> Step 3 active (Engineering strategy)
+    // Phase 3/4: 9.6s – 10.0s -> All steps complete with checkmarks & glowing radar success
+    // At 10.0s (10000ms): Automatically transition to /report instantly
     const t1 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 1));
-    }, 1600);
+    }, 3300);
 
     const t2 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 2));
-    }, 3300);
+    }, 6600);
 
     const t3 = setTimeout(() => {
       if (isMounted) setPhase(prev => Math.max(prev, 3));
-    }, 4800);
+    }, 9600);
 
     const t4 = setTimeout(() => {
       if (isMounted) setPhase(4);
-    }, 4900);
+    }, 9750);
 
     const autoNavTimer = setTimeout(() => {
       if (isMounted && !analysisError) {
         setIsNavigating(true);
         onComplete();
       }
-    }, 5000);
+    }, 10000);
 
     // Call /api/fitness/analyze (returns deterministic strategy in < 50ms)
     if (sessionId && lastSubmissionSessionId === sessionId && lastSubmissionPromise && retryCount === 0) {
@@ -3011,14 +3011,14 @@ const AIAnalysisScreen = ({
           </span>
         </motion.div>
 
-        {/* Slim Neon Progress Bar - fills smoothly from 0% to 100% across the exact 5.0 seconds */}
+        {/* Slim Neon Progress Bar - fills smoothly from 0% to 100% across the exact 10.0 seconds */}
         <div className="w-full max-w-[280px] mx-auto mb-6 h-1.5 bg-[#1A2619] rounded-full overflow-hidden border border-[#ADFF00]/20 relative">
           <motion.div
-            key="progress-bar-5s"
+            key="progress-bar-10s"
             className="h-full bg-gradient-to-r from-[#ADFF00]/80 via-[#ADFF00] to-[#ADFF00] shadow-[0_0_12px_#ADFF00]"
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
-            transition={{ duration: 5.0, ease: "linear" }}
+            transition={{ duration: 10.0, ease: "linear" }}
           />
         </div>
 
