@@ -811,7 +811,7 @@ export default function PlanSetupPage() {
           <div className="h-56 shrink-0 w-full" />
 
           {/* Floating Modulator & Save */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pt-16 pb-6 z-50 pointer-events-none backdrop-blur-[2px]">
+          <div className="fixed bottom-0 left-0 right-0 p-4 pb-[max(env(safe-area-inset-bottom),20px)] bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pt-8 z-50 pointer-events-none">
             <div className="max-w-md mx-auto space-y-3 pointer-events-auto">
               <p className="px-4 text-center text-xs text-gray-500">
                 You can refine this plan later from your dashboard.
