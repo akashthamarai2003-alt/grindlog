@@ -466,16 +466,15 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
         </div>
       ) : null}
 
-      {/* GPU Hardware-Accelerated Heatmap scroll container */}
+      {/* Smooth Native Scroll Heatmap container */}
       <div
         ref={scrollRef}
-        className="overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none overscroll-x-contain touch-pan-x"
+        className="overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none overscroll-x-contain"
         style={{
+          touchAction: "pan-x pan-y",
           WebkitOverflowScrolling: "touch",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
-          willChange: "scroll-position",
-          transform: "translateZ(0)",
         }}
       >
         <div className="inline-flex flex-col gap-1 min-w-max mx-auto">
