@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/services/supabase/client";
-import { isNativePlatform } from "@/lib/capacitor/bridge";
 
 import { useAuthStore } from "@/store/auth-store";
 import type { Profile } from "@/types";
@@ -13,7 +12,6 @@ import type { Database } from "@/types/database";
 const inFlightProfiles = new Map<string, Promise<Profile | null>>();
 let cachedProfile: Profile | null = null;
 let cachedUserId: string | null = null;
-let isNativeOAuthInProgress = false;
 
 
 async function fetchProfileDeduped(
@@ -250,50 +248,6 @@ export function useAuth() {
   };
 
   const signInWithGoogle = async (redirect?: string) => {
-    if (isNativePlatform()) {
-      if (isNativeOAuthInProgress) return;
-      isNativeOAuthInProgress = true;
-
-      try {
-        const callbackUrl = `https://www.grindlog.in/auth/callback?app=true`;
-
-        const { data, error: oauthErr } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: callbackUrl,
-            skipBrowserRedirect: true,
-          },
-        });
-
-        if (oauthErr) {
-          isNativeOAuthInProgress = false;
-          setError(oauthErr.message);
-          return;
-        }
-
-        if (data?.url) {
-          const { Browser } = await import("@capacitor/browser");
-
-          const finishedListener = await Browser.addListener("browserFinished", () => {
-            isNativeOAuthInProgress = false;
-            finishedListener.remove();
-          });
-
-          await Browser.open({
-            url: data.url,
-            toolbarColor: "#0A1108",
-          });
-        } else {
-          isNativeOAuthInProgress = false;
-        }
-      } catch (err: any) {
-        isNativeOAuthInProgress = false;
-        setError(err?.message || "Failed to start Google sign-in");
-      }
-      return;
-    }
-
-
     let callbackUrl = `${location.origin}/auth/callback`;
     if (redirect) {
       callbackUrl += `?redirect=${encodeURIComponent(redirect)}`;

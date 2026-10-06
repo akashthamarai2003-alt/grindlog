@@ -224,8 +224,8 @@ test.describe("GrindLog Progress Flow Verification", () => {
     await expect(page.getByText("Log Activity & Recovery")).not.toBeVisible();
   });
 
-  // ── 7. ANDROID APK MOBILE VIEWPORT RESPONSIVENESS ──
-  test("Android mobile viewport (390x844): layout fits without horizontal page scroll", async ({ page }) => {
+  // ── 7. MOBILE VIEWPORT RESPONSIVENESS ──
+  test("Mobile viewport (390x844): layout fits without horizontal page scroll", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/test-progress?view=pro");
 

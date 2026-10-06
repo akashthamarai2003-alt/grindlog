@@ -9,18 +9,6 @@ test.describe("GrindLog Home Page Flow & Dashboard Verification", () => {
     await expect(page.getByText(/Transform Your Body|GrindLog/i).first()).toBeVisible();
   });
 
-  test("Android APK User-Agent: unauthenticated access to / redirects to /auth/signin", async ({ browser }) => {
-    // Create isolated browser context with native GrindLogApp User-Agent
-    const context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 GrindLogApp",
-    });
-    const page = await context.newPage();
-    await page.goto("/");
-    await expect(page).toHaveURL(/\/auth\/signin/);
-    await context.close();
-  });
-
   // ── 2. FREE PREVIEW MODE ──
   test("Free user preview mode: renders preview banner, locked workout, locked meals, and calendar dots", async ({ page }) => {
     await page.goto("/test-home?view=free");

@@ -42,30 +42,15 @@ import {
   HelpCircle
 } from "lucide-react";
 import { toast } from "sonner";
-import { isNativePlatform } from "@/lib/capacitor/bridge";
 
 export function FitnessLandingPage() {
-  const [isNative, setIsNative] = useState(false);
-
   React.useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.classList.remove("theme-white");
       document.documentElement.classList.add("dark");
       document.documentElement.style.colorScheme = "dark";
     }
-    if (isNativePlatform()) {
-      setIsNative(true);
-      window.location.replace("/auth/signin");
-    }
   }, []);
-
-  if (isNative) {
-    return (
-      <div className="min-h-screen bg-[#0A1108] flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-      </div>
-    );
-  }
 
   const [activeTab, setActiveTab] = useState<"workout" | "nutrition" | "grocery" | "scanner" | "comparison" | "coach">("workout");
   const [groceryMode, setGroceryMode] = useState<"weekly" | "monthly">("weekly");

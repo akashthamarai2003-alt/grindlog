@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Share, PlusSquare, Download } from "lucide-react";
 import Image from "next/image";
-import { isNativePlatform } from "@/lib/capacitor/bridge";
 
 // Global event store for the prompt so we don't lose it
 let globalDeferredPrompt: any = null;
@@ -23,20 +22,14 @@ export function InstallModal() {
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    if (isNativePlatform()) {
-      setIsStandalone(true);
-      return;
-    }
-
     const handleOpen = () => setIsOpen(true);
     window.addEventListener("open-install-modal", handleOpen);
     return () => window.removeEventListener("open-install-modal", handleOpen);
   }, []);
 
   useEffect(() => {
-    // Detect if already installed or inside native app
+    // Detect if already installed as standalone PWA
     if (
-      isNativePlatform() ||
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone === true
     ) {

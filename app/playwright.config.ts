@@ -23,10 +23,9 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
-      name: "Mobile Chrome (APK Viewport)",
+      name: "Mobile Chrome",
       use: {
         ...devices["Pixel 7"],
-        userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 GrindLogApp",
       },
     },
   ],

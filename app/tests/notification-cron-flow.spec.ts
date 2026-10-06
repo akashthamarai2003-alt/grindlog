@@ -125,8 +125,8 @@ test.describe("GrindLog Notifications & Cron Push Flow Verification", () => {
     await expect(addReminderBtn).toBeVisible();
   });
 
-  // ── 4. ANDROID APK MOBILE VIEWPORT RESPONSIVENESS ──
-  test("Android mobile viewport (390x844): notification and reminder screens fit without horizontal scroll", async ({ page }) => {
+  // ── 4. MOBILE VIEWPORT RESPONSIVENESS ──
+  test("Mobile viewport (390x844): notification and reminder screens fit without horizontal scroll", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
     // Test Notifications screen
