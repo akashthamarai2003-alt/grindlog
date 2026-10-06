@@ -44,11 +44,21 @@ export function BodyScanCameraModal({
   const [countingDown, setCountingDown] = useState<number | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isSwitching, setIsSwitching] = useState<boolean>(false);
+
+  const isSwitchingRef = useRef<boolean>(false);
+  const activeFacingRef = useRef<"environment" | "user">("environment");
 
   // Stop current active stream
   const stopStream = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (e) {
+          // ignore track stop error
+        }
+      });
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -56,13 +66,63 @@ export function BodyScanCameraModal({
     }
   }, []);
 
-  // Multi-tier resilient media stream acquisition for mobile compatibility
+  // Multi-tier resilient media stream acquisition with device enumeration & exact facingMode
   const requestCameraStream = useCallback(async (facing: "environment" | "user"): Promise<MediaStream> => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       throw new Error("UNSUPPORTED_CONTEXT");
     }
 
-    // Tier 1: Flexible mobile constraints with ideal facingMode
+    // Tier 1: Check enumerateDevices for physical camera matching (most reliable on Android/iOS)
+    try {
+      if (navigator.mediaDevices.enumerateDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter((d) => d.kind === "videoinput");
+
+        if (videoDevices.length > 1) {
+          const targetDevice = videoDevices.find((d) => {
+            const label = (d.label || "").toLowerCase();
+            if (facing === "environment") {
+              return label.includes("back") || label.includes("rear") || label.includes("environment");
+            } else {
+              return label.includes("front") || label.includes("user") || label.includes("selfie");
+            }
+          });
+
+          if (targetDevice?.deviceId) {
+            try {
+              return await navigator.mediaDevices.getUserMedia({
+                video: {
+                  deviceId: { exact: targetDevice.deviceId },
+                  width: { ideal: 1080 },
+                  height: { ideal: 1080 },
+                },
+                audio: false,
+              });
+            } catch (devErr) {
+              console.warn("[Camera] deviceId exact constraint failed, falling to exact facingMode:", devErr);
+            }
+          }
+        }
+      }
+    } catch (enumErr) {
+      console.warn("[Camera] enumerateDevices failed:", enumErr);
+    }
+
+    // Tier 2: Exact facingMode (forces Android/iOS to switch cameras)
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { exact: facing },
+          width: { ideal: 1080 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      });
+    } catch (errExact: any) {
+      console.warn("[Camera] Tier 2 exact facingMode failed, falling to ideal:", errExact?.name || errExact);
+    }
+
+    // Tier 3: Ideal facingMode with flexible resolution
     try {
       return await navigator.mediaDevices.getUserMedia({
         video: {
@@ -72,31 +132,31 @@ export function BodyScanCameraModal({
         },
         audio: false,
       });
-    } catch (err1: any) {
-      console.warn("[Camera] Tier 1 rejected, attempting Tier 2:", err1?.name || err1);
+    } catch (errIdeal: any) {
+      console.warn("[Camera] Tier 3 ideal facingMode with resolution failed:", errIdeal?.name || errIdeal);
     }
 
-    // Tier 2: Pure facingMode without resolution locks (prevents OverconstrainedError)
+    // Tier 4: Pure facingMode without resolution locks
     try {
       return await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: facing } },
         audio: false,
       });
-    } catch (err2: any) {
-      console.warn("[Camera] Tier 2 rejected, attempting Tier 3:", err2?.name || err2);
+    } catch (errPure: any) {
+      console.warn("[Camera] Tier 4 pure ideal failed:", errPure?.name || errPure);
     }
 
-    // Tier 3: Direct facingMode
+    // Tier 5: Direct string facingMode
     try {
       return await navigator.mediaDevices.getUserMedia({
         video: { facingMode: facing },
         audio: false,
       });
-    } catch (err3: any) {
-      console.warn("[Camera] Tier 3 rejected, attempting Tier 4 (any video):", err3?.name || err3);
+    } catch (errStr: any) {
+      console.warn("[Camera] Tier 5 string facingMode failed, falling to any video:", errStr?.name || errStr);
     }
 
-    // Tier 4: Fallback to any video hardware
+    // Tier 6: Ultimate fallback to any available video hardware
     return await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: false,
@@ -105,13 +165,27 @@ export function BodyScanCameraModal({
 
   // Start camera stream
   const startCamera = useCallback(async (facing: "environment" | "user") => {
+    activeFacingRef.current = facing;
+    isSwitchingRef.current = true;
+    setIsSwitching(true);
+
     stopStream();
     setCameraState("loading");
     setErrorMessage(null);
     setCapturedImage(null);
 
+    // Give hardware camera sensor 200ms to cleanly release in Android Camera HAL
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     try {
       const stream = await requestCameraStream(facing);
+
+      // Discard stream if user flipped again while waiting
+      if (activeFacingRef.current !== facing) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
       streamRef.current = stream;
 
       if (videoRef.current) {
@@ -125,6 +199,7 @@ export function BodyScanCameraModal({
 
       setCameraState("ready");
     } catch (err: any) {
+      if (activeFacingRef.current !== facing) return;
       console.warn("[Camera] Camera initialization error:", err);
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
         setErrorMessage("Camera permission was denied. Tap below to launch your phone's camera app directly or allow access in browser site settings.");
@@ -139,6 +214,9 @@ export function BodyScanCameraModal({
         setErrorMessage("Could not start live camera feed. You can use your device's built-in camera app directly.");
         setCameraState("error");
       }
+    } finally {
+      isSwitchingRef.current = false;
+      setIsSwitching(false);
     }
   }, [stopStream, requestCameraStream]);
 
@@ -159,9 +237,9 @@ export function BodyScanCameraModal({
 
   // Flip camera front/back
   const handleToggleFacingMode = () => {
+    if (cameraState === "loading" || isSwitchingRef.current) return;
     const nextMode = facingMode === "environment" ? "user" : "environment";
     setFacingMode(nextMode);
-    startCamera(nextMode);
   };
 
   // Capture frame from live video
@@ -346,14 +424,15 @@ export function BodyScanCameraModal({
             )}
 
             {/* Flip Camera */}
-            {!capturedImage && cameraState === "ready" && (
+            {!capturedImage && (
               <button
                 type="button"
+                disabled={isSwitching || cameraState === "loading"}
                 onClick={handleToggleFacingMode}
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-white transition-all"
-                title="Flip Camera"
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-white transition-all disabled:opacity-40 cursor-pointer"
+                title={`Switch to ${facingMode === "environment" ? "Front" : "Back"} Camera`}
               >
-                <FlipHorizontal size={18} />
+                <FlipHorizontal size={18} className={isSwitching ? "animate-spin text-[#ADFF00]" : ""} />
               </button>
             )}
           </div>
@@ -548,13 +627,14 @@ export function BodyScanCameraModal({
                 {/* Flip camera shortcut */}
                 <button
                   type="button"
+                  disabled={isSwitching}
                   onClick={handleToggleFacingMode}
-                  className="flex flex-col items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-white transition-colors"
+                  className="flex flex-col items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-white transition-colors disabled:opacity-40 cursor-pointer"
                 >
                   <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white">
-                    <FlipHorizontal size={16} />
+                    <FlipHorizontal size={16} className={isSwitching ? "animate-spin text-[#ADFF00]" : ""} />
                   </div>
-                  <span>Flip</span>
+                  <span>{isSwitching ? "Switching..." : facingMode === "environment" ? "Front" : "Back"}</span>
                 </button>
               </div>
             ) : (
