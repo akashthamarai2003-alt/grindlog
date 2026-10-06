@@ -7,6 +7,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { progressClientCache } from "@/lib/api/progress-cache";
 import { BodyScanCameraModal } from "@/components/fitness/scanner/body-scan-camera-modal";
+import { useFitnessTheme } from "@/components/fitness/fitness-theme-provider";
 import frontImg from "@/assets/images/placeholder-front.png";
 import backImg from "@/assets/images/placeholder-back.png";
 import leftImg from "@/assets/images/placeholder-left.png";
@@ -20,6 +21,8 @@ function getLocalDateString(d: Date = new Date()): string {
 }
 
 export default function AddScanPage() {
+  const { theme } = useFitnessTheme();
+  const isWhite = theme === "white";
   const [images, setImages] = useState<{ front?: string; left?: string; right?: string; back?: string }>({});
   const [scanDate, setScanDate] = useState(() => getLocalDateString());
   const [isLoading, setIsLoading] = useState(false);
@@ -159,10 +162,14 @@ export default function AddScanPage() {
     return (
       <div className="relative group">
         <div 
-          className={`relative w-full aspect-[3/4] rounded-2xl border transition-all overflow-hidden flex flex-col items-center justify-center ${
+          className={`relative w-full aspect-[4/5] rounded-2xl border transition-all overflow-hidden flex flex-col items-center justify-center ${
             hasImage 
-              ? 'border-[#ADFF00] bg-[#ADFF00]/5 shadow-[0_0_20px_rgba(173,255,0,0.12)]' 
-              : 'border-white/10 bg-[#0E160E] hover:border-[#ADFF00]/40'
+              ? isWhite
+                ? 'border-emerald-500 bg-emerald-50/30 shadow-[0_4px_16px_rgba(16,185,129,0.15)]'
+                : 'border-[#ADFF00] bg-[#ADFF00]/5 shadow-[0_0_20px_rgba(173,255,0,0.12)]' 
+              : isWhite
+                ? 'border-gray-200 bg-white hover:border-emerald-500/50 shadow-xs'
+                : 'border-white/10 bg-[#0E160E] hover:border-[#ADFF00]/40'
           }`}
         >
           <input 
@@ -175,16 +182,22 @@ export default function AddScanPage() {
           />
 
           {/* Top Label Badge */}
-          <div className="absolute top-2.5 inset-x-2.5 z-20 flex items-center justify-between pointer-events-none">
+          <div className="absolute top-2 inset-x-2 z-20 flex items-center justify-between pointer-events-none">
             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md border ${
               hasImage 
-                ? 'bg-[#ADFF00]/20 border-[#ADFF00]/40 text-[#ADFF00]' 
-                : 'bg-black/60 border-white/10 text-gray-300'
+                ? isWhite
+                  ? 'bg-emerald-100/90 border-emerald-300 text-emerald-800'
+                  : 'bg-[#ADFF00]/20 border-[#ADFF00]/40 text-[#ADFF00]' 
+                : isWhite
+                  ? 'bg-white/95 border-gray-200 text-gray-700 shadow-xs'
+                  : 'bg-black/70 border-white/10 text-gray-300'
             }`}>
               {title}
             </span>
             {hasImage && (
-              <span className="w-5 h-5 rounded-full bg-[#ADFF00] text-black flex items-center justify-center shadow-md">
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center shadow-md ${
+                isWhite ? 'bg-emerald-600 text-white' : 'bg-[#ADFF00] text-black'
+              }`}>
                 <CheckCircle2 size={11} strokeWidth={3} />
               </span>
             )}
@@ -196,11 +209,19 @@ export default function AddScanPage() {
               <img src={images[field]} className="w-full h-full object-cover rounded-xl" alt={title} />
               
               {/* Top-Right Floating Actions */}
-              <div className="absolute top-2.5 right-2.5 z-30 flex items-center gap-1 bg-black/80 backdrop-blur-md border border-white/15 p-1 rounded-full shadow-lg">
+              <div className={`absolute top-2 right-2 z-30 flex items-center gap-1 backdrop-blur-md border p-1 rounded-full shadow-lg ${
+                isWhite
+                  ? 'bg-white/95 border-gray-200'
+                  : 'bg-black/80 border-white/15'
+              }`}>
                 <button 
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setCameraModalField(field); }}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all cursor-pointer"
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                    isWhite
+                      ? 'text-emerald-700 hover:bg-emerald-600 hover:text-white'
+                      : 'text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black'
+                  }`}
                   title="Retake photo with camera"
                 >
                   <Camera size={11} strokeWidth={2.5} />
@@ -217,28 +238,50 @@ export default function AddScanPage() {
             </>
           ) : (
             <>
-              {/* Silhouette Reference with dark gradient overlay */}
+              {/* Silhouette Reference with theme-adaptive gradient overlay */}
               <div className="absolute inset-0 z-0 overflow-hidden rounded-xl pointer-events-none">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src={resolvedSrc}
                   alt={`${title} Reference`}
-                  className={`w-full h-full object-cover object-top transition-opacity duration-300 ${isProcessing ? 'opacity-10 blur-sm' : 'opacity-40 group-hover:opacity-60'}`}
+                  className={`w-full h-full object-cover object-top transition-opacity duration-300 ${
+                    isProcessing 
+                      ? 'opacity-10 blur-sm' 
+                      : isWhite 
+                        ? 'opacity-85 group-hover:opacity-95' 
+                        : 'opacity-45 group-hover:opacity-65'
+                  }`}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/40 pointer-events-none" />
+                <div className={`absolute inset-0 pointer-events-none ${
+                  isWhite
+                    ? 'bg-gradient-to-t from-white/95 via-white/30 to-transparent'
+                    : 'bg-gradient-to-t from-black/90 via-black/20 to-black/35'
+                }`} />
               </div>
 
               {/* Viewfinder corner brackets */}
-              <div className="absolute inset-2.5 pointer-events-none border border-white/5 rounded-xl">
-                <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-[#ADFF00]/40 rounded-tl-sm" />
-                <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-[#ADFF00]/40 rounded-tr-sm" />
-                <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-[#ADFF00]/40 rounded-bl-sm" />
-                <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-[#ADFF00]/40 rounded-br-sm" />
+              <div className="absolute inset-2 pointer-events-none border border-transparent rounded-xl">
+                <div className={`absolute top-0 left-0 w-2.5 h-2.5 border-t border-l rounded-tl-sm ${
+                  isWhite ? 'border-emerald-600/50' : 'border-[#ADFF00]/40'
+                }`} />
+                <div className={`absolute top-0 right-0 w-2.5 h-2.5 border-t border-r rounded-tr-sm ${
+                  isWhite ? 'border-emerald-600/50' : 'border-[#ADFF00]/40'
+                }`} />
+                <div className={`absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l rounded-bl-sm ${
+                  isWhite ? 'border-emerald-600/50' : 'border-[#ADFF00]/40'
+                }`} />
+                <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r rounded-br-sm ${
+                  isWhite ? 'border-emerald-600/50' : 'border-[#ADFF00]/40'
+                }`} />
               </div>
 
               {/* Unified Glass Capsule Action Dock */}
-              <div className="absolute bottom-2.5 inset-x-2 z-10 flex items-center justify-center">
-                <div className="flex items-center gap-1 bg-black/85 backdrop-blur-xl border border-white/15 p-1 rounded-xl shadow-xl w-full">
+              <div className="absolute bottom-2 inset-x-2 z-10 flex items-center justify-center">
+                <div className={`flex items-center gap-1 backdrop-blur-xl border p-1 rounded-xl shadow-lg w-full ${
+                  isWhite
+                    ? 'bg-white/95 border-gray-200/90 shadow-[0_4px_16px_rgba(0,0,0,0.06)]'
+                    : 'bg-black/85 border-white/15 shadow-xl'
+                }`}>
                   <button
                     type="button"
                     disabled={isProcessing}
@@ -246,13 +289,17 @@ export default function AddScanPage() {
                       e.stopPropagation();
                       setCameraModalField(field);
                     }}
-                    className="flex-1 py-1.5 px-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black transition-all cursor-pointer active:scale-95 disabled:opacity-50 group"
+                    className={`flex-1 py-1 px-1 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 disabled:opacity-50 group ${
+                      isWhite
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 hover:bg-emerald-600 hover:text-white'
+                        : 'bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black'
+                    }`}
                   >
-                    <Camera size={12} className="shrink-0 transition-transform group-hover:scale-110" />
+                    <Camera size={11} className="shrink-0 transition-transform group-hover:scale-110" />
                     <span>Camera</span>
                   </button>
 
-                  <div className="w-px h-3.5 bg-white/10 shrink-0" />
+                  <div className={`w-px h-3 shrink-0 ${isWhite ? 'bg-gray-200' : 'bg-white/10'}`} />
 
                   <button
                     type="button"
@@ -261,12 +308,18 @@ export default function AddScanPage() {
                       e.stopPropagation();
                       triggerUpload(field);
                     }}
-                    className="flex-1 py-1.5 px-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95 disabled:opacity-50 group"
+                    className={`flex-1 py-1 px-1 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 disabled:opacity-50 group ${
+                      isWhite
+                        ? 'text-gray-700 hover:text-black hover:bg-gray-100'
+                        : 'text-gray-300 hover:text-white hover:bg-white/10'
+                    }`}
                   >
                     {isProcessing ? (
-                      <Loader2 size={12} className="animate-spin text-[#ADFF00]" />
+                      <Loader2 size={11} className={`animate-spin ${isWhite ? 'text-emerald-600' : 'text-[#ADFF00]'}`} />
                     ) : (
-                      <Upload size={11} className="shrink-0 text-gray-400 group-hover:text-white transition-colors" />
+                      <Upload size={11} className={`shrink-0 transition-colors ${
+                        isWhite ? 'text-gray-500 group-hover:text-black' : 'text-gray-400 group-hover:text-white'
+                      }`} />
                     )}
                     <span>Upload</span>
                   </button>
@@ -280,35 +333,58 @@ export default function AddScanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1108] text-white p-5 pb-28 max-w-lg mx-auto">
+    <div className={`min-h-screen p-4 sm:p-5 pb-24 max-w-lg mx-auto transition-colors ${
+      isWhite ? 'bg-gray-50 text-gray-900' : 'bg-[#0A1108] text-white'
+    }`}>
       {/* Top Navigation */}
-      <div className="flex items-center gap-3.5 mb-5">
-        <Link href="/progress" className="w-10 h-10 rounded-full bg-[#1A2619] flex items-center justify-center hover:bg-[#ADFF00] hover:text-black transition-colors">
+      <div className="flex items-center gap-3.5 mb-4">
+        <Link 
+          href="/progress" 
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+            isWhite 
+              ? 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 shadow-xs' 
+              : 'bg-[#1A2619] border border-white/5 text-white hover:bg-[#ADFF00] hover:text-black'
+          }`}
+        >
           <ArrowLeft size={18} />
         </Link>
         <div>
-          <h1 className="text-xl font-black">Add Body Scan</h1>
-          <p className="text-xs text-white/50 font-medium">Capture your physique to track visual progress</p>
+          <h1 className={`text-xl font-black ${isWhite ? 'text-gray-900' : 'text-white'}`}>Add Body Scan</h1>
+          <p className={`text-xs font-medium ${isWhite ? 'text-gray-500' : 'text-white/50'}`}>
+            Capture your physique to track visual progress
+          </p>
         </div>
       </div>
 
       {/* Date Selection */}
-      <div className="bg-[#111A10] border border-white/10 rounded-2xl p-3.5 mb-5 shadow-sm">
+      <div className={`rounded-2xl p-3.5 mb-4 shadow-sm border ${
+        isWhite ? 'bg-white border-gray-200/90' : 'bg-[#111A10] border-white/10'
+      }`}>
         <div className="flex items-center justify-between mb-2 px-0.5">
-          <span className="text-[11px] font-black text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Calendar size={13} className="text-[#ADFF00]" />
+          <span className={`text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+            isWhite ? 'text-gray-700' : 'text-gray-300'
+          }`}>
+            <Calendar size={13} className={isWhite ? 'text-emerald-600' : 'text-[#ADFF00]'} />
             <span>Scan Date</span>
           </span>
-          <span className="text-[10px] text-gray-500 font-medium">Logged in progress history</span>
+          <span className={`text-[10px] font-medium ${isWhite ? 'text-gray-500' : 'text-gray-500'}`}>
+            Logged in progress history
+          </span>
         </div>
-        <div className="grid grid-cols-3 gap-1.5 bg-black/40 p-1 rounded-xl border border-white/5">
+        <div className={`grid grid-cols-3 gap-1.5 p-1 rounded-xl border ${
+          isWhite ? 'bg-gray-100/80 border-gray-200/80' : 'bg-black/40 border-white/5'
+        }`}>
           <button
             type="button"
             onClick={() => setScanDate(todayStr)}
             className={`py-1.5 px-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
               scanDate === todayStr 
-                ? 'bg-[#ADFF00] text-black shadow-sm font-black' 
-                : 'text-gray-400 hover:text-white'
+                ? isWhite
+                  ? 'bg-emerald-600 text-white shadow-sm font-black'
+                  : 'bg-[#ADFF00] text-black shadow-sm font-black' 
+                : isWhite
+                  ? 'text-gray-600 hover:text-black'
+                  : 'text-gray-400 hover:text-white'
             }`}
           >
             Today
@@ -318,8 +394,12 @@ export default function AddScanPage() {
             onClick={() => setScanDate(yesterdayStr)}
             className={`py-1.5 px-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
               scanDate === yesterdayStr 
-                ? 'bg-[#ADFF00] text-black shadow-sm font-black' 
-                : 'text-gray-400 hover:text-white'
+                ? isWhite
+                  ? 'bg-emerald-600 text-white shadow-sm font-black'
+                  : 'bg-[#ADFF00] text-black shadow-sm font-black' 
+                : isWhite
+                  ? 'text-gray-600 hover:text-black'
+                  : 'text-gray-400 hover:text-white'
             }`}
           >
             Yesterday
@@ -329,20 +409,26 @@ export default function AddScanPage() {
             value={scanDate}
             max={todayStr}
             onChange={(e) => setScanDate(e.target.value)}
-            className="bg-transparent text-center text-xs text-gray-200 font-bold focus:outline-none cursor-pointer py-1"
+            className={`bg-transparent text-center text-xs font-bold focus:outline-none cursor-pointer py-1 ${
+              isWhite ? 'text-gray-800' : 'text-gray-200'
+            }`}
           />
         </div>
       </div>
 
-      {/* Photo Grid */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <span className="text-[11px] font-black tracking-widest text-[#ADFF00] uppercase">
+      {/* Photo Grid Header */}
+      <div className="flex items-center justify-between mb-2.5 px-1">
+        <span className={`text-[11px] font-black tracking-widest uppercase ${
+          isWhite ? 'text-emerald-700' : 'text-[#ADFF00]'
+        }`}>
           Physique Photos ({uploadedCount}/4)
         </span>
-        <span className="text-[11px] text-white/40">Front required, others optional</span>
+        <span className={`text-[11px] ${isWhite ? 'text-gray-500' : 'text-white/40'}`}>
+          Front required, others optional
+        </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5 mb-6">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 mb-5">
         <PhotoSlot title="Front View" field="front" inputRef={frontInputRef} />
         <PhotoSlot title="Left Side" field="left" inputRef={leftInputRef} />
         <PhotoSlot title="Right Side" field="right" inputRef={rightInputRef} />
@@ -353,10 +439,14 @@ export default function AddScanPage() {
       <button 
         onClick={handleSave}
         disabled={isLoading || uploadedCount === 0}
-        className={`w-full h-14 font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-lg ${
+        className={`w-full h-13 font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-md text-xs sm:text-sm ${
           uploadedCount > 0 
-            ? "bg-[#ADFF00] hover:bg-[#baff22] active:scale-[0.98] text-black shadow-[0_0_25px_rgba(173,255,0,0.35)] cursor-pointer" 
-            : "bg-white/10 text-gray-500 cursor-not-allowed opacity-50"
+            ? isWhite
+              ? "bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white shadow-[0_4px_20px_rgba(16,185,129,0.35)] cursor-pointer"
+              : "bg-[#ADFF00] hover:bg-[#baff22] active:scale-[0.98] text-black shadow-[0_0_25px_rgba(173,255,0,0.35)] cursor-pointer" 
+            : isWhite
+              ? "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+              : "bg-[#131E12] border border-white/10 text-gray-500 cursor-not-allowed shadow-none"
         }`}
       >
         {isLoading ? (

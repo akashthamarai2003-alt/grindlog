@@ -639,8 +639,13 @@ html.theme-white .rounded-full.bg-black\/60 {
 }
 html.theme-white .bg-black\/50,
 html.theme-white .bg-black\/60,
-html.theme-white .bg-black\/70 {
-  background-color: var(--fitness-soft-bg) !important;
+html.theme-white .bg-black\/70,
+html.theme-white .bg-black\/75,
+html.theme-white .bg-black\/80,
+html.theme-white .bg-black\/85,
+html.theme-white .bg-black\/90,
+html.theme-white .bg-black\/95 {
+  background-color: var(--fitness-card) !important;
   border-color: var(--fitness-border) !important;
 }
 
