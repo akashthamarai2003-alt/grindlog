@@ -524,107 +524,105 @@ export function V2NutritionView({
           </div>
         </div>
 
-        {/* Balanced Two-Side Layout: Left = Calorie Ring, Right = Full-Width Macro Bars */}
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
-          {/* Left: Calorie Ring with subtext */}
-          <div className="flex flex-col items-center justify-center shrink-0 self-center sm:self-auto sm:pr-2">
-            <div className="relative flex h-24 w-24 items-center justify-center sm:h-28 sm:w-28">
-              <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="transparent"
-                  stroke="rgba(255,255,255,0.08)"
-                  strokeWidth="8"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="transparent"
-                  stroke="#ADFF00"
-                  strokeWidth="8"
-                  strokeDasharray={circleCircumference}
-                  strokeDashoffset={calorieOffset}
-                  strokeLinecap="round"
-                  className="transition-all duration-700 ease-out"
-                />
-              </svg>
-              <div className="absolute flex flex-col items-center justify-center text-center">
-                <span className="text-xl font-black leading-none tracking-tight text-white sm:text-2xl">
-                  {number(calorieRemaining)}
-                </span>
-                <span className="mt-1 text-[9px] font-extrabold uppercase tracking-wider text-[#ADFF00]">
-                  {isSurplus ? "Surplus" : "Kcal Left"}
-                </span>
-              </div>
+        {/* Primary Calories Progress */}
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <Flame className="h-4 w-4 text-[#ADFF00]" />
+              <span className="text-xs font-black uppercase tracking-wider text-white">
+                Calories
+              </span>
             </div>
-            <p className="mt-1.5 text-center text-xs font-semibold text-white/50">
-              <span className="font-bold text-white">{number(consumedCals)}</span> / {number(targetCals)} kcal
-            </p>
+            <div className="text-right">
+              <span className="text-base font-black text-white sm:text-lg">
+                {number(consumedCals)}
+              </span>
+              <span className="text-xs font-semibold text-white/45">
+                {" "}/ {number(targetCals)} kcal
+              </span>
+            </div>
           </div>
 
-          {/* Right: 3 Full-Width Horizontal Macro Bars (Protein, Carbs, Fat) */}
-          <div className="flex-1 min-w-0 space-y-2.5 sm:space-y-3">
-            {/* Protein Bar */}
-            <div>
-              <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                <span className="flex items-center gap-1.5 text-sky-300">
-                  <span className="h-2 w-2 rounded-full bg-sky-400" /> Protein
-                </span>
-                <span className="text-white/90">
-                  <span className="font-bold">{number(consumedPro)}</span>
-                  <span className="font-normal text-white/40"> / {number(targetPro)}g</span>{" "}
-                  <span className="text-[10px] text-white/35">({proPercent}%)</span>
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 sm:h-2.5">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-300 transition-all duration-500"
-                  style={{ width: `${Math.min(100, proPercent)}%` }}
-                />
-              </div>
-            </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/50 border border-white/5 p-[1px]">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#ADFF00] via-[#c4ff4d] to-emerald-400 shadow-[0_0_12px_rgba(173,255,0,0.35)] transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(0, caloriePercent))}%` }}
+            />
+          </div>
 
-            {/* Carbs Bar */}
-            <div>
-              <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                <span className="flex items-center gap-1.5 text-amber-300">
-                  <span className="h-2 w-2 rounded-full bg-amber-400" /> Carbs
-                </span>
-                <span className="text-white/90">
-                  <span className="font-bold">{number(consumedCarbs)}</span>
-                  <span className="font-normal text-white/40"> / {number(targetCarbs)}g</span>{" "}
-                  <span className="text-[10px] text-white/35">({carbsPercent}%)</span>
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 sm:h-2.5">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-500"
-                  style={{ width: `${Math.min(100, carbsPercent)}%` }}
-                />
-              </div>
-            </div>
+          <div className="flex items-center justify-between text-[11px] font-semibold text-white/50 px-0.5">
+            <span>{caloriePercent}% target hit</span>
+            <span className="font-bold text-[#ADFF00]">
+              {number(calorieRemaining)} kcal remaining
+            </span>
+          </div>
+        </div>
 
-            {/* Fat Bar */}
-            <div>
-              <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                <span className="flex items-center gap-1.5 text-rose-300">
-                  <span className="h-2 w-2 rounded-full bg-rose-400" /> Fat
-                </span>
-                <span className="text-white/90">
-                  <span className="font-bold">{number(consumedFat)}</span>
-                  <span className="font-normal text-white/40"> / {number(targetFat)}g</span>{" "}
-                  <span className="text-[10px] text-white/35">({fatPercent}%)</span>
-                </span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 sm:h-2.5">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-rose-400 to-pink-400 transition-all duration-500"
-                  style={{ width: `${Math.min(100, fatPercent)}%` }}
-                />
-              </div>
+        {/* 3 Secondary Macro Pillars (Protein, Carbs, Fat) */}
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+          {/* Protein */}
+          <div className="rounded-xl border border-white/5 bg-black/30 p-2.5 sm:p-3 flex flex-col justify-between gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-sky-400">
+                Protein
+              </span>
+              <span className="text-[10px] font-bold text-white/40 tabular-nums">
+                {proPercent}%
+              </span>
+            </div>
+            <div className="text-xs sm:text-sm font-black text-white truncate">
+              {number(consumedPro)}
+              <span className="text-[10px] font-normal text-white/40">/{number(targetPro)}g</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-300 transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(0, proPercent))}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Carbs */}
+          <div className="rounded-xl border border-white/5 bg-black/30 p-2.5 sm:p-3 flex flex-col justify-between gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">
+                Carbs
+              </span>
+              <span className="text-[10px] font-bold text-white/40 tabular-nums">
+                {carbsPercent}%
+              </span>
+            </div>
+            <div className="text-xs sm:text-sm font-black text-white truncate">
+              {number(consumedCarbs)}
+              <span className="text-[10px] font-normal text-white/40">/{number(targetCarbs)}g</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(0, carbsPercent))}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Fat */}
+          <div className="rounded-xl border border-white/5 bg-black/30 p-2.5 sm:p-3 flex flex-col justify-between gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-rose-400">
+                Fat
+              </span>
+              <span className="text-[10px] font-bold text-white/40 tabular-nums">
+                {fatPercent}%
+              </span>
+            </div>
+            <div className="text-xs sm:text-sm font-black text-white truncate">
+              {number(consumedFat)}
+              <span className="text-[10px] font-normal text-white/40">/{number(targetFat)}g</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-rose-400 to-pink-400 transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(0, fatPercent))}%` }}
+              />
             </div>
           </div>
         </div>
