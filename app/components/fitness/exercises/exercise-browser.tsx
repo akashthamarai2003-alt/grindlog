@@ -203,6 +203,7 @@ function ExerciseBrowserContent({ initialExercises }: { initialExercises?: Libra
                 <ExerciseAnimationPlayer
                   name={ex.name}
                   targetMuscle={ex.target_muscle}
+                  imageUrls={ex.image_urls}
                   compact={true}
                   className="w-16 h-16 rounded-xl shrink-0"
                 />

@@ -70,6 +70,7 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
                 <ExerciseAnimationPlayer
                   name={exercise.name}
                   targetMuscle={exercise.target_muscle}
+                  imageUrls={exercise.image_urls}
                   aspectRatio="square"
                   className="shadow-2xl"
                 />
