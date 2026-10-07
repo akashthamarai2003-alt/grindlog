@@ -90,18 +90,12 @@ export async function POST(request: NextRequest) {
       isAdmin 
     });
 
-    let result: any;
-    if (isV2) {
-      // Source of truth for new plans: V2 deterministic unified planner
-      // Validated against GrindLog deterministic nutrition rules and automated acceptance tests.
-      result = await V2PlanService.generateV2MealPlan(user.id, {
-        forceV2: requestedV2,
-        startDate: body?.start_date,
-      });
-    } else {
-      // Legacy fallback: Pro users can generate via legacy path
-      result = await AINutritionService.generateMealPlan(user.id);
-    }
+    // Source of truth for all plans: V2 deterministic unified planner (Zero AI / LLM dependency)
+    // Validated against GrindLog deterministic nutrition rules and automated acceptance tests.
+    const result = await V2PlanService.generateV2MealPlan(user.id, {
+      forceV2: requestedV2,
+      startDate: body?.start_date,
+    });
 
     NutritionService.invalidateServerCache(user.id);
     try {

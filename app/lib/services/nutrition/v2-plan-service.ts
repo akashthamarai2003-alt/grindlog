@@ -127,10 +127,7 @@ export class V2PlanService {
     profile?: any,
     options?: { forceV2?: boolean; isAdmin?: boolean }
   ): boolean {
-    // 1. Explicit opt-out if flag in database profile is false
-    if (profile?.nutrition_engine_v2 === false) return false;
-
-    // 2. V2 deterministic engine is enabled by default for all users (Zero AI / LLM dependency)
+    // V2 deterministic engine is universally enabled for all users (Zero AI / LLM dependency)
     return true;
   }
 
