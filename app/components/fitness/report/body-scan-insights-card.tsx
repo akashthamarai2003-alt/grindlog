@@ -239,11 +239,15 @@ export function BodyScanInsightsCard({
 
         </div>
       ) : (
-        /* STATE 3: No photos uploaded in onboarding */
+        /* STATE 3: No photos uploaded in onboarding or renewal */
         <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4">
-          <p className="text-sm font-bold text-white">Visual coaching feedback</p>
+          <p className="text-sm font-bold text-white">
+            {isRenew ? "Month 2 Mesocycle Recalibration" : "Visual coaching feedback"}
+          </p>
           <p className="mt-1 text-xs leading-relaxed text-gray-400">
-            Coaching observations are generated based on your biometric profile and fitness goals.
+            {isRenew
+              ? "Your Month 2 progression is calibrated using your Month 1 workout adherence, strength progressions, and biometric measurements."
+              : "Coaching observations are generated based on your biometric profile and fitness goals."}
           </p>
         </div>
       )}
