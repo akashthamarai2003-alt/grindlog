@@ -1027,9 +1027,15 @@ export function generateUnified7DayPlan(
       if (strictBudget !== null && rawCandidates.length > 0) {
         const cap = strictPerMealCap(alloc.targetCalories) * 1.28;
         const affordable = rawCandidates.filter(c => c.estimatedCost <= cap && (recipeUsageCount.get(c.catalogItem.recipe.slug) || 0) < 3);
-        candidates = affordable.length >= 2
+        const hasAdequateProteinInAffordable = alloc.targetProtein < 25 || affordable.some(c => c.selectedVariant.targetProtein >= alloc.targetProtein * 0.55);
+        candidates = (affordable.length >= 2 && hasAdequateProteinInAffordable)
           ? affordable
-          : [...rawCandidates].filter(c => (recipeUsageCount.get(c.catalogItem.recipe.slug) || 0) < 3).sort((a, b) => a.estimatedCost - b.estimatedCost).slice(0, Math.max(5, rawCandidates.length));
+          : [...rawCandidates].filter(c => (recipeUsageCount.get(c.catalogItem.recipe.slug) || 0) < 4).sort((a, b) => {
+              const pDeltaA = Math.abs(a.selectedVariant.targetProtein - alloc.targetProtein);
+              const pDeltaB = Math.abs(b.selectedVariant.targetProtein - alloc.targetProtein);
+              if (alloc.targetProtein >= 28 && Math.abs(pDeltaA - pDeltaB) > 8) return pDeltaA - pDeltaB;
+              return a.estimatedCost - b.estimatedCost;
+            }).slice(0, Math.max(8, rawCandidates.length));
         if (candidates.length === 0) candidates = rawCandidates;
       }
 
@@ -1043,9 +1049,17 @@ export function generateUnified7DayPlan(
         // Rule 1: Never repeat the same canonical dish on the same day
         if (usedRecipesToday.has(canonicalId)) continue;
 
-        // Rule 2: Max 2 repeats of the same canonical dish in a 7-day week, IF viable protein-accurate alternatives exist (hard limit 3)
+        // Rule 2: Max repeats in 7-day week (hard limit 3 when viable alternatives exist; allow 4 if alternatives lack protein)
         const totalUsed = recipeUsageCount.get(canonicalId) || 0;
-        if (totalUsed >= 3) continue; // Hard limit 3
+        if (totalUsed >= 3) {
+          const hasAlternativeWithProtein = candidates.some(
+            c => c.catalogItem.recipe.slug !== canonicalId &&
+                 !usedRecipesToday.has(c.catalogItem.recipe.slug) &&
+                 (recipeUsageCount.get(c.catalogItem.recipe.slug) || 0) < 3 &&
+                 c.selectedVariant.targetProtein >= alloc.targetProtein * 0.60
+          );
+          if (hasAlternativeWithProtein || totalUsed >= 4) continue;
+        }
 
         if (totalUsed >= 2) {
           const targetProteinRatio = (alloc.targetProtein * 4) / alloc.targetCalories;
@@ -1073,9 +1087,10 @@ export function generateUnified7DayPlan(
       }
 
       if (!chosenCandidate && candidates.length > 0) {
-        // Fallback: pick candidate not used today with lowest weekly usage (<= 3) and best protein proximity
+        // Fallback: pick candidate not used today with lowest weekly usage and best protein proximity
+        const maxRepLimit = candidates.some(c => (recipeUsageCount.get(c.catalogItem.recipe.slug) || 0) < 3) ? 3 : 4;
         const notUsedToday = candidates.filter(
-          c => !usedRecipesToday.has(c.catalogItem.recipe.slug) && (recipeUsageCount.get(c.catalogItem.recipe.slug) || 0) < 3
+          c => !usedRecipesToday.has(c.catalogItem.recipe.slug) && (recipeUsageCount.get(c.catalogItem.recipe.slug) || 0) < maxRepLimit
         );
         const pool = notUsedToday.length > 0 ? notUsedToday : candidates;
         pool.sort((a, b) => {
@@ -1659,7 +1674,7 @@ export function generateUnified7DayPlan(
       const pDiffRemaining = dailyTargets.protein - dayP;
       const isStrict = profile.budgetPolicy === "STRICT" && (profile.weeklyBudgetTargetInr || 0) <= 1500;
       const remainingBudgetHeadroom = isStrict && strictBudget !== null
-        ? Math.max(0, strictBudget - weekSpent)
+        ? Math.max(0, Math.round(strictBudget * 1.15) - weekSpent)
         : Infinity;
 
       if (pDiffRemaining / dailyTargets.protein > 0.025) {

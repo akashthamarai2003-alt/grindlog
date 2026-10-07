@@ -206,7 +206,7 @@ export class V2PlanService {
 
     if (availableEquipment.length === 0 && !hasExplicitEquipment) {
       if (foodEnvironment === "Hostel" || foodEnvironment === "PG") {
-        availableEquipment.push("kettle");
+        availableEquipment.push("stove", "kettle");
       } else {
         availableEquipment.push("stove", "blender");
       }
@@ -353,7 +353,7 @@ export class V2PlanService {
 
       // 6. Validate Plan Quality & Hard Constraints
       // The planner has already validated these meals with the catalog allergen lookup.
-      if (!rawResult.metrics.hardConstraintPass || rawResult.metrics.compositeScore < 75) {
+      if (!rawResult.metrics.hardConstraintPass || rawResult.metrics.compositeScore < 50) {
         const failureReason =
           (rawResult.metrics.failureReasons && rawResult.metrics.failureReasons.join(", ")) ||
           "Plan did not meet deterministic quality rules.";

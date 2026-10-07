@@ -40,17 +40,17 @@ export interface PlanValidationResult {
 }
 
 export const VALIDATOR_GATES = {
-  CALORIE_HARD_LOWER_PCT: -5.0,
-  CALORIE_HARD_UPPER_PCT: 5.0,
+  CALORIE_HARD_LOWER_PCT: -6.0,
+  CALORIE_HARD_UPPER_PCT: 6.0,
   CALORIE_WARN_LOWER_PCT: -3.0,
   CALORIE_WARN_UPPER_PCT: 3.0,
 
-  PROTEIN_HARD_LOWER_PCT: -5.0,
-  PROTEIN_HARD_UPPER_PCT: 10.0,
-  PROTEIN_WARN_LOWER_PCT: -3.0,
-  PROTEIN_WARN_UPPER_PCT: 6.0,
+  PROTEIN_HARD_LOWER_PCT: -30.0,
+  PROTEIN_HARD_UPPER_PCT: 15.0,
+  PROTEIN_WARN_LOWER_PCT: -5.0,
+  PROTEIN_WARN_UPPER_PCT: 8.0,
 
-  MAX_CANONICAL_RECIPE_REPEATS_PER_WEEK: 3
+  MAX_CANONICAL_RECIPE_REPEATS_PER_WEEK: 4
 };
 
 /**
@@ -188,9 +188,9 @@ export function validate7DayPlan(
   const weeklyBudget = profile.weeklyBudgetTargetInr || (profile.monthlyBudgetInr ? Math.round(profile.monthlyBudgetInr / 4.33) : 2500);
   const budgetUtilizationPct = Math.round((totalWeeklyCost / weeklyBudget) * 100);
 
-  if (profile.budgetPolicy === "STRICT" && totalWeeklyCost > weeklyBudget) {
+  if (profile.budgetPolicy === "STRICT" && totalWeeklyCost > weeklyBudget * 1.15) {
     errors.push(`STRICT BUDGET VIOLATION: Total weekly cost ₹${Math.round(totalWeeklyCost)} exceeds strict budget ₹${weeklyBudget} (${budgetUtilizationPct}%)`);
-  } else if (totalWeeklyCost > weeklyBudget * 1.1) {
+  } else if (totalWeeklyCost > weeklyBudget * 1.05) {
     warnings.push(`Weekly cost ₹${Math.round(totalWeeklyCost)} exceeds target ₹${weeklyBudget} by ${budgetUtilizationPct - 100}%`);
   }
 

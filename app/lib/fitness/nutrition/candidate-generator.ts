@@ -326,11 +326,13 @@ export function generateMealCandidates(
           vCost += vi.portionType === "DISCRETE" ? (vi.amount * itemCostRate) : ((vi.amount / sw) * itemCostRate);
         }
         if (vCost > approxMealBudget * 1.35) {
-          costPenalty = 3.0 * ((vCost - approxMealBudget * 1.35) / approxMealBudget);
+          costPenalty = Math.min(1.2, 1.5 * ((vCost - approxMealBudget * 1.35) / approxMealBudget));
         }
       }
 
-      const compositeDelta = calRatio + 1.4 * pRatio + costPenalty;
+      const pWeight = slotTargetProtein >= 28 ? 2.5 : 1.4;
+      const severeProteinShortfall = slotTargetProtein >= 28 && v.targetProtein < slotTargetProtein * 0.65 ? 2.5 : 0;
+      const compositeDelta = calRatio + pWeight * pRatio + costPenalty + severeProteinShortfall;
       if (compositeDelta < minCompositeDelta) {
         minCompositeDelta = compositeDelta;
         bestVariant = v;
