@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { FoodAvatar } from "./food-avatar";
 import { LogFoodModal } from "./log-food-modal";
+import { TodaySummaryCard } from "./today-summary-card";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
 import { nutritionApi } from "@/lib/api/nutrition";
@@ -433,6 +434,15 @@ export function V2NutritionView({
   const targetFat = Math.max(1, Math.round(Number(current?.targets.fat) || 60));
   const consumedFat = Math.round(Number(current?.consumed.fat) || 0);
   const fatPercent = Math.round((consumedFat / targetFat) * 100);
+
+  const nutritionScore = useMemo(() => {
+    if (!current) return 0;
+    const cScore = targetCals > 0 ? Math.min(100, Math.round((consumedCals / targetCals) * 100)) : 0;
+    const pScore = targetPro > 0 ? Math.min(100, Math.round((consumedPro / targetPro) * 100)) : 0;
+    const wTarget = current.targets.water_ml || 2500;
+    const wScore = wTarget > 0 ? Math.min(100, Math.round(((current.consumed.water_ml || 0) / wTarget) * 100)) : 0;
+    return Math.round((cScore + pScore + wScore) / 3);
+  }, [current, targetCals, consumedCals, targetPro, consumedPro]);
 
   return (
     <div className="space-y-5 pb-36 sm:space-y-6 sm:pb-40" data-v2-ready={hydrated}>
@@ -1009,6 +1019,20 @@ export function V2NutritionView({
           <WaterHistoryCard
             todayConsumedMl={isToday ? current.consumed.water_ml : 0}
             targetMl={current.targets.water_ml}
+          />
+        </section>
+      )}
+
+      {/* 7. Detailed Adherence & Goals Breakdown (Today's Summary) */}
+      {current && (
+        <section aria-label="Today targets summary">
+          <TodaySummaryCard
+            consumed={current.consumed}
+            targets={current.targets}
+            meals={current.meals.map((meal) => ({ meal_type: meal.slot }))}
+            loggedFoods={current.logs.map((log) => ({ meal_type: log.mealSlot }))}
+            nutritionScore={nutritionScore}
+            title={isToday ? "Today's Summary" : "Day Summary"}
           />
         </section>
       )}
