@@ -59,19 +59,19 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "fish": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
   "seafood": { emoji: "🐟", colors: ["#0284C7", "#075985"] },
 
-  // --- Soy & Plant Protein (Rich Emerald Protein Gradients - NO sprout in dirt!) ---
-  "soya chunks curry": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
-  "soya chunks": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
-  "soya chunk": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
-  "soy chunks": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
-  "soy chunk": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
+  // --- Soy & Plant Protein (Rich Emerald Protein Gradients) ---
+  "soya chunks curry": { emoji: "🍲", colors: ["#059669", "#064E3B"] },
+  "soya chunks": { emoji: "🍲", colors: ["#059669", "#064E3B"] },
+  "soya chunk": { emoji: "🍲", colors: ["#059669", "#064E3B"] },
+  "soy chunks": { emoji: "🍲", colors: ["#059669", "#064E3B"] },
+  "soy chunk": { emoji: "🍲", colors: ["#059669", "#064E3B"] },
   "soya chaap": { emoji: "🍢", colors: ["#059669", "#064E3B"] },
   "tofu bhurji": { emoji: "🍳", colors: ["#EAB308", "#854D0E"] },
   "tofu scramble": { emoji: "🍳", colors: ["#EAB308", "#854D0E"] },
   "tofu": { emoji: "🥗", colors: ["#059669", "#064E3B"] },
   "tempeh": { emoji: "🥗", colors: ["#059669", "#064E3B"] },
-  "edamame": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
-  "soy": { emoji: "🫘", colors: ["#059669", "#064E3B"] },
+  "edamame": { emoji: "🥗", colors: ["#059669", "#064E3B"] },
+  "soy": { emoji: "🌱", colors: ["#059669", "#064E3B"] },
 
   // --- Paneer & Dairy (Golden Dairy & Ice Cyan Gradients) ---
   "paneer tikka": { emoji: "🧀", colors: ["#D97706", "#78350F"] },

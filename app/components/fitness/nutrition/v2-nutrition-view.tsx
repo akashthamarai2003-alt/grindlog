@@ -852,7 +852,7 @@ export function V2NutritionView({
                       </div>
 
                       {/* Recipe Title */}
-                      <h3 className="mt-1 line-clamp-1 text-sm font-bold leading-tight text-white sm:text-base">
+                      <h3 className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-white sm:text-base">
                         {meal.name}
                       </h3>
 

@@ -89,6 +89,47 @@ function numeric(value: number | string | null | undefined): number {
 function relatedFood<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? value[0] || null : value;
 }
+function resolvePrepInstructions(raw: string | null | undefined, name: string): string {
+  const trimmed = (raw || "").trim();
+  const isGeneric = !trimmed || trimmed.toLowerCase().includes("standard indian homestyle recipe") || trimmed.toLowerCase().includes("serve the listed foods in their planned portions");
+  if (!isGeneric && trimmed.length > 25) return trimmed;
+
+  const lower = name.toLowerCase();
+  if (lower.includes("soya chunks bhurji") || (lower.includes("soya") && lower.includes("bhurji"))) {
+    return "1. Soak dry soya chunks in boiling water for 8-10 mins. Drain and squeeze out water completely, then coarsely mince. 2. In a pan, sauté chopped onions, green chilies, and ginger-garlic paste in 1 tsp oil with turmeric and garam masala. 3. Add minced soya chunks and stir-fry on medium flame for 5-7 mins. Serve hot with warm multigrain rotis.";
+  }
+  if (lower.includes("soya chunks curry") || (lower.includes("soya") && lower.includes("curry"))) {
+    return "1. Boil soya chunks in salted water for 10 mins, drain, and squeeze out excess moisture. 2. Heat 1 tsp oil, sauté onions, ginger-garlic paste, and tomato puree with turmeric, coriander, and chili powder. 3. Add soya chunks and 1 cup warm water; cover and simmer for 8 mins until gravy thickens. Serve with rotis and fresh salad.";
+  }
+  if (lower.includes("chana dal") || lower.includes("dal curry") || lower.includes("dal tadka")) {
+    return "1. Rinse and pressure cook chana dal with turmeric, salt, and water until tender. 2. For tempering, heat 1 tsp oil or ghee, add cumin seeds, minced garlic, green chilies, and chopped tomatoes. 3. Pour tempering into cooked dal and simmer for 3-5 mins. Enjoy with fresh rotis and roasted chana.";
+  }
+  if (lower.includes("cheela")) {
+    return "1. Whisk batter with salt, grated ginger, and chopped green chilies until smooth. 2. Grease a tawa lightly with oil, pour a ladle of batter, and spread into a thin round. 3. Cook on medium flame until both sides turn golden and crisp. Serve warm with sliced cucumbers or mint chutney.";
+  }
+  if (lower.includes("poha")) {
+    return "1. Rinse thick poha under running water and drain well in a colander. 2. Heat 1 tsp oil, add mustard seeds, curry leaves, green chilies, and peanuts until aromatic. 3. Add turmeric and sliced onions, followed by drained poha. Toss gently for 3 mins and squeeze fresh lemon juice on top.";
+  }
+  if (lower.includes("upma")) {
+    return "1. Dry roast rava/semolina until lightly fragrant. 2. In a pot, heat 1 tsp oil, temper mustard seeds, curry leaves, and green chilies. Add steamed peas and 2.5 cups water with salt; bring to a boil. 3. Slowly whisk in roasted rava, cover on low flame for 3 mins, and serve warm.";
+  }
+  if (lower.includes("idli") || lower.includes("dosa")) {
+    return "1. Steam fresh idlis in a steamer for 10-12 mins, or spread dosa batter on a hot greased tawa until crisp. 2. Heat lentil-rich sambar with mixed vegetables. 3. Serve hot and fresh.";
+  }
+  if (lower.includes("oats")) {
+    return "1. Dry roast rolled oats for 2 mins in a pan. 2. Add water or skim milk with a pinch of cinnamon or chopped veggies for savory masala oats. 3. Simmer for 3-5 mins until creamy and serve warm.";
+  }
+  if (lower.includes("daliya")) {
+    return "1. Dry roast broken wheat (daliya) until nutty and fragrant. 2. In a pressure cooker, sauté cumin, ginger, and diced vegetables in 1 tsp oil. 3. Add roasted daliya and 3 cups water with salt; pressure cook for 3 whistles until soft and wholesome.";
+  }
+  if (lower.includes("tofu") || lower.includes("paneer")) {
+    return "1. Cut paneer or firm tofu into bite-sized cubes. 2. Lightly pan-sear in 1 tsp oil with turmeric, black pepper, and chaat masala for 4-5 mins. 3. Pair with warm rotis or fresh whole wheat toast.";
+  }
+  if (lower.includes("toast") && lower.includes("peanut butter")) {
+    return "1. Lightly toast whole wheat bread slices until golden and crisp. 2. Spread 1-2 tbsp natural peanut butter evenly across slices. 3. Top with sliced banana or chia seeds and enjoy immediately.";
+  }
+  return "Cook ingredients using minimal oil (1 tsp) and light Indian spices. Measure portions according to the listed gram weights to stay within your nutrition targets.";
+}
 
 /** Read-only V2 presentation model. Meals come from planned_meals; intake comes from food_logs. */
 export async function getV2NutritionDay(userId: string, date?: string): Promise<V2NutritionDay> {
@@ -184,8 +225,7 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
       scheduledTime: row.scheduled_time, status: row.status, sourceType: row.source_type,
       name, description: version?.description || template?.description || null,
       whyThisMeal: template?.description || null,
-      prepInstructions: version?.prep_instructions || (template ?
-        "Serve the listed foods in their planned portions. Add any optional sides separately." : null),
+      prepInstructions: resolvePrepInstructions(version?.prep_instructions, name),
       prepTimeMin: version?.cooking_time_min ?? null,
       imageUrl: resolveV2ImageSnapshot(image?.url, name),
       calories: numeric(row.calories_snapshot), protein: numeric(row.protein_snapshot),
