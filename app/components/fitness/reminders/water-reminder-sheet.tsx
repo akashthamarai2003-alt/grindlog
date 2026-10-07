@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, Droplets } from "lucide-react";
+import { ReminderTimeSheet } from "./reminder-time-sheet";
 
 export function formatTo12Hour(time24: string): string {
   if (!time24) return "9:00 AM";
@@ -74,6 +75,7 @@ export function WaterReminderSheet({
   const [startTime, setStartTime] = useState<string>(currentSchedule?.startTime || "09:00");
   const [endTime, setEndTime] = useState<string>(currentSchedule?.endTime || "21:00");
   const [interval, setInterval] = useState<number>(currentSchedule?.interval || 2);
+  const [timePickerTarget, setTimePickerTarget] = useState<"start" | "end" | null>(null);
 
   // Sync state whenever opened with existing schedule
   useEffect(() => {
@@ -101,8 +103,9 @@ export function WaterReminderSheet({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
+    <>
+      <AnimatePresence>
+        {isOpen && (
         <>
           {/* Backdrop */}
           <motion.div
@@ -149,20 +152,16 @@ export function WaterReminderSheet({
                 <label className="text-gray-400 text-xs font-semibold px-1">
                   Start time
                 </label>
-                <div className="relative bg-[#1A251E] hover:bg-[#202E25] border border-white/5 hover:border-[#00D2FF]/40 rounded-2xl p-4 flex items-center justify-between transition-all cursor-pointer group shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setTimePickerTarget("start")}
+                  className="w-full bg-[#1A251E] hover:bg-[#202E25] active:scale-[0.99] border border-white/5 hover:border-[#00D2FF]/40 rounded-2xl p-4 flex items-center justify-between transition-all cursor-pointer group shadow-sm text-left"
+                >
                   <span className="text-white font-bold text-[15px] tracking-wide">
                     {formatTo12Hour(startTime)}
                   </span>
                   <ChevronRight className="w-4 h-4 text-[#00D2FF] group-hover:translate-x-0.5 transition-transform" />
-
-                  {/* Native invisible time picker covering the card */}
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  />
-                </div>
+                </button>
               </div>
 
               {/* End Time Row */}
@@ -170,20 +169,16 @@ export function WaterReminderSheet({
                 <label className="text-gray-400 text-xs font-semibold px-1">
                   End time
                 </label>
-                <div className="relative bg-[#1A251E] hover:bg-[#202E25] border border-white/5 hover:border-[#00D2FF]/40 rounded-2xl p-4 flex items-center justify-between transition-all cursor-pointer group shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setTimePickerTarget("end")}
+                  className="w-full bg-[#1A251E] hover:bg-[#202E25] active:scale-[0.99] border border-white/5 hover:border-[#00D2FF]/40 rounded-2xl p-4 flex items-center justify-between transition-all cursor-pointer group shadow-sm text-left"
+                >
                   <span className="text-white font-bold text-[15px] tracking-wide">
                     {formatTo12Hour(endTime)}
                   </span>
                   <ChevronRight className="w-4 h-4 text-[#00D2FF] group-hover:translate-x-0.5 transition-transform" />
-
-                  {/* Native invisible time picker covering the card */}
-                  <input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  />
-                </div>
+                </button>
               </div>
 
               {/* Repeat Every Interval */}
@@ -256,5 +251,21 @@ export function WaterReminderSheet({
         </>
       )}
     </AnimatePresence>
+
+    {/* Custom Cyberpunk Time Picker Sheet for Water Times */}
+    <ReminderTimeSheet
+      isOpen={timePickerTarget !== null}
+      onClose={() => setTimePickerTarget(null)}
+      initialTime={timePickerTarget === "start" ? startTime : endTime}
+      title={timePickerTarget === "start" ? "Set Water Start Time" : "Set Water End Time"}
+      onSave={(newTime) => {
+        if (timePickerTarget === "start") {
+          setStartTime(newTime);
+        } else if (timePickerTarget === "end") {
+          setEndTime(newTime);
+        }
+      }}
+    />
+    </>
   );
 }

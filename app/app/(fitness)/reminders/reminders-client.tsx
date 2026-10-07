@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { updateRemindersAction } from "@/app/actions/fitness";
 import { requestFirebaseNotificationPermission } from "@/lib/firebase/client";
 import { ReminderTypeSheet, REMINDER_TYPES } from "@/components/fitness/reminders/reminder-type-sheet";
+import { ReminderTimeSheet } from "@/components/fitness/reminders/reminder-time-sheet";
 import {
   WaterReminderSheet,
   WaterScheduleConfig,
@@ -68,6 +69,8 @@ export function RemindersClient({
   const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isTimeSheetOpen, setIsTimeSheetOpen] = useState(false);
+  const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
   const [isWaterModalOpen, setIsWaterModalOpen] = useState(false);
   const [waterSchedule, setWaterSchedule] = useState<WaterScheduleConfig | null>(null);
   const [devicePermission, setDevicePermission] = useState<NotificationPermission | "default">("default");
@@ -527,18 +530,20 @@ export function RemindersClient({
 
                   {/* Time Chip with Native Time Picker & Trash */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className="relative bg-[#1A2619] hover:bg-[#202E25] border border-white/5 hover:border-[#ADFF00]/40 rounded-xl px-3 py-2 flex items-center gap-2 transition-all cursor-pointer group">
-                      <Clock className="w-3.5 h-3.5 text-[#ADFF00]" />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setEditingTimeId(reminder.id);
+                        setIsTimeSheetOpen(true);
+                      }}
+                      className="bg-[#1A2619] hover:bg-[#202E25] active:scale-95 border border-white/5 hover:border-[#ADFF00]/50 rounded-xl px-3 py-2 flex items-center gap-2 transition-all cursor-pointer group shadow-sm"
+                      title="Tap to change reminder time"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-[#ADFF00] group-hover:scale-110 transition-transform" />
                       <span className="text-white font-black text-sm tracking-wide">
                         {formatTo12Hour(reminder.time)}
                       </span>
-                      <input 
-                        type="time" 
-                        value={reminder.time}
-                        onChange={(e) => handleTimeChange(reminder.id, e.target.value)}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
-                    </div>
+                    </button>
 
                     <button 
                       type="button"
@@ -599,6 +604,31 @@ export function RemindersClient({
           </button>
         </div>
       </main>
+
+      {/* Reminder Time Selection Bottom Sheet */}
+      <ReminderTimeSheet
+        isOpen={isTimeSheetOpen}
+        onClose={() => {
+          setIsTimeSheetOpen(false);
+          setEditingTimeId(null);
+        }}
+        initialTime={
+          editingTimeId
+            ? (reminders.find((r) => r.id === editingTimeId)?.time || "18:00")
+            : "18:00"
+        }
+        title={
+          editingTimeId
+            ? `${reminders.find((r) => r.id === editingTimeId)?.type || "Reminder"} Time`
+            : "Set Reminder Time"
+        }
+        onSave={(newTime) => {
+          if (editingTimeId) {
+            handleTimeChange(editingTimeId, newTime);
+            toast.success(`Time set to ${formatTo12Hour(newTime)}! ⏰`);
+          }
+        }}
+      />
 
       {/* Reminder Type Selection Bottom Sheet */}
       <ReminderTypeSheet 
