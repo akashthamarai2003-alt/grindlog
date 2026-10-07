@@ -878,6 +878,8 @@ export function V2NutritionView({
               const differentFood = logged && meal.logs.some((log) => !log.plannedMealId);
               const shownCalories = logged && meal.logs.length > 0 ? actual.calories : meal.calories;
               const shownProtein = logged && meal.logs.length > 0 ? actual.protein : meal.protein;
+              const shownCarbs = logged && meal.logs.length > 0 ? actual.carbs : meal.carbs;
+              const shownFat = logged && meal.logs.length > 0 ? actual.fat : meal.fat;
               const expanded = expandedId === meal.id;
 
               return (
@@ -933,13 +935,19 @@ export function V2NutritionView({
                         {meal.name}
                       </h3>
 
-                      {/* Compact Macro Badges */}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
-                        <span className="rounded-md bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 text-[#ADFF00]">
+                      {/* Compact Macro Badges (Calories, Protein, Carbs, Fat, Cost) */}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] font-bold">
+                        <span className="rounded-md bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-1.5 py-0.5 text-[#ADFF00]">
                           {number(shownCalories)} kcal
                         </span>
-                        <span className="rounded-md bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 text-sky-300">
-                          {number(shownProtein)}g protein
+                        <span className="rounded-md bg-sky-400/10 border border-sky-400/20 px-1.5 py-0.5 text-sky-300">
+                          {number(shownProtein)}g P
+                        </span>
+                        <span className="rounded-md bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 text-amber-300">
+                          {number(shownCarbs)}g C
+                        </span>
+                        <span className="rounded-md bg-rose-400/10 border border-rose-400/20 px-1.5 py-0.5 text-rose-300">
+                          {number(shownFat)}g F
                         </span>
                         <span className="text-[10px] font-medium text-white/40">
                           ₹{number(meal.cost)}
@@ -1001,6 +1009,26 @@ export function V2NutritionView({
                   {/* Expandable Drawer: Ingredients, Prep, & Notes */}
                   {expanded && (
                     <div className="grid gap-4 border-t border-white/5 bg-black/20 p-3.5 text-xs sm:p-5">
+                      {/* Macro Breakdown Strip */}
+                      <div className="grid grid-cols-4 gap-2 rounded-xl border border-white/5 bg-black/40 p-2.5 text-center">
+                        <div>
+                          <span className="block text-[9px] font-black uppercase tracking-wider text-white/40">Calories</span>
+                          <span className="text-xs font-black text-[#ADFF00]">{number(shownCalories)} kcal</span>
+                        </div>
+                        <div>
+                          <span className="block text-[9px] font-black uppercase tracking-wider text-sky-400">Protein</span>
+                          <span className="text-xs font-black text-sky-300">{number(shownProtein)}g</span>
+                        </div>
+                        <div>
+                          <span className="block text-[9px] font-black uppercase tracking-wider text-amber-400">Carbs</span>
+                          <span className="text-xs font-black text-amber-300">{number(shownCarbs)}g</span>
+                        </div>
+                        <div>
+                          <span className="block text-[9px] font-black uppercase tracking-wider text-rose-400">Fat</span>
+                          <span className="text-xs font-black text-rose-300">{number(shownFat)}g</span>
+                        </div>
+                      </div>
+
                       <div>
                         <h4 className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
                           Full Ingredients
