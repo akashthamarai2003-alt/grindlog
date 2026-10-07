@@ -25,6 +25,13 @@ export interface GroceryBudgetSummary {
   tier: string;
 }
 
+import {
+  getGroceryCategories,
+  normalizeCategoryForDiet,
+} from "@/lib/fitness/nutrition/canonical-groceries";
+
+export { getGroceryCategories, normalizeCategoryForDiet };
+
 export const GROCERY_CATEGORIES = [
   "All",
   "Dairy & High-Protein",
@@ -33,93 +40,14 @@ export const GROCERY_CATEGORIES = [
   "Pantry & Healthy Fats",
 ] as const;
 
-export type GroceryCategoryFilter = typeof GROCERY_CATEGORIES[number];
+export type GroceryCategoryFilter = string;
 
-export function normalizeGroceryCategory(category: string, itemName?: string): string {
-  const cat = (category || "").toLowerCase();
-  const name = (itemName || "").toLowerCase();
-
-  // Explicit check for protein-rich foods
-  if (
-    cat.includes("dairy") ||
-    cat.includes("protein") ||
-    cat.includes("egg") ||
-    cat.includes("chicken") ||
-    cat.includes("meat") ||
-    cat.includes("fish") ||
-    name.includes("paneer") ||
-    name.includes("tofu") ||
-    name.includes("soya") ||
-    name.includes("curd") ||
-    name.includes("yogurt") ||
-    name.includes("milk") ||
-    name.includes("egg") ||
-    name.includes("chicken")
-  ) {
-    return "Dairy & High-Protein";
-  }
-
-  // Grains & Staples
-  if (
-    cat.includes("grain") ||
-    cat.includes("carb") ||
-    cat.includes("pulse") ||
-    cat.includes("breakfast") ||
-    name.includes("rice") ||
-    name.includes("atta") ||
-    name.includes("wheat") ||
-    name.includes("oat") ||
-    name.includes("dal") ||
-    name.includes("dhal") ||
-    name.includes("chana") ||
-    name.includes("rajma") ||
-    name.includes("bread") ||
-    name.includes("poha") ||
-    name.includes("cheela") ||
-    name.includes("roti")
-  ) {
-    return "Grains & Staples";
-  }
-
-  // Fresh Produce
-  if (
-    cat.includes("veg") ||
-    cat.includes("fruit") ||
-    cat.includes("produce") ||
-    cat.includes("salad") ||
-    cat.includes("green") ||
-    name.includes("banana") ||
-    name.includes("apple") ||
-    name.includes("spinach") ||
-    name.includes("onion") ||
-    name.includes("tomato") ||
-    name.includes("cucumber") ||
-    name.includes("lemon") ||
-    name.includes("broccoli")
-  ) {
-    return "Fresh Produce";
-  }
-
-  // Pantry & Healthy Fats
-  if (
-    cat.includes("fat") ||
-    cat.includes("nut") ||
-    cat.includes("seed") ||
-    cat.includes("oil") ||
-    cat.includes("snack") ||
-    cat.includes("spice") ||
-    name.includes("peanut") ||
-    name.includes("almond") ||
-    name.includes("chia") ||
-    name.includes("flax") ||
-    name.includes("oil") ||
-    name.includes("ghee") ||
-    name.includes("butter")
-  ) {
-    return "Pantry & Healthy Fats";
-  }
-
-  return "Pantry & Healthy Fats";
+export function normalizeGroceryCategory(
+  category?: string | null,
+  itemName?: string | null,
+  dietType?: string | null
+): string {
+  return normalizeCategoryForDiet(category, itemName, dietType);
 }
 
 export function getScaledQuantity(
@@ -165,12 +93,17 @@ export function getScaledQuantity(
     };
   }
 
+  if (lowerUnit === "g") {
+    const grams = Math.round(weekly);
+    return { displayQuantity: grams.toString(), unit: "g" };
+  }
+
   if (lowerUnit === "pieces" || lowerUnit === "piece" || lowerUnit === "eggs") {
     const pieces = Math.max(1, Math.round(weekly));
     return { displayQuantity: pieces.toString(), unit: "pcs" };
   }
 
-  // packs, jars, cartons, boxes
+  // packs, jars, cartons, boxes, bunch
   const packs = Math.max(1, Math.round(weekly * 10) / 10);
   return {
     displayQuantity: packs % 1 === 0 ? packs.toString() : packs.toFixed(1),

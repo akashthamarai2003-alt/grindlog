@@ -27,10 +27,12 @@ import {
   GroceryCategoryFilter, 
   GROCERY_CATEGORIES, 
   normalizeGroceryCategory, 
+  getGroceryCategories,
   getScaledQuantity, 
   getScaledPrice,
   GroceryBudgetSummary
 } from "./types";
+import { getFoodEnvironmentInfo } from "@/lib/fitness/nutrition/canonical-groceries";
 import { GroceryItemCard } from "./grocery-item-card";
 import { 
   toggleGroceryItemPurchasedAction, 
@@ -43,6 +45,8 @@ interface GroceryViewProps {
   planName?: string;
   planGoal?: string;
   dietType?: string;
+  foodEnvironment?: string;
+  providedItems?: Array<{ name: string; note?: string }>;
   userId: string;
   planId: string;
   authoritativePurchases?: boolean;
@@ -54,6 +58,8 @@ export function GroceryView({
   planName = "AI Nutrition Plan",
   planGoal,
   dietType,
+  foodEnvironment,
+  providedItems = [],
   userId,
   planId,
   authoritativePurchases = false,
@@ -61,6 +67,9 @@ export function GroceryView({
   const router = useRouter();
   const [items, setItems] = useState<GroceryItemData[]>(initialItems);
   const [period, setPeriod] = useState<ShoppingPeriod>("weekly");
+  const categories = useMemo(() => getGroceryCategories(dietType), [dietType]);
+  const envInfo = useMemo(() => getFoodEnvironmentInfo(foodEnvironment), [foodEnvironment]);
+  const [showProvidedMess, setShowProvidedMess] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<GroceryCategoryFilter>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [hidePurchased, setHidePurchased] = useState(false);
@@ -159,7 +168,7 @@ export function GroceryView({
     return items.filter((item) => {
       // Category filter
       if (selectedCategory !== "All") {
-        const itemCategory = normalizeGroceryCategory(item.category, item.name);
+        const itemCategory = normalizeGroceryCategory(item.category, item.name, dietType);
         if (itemCategory !== selectedCategory) return false;
       }
 
@@ -179,14 +188,14 @@ export function GroceryView({
 
       return true;
     });
-  }, [items, selectedCategory, searchQuery, hidePurchased]);
+  }, [items, selectedCategory, searchQuery, hidePurchased, dietType]);
 
   // Group filtered items by normalized category
   const groupedItems = useMemo(() => {
     const groups = new Map<string, GroceryItemData[]>();
 
     for (const item of filteredItems) {
-      const cat = normalizeGroceryCategory(item.category, item.name);
+      const cat = normalizeGroceryCategory(item.category, item.name, dietType);
       if (!groups.has(cat)) {
         groups.set(cat, []);
       }
@@ -194,7 +203,7 @@ export function GroceryView({
     }
 
     return Array.from(groups.entries());
-  }, [filteredItems]);
+  }, [filteredItems, dietType]);
 
   // Cost & Progress calculations
   const { totalSpend, targetBudget, purchasedCount, totalCount, progressPercent } = useMemo(() => {
@@ -220,12 +229,13 @@ export function GroceryView({
 
     lines.push(`🛒 *GrindLog Smart Grocery List* (${periodLabel})`);
     if (planGoal) lines.push(`🎯 Goal: ${planGoal}`);
+    if (envInfo.title) lines.push(`📍 Environment: ${envInfo.title}`);
     lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
 
     // Group all items
     const allGroups = new Map<string, GroceryItemData[]>();
     for (const it of items) {
-      const cat = normalizeGroceryCategory(it.category, it.name);
+      const cat = normalizeGroceryCategory(it.category, it.name, dietType);
       if (!allGroups.has(cat)) allGroups.set(cat, []);
       allGroups.get(cat)!.push(it);
     }
@@ -303,6 +313,13 @@ export function GroceryView({
             <p className="text-[11px] font-semibold text-white/50 truncate">
               {dietType ? `${dietType} • ` : ""}{planGoal || "AI Nutrition Plan"}
             </p>
+            {envInfo.badge && (
+              <div className="mt-1 flex items-center justify-center">
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-emerald-400">
+                  {envInfo.badge}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -419,6 +436,53 @@ export function GroceryView({
           </div>
         </div>
 
+        {/* Living / Food Environment Context Banner */}
+        {envInfo.isMess && (
+          <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-3.5 mb-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <span className="text-base flex-shrink-0 mt-0.5">ℹ️</span>
+                <div>
+                  <h4 className="text-xs font-bold text-white/90">
+                    {envInfo.title} — Base Meals Provided (₹0)
+                  </h4>
+                  <p className="text-[11px] text-white/55 mt-0.5 leading-relaxed">
+                    {envInfo.description}
+                  </p>
+                </div>
+              </div>
+              {providedItems && providedItems.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowProvidedMess(!showProvidedMess)}
+                  className="text-[11px] font-bold text-[#ADFF00] hover:underline flex-shrink-0 pt-0.5"
+                >
+                  {showProvidedMess ? "Hide" : `View (${providedItems.length})`}
+                </button>
+              )}
+            </div>
+
+            {showProvidedMess && providedItems && providedItems.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-white/5 space-y-1.5">
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                  Provided at ₹0 by Mess / Kitchen
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {providedItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-black/20 border border-white/5 text-xs"
+                    >
+                      <span className="text-white/80 font-medium truncate">{item.name}</span>
+                      <span className="text-[10px] font-bold text-emerald-400 flex-shrink-0 ml-2">₹0 Included</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Search & Filter Controls */}
         <div className="space-y-2.5 mb-5">
           <div className="flex items-center gap-2">
@@ -461,7 +525,7 @@ export function GroceryView({
 
           {/* Category Filter Chips */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {GROCERY_CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const isSelected = selectedCategory === cat;
               return (
                 <button

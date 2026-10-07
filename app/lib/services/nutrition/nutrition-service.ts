@@ -190,6 +190,7 @@ export function isStapleCoreFood(foodName?: string, foodEnv?: string): boolean {
     'roti', 'chapati', 'phulka', 'paratha', 'naan',
     'dal', 'tadka', 'sambar', 'rasam', 'curry',
     'sabzi', 'vegetable', 'aloo', 'gobi', 'bhindi', 'palak', 'beans', 'matar',
+    'salad', 'sprout',
     'poha', 'upma', 'idli', 'dosa', 'pongal', 'khichdi', 'cheela',
     'bread', 'toast', 'tea', 'chai', 'milk',
     'core meal', 'base meal', 'provided core', 'standard base', 'thali'

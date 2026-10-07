@@ -80,9 +80,33 @@ export default async function GroceryPage() {
           .in("meal_plan_id", readyIds).like("planner_version", "v2%").limit(1)
       : { data: [], error: null };
     if (v2MealError) throw v2MealError;
-    const v2Rows = v2Meals?.length && activePlan?.id
+    let v2Rows = v2Meals?.length && activePlan?.id
       ? (dbGroceryItems || []).filter((row) => row.plan_id === activePlan.id)
       : [];
+
+    // Automatically synchronize canonical retail items if existing rows contain legacy cooked dish names
+    const needsCanonicalSync = v2Rows.some((r: any) => {
+      const n = (r.name || "").toLowerCase();
+      return n.includes("curry") || n.includes("bhurji") || n.includes("phulka") || (n.includes("dal") && !n.includes("raw"));
+    });
+
+    if (v2Meals?.length && activePlan?.id && (v2Rows.length === 0 || needsCanonicalSync)) {
+      try {
+        await V2PlanService.generateV2GroceryList(user.id);
+        const { data: refreshedRows } = await supabase
+          .from("fitness_grocery_items")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("plan_id", activePlan.id)
+          .order("category", { ascending: true });
+        if (refreshedRows?.length) {
+          v2Rows = refreshedRows;
+        }
+      } catch (genErr) {
+        console.warn("[GroceryPage] Auto-sync canonical grocery error:", genErr);
+      }
+    }
+
     if (v2Rows.length === 0) {
       return <div className="min-h-screen bg-[#0A1108] px-4 pb-28 pt-16 text-center text-white">
         <div className="mx-auto max-w-md rounded-[28px] border border-white/10 bg-[#111A10] p-8">
@@ -95,6 +119,7 @@ export default async function GroceryPage() {
         </div>
       </div>;
     }
+    const providedItems = activePlan?.plan_data?.nutrition?.provided_by_mess || [];
     const v2Items: GroceryItemData[] = v2Rows.map((row) => ({
       id: row.id, name: row.name, monthlyQuantity: Number(row.monthly_quantity),
       unit: row.unit || "unit", estimatedPrice: Number(row.estimated_price),
@@ -104,6 +129,8 @@ export default async function GroceryPage() {
     return <GroceryView initialItems={v2Items} budget={budgetSummary} authoritativePurchases
       planName="V2 7-Day Nutrition Plan" planGoal={activePlan?.goal || "Nutrition"}
       dietType={profile.diet_preference || profile.food_type || undefined}
+      foodEnvironment={profile.food_environment || "Home"}
+      providedItems={providedItems}
       userId={user.id} planId={activePlan?.id || ""} />;
   }
 

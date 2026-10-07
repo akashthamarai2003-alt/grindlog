@@ -49,6 +49,11 @@ import { groceryPortionAmount, selectGroceryPlanItems } from "@/lib/services/nut
 import { calculateDailyBudget } from "@/lib/fitness/nutrition/user-context";
 import { getFoodSvgAvatar } from "@/lib/utils/food-images";
 import { approvedImageForReference, type RecipeImageRow } from "@/lib/fitness/nutrition/image-policy";
+import {
+  toCanonicalGroceryStaple,
+  normalizeCategoryForDiet,
+  type CanonicalGroceryDefinition,
+} from "@/lib/fitness/nutrition/canonical-groceries";
 
 /** Keep the catalog asset identity while avoiding the currently unreachable image host. */
 export function resolveV2ImageSnapshot(url: string | null | undefined, mealName: string): string {
@@ -442,6 +447,7 @@ export class V2PlanService {
               food_id: resolveFoodId(item.foodId),
               quantity: item.portionType === "DISCRETE" ? item.quantity : 1,
               serving_size: `${meal.mealSlot}::${mealTitle}::${rawServing}`,
+              is_provided: item.isProvided ?? false,
             });
           }
         }
@@ -947,12 +953,14 @@ export class V2PlanService {
         .filter(Boolean)
     );
 
-    const isMessLiving = profile?.mess_available === true ||
-      (profile?.mess_available == null && (
-        profile?.food_environment === "Hostel" ||
-        profile?.food_environment === "PG" ||
-        profile?.food_environment === "Office/Canteen"
-      ));
+    const rawEnv = String(profile?.food_environment || "").toLowerCase().trim();
+    const isBaseProvidedEnv =
+      rawEnv === "hostel" ||
+      rawEnv === "pg" ||
+      rawEnv === "office/canteen" ||
+      rawEnv === "home" ||
+      profile?.mess_available === true;
+    const isHomeLiving = rawEnv === "home";
 
     // 3. Aggregate items across 7 days
     const itemMap = new Map<
@@ -960,6 +968,7 @@ export class V2PlanService {
       {
         name: string;
         food: any;
+        canonical: CanonicalGroceryDefinition;
         totalGrams: number;
         totalUnits: number;
         unit: string;
@@ -978,12 +987,9 @@ export class V2PlanService {
 
         const foodName = food.name;
         const lowerName = foodName.toLowerCase();
-        const key = lowerName;
 
-        const isCoreMessItem = isMessLiving && isStapleCoreFood(foodName, profile?.food_environment);
-        const isProvided = item.planned_meal_id != null
-          ? item.is_provided === true
-          : isCoreMessItem;
+        const isCoreMessItem = isBaseProvidedEnv && isStapleCoreFood(foodName, profile?.food_environment);
+        const isProvided = (item.is_provided === true) || isCoreMessItem;
         const isPantry = Array.from(pantryFoods).some((p) => lowerName.includes(p) || p.includes(lowerName));
 
         // Parse quantity
@@ -993,13 +999,24 @@ export class V2PlanService {
           slotName = sSize.split("::")[0];
         }
 
+        // Map to retail grocery staple
+        const canonical = toCanonicalGroceryStaple(
+          foodName,
+          food.category,
+          food.serving_unit,
+          profile?.diet_preference || profile?.food_type
+        );
+        const displayName = isProvided ? foodName : canonical.canonicalName;
+        const key = isProvided ? `provided:${lowerName}` : `buy:${canonical.canonicalName.toLowerCase()}`;
+
         if (!itemMap.has(key)) {
           itemMap.set(key, {
-            name: foodName,
+            name: displayName,
             food,
+            canonical,
             totalGrams: 0,
             totalUnits: 0,
-            unit: food.serving_unit || "piece",
+            unit: canonical.retailUnit,
             isProvided,
             isPantry,
             usedInMeals: new Set(),
@@ -1010,7 +1027,7 @@ export class V2PlanService {
         const entry = itemMap.get(key)!;
         entry.usedInMeals.add(slotName);
 
-        const sw = Number(food.serving_weight_g) || 100;
+        const sw = Number(food.serving_weight_g) || canonical.packGrams || 100;
         const portion = groceryPortionAmount(item, sw);
         entry.totalGrams += portion.grams;
         entry.totalUnits += portion.units;
@@ -1027,13 +1044,15 @@ export class V2PlanService {
 
     for (const entry of itemMap.values()) {
       const food = entry.food;
-      const lower = entry.name.toLowerCase();
+      const canonical = entry.canonical;
 
       // Check mess provision
       if (entry.isProvided) {
         providedByMess.push({
           name: entry.name,
-          note: `Provided ₹0 by ${profile?.food_environment || "Hostel"} mess`,
+          note: isHomeLiving
+            ? "Provided ₹0 by Family Home Kitchen"
+            : `Provided ₹0 by ${profile?.food_environment || "Hostel"} mess`,
         });
         continue;
       }
@@ -1048,51 +1067,42 @@ export class V2PlanService {
       }
 
       // Normalization of purchase units
-      let retailUnit = "pack";
-      let weeklyQty = Math.ceil(entry.totalUnits);
+      const retailUnit = canonical?.retailUnit || "pack";
+      let weeklyQty = 1;
       let itemPrice = 0;
 
-      if (lower.includes("egg")) {
-        retailUnit = "eggs";
+      if (retailUnit === "eggs") {
         weeklyQty = Math.max(6, Math.ceil(entry.totalUnits / 6) * 6);
-        itemPrice = weeklyQty * 7;
-      } else if (lower.includes("paneer") || lower.includes("tofu")) {
-        retailUnit = "g";
-        weeklyQty = Math.max(200, Math.ceil(entry.totalGrams / 100) * 100);
-        itemPrice = Math.round((weeklyQty / 100) * 35);
-      } else if (lower.includes("curd") || lower.includes("dahi")) {
-        retailUnit = "g";
-        weeklyQty = Math.max(400, Math.ceil(entry.totalGrams / 200) * 200);
-        itemPrice = Math.round((weeklyQty / 100) * 10);
-      } else if (lower.includes("milk")) {
-        retailUnit = "liters";
+        itemPrice = weeklyQty * (canonical?.costPerPack || 7);
+      } else if (retailUnit === "pieces") {
+        weeklyQty = Math.max(canonical?.minPurchasePacks || 3, Math.ceil(entry.totalUnits));
+        itemPrice = weeklyQty * (canonical?.costPerPack || 10);
+      } else if (retailUnit === "liters") {
         weeklyQty = Math.max(1, Math.round((entry.totalGrams / 1000) * 2) / 2);
-        itemPrice = Math.round(weeklyQty * 65);
-      } else if (lower.includes("oats") || lower.includes("chana") || lower.includes("rajma") || lower.includes("dal")) {
-        retailUnit = "g";
-        weeklyQty = Math.max(250, Math.ceil(entry.totalGrams / 250) * 250);
-        itemPrice = Math.round((weeklyQty / 100) * 15);
-      } else if (lower.includes("peanut") || lower.includes("almond")) {
-        retailUnit = "g";
-        weeklyQty = Math.max(100, Math.ceil(entry.totalGrams / 100) * 100);
-        itemPrice = Math.round((weeklyQty / 100) * 25);
-      } else if (lower.includes("banana") || lower.includes("apple")) {
-        retailUnit = "pieces";
-        weeklyQty = Math.max(3, Math.ceil(entry.totalUnits));
-        itemPrice = weeklyQty * (lower.includes("banana") ? 6 : 25);
-      } else if (lower.includes("chicken")) {
-        retailUnit = "kg";
-        weeklyQty = Math.max(0.5, Math.round((entry.totalGrams / 1000) * 2) / 2);
-        itemPrice = Math.round(weeklyQty * 280);
-      } else {
-        retailUnit = "pack";
-        weeklyQty = Math.max(1, Math.ceil(entry.totalUnits));
-        itemPrice = weeklyQty * (food.estimated_cost || 20);
+        itemPrice = Math.round(weeklyQty * (canonical?.costPerPack || 65));
+      } else if (retailUnit === "kg") {
+        weeklyQty = Math.max(0.5, Math.ceil((entry.totalGrams / 1000) * 2) / 2);
+        itemPrice = Math.round(weeklyQty * (canonical?.costPerPack || 60));
+      } else if (retailUnit === "g") {
+        const packSize = canonical?.packGrams || 500;
+        weeklyQty = Math.max(packSize, Math.ceil(entry.totalGrams / packSize) * packSize);
+        itemPrice = Math.round((weeklyQty / packSize) * (canonical?.costPerPack || 50));
+      } else { // "pack", "jar", "bunch"
+        const packGrams = canonical?.packGrams || 200;
+        const packsNeeded = entry.totalGrams > 0
+          ? Math.max(1, Math.ceil(entry.totalGrams / packGrams))
+          : Math.max(1, Math.ceil(entry.totalUnits));
+        weeklyQty = packsNeeded;
+        itemPrice = weeklyQty * (canonical?.costPerPack || food.estimated_cost || 35);
       }
 
       totalSpendInr += itemPrice;
 
-      const cat = food.category || "General";
+      const cat = normalizeCategoryForDiet(
+        canonical?.category || food.category || "General",
+        entry.name,
+        profile?.diet_preference || profile?.food_type
+      );
       if (!needToBuyByCategory.has(cat)) {
         needToBuyByCategory.set(cat, []);
       }
@@ -1106,7 +1116,7 @@ export class V2PlanService {
         is_provided: false,
         is_pantry: false,
         used_in_meals: Array.from(entry.usedInMeals),
-        serving_info: food.serving_size || "1 serving",
+        serving_info: food.serving_size || `${weeklyQty} ${retailUnit}`,
       };
 
       needToBuyByCategory.get(cat)!.push(itemDetail);
@@ -1144,6 +1154,8 @@ export class V2PlanService {
           nutrition: {
             ...((activePlan.plan_data || {}).nutrition || {}),
             grocery_list: legacyDbGroceryRows,
+            provided_by_mess: providedByMess,
+            already_have_pantry: alreadyHave,
           },
         };
 
