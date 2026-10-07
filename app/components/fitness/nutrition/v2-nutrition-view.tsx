@@ -284,6 +284,7 @@ export function V2NutritionView({
   const [waterGoal, setWaterGoal] = useState(initialData?.targets.water_ml || 2500);
   const [savingWaterGoal, setSavingWaterGoal] = useState(false);
   const [loggingMealId, setLoggingMealId] = useState<string | null>(null);
+  const inFlightMealsRef = useRef<Set<string>>(new Set());
   const dayRequest = useRef(0);
   const pendingWaterDeltaRef = useRef<number>(0);
   const waterInFlightDeltaRef = useRef<number>(0);
@@ -455,8 +456,50 @@ export function V2NutritionView({
   };
 
   const logPlanned = async (meal: V2NutritionMeal) => {
-    if (loggingMealId) return;
+    if (inFlightMealsRef.current.has(meal.id)) return;
+    inFlightMealsRef.current.add(meal.id);
     setLoggingMealId(meal.id);
+
+    // 1. Instant 0ms Optimistic UI Update
+    setData((prev) => {
+      if (!prev) return prev;
+      const updatedMeals = prev.meals.map((m) => {
+        if (m.id !== meal.id) return m;
+        return {
+          ...m,
+          status: "LOGGED" as const,
+          logs: [
+            ...m.logs,
+            {
+              id: `optimistic-${Date.now()}`,
+              mealSlot: m.slot,
+              plannedMealId: m.id,
+              name: m.name,
+              serving: null,
+              calories: m.calories,
+              protein: m.protein,
+              carbs: m.carbs,
+              fat: m.fat,
+              loggedAt: new Date().toISOString(),
+            },
+          ],
+        };
+      });
+
+      return {
+        ...prev,
+        meals: updatedMeals,
+        consumed: {
+          ...prev.consumed,
+          calories: prev.consumed.calories + Math.round(Number(meal.calories) || 0),
+          protein: prev.consumed.protein + Math.round(Number(meal.protein) || 0),
+          carbs: prev.consumed.carbs + Math.round(Number(meal.carbs) || 0),
+          fat: prev.consumed.fat + Math.round(Number(meal.fat) || 0),
+        },
+      };
+    });
+
+    // 2. Safe Background API Persistence
     try {
       const response = await fetch("/api/nutrition/log-planned-meal", {
         method: "POST",
@@ -465,13 +508,56 @@ export function V2NutritionView({
       });
       const payload = await response.json();
       if (!response.ok || payload.engine !== "v2") {
-        throw new Error(messageOf(payload.error || "Planned meal was not saved."));
+        throw new Error(messageOf(payload?.error?.message || payload?.error || "Planned meal was not saved."));
       }
+
       toast.success(`${titleCase(meal.slot)} logged from your plan.`);
-      reload();
+
+      // Seamlessly reconcile authoritative consumed macros from server
+      const adaptiveConsumed = payload?.data?.adaptiveDay?.consumedMacros;
+      if (adaptiveConsumed) {
+        setData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            consumed: {
+              ...prev.consumed,
+              calories: Number(adaptiveConsumed.calories) || prev.consumed.calories,
+              protein: Number(adaptiveConsumed.protein) || prev.consumed.protein,
+              carbs: Number(adaptiveConsumed.carbs) || prev.consumed.carbs,
+              fat: Number(adaptiveConsumed.fat) || prev.consumed.fat,
+            },
+          };
+        });
+      }
     } catch (cause) {
+      // 3. Rollback Optimistic State on Failure
+      setData((prev) => {
+        if (!prev) return prev;
+        const revertedMeals = prev.meals.map((m) => {
+          if (m.id !== meal.id) return m;
+          return {
+            ...m,
+            status: meal.status,
+            logs: meal.logs,
+          };
+        });
+
+        return {
+          ...prev,
+          meals: revertedMeals,
+          consumed: {
+            ...prev.consumed,
+            calories: Math.max(0, prev.consumed.calories - Math.round(Number(meal.calories) || 0)),
+            protein: Math.max(0, prev.consumed.protein - Math.round(Number(meal.protein) || 0)),
+            carbs: Math.max(0, prev.consumed.carbs - Math.round(Number(meal.carbs) || 0)),
+            fat: Math.max(0, prev.consumed.fat - Math.round(Number(meal.fat) || 0)),
+          },
+        };
+      });
       toast.error(messageOf(cause));
     } finally {
+      inFlightMealsRef.current.delete(meal.id);
       setLoggingMealId(null);
     }
   };
@@ -1169,9 +1255,9 @@ export function V2NutritionView({
                       {!logged && state !== "SKIPPED" && isToday && isPro ? (
                         <button
                           type="button"
-                          disabled={Boolean(loggingMealId)}
+                          disabled={Boolean(loggingMealId && loggingMealId === meal.id)}
                           onClick={() => void logPlanned(meal)}
-                          className="rounded-xl bg-[#ADFF00] px-3.5 py-1.5 text-xs font-black text-[#0A1108] shadow-sm transition hover:bg-[#c3ff42] active:scale-95 disabled:opacity-50"
+                          className="rounded-xl bg-[#ADFF00] px-3.5 py-1.5 text-xs font-black text-[#0A1108] shadow-sm transition hover:bg-[#c3ff42] active:scale-95 disabled:opacity-50 touch-manipulation select-none cursor-pointer"
                         >
                           {loggingMealId === meal.id ? <Loader2 size={13} className="animate-spin" /> : "Log"}
                         </button>
