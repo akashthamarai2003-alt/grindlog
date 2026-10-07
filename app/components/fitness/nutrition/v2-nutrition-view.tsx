@@ -1436,11 +1436,6 @@ export function V2NutritionView({
                             Next Up
                           </span>
                         )}
-                        {logged && (
-                          <span className="rounded bg-emerald-400/15 border border-emerald-400/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
-                            Logged
-                          </span>
-                        )}
                         {isExtra && (
                           <span className="rounded bg-[#ADFF00]/15 border border-[#ADFF00]/25 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#ADFF00]">
                             Extra
@@ -1522,44 +1517,44 @@ export function V2NutritionView({
 
                   {/* Expandable Drawer: Macros & Details */}
                   {expanded && (
-                    <div className="grid gap-4 border-t border-white/5 bg-black/20 p-3.5 text-xs sm:p-5">
+                    <div className="flex flex-col gap-4 border-t border-white/5 bg-black/20 p-3.5 text-xs sm:p-5 w-full min-w-0 max-w-full overflow-hidden">
                       {/* Macro Breakdown Strip */}
-                      <div className="grid grid-cols-4 gap-2 rounded-xl border border-white/5 bg-black/40 p-2.5 text-center">
-                        <div>
-                          <span className="block text-[9px] font-black uppercase tracking-wider text-white/40">Calories</span>
-                          <span className="text-xs font-black text-[#ADFF00]">{number(shownCalories)} kcal</span>
+                      <div className="grid grid-cols-4 gap-1.5 sm:gap-2 rounded-xl border border-white/5 bg-black/40 p-2.5 text-center min-w-0 w-full">
+                        <div className="min-w-0">
+                          <span className="block text-[9px] font-black uppercase tracking-wider text-white/40 truncate">Calories</span>
+                          <span className="text-xs font-black text-[#ADFF00] truncate block">{number(shownCalories)} kcal</span>
                         </div>
-                        <div>
-                          <span className="block text-[9px] font-black uppercase tracking-wider text-sky-400">Protein</span>
-                          <span className="text-xs font-black text-sky-300">{number(shownProtein)}g</span>
+                        <div className="min-w-0">
+                          <span className="block text-[9px] font-black uppercase tracking-wider text-sky-400 truncate">Protein</span>
+                          <span className="text-xs font-black text-sky-300 truncate block">{number(shownProtein)}g</span>
                         </div>
-                        <div>
-                          <span className="block text-[9px] font-black uppercase tracking-wider text-amber-400">Carbs</span>
-                          <span className="text-xs font-black text-amber-300">{number(shownCarbs)}g</span>
+                        <div className="min-w-0">
+                          <span className="block text-[9px] font-black uppercase tracking-wider text-amber-400 truncate">Carbs</span>
+                          <span className="text-xs font-black text-amber-300 truncate block">{number(shownCarbs)}g</span>
                         </div>
-                        <div>
-                          <span className="block text-[9px] font-black uppercase tracking-wider text-rose-400">Fat</span>
-                          <span className="text-xs font-black text-rose-300">{number(shownFat)}g</span>
+                        <div className="min-w-0">
+                          <span className="block text-[9px] font-black uppercase tracking-wider text-rose-400 truncate">Fat</span>
+                          <span className="text-xs font-black text-rose-300 truncate block">{number(shownFat)}g</span>
                         </div>
                       </div>
 
                       {/* If Extra logged meal: list of logged items + delete button + add more */}
                       {isExtra ? (
-                        <div>
+                        <div className="w-full min-w-0">
                           <h4 className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
                             Logged Food Items ({meal.logs.length})
                           </h4>
-                          <ul className="space-y-2">
+                          <ul className="space-y-2 w-full min-w-0">
                             {meal.logs.map((log) => (
                               <li
                                 key={log.id}
-                                className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-2.5"
+                                className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-2.5 min-w-0"
                               >
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
                                     <span className="font-bold text-white text-xs truncate">{log.name}</span>
                                     {log.serving && (
-                                      <span className="text-[10px] text-white/40">({log.serving})</span>
+                                      <span className="text-[10px] text-white/40 shrink-0">({log.serving})</span>
                                     )}
                                   </div>
                                   <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[10px] text-white/50">
@@ -1604,64 +1599,107 @@ export function V2NutritionView({
                       ) : (
                         /* Planned meal expanded content */
                         <>
-                          <div>
+                          <div className="w-full min-w-0">
                             <h4 className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
                               Full Ingredients
                             </h4>
-                            <ul className="space-y-1.5">
+                            <ul className="space-y-1.5 w-full min-w-0">
                               {meal.ingredients.map((item) => (
-                                <li key={item.id} className="flex justify-between gap-3 text-white/75">
-                                  <span>
+                                <li key={item.id} className="flex items-center justify-between gap-3 text-white/75 min-w-0">
+                                  <span className="min-w-0 truncate text-white/85">
                                     {item.name}
                                     {item.isProvided && (
-                                      <span className="ml-1 text-[9px] font-bold text-[#ADFF00]">Provided</span>
+                                      <span className="ml-1.5 text-[9px] font-bold text-[#ADFF00] shrink-0">Provided</span>
                                     )}
                                   </span>
-                                  <span className="whitespace-nowrap font-semibold text-white">{item.quantity}</span>
+                                  <span className="whitespace-nowrap font-bold text-white shrink-0 text-right">{item.quantity}</span>
                                 </li>
                               ))}
                             </ul>
                           </div>
 
-                          <div>
+                          <div className="w-full min-w-0">
                             <h4 className="mb-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
                               Preparation
                             </h4>
-                            <p className="leading-relaxed text-white/70">
+                            <p className="leading-relaxed text-white/70 break-words whitespace-normal text-xs">
                               {meal.prepInstructions || "Preparation instructions are not available for this meal."}
                             </p>
 
                             {meal.whyThisMeal && (
-                              <>
-                                <h4 className="mb-1 mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
+                              <div className="mt-3 w-full min-w-0">
+                                <h4 className="mb-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
                                   Why This Meal Fits Your Goal
                                 </h4>
-                                <p className="leading-relaxed text-white/70">{meal.whyThisMeal}</p>
-                              </>
+                                <p className="leading-relaxed text-white/70 break-words whitespace-normal text-xs">{meal.whyThisMeal}</p>
+                              </div>
                             )}
 
                             {logged && meal.logs.length > 0 && (
-                              <div className="mt-3 rounded-xl border border-emerald-400/15 bg-emerald-400/5 p-2.5">
-                                <p className="text-[11px] font-black text-emerald-300">Actual food logged</p>
-                                <ul className="mt-2 space-y-1.5 text-white/70">
+                              <div className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-3 min-w-0 w-full">
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                  <p className="text-[11px] font-black text-emerald-300 uppercase tracking-wider">
+                                    Actual food logged
+                                  </p>
+                                  <span className="text-[10px] font-bold text-emerald-400/70">
+                                    {meal.logs.length} item{meal.logs.length === 1 ? "" : "s"}
+                                  </span>
+                                </div>
+                                <ul className="space-y-2 w-full min-w-0">
                                   {meal.logs.map((log) => (
-                                    <li key={log.id} className="flex items-center justify-between gap-2">
-                                      <span className="text-xs text-white/90 truncate">
-                                        {log.name}
-                                        {log.serving && ` · ${log.serving}`} · {number(log.calories)} kcal · {number(log.protein)}g pro
-                                      </span>
+                                    <li
+                                      key={log.id}
+                                      className="flex items-center justify-between gap-2.5 rounded-xl border border-white/5 bg-black/30 p-2.5 min-w-0"
+                                    >
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                          <span className="text-xs font-bold text-white truncate">
+                                            {log.name}
+                                          </span>
+                                          {log.serving && (
+                                            <span className="text-[10px] text-white/50 shrink-0">
+                                              ({log.serving})
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[10px] text-white/60">
+                                          <span className="text-[#ADFF00] font-bold">
+                                            {number(log.calories)} kcal
+                                          </span>
+                                          <span>·</span>
+                                          <span className="text-sky-300 font-bold">
+                                            {number(log.protein)}g pro
+                                          </span>
+                                          {Number(log.carbs) > 0 && (
+                                            <>
+                                              <span>·</span>
+                                              <span className="text-amber-300">
+                                                {number(log.carbs)}g carb
+                                              </span>
+                                            </>
+                                          )}
+                                          {Number(log.fat) > 0 && (
+                                            <>
+                                              <span>·</span>
+                                              <span className="text-rose-300">
+                                                {number(log.fat)}g fat
+                                              </span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
                                       {isToday && (
                                         <button
                                           type="button"
                                           disabled={deletingLogId === log.id}
                                           onClick={() => void handleDeleteFood(log.id, log.name)}
-                                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-rose-400 hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-300 transition"
+                                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-rose-400 hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-300 active:scale-95 transition cursor-pointer"
                                           title={`Remove ${log.name}`}
                                         >
                                           {deletingLogId === log.id ? (
-                                            <Loader2 size={11} className="animate-spin" />
+                                            <Loader2 size={12} className="animate-spin" />
                                           ) : (
-                                            <Trash2 size={11} />
+                                            <Trash2 size={12} />
                                           )}
                                         </button>
                                       )}
