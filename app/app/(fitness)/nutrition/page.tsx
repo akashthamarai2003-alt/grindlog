@@ -5,6 +5,7 @@ import { Utensils, ShoppingCart } from "lucide-react";
 import { NutritionView } from "@/components/fitness/nutrition/nutrition-view";
 import { V2NutritionView } from "@/components/fitness/nutrition/v2-nutrition-view";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+import { V2PlanService } from "@/lib/services/nutrition/v2-plan-service";
 import { getV2NutritionDay } from "@/lib/services/nutrition/v2-ui-data";
 import { getCachedUser } from "@/lib/services/supabase/server";
 import { createAdminClient } from "@/lib/services/supabase/admin";
@@ -42,7 +43,7 @@ async function NutritionContent() {
 
   const isPro = plan?.id === "pro";
 
-  if (profile.nutrition_engine_v2 === true) {
+  if (V2PlanService.isNutritionV2Enabled(user.id, profile)) {
     const initialData = await getV2NutritionDay(user.id).catch((err) => {
       console.warn("Failed to prefetch V2 nutrition:", err?.message || err);
       return null;
