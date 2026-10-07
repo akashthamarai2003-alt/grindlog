@@ -345,7 +345,76 @@ export function V2NutritionView({
     setPlanOpen(false);
   };
 
-  const nextMealId = current?.meals.find((meal) => meal.status === "PLANNED" && meal.logs.length === 0)?.id;
+  // Smart & Time-Aware Next Meal Selector:
+  // - Morning (before 11:30 AM): Marks Breakfast as Next Up (or Lunch if Breakfast already logged).
+  // - Afternoon (11:30 AM – 4:30 PM): Marks Lunch as Next Up (or Dinner if Lunch already logged).
+  // - Evening (after 4:30 PM): Marks Dinner as Next Up.
+  // - Past unlogged meals do NOT show the green Next Up badge.
+  // - Only active on Today (disabled when viewing other days in the week).
+  const nextMealId = useMemo(() => {
+    if (!current?.meals || current.meals.length === 0) return undefined;
+
+    // Preserve deterministic selection in visual fixture tests
+    if (fixtureMode) {
+      return current.meals.find((meal) => meal.status === "PLANNED" && meal.logs.length === 0)?.id;
+    }
+
+    if (!isToday) return undefined;
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const MORNING_CUTOFF = 11 * 60 + 30; // 11:30 AM (690 min)
+    const AFTERNOON_CUTOFF = 16 * 60 + 30; // 4:30 PM (990 min)
+
+    const isUnlogged = (meal: V2NutritionMeal) =>
+      (meal.status === "PLANNED" || !meal.status) && meal.logs.length === 0;
+
+    const parseMealMinutes = (meal: V2NutritionMeal): number | null => {
+      if (!meal.scheduledTime) return null;
+      const [h, m] = meal.scheduledTime.split(":").map(Number);
+      if (Number.isFinite(h)) return h * 60 + (m || 0);
+      return null;
+    };
+
+    const isSlot = (meal: V2NutritionMeal, type: "breakfast" | "lunch" | "dinner") => {
+      const slot = meal.slot?.toLowerCase() || "";
+      if (slot.includes(type)) return true;
+      const mins = parseMealMinutes(meal);
+      if (mins !== null) {
+        if (type === "breakfast" && mins < MORNING_CUTOFF) return true;
+        if (type === "lunch" && mins >= MORNING_CUTOFF && mins < AFTERNOON_CUTOFF) return true;
+        if (type === "dinner" && mins >= AFTERNOON_CUTOFF) return true;
+      }
+      return false;
+    };
+
+    // 1. Morning (before 11:30 AM):
+    if (currentMinutes < MORNING_CUTOFF) {
+      const breakfast = current.meals.find((m) => isSlot(m, "breakfast"));
+      if (breakfast && isUnlogged(breakfast)) return breakfast.id;
+      const lunch = current.meals.find((m) => isSlot(m, "lunch"));
+      if (lunch && isUnlogged(lunch)) return lunch.id;
+      return undefined;
+    }
+
+    // 2. Afternoon (11:30 AM – 4:30 PM):
+    if (currentMinutes >= MORNING_CUTOFF && currentMinutes < AFTERNOON_CUTOFF) {
+      const lunch = current.meals.find((m) => isSlot(m, "lunch"));
+      if (lunch && isUnlogged(lunch)) return lunch.id;
+      const dinner = current.meals.find((m) => isSlot(m, "dinner"));
+      if (dinner && isUnlogged(dinner)) return dinner.id;
+      return undefined;
+    }
+
+    // 3. Evening (after 4:30 PM):
+    const dinner = current.meals.find((m) => isSlot(m, "dinner"));
+    if (dinner && isUnlogged(dinner)) return dinner.id;
+    const upcomingEvening = current.meals.find((m) => {
+      const mins = parseMealMinutes(m);
+      return mins !== null && mins >= AFTERNOON_CUTOFF && isUnlogged(m);
+    });
+    return upcomingEvening?.id;
+  }, [current, isToday, fixtureMode]);
   const loggedCount = current?.meals.filter((meal) => meal.logs.length > 0 || meal.status === "LOGGED").length || 0;
 
   const generatePlan = async () => {
