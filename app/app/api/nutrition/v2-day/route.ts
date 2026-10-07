@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { getV2NutritionDay } from "@/lib/services/nutrition/v2-ui-data";
+import { V2PlanService } from "@/lib/services/nutrition/v2-plan-service";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
     const { data: profile, error: profileError } = await supabase.from("fitness_os_profiles")
       .select("nutrition_engine_v2").eq("user_id", user.id).maybeSingle();
     if (profileError) throw profileError;
-    if (profile?.nutrition_engine_v2 !== true) {
+    if (!V2PlanService.isNutritionV2Enabled(user.id, profile)) {
       return NextResponse.json({ error: "V2_NOT_ENABLED" }, { status: 403 });
     }
     const date = new URL(request.url).searchParams.get("date") || undefined;

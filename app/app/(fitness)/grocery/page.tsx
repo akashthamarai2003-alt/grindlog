@@ -6,6 +6,7 @@ import { parseBudget } from "@/lib/fitness/nutrition/constants";
 import { calculateGroceryList } from "@/lib/fitness/nutrition/grocery-calculator";
 import { generateDeterministicNutritionPlan } from "@/lib/fitness/nutrition/nutrition-engine";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
+import { V2PlanService } from "@/lib/services/nutrition/v2-plan-service";
 import { GroceryView } from "@/components/fitness/grocery/grocery-view";
 import { GroceryItemData, GroceryBudgetSummary } from "@/components/fitness/grocery/types";
 
@@ -63,7 +64,7 @@ export default async function GroceryPage() {
     tier: parsedBudget.tier,
   };
 
-  if (profile.nutrition_engine_v2 === true) {
+  if (V2PlanService.isNutritionV2Enabled(user.id, profile)) {
     // V2 groceries are written by the validated V2 aggregator. Never fill a
     // flagged user's empty list with legacy or AI generated purchase rows.
     if (activePlanError) throw activePlanError;

@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .maybeSingle();
     if (profileError) throw profileError;
-    if (profile?.nutrition_engine_v2 !== true) {
+    if (!V2PlanService.isNutritionV2Enabled(user.id, profile)) {
       return NextResponse.json({ success: false, error: "V2_NOT_ENABLED" }, { status: 403 });
     }
 
