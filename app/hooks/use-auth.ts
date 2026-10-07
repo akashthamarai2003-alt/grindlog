@@ -264,6 +264,8 @@ export function useAuth() {
       localStorage.removeItem("grindlog_onboarding_completed");
       localStorage.removeItem("grindlog_onboarding_step");
       localStorage.removeItem("grindlog_onboarding_draft");
+      localStorage.removeItem("grindlog_is_pro");
+      document.cookie = "grindlog_is_pro=; path=/; max-age=0";
     } catch {}
     await supabase.auth.signOut();
     cachedProfile = null;

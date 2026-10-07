@@ -3,13 +3,37 @@
 import { Home, Dumbbell, Utensils, User, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useInstantNav } from "../navigation-context";
 
 export function BottomNav({ isPro = false }: { isPro?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { navigatingTo, setNavigatingTo } = useInstantNav();
+
+  const [clientPro, setClientPro] = useState(() => {
+    if (isPro) return true;
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem("grindlog_is_pro") === "true";
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isPro) {
+      setClientPro(true);
+      try {
+        localStorage.setItem("grindlog_is_pro", "true");
+        document.cookie = "grindlog_is_pro=true; path=/; max-age=31536000; SameSite=Lax";
+      } catch {}
+    }
+  }, [isPro]);
+
+  const effectivePro = isPro || clientPro;
 
   const navItems = [
     { icon: Home, label: "Home", href: "/" },
@@ -83,7 +107,7 @@ export function BottomNav({ isPro = false }: { isPro?: boolean }) {
                   : 'text-gray-400 group-hover:text-white'
               }`}>
                 <Icon size={isActive ? 18 : 20} strokeWidth={isActive ? 2.5 : 2} />
-                {item.proOnly && !isPro && (
+                {item.proOnly && !effectivePro && (
                   <span className="fitness-pro-badge absolute -top-1 -right-1 bg-[#ADFF00] text-black text-[7px] font-black px-1 rounded-full uppercase tracking-tight shadow-sm">
                     PRO
                   </span>

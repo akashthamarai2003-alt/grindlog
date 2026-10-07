@@ -2,6 +2,7 @@ import { getCachedUser, getCachedFitnessProfile } from "@/lib/services/supabase/
 import { FitnessShell } from "@/components/fitness/fitness-shell";
 import { getFitnessPlan } from "@/lib/fitness/subscription/access";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +29,14 @@ async function FitnessLayoutContent({ children }: { children: React.ReactNode })
   return <FitnessShell isPro={plan?.id === "pro"}>{children}</FitnessShell>;
 }
 
-export default function FitnessLayout({ children }: { children: React.ReactNode }) {
+export default async function FitnessLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const isProCookie = cookieStore.get("grindlog_is_pro")?.value === "true";
+
   // Keep the app shell and route-level loading UI visible while auth/profile
-  // checks complete. Previously this async layout blocked the whole page.
+  // checks complete. Passing isProCookie prevents Pro users from seeing free-tier badges on refresh.
   return (
-    <Suspense fallback={<FitnessShell>{children}</FitnessShell>}>
+    <Suspense fallback={<FitnessShell isPro={isProCookie}>{children}</FitnessShell>}>
       <FitnessLayoutContent>{children}</FitnessLayoutContent>
     </Suspense>
   );

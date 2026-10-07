@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { BottomNav } from "./dashboard/bottom-nav";
 import { FitnessChatbot } from "./chatbot/fitness-chatbot";
@@ -28,6 +29,31 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
   const pathname = usePathname();
   const { navigatingTo } = useInstantNav();
 
+  // Instant local memory/cookie check so Pro users never see free-tier badges or paywall flashes on refresh
+  const [clientPro, setClientPro] = useState(() => {
+    if (isPro) return true;
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem("grindlog_is_pro") === "true";
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isPro) {
+      setClientPro(true);
+      try {
+        localStorage.setItem("grindlog_is_pro", "true");
+        document.cookie = "grindlog_is_pro=true; path=/; max-age=31536000; SameSite=Lax";
+      } catch {}
+    }
+  }, [isPro]);
+
+  const effectivePro = isPro || clientPro;
+
   // Normalize pathname by stripping trailing slashes for robust matching
   const cleanPath = pathname ? (pathname.replace(/\/+$/, "") || "/") : "/";
   const isMainPage = MAIN_PAGES.has(cleanPath);
@@ -42,7 +68,7 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
     } else if (navigatingTo === "/nutrition" || navigatingTo === "/diet") {
       activeSkeleton = <NutritionLoading />;
     } else if (navigatingTo === "/progress") {
-      activeSkeleton = <ProgressInstantFallback isPro={isPro} />;
+      activeSkeleton = <ProgressInstantFallback isPro={effectivePro} />;
     } else if (navigatingTo === "/") {
       activeSkeleton = (
         <DashboardInstantFallback />
@@ -60,8 +86,8 @@ function FitnessShellInner({ children, isPro = false }: { children: React.ReactN
         </main>
         {isMainPage && (
           <>
-            <FitnessChatbot isPro={isPro} />
-            <BottomNav isPro={isPro} />
+            <FitnessChatbot isPro={effectivePro} />
+            <BottomNav isPro={effectivePro} />
           </>
         )}
       </div>
