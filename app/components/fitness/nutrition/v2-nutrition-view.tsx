@@ -16,6 +16,7 @@ import {
   RotateCcw,
   ShoppingBasket,
   Sparkles,
+  Trash2,
   Utensils,
   X,
 } from "lucide-react";
@@ -26,7 +27,7 @@ import { TodaySummaryCard } from "./today-summary-card";
 import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
 import { nutritionApi } from "@/lib/api/nutrition";
-import type { V2NutritionDay, V2NutritionMeal } from "@/lib/services/nutrition/v2-ui-data";
+import type { V2NutritionDay, V2NutritionLog, V2NutritionMeal } from "@/lib/services/nutrition/v2-ui-data";
 
 type SwapOption = {
   id: string;
@@ -109,6 +110,20 @@ function stateOf(meal: V2NutritionMeal, nextId: string | undefined) {
   if (meal.status === "SKIPPED" || meal.status === "CANCELLED") return "SKIPPED";
   return meal.id === nextId ? "NEXT" : "UPCOMING";
 }
+
+const SLOT_ORDER: Record<string, number> = {
+  breakfast: 10,
+  morning_snack: 20,
+  lunch: 30,
+  snack: 40,
+  afternoon_snack: 40,
+  pre_workout: 50,
+  post_workout: 60,
+  dinner: 70,
+  evening_snack: 80,
+  late_night: 90,
+  other: 100,
+};
 
 function SwapDialog({
   meal,
@@ -284,6 +299,7 @@ export function V2NutritionView({
   const [waterGoal, setWaterGoal] = useState(initialData?.targets.water_ml || 2500);
   const [savingWaterGoal, setSavingWaterGoal] = useState(false);
   const [loggingMealId, setLoggingMealId] = useState<string | null>(null);
+  const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
   const inFlightMealsRef = useRef<Set<string>>(new Set());
   const dayRequest = useRef(0);
   const pendingWaterDeltaRef = useRef<number>(0);
@@ -438,7 +454,192 @@ export function V2NutritionView({
     });
     return upcomingEvening?.id;
   }, [current, isToday, fixtureMode]);
-  const loggedCount = current?.meals.filter((meal) => meal.logs.length > 0 || meal.status === "LOGGED").length || 0;
+
+  const extraMeals = useMemo<V2NutritionMeal[]>(() => {
+    if (!current) return [];
+    const attachedIds = new Set(current.meals.flatMap((m) => m.logs.map((l) => l.id)));
+    const map = new Map<string, V2NutritionLog[]>();
+    for (const log of current.logs) {
+      if (!attachedIds.has(log.id)) {
+        const slot = log.mealSlot || "snack";
+        const existing = map.get(slot) || [];
+        existing.push(log);
+        map.set(slot, existing);
+      }
+    }
+
+    const result: V2NutritionMeal[] = [];
+    for (const [slot, logs] of map.entries()) {
+      const totalCals = logs.reduce((sum, l) => sum + (Number(l.calories) || 0), 0);
+      const totalPro = logs.reduce((sum, l) => sum + (Number(l.protein) || 0), 0);
+      const totalCarbs = logs.reduce((sum, l) => sum + (Number(l.carbs) || 0), 0);
+      const totalFat = logs.reduce((sum, l) => sum + (Number(l.fat) || 0), 0);
+      const latestTime = logs[logs.length - 1]?.loggedAt;
+      let scheduledTime: string | null = null;
+      if (latestTime) {
+        try {
+          const d = new Date(latestTime);
+          scheduledTime = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        } catch {}
+      }
+
+      result.push({
+        id: `extra-${slot}`,
+        slot,
+        sequence: 99,
+        scheduledTime,
+        status: "LOGGED",
+        sourceType: "TEMPLATE",
+        name: logs.map((l) => l.name).join(" · "),
+        description: null,
+        whyThisMeal: null,
+        prepInstructions: null,
+        prepTimeMin: null,
+        imageUrl: "",
+        calories: totalCals,
+        protein: totalPro,
+        carbs: totalCarbs,
+        fat: totalFat,
+        cost: 0,
+        ingredients: logs.map((l) => ({
+          id: l.id,
+          name: l.name,
+          quantity: l.serving || "1 serving",
+          isProvided: false,
+        })),
+        logs,
+      });
+    }
+    return result;
+  }, [current]);
+
+  const allTimelineMeals = useMemo(() => {
+    if (!current) return [];
+    const combined = [...current.meals, ...extraMeals];
+    return combined.sort((a, b) => {
+      if (a.scheduledTime && b.scheduledTime) {
+        const cmp = a.scheduledTime.localeCompare(b.scheduledTime);
+        if (cmp !== 0) return cmp;
+      }
+      const orderA = SLOT_ORDER[a.slot.toLowerCase()] ?? a.sequence * 10;
+      const orderB = SLOT_ORDER[b.slot.toLowerCase()] ?? b.sequence * 10;
+      return orderA - orderB;
+    });
+  }, [current, extraMeals]);
+
+  const loggedCount = (current?.meals.filter((meal) => meal.logs.length > 0 || meal.status === "LOGGED").length || 0) + extraMeals.length;
+  const totalMealSlotsCount = (current?.meals.length || 0) + extraMeals.length;
+
+  const handleOptimisticLog = useCallback((loggedItems: any, defaultSlot?: string) => {
+    if (!loggedItems) return;
+    const items = Array.isArray(loggedItems) ? loggedItems : [loggedItems];
+    if (items.length === 0) return;
+
+    setData((prev) => {
+      if (!prev) return prev;
+      const newLogs: V2NutritionLog[] = items.map((item: any) => {
+        const slot = item.meal_type || item.mealSlot || defaultSlot || "snack";
+        return {
+          id: item.id || `optimistic-log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          mealSlot: slot,
+          plannedMealId: item.planned_meal_id || item.plannedMealId || null,
+          name: item.foods?.name || item.custom_food?.name || item.recipe_name_snapshot || item.name || "Logged Food",
+          serving: item.serving_snapshot || item.foods?.serving_size || item.serving || null,
+          calories: Number(item.calories) || 0,
+          protein: Number(item.protein) || 0,
+          carbs: Number(item.carbs) || 0,
+          fat: Number(item.fat) || 0,
+          loggedAt: item.logged_at || new Date().toISOString(),
+        };
+      });
+
+      const addedCals = newLogs.reduce((s, l) => s + l.calories, 0);
+      const addedPro = newLogs.reduce((s, l) => s + l.protein, 0);
+      const addedCarbs = newLogs.reduce((s, l) => s + l.carbs, 0);
+      const addedFat = newLogs.reduce((s, l) => s + l.fat, 0);
+
+      const updatedMeals = prev.meals.map((m) => {
+        const matchingLogs = newLogs.filter((nl) => nl.mealSlot === m.slot || (nl.plannedMealId && nl.plannedMealId === m.id));
+        if (matchingLogs.length === 0) return m;
+        return {
+          ...m,
+          status: "LOGGED" as const,
+          logs: [...m.logs, ...matchingLogs],
+        };
+      });
+
+      return {
+        ...prev,
+        meals: updatedMeals,
+        logs: [...prev.logs, ...newLogs],
+        consumed: {
+          ...prev.consumed,
+          calories: prev.consumed.calories + addedCals,
+          protein: prev.consumed.protein + addedPro,
+          carbs: prev.consumed.carbs + addedCarbs,
+          fat: prev.consumed.fat + addedFat,
+        },
+      };
+    });
+  }, []);
+
+  const handleDeleteFood = useCallback(async (logId: string, foodName?: string) => {
+    if (deletingLogId) return;
+    setDeletingLogId(logId);
+
+    const previousData = data;
+    if (!previousData) {
+      setDeletingLogId(null);
+      return;
+    }
+
+    const targetLog = previousData.logs.find((l) => l.id === logId);
+    if (!targetLog) {
+      setDeletingLogId(null);
+      return;
+    }
+
+    // 1. Instant 0ms Optimistic UI Update
+    setData((prev) => {
+      if (!prev) return prev;
+      const filteredLogs = prev.logs.filter((l) => l.id !== logId);
+      const updatedMeals = prev.meals.map((m) => {
+        const remainingMealLogs = m.logs.filter((l) => l.id !== logId);
+        return {
+          ...m,
+          status: (remainingMealLogs.length === 0 && m.status === "LOGGED" ? "PLANNED" : m.status) as V2NutritionMeal["status"],
+          logs: remainingMealLogs,
+        };
+      });
+
+      return {
+        ...prev,
+        meals: updatedMeals,
+        logs: filteredLogs,
+        consumed: {
+          ...prev.consumed,
+          calories: Math.max(0, prev.consumed.calories - Math.round(Number(targetLog.calories) || 0)),
+          protein: Math.max(0, prev.consumed.protein - Math.round(Number(targetLog.protein) || 0)),
+          carbs: Math.max(0, prev.consumed.carbs - Math.round(Number(targetLog.carbs) || 0)),
+          fat: Math.max(0, prev.consumed.fat - Math.round(Number(targetLog.fat) || 0)),
+        },
+      };
+    });
+
+    toast.success(`Removed ${foodName || "food"}`);
+
+    // 2. Background Server API Call
+    try {
+      await nutritionApi.deleteFood(logId);
+      reload();
+    } catch (cause) {
+      // 3. Rollback on Failure
+      setData(previousData);
+      toast.error(messageOf(cause));
+    } finally {
+      setDeletingLogId(null);
+    }
+  }, [deletingLogId, data, reload]);
 
   const generatePlan = async () => {
     setGenerating(true);
@@ -889,7 +1090,7 @@ export function V2NutritionView({
           <div className="flex items-center gap-2 text-[11px] font-bold text-white/60">
             <span>Meals Logged:</span>
             <span className="rounded-md bg-white/10 px-2 py-0.5 font-black text-white">
-              {loggedCount} / {current?.meals.length || 0}
+              {loggedCount} / {totalMealSlotsCount}
             </span>
           </div>
         </div>
@@ -1126,11 +1327,18 @@ export function V2NutritionView({
               Meals for {displayDate(selectedDate, { weekday: "long" })}
             </h2>
           </div>
-          {current?.planId && (
-            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white/50">
-              {current.meals.length} planned
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {current?.planId && (
+              <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white/50">
+                {current.meals.length} planned
+              </span>
+            )}
+            {extraMeals.length > 0 && (
+              <span className="rounded-full border border-[#ADFF00]/20 bg-[#ADFF00]/10 px-2.5 py-1 text-xs font-bold text-[#ADFF00]">
+                +{extraMeals.length} extra logged
+              </span>
+            )}
+          </div>
         </div>
 
         {loading && !current && (
@@ -1150,7 +1358,7 @@ export function V2NutritionView({
           </div>
         )}
 
-        {!loading && !error && current?.meals.length === 0 && (
+        {!loading && !error && allTimelineMeals.length === 0 && (
           <div className="rounded-[24px] border border-dashed border-white/15 bg-[#111A10] p-7 text-center">
             <CalendarDays className="mx-auto mb-2.5 text-[#ADFF00]" size={32} />
             <h3 className="text-base font-black text-white">No meals planned for this day</h3>
@@ -1170,13 +1378,17 @@ export function V2NutritionView({
           </div>
         )}
 
-        {current && (
+        {current && allTimelineMeals.length > 0 && (
           <div className="space-y-2.5 sm:space-y-3">
-            {current.meals.map((meal) => {
-              const state = stateOf(meal, nextMealId);
+            {allTimelineMeals.map((meal) => {
+              const isExtra = meal.id.startsWith("extra-");
+              const state = isExtra ? "LOGGED" : stateOf(meal, nextMealId);
               const logged = state === "LOGGED";
               const actual = actualTotals(meal);
-              const differentFood = logged && meal.logs.some((log) => !log.plannedMealId);
+              const differentFood = !isExtra && logged && meal.logs.some((log) => !log.plannedMealId);
+              const actualTitle = (isExtra || differentFood) && meal.logs.length > 0
+                ? meal.logs.map((log) => log.name).join(" · ")
+                : meal.name;
               const shownCalories = logged && meal.logs.length > 0 ? actual.calories : meal.calories;
               const shownProtein = logged && meal.logs.length > 0 ? actual.protein : meal.protein;
               const shownCarbs = logged && meal.logs.length > 0 ? actual.carbs : meal.carbs;
@@ -1197,8 +1409,8 @@ export function V2NutritionView({
                     {/* Food Avatar / Image */}
                     <div className="relative shrink-0">
                       <FoodAvatar
-                        name={meal.name}
-                        imageUrl={meal.imageUrl}
+                        name={(isExtra || differentFood) && meal.logs.length > 0 ? meal.logs[0].name : meal.name}
+                        imageUrl={isExtra || differentFood ? undefined : meal.imageUrl}
                         className="h-16 w-16 shrink-0 rounded-xl object-cover border border-white/10 sm:h-20 sm:w-20"
                       />
                       {logged && (
@@ -1229,11 +1441,16 @@ export function V2NutritionView({
                             Logged
                           </span>
                         )}
+                        {isExtra && (
+                          <span className="rounded bg-[#ADFF00]/15 border border-[#ADFF00]/25 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#ADFF00]">
+                            Extra
+                          </span>
+                        )}
                       </div>
 
-                      {/* Recipe Title */}
+                      {/* Food / Recipe Title */}
                       <h3 className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-white sm:text-base">
-                        {meal.name}
+                        {actualTitle}
                       </h3>
 
                       {/* Compact Macro Badges (Calories, Protein, Cost) */}
@@ -1244,12 +1461,14 @@ export function V2NutritionView({
                         <span className="rounded-md bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 text-sky-300">
                           {number(shownProtein)}g protein
                         </span>
-                        <span className="text-[10px] font-medium text-white/40">
-                          ₹{number(meal.cost)}
-                        </span>
+                        {!isExtra && Number(meal.cost) > 0 && (
+                          <span className="text-[10px] font-medium text-white/40">
+                            ₹{number(meal.cost)}
+                          </span>
+                        )}
                         {differentFood && (
                           <span className="text-[10px] font-semibold text-amber-300">
-                            (custom food)
+                            (custom food · planned: {meal.name})
                           </span>
                         )}
                       </div>
@@ -1276,7 +1495,7 @@ export function V2NutritionView({
 
                       {/* Secondary Buttons Row */}
                       <div className="mt-auto flex items-center gap-1">
-                        {!logged && state !== "SKIPPED" && !isPast && isPro && (
+                        {!isExtra && !logged && state !== "SKIPPED" && !isPast && isPro && (
                           <button
                             type="button"
                             onClick={() => setSwapMeal(meal)}
@@ -1290,7 +1509,7 @@ export function V2NutritionView({
                           aria-expanded={expanded}
                           onClick={() => setExpandedId(expanded ? null : meal.id)}
                           className="flex items-center gap-0.5 rounded-lg border border-white/10 bg-white/5 p-1 text-white/60 hover:text-white transition"
-                          title={expanded ? "Less detail" : "View ingredients & prep"}
+                          title={expanded ? "Less detail" : isExtra ? "View logged items" : "View ingredients & prep"}
                         >
                           <ChevronDown
                             size={14}
@@ -1301,7 +1520,7 @@ export function V2NutritionView({
                     </div>
                   </div>
 
-                  {/* Expandable Drawer: Ingredients, Prep, & Notes */}
+                  {/* Expandable Drawer: Macros & Details */}
                   {expanded && (
                     <div className="grid gap-4 border-t border-white/5 bg-black/20 p-3.5 text-xs sm:p-5">
                       {/* Macro Breakdown Strip */}
@@ -1324,71 +1543,163 @@ export function V2NutritionView({
                         </div>
                       </div>
 
-                      <div>
-                        <h4 className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
-                          Full Ingredients
-                        </h4>
-                        <ul className="space-y-1.5">
-                          {meal.ingredients.map((item) => (
-                            <li key={item.id} className="flex justify-between gap-3 text-white/75">
-                              <span>
-                                {item.name}
-                                {item.isProvided && (
-                                  <span className="ml-1 text-[9px] font-bold text-[#ADFF00]">Provided</span>
+                      {/* If Extra logged meal: list of logged items + delete button + add more */}
+                      {isExtra ? (
+                        <div>
+                          <h4 className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
+                            Logged Food Items ({meal.logs.length})
+                          </h4>
+                          <ul className="space-y-2">
+                            {meal.logs.map((log) => (
+                              <li
+                                key={log.id}
+                                className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-2.5"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-white text-xs truncate">{log.name}</span>
+                                    {log.serving && (
+                                      <span className="text-[10px] text-white/40">({log.serving})</span>
+                                    )}
+                                  </div>
+                                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[10px] text-white/50">
+                                    <span className="text-[#ADFF00] font-semibold">{number(log.calories)} kcal</span>
+                                    <span>·</span>
+                                    <span className="text-sky-300 font-semibold">{number(log.protein)}g pro</span>
+                                    <span>·</span>
+                                    <span className="text-amber-300 font-semibold">{number(log.carbs)}g carb</span>
+                                    <span>·</span>
+                                    <span className="text-rose-300 font-semibold">{number(log.fat)}g fat</span>
+                                  </div>
+                                </div>
+                                {isToday && (
+                                  <button
+                                    type="button"
+                                    disabled={deletingLogId === log.id}
+                                    onClick={() => void handleDeleteFood(log.id, log.name)}
+                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-rose-400 hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-300 transition"
+                                    title={`Remove ${log.name}`}
+                                  >
+                                    {deletingLogId === log.id ? (
+                                      <Loader2 size={12} className="animate-spin" />
+                                    ) : (
+                                      <Trash2 size={12} />
+                                    )}
+                                  </button>
                                 )}
-                              </span>
-                              <span className="whitespace-nowrap font-semibold text-white">{item.quantity}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h4 className="mb-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
-                          Preparation
-                        </h4>
-                        <p className="leading-relaxed text-white/70">
-                          {meal.prepInstructions || "Preparation instructions are not available for this meal."}
-                        </p>
-
-                        {meal.whyThisMeal && (
-                          <>
-                            <h4 className="mb-1 mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
-                              Why This Meal Fits Your Goal
+                              </li>
+                            ))}
+                          </ul>
+                          {isToday && isPro && (
+                            <button
+                              type="button"
+                              onClick={() => setManualSlot(meal.slot)}
+                              className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#ADFF00] hover:underline"
+                            >
+                              <Plus size={13} />
+                              <span>Log more to {titleCase(meal.slot)}</span>
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        /* Planned meal expanded content */
+                        <>
+                          <div>
+                            <h4 className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
+                              Full Ingredients
                             </h4>
-                            <p className="leading-relaxed text-white/70">{meal.whyThisMeal}</p>
-                          </>
-                        )}
-
-                        {logged && meal.logs.length > 0 && (
-                          <div className="mt-3 rounded-xl border border-emerald-400/15 bg-emerald-400/5 p-2.5">
-                            <p className="text-[11px] font-black text-emerald-300">Actual food logged</p>
-                            <ul className="mt-1.5 space-y-1 text-white/70">
-                              {meal.logs.map((log) => (
-                                <li key={log.id}>
-                                  {log.name}
-                                  {log.serving && ` · ${log.serving}`} · {number(log.calories)} kcal
+                            <ul className="space-y-1.5">
+                              {meal.ingredients.map((item) => (
+                                <li key={item.id} className="flex justify-between gap-3 text-white/75">
+                                  <span>
+                                    {item.name}
+                                    {item.isProvided && (
+                                      <span className="ml-1 text-[9px] font-bold text-[#ADFF00]">Provided</span>
+                                    )}
+                                  </span>
+                                  <span className="whitespace-nowrap font-semibold text-white">{item.quantity}</span>
                                 </li>
                               ))}
                             </ul>
                           </div>
-                        )}
 
-                        {isToday && isPro && !logged && (
-                          <button
-                            type="button"
-                            onClick={() => setManualSlot(meal.slot)}
-                            className="mt-3 text-xs font-bold text-[#ADFF00] underline underline-offset-4"
-                          >
-                            I ate different food
-                          </button>
-                        )}
-                      </div>
+                          <div>
+                            <h4 className="mb-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
+                              Preparation
+                            </h4>
+                            <p className="leading-relaxed text-white/70">
+                              {meal.prepInstructions || "Preparation instructions are not available for this meal."}
+                            </p>
+
+                            {meal.whyThisMeal && (
+                              <>
+                                <h4 className="mb-1 mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
+                                  Why This Meal Fits Your Goal
+                                </h4>
+                                <p className="leading-relaxed text-white/70">{meal.whyThisMeal}</p>
+                              </>
+                            )}
+
+                            {logged && meal.logs.length > 0 && (
+                              <div className="mt-3 rounded-xl border border-emerald-400/15 bg-emerald-400/5 p-2.5">
+                                <p className="text-[11px] font-black text-emerald-300">Actual food logged</p>
+                                <ul className="mt-2 space-y-1.5 text-white/70">
+                                  {meal.logs.map((log) => (
+                                    <li key={log.id} className="flex items-center justify-between gap-2">
+                                      <span className="text-xs text-white/90 truncate">
+                                        {log.name}
+                                        {log.serving && ` · ${log.serving}`} · {number(log.calories)} kcal · {number(log.protein)}g pro
+                                      </span>
+                                      {isToday && (
+                                        <button
+                                          type="button"
+                                          disabled={deletingLogId === log.id}
+                                          onClick={() => void handleDeleteFood(log.id, log.name)}
+                                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-rose-400 hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-300 transition"
+                                          title={`Remove ${log.name}`}
+                                        >
+                                          {deletingLogId === log.id ? (
+                                            <Loader2 size={11} className="animate-spin" />
+                                          ) : (
+                                            <Trash2 size={11} />
+                                          )}
+                                        </button>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {isToday && isPro && !logged && (
+                              <button
+                                type="button"
+                                onClick={() => setManualSlot(meal.slot)}
+                                className="mt-3 text-xs font-bold text-[#ADFF00] underline underline-offset-4"
+                              >
+                                I ate different food
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </article>
               );
             })}
+
+            {/* Quick "+ Log Snack or Extra Food" button at bottom of timeline */}
+            {isToday && (
+              <button
+                type="button"
+                onClick={() => setManualSlot("snack")}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] py-3 text-xs font-bold text-white/60 transition hover:border-[#ADFF00]/40 hover:bg-[#ADFF00]/5 hover:text-[#ADFF00] active:scale-[0.99] touch-manipulation select-none cursor-pointer"
+              >
+                <Plus size={15} />
+                <span>+ Log Snack or Extra Food</span>
+              </button>
+            )}
           </div>
         )}
       </section>
@@ -1446,7 +1757,8 @@ export function V2NutritionView({
           onClose={() => setManualSlot(null)}
           defaultMealType={manualSlot}
           preselectedFoods={NO_PRESELECTED_FOODS}
-          onSuccess={() => {
+          onSuccess={(loggedData) => {
+            handleOptimisticLog(loggedData, manualSlot);
             reload();
           }}
         />
