@@ -2647,12 +2647,12 @@ export function generateUnified7DayPlan(
         // Priority A: continuous carbs (rice, oats, khichdi, corn, poha, upma)
         const contCarb = dayMeals
           .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
-          .find(({ item }) => item.portionType === "CONTINUOUS" && item.quantity > 0 &&
+          .find(({ item }) => item.portionType === "CONTINUOUS" && item.quantity >= 50 &&
             (item.ingredientRole === "STAPLE_CARB" || item.foodName.toLowerCase().includes("rice") || item.foodName.toLowerCase().includes("oats") || item.foodName.toLowerCase().includes("khichdi") || item.foodName.toLowerCase().includes("corn") || item.foodName.toLowerCase().includes("poha") || item.foodName.toLowerCase().includes("upma")));
         if (contCarb) {
           const { item, meal } = contCarb;
-          const subG = Math.min(25, item.quantity);
-          if (subG > 0) {
+          const subG = Math.min(25, item.quantity - 35);
+          if (subG >= 15) {
             const calPerG = item.caloriesSnapshot / item.quantity;
             const pPerG = item.proteinSnapshot / item.quantity;
             const subCal = Math.round(subG * calPerG);
