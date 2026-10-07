@@ -127,25 +127,11 @@ export class V2PlanService {
     profile?: any,
     options?: { forceV2?: boolean; isAdmin?: boolean }
   ): boolean {
-    // 1. Authoritative controlled feature flag from database profile
-    if (profile?.nutrition_engine_v2 === true) return true;
+    // 1. Explicit opt-out if flag in database profile is false
+    if (profile?.nutrition_engine_v2 === false) return false;
 
-    // 2. Global rollout flag via environment variable
-    if (
-      process.env.NUTRITION_ENGINE_V2 === "true" ||
-      process.env.ENABLE_NUTRITION_V2 === "true"
-    ) {
-      return true;
-    }
-
-    // 3. Secure override: ONLY permitted in development/test OR for authenticated admins
-    const isNonProd = process.env.NODE_ENV !== "production";
-    if (options?.forceV2 && (isNonProd || options?.isAdmin === true)) {
-      return true;
-    }
-
-    // Normal production users CANNOT bypass the rollout via query params or request payload
-    return false;
+    // 2. V2 deterministic engine is enabled by default for all users (Zero AI / LLM dependency)
+    return true;
   }
 
   /**
@@ -216,9 +202,10 @@ export class V2PlanService {
         if (l.includes("toast")) return "toaster";
         if (l.includes("air")) return "air_fryer";
         if (l.includes("oven")) return "oven";
-        return "none";
+        if (l.includes("none") || l.includes("no equipment")) return "none";
+        return null;
       })
-      .filter((eq: CookingEquipment) => eq !== "none");
+      .filter((eq: CookingEquipment | null): eq is CookingEquipment => eq !== null);
 
     if (availableEquipment.length === 0 && !hasExplicitEquipment) {
       if (foodEnvironment === "Hostel" || foodEnvironment === "PG") {
@@ -228,10 +215,8 @@ export class V2PlanService {
       }
     }
 
-    // 6. Mess meals resolution
-    const messAvailable = typeof profile?.mess_available === "boolean"
-      ? profile.mess_available
-      : foodEnvironment === "Hostel" || foodEnvironment === "PG" || foodEnvironment === "Office/Canteen";
+    // 6. Mess meals resolution (explicit opt-in only)
+    const messAvailable = profile?.mess_available === true;
     const defaultMessMeals: MealSlotType[] = mealsPerDay === 2
       ? ["lunch", "dinner"]
       : ["breakfast", "lunch", "dinner"];
@@ -249,11 +234,17 @@ export class V2PlanService {
       return [];
     };
 
-    const allergies = parseList(profile?.food_allergies);
-    const dislikedFoods = parseList(profile?.foods_disliked);
-    const avoidedFoods = parseList(profile?.foods_avoided);
-    const availableFoodsRaw = parseList(profile?.available_foods);
+    const allergies = parseList(profile?.food_allergies || profile?.allergies);
+    const dislikedFoods = parseList(profile?.foods_disliked || profile?.disliked_foods);
+    const avoidedFoods = parseList(profile?.foods_avoided || profile?.avoided_foods);
+    const availableFoodsRaw = parseList(profile?.available_foods || profile?.pantry_foods);
     const availableFoods: AvailablePantryFood[] = availableFoodsRaw.map((name) => ({ name }));
+
+    let activityLevel = profile?.activity_level || "Moderately active";
+    const actLower = String(activityLevel).toLowerCase();
+    if (actLower.includes("sitting") || actLower.includes("desk")) {
+      activityLevel = "sedentary";
+    }
 
     return {
       userId: profile?.user_id || profile?.id || "user-v2",
@@ -264,7 +255,7 @@ export class V2PlanService {
       targetWeightKg: profile?.target_weight ? Number(profile.target_weight) : null,
       goal: profile?.goal || "Maintain",
       fitnessLevel: profile?.fitness_level || "Intermediate",
-      activityLevel: profile?.activity_level || "Moderately active",
+      activityLevel,
       dietPreference,
       foodEnvironment,
       mealsPerDay,

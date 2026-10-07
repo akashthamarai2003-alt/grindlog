@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { generateDeterministicNutritionPlan, convertToAIPlanFormat } from "@/lib/fitness/nutrition/nutrition-engine";
-import { buildHybridNutritionPrompt, mergeHybridNutrition } from "@/lib/fitness/nutrition/hybrid-merger";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import {
   FITNESS_PLAN_MODEL,

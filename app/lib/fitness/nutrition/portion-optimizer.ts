@@ -44,6 +44,7 @@ export interface FoodMacroProfile {
   protein: number;
   carbs: number;
   fat: number;
+  allergens?: string[];
   serving_weight_g?: number;
   serving_unit?: string;
   estimated_cost?: number;
@@ -121,15 +122,20 @@ export function resolveFoodPortionBounds(
     defaultMax = 350;
   } else if (name.includes("rice") || name.includes("dal")) {
     defaultStep = 25;
-    defaultMax = 450;
+    defaultMax = 350;
   }
 
   const isCookingOil = /\boil\b/i.test(name) || name.includes("ghee") || (name.includes("butter") && !name.includes("peanut butter"));
-  const minPortion = rule?.minPortion ?? food.portion_rule?.min_portion ?? (isCookingOil ? 2.5 : 20);
-  const maxPortion = rule?.maxSensiblePortion ?? food.portion_rule?.max_sensible_portion ?? defaultMax;
-  const incrementStep = rule?.incrementStep ?? food.portion_rule?.increment_step ?? defaultStep;
+  const dbRuleIsContinuous = food.portion_rule?.portion_type === "CONTINUOUS" || ((food.portion_rule?.max_sensible_portion || 0) > 10);
+  const rawMin = rule?.minPortion ?? (dbRuleIsContinuous ? food.portion_rule?.min_portion : undefined) ?? (isCookingOil ? 2.5 : 20);
+  const rawMax = rule?.maxSensiblePortion ?? (dbRuleIsContinuous ? food.portion_rule?.max_sensible_portion : undefined) ?? defaultMax;
+  const rawStep = rule?.incrementStep ?? (dbRuleIsContinuous ? food.portion_rule?.increment_step : undefined) ?? defaultStep;
 
-  return { minPortion, maxPortion: Math.max(minPortion, maxPortion), incrementStep };
+  const minPortion = isCookingOil ? rawMin : Math.max(20, rawMin);
+  const maxPortion = Math.min(350, Math.max(minPortion, rawMax));
+  const incrementStep = rawStep;
+
+  return { minPortion, maxPortion, incrementStep };
 }
 
 /**
@@ -329,9 +335,10 @@ export function optimizeMealPortions(
         let idealC = (neededCal * pp - neededP * cp) / det;
 
         // KKT boundary projection when unconstrained solution violates bounds
+        const maxAllowedPByCal = Math.ceil((targetCalories * 0.70) / cp);
         const maxAllowedP = Math.min(
           pBounds.maxPortion,
-          Math.max(pBounds.minPortion, Math.ceil((targetProtein * 1.12) / pp))
+          Math.max(pBounds.minPortion, Math.min(Math.ceil((targetProtein * 1.12) / pp), maxAllowedPByCal))
         );
 
         if (idealP < pBounds.minPortion) {
@@ -380,9 +387,9 @@ export function optimizeMealPortions(
 
             // Penalties for crossing hard gate thresholds
             const pUndershootPenalty = pErr < -0.04 ? 25.0 * Math.abs(pErr + 0.04) : 0;
-            const pOvershootPenalty = pErr > 0.06 ? 30.0 * (pErr - 0.06) : 0;
+            const pOvershootPenalty = pErr > 0.12 ? 15.0 * (pErr - 0.12) : 0;
             const calUndershootPenalty = calErr < -0.04 ? 20.0 * Math.abs(calErr + 0.04) : 0;
-            const calOvershootPenalty = calErr > 0.04 ? 25.0 * (calErr - 0.04) : 0;
+            const calOvershootPenalty = calErr > 0.05 ? 30.0 * (calErr - 0.05) : 0;
 
             const score = Math.pow(calErr, 2) + 2.0 * Math.pow(pErr, 2) +
               pUndershootPenalty + pOvershootPenalty + calUndershootPenalty + calOvershootPenalty;
@@ -418,9 +425,11 @@ export function optimizeMealPortions(
       const neededP = Math.max(0, targetProtein - fixedP);
       const pSw = pItem.portionType === "DISCRETE" ? 1 : (pFood.serving_weight_g || 100);
       const pp = pFood.protein / pSw;
+      const cp = pFood.calories / pSw;
+      const maxAllowedPByCal = Math.ceil((targetCalories * 0.75) / (cp || 1));
       const maxAllowedP = Math.min(
         pBounds.maxPortion,
-        Math.max(pBounds.minPortion, Math.ceil((targetProtein * 1.12) / pp))
+        Math.max(pBounds.minPortion, Math.min(Math.ceil((targetProtein * 1.12) / pp), maxAllowedPByCal))
       );
       const idealP = Math.min(maxAllowedP, neededP / pp);
       const stepP = pBounds.incrementStep;
@@ -440,9 +449,9 @@ export function optimizeMealPortions(
         const calErr = (totCal - targetCalories) / (targetCalories || 400);
         const pErr = (totP - targetProtein) / (targetProtein || 30);
         const pUndershootPenalty = pErr < -0.04 ? 25.0 * Math.abs(pErr + 0.04) : 0;
-        const pOvershootPenalty = pErr > 0.06 ? 30.0 * (pErr - 0.06) : 0;
+        const pOvershootPenalty = pErr > 0.12 ? 15.0 * (pErr - 0.12) : 0;
         const calUndershootPenalty = calErr < -0.04 ? 20.0 * Math.abs(calErr + 0.04) : 0;
-        const calOvershootPenalty = calErr > 0.04 ? 25.0 * (calErr - 0.04) : 0;
+        const calOvershootPenalty = calErr > 0.05 ? 30.0 * (calErr - 0.05) : 0;
         const score = Math.pow(calErr, 2) + 2.0 * Math.pow(pErr, 2) +
           pUndershootPenalty + pOvershootPenalty + calUndershootPenalty + calOvershootPenalty;
         if (score < bestScore) {
@@ -491,9 +500,9 @@ export function optimizeMealPortions(
         const calErr = (totCal - targetCalories) / (targetCalories || 400);
         const pErr = (totP - targetProtein) / (targetProtein || 30);
         const pUndershootPenalty = pErr < -0.04 ? 25.0 * Math.abs(pErr + 0.04) : 0;
-        const pOvershootPenalty = pErr > 0.06 ? 30.0 * (pErr - 0.06) : 0;
+        const pOvershootPenalty = pErr > 0.12 ? 15.0 * (pErr - 0.12) : 0;
         const calUndershootPenalty = calErr < -0.04 ? 20.0 * Math.abs(calErr + 0.04) : 0;
-        const calOvershootPenalty = calErr > 0.04 ? 25.0 * (calErr - 0.04) : 0;
+        const calOvershootPenalty = calErr > 0.05 ? 30.0 * (calErr - 0.05) : 0;
         const score = Math.pow(calErr, 2) + 2.0 * Math.pow(pErr, 2) +
           pUndershootPenalty + pOvershootPenalty + calUndershootPenalty + calOvershootPenalty;
         if (score < bestScore) {

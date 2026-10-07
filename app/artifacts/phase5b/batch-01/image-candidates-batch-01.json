@@ -1,0 +1,405 @@
+[
+  {
+    "id": "a0a76013-f31e-4fce-9996-49b7f9ca1391",
+    "recipe_id": "4c5fac01-cf60-468d-8d93-2fb5a222d915",
+    "recipe_version_id": "48920f74-d8d9-4126-b807-e3683ab6a97b",
+    "slug": "dal-fry-paneer-rice",
+    "name": "Dal Fry with Steamed Rice & Fresh Paneer",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "2feca748f2076e83f1d82fd803d99f59fe64d4064447b86051af064bfce049fa",
+    "sha256": "aae9465e3684e7e2b30f1a6644b5a03e873ac6f4c0a645ca8a0e040a7b09c198",
+    "storage_path": "recipe-images/dal-fry-paneer-rice/v1/aae9465e3684e7e2b30f1a6644b5a03e873ac6f4c0a645ca8a0e040a7b09c198.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/dal-fry-paneer-rice/v1/aae9465e3684e7e2b30f1a6644b5a03e873ac6f4c0a645ca8a0e040a7b09c198.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 123542,
+    "alt_text": "Dal Fry with Steamed Rice & Fresh Paneer",
+    "dominant_foods": [
+      "Dal Fry",
+      "White Rice (Steamed)",
+      "Fresh Paneer (Raw)"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Yellow dal fry with roasted cumin tempering in ceramic bowl, steamed white basmati rice, and fresh raw paneer cubes clearly visible. Pure lacto-vegetarian, no roti, meat, or eggs."
+    }
+  },
+  {
+    "id": "d1b26a20-6722-426c-9a8f-def4534883ac",
+    "recipe_id": "6243a435-d1cb-42a7-bdd3-0868efa189ed",
+    "recipe_version_id": "afb0faad-8d9a-4dc8-a246-58a50ce61257",
+    "slug": "chole-paneer-paratha",
+    "name": "Chole Masala with Paneer Paratha & Curd",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "b9e9fe9e91b9e0740a6ec092334e53bae350a945d43ec6a25b546dd92d0e6840",
+    "sha256": "2f0056a6d0f85d20ee4b0ca7812e3ccbd5d66f99c780d757adac6ed22b1fff49",
+    "storage_path": "recipe-images/chole-paneer-paratha/v1/2f0056a6d0f85d20ee4b0ca7812e3ccbd5d66f99c780d757adac6ed22b1fff49.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/chole-paneer-paratha/v1/2f0056a6d0f85d20ee4b0ca7812e3ccbd5d66f99c780d757adac6ed22b1fff49.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 139064,
+    "alt_text": "Chole Masala with Paneer Paratha & Curd",
+    "dominant_foods": [
+      "Chole / Chana Masala",
+      "Paneer Paratha"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Authentic North Indian meal: dark spiced chole chickpea curry, golden griddled paneer paratha cut in half displaying paneer filling, and fresh plain curd. No rice or meat."
+    }
+  },
+  {
+    "id": "4cc98011-2029-49af-9ee3-6748fcbf3c71",
+    "recipe_id": "a1616617-6bfc-43c7-85d9-1a963885f4c6",
+    "recipe_version_id": "edb9dc6e-8aaf-48e1-8948-87a2f91bc884",
+    "slug": "chana-dal-paneer-phulka",
+    "name": "Chana Dal Curry with Fresh Paneer & Phulkas",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "d9800cdeb844c03c14634db4e2c243e6e51059ed4e3650fc59a7dd02aae60a20",
+    "sha256": "2d2deb14bdf9503ea98ff55e6123070eb70a4972af51690fa5fe19706f245171",
+    "storage_path": "recipe-images/chana-dal-paneer-phulka/v1/2d2deb14bdf9503ea98ff55e6123070eb70a4972af51690fa5fe19706f245171.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/chana-dal-paneer-phulka/v1/2d2deb14bdf9503ea98ff55e6123070eb70a4972af51690fa5fe19706f245171.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 136554,
+    "alt_text": "Chana Dal Curry with Fresh Paneer & Phulkas",
+    "dominant_foods": [
+      "Chana Dal Curry",
+      "Chapati / Phulka"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Golden split Bengal gram chana dal curry, two thin puffed soft whole wheat phulkas with light char marks, and fresh paneer cubes. No meat, rice, or fried sides."
+    }
+  },
+  {
+    "id": "c3ba3284-a77d-477d-90fe-0fa974d8feeb",
+    "recipe_id": "7052914e-f5a4-45cc-a012-cd39ac8e9161",
+    "recipe_version_id": "1f8410c6-b240-46ee-98ef-5a378e7e2a84",
+    "slug": "punjabi-rajma-curd-phulka",
+    "name": "Punjabi Rajma with Phulkas & Low Fat Curd",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "21ab915c8bd3f134b520a365e87f77357019cf370c56117c6dafd9727ae63369",
+    "sha256": "cce961c20c4b3a05fdeb98fac6f5fe08d92ef7006af007a39eb169cd7e40a497",
+    "storage_path": "recipe-images/punjabi-rajma-curd-phulka/v1/cce961c20c4b3a05fdeb98fac6f5fe08d92ef7006af007a39eb169cd7e40a497.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/punjabi-rajma-curd-phulka/v1/cce961c20c4b3a05fdeb98fac6f5fe08d92ef7006af007a39eb169cd7e40a497.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 227538,
+    "alt_text": "Punjabi Rajma with Phulkas & Low Fat Curd",
+    "dominant_foods": [
+      "Low Fat Curd / Dahi",
+      "Rajma (Kidney Beans Curry)",
+      "Chapati / Phulka"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Tender whole kidney beans in thick spiced Punjabi rajma curry, two thin phulkas, and fresh plain curd. No rice or non-veg ingredients."
+    }
+  },
+  {
+    "id": "aed418de-a3bc-4ef1-82f4-1f221c9456c4",
+    "recipe_id": "7e2115fc-24e9-49e7-8319-f22ce7726824",
+    "recipe_version_id": "91ea2c84-a430-418e-9a54-b61120d2bdfb",
+    "slug": "high-protein-veg-thali",
+    "name": "High-Protein Veg Thali (Dal, Paneer Bhurji, Phulkas & Dahi)",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "ea2277e8bf2b5f996a88ef5e8f52e273d0426b9b02aabb036ccc833d334e58d0",
+    "sha256": "32d493d7395fa7e88b46e59e45159436ba95f8cf9c8996f9a57c740a8b80d36b",
+    "storage_path": "recipe-images/high-protein-veg-thali/v1/32d493d7395fa7e88b46e59e45159436ba95f8cf9c8996f9a57c740a8b80d36b.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/high-protein-veg-thali/v1/32d493d7395fa7e88b46e59e45159436ba95f8cf9c8996f9a57c740a8b80d36b.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 172542,
+    "alt_text": "High-Protein Veg Thali (Dal, Paneer Bhurji, Phulkas & Dahi)",
+    "dominant_foods": [
+      "Paneer Bhurji",
+      "Dal Tadka"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Clean fitness thali: turmeric-scrambled paneer bhurji, yellow dal tadka, two folded phulkas, and plain white curd. Plated on dark platter, no meat or sweets."
+    }
+  },
+  {
+    "id": "e1213733-4e9b-41b1-8efb-0446fa107898",
+    "recipe_id": "aeec054a-27d7-4040-a8b8-4def72f46e2a",
+    "recipe_version_id": "d6e0e109-4393-4d2f-8275-757f8414e821",
+    "slug": "moong-dal-cheela-tomato",
+    "name": "Moong Dal Cheela with Fresh Tomato & Salad",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "b57f5c584ad95e46e59874906e82a9dbbe6a621454818e4f544eda07d8e5834c",
+    "sha256": "ea18e6a432175cc7e40c130ad0a359249dfb0f4e8ede76803ae23a0d0cef6ee3",
+    "storage_path": "recipe-images/moong-dal-cheela-tomato/v1/ea18e6a432175cc7e40c130ad0a359249dfb0f4e8ede76803ae23a0d0cef6ee3.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/moong-dal-cheela-tomato/v1/ea18e6a432175cc7e40c130ad0a359249dfb0f4e8ede76803ae23a0d0cef6ee3.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 145414,
+    "alt_text": "Moong Dal Cheela with Fresh Tomato & Salad",
+    "dominant_foods": [
+      "Moong Dal Cheela"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Two folded golden-yellow savory moong dal crepes, fresh sliced tomatoes and cucumbers. 100% plant-based vegan breakfast, no dairy, paneer, or eggs."
+    }
+  },
+  {
+    "id": "83c8de86-ac8a-481b-b39c-653756f5a5e4",
+    "recipe_id": "e49ec7ee-d552-4d3c-b78a-b1761706172c",
+    "recipe_version_id": "acf8d601-6c0f-4a9e-9e62-ab1b4482e192",
+    "slug": "soya-chunks-curry-rice",
+    "name": "Soya Chunks Curry with Steamed Rice",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "cd76d22a9a22db0fdb4f13c690a6d21485f93af0d2b6fe53b0a7d13f13a1448d",
+    "sha256": "2cebcb00ca988de190f71e974d33ddbbab62f48d3c27bb752d8fb34f7a3a62f7",
+    "storage_path": "recipe-images/soya-chunks-curry-rice/v1/2cebcb00ca988de190f71e974d33ddbbab62f48d3c27bb752d8fb34f7a3a62f7.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/soya-chunks-curry-rice/v1/2cebcb00ca988de190f71e974d33ddbbab62f48d3c27bb752d8fb34f7a3a62f7.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 136030,
+    "alt_text": "Soya Chunks Curry with Steamed Rice",
+    "dominant_foods": [
+      "Soya Chunks Curry (Cooked)",
+      "White Rice (Steamed)"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Plump textured plant-based soya nuggets in rich tomato-onion curry with cilantro, steamed basmati rice. 100% vegan, no meat or dairy."
+    }
+  },
+  {
+    "id": "13f90871-cfe1-4e1e-996d-e8c6edb148fc",
+    "recipe_id": "20ec4871-d7d5-41e9-bc8e-ac1eeefff731",
+    "recipe_version_id": "cb605a54-cade-46e1-892a-a04b48422b30",
+    "slug": "soya-chunks-bhurji-roti",
+    "name": "Soya Chunks Bhurji with Multigrain Roti",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "e0852256d85ee1608738981d6419ee07eb98d80e9817a383e0c1f144133be93f",
+    "sha256": "8329f0d58a4a747fa9f0cc25ee0aa27ba08b9daa5a4dade0a3982a09ccb3e37d",
+    "storage_path": "recipe-images/soya-chunks-bhurji-roti/v1/8329f0d58a4a747fa9f0cc25ee0aa27ba08b9daa5a4dade0a3982a09ccb3e37d.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/soya-chunks-bhurji-roti/v1/8329f0d58a4a747fa9f0cc25ee0aa27ba08b9daa5a4dade0a3982a09ccb3e37d.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 177252,
+    "alt_text": "Soya Chunks Bhurji with Multigrain Roti",
+    "dominant_foods": [
+      "Multigrain Roti",
+      "Soya Chunks (Raw / Dry)"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Spiced scrambled plant soya granules with onions, tomatoes, and cilantro, served with two warm whole wheat rotis. Distinct plant texture, no eggs or meat."
+    }
+  },
+  {
+    "id": "fd4d196c-e41d-4095-a8a9-d0b5a48bd72e",
+    "recipe_id": "48ddcad4-4e9a-4222-a1c9-8ab79cc024c0",
+    "recipe_version_id": "d55da81f-858a-41c0-b017-f28ec8b8f916",
+    "slug": "moong-sprouts-chaat",
+    "name": "Fresh Moong Sprouts Salad with Lemon & Tomato",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "07a8062925ec33e2bae1062b2d3dbdc86b2abc82bb6a7073ce2a618990ed6abc",
+    "sha256": "7d465ebc420f5016dcdd0d8049b980b7dfb10d8cfd9ae3c971b4943e0117ac18",
+    "storage_path": "recipe-images/moong-sprouts-chaat/v1/7d465ebc420f5016dcdd0d8049b980b7dfb10d8cfd9ae3c971b4943e0117ac18.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/moong-sprouts-chaat/v1/7d465ebc420f5016dcdd0d8049b980b7dfb10d8cfd9ae3c971b4943e0117ac18.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 139394,
+    "alt_text": "Fresh Moong Sprouts Salad with Lemon & Tomato",
+    "dominant_foods": [
+      "Moong Sprouts Salad"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Raw fitness salad: fresh sprouted green moong beans with visible tails, diced tomatoes, cilantro, roasted peanuts, and lemon wedge. 100% vegan."
+    }
+  },
+  {
+    "id": "63da25f9-ea19-4294-a9f7-fe0c55f80310",
+    "recipe_id": "958e9ea8-dfda-49ea-be13-f35427b42083",
+    "recipe_version_id": "74d63b7c-a470-4c7a-b5b7-58a29d7cd150",
+    "slug": "besan-cheela-cucumber",
+    "name": "Besan Cheela with Fresh Cucumber",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "0af26d2f3f0d37dbe33a11168a00d3df15861fe6afbd5e9a7e409d927580d50b",
+    "sha256": "f92be22e0b4e5b18f7d6795bf25f15b68949b046fa04a975d77d5ed999a77dea",
+    "storage_path": "recipe-images/besan-cheela-cucumber/v1/f92be22e0b4e5b18f7d6795bf25f15b68949b046fa04a975d77d5ed999a77dea.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/besan-cheela-cucumber/v1/f92be22e0b4e5b18f7d6795bf25f15b68949b046fa04a975d77d5ed999a77dea.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 146606,
+    "alt_text": "Besan Cheela with Fresh Cucumber",
+    "dominant_foods": [
+      "Besan Cheela"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Two folded golden-orange savory besan (gram flour) pancakes with herbs, served with crisp cucumber slices. 100% vegan, no paneer or eggs."
+    }
+  },
+  {
+    "id": "9b04c042-07b9-4e99-8d5f-7645ed13bc48",
+    "recipe_id": "28afd9dc-a505-4c9c-abf4-5295df7af55b",
+    "recipe_version_id": "1b088bf6-d816-4df9-af4f-87fb0908ddb1",
+    "slug": "bread-omelette-homestyle",
+    "name": "Indian Street-Style Bread Omelette",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "18e126615bf77c70f2475733308f11919b76911c05d705710d604eeaf7fd4a44",
+    "sha256": "8f2fec0f41b7ec52e611c02395a9eb9c1175dc96d04d597ebf69455b52541524",
+    "storage_path": "recipe-images/bread-omelette-homestyle/v1/8f2fec0f41b7ec52e611c02395a9eb9c1175dc96d04d597ebf69455b52541524.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/bread-omelette-homestyle/v1/8f2fec0f41b7ec52e611c02395a9eb9c1175dc96d04d597ebf69455b52541524.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 166498,
+    "alt_text": "Indian Street-Style Bread Omelette",
+    "dominant_foods": [
+      "Bread Omelette"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Authentic Indian street-style folded egg omelette with whole wheat toast inside, cut diagonally, onions, green chillies, and herbs visible. Eggetarian, no bacon or meat."
+    }
+  },
+  {
+    "id": "d708597c-1304-41e9-b49c-3d90a5d2395d",
+    "recipe_id": "24d5eccc-4359-44b7-b912-047afec08e1e",
+    "recipe_version_id": "8cd57c7a-af42-4843-9c59-b9c254f729f9",
+    "slug": "boiled-eggs-toor-dal-rice",
+    "name": "Boiled Eggs with Toor Dal & Steamed Rice",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "8468de5fad2485dc10a41185d7cd91eb5b51a1703ba13dc48622512aeb6faa51",
+    "sha256": "47d424b564d81bf75a7428539119d58ac59bd87503e17c84bf2b9fa282f9515a",
+    "storage_path": "recipe-images/boiled-eggs-toor-dal-rice/v1/47d424b564d81bf75a7428539119d58ac59bd87503e17c84bf2b9fa282f9515a.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/boiled-eggs-toor-dal-rice/v1/47d424b564d81bf75a7428539119d58ac59bd87503e17c84bf2b9fa282f9515a.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 148164,
+    "alt_text": "Boiled Eggs with Toor Dal & Steamed Rice",
+    "dominant_foods": [
+      "Toor Dal (Arhar Dal)",
+      "White Rice (Steamed)",
+      "Boiled Egg (Whole)"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Two halved hard-boiled eggs with bright cooked yellow yolks, yellow toor dal with cumin seasoning, and steamed basmati rice. Eggetarian gym lunch."
+    }
+  },
+  {
+    "id": "53968fb7-7c14-466e-86b6-73e4d97d060d",
+    "recipe_id": "96bf610e-9eaa-42e4-bc73-c8e12a8de1e6",
+    "recipe_version_id": "745c1120-5645-4b4f-8524-ac0796e72490",
+    "slug": "boiled-eggs-chole-masala-phulka",
+    "name": "Boiled Eggs with Chole Masala & Multigrain Roti",
+    "status": "DRAFT",
+    "provenance": "AI_GENERATED_IMAGEGEN",
+    "source_sha256": "8a194546f84d8dbdbf94c2fe1124361c6ae6dc1991a86d0df05ba7703d3b89cd",
+    "sha256": "5a560e40a914152c6a2c3328851ba687bb14c71f5c294ffbfbb402159146c404",
+    "storage_path": "recipe-images/boiled-eggs-chole-masala-phulka/v1/5a560e40a914152c6a2c3328851ba687bb14c71f5c294ffbfbb402159146c404.webp",
+    "local_file": "artifacts/phase5b/assets/recipe-images/boiled-eggs-chole-masala-phulka/v1/5a560e40a914152c6a2c3328851ba687bb14c71f5c294ffbfbb402159146c404.webp",
+    "format": "webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 164004,
+    "alt_text": "Boiled Eggs with Chole Masala & Multigrain Roti",
+    "dominant_foods": [
+      "Chole / Chana Masala",
+      "Boiled Egg (Whole)",
+      "Multigrain Roti"
+    ],
+    "visual_review": {
+      "status": "REVIEWED",
+      "reviewer": "Codex visual inspection of generated image",
+      "reviewed_at": "2026-10-06T07:15:15.342Z",
+      "ingredients_match": true,
+      "no_unrelated_ingredients": true,
+      "no_text_or_watermark": true,
+      "notes": "Two halved hard-boiled eggs showing clean yolks, rich dark Punjabi chole curry, and two multigrain rotis. Eggetarian high-protein meal."
+    }
+  }
+]

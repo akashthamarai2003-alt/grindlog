@@ -265,6 +265,9 @@ export interface PlanQualityMetrics {
  */
 export function normalizeAllergen(allergen: string): string[] {
   const norm = allergen.toLowerCase().trim();
+  if (norm.includes("free") || norm.includes("non-")) {
+    return [];
+  }
   if (norm.includes("milk") || norm.includes("dairy") || norm.includes("lactose")) {
     return ["milk", "dairy", "lactose"];
   }
@@ -306,3 +309,172 @@ export function matchesAllergen(userAllergy: string, foodAllergen: string): bool
   const foodForms = normalizeAllergen(foodAllergen);
   return userForms.some(u => foodForms.some(f => u === f || u.includes(f) || f.includes(u)));
 }
+
+/**
+ * Double-layer allergen defense: verifies both structured food allergen tags
+ * AND authoritative food name/alias keywords.
+ */
+export function isFoodAllergenSafe(
+  foodName: string,
+  foodAllergens: string[] = [],
+  userAllergies: string[] = []
+): boolean {
+  if (!userAllergies || userAllergies.length === 0) return true;
+  const name = (foodName || "").toLowerCase();
+
+  for (const rawAllergy of userAllergies) {
+    const ua = rawAllergy.toLowerCase().trim();
+    if (!ua) continue;
+
+    // 1. Structured allergen check (with synonym expansion)
+    if (foodAllergens && foodAllergens.length > 0) {
+      if (foodAllergens.some(fa => matchesAllergen(ua, fa))) {
+        return false;
+      }
+    }
+
+    // 2. Food name keyword check (catches alias variations and unannotated items)
+    if (ua.includes("milk") || ua.includes("dairy") || ua.includes("lactose")) {
+      if (
+        name.includes("milk") ||
+        name.includes("curd") ||
+        name.includes("dahi") ||
+        name.includes("paneer") ||
+        name.includes("whey") ||
+        name.includes("cheese") ||
+        name.includes("yogurt") ||
+        name.includes("chaas") ||
+        name.includes("lassi") ||
+        name.includes("butter") ||
+        name.includes("ghee") ||
+        name.includes("dairy")
+      ) {
+        return false;
+      }
+    }
+
+    if (ua.includes("wheat") || ua.includes("gluten")) {
+      if (
+        name.includes("wheat") ||
+        name.includes("gluten") ||
+        name.includes("atta") ||
+        name.includes("roti") ||
+        name.includes("phulka") ||
+        name.includes("paratha") ||
+        name.includes("chapati") ||
+        name.includes("bread") ||
+        name.includes("suji") ||
+        name.includes("sooji") ||
+        name.includes("semolina") ||
+        name.includes("maida") ||
+        name.includes("toast") ||
+        name.includes("pasta")
+      ) {
+        return false;
+      }
+    }
+
+    if (ua.includes("egg")) {
+      if (
+        name.includes("egg") ||
+        name.includes("anda") ||
+        name.includes("omelette")
+      ) {
+        // Exclude false matches like paneer bhurji or soya bhurji or tofu bhurji
+        if (!name.includes("paneer bhurji") && !name.includes("soya bhurji") && !name.includes("tofu bhurji")) {
+          return false;
+        }
+      }
+    }
+
+    if (ua.includes("soy")) {
+      if (
+        name.includes("soya") ||
+        name.includes("soy") ||
+        name.includes("tofu") ||
+        name.includes("edamame") ||
+        name.includes("tempeh")
+      ) {
+        return false;
+      }
+    }
+
+    if (ua.includes("peanut")) {
+      if (
+        name.includes("peanut") ||
+        name.includes("groundnut") ||
+        name.includes("moongphali")
+      ) {
+        return false;
+      }
+    }
+
+    if (
+      ua.includes("tree nut") ||
+      ua.includes("tree_nut") ||
+      ua.includes("nut") ||
+      ua.includes("almond") ||
+      ua.includes("walnut") ||
+      ua.includes("cashew")
+    ) {
+      if (
+        name.includes("almond") ||
+        name.includes("cashew") ||
+        name.includes("walnut") ||
+        name.includes("pista") ||
+        name.includes("pistachio") ||
+        name.includes("badam") ||
+        name.includes("kaju") ||
+        name.includes("akhrot")
+      ) {
+        return false;
+      }
+    }
+
+    if (ua.includes("fish")) {
+      if (
+        name.includes("fish") ||
+        name.includes("salmon") ||
+        name.includes("tuna") ||
+        name.includes("rohu") ||
+        name.includes("katla") ||
+        name.includes("pomfret") ||
+        name.includes("surmai")
+      ) {
+        return false;
+      }
+    }
+
+    if (
+      ua.includes("shellfish") ||
+      ua.includes("prawn") ||
+      ua.includes("shrimp") ||
+      ua.includes("crab")
+    ) {
+      if (
+        name.includes("prawn") ||
+        name.includes("shrimp") ||
+        name.includes("crab") ||
+        name.includes("lobster") ||
+        name.includes("shellfish")
+      ) {
+        return false;
+      }
+    }
+
+    if (ua.includes("mustard")) {
+      if (name.includes("mustard") || name.includes("sarson")) {
+        return false;
+      }
+    }
+
+    if (ua.includes("sesame")) {
+      if (name.includes("sesame") || name.includes("til")) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+

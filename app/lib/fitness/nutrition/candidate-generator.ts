@@ -12,7 +12,8 @@ import {
   RecipeVariant,
   RecipeVariantIngredient,
   RecipeImage,
-  matchesAllergen
+  matchesAllergen,
+  isFoodAllergenSafe
 } from "./domain-types";
 
 export interface RecipeCatalogItem {
@@ -64,13 +65,15 @@ function isSlotAppropriate(
     cuisine.includes("breakfast") ||
     tags.includes("breakfast");
 
+  const isTeaDrink = /\btea\b/i.test(name) || name.includes("chai");
+  const isCoffeeDrink = /\bcoffee\b/i.test(name);
+
   const isSnackItem =
     name.includes("makhana") ||
     name.includes("snack") ||
     name.includes("chaat") ||
-    name.includes("coffee") ||
-    name.includes("tea") ||
-    name.includes("chai") ||
+    isCoffeeDrink ||
+    isTeaDrink ||
     name.includes("fruit") ||
     name.includes("smoothie") ||
     name.includes("curd") ||
@@ -91,6 +94,10 @@ function isSlotAppropriate(
     !name.includes("idli") &&
     !name.includes("dosa") &&
     !name.includes("oats") &&
+    !name.includes("snack") &&
+    !isTeaDrink &&
+    !isCoffeeDrink &&
+    !tags.includes("snack") &&
     (
       name.includes("rice") ||
       name.includes("phulka") ||
@@ -99,6 +106,10 @@ function isSlotAppropriate(
       name.includes("dal") ||
       name.includes("rajma") ||
       name.includes("chole") ||
+      name.includes("tofu") ||
+      name.includes("soya") ||
+      name.includes("stir fry") ||
+      name.includes("tempeh") ||
       (name.includes("paneer") && !name.includes("raw paneer")) ||
       name.includes("chicken") ||
       name.includes("fish") ||
@@ -112,7 +123,7 @@ function isSlotAppropriate(
   switch (slot) {
     case "breakfast":
       return (
-        (isBreakfastItem || name.includes("egg") || (isSnackItem && !name.includes("makhana") && !name.includes("coffee") && !name.includes("chai"))) &&
+        (isBreakfastItem || name.includes("egg") || (isSnackItem && !name.includes("makhana") && !isCoffeeDrink && !isTeaDrink && !name.includes("fitness snack"))) &&
         !name.includes("biryani") &&
         !name.includes("mutton") &&
         !name.includes("fish curry")
@@ -134,8 +145,8 @@ function isSlotAppropriate(
 
       return (
         (isMainMealItem || isRestrictedMainMeal || (name.includes("oats") && name.includes("savory"))) &&
-        !name.includes("black coffee") &&
-        !name.includes("chai")
+        !isCoffeeDrink &&
+        !isTeaDrink
       );
     }
 
@@ -174,41 +185,46 @@ export function generateMealCandidates(
       if (avoidsPrimary) continue;
     }
 
-    // Stage 2: Structured Allergen Hard Filter (with synonyms)
+    // Stage 2: Structured & Name Allergen Hard Filter (double-layer defense)
     if (profile.allergies && profile.allergies.length > 0) {
+      if (!isFoodAllergenSafe(rv.name, [], profile.allergies) ||
+          !isFoodAllergenSafe(rv.primaryProtein, [], profile.allergies)) {
+        continue;
+      }
       let containsAllergen = false;
       for (const ing of item.variantIngredients) {
         const foodAllergens = foodAllergensLookup(ing.foodId);
-        if (foodAllergens && foodAllergens.length > 0) {
-          for (const userAllergy of profile.allergies) {
-            if (foodAllergens.some(fa => matchesAllergen(userAllergy, fa))) {
-              containsAllergen = true;
-              break;
-            }
-          }
+        if (!isFoodAllergenSafe(ing.foodName || "", foodAllergens, profile.allergies)) {
+          containsAllergen = true;
+          break;
         }
-        if (containsAllergen) break;
       }
       if (containsAllergen) continue;
     }
 
-    // Stage 3: Disliked & Avoided Foods Filter (checked across ALL ingredients)
-    const combinedAvoids = [
-      ...(profile.dislikedFoods || []),
-      ...(profile.avoidedFoods || [])
-    ].map(f => f.toLowerCase().trim()).filter(Boolean);
-
-    if (combinedAvoids.length > 0) {
+    // Stage 3: Avoided Foods Hard Filter (checked across ALL ingredients, title, and protein)
+    const avoidedList = (profile.avoidedFoods || []).map(f => f.toLowerCase().trim()).filter(Boolean);
+    if (avoidedList.length > 0) {
       let containsAvoided = false;
-      for (const ing of item.variantIngredients) {
-        const ingName = (ing.foodName || "").toLowerCase();
-        for (const avoided of combinedAvoids) {
-          if (ingName.includes(avoided)) {
-            containsAvoided = true;
-            break;
-          }
+      const rName = rv.name.toLowerCase();
+      const pProt = rv.primaryProtein.toLowerCase();
+      for (const avoided of avoidedList) {
+        if (rName.includes(avoided) || pProt.includes(avoided)) {
+          containsAvoided = true;
+          break;
         }
-        if (containsAvoided) break;
+      }
+      if (!containsAvoided) {
+        for (const ing of item.variantIngredients) {
+          const ingName = (ing.foodName || "").toLowerCase();
+          for (const avoided of avoidedList) {
+            if (ingName.includes(avoided)) {
+              containsAvoided = true;
+              break;
+            }
+          }
+          if (containsAvoided) break;
+        }
       }
       if (containsAvoided) continue;
     }
@@ -226,13 +242,46 @@ export function generateMealCandidates(
     }
 
     if (profile.availableEquipment && profile.availableEquipment.length > 0) {
-      const canCook =
-        !rv.requiredEquipment ||
-        rv.requiredEquipment.length === 0 ||
-        rv.requiredEquipment.some(
-          eq => eq === "none" || profile.availableEquipment!.includes(eq)
-        );
-      if (!canCook) continue;
+      const userEquip = new Set(profile.availableEquipment);
+      const reqEquip = rv.requiredEquipment || [];
+
+      if (userEquip.has("none") && userEquip.size === 1) {
+        // User has NO equipment at all (cold prep only)
+        const isColdPrep = reqEquip.length === 0 || reqEquip.includes("none");
+        if (!isColdPrep) continue;
+      } else {
+        const isNoneOnly = reqEquip.length === 1 && reqEquip[0] === "none";
+        if (!isNoneOnly && reqEquip.length > 0) {
+          const hasMatch = reqEquip.some(eq => eq === "none" || userEquip.has(eq as any));
+          if (!hasMatch) continue;
+
+          // Check if user has only kettle (no stove, no microwave)
+          if (!userEquip.has("stove") && !userEquip.has("microwave")) {
+            const lowerName = rv.name.toLowerCase();
+            if (
+              lowerName.includes("roti") ||
+              lowerName.includes("phulka") ||
+              lowerName.includes("paratha") ||
+              lowerName.includes("biryani") ||
+              lowerName.includes("curry") ||
+              lowerName.includes("tikka") ||
+              lowerName.includes("cheela") ||
+              lowerName.includes("poha") ||
+              lowerName.includes("upma") ||
+              lowerName.includes("dal") ||
+              lowerName.includes("rice") ||
+              (lowerName.includes("masala") && !lowerName.includes("masala oats")) ||
+              lowerName.includes("sabzi") ||
+              lowerName.includes("khichdi") ||
+              lowerName.includes("dosa") ||
+              lowerName.includes("idli") ||
+              lowerName.includes("bhurji")
+            ) {
+              continue;
+            }
+          }
+        }
+      }
     }
 
     // Stage 5: Meal Slot Appropriateness
@@ -245,7 +294,7 @@ export function generateMealCandidates(
     // which have low protein density and cause cost blowups when scaled.
     if (profile.budgetPolicy === "STRICT" && profile.weeklyBudgetTargetInr && profile.weeklyBudgetTargetInr <= 1500) {
       const lowerName = (rv.name || "").toLowerCase();
-      if (lowerName.includes("chia") || lowerName.includes("makhana") || lowerName.includes("walnut")) {
+      if ((lowerName.includes("chia") && !lowerName.includes("oats")) || lowerName.includes("makhana") || lowerName.includes("walnut")) {
         continue;
       }
     }
@@ -306,14 +355,16 @@ export function generateMealCandidates(
 
     // Large protein deficit penalty: meals lacking protein for the slot must not outscore nutritious meals
     const pErrorPct = pDelta / (slotTargetProtein || 30);
-    if (pErrorPct > 0.25) {
-      score -= Math.min(40, (pErrorPct - 0.25) * 60);
+    if (pErrorPct > 0.15) {
+      score -= Math.min(45, (pErrorPct - 0.15) * 85);
     }
 
-    // If slot requires high protein (>= 38g) on a vegetarian diet, plain dal/lentils cannot hit the target without calorie bloat:
+    // If slot requires high protein density (>= 24% calories from protein) on a vegetarian/vegan diet,
+    // plain dal/lentils cannot hit the target without calorie bloat:
     const isVegDiet = profile.dietPreference === "vegetarian" || profile.dietPreference === "vegan";
     const isLentilPrimary = (rv.primaryProtein || "").toLowerCase().includes("dal") || (rv.primaryProtein || "").toLowerCase().includes("lentil");
-    if (slotTargetProtein >= 38 && isVegDiet && isLentilPrimary) {
+    const slotProteinCalRatio = (slotTargetProtein * 4) / Math.max(1, slotTargetCalories);
+    if ((slotTargetProtein >= 35 || slotProteinCalRatio >= 0.24) && isVegDiet && isLentilPrimary) {
       score -= 35;
     }
 
@@ -354,6 +405,25 @@ export function generateMealCandidates(
           const excessRatio = (projectedCost - perMealBudget) / perMealBudget;
           score -= Math.min(15, excessRatio * 15);
         }
+      }
+    }
+
+    // Disliked foods soft penalty (soft deprioritization, not hard exclusion)
+    if (profile.dislikedFoods && profile.dislikedFoods.length > 0) {
+      const dislikes = profile.dislikedFoods.map(f => f.toLowerCase().trim()).filter(Boolean);
+      const rName = rv.name.toLowerCase();
+      let dislikeCount = 0;
+      for (const d of dislikes) {
+        if (rName.includes(d)) dislikeCount++;
+      }
+      for (const ing of variantIngs) {
+        const ingName = (ing.foodName || "").toLowerCase();
+        for (const d of dislikes) {
+          if (ingName.includes(d)) dislikeCount++;
+        }
+      }
+      if (dislikeCount > 0) {
+        score -= Math.min(50, dislikeCount * 30);
       }
     }
 

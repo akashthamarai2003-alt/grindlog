@@ -13,7 +13,8 @@ import {
   PlannedMeal,
   UserPlanningProfile,
   PlanQualityMetrics,
-  matchesAllergen
+  matchesAllergen,
+  isFoodAllergenSafe
 } from "./domain-types";
 
 export interface DayPlanSummary {
@@ -131,16 +132,12 @@ export function validate7DayPlan(
             }
           }
 
-          // Structured allergen leakage verification
+          // Structured & food name allergen leakage verification (double-layer defense)
           if (profile.allergies && profile.allergies.length > 0) {
             const foodAllergens = foodAllergensLookup(item.foodId);
-            if (foodAllergens && foodAllergens.length > 0) {
-              for (const allergy of profile.allergies) {
-                if (foodAllergens.some(fa => matchesAllergen(allergy, fa))) {
-                  allergenViolations++;
-                  errors.push(`CRITICAL ALLERGEN LEAKAGE: Food ${item.foodName || item.foodId} contains allergen "${allergy}" for allergic user`);
-                }
-              }
+            if (!isFoodAllergenSafe(item.foodName || item.foodId, foodAllergens, profile.allergies)) {
+              allergenViolations++;
+              errors.push(`CRITICAL ALLERGEN LEAKAGE: Food ${item.foodName || item.foodId} contains allergen for allergic user (${profile.allergies.join(", ")})`);
             }
           }
         }
@@ -197,7 +194,11 @@ export function validate7DayPlan(
     warnings.push(`Weekly cost ₹${Math.round(totalWeeklyCost)} exceeds target ₹${weeklyBudget} by ${budgetUtilizationPct - 100}%`);
   }
 
-  const budgetFit = totalWeeklyCost <= weeklyBudget ? 1.0 : Math.max(0, 1 - (totalWeeklyCost - weeklyBudget) / weeklyBudget);
+  const budgetFit = totalWeeklyCost <= weeklyBudget
+    ? 1.0
+    : profile.budgetPolicy === "STRICT"
+      ? Math.max(0, 1 - (totalWeeklyCost - weeklyBudget) / weeklyBudget)
+      : Math.max(0.5, 1 - (totalWeeklyCost - weeklyBudget) / (weeklyBudget * 2.5));
 
   // 3. Weekly Canonical Recipe Repetition Check
   for (const [canonicalId, count] of canonicalRecipeUsageCount.entries()) {

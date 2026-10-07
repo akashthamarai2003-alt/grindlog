@@ -1,23 +1,23 @@
 [
   {
-    "id": "9f868153-a6ec-45b9-a788-b9018d839ea4",
+    "id": "e1213733-4e9b-41b1-8efb-0446fa107898",
     "recipe_version_id": "d6e0e109-4393-4d2f-8275-757f8414e821",
-    "storage_path": "recipe-images/moong-dal-cheela-tomato-v1.webp",
-    "url": "https://images.grindlog.in/recipes/moong-dal-cheela-tomato.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Moong Dal Cheela with Fresh Tomato & Salad",
+    "storage_path": "recipe-images/moong-dal-cheela-tomato/v1/ea18e6a432175cc7e40c130ad0a359249dfb0f4e8ede76803ae23a0d0cef6ee3.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/moong-dal-cheela-tomato/v1/ea18e6a432175cc7e40c130ad0a359249dfb0f4e8ede76803ae23a0d0cef6ee3.webp",
+    "status": "APPROVED",
+    "alt_text": "Moong Dal Cheela with Fresh Tomato & Salad",
     "dominant_foods": [
       "Moong Dal Cheela"
     ],
     "is_primary": true
   },
   {
-    "id": "d2cd8921-f3d9-4e63-bf37-65e5b244d785",
+    "id": "63da25f9-ea19-4294-a9f7-fe0c55f80310",
     "recipe_version_id": "74d63b7c-a470-4c7a-b5b7-58a29d7cd150",
-    "storage_path": "recipe-images/besan-cheela-cucumber-v1.webp",
-    "url": "https://images.grindlog.in/recipes/besan-cheela-cucumber.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Besan Cheela with Fresh Cucumber",
+    "storage_path": "recipe-images/besan-cheela-cucumber/v1/f92be22e0b4e5b18f7d6795bf25f15b68949b046fa04a975d77d5ed999a77dea.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/besan-cheela-cucumber/v1/f92be22e0b4e5b18f7d6795bf25f15b68949b046fa04a975d77d5ed999a77dea.webp",
+    "status": "APPROVED",
+    "alt_text": "Besan Cheela with Fresh Cucumber",
     "dominant_foods": [
       "Besan Cheela"
     ],
@@ -132,13 +132,14 @@
     "is_primary": true
   },
   {
-    "id": "05d71971-0c4f-4f0b-acf6-a8120cb54c7c",
+    "id": "13f90871-cfe1-4e1e-996d-e8c6edb148fc",
     "recipe_version_id": "cb605a54-cade-46e1-892a-a04b48422b30",
-    "storage_path": "recipe-images/soya-chunks-bhurji-roti-v1.webp",
-    "url": "https://images.grindlog.in/recipes/soya-chunks-bhurji-roti.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Soya Chunks Bhurji with Multigrain Roti",
+    "storage_path": "recipe-images/soya-chunks-bhurji-roti/v1/8329f0d58a4a747fa9f0cc25ee0aa27ba08b9daa5a4dade0a3982a09ccb3e37d.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/soya-chunks-bhurji-roti/v1/8329f0d58a4a747fa9f0cc25ee0aa27ba08b9daa5a4dade0a3982a09ccb3e37d.webp",
+    "status": "APPROVED",
+    "alt_text": "Soya Chunks Bhurji with Multigrain Roti",
     "dominant_foods": [
+      "Multigrain Roti",
       "Soya Chunks (Raw / Dry)"
     ],
     "is_primary": true
@@ -156,12 +157,12 @@
     "is_primary": true
   },
   {
-    "id": "f776d9e8-f116-4dfa-84e4-1f163dc19d2a",
+    "id": "fd4d196c-e41d-4095-a8a9-d0b5a48bd72e",
     "recipe_version_id": "d55da81f-858a-41c0-b017-f28ec8b8f916",
-    "storage_path": "recipe-images/moong-sprouts-chaat-v1.webp",
-    "url": "https://images.grindlog.in/recipes/moong-sprouts-chaat.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Fresh Moong Sprouts Salad with Lemon & Tomato",
+    "storage_path": "recipe-images/moong-sprouts-chaat/v1/7d465ebc420f5016dcdd0d8049b980b7dfb10d8cfd9ae3c971b4943e0117ac18.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/moong-sprouts-chaat/v1/7d465ebc420f5016dcdd0d8049b980b7dfb10d8cfd9ae3c971b4943e0117ac18.webp",
+    "status": "APPROVED",
+    "alt_text": "Fresh Moong Sprouts Salad with Lemon & Tomato",
     "dominant_foods": [
       "Moong Sprouts Salad"
     ],
@@ -373,14 +374,15 @@
     "is_primary": true
   },
   {
-    "id": "6bd0e5cd-7de7-4e9f-b7f0-15eb4f34f7e6",
+    "id": "83c8de86-ac8a-481b-b39c-653756f5a5e4",
     "recipe_version_id": "acf8d601-6c0f-4a9e-9e62-ab1b4482e192",
-    "storage_path": "recipe-images/soya-chunks-curry-rice-v1.webp",
-    "url": "https://images.grindlog.in/recipes/soya-chunks-curry-rice.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Soya Chunks Curry with Steamed Rice",
+    "storage_path": "recipe-images/soya-chunks-curry-rice/v1/2cebcb00ca988de190f71e974d33ddbbab62f48d3c27bb752d8fb34f7a3a62f7.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/soya-chunks-curry-rice/v1/2cebcb00ca988de190f71e974d33ddbbab62f48d3c27bb752d8fb34f7a3a62f7.webp",
+    "status": "APPROVED",
+    "alt_text": "Soya Chunks Curry with Steamed Rice",
     "dominant_foods": [
-      "Soya Chunks Curry (Cooked)"
+      "Soya Chunks Curry (Cooked)",
+      "White Rice (Steamed)"
     ],
     "is_primary": true
   },
@@ -892,14 +894,15 @@
     "is_primary": true
   },
   {
-    "id": "bb8de902-8185-4317-be95-215c73df58d8",
+    "id": "aed418de-a3bc-4ef1-82f4-1f221c9456c4",
     "recipe_version_id": "91ea2c84-a430-418e-9a54-b61120d2bdfb",
-    "storage_path": "recipe-images/high-protein-veg-thali-v1.webp",
-    "url": "https://images.grindlog.in/recipes/high-protein-veg-thali.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of High-Protein Veg Thali (Dal, Paneer Bhurji, Phulkas & Dahi)",
+    "storage_path": "recipe-images/high-protein-veg-thali/v1/32d493d7395fa7e88b46e59e45159436ba95f8cf9c8996f9a57c740a8b80d36b.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/high-protein-veg-thali/v1/32d493d7395fa7e88b46e59e45159436ba95f8cf9c8996f9a57c740a8b80d36b.webp",
+    "status": "APPROVED",
+    "alt_text": "High-Protein Veg Thali (Dal, Paneer Bhurji, Phulkas & Dahi)",
     "dominant_foods": [
-      "Paneer Bhurji"
+      "Paneer Bhurji",
+      "Dal Tadka"
     ],
     "is_primary": true
   },
@@ -1012,13 +1015,15 @@
     "is_primary": true
   },
   {
-    "id": "4e4755a8-ff39-4e73-868f-59ff1dab2be1",
+    "id": "a0a76013-f31e-4fce-9996-49b7f9ca1391",
     "recipe_version_id": "48920f74-d8d9-4126-b807-e3683ab6a97b",
-    "storage_path": "recipe-images/dal-fry-paneer-rice-v1.webp",
-    "url": "https://images.grindlog.in/recipes/dal-fry-paneer-rice.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Dal Fry with Steamed Rice & Fresh Paneer",
+    "storage_path": "recipe-images/dal-fry-paneer-rice/v1/aae9465e3684e7e2b30f1a6644b5a03e873ac6f4c0a645ca8a0e040a7b09c198.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/dal-fry-paneer-rice/v1/aae9465e3684e7e2b30f1a6644b5a03e873ac6f4c0a645ca8a0e040a7b09c198.webp",
+    "status": "APPROVED",
+    "alt_text": "Dal Fry with Steamed Rice & Fresh Paneer",
     "dominant_foods": [
+      "Dal Fry",
+      "White Rice (Steamed)",
       "Fresh Paneer (Raw)"
     ],
     "is_primary": true
@@ -1048,37 +1053,41 @@
     "is_primary": true
   },
   {
-    "id": "9bbb78d0-df1b-42d2-83e7-a1cfbdcfb207",
+    "id": "4cc98011-2029-49af-9ee3-6748fcbf3c71",
     "recipe_version_id": "edb9dc6e-8aaf-48e1-8948-87a2f91bc884",
-    "storage_path": "recipe-images/chana-dal-paneer-phulka-v1.webp",
-    "url": "https://images.grindlog.in/recipes/chana-dal-paneer-phulka.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Chana Dal Curry with Fresh Paneer & Phulkas",
+    "storage_path": "recipe-images/chana-dal-paneer-phulka/v1/2d2deb14bdf9503ea98ff55e6123070eb70a4972af51690fa5fe19706f245171.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/chana-dal-paneer-phulka/v1/2d2deb14bdf9503ea98ff55e6123070eb70a4972af51690fa5fe19706f245171.webp",
+    "status": "APPROVED",
+    "alt_text": "Chana Dal Curry with Fresh Paneer & Phulkas",
     "dominant_foods": [
-      "Fresh Paneer (Raw)"
+      "Chana Dal Curry",
+      "Chapati / Phulka"
     ],
     "is_primary": true
   },
   {
-    "id": "c6b5d7f6-cbfd-4d06-895b-fa4647a12afb",
+    "id": "c3ba3284-a77d-477d-90fe-0fa974d8feeb",
     "recipe_version_id": "1f8410c6-b240-46ee-98ef-5a378e7e2a84",
-    "storage_path": "recipe-images/punjabi-rajma-curd-phulka-v1.webp",
-    "url": "https://images.grindlog.in/recipes/punjabi-rajma-curd-phulka.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Punjabi Rajma with Phulkas & Low Fat Curd",
+    "storage_path": "recipe-images/punjabi-rajma-curd-phulka/v1/cce961c20c4b3a05fdeb98fac6f5fe08d92ef7006af007a39eb169cd7e40a497.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/punjabi-rajma-curd-phulka/v1/cce961c20c4b3a05fdeb98fac6f5fe08d92ef7006af007a39eb169cd7e40a497.webp",
+    "status": "APPROVED",
+    "alt_text": "Punjabi Rajma with Phulkas & Low Fat Curd",
     "dominant_foods": [
-      "Rajma (Kidney Beans Curry)"
+      "Low Fat Curd / Dahi",
+      "Rajma (Kidney Beans Curry)",
+      "Chapati / Phulka"
     ],
     "is_primary": true
   },
   {
-    "id": "e4f05ce0-cdfe-4c8c-8a5c-bfcb73033692",
+    "id": "d1b26a20-6722-426c-9a8f-def4534883ac",
     "recipe_version_id": "afb0faad-8d9a-4dc8-a246-58a50ce61257",
-    "storage_path": "recipe-images/chole-paneer-paratha-v1.webp",
-    "url": "https://images.grindlog.in/recipes/chole-paneer-paratha.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Chole Masala with Paneer Paratha & Curd",
+    "storage_path": "recipe-images/chole-paneer-paratha/v1/2f0056a6d0f85d20ee4b0ca7812e3ccbd5d66f99c780d757adac6ed22b1fff49.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/chole-paneer-paratha/v1/2f0056a6d0f85d20ee4b0ca7812e3ccbd5d66f99c780d757adac6ed22b1fff49.webp",
+    "status": "APPROVED",
+    "alt_text": "Chole Masala with Paneer Paratha & Curd",
     "dominant_foods": [
+      "Chole / Chana Masala",
       "Paneer Paratha"
     ],
     "is_primary": true
@@ -1445,12 +1454,12 @@
     "is_primary": true
   },
   {
-    "id": "26ebc1ef-1501-47c5-ad42-3b2ed1fb9c54",
+    "id": "9b04c042-07b9-4e99-8d5f-7645ed13bc48",
     "recipe_version_id": "1b088bf6-d816-4df9-af4f-87fb0908ddb1",
-    "storage_path": "recipe-images/bread-omelette-homestyle-v1.webp",
-    "url": "https://images.grindlog.in/recipes/bread-omelette-homestyle.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Indian Street-Style Bread Omelette",
+    "storage_path": "recipe-images/bread-omelette-homestyle/v1/8f2fec0f41b7ec52e611c02395a9eb9c1175dc96d04d597ebf69455b52541524.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/bread-omelette-homestyle/v1/8f2fec0f41b7ec52e611c02395a9eb9c1175dc96d04d597ebf69455b52541524.webp",
+    "status": "APPROVED",
+    "alt_text": "Indian Street-Style Bread Omelette",
     "dominant_foods": [
       "Bread Omelette"
     ],
@@ -1589,14 +1598,16 @@
     "is_primary": true
   },
   {
-    "id": "507a09b2-afdb-45ed-b182-88677f023028",
+    "id": "53968fb7-7c14-466e-86b6-73e4d97d060d",
     "recipe_version_id": "745c1120-5645-4b4f-8524-ac0796e72490",
-    "storage_path": "recipe-images/boiled-eggs-chole-masala-phulka-v1.webp",
-    "url": "https://images.grindlog.in/recipes/boiled-eggs-chole-masala-phulka.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Boiled Eggs with Chole Masala & Multigrain Roti",
+    "storage_path": "recipe-images/boiled-eggs-chole-masala-phulka/v1/5a560e40a914152c6a2c3328851ba687bb14c71f5c294ffbfbb402159146c404.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/boiled-eggs-chole-masala-phulka/v1/5a560e40a914152c6a2c3328851ba687bb14c71f5c294ffbfbb402159146c404.webp",
+    "status": "APPROVED",
+    "alt_text": "Boiled Eggs with Chole Masala & Multigrain Roti",
     "dominant_foods": [
-      "Boiled Egg (Whole)"
+      "Chole / Chana Masala",
+      "Boiled Egg (Whole)",
+      "Multigrain Roti"
     ],
     "is_primary": true
   },
@@ -1685,13 +1696,15 @@
     "is_primary": true
   },
   {
-    "id": "19365b71-183a-4724-a509-aada4b5b6b01",
+    "id": "d708597c-1304-41e9-b49c-3d90a5d2395d",
     "recipe_version_id": "8cd57c7a-af42-4843-9c59-b9c254f729f9",
-    "storage_path": "recipe-images/boiled-eggs-toor-dal-rice-v1.webp",
-    "url": "https://images.grindlog.in/recipes/boiled-eggs-toor-dal-rice.webp",
-    "status": "DRAFT",
-    "alt_text": "Plate of Boiled Eggs with Toor Dal & Steamed Rice",
+    "storage_path": "recipe-images/boiled-eggs-toor-dal-rice/v1/47d424b564d81bf75a7428539119d58ac59bd87503e17c84bf2b9fa282f9515a.webp",
+    "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/boiled-eggs-toor-dal-rice/v1/47d424b564d81bf75a7428539119d58ac59bd87503e17c84bf2b9fa282f9515a.webp",
+    "status": "APPROVED",
+    "alt_text": "Boiled Eggs with Toor Dal & Steamed Rice",
     "dominant_foods": [
+      "Toor Dal (Arhar Dal)",
+      "White Rice (Steamed)",
       "Boiled Egg (Whole)"
     ],
     "is_primary": true

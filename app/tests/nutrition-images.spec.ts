@@ -88,8 +88,8 @@ test("reviewed photos survive logging; swap changes image; a failed photo uses f
   await page.goto("/test-nutrition-v2");
   await expect(page.locator('[data-v2-ready="true"]')).toBeVisible();
   await page.getByRole("button", { name: "Next week" }).click();
-  await expect(page.locator("article img")).toHaveCount(6);
-  for (let index = 0; index < 6; index++) {
+  await expect(page.locator("article img")).toHaveCount(candidates.length);
+  for (let index = 0; index < candidates.length; index++) {
     const image = page.locator("article img").nth(index);
     await image.scrollIntoViewIfNeeded();
     await expect(image).toHaveAttribute("alt", candidates[index].name);

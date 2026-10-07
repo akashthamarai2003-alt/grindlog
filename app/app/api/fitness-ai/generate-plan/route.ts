@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { generateDeterministicNutritionPlan, convertToAIPlanFormat } from "@/lib/fitness/nutrition/nutrition-engine";
-import { buildHybridNutritionPrompt, mergeHybridNutrition } from "@/lib/fitness/nutrition/hybrid-merger";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import {
   FITNESS_PLAN_MODEL,
@@ -234,7 +233,7 @@ export async function POST(req: Request) {
 
           // Step A: Luna AI generates workouts & coaching intelligence
           const aiResponse = await generateOpenAIResponseJSON<GeneratedPlanData>({
-            systemPrompt: `${buildFitnessPlanSystemPrompt("starter")}\n\nWORKOUT PLAN FOCUS RULE: Focus 100% of your coaching intelligence on generating the 7-day workout split, exercise selection, sets, reps, and coaching cues based on the user's profile. For nutrition, return calorie and protein targets; keep meals and grocery_list arrays strictly empty, as complete nutrition and grocery plans are dynamically handled by Groq AI in their dedicated hubs.`,
+            systemPrompt: `${buildFitnessPlanSystemPrompt("starter")}\n\nWORKOUT PLAN FOCUS RULE: Focus 100% of your coaching intelligence on generating the 7-day workout split, exercise selection, sets, reps, and coaching cues based on the user's profile. For nutrition, return calorie and protein targets; keep meals and grocery_list arrays strictly empty, as complete nutrition and grocery plans are deterministically calculated by the clinical nutrition engine in their dedicated hubs.`,
             userPrompt: correctionNote ? `${userPrompt}\n\n${correctionNote}` : userPrompt,
             model: FITNESS_PLAN_MODEL,
             maxTokens: 3500,
@@ -285,21 +284,21 @@ export async function POST(req: Request) {
             }
           }
 
-          // Step B: Groq AI generates the Pro diet plan and monthly grocery plan
+          // Step B: Generate the Pro diet plan and monthly grocery plan deterministically
           if (isPro && candidatePlan.workouts.length > 0) {
             try {
-              console.log("Generating Pro diet and monthly grocery plan via Groq AI...");
-              const groqNutrition = await generateProNutritionLayer({
+              console.log("Generating Pro diet and monthly grocery plan deterministically...");
+              const proNutrition = await generateProNutritionLayer({
                 profile,
                 existingWorkouts: candidatePlan.workouts,
                 foodCatalog,
               });
               candidatePlan = {
                 ...candidatePlan,
-                nutrition: groqNutrition,
+                nutrition: proNutrition,
               };
-            } catch (groqErr) {
-              console.warn("Groq nutrition generation failed, keeping base nutrition:", groqErr);
+            } catch (nutritionErr) {
+              console.warn("Deterministic nutrition generation failed, keeping base nutrition:", nutritionErr);
             }
           }
 

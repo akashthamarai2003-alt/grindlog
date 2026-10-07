@@ -1,5 +1,4 @@
 import { createServerSupabase } from "@/lib/services/supabase/server";
-import { generateAIResponseJSON } from "@/lib/services/groq/client";
 import {
   NutritionService,
   findFoodReference,
@@ -158,156 +157,29 @@ export class AINutritionService {
       ? userContext.availableFoods.join(', ')
       : 'Standard local Indian whole foods (Eggs, Paneer, Curd, Dals, Chana, Rajma, Tofu, Peanuts, Rice, Roti, Oats, Bananas)';
 
-    // 4. Construct High-Precision Groq Prompt
-const systemPrompt = `You are Luna AI, a meal-planning assistant for general adult nutrition. Do not present yourself as a clinician or provide medical diet advice.
-Your mission is to generate a comprehensive 7-Day Precision Weekly Meal Plan (Day 1 through Day 7) specifically tailored to the user's macros, budget, and lifestyle.
-
-CRITICAL USER PROFILE & STRICT CONSTRAINTS:
-1. DIET CATEGORY: ${userContext.dietLabel}
-   - You MUST STRICTLY respect this diet.
-   ${isEggetarian ? '- For Eggetarian: Include Boiled Eggs, Egg Bhurji, Egg Curry, Curd, Paneer, Dals, Chana, Rajma. NEVER EVER include chicken, fish, mutton, or meat.' : ''}
-   ${isVegan ? '- For Vegan: 100% plant foods only (Tofu, Rajma, Chana, Dal Tadka, Roasted Peanuts, Fruits, Phulkas, Rice, Soya Chunks). NEVER include curd, milk, paneer, butter, ghee, eggs, or meat.' : ''}
-   ${isVegetarian ? '- For Vegetarian: Plant foods and dairy (Paneer, Curd, Milk, Dals, Chana, Rajma). NEVER include eggs, chicken, fish, or meat.' : ''}
-   ${isNonVeg ? '- For Non-Vegetarian: Include Chicken Breast, Fish Curry, Chicken Curry, Eggs, Paneer, Curd, Dal, Rice.' : ''}
-
-2. LIVING ENVIRONMENT & REAL-WORLD FLOW: ${userContext.environment.toUpperCase()}
-   ${
-     userContext.environment === 'pg' || userContext.environment === 'hostel'
-       ? '- PG / HOSTEL LIVING: The mess provides core meals (Breakfast: Poha, Upma, Idli & Sambar, Dosa, Bread; Lunch & Dinner: White Rice, Dal Tadka, Seasonal Sabzi, Chapatis) for free (₹0).\n' +
-         '- The user CANNOT cook elaborate curries from scratch. You MUST pair the standard mess meal with practical high-protein add-ons (e.g. 2–3 boiled eggs cooked in electric kettle, fresh curd, roasted peanuts, soy chunks boiled in kettle, paneer).\n' +
-         '- Example Breakfast: "Poha (1 bowl, Mess Base) + 3 Boiled Eggs (Kettle Add-on)".\n' +
-         '- Example Lunch: "White Rice (2 bowls) + Dal Tadka (1 bowl) + Mixed Veggies (1 bowl) + 2 Boiled Eggs or Paneer (Add-on)".'
-       : userContext.environment === 'i_cook'
-       ? '- SELF-COOKED / I COOK: The user personally buys groceries and cooks all meals from scratch in their kitchen.\n' +
-         '- Plan complete, delicious, easy-to-cook whole-food recipes with simple ingredients and step-by-step cooking instructions (e.g., "10 min prep: Sauté onions, scramble 3 eggs, toast bread").'
-       : '- HOME LIVING: Family kitchen prepares everyday meals (phulkas, dal, steamed rice, seasonal sabzi). Pair family meals with simple fitness protein boosters (e.g., 3 boiled eggs or egg scramble on stove, paneer bowl, fresh curd).'
-   }
-
-3. USER'S ACCESSIBLE FOODS:
-   - Foods available to user: ${availableFoodsStr}
-   - Prioritize these accessible foods when building meals.
-
-4. PROTEIN ROTATION & VARIETY (STRICT RULES):
-   - Soya Chunks MUST NEVER appear more than 1 time per day. NEVER include Soya Chunks in both lunch and dinner on the same day.
-   - Cycle diverse protein sources across meals and days:
-     * Vegetarians: Paneer, Curd/Dahi, Moong Dal, Chana/Chole, Rajma, Sprouts, Milk.
-     * Vegans: Tofu, Moong Sprouts, Kala Chana, Rajma, Soya Chunks (max 1 serving/day), Roasted Peanuts, Dal.
-     * Eggetarians: Farm Boiled Eggs, Egg Whites, Egg Bhurji, Egg Curry, Paneer, Curd, Dals, Sprouts.
-     * Non-Vegetarians: Chicken Breast, Fish, Eggs, Paneer, Curd, Dals.
-   - Every single day must feature protein variety, never repetitive meals.
-
-5. MEALS PER DAY: Exactly these meal slots: ${mealSlots.join(', ')}.
-
-6. TARGET DAILY MACROS TO HIT:
-   - Daily Calories: ${targets.calories} kcal
-   - Daily Protein: ${targets.protein} g
-   - Daily Carbs: ${targets.carbs} g
-   - Daily Fat: ${targets.fat} g
-   (Distribute proportionally across the ${mealSlots.length} meals so each day totals approximately ${targets.calories} kcal and ${targets.protein}g protein).
-
-7. ALLERGIES & DISLIKES:
-   - Allergies: ${userContext.allergies.join(', ') || 'None'}
-   - Disliked / Avoided: ${[...userContext.dislikedFoods, ...userContext.avoidedFoods].join(', ') || 'None'}
-
-8. BUDGET GUIDANCE:
-   - Daily out-of-pocket target: ~₹${userContext.dailyBudget}/day for fitness add-ons (Staples like mess rice/dal are ₹0).
-
-9. STRICT SERVING QUANTITY & CALORIE RULES:
-   - "quantity" MUST be a small portion count (e.g. 1, 2, or 3). NEVER output grams, milliliters, or numbers >= 5 as "quantity"! (e.g. for 100g paneer, quantity is 1 and serving_size is "100g". For 250ml milk, quantity is 1 and serving_size is "1 glass (250ml)").
-   - "serving_size": Describe the single unit cleanly (e.g. "large", "piece", "bowl (150g)", "cup (200ml)"). NEVER prefix with "1 " if quantity > 1 (e.g., for 3 eggs: quantity: 3, serving_size: "large (50g)" or "large eggs").
-   - TARGET CALORIES PER MEAL: Distribute total daily calories (${targets.calories} kcal) realistically:
-     * Breakfast: ~${Math.round(targets.calories * (slotPercentages['breakfast'] || 0.28))} kcal, ~${Math.round(targets.protein * (slotPercentages['breakfast'] || 0.28))}g protein
-     * Lunch: ~${Math.round(targets.calories * (slotPercentages['lunch'] || 0.38))} kcal, ~${Math.round(targets.protein * (slotPercentages['lunch'] || 0.38))}g protein
-     * Dinner: ~${Math.round(targets.calories * (slotPercentages['dinner'] || 0.34))} kcal, ~${Math.round(targets.protein * (slotPercentages['dinner'] || 0.34))}g protein
-   - Items in each meal MUST sum up to approximately that meal's target calories. Do NOT over-pack meals.
-   - Do NOT repeat the exact same food item multiple times in one meal.
-   - 100% NATURAL WHOLE FOODS ONLY: NEVER recommend or include whey protein, protein powders, mass gainers, creatine, BCAAs, or chemical pills. 100% of macros must come from real whole food (Farm Eggs, Paneer, Curd/Dahi, Dals, Chana, Rajma, Soya Chunks, Chicken, Fish, Tofu, Peanuts, Oats, Bananas).
-   - DUAL-CHOICE ARCHITECTURE (OPTION A & OPTION B): Every single meal slot must provide Option A (Quick / Mess Base) and Option B (Variety / Cooked Alternative), matched to the same target calories and protein.
-   - Every item name in "items" and "option_b_items" MUST match one of these reviewed catalog food names exactly: ${safeFoodCatalog.map(food => food.name).join(' | ')}. Put unlisted cooking ingredients such as onion in prep instructions only; do not list them as separate food items.
-
-Return ONLY valid JSON matching this schema:
-{
-  "plan_summary": "7-Day Personalized Luna AI Master Plan",
-  "days": [
-    {
-      "day_number": 1,
-      "meals": [
-        {
-          "meal_type": "breakfast",
-          "name": "Option A Title (e.g. Desi Egg Bhurji with Warm Phulkas)",
-          "prep_instruction": "Short, practical kitchen or kettle hack tip suited for ${userContext.environment}",
-          "items": [
-            { "name": "Exact whole food name", "quantity": 1, "serving_size": "portion e.g. 2 large, 2 medium, 1 bowl, 100g" }
-          ],
-          "option_b_name": "Option B Title (e.g. Besan Paneer Chilla with Mint Chutney)",
-          "option_b_prep_instruction": "Short kitchen or kettle tip for Option B",
-          "option_b_items": [
-            { "name": "Exact whole food name", "quantity": 1, "serving_size": "portion e.g. 2 pieces, 1 bowl, 100g" }
-          ]
-        }
-      ]
-    }
-  ]
-}`;
-
-    const userPrompt = `Generate the 7-day personalized master plan for:
-Diet: ${userContext.dietLabel}
-Environment: ${userContext.environment}
-Available Foods: ${availableFoodsStr}
-Budget: ${userContext.budgetStr} (~₹${userContext.dailyBudget}/day)
-Meals per day: ${mealsPerDay} (${mealSlots.join(', ')})
-Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}g carbs, ${targets.fat}g fat.`;
-
-    // 5. Execute AI Generation with Groq (with graceful deterministic fallback)
-    let aiPlan: LunaAIGenerationResult | null = null;
-    try {
-      aiPlan = await generateAIResponseJSON<LunaAIGenerationResult>({
-        systemPrompt,
-        userPrompt,
-        model: "primary",
-        maxTokens: 3500,
-        temperature: 0.3
-      });
-    } catch (groqErr: any) {
-      console.warn("[Luna AI] Primary Groq call failed, attempting fallback to fast model:", groqErr?.message);
-      try {
-        aiPlan = await generateAIResponseJSON<LunaAIGenerationResult>({
-          systemPrompt,
-          userPrompt,
-          model: "fast",
-          maxTokens: 3500,
-          temperature: 0.3
-        });
-      } catch (fallbackErr: any) {
-        console.warn("[Luna AI] Groq fallback also failed, activating deterministic 7-day plan fallback:", fallbackErr?.message);
-        await this.logUsage(userId, 'fallback_deterministic_generation', 'deterministic', undefined);
-      }
-    }
-
-    if (!aiPlan || !Array.isArray(aiPlan.days) || aiPlan.days.length === 0) {
-      console.info("[Luna AI] Generating high-precision deterministic 7-day plan fallback for user:", userId);
-      aiPlan = {
-        plan_summary: "7-Day Precision Personalized Plan",
-        days: Array.from({ length: 7 }, (_, dIdx) => {
-          const fallbackStartDate = new Date(`${localDate}T12:00:00.000Z`);
-          const rotatingMap = NutritionService.getRotatingMealPlanForDay((fallbackStartDate.getUTCDay() + dIdx) % 7, profile, targets, safeFoodCatalog);
-          const dayMeals = mealSlots.map(slot => rotatingMap.get(slot) || rotatingMap.get('lunch')).filter(Boolean);
-          return {
-            day_number: dIdx + 1,
-            meals: dayMeals.map(m => ({
-              meal_type: m.meal_type || 'meal',
-              name: m.name || 'Personalized Meal',
-              prep_instruction: m.prep_instructions || '',
-              items: (m.items || m.meal_plan_items || []).map((it: any) => ({
-                name: it.foods?.name || it.name,
-                quantity: it.quantity || 1,
-                serving_size: it.foods?.serving_size || it.serving_size || '1 serving'
-              }))
+    // 4. Deterministic Plan Generation (Zero LLM / AI Call)
+    console.info("[Luna AI] Generating high-precision deterministic 7-day plan for user:", userId);
+    const aiPlan: LunaAIGenerationResult = {
+      plan_summary: "7-Day Precision Personalized Plan",
+      days: Array.from({ length: 7 }, (_, dIdx) => {
+        const fallbackStartDate = new Date(`${localDate}T12:00:00.000Z`);
+        const rotatingMap = NutritionService.getRotatingMealPlanForDay((fallbackStartDate.getUTCDay() + dIdx) % 7, profile, targets, safeFoodCatalog);
+        const dayMeals = mealSlots.map(slot => rotatingMap.get(slot) || rotatingMap.get('lunch')).filter(Boolean);
+        return {
+          day_number: dIdx + 1,
+          meals: dayMeals.map(m => ({
+            meal_type: m.meal_type || 'meal',
+            name: m.name || 'Personalized Meal',
+            prep_instruction: m.prep_instructions || '',
+            items: (m.items || m.meal_plan_items || []).map((it: any) => ({
+              name: it.foods?.name || it.name,
+              quantity: it.quantity || 1,
+              serving_size: it.foods?.serving_size || it.serving_size || '1 serving'
             }))
-          };
-        })
-      };
-    }
+          }))
+        };
+      })
+    };
 
     // Helper: Category-aware fallback food resolution
     const findFallbackFood = (fName: string): NutritionFoodReference | undefined => {
@@ -854,7 +726,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
     const { error: saveError } = await supabase.rpc('replace_weekly_meal_plans', { p_days: planDaysPayload });
     if (saveError) {
       console.error('[Luna AI] Error saving weekly meal plan:', saveError);
-      await this.logUsage(userId, 'failed_db_insert', 'groq');
+      await this.logUsage(userId, 'failed_db_insert', 'deterministic');
       throw new Error(`Failed to save your meal plan. Your previous plan was left unchanged: ${saveError.message}`);
     }
 
@@ -930,7 +802,7 @@ Targets: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}
     invalidateNutritionServerCache(userId);
 
     // 9. Update Daily Summary for Today & Log Success
-    await this.logUsage(userId, 'success', 'groq');
+    await this.logUsage(userId, 'success', 'deterministic');
     await NutritionService.updateDailySummary(userId);
 
     return {

@@ -1,7 +1,7 @@
 {
   "project": "saoesvkicojsvuytcfid.supabase.co",
-  "applied_at": "2026-10-04T16:07:32.816Z",
-  "downgraded_unbacked_rows": 220,
+  "applied_at": "2026-10-06T07:31:05.193Z",
+  "downgraded_unbacked_rows": 0,
   "published": [
     {
       "id": "2c06a8a6-18a0-4240-a716-1862a5b115c3",
@@ -44,6 +44,97 @@
       "storage_path": "recipe-images/punjabi-rajma-chawal/v1/f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4.webp",
       "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/punjabi-rajma-chawal/v1/f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4.webp",
       "sha256": "f0452a7de8646e6e61f6772e88346353cd22c7f8fbf1780c5e1e0f93352cb2d4"
+    },
+    {
+      "id": "a0a76013-f31e-4fce-9996-49b7f9ca1391",
+      "slug": "dal-fry-paneer-rice",
+      "storage_path": "recipe-images/dal-fry-paneer-rice/v1/aae9465e3684e7e2b30f1a6644b5a03e873ac6f4c0a645ca8a0e040a7b09c198.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/dal-fry-paneer-rice/v1/aae9465e3684e7e2b30f1a6644b5a03e873ac6f4c0a645ca8a0e040a7b09c198.webp",
+      "sha256": "aae9465e3684e7e2b30f1a6644b5a03e873ac6f4c0a645ca8a0e040a7b09c198"
+    },
+    {
+      "id": "d1b26a20-6722-426c-9a8f-def4534883ac",
+      "slug": "chole-paneer-paratha",
+      "storage_path": "recipe-images/chole-paneer-paratha/v1/2f0056a6d0f85d20ee4b0ca7812e3ccbd5d66f99c780d757adac6ed22b1fff49.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/chole-paneer-paratha/v1/2f0056a6d0f85d20ee4b0ca7812e3ccbd5d66f99c780d757adac6ed22b1fff49.webp",
+      "sha256": "2f0056a6d0f85d20ee4b0ca7812e3ccbd5d66f99c780d757adac6ed22b1fff49"
+    },
+    {
+      "id": "4cc98011-2029-49af-9ee3-6748fcbf3c71",
+      "slug": "chana-dal-paneer-phulka",
+      "storage_path": "recipe-images/chana-dal-paneer-phulka/v1/2d2deb14bdf9503ea98ff55e6123070eb70a4972af51690fa5fe19706f245171.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/chana-dal-paneer-phulka/v1/2d2deb14bdf9503ea98ff55e6123070eb70a4972af51690fa5fe19706f245171.webp",
+      "sha256": "2d2deb14bdf9503ea98ff55e6123070eb70a4972af51690fa5fe19706f245171"
+    },
+    {
+      "id": "c3ba3284-a77d-477d-90fe-0fa974d8feeb",
+      "slug": "punjabi-rajma-curd-phulka",
+      "storage_path": "recipe-images/punjabi-rajma-curd-phulka/v1/cce961c20c4b3a05fdeb98fac6f5fe08d92ef7006af007a39eb169cd7e40a497.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/punjabi-rajma-curd-phulka/v1/cce961c20c4b3a05fdeb98fac6f5fe08d92ef7006af007a39eb169cd7e40a497.webp",
+      "sha256": "cce961c20c4b3a05fdeb98fac6f5fe08d92ef7006af007a39eb169cd7e40a497"
+    },
+    {
+      "id": "aed418de-a3bc-4ef1-82f4-1f221c9456c4",
+      "slug": "high-protein-veg-thali",
+      "storage_path": "recipe-images/high-protein-veg-thali/v1/32d493d7395fa7e88b46e59e45159436ba95f8cf9c8996f9a57c740a8b80d36b.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/high-protein-veg-thali/v1/32d493d7395fa7e88b46e59e45159436ba95f8cf9c8996f9a57c740a8b80d36b.webp",
+      "sha256": "32d493d7395fa7e88b46e59e45159436ba95f8cf9c8996f9a57c740a8b80d36b"
+    },
+    {
+      "id": "e1213733-4e9b-41b1-8efb-0446fa107898",
+      "slug": "moong-dal-cheela-tomato",
+      "storage_path": "recipe-images/moong-dal-cheela-tomato/v1/ea18e6a432175cc7e40c130ad0a359249dfb0f4e8ede76803ae23a0d0cef6ee3.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/moong-dal-cheela-tomato/v1/ea18e6a432175cc7e40c130ad0a359249dfb0f4e8ede76803ae23a0d0cef6ee3.webp",
+      "sha256": "ea18e6a432175cc7e40c130ad0a359249dfb0f4e8ede76803ae23a0d0cef6ee3"
+    },
+    {
+      "id": "83c8de86-ac8a-481b-b39c-653756f5a5e4",
+      "slug": "soya-chunks-curry-rice",
+      "storage_path": "recipe-images/soya-chunks-curry-rice/v1/2cebcb00ca988de190f71e974d33ddbbab62f48d3c27bb752d8fb34f7a3a62f7.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/soya-chunks-curry-rice/v1/2cebcb00ca988de190f71e974d33ddbbab62f48d3c27bb752d8fb34f7a3a62f7.webp",
+      "sha256": "2cebcb00ca988de190f71e974d33ddbbab62f48d3c27bb752d8fb34f7a3a62f7"
+    },
+    {
+      "id": "13f90871-cfe1-4e1e-996d-e8c6edb148fc",
+      "slug": "soya-chunks-bhurji-roti",
+      "storage_path": "recipe-images/soya-chunks-bhurji-roti/v1/8329f0d58a4a747fa9f0cc25ee0aa27ba08b9daa5a4dade0a3982a09ccb3e37d.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/soya-chunks-bhurji-roti/v1/8329f0d58a4a747fa9f0cc25ee0aa27ba08b9daa5a4dade0a3982a09ccb3e37d.webp",
+      "sha256": "8329f0d58a4a747fa9f0cc25ee0aa27ba08b9daa5a4dade0a3982a09ccb3e37d"
+    },
+    {
+      "id": "fd4d196c-e41d-4095-a8a9-d0b5a48bd72e",
+      "slug": "moong-sprouts-chaat",
+      "storage_path": "recipe-images/moong-sprouts-chaat/v1/7d465ebc420f5016dcdd0d8049b980b7dfb10d8cfd9ae3c971b4943e0117ac18.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/moong-sprouts-chaat/v1/7d465ebc420f5016dcdd0d8049b980b7dfb10d8cfd9ae3c971b4943e0117ac18.webp",
+      "sha256": "7d465ebc420f5016dcdd0d8049b980b7dfb10d8cfd9ae3c971b4943e0117ac18"
+    },
+    {
+      "id": "63da25f9-ea19-4294-a9f7-fe0c55f80310",
+      "slug": "besan-cheela-cucumber",
+      "storage_path": "recipe-images/besan-cheela-cucumber/v1/f92be22e0b4e5b18f7d6795bf25f15b68949b046fa04a975d77d5ed999a77dea.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/besan-cheela-cucumber/v1/f92be22e0b4e5b18f7d6795bf25f15b68949b046fa04a975d77d5ed999a77dea.webp",
+      "sha256": "f92be22e0b4e5b18f7d6795bf25f15b68949b046fa04a975d77d5ed999a77dea"
+    },
+    {
+      "id": "9b04c042-07b9-4e99-8d5f-7645ed13bc48",
+      "slug": "bread-omelette-homestyle",
+      "storage_path": "recipe-images/bread-omelette-homestyle/v1/8f2fec0f41b7ec52e611c02395a9eb9c1175dc96d04d597ebf69455b52541524.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/bread-omelette-homestyle/v1/8f2fec0f41b7ec52e611c02395a9eb9c1175dc96d04d597ebf69455b52541524.webp",
+      "sha256": "8f2fec0f41b7ec52e611c02395a9eb9c1175dc96d04d597ebf69455b52541524"
+    },
+    {
+      "id": "d708597c-1304-41e9-b49c-3d90a5d2395d",
+      "slug": "boiled-eggs-toor-dal-rice",
+      "storage_path": "recipe-images/boiled-eggs-toor-dal-rice/v1/47d424b564d81bf75a7428539119d58ac59bd87503e17c84bf2b9fa282f9515a.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/boiled-eggs-toor-dal-rice/v1/47d424b564d81bf75a7428539119d58ac59bd87503e17c84bf2b9fa282f9515a.webp",
+      "sha256": "47d424b564d81bf75a7428539119d58ac59bd87503e17c84bf2b9fa282f9515a"
+    },
+    {
+      "id": "53968fb7-7c14-466e-86b6-73e4d97d060d",
+      "slug": "boiled-eggs-chole-masala-phulka",
+      "storage_path": "recipe-images/boiled-eggs-chole-masala-phulka/v1/5a560e40a914152c6a2c3328851ba687bb14c71f5c294ffbfbb402159146c404.webp",
+      "url": "https://saoesvkicojsvuytcfid.supabase.co/storage/v1/object/public/food-photos/recipe-images/boiled-eggs-chole-masala-phulka/v1/5a560e40a914152c6a2c3328851ba687bb14c71f5c294ffbfbb402159146c404.webp",
+      "sha256": "5a560e40a914152c6a2c3328851ba687bb14c71f5c294ffbfbb402159146c404"
     }
   ],
   "profile_changes": 0

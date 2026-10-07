@@ -2,13 +2,12 @@ import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
 import { checkFitnessAILimit } from "@/lib/services/fitness-ai-limit";
 import { GeneratedGroceryItemSchema } from "@/lib/fitness/ai/schemas";
-import { generateAIResponseJSON as generateGroqResponseJSON } from "@/lib/services/groq/client";
 import {
-  parseBudgetPlanningReference,
   validateGroceryListAgainstProfile,
 } from "@/lib/fitness/validation/fitness-plan-profile";
 import { z } from "zod";
 import { canUseFitnessFeature } from "@/lib/fitness/subscription/access";
+import { generateDeterministicNutritionPlan, convertToAIPlanFormat } from "@/lib/fitness/nutrition/nutrition-engine";
 
 const GenerateGroceryResponseSchema = z.object({
   grocery_list: z.array(GeneratedGroceryItemSchema)
@@ -31,13 +30,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Fitness AI limit reached." }, { status: 429 });
     }
 
-    const body = await req.json();
-    const { currentNutritionPlan, optimizeBudgetMode, currentTotalCost } = body;
-
-    if (!currentNutritionPlan) {
-      return NextResponse.json({ success: false, error: "Missing nutrition plan." }, { status: 400 });
-    }
-
     const { data: profile, error: profileError } = await supabase
       .from("fitness_os_profiles")
       .select("*")
@@ -47,66 +39,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Fitness profile not found." }, { status: 404 });
     }
 
-    const systemPrompt = `You are the Fitness AI OS intelligent coaching assistant.
-Your goal is to generate a structured, highly personalized monthly grocery list based on the user's existing nutrition plan.
+    // 100% Deterministic grocery generation from clinical food engine (Zero LLM / AI hallucination)
+    const nutritionPlan = await generateDeterministicNutritionPlan(profile);
+    const formatted = convertToAIPlanFormat(nutritionPlan);
 
-CRITICAL RULES:
-1. OUTPUT JSON ONLY. You must strictly follow the JSON schema provided.
-2. NO MEDICAL ADVICE.
-3. Use the user's food environment context to determine what foods they actually need to buy vs what is already provided.
-4. Do not recommend foods they are allergic to or avoiding.
-5. The quantities should reflect approximately 30 days of consumption.
-6. The estimated_price MUST ALWAYS be greater than 0 for every single item. NEVER output 0 for eggs, meat, or staple foods.
-7. ABSOLUTE PROHIBITION OF COOKED DISHES: NEVER include cooked curries, sabzis, gravies, chaats, or restaurant dishes (e.g. no "Chana Masala", "Chole", "Kala Chana Curry", "Chana Chaat"). Groceries must be real packaged products bought from a store (Blinkit/Instamart/Amazon).
-8. 100% NATURAL WHOLE FOODS MANDATE: NEVER recommend Whey Protein, Plant Protein Powder, or any artificial supplements. Every grocery item must be an unadulterated whole food (e.g. Tofu, Soya Chunks, Soy Milk, Paneer, Curd, Eggs, Chicken, Oats, Peanut Butter, Nuts, Seeds).
-9. VALID RETAIL UNITS ONLY: "kg", "grams", "liters", "packs", "jars", "cartons", "packets", "pieces". NEVER use "bowls", "plates", "servings", or "handfuls".
-10. NEVER use "dozen" or "dozens" as a unit. You MUST use "pieces". Example: 30 pieces.
-11. NEVER duplicate variations of the same base food (e.g. max 1 chana/chickpea item).`;
-
-    const userPrompt = `Here is my existing nutrition plan and profile:
-Profile:
-- Food Environment: ${profile.food_environment || "Home"}
-- Budget: ${profile.nutrition_budget || "Not specified"}
-- Monthly planning reference: ${parseBudgetPlanningReference(profile.nutrition_budget) || "Not specified"} INR
-- Diet Preference (Food Type): ${profile.food_type || profile.diet_preference || "Balanced"}
-- Allergies: ${profile.food_allergies || "None"}
-- Disliked/Avoided Foods: ${[profile.foods_disliked, profile.foods_avoided].filter(Boolean).join(", ") || "None"}
-- Available Foods: ${Array.isArray(profile.available_foods) ? profile.available_foods.join(", ") : "None"}
-
-Current Nutrition Plan:
-${JSON.stringify(currentNutritionPlan, null, 2)}
-
-Instructions:
-${optimizeBudgetMode 
-  ? `My current estimated grocery cost is ₹${currentTotalCost}, but my budget is only ${profile.nutrition_budget}. Your previous list was OVER BUDGET. You MUST strictly reduce the estimated_price totals by substituting expensive items with cheaper alternatives (like replacing expensive meats/supplements with affordable whole foods) or slightly reducing quantities while ensuring adequate nutrition. Return the newly optimized grocery_list.` 
-  : `Generate a practical monthly 'grocery_list' based directly on the nutrition plan above. Prioritize foods already available to me. Do not recommend purchasing foods already provided by my food environment. The monthly planning reference is the spend target: when three or more compatible foods are available, make a varied, useful list that uses 80-95% of that reference. Do not create excessive portions or add unnecessary foods merely to spend money. Quantities should represent realistic 30-day consumption for one person. Prices are estimated only and should never be treated as exact market prices.`}
-
-Respond entirely in JSON format matching this schema: 
-{ 
-  "grocery_list": [ 
-    { 
-      "name": string, 
-      "monthly_quantity": number, 
-      "unit": string, // MUST be one of: "kg", "grams", "liters", "pieces", "units", "packets", "bunches", "tins"
-      "estimated_price": number, 
-      "category": string, 
-      "is_optional": boolean, 
-      "reason": string 
-    } 
-  ] 
-}
-CRITICAL: For eggs, NEVER use "dozen" or "dozens". If you want 36 eggs, use {"monthly_quantity": 36, "unit": "pieces"}. Every single item MUST have a realistic estimated_price > 0. Never output 0 for prices.`;
-
-    const aiResponse = await generateGroqResponseJSON<z.infer<typeof GenerateGroceryResponseSchema>>({
-      systemPrompt,
-      userPrompt,
-      model: "primary",
-      temperature: 0.2,
+    const parsedData = GenerateGroceryResponseSchema.parse({
+      grocery_list: formatted.grocery_list,
     });
-    const parsedData = GenerateGroceryResponseSchema.parse(aiResponse);
 
     const profileCheck = validateGroceryListAgainstProfile(parsedData.grocery_list, profile, {
-      enforceBudgetUtilisation: true,
+      enforceBudgetUtilisation: false,
     });
     if (!profileCheck.valid) {
       return NextResponse.json(
@@ -117,7 +59,7 @@ CRITICAL: For eggs, NEVER use "dozen" or "dozens". If you want 36 eggs, use {"mo
 
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {
-    console.error("Fitness AI Generate Grocery Error:", error);
+    console.error("Generate Grocery Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

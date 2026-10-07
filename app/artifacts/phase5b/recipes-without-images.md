@@ -5,7 +5,6 @@
 - Punjabi Aloo Paratha with Plain Dahi — `aloo-paratha-dahi`
 - Baingan Bharta with Curd & Chapati with Ghee — `baingan-bharta-dahi-phulka`
 - Baingan Bharta with Multigrain Roti & Chana — `baingan-bharta-phulka`
-- Besan Cheela with Fresh Cucumber — `besan-cheela-cucumber`
 - Besan Cheela with Grated Low Fat Paneer — `besan-cheela-paneer-stuffing`
 - Homestyle Bhindi Masala with Phulkas & Dal — `bhindi-masala-phulka`
 - Bhindi Masala with Yellow Dal & Chapati with Ghee — `bhindi-masala-yellow-dal-phulka`
@@ -21,7 +20,6 @@
 - Boiled Eggs with Banana & Peanut Butter — `boiled-eggs-banana-pb`
 - Hard Boiled Eggs with Black Coffee — `boiled-eggs-black-coffee`
 - Boiled Eggs with Chana Dal Curry & Phulkas — `boiled-eggs-chana-dal-phulka`
-- Boiled Eggs with Chole Masala & Multigrain Roti — `boiled-eggs-chole-masala-phulka`
 - Boiled Eggs with Chole Masala & Steamed Rice — `boiled-eggs-chole-masala-rice`
 - Boiled Eggs with Dal Fry & Steamed White Rice — `boiled-eggs-dal-fry-rice`
 - Boiled Eggs with Dal Tadka & Hot Phulkas — `boiled-eggs-dal-tadka-phulka`
@@ -36,14 +34,11 @@
 - Boiled Eggs with South Indian Sambar Rice — `boiled-eggs-sambar-rice`
 - Boiled Eggs with Boiled Sweet Potato — `boiled-eggs-sweet-potato`
 - Boiled Eggs with Toor Dal & Hot Phulkas — `boiled-eggs-toor-dal-phulka`
-- Boiled Eggs with Toor Dal & Steamed Rice — `boiled-eggs-toor-dal-rice`
-- Indian Street-Style Bread Omelette — `bread-omelette-homestyle`
 - Tuna & Boiled Egg Whites on Toast — `canned-tuna-boiled-eggs-toast`
 - Tuna & Brown Rice Fitness Bowl — `canned-tuna-brown-rice-salad`
 - High-Protein Tuna on Brown Bread Toast — `canned-tuna-brown-toast`
 - Quick Tuna & Basmati Rice Bowl — `canned-tuna-rice-bowl`
 - Salted Chaas (Buttermilk) with Roasted Chana — `chaas-roasted-chana`
-- Chana Dal Curry with Fresh Paneer & Phulkas — `chana-dal-paneer-phulka`
 - Chana Dal Curry with Multigrain Roti — `chana-dal-phulka`
 - Whole Wheat Cheese Toast with Indian Masala Chai — `cheese-toast-chai`
 - Homestyle Chicken Biryani with Cucumber Salad — `chicken-biryani-homestyle`
@@ -67,12 +62,10 @@
 - Chole Masala with Steamed Rice & Salted Chaas — `chole-masala-curd-rice`
 - Chole Masala with Multigrain Roti — `chole-masala-phulka`
 - Chole Masala with Steamed Basmati Rice — `chole-masala-rice`
-- Chole Masala with Paneer Paratha & Curd — `chole-paneer-paratha`
 - Plain Curd Bowl with Sliced Banana & Walnuts — `curd-banana-walnuts`
 - South Indian Curd Rice with Grilled Paneer Tikka — `curd-rice-paneer-tikka`
 - South Indian Curd Rice with Tadka & Cucumber Salad — `curd-rice-tadka-cucumber`
 - Dal Fry with Ghee Phulka & Plain Curd — `dal-fry-ghee-phulka-dahi`
-- Dal Fry with Steamed Rice & Fresh Paneer — `dal-fry-paneer-rice`
 - Dal Tadka with Paneer Bhurji & Phulkas — `dal-tadka-paneer-bhurji-phulka`
 - Dal Tadka with Steamed Rice & Low Fat Paneer — `dal-tadka-paneer-rice`
 - Double Toned Skimmed Milk with Medjool Dates — `double-toned-milk-dates`
@@ -116,7 +109,6 @@
 - Grilled Salmon with Brown Rice & Broccoli — `grilled-salmon-brown-rice-veggies`
 - Grilled Salmon with Steamed Rice & Salad — `grilled-salmon-steamed-rice`
 - Grilled Salmon with Sweet Potato & Salad — `grilled-salmon-sweet-potato`
-- High-Protein Veg Thali (Dal, Paneer Bhurji, Phulkas & Dahi) — `high-protein-veg-thali`
 - Homestyle Chicken Curry with Hot Phulkas — `homestyle-chicken-curry-phulka`
 - Homestyle Chicken Curry with Steamed White Rice — `homestyle-chicken-curry-rice`
 - Homestyle Egg Curry with Hot Phulkas & Salad — `homestyle-egg-curry-phulka`
@@ -151,9 +143,7 @@
 - Mixed Vegetable Sabzi with Paneer Bhurji & Phulka — `mixed-veg-paneer-bhurji-phulka`
 - Mixed Vegetable Sabzi with Phulkas & Moong Sprouts — `mixed-veg-sabzi-phulka`
 - Moong Dal Cheela with Fresh Paneer — `moong-dal-cheela-paneer`
-- Moong Dal Cheela with Fresh Tomato & Salad — `moong-dal-cheela-tomato`
 - Moong Dal Khichdi with Desi Ghee & Fresh Curd — `moong-dal-khichdi-ghee-dahi`
-- Fresh Moong Sprouts Salad with Lemon & Tomato — `moong-sprouts-chaat`
 - Mushroom Masala with Steamed Rice & Plain Curd — `mushroom-masala-curd-rice`
 - Mushroom Masala with Low Fat Paneer & Multigrain Roti — `mushroom-masala-paneer-roti`
 - Mushroom Masala with Steamed White Rice — `mushroom-masala-rice`
@@ -172,7 +162,6 @@
 - Prawns Masala with Jeera Rice & Salad — `prawns-masala-jeera-rice`
 - Homestyle Prawns Masala with Hot Phulkas — `prawns-masala-phulka`
 - Spicy Prawns Masala with Steamed Rice — `prawns-masala-steamed-rice`
-- Punjabi Rajma with Phulkas & Low Fat Curd — `punjabi-rajma-curd-phulka`
 - Punjabi Rajma with Steamed Rice & Low Fat Paneer — `punjabi-rajma-paneer-rice`
 - Punjabi Rajma Masala with Hot Phulkas — `punjabi-rajma-phulka`
 - South Indian Rasam Rice with Paneer Bhurji — `rasam-rice-paneer-bhurji`
@@ -188,8 +177,6 @@
 - Set Dosa with Plain Curd & Sambar — `set-dosa-dahi-sambar`
 - Soy Milk & Chia Power Smoothie — `soy-milk-chia-smoothie`
 - Soya Chaap Masala with Hot Phulkas — `soya-chaap-curry-phulka`
-- Soya Chunks Bhurji with Multigrain Roti — `soya-chunks-bhurji-roti`
-- Soya Chunks Curry with Steamed Rice — `soya-chunks-curry-rice`
 - Soya Chunks Curry with Multigrain Roti — `soya-chunks-curry-roti`
 - Dhaba-Style Egg Curry with Multigrain Roti — `spicy-egg-curry-multigrain-roti`
 - Steamed Idlis with Sambar — `steamed-idli-sambar`

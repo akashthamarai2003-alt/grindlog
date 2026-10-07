@@ -174,14 +174,33 @@ const manifest = catalog.map((recipe) => {
   const forbidden = Object.entries({ rice: /rice/, roti: /roti|phulka|chapati/, naan: /naan/,
     paneer: /paneer/, egg: /egg/, chicken: /chicken/, fish: /fish|rohu|tilapia|salmon|tuna/, salad: /salad/ })
     .filter(([, matches]) => !matches.test(dishText)).map(([food]) => food);
+  const localFile = valid?.storage_path ? path.join(directory, "assets", valid.storage_path) : null;
+  const localExists = Boolean(localFile && fs.existsSync(localFile));
   return {
-    recipe_id: recipe.id, recipe_version_id: version.id, slug: recipe.slug, recipe_name: version.name,
+    recipe_id: recipe.id, recipe_slug: recipe.slug, recipe_version_id: version.id, slug: recipe.slug, recipe_name: version.name,
     diet_category: version.diet_category, meal_slots: null,
     meal_slots_source: "Not stored on recipe_versions; the existing planner derives eligibility from recipe metadata and profile equipment.",
     primary_protein: version.primary_protein, key_visible_ingredients: visible,
     canonical_photo_scope: common.length ? "SHARED_COMPONENTS_ACROSS_VARIANTS" : "REGULAR_ONLY_REQUIRES_VARIANT_REVIEW",
     regular_ingredients: regular.ingredients, variant_ingredient_sets: tiers,
     variant_specific_ingredients_to_omit_from_shared_photo: variable,
+    expected_storage_path: valid?.storage_path || `recipe-images/${recipe.slug}/v1/{sha256}.webp`,
+    database_image_row_exists: Boolean(primary),
+    primary_status: Boolean(primary?.is_primary),
+    approval_status: primary?.status || "NO_ROW",
+    local_asset_exists: localExists,
+    storage_asset_exists: Boolean(primary?.asset_exists),
+    asset_accessible: Boolean(valid && primary?.url_probe?.ok),
+    file_format: valid?.url_probe?.format || null,
+    file_size: valid?.url_probe?.bytes || null,
+    width: valid?.url_probe?.width || null,
+    height: valid?.url_probe?.height || null,
+    sha256: valid?.url_probe?.sha256 || null,
+    semantic_review_status: valid ? "APPROVED" : "SEMANTIC_REVIEW_REQUIRED",
+    fallback_required: !valid,
+    notes: valid
+      ? (valid.visual_review?.notes || "Reviewed and approved real production photo.")
+      : "No verified real image object in Storage. GrindLog glassmorphic fallback badge required.",
     image_asset_id: primary?.id || null, storage_path: primary?.storage_path || null,
     status: primary?.status || "MISSING", asset_exists: primary?.asset_exists || false,
     needs_image: !valid, production_delivery: valid ? "APPROVED_ASSET" : "GRINDLOG_FALLBACK",
@@ -220,6 +239,49 @@ const report = { generated_at: new Date().toISOString(), source: "Live Supabase 
 fs.writeFileSync(path.join(directory, "recipe-image-manifest.json"), JSON.stringify(report, null, 2) + "\n");
 fs.writeFileSync(path.join(directory, "recipes-without-images.md"), "# Recipes using the GrindLog fallback\n\n" +
   manifest.filter((recipe) => recipe.needs_image).map((recipe) => `- ${recipe.recipe_name} — \`${recipe.slug}\``).join("\n") + "\n");
+
+const csvRows = [
+  "recipe_id,recipe_slug,recipe_name,diet_category,production_category,meal_type_category,primary_protein,visible_ingredients,expected_storage_path"
+];
+for (const recipe of manifest.filter((r) => r.needs_image)) {
+  let prodCat = "Vegetarian";
+  if (recipe.diet_category === "vegan") prodCat = "Vegan";
+  else if (recipe.diet_category === "eggetarian") prodCat = "Eggetarian";
+  else if (recipe.diet_category === "non-veg") {
+    const text = (recipe.recipe_name + " " + recipe.slug + " " + recipe.primary_protein).toLowerCase();
+    if (text.includes("fish") || text.includes("tuna") || text.includes("prawn") || text.includes("salmon") || text.includes("tilapia") || text.includes("rohu") || text.includes("seafood")) {
+      prodCat = "Fish";
+    } else if (text.includes("chicken")) {
+      prodCat = "Chicken";
+    } else {
+      prodCat = "Other Non-Veg";
+    }
+  }
+
+  const nameLower = recipe.recipe_name.toLowerCase();
+  let mealType = "Main Course";
+  if (/oats|poha|upma|chilla|cheela|toast|omelette|paratha|idli|dosa|boiled egg/.test(nameLower)) {
+    mealType = "Breakfast";
+  } else if (/sprouts|chaat|roasted chana|peanut|salad/.test(nameLower)) {
+    mealType = "Snacks";
+  } else if (/chai|coffee|lassi|chaas|milk|smoothie|shake/.test(nameLower)) {
+    mealType = "Drinks / Sides";
+  }
+
+  const escapeCsv = (val) => `"${String(val || "").replace(/"/g, '""')}"`;
+  csvRows.push([
+    recipe.recipe_id,
+    recipe.slug,
+    escapeCsv(recipe.recipe_name),
+    recipe.diet_category,
+    prodCat,
+    mealType,
+    escapeCsv(recipe.primary_protein),
+    escapeCsv(recipe.key_visible_ingredients.join("; ")),
+    recipe.proposed_storage_path_pattern
+  ].join(","));
+}
+fs.writeFileSync(path.join(directory, "missing-recipe-images.csv"), csvRows.join("\n") + "\n");
 console.log(JSON.stringify(counts, null, 2));
 console.log(JSON.stringify(report.rollout));
 if (process.argv.includes("--require-safe") && (assetChecks.some((image) => image.status === "APPROVED" && !image.valid_production_asset) ||

@@ -14,7 +14,18 @@ if (!url || !key) throw new Error("Supabase credentials required");
 const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 const directory = path.resolve("artifacts/phase5b");
 const read = (name) => JSON.parse(fs.readFileSync(path.join(directory, name), "utf8"));
-const write = (name, value) => fs.writeFileSync(path.join(directory, name), JSON.stringify(value, null, 2) + "\n");
+const safeWriteFile = (file, content) => {
+  for (let i = 0; i < 10; i++) {
+    try {
+      fs.writeFileSync(file, content);
+      return;
+    } catch (err) {
+      if (i === 9) throw err;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+    }
+  }
+};
+const write = (name, value) => safeWriteFile(path.join(directory, name), JSON.stringify(value, null, 2) + "\n");
 const manifest = read("recipe-image-manifest.json");
 const candidates = read("image-candidates.json");
 const apply = process.argv.includes("--apply");
@@ -124,7 +135,7 @@ for (const { candidate, bytes } of prepared) {
   candidate.status = "APPROVED";
   candidate.url = imageUrl;
   write("image-candidates.json", candidates);
-  fs.writeFileSync(seedPath, JSON.stringify(seeds, null, 2) + "\n");
+  safeWriteFile(seedPath, JSON.stringify(seeds, null, 2) + "\n");
   published.push({ id: candidate.id, slug: candidate.slug, storage_path: candidate.storage_path, url: imageUrl, sha256: candidate.sha256 });
   write("publication.json", { project: new URL(url).hostname, applied_at: new Date().toISOString(),
     downgraded_unbacked_rows: before.length, published, profile_changes: 0 });
