@@ -856,8 +856,13 @@ export function V2NutritionView({
           {isToday && (
             <button
               type="button"
-              onClick={() => setManualSlot("snack")}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#ADFF00] px-3 py-2 text-xs font-black text-[#0A1108] shadow-[0_0_16px_rgba(173,255,0,0.25)] transition hover:bg-[#c3ff42] active:scale-95"
+              onClick={() => {
+                const nextSlot = current?.meals.find((m) => m.id === nextMealId)?.slot 
+                  || current?.meals.find((m) => m.status === "PLANNED" && m.logs.length === 0)?.slot 
+                  || "snack";
+                setManualSlot(nextSlot);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#ADFF00] px-3 py-2 text-xs font-black text-[#0A1108] shadow-[0_0_16px_rgba(173,255,0,0.25)] transition hover:bg-[#c3ff42] active:scale-95 touch-manipulation select-none cursor-pointer"
             >
               <Plus size={14} />
               <span>Log Food</span>
