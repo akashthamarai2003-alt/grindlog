@@ -935,19 +935,13 @@ export function V2NutritionView({
                         {meal.name}
                       </h3>
 
-                      {/* Compact Macro Badges (Calories, Protein, Carbs, Fat, Cost) */}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] font-bold">
-                        <span className="rounded-md bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-1.5 py-0.5 text-[#ADFF00]">
+                      {/* Compact Macro Badges (Calories, Protein, Cost) */}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+                        <span className="rounded-md bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 text-[#ADFF00]">
                           {number(shownCalories)} kcal
                         </span>
-                        <span className="rounded-md bg-sky-400/10 border border-sky-400/20 px-1.5 py-0.5 text-sky-300">
-                          {number(shownProtein)}g P
-                        </span>
-                        <span className="rounded-md bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 text-amber-300">
-                          {number(shownCarbs)}g C
-                        </span>
-                        <span className="rounded-md bg-rose-400/10 border border-rose-400/20 px-1.5 py-0.5 text-rose-300">
-                          {number(shownFat)}g F
+                        <span className="rounded-md bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 text-sky-300">
+                          {number(shownProtein)}g protein
                         </span>
                         <span className="text-[10px] font-medium text-white/40">
                           ₹{number(meal.cost)}
