@@ -50,7 +50,7 @@ async function NutritionContent() {
     });
     return (
       <div className="min-h-screen bg-[#0A1108] text-white">
-        <div className="mx-auto w-full max-w-5xl px-4 pb-32 pt-6 sm:px-6 sm:pt-10">
+        <div className="mx-auto w-full max-w-3xl px-3.5 pb-36 pt-4 sm:px-6 sm:pb-40 sm:pt-8">
           <V2NutritionView initialData={initialData} isPro={isPro} />
         </div>
       </div>

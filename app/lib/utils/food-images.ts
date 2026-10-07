@@ -142,19 +142,19 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "rasam": { emoji: "🥘", colors: ["#EA580C", "#7C2D12"] },
 
   // --- Indian Breads (Golden Wheat & Flatbread Gradients) ---
-  "chapati with ghee": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "chapati / phulka": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "chapati": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "phulka": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "multigrain roti": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "roti": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "aloo paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "gobi paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "plain paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "paratha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "naan": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "kulcha": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
-  "poori": { emoji: "🫓", colors: ["#B45309", "#78350F"] },
+  "chapati with ghee": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "chapati / phulka": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "chapati": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "phulka": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "multigrain roti": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "roti": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "aloo paratha": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "gobi paratha": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "plain paratha": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "paratha": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "naan": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "kulcha": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
+  "poori": { emoji: "🥙", colors: ["#B45309", "#78350F"] },
   "whole wheat bread": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
   "brown bread": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
   "bread": { emoji: "🍞", colors: ["#B45309", "#78350F"] },
@@ -211,7 +211,7 @@ const FOOD_BADGE_MAP: Record<string, BadgeConfig> = {
   "boiled broccoli": { emoji: "🥦", colors: ["#16A34A", "#14532D"] },
   "broccoli": { emoji: "🥦", colors: ["#16A34A", "#14532D"] },
   "cucumber": { emoji: "🥒", colors: ["#16A34A", "#14532D"] },
-  "green peas": { emoji: "🫛", colors: ["#16A34A", "#14532D"] },
+  "green peas": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
   "sweet corn": { emoji: "🌽", colors: ["#EAB308", "#854D0E"] },
   "mixed vegetable sabzi": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
   "mixed vegetables": { emoji: "🥗", colors: ["#16A34A", "#14532D"] },
@@ -357,7 +357,7 @@ export function getFoodSvgAvatar(name?: string, category?: string): string {
     } else if (catLower.includes("curry") || catLower.includes("dal") || catLower.includes("soup") || catLower.includes("gravy")) {
       config = { emoji: "🍲", colors: ["#EAB308", "#854D0E"] };
     } else if (catLower.includes("bread") || catLower.includes("roti") || catLower.includes("grain") || catLower.includes("cereal") || catLower.includes("bakery")) {
-      config = { emoji: "🫓", colors: ["#B45309", "#78350F"] };
+      config = { emoji: "🥙", colors: ["#B45309", "#78350F"] };
     } else if (catLower.includes("dairy") || catLower.includes("curd") || catLower.includes("milk") || catLower.includes("cheese")) {
       config = { emoji: "🥣", colors: ["#0284C7", "#0C4A6E"] };
     } else if (catLower.includes("breakfast") || catLower.includes("tiffin")) {
@@ -392,8 +392,8 @@ export function getFoodSvgAvatar(name?: string, category?: string): string {
     <rect width="94" height="94" x="3" y="3" rx="26" fill="url(#${bgGradId})" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
     <!-- Specular Highlight -->
     <rect width="94" height="47" x="3" y="3" rx="26" fill="url(#${specGradId})"/>
-    <!-- Centered High-Res Emoji Glyph -->
-    <text x="50" y="55" font-size="44" text-anchor="middle" dominant-baseline="central" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));">${config.emoji}</text>
+    <!-- Centered High-Res Emoji Glyph with cross-platform emoji font fallback -->
+    <text x="50" y="55" font-size="42" font-family="'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', sans-serif" text-anchor="middle" dominant-baseline="central" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));">${config.emoji}</text>
   </svg>`;
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
