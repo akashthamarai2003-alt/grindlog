@@ -514,11 +514,11 @@ export function V2NutritionView({
           </div>
         </div>
 
-        {/* Two-Column Responsive Layout: Left = Calorie Ring, Right = Horizontal Macro Bars */}
-        <div className="relative grid grid-cols-1 items-center gap-4 sm:grid-cols-12 sm:gap-6">
-          {/* Left Column: Calorie Ring */}
-          <div className="flex items-center gap-4 sm:col-span-5 sm:justify-center">
-            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
+        {/* Balanced Two-Side Layout: Left = Calorie Ring, Right = Full-Width Macro Bars */}
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
+          {/* Left: Calorie Ring with subtext */}
+          <div className="flex flex-col items-center justify-center shrink-0 self-center sm:self-auto sm:pr-2">
+            <div className="relative flex h-24 w-24 items-center justify-center sm:h-28 sm:w-28">
               <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 100 100">
                 <circle
                   cx="50"
@@ -545,42 +545,31 @@ export function V2NutritionView({
                 <span className="text-xl font-black leading-none tracking-tight text-white sm:text-2xl">
                   {number(calorieRemaining)}
                 </span>
-                <span className="mt-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#ADFF00]">
+                <span className="mt-1 text-[9px] font-extrabold uppercase tracking-wider text-[#ADFF00]">
                   {isSurplus ? "Surplus" : "Kcal Left"}
                 </span>
               </div>
             </div>
-
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <Flame size={14} className="text-[#ADFF00]" />
-                <p className="text-xs font-bold uppercase tracking-wider text-white/50">Calories</p>
-              </div>
-              <p className="mt-0.5 text-lg font-black leading-tight text-white">
-                {number(consumedCals)}{" "}
-                <span className="text-xs font-semibold text-white/40">/ {number(targetCals)}</span>
-              </p>
-              <p className="mt-0.5 text-[11px] font-medium text-white/45">
-                {caloriePercent}% of daily budget
-              </p>
-            </div>
+            <p className="mt-1.5 text-center text-xs font-semibold text-white/50">
+              <span className="font-bold text-white">{number(consumedCals)}</span> / {number(targetCals)} kcal
+            </p>
           </div>
 
-          {/* Right Column: 3 Horizontal Macro Bars (Protein, Carbs, Fat) */}
-          <div className="space-y-2.5 sm:col-span-7 sm:border-l sm:border-white/10 sm:pl-6">
+          {/* Right: 3 Full-Width Horizontal Macro Bars (Protein, Carbs, Fat) */}
+          <div className="flex-1 min-w-0 space-y-2.5 sm:space-y-3">
             {/* Protein Bar */}
             <div>
               <div className="mb-1 flex items-center justify-between text-xs font-bold">
                 <span className="flex items-center gap-1.5 text-sky-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-sky-400" /> Protein
+                  <span className="h-2 w-2 rounded-full bg-sky-400" /> Protein
                 </span>
-                <span className="text-white/80">
-                  {number(consumedPro)}{" "}
-                  <span className="font-normal text-white/40">/ {number(targetPro)}g</span>{" "}
+                <span className="text-white/90">
+                  <span className="font-bold">{number(consumedPro)}</span>
+                  <span className="font-normal text-white/40"> / {number(targetPro)}g</span>{" "}
                   <span className="text-[10px] text-white/35">({proPercent}%)</span>
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 sm:h-2.5">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-300 transition-all duration-500"
                   style={{ width: `${Math.min(100, proPercent)}%` }}
@@ -592,15 +581,15 @@ export function V2NutritionView({
             <div>
               <div className="mb-1 flex items-center justify-between text-xs font-bold">
                 <span className="flex items-center gap-1.5 text-amber-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Carbs
+                  <span className="h-2 w-2 rounded-full bg-amber-400" /> Carbs
                 </span>
-                <span className="text-white/80">
-                  {number(consumedCarbs)}{" "}
-                  <span className="font-normal text-white/40">/ {number(targetCarbs)}g</span>{" "}
+                <span className="text-white/90">
+                  <span className="font-bold">{number(consumedCarbs)}</span>
+                  <span className="font-normal text-white/40"> / {number(targetCarbs)}g</span>{" "}
                   <span className="text-[10px] text-white/35">({carbsPercent}%)</span>
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 sm:h-2.5">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-500"
                   style={{ width: `${Math.min(100, carbsPercent)}%` }}
@@ -612,15 +601,15 @@ export function V2NutritionView({
             <div>
               <div className="mb-1 flex items-center justify-between text-xs font-bold">
                 <span className="flex items-center gap-1.5 text-rose-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-rose-400" /> Fat
+                  <span className="h-2 w-2 rounded-full bg-rose-400" /> Fat
                 </span>
-                <span className="text-white/80">
-                  {number(consumedFat)}{" "}
-                  <span className="font-normal text-white/40">/ {number(targetFat)}g</span>{" "}
+                <span className="text-white/90">
+                  <span className="font-bold">{number(consumedFat)}</span>
+                  <span className="font-normal text-white/40"> / {number(targetFat)}g</span>{" "}
                   <span className="text-[10px] text-white/35">({fatPercent}%)</span>
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 sm:h-2.5">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-rose-400 to-pink-400 transition-all duration-500"
                   style={{ width: `${Math.min(100, fatPercent)}%` }}
