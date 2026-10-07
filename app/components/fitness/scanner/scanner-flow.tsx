@@ -283,19 +283,19 @@ export function ScannerFlow({ isRenew: propIsRenew }: ScannerFlowProps) {
                   <button
                     type="button"
                     onClick={() => setCameraModalView(view)}
-                    className={`flex-1 py-1 px-1 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 group ${
+                    className={`flex-1 min-w-0 py-1.5 px-1 rounded-lg text-[10px] font-black uppercase tracking-tight flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 group ${
                       isWhite
                         ? "bg-emerald-50 text-emerald-800 border border-emerald-200/80 hover:bg-emerald-600 hover:text-white"
                         : "bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black"
                     }`}
                   >
                     <Camera size={11} className="shrink-0 transition-transform group-hover:scale-110" />
-                    <span>Camera</span>
+                    <span className="truncate">Camera</span>
                   </button>
 
                   <div className={`w-px h-3 shrink-0 ${isWhite ? "bg-gray-200" : "bg-white/10"}`} />
 
-                  <label className={`flex-1 py-1 px-1 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 group ${
+                  <label className={`flex-1 min-w-0 py-1.5 px-1 rounded-lg text-[10px] font-bold uppercase tracking-tight flex items-center justify-center gap-1 transition-all cursor-pointer active:scale-95 group ${
                     isWhite
                       ? "text-gray-700 hover:text-black hover:bg-gray-100"
                       : "text-gray-300 hover:text-white hover:bg-white/10"
@@ -303,7 +303,7 @@ export function ScannerFlow({ isRenew: propIsRenew }: ScannerFlowProps) {
                     <Upload size={11} className={`shrink-0 transition-colors ${
                       isWhite ? "text-gray-500 group-hover:text-black" : "text-gray-400 group-hover:text-white"
                     }`} />
-                    <span>Upload</span>
+                    <span className="truncate">Upload</span>
                     <input
                       type="file"
                       accept="image/*"

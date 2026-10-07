@@ -103,10 +103,10 @@ export function BodyScanInsightsCard({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="mb-1 text-xs font-bold tracking-wider text-[#ADFF00] uppercase">
-            {isRenew ? "Month-End Check-In Insights" : "Your body scan insights"}
+            {isRenew ? "Month-End Check-In Insights" : initialHasBodyScan ? "Your body scan insights" : "AI Body Analysis"}
           </p>
           <h2 className="text-lg font-black tracking-tight text-white">
-            {isRenew ? "Month 2 Physique & Progress Check" : "What the uploaded photos show"}
+            {isRenew ? "Month 2 Physique & Progress Check" : initialHasBodyScan ? "What the uploaded photos show" : "Physique & Biometric Assessment"}
           </h2>
         </div>
 
@@ -127,7 +127,7 @@ export function BodyScanInsightsCard({
         <>
           <div className="rounded-2xl border border-white/5 bg-[#0D150D] p-4 transition-all">
             <p className="mb-3 text-xs font-bold tracking-wider text-emerald-400 uppercase">
-              {isRenew ? "Month 1 Progress Observation" : "What I notice"}
+              {isRenew ? "Month 1 Progress Observation" : initialHasBodyScan ? "What I notice" : "Coaching Observations"}
             </p>
             <p className="text-sm leading-relaxed text-gray-300">
               {insights.overall_summary || (isRenew ? "Your check-in photos show solid foundation from Month 1 training." : "Your photos provide a useful starting point for coaching.")}
@@ -249,8 +249,9 @@ export function BodyScanInsightsCard({
       )}
 
       <p className="text-[11px] text-gray-500">
-        Photo observations are coaching guidance only, not a medical diagnosis or
-        body-fat measurement.
+        {initialHasBodyScan
+          ? "Photo observations are coaching guidance only, not a medical diagnosis or body-fat measurement."
+          : "Observations are generated from your biometric profile and fitness goals."}
       </p>
     </section>
   );

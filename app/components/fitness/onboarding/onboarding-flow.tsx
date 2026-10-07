@@ -515,18 +515,25 @@ export function OnboardingFlow({
           hasMeaningfulChoice(data.exercise_limitations);
       }
       case 13: return data.safety_acknowledged === true;
-      case 14: return Boolean(
-        data.target_physique || 
-        data.goal_physique_image || 
-        data.body_scan_inspiration || 
-        data.body_scan_front
-      );
+      case 14: return true;
       default: return false;
     }
   };
 
   const handleNext = () => {
     if (!canAdvanceFromStep(step)) return;
+    if (step === 14) {
+      const hasTargetOrScan = Boolean(
+        data.target_physique || 
+        data.goal_physique_image || 
+        data.body_scan_inspiration || 
+        data.body_scan_front
+      );
+      if (!hasTargetOrScan) {
+        handleSkipPhotos();
+        return;
+      }
+    }
     if (editingFromReview && step !== 15) {
       setDirection(1);
       setStep(15);
@@ -2416,9 +2423,9 @@ export function OnboardingFlow({
 
       case 14:
         return (
-          <div className="px-6 pt-6 pb-36">
+          <div className="px-3.5 sm:px-6 pt-4 sm:pt-6 pb-40">
             <div className="mb-8 mt-2">
-              <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[38px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-col">
+              <h2 style={{ fontFamily: 'Oswald, sans-serif' }} className="text-[32px] sm:text-[38px] leading-[1.05] font-bold italic uppercase tracking-tight flex flex-col">
                 <span className="text-[#ADFF00]">AI BODY SCAN</span>
                 <span className="text-white">& GOAL PHYSIQUE</span>
               </h2>
@@ -2444,25 +2451,25 @@ export function OnboardingFlow({
                 <p className="text-xs text-gray-400 mb-3">Upload photos for AI body fat, posture, and muscle distribution analysis.</p>
 
                 {/* Friendly Skip Notice */}
-                <div className="mb-4 bg-[#121E12] border border-[#1E2E1D] p-3 rounded-xl flex items-center justify-between gap-3">
+                <div className="mb-4 bg-[#121E12] border border-[#1E2E1D] p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center shrink-0">
-                      <CameraOff className="w-3.5 h-3.5 text-[#ADFF00]" />
+                    <div className="w-8 h-8 rounded-xl bg-[#ADFF00]/10 border border-[#ADFF00]/20 flex items-center justify-center shrink-0">
+                      <CameraOff className="w-4 h-4 text-[#ADFF00]" />
                     </div>
-                    <div className="text-[11px] text-gray-300">
+                    <div className="text-xs text-gray-300 leading-snug">
                       <span className="font-bold text-white">Don't want to upload pictures?</span> You can skip anytime — our AI will analyze your profile using your body measurements.
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={handleSkipPhotos}
-                    className="text-xs font-black text-[#ADFF00] hover:text-white bg-[#ADFF00]/10 hover:bg-[#ADFF00]/20 px-3 py-1.5 rounded-lg border border-[#ADFF00]/30 transition-all shrink-0 uppercase tracking-wider cursor-pointer"
+                    className="self-stretch sm:self-auto text-center text-xs font-black text-[#ADFF00] hover:text-black hover:bg-[#ADFF00] bg-[#ADFF00]/10 py-2 sm:py-1.5 px-3.5 rounded-xl border border-[#ADFF00]/30 transition-all shrink-0 uppercase tracking-wider cursor-pointer active:scale-95"
                   >
                     Skip Photos →
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
                   {[
                     { label: "FRONT VIEW", field: "body_scan_front" },
                     { label: "LEFT SIDE", field: "body_scan_left" },
@@ -2471,11 +2478,15 @@ export function OnboardingFlow({
                   ].map(item => (
                     <div key={item.field} className="relative">
                       <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider text-center">{item.label}</label>
-                      <div className={`relative w-full aspect-[4/5] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
+                      <div className={`relative w-full aspect-[4/5] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${(data as any)[item.field] ? 'border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_15px_rgba(173,255,0,0.12)]' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
                         {(data as any)[item.field] ? (
                           <>
-                            <img src={(data as any)[item.field]} className="w-full h-full object-cover rounded-xl" />
-                            <div className="absolute top-2 right-2 z-20 flex items-center gap-1.5">
+                            <img src={(data as any)[item.field]} className="w-full h-full object-cover rounded-xl" alt={item.label} />
+                            <div className="absolute top-2 left-2 z-20 bg-[#ADFF00] text-black text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-md uppercase tracking-wider">
+                              <Check size={10} strokeWidth={3} />
+                              <span>Added</span>
+                            </div>
+                            <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -2483,11 +2494,33 @@ export function OnboardingFlow({
                                   e.stopPropagation();
                                   setCameraModalField(item.field);
                                 }}
-                                className="w-7 h-7 bg-black/75 backdrop-blur-md rounded-full flex items-center justify-center text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all shadow-md cursor-pointer"
+                                className="w-7 h-7 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all shadow-md cursor-pointer"
                                 title="Retake with Camera"
                               >
-                                <Camera size={13} />
+                                <Camera size={12} />
                               </button>
+                              <label
+                                className="w-7 h-7 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-white/90 hover:bg-[#ADFF00] hover:text-black transition-all shadow-md cursor-pointer"
+                                title="Change photo"
+                              >
+                                <Upload size={12} />
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      try {
+                                        const compressedBase64 = await compressImage(file);
+                                        handleUpdate({ [item.field]: compressedBase64 });
+                                      } catch (err) {
+                                        console.error("Compression failed", err);
+                                      }
+                                    }
+                                  }}
+                                />
+                              </label>
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -2495,10 +2528,10 @@ export function OnboardingFlow({
                                   e.stopPropagation();
                                   handleUpdate({ [item.field]: undefined });
                                 }}
-                                className="w-7 h-7 bg-black/75 backdrop-blur-md rounded-full flex items-center justify-center text-white/80 hover:bg-red-500 hover:text-white transition-all shadow-md cursor-pointer"
+                                className="w-7 h-7 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-white/70 hover:bg-red-500 hover:text-white transition-all shadow-md cursor-pointer"
                                 title="Remove photo"
                               >
-                                <Trash2 size={13} />
+                                <Trash2 size={12} />
                               </button>
                             </div>
                           </>
@@ -2522,23 +2555,23 @@ export function OnboardingFlow({
                                 className="w-full h-full object-cover object-top opacity-60 transition-opacity hover:opacity-100"
                               />
                             </div>
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none" />
-                            <div className="absolute bottom-2.5 inset-x-2 z-10 flex items-center justify-center">
-                              <div className="flex items-center gap-1 bg-black/85 backdrop-blur-xl border border-white/15 p-1 rounded-xl shadow-xl w-full max-w-[96%]">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30 pointer-events-none" />
+                            <div className="absolute bottom-2 inset-x-1.5 z-10 flex items-center justify-center">
+                              <div className="flex items-center justify-between gap-1 bg-black/90 backdrop-blur-xl border border-white/20 p-1 rounded-xl shadow-2xl w-full">
                                 <button
                                   type="button"
                                   onClick={() => setCameraModalField(item.field)}
-                                  className="flex-1 py-1.5 px-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black transition-all cursor-pointer active:scale-95 group"
+                                  className="flex-1 min-w-0 py-1.5 px-1 rounded-lg text-[10px] font-extrabold uppercase tracking-tight flex items-center justify-center gap-1 bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black transition-all cursor-pointer active:scale-95 group"
                                 >
-                                  <Camera size={12} className="shrink-0 transition-transform group-hover:scale-110" />
-                                  <span>Camera</span>
+                                  <Camera size={11} className="shrink-0 transition-transform group-hover:scale-110" />
+                                  <span className="truncate">Camera</span>
                                 </button>
 
-                                <div className="w-px h-3.5 bg-white/10 shrink-0" />
+                                <div className="w-px h-3.5 bg-white/15 shrink-0" />
 
-                                <label className="flex-1 py-1.5 px-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95 group">
+                                <label className="flex-1 min-w-0 py-1.5 px-1 rounded-lg text-[10px] font-extrabold uppercase tracking-tight flex items-center justify-center gap-1 text-gray-200 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95 group">
                                   <Upload size={11} className="shrink-0 text-gray-400 group-hover:text-white transition-colors" />
-                                  <span>Upload</span>
+                                  <span className="truncate">Upload</span>
                                   <input
                                     type="file"
                                     accept="image/*"
@@ -2586,11 +2619,15 @@ export function OnboardingFlow({
                       <span className="text-[10px] font-bold text-[#ADFF00] bg-[#ADFF00]/10 px-2 py-0.5 rounded-full border border-[#ADFF00]/30">Uploaded</span>
                     )}
                   </div>
-                  <div className={`relative w-full sm:w-2/3 md:w-1/2 mx-auto aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
+                  <div className={`relative w-full sm:w-2/3 md:w-1/2 mx-auto aspect-[3/4] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden ${data.body_scan_inspiration || data.goal_physique_image ? 'border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_15px_rgba(173,255,0,0.15)]' : 'border-[#1A2619] bg-[#0D150D] hover:border-[#ADFF00]/50'}`}>
                     {data.body_scan_inspiration || data.goal_physique_image ? (
                       <>
-                        <img src={(data.body_scan_inspiration || data.goal_physique_image) || ""} className="w-full h-full object-cover" />
-                        <div className="absolute top-2 right-2 z-20 flex items-center gap-1.5">
+                        <img src={(data.body_scan_inspiration || data.goal_physique_image) || ""} className="w-full h-full object-cover rounded-xl" alt="Goal Inspiration" />
+                        <div className="absolute top-2.5 left-2.5 z-20 bg-[#ADFF00] text-black text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-md uppercase tracking-wider">
+                          <Check size={10} strokeWidth={3} />
+                          <span>Goal Photo Set</span>
+                        </div>
+                        <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -2598,11 +2635,37 @@ export function OnboardingFlow({
                               e.stopPropagation();
                               setCameraModalField("body_scan_inspiration");
                             }}
-                            className="w-7 h-7 bg-black/75 backdrop-blur-md rounded-full flex items-center justify-center text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all shadow-md cursor-pointer"
+                            className="w-7 h-7 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#ADFF00] hover:bg-[#ADFF00] hover:text-black transition-all shadow-md cursor-pointer"
                             title="Retake with Camera"
                           >
                             <Camera size={13} />
                           </button>
+                          <label
+                            className="w-7 h-7 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-white/90 hover:bg-[#ADFF00] hover:text-black transition-all shadow-md cursor-pointer"
+                            title="Change photo"
+                          >
+                            <Upload size={13} />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const compressedBase64 = await compressImage(file);
+                                    handleUpdate({ 
+                                      body_scan_inspiration: compressedBase64, 
+                                      goal_physique_image: compressedBase64, 
+                                      target_physique: data.target_physique || "Custom Photo" 
+                                    });
+                                  } catch (err) {
+                                    console.error("Compression failed", err);
+                                  }
+                                }
+                              }}
+                            />
+                          </label>
                           <button 
                             type="button"
                             onClick={(e) => { 
@@ -2614,10 +2677,10 @@ export function OnboardingFlow({
                                 target_physique: data.target_physique === "Custom Photo" ? undefined : data.target_physique
                               }); 
                             }}
-                            className="w-7 h-7 bg-black/60 rounded-full flex items-center justify-center hover:bg-red-500/80 transition-colors cursor-pointer"
+                            className="w-7 h-7 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-white/70 hover:bg-red-500 hover:text-white transition-all shadow-md cursor-pointer"
                             title="Remove photo"
                           >
-                            <Trash2 size={13} className="text-white" />
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       </>
@@ -2631,22 +2694,22 @@ export function OnboardingFlow({
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none" />
                         </div>
-                        <div className="absolute bottom-3 inset-x-3 z-10 flex items-center justify-center">
-                          <div className="flex items-center gap-1.5 bg-black/85 backdrop-blur-xl border border-white/15 p-1.5 rounded-xl shadow-xl w-full max-w-[94%]">
+                        <div className="absolute bottom-3 inset-x-2.5 z-10 flex items-center justify-center">
+                          <div className="flex items-center justify-between gap-1.5 bg-black/90 backdrop-blur-xl border border-white/20 p-1.5 rounded-xl shadow-2xl w-full max-w-[92%]">
                             <button
                               type="button"
                               onClick={() => setCameraModalField("body_scan_inspiration")}
-                              className="flex-1 py-2 px-2.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black transition-all cursor-pointer active:scale-95 group"
+                              className="flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-black uppercase tracking-tight flex items-center justify-center gap-1.5 bg-[#ADFF00]/15 hover:bg-[#ADFF00] text-[#ADFF00] hover:text-black transition-all cursor-pointer active:scale-95 group"
                             >
                               <Camera size={13} className="shrink-0 transition-transform group-hover:scale-110" />
-                              <span>Camera</span>
+                              <span className="truncate">Camera</span>
                             </button>
 
-                            <div className="w-px h-4 bg-white/10 shrink-0" />
+                            <div className="w-px h-4 bg-white/15 shrink-0" />
 
-                            <label className="flex-1 py-2 px-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 text-gray-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95 group">
+                            <label className="flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold uppercase tracking-tight flex items-center justify-center gap-1.5 text-gray-200 hover:text-white hover:bg-white/10 transition-all cursor-pointer active:scale-95 group">
                               <Upload size={13} className="shrink-0 text-gray-400 group-hover:text-white transition-colors" />
-                              <span>Upload</span>
+                              <span className="truncate">Upload</span>
                               <input
                                 type="file"
                                 accept="image/*"
@@ -2707,32 +2770,32 @@ export function OnboardingFlow({
                               : (opt.id as any);
                             handleUpdate({ target_physique: nextTarget });
                           }}
-                          className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                          className={`w-full p-3.5 sm:p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between gap-3 ${
                             isSelected 
                               ? "border-[#ADFF00] bg-[#ADFF00]/10 shadow-[0_0_20px_rgba(173,255,0,0.15)]" 
                               : "border-[#1A2619] bg-[#0D150D] hover:border-[#233522]"
                           }`}
                         >
-                          <div className="flex items-center gap-3.5">
+                          <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
                             <div className={`relative w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 ${
                               isSelected ? "border-[#ADFF00]" : "border-[#1A2619]"
                             }`}>
                               <Image src={opt.image} alt={opt.id} fill className="object-cover" unoptimized />
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className={`font-extrabold text-base ${isSelected ? "text-[#ADFF00]" : "text-white"}`}>{opt.id}</h4>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center flex-wrap gap-1.5 sm:gap-2">
+                                <h4 className={`font-extrabold text-sm sm:text-base leading-tight ${isSelected ? "text-[#ADFF00]" : "text-white"}`}>{opt.id}</h4>
+                                <span className={`text-[9.5px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
                                   isSelected ? "bg-[#ADFF00]/20 text-[#ADFF00] border-[#ADFF00]/30" : "bg-[#1A2619] text-gray-400 border-gray-800"
                                 }`}>
                                   {opt.tag}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-400 mt-0.5 font-medium leading-normal">{opt.desc}</p>
+                              <p className="text-[11px] sm:text-xs text-gray-400 mt-1 font-medium leading-relaxed">{opt.desc}</p>
                             </div>
                           </div>
 
-                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 ml-3 ${
+                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 ml-1 sm:ml-2 ${
                             isSelected ? "bg-[#ADFF00] border-[#ADFF00] text-black" : "border-gray-700"
                           }`}>
                             {isSelected && <Check size={14} strokeWidth={3} />}
@@ -2764,11 +2827,27 @@ export function OnboardingFlow({
 
             </div>
 
-            <BottomBar 
-              canProceed={canAdvanceFromStep(14)}
-              onProceed={handleNext} 
-              label="Review Profile" 
-            />
+            {(() => {
+              const hasTargetOrScan = Boolean(
+                data.target_physique || 
+                data.goal_physique_image || 
+                data.body_scan_inspiration || 
+                data.body_scan_front
+              );
+              return (
+                <BottomBar 
+                  canProceed={true}
+                  onProceed={() => {
+                    if (!hasTargetOrScan) {
+                      handleSkipPhotos();
+                    } else {
+                      handleNext();
+                    }
+                  }} 
+                  label="Review Profile" 
+                />
+              );
+            })()}
           </div>
         );
 
@@ -2976,6 +3055,15 @@ const AIAnalysisScreen = ({
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
+  const hasPhotos = Boolean(
+    data?.body_scan_front || 
+    data?.body_scan_left || 
+    data?.body_scan_right || 
+    data?.body_scan_back || 
+    data?.body_scan_inspiration || 
+    data?.goal_physique_image
+  );
+
   const handleRetry = () => {
     lastSubmissionSessionId = null;
     lastSubmissionPromise = null;
@@ -3180,7 +3268,7 @@ const AIAnalysisScreen = ({
               : phase === 0
                 ? "Step 1 of 3 • Analyzing Profile"
                 : phase === 1
-                  ? "Step 2 of 3 • Visual Assessment"
+                  ? (hasPhotos ? "Step 2 of 3 • Visual Assessment" : "Step 2 of 3 • Biometric Assessment")
                   : phase === 2
                     ? "Step 3 of 3 • Engineering Strategy"
                     : "Transformation Ready"}
@@ -3239,8 +3327,8 @@ const AIAnalysisScreen = ({
               isComplete={phase >= 1}
             />
             <AnalysisBlock 
-              title="Analyzing your uploaded photos..." 
-              items={["Visual assessment"]}
+              title={hasPhotos ? "Analyzing your uploaded photos..." : "Analyzing body composition & measurements..."} 
+              items={hasPhotos ? ["Visual assessment", "Muscle balance check"] : ["Biometric assessment", "Frame proportions"]}
               isActive={phase >= 1}
               isComplete={phase >= 2}
             />
