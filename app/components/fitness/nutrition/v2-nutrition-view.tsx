@@ -310,7 +310,7 @@ export function V2NutritionView({
   }, []);
 
   useEffect(() => {
-    if (fixtureMode && refreshKey === 0 && selectedDate === initialData?.date) return;
+    if (refreshKey === 0 && initialData && selectedDate === initialData.date) return;
     const requestId = ++dayRequest.current;
     const controller = new AbortController();
     setLoading(true);
@@ -323,7 +323,19 @@ export function V2NutritionView({
       })
       .then((fresh) => {
         if (requestId === dayRequest.current) {
-          setData(fresh);
+          // If viewing today, preserve local optimistic water so it never jumps down
+          const hasPendingWater = pendingWaterDeltaRef.current !== 0 || waterInFlightDeltaRef.current !== 0;
+          const effectiveWater = (selectedDate === today && hasPendingWater)
+            ? currentWaterRef.current
+            : fresh.consumed.water_ml;
+          currentWaterRef.current = effectiveWater;
+          setData({
+            ...fresh,
+            consumed: {
+              ...fresh.consumed,
+              water_ml: effectiveWater,
+            },
+          });
           setWaterGoal(fresh.targets.water_ml || 2500);
         }
       })
@@ -334,7 +346,7 @@ export function V2NutritionView({
         if (requestId === dayRequest.current) setLoading(false);
       });
     return () => controller.abort();
-  }, [selectedDate, refreshKey, fixtureMode, initialData?.date]);
+  }, [selectedDate, refreshKey, initialData, today]);
 
   const navigateWeek = (days: number) => {
     const next = addDays(weekStart, days);
@@ -478,17 +490,16 @@ export function V2NutritionView({
         res = await nutritionApi.removeWater(Math.abs(delta));
       }
       waterInFlightDeltaRef.current -= delta;
-      if (res?.total_water_ml !== undefined) {
-        const unconfirmed = waterInFlightDeltaRef.current + pendingWaterDeltaRef.current;
-        const reconciledTotal = Math.max(0, Math.min(8000, Number(res.total_water_ml) + unconfirmed));
-        currentWaterRef.current = reconciledTotal;
+      // If the server reported hitting the 8L daily safety cap, clamp client state
+      if (res?.capped) {
+        currentWaterRef.current = 8000;
         setData((prev) => {
           if (!prev) return prev;
           return {
             ...prev,
             consumed: {
               ...prev.consumed,
-              water_ml: reconciledTotal,
+              water_ml: 8000,
             },
           };
         });
