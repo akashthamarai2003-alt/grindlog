@@ -233,7 +233,7 @@ export function WaterBottleCard({
               <button
                 type="button"
                 onClick={onResetWater}
-                className="text-[10px] font-semibold text-white/40 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-rose-500/10"
+                className="text-[10px] font-semibold text-white/40 hover:text-rose-400 active:scale-95 transition-all cursor-pointer flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-rose-500/10 touch-manipulation select-none"
                 title="Reset today's water to 0L"
               >
                 <RotateCcw size={10} />
@@ -265,8 +265,9 @@ export function WaterBottleCard({
           <div className="flex items-center gap-3 mt-1 mb-3.5 flex-wrap">
             <button
               type="button"
+              disabled={disabled}
               onClick={onEditGoal}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00D2FF] hover:text-[#52e5ff] transition-colors group cursor-pointer w-fit"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00D2FF] hover:text-[#52e5ff] active:scale-95 transition-all group cursor-pointer w-fit touch-manipulation select-none disabled:pointer-events-none disabled:opacity-50"
               title="Edit daily water target"
             >
               <span>Goal - {targetInLiters}L</span>
@@ -297,7 +298,7 @@ export function WaterBottleCard({
           </div>
 
           {/* Pill Stepper Logger: [ - ]  250 ml  [ + ] */}
-          <div className={`w-full max-w-[200px] bg-[#1E261D] border border-white/10 rounded-2xl p-1.5 flex items-center justify-between shadow-inner ${
+          <div className={`w-full max-w-[200px] bg-[#1E261D] border border-white/10 rounded-2xl p-1.5 flex items-center justify-between shadow-inner select-none ${
             disabled ? 'opacity-50 pointer-events-none' : ''
           }`}>
             {/* Minus Button */}
@@ -305,7 +306,7 @@ export function WaterBottleCard({
               type="button"
               disabled={disabled || (isPro && rawConsumed <= 0)}
               onClick={() => onRemoveWater(stepAmount)}
-              className="w-10 h-10 rounded-xl bg-black/40 hover:bg-black/70 active:scale-95 disabled:opacity-30 disabled:pointer-events-none text-white flex items-center justify-center transition-all cursor-pointer"
+              className="w-10 h-10 rounded-xl bg-black/40 hover:bg-black/70 active:scale-90 disabled:opacity-30 disabled:pointer-events-none text-white flex items-center justify-center transition-transform cursor-pointer touch-manipulation select-none"
               title={`Remove ${stepAmount}ml`}
             >
               <Minus size={14} strokeWidth={3} />
@@ -315,7 +316,7 @@ export function WaterBottleCard({
             <button
               type="button"
               onClick={() => isPro && setStepAmount((prev) => (prev === 250 ? 500 : 250))}
-              className="px-2 py-1 rounded-lg hover:bg-white/5 text-xs font-black text-white/90 tracking-wide transition-colors cursor-pointer"
+              className="px-2 py-1 rounded-lg hover:bg-white/5 active:scale-95 text-xs font-black text-white/90 tracking-wide transition-all cursor-pointer touch-manipulation select-none"
               title="Tap to toggle between 250ml and 500ml"
             >
               {stepAmount} ml
@@ -327,10 +328,10 @@ export function WaterBottleCard({
                 type="button"
                 disabled={disabled || isAtMaxCap}
                 onClick={() => onAddWater(stepAmount)}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${
+                className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-transform touch-manipulation select-none ${
                   disabled || isAtMaxCap
                     ? "bg-white/10 text-white/30 cursor-not-allowed shadow-none"
-                    : "bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-95 text-black cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
+                    : "bg-[#00D2FF] hover:bg-[#38e1ff] active:scale-90 text-black cursor-pointer shadow-[0_0_15px_rgba(0,210,255,0.35)]"
                 }`}
                 title={isAtMaxCap ? "Daily safety cap of 8L reached" : `Add ${stepAmount}ml`}
               >
@@ -340,7 +341,7 @@ export function WaterBottleCard({
               <button
                 type="button"
                 onClick={() => onAddWater(stepAmount)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center font-black bg-white/10 text-[#00D2FF] hover:bg-white/20 active:scale-95 cursor-pointer shadow-none"
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-black bg-white/10 text-[#00D2FF] hover:bg-white/20 active:scale-90 cursor-pointer shadow-none touch-manipulation select-none"
                 title="Unlock water tracking with Pro"
               >
                 <Lock size={14} />

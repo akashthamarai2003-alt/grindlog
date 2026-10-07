@@ -285,6 +285,16 @@ export function V2NutritionView({
   const [savingWaterGoal, setSavingWaterGoal] = useState(false);
   const [loggingMealId, setLoggingMealId] = useState<string | null>(null);
   const dayRequest = useRef(0);
+  const pendingWaterDeltaRef = useRef<number>(0);
+  const waterInFlightDeltaRef = useRef<number>(0);
+  const waterDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const currentWaterRef = useRef<number>(Number(initialData?.consumed?.water_ml) || 0);
+
+  useEffect(() => {
+    if (data?.consumed?.water_ml !== undefined) {
+      currentWaterRef.current = Number(data.consumed.water_ml) || 0;
+    }
+  }, [data?.consumed?.water_ml]);
 
   useEffect(() => {
     setHydrated(true);
@@ -454,14 +464,194 @@ export function V2NutritionView({
     }
   };
 
-  const updateWater = async (action: () => Promise<unknown>) => {
+  const flushWaterSync = useCallback(async () => {
+    const delta = pendingWaterDeltaRef.current;
+    if (delta === 0) return;
+    pendingWaterDeltaRef.current = 0;
+    waterInFlightDeltaRef.current += delta;
+
     try {
-      await action();
-      reload();
+      let res: any;
+      if (delta > 0) {
+        res = await nutritionApi.logWater(delta);
+      } else {
+        res = await nutritionApi.removeWater(Math.abs(delta));
+      }
+      waterInFlightDeltaRef.current -= delta;
+      if (res?.total_water_ml !== undefined) {
+        const unconfirmed = waterInFlightDeltaRef.current + pendingWaterDeltaRef.current;
+        const reconciledTotal = Math.max(0, Math.min(8000, Number(res.total_water_ml) + unconfirmed));
+        currentWaterRef.current = reconciledTotal;
+        setData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            consumed: {
+              ...prev.consumed,
+              water_ml: reconciledTotal,
+            },
+          };
+        });
+      }
+    } catch (cause) {
+      waterInFlightDeltaRef.current -= delta;
+      console.error("Failed to sync water to server:", cause);
+      toast.error("Failed to sync water to server");
+      setData((prev) => {
+        if (!prev) return prev;
+        const cur = Number(prev.consumed?.water_ml) || 0;
+        const reverted = Math.max(0, cur - delta);
+        currentWaterRef.current = reverted;
+        return {
+          ...prev,
+          consumed: {
+            ...prev.consumed,
+            water_ml: reverted,
+          },
+        };
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (waterDebounceTimerRef.current) {
+        clearTimeout(waterDebounceTimerRef.current);
+        void flushWaterSync();
+      }
+    };
+  }, [flushWaterSync]);
+
+  const handleAddWater = useCallback((amount: number = 250) => {
+    if (!isToday) {
+      toast.info("Water can only be changed for today.");
+      return;
+    }
+    if (!isPro) {
+      toast.info("Water tracking is available on the Pro plan.");
+      return;
+    }
+    if (!data) return;
+
+    const currentWater = currentWaterRef.current;
+    if (currentWater >= 8000) {
+      toast.info("Daily safety cap of 8L reached.");
+      return;
+    }
+
+    const effectiveAmount = Math.min(amount, 8000 - currentWater);
+    if (effectiveAmount <= 0) return;
+
+    const newWater = Math.min(8000, currentWater + effectiveAmount);
+    currentWaterRef.current = newWater;
+
+    // Instant 0ms local state update
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        consumed: {
+          ...prev.consumed,
+          water_ml: newWater,
+        },
+      };
+    });
+
+    const targetWater = Number(data.targets?.water_ml) || 2500;
+    if (newWater >= targetWater && currentWater < targetWater) {
+      toast.success(`🎉 Daily water goal of ${(targetWater / 1000).toFixed(1)}L reached!`);
+    }
+
+    // Debounce background API sync
+    pendingWaterDeltaRef.current += effectiveAmount;
+    if (waterDebounceTimerRef.current) {
+      clearTimeout(waterDebounceTimerRef.current);
+    }
+    waterDebounceTimerRef.current = setTimeout(() => {
+      void flushWaterSync();
+    }, 350);
+  }, [isToday, isPro, data, flushWaterSync]);
+
+  const handleRemoveWater = useCallback((amount: number = 250) => {
+    if (!isToday) {
+      toast.info("Water can only be changed for today.");
+      return;
+    }
+    if (!isPro) {
+      toast.info("Water tracking is available on the Pro plan.");
+      return;
+    }
+    if (!data) return;
+
+    const currentWater = currentWaterRef.current;
+    if (currentWater <= 0) return;
+
+    const effectiveAmount = Math.min(amount, currentWater);
+    const newWater = Math.max(0, currentWater - effectiveAmount);
+    currentWaterRef.current = newWater;
+
+    // Instant 0ms local state update
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        consumed: {
+          ...prev.consumed,
+          water_ml: newWater,
+        },
+      };
+    });
+
+    // Debounce background API sync
+    pendingWaterDeltaRef.current -= effectiveAmount;
+    if (waterDebounceTimerRef.current) {
+      clearTimeout(waterDebounceTimerRef.current);
+    }
+    waterDebounceTimerRef.current = setTimeout(() => {
+      void flushWaterSync();
+    }, 350);
+  }, [isToday, isPro, data, flushWaterSync]);
+
+  const handleResetWater = useCallback(async () => {
+    if (!isToday) {
+      toast.info("Water can only be changed for today.");
+      return;
+    }
+    if (!isPro) {
+      toast.info("Water tracking is available on the Pro plan.");
+      return;
+    }
+    if (typeof window !== "undefined" && !window.confirm("Do you want to reset today's logged water to 0L?")) {
+      return;
+    }
+
+    if (waterDebounceTimerRef.current) {
+      clearTimeout(waterDebounceTimerRef.current);
+    }
+    pendingWaterDeltaRef.current = 0;
+    waterInFlightDeltaRef.current = 0;
+    currentWaterRef.current = 0;
+
+    // Instant 0ms local state update
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        consumed: {
+          ...prev.consumed,
+          water_ml: 0,
+        },
+      };
+    });
+
+    try {
+      await nutritionApi.resetWater();
+      toast.success("Water reset to 0 ml");
     } catch (cause) {
       toast.error(messageOf(cause));
+      reload();
     }
-  };
+  }, [isToday, isPro, reload]);
 
   const saveWaterGoal = async () => {
     if (!current || waterGoal < 250 || waterGoal > 8000) {
@@ -471,8 +661,17 @@ export function V2NutritionView({
     setSavingWaterGoal(true);
     try {
       await nutritionApi.setTargets({ ...current.targets, water_ml: waterGoal });
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          targets: {
+            ...prev.targets,
+            water_ml: waterGoal,
+          },
+        };
+      });
       setWaterGoalOpen(false);
-      reload();
       toast.success("Water target updated.");
     } catch (cause) {
       toast.error(messageOf(cause));
@@ -1100,9 +1299,9 @@ export function V2NutritionView({
             disabled={!isToday}
             consumedMl={current.consumed.water_ml}
             targetMl={current.targets.water_ml}
-            onAddWater={(amount) => updateWater(() => nutritionApi.logWater(amount))}
-            onRemoveWater={(amount) => updateWater(() => nutritionApi.removeWater(amount))}
-            onResetWater={() => updateWater(() => nutritionApi.resetWater())}
+            onAddWater={handleAddWater}
+            onRemoveWater={handleRemoveWater}
+            onResetWater={handleResetWater}
             onEditGoal={() => setWaterGoalOpen(true)}
           />
           <WaterHistoryCard
