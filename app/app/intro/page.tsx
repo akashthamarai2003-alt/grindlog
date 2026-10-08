@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function IntroPage() {
   return (
-    <main className="w-screen h-screen overflow-hidden bg-[#060907]">
+    <main className="fixed inset-0 z-50 w-full h-full overflow-hidden bg-[#060907]">
       <AppIntroAnimation />
     </main>
   );

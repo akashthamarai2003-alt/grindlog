@@ -32,16 +32,15 @@ class IntroAudioEngine {
       }
       return;
     }
-    const AudioContextClass =
-      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (AudioContextClass) {
-      this.ctx = new AudioContextClass();
+    try {
+      const AudioContextClass =
+        window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextClass) {
+        this.ctx = new AudioContextClass();
+      }
+    } catch {
+      // safe fallback if audio context blocked
     }
-  }
-
-  public enableAudio() {
-    this.initContext();
-    this.isMuted = false;
   }
 
   public setMuted(muted: boolean) {
@@ -61,29 +60,29 @@ class IntroAudioEngine {
       const filter = this.ctx.createBiquadFilter();
 
       osc.type = "sine";
-      osc.frequency.setValueAtTime(420, now);
-      osc.frequency.exponentialRampToValueAtTime(75, now + 0.42);
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.42);
 
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(600, now);
+      filter.frequency.setValueAtTime(650, now);
       filter.frequency.linearRampToValueAtTime(150, now + 0.42);
 
       gain.gain.setValueAtTime(0.01, now);
-      gain.gain.linearRampToValueAtTime(0.35, now + 0.2);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      gain.gain.linearRampToValueAtTime(0.35, now + 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
 
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(this.ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.46);
+      osc.stop(now + 0.45);
     } catch {
-      // safe fallback
+      // safe ignore
     }
   }
 
-  // Thunderous metallic impact slam (sub kick + metal resonance)
+  // Thunderous metallic impact slam (sub kick + iron resonance)
   public playSlam() {
     if (this.isMuted || !this.ctx) return;
     try {
@@ -93,10 +92,10 @@ class IntroAudioEngine {
       const subOsc = this.ctx.createOscillator();
       const subGain = this.ctx.createGain();
       subOsc.type = "sine";
-      subOsc.frequency.setValueAtTime(140, now);
-      subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.35);
+      subOsc.frequency.setValueAtTime(150, now);
+      subOsc.frequency.exponentialRampToValueAtTime(34, now + 0.35);
 
-      subGain.gain.setValueAtTime(0.85, now);
+      subGain.gain.setValueAtTime(0.9, now);
       subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
 
       subOsc.connect(subGain);
@@ -104,8 +103,8 @@ class IntroAudioEngine {
       subOsc.start(now);
       subOsc.stop(now + 0.58);
 
-      // 2. Metallic Impact Clack (High resonant bandpass noise)
-      const bufferSize = this.ctx.sampleRate * 0.25;
+      // 2. Metallic Impact Noise Burst
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.22);
       const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const output = noiseBuffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
@@ -117,36 +116,36 @@ class IntroAudioEngine {
 
       const bandpass = this.ctx.createBiquadFilter();
       bandpass.type = "bandpass";
-      bandpass.frequency.setValueAtTime(1250, now);
-      bandpass.Q.setValueAtTime(8.0, now);
+      bandpass.frequency.setValueAtTime(1300, now);
+      bandpass.Q.setValueAtTime(7.0, now);
 
       const noiseGain = this.ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.65, now);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      noiseGain.gain.setValueAtTime(0.7, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
       whiteNoise.connect(bandpass);
       bandpass.connect(noiseGain);
       noiseGain.connect(this.ctx.destination);
 
       whiteNoise.start(now);
-      whiteNoise.stop(now + 0.25);
+      whiteNoise.stop(now + 0.22);
 
-      // 3. Heavy Iron Chime / Anvil Ring (harmonic overtones)
+      // 3. Heavy Iron Chime / Anvil Ring
       const iron1 = this.ctx.createOscillator();
       const ironGain = this.ctx.createGain();
       iron1.type = "triangle";
-      iron1.frequency.setValueAtTime(680, now);
-      iron1.frequency.exponentialRampToValueAtTime(340, now + 0.6);
+      iron1.frequency.setValueAtTime(720, now);
+      iron1.frequency.exponentialRampToValueAtTime(360, now + 0.6);
 
-      ironGain.gain.setValueAtTime(0.4, now);
-      ironGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+      ironGain.gain.setValueAtTime(0.42, now);
+      ironGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.68);
 
       iron1.connect(ironGain);
       ironGain.connect(this.ctx.destination);
       iron1.start(now);
-      iron1.stop(now + 0.75);
+      iron1.stop(now + 0.7);
     } catch {
-      // safe fallback
+      // safe ignore
     }
   }
 
@@ -157,7 +156,7 @@ class IntroAudioEngine {
       const now = this.ctx.currentTime;
 
       // Sliding friction hiss
-      const bufferSize = Math.floor(this.ctx.sampleRate * 0.4);
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.38);
       const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const out = noiseBuffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
@@ -168,37 +167,37 @@ class IntroAudioEngine {
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = "bandpass";
-      filter.frequency.setValueAtTime(1800, now);
-      filter.Q.setValueAtTime(4.0, now);
+      filter.frequency.setValueAtTime(1850, now);
+      filter.Q.setValueAtTime(4.5, now);
 
       const slideGain = this.ctx.createGain();
-      slideGain.gain.setValueAtTime(0.18, now);
-      slideGain.gain.linearRampToValueAtTime(0.32, now + 0.2);
-      slideGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+      slideGain.gain.setValueAtTime(0.2, now);
+      slideGain.gain.linearRampToValueAtTime(0.35, now + 0.18);
+      slideGain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
 
       noise.connect(filter);
       filter.connect(slideGain);
       slideGain.connect(this.ctx.destination);
       noise.start(now);
-      noise.stop(now + 0.4);
+      noise.stop(now + 0.38);
 
       // Mechanical LOCK SNAP at the end of slide
-      const snapTime = now + 0.36;
+      const snapTime = now + 0.34;
       const snapOsc = this.ctx.createOscillator();
       const snapGain = this.ctx.createGain();
       snapOsc.type = "square";
-      snapOsc.frequency.setValueAtTime(2400, snapTime);
-      snapOsc.frequency.exponentialRampToValueAtTime(480, snapTime + 0.12);
+      snapOsc.frequency.setValueAtTime(2500, snapTime);
+      snapOsc.frequency.exponentialRampToValueAtTime(450, snapTime + 0.12);
 
-      snapGain.gain.setValueAtTime(0.45, snapTime);
-      snapGain.gain.exponentialRampToValueAtTime(0.001, snapTime + 0.15);
+      snapGain.gain.setValueAtTime(0.5, snapTime);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, snapTime + 0.14);
 
       snapOsc.connect(snapGain);
       snapGain.connect(this.ctx.destination);
       snapOsc.start(snapTime);
-      snapOsc.stop(snapTime + 0.16);
+      snapOsc.stop(snapTime + 0.15);
     } catch {
-      // safe fallback
+      // safe ignore
     }
   }
 
@@ -207,28 +206,27 @@ class IntroAudioEngine {
     if (this.isMuted || !this.ctx) return;
     try {
       const now = this.ctx.currentTime;
-      const dur = 1.1;
+      const dur = 1.15;
 
-      // Dual harmonic FM-style sweep
       const osc1 = this.ctx.createOscillator();
       const osc2 = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       const filter = this.ctx.createBiquadFilter();
 
       osc1.type = "sine";
-      osc1.frequency.setValueAtTime(740, now);
-      osc1.frequency.exponentialRampToValueAtTime(2850, now + dur);
+      osc1.frequency.setValueAtTime(780, now);
+      osc1.frequency.exponentialRampToValueAtTime(2950, now + dur);
 
       osc2.type = "triangle";
-      osc2.frequency.setValueAtTime(1480, now);
-      osc2.frequency.exponentialRampToValueAtTime(4200, now + dur);
+      osc2.frequency.setValueAtTime(1560, now);
+      osc2.frequency.exponentialRampToValueAtTime(4300, now + dur);
 
       filter.type = "highpass";
-      filter.frequency.setValueAtTime(500, now);
+      filter.frequency.setValueAtTime(450, now);
 
       gain.gain.setValueAtTime(0.01, now);
-      gain.gain.linearRampToValueAtTime(0.28, now + 0.3);
-      gain.gain.linearRampToValueAtTime(0.35, now + 0.7);
+      gain.gain.linearRampToValueAtTime(0.3, now + 0.3);
+      gain.gain.linearRampToValueAtTime(0.38, now + 0.7);
       gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
       osc1.connect(filter);
@@ -241,7 +239,7 @@ class IntroAudioEngine {
       osc1.stop(now + dur + 0.05);
       osc2.stop(now + dur + 0.05);
     } catch {
-      // safe fallback
+      // safe ignore
     }
   }
 }
@@ -256,23 +254,23 @@ function createBrushedMetalTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext("2d")!;
 
   // Base metallic dark charcoal background
-  const baseGrad = ctx.createRadialGradient(512, 512, 50, 512, 512, 600);
-  baseGrad.addColorStop(0, "#161b17");
-  baseGrad.addColorStop(0.5, "#0d110e");
-  baseGrad.addColorStop(1, "#050706");
+  const baseGrad = ctx.createRadialGradient(512, 512, 60, 512, 512, 620);
+  baseGrad.addColorStop(0, "#222a23");
+  baseGrad.addColorStop(0.45, "#151b16");
+  baseGrad.addColorStop(1, "#080c09");
   ctx.fillStyle = baseGrad;
   ctx.fillRect(0, 0, 1024, 1024);
 
   // Thousands of fine horizontal anisotropic brushed lines
   ctx.lineWidth = 1;
-  for (let i = 0; i < 9000; i++) {
+  for (let i = 0; i < 9500; i++) {
     const y = Math.random() * 1024;
     const x1 = Math.random() * 1024;
-    const len = 40 + Math.random() * 220;
-    const alpha = 0.015 + Math.random() * 0.06;
-    const lightness = 40 + Math.random() * 140;
+    const len = 50 + Math.random() * 240;
+    const alpha = 0.02 + Math.random() * 0.08;
+    const lightness = 60 + Math.random() * 160;
 
-    ctx.strokeStyle = `rgba(${lightness}, ${lightness + 10}, ${lightness}, ${alpha})`;
+    ctx.strokeStyle = `rgba(${lightness}, ${lightness + 15}, ${lightness}, ${alpha})`;
     ctx.beginPath();
     ctx.moveTo(x1, y);
     ctx.lineTo(Math.min(1024, x1 + len), y);
@@ -280,22 +278,21 @@ function createBrushedMetalTexture(): THREE.CanvasTexture {
   }
 
   // Laser-etched high-tech Olympic platform concentric rings
-  ctx.lineWidth = 2;
-  const rings = [180, 320, 440];
+  ctx.lineWidth = 2.5;
+  const rings = [180, 320, 460];
   rings.forEach((r, idx) => {
-    ctx.strokeStyle = idx === 1 ? "rgba(173, 255, 0, 0.16)" : "rgba(255, 255, 255, 0.07)";
+    ctx.strokeStyle = idx === 1 ? "rgba(173, 255, 0, 0.28)" : "rgba(255, 255, 255, 0.12)";
     ctx.beginPath();
     ctx.arc(512, 512, r, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Subtle tick marks
     const ticks = idx === 1 ? 24 : 16;
     for (let t = 0; t < ticks; t++) {
       const angle = (t / ticks) * Math.PI * 2;
-      const xA = 512 + Math.cos(angle) * (r - 6);
-      const yA = 512 + Math.sin(angle) * (r - 6);
-      const xB = 512 + Math.cos(angle) * (r + 6);
-      const yB = 512 + Math.sin(angle) * (r + 6);
+      const xA = 512 + Math.cos(angle) * (r - 8);
+      const yA = 512 + Math.sin(angle) * (r - 8);
+      const xB = 512 + Math.cos(angle) * (r + 8);
+      const yB = 512 + Math.sin(angle) * (r + 8);
       ctx.beginPath();
       ctx.moveTo(xA, yA);
       ctx.lineTo(xB, yB);
@@ -318,7 +315,6 @@ function createKnurlingBumpTexture(): THREE.CanvasTexture {
   ctx.fillStyle = "#808080";
   ctx.fillRect(0, 0, 256, 256);
 
-  // High-density diamond knurling criss-cross pattern
   ctx.strokeStyle = "#ffffff";
   ctx.lineWidth = 1.5;
   const step = 8;
@@ -347,40 +343,35 @@ function createPlateHubTexture(label: string): THREE.CanvasTexture {
   canvas.height = 512;
   const ctx = canvas.getContext("2d")!;
 
-  // Dark metallic disc
   const grad = ctx.createRadialGradient(256, 256, 30, 256, 256, 256);
-  grad.addColorStop(0, "#1f2721");
-  grad.addColorStop(0.7, "#111613");
-  grad.addColorStop(1, "#090d0b");
+  grad.addColorStop(0, "#28342b");
+  grad.addColorStop(0.7, "#141c16");
+  grad.addColorStop(1, "#090f0b");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 512, 512);
 
-  // Concentric neon green groove
   ctx.strokeStyle = "#ADFF00";
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.arc(256, 256, 220, 0, Math.PI * 2);
   ctx.stroke();
 
-  // White inner rim
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
   ctx.arc(256, 256, 175, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Typography: GRINDLOG at top
   ctx.save();
   ctx.translate(256, 256);
   ctx.fillStyle = "#ADFF00";
-  ctx.font = "900 32px 'Oswald', 'Inter', sans-serif";
+  ctx.font = "900 32px 'Oswald', sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("GRINDLOG", 0, -120);
 
-  // Weight label at bottom
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "800 28px 'Oswald', 'Inter', sans-serif";
+  ctx.font = "800 28px 'Oswald', sans-serif";
   ctx.fillText(label, 0, 120);
   ctx.restore();
 
@@ -404,16 +395,15 @@ export function AppIntroAnimation({
 }: AppIntroAnimationProps) {
   const router = useRouter();
   const mountRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<IntroAudioEngine | null>(null);
 
-  // UI state
+  // UI state (minimal state setters to maintain 60-120fps without React re-render overhead)
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(!autoPlaySound);
   const [playbackSpeed, setPlaybackSpeed] = useState<1 | 0.5>(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [animProgress, setAnimProgress] = useState(0); // 0 to 1
   const [showBrandText, setShowBrandText] = useState(false);
-  const [impactFired, setImpactFired] = useState(false);
 
   // Animation internal time refs
   const timeRef = useRef(0);
@@ -439,10 +429,11 @@ export function AppIntroAnimation({
   // Replay Animation Handler
   const restartAnimation = useCallback(() => {
     timeRef.current = 0;
-    setAnimProgress(0);
     setShowBrandText(false);
-    setImpactFired(false);
     setIsPlaying(true);
+    if (progressBarRef.current) {
+      progressBarRef.current.style.width = "0%";
+    }
     if (audioRef.current && !isMuted) {
       audioRef.current.playWhoosh();
     }
@@ -451,7 +442,7 @@ export function AppIntroAnimation({
   // Fullscreen Handler
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
-      mountRef.current?.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
+      document.documentElement.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
     } else {
       document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
     }
@@ -476,13 +467,18 @@ export function AppIntroAnimation({
     // 1. Scene, Camera, Renderer
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x060907);
-    scene.fog = new THREE.FogExp2(0x060907, 0.035);
+    scene.fog = new THREE.FogExp2(0x060907, 0.022);
 
-    const width = container.clientWidth || window.innerWidth;
-    const height = container.clientHeight || window.innerHeight;
+    const getDimensions = () => {
+      const w = container.clientWidth || window.innerWidth || 800;
+      const h = container.clientHeight || window.innerHeight || 600;
+      return { w, h };
+    };
 
-    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
-    camera.position.set(0, 1.2, 13.5);
+    const { w: initialW, h: initialH } = getDimensions();
+
+    const camera = new THREE.PerspectiveCamera(40, initialW / initialH, 0.1, 100);
+    camera.position.set(0, 1.4, 13.0);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -490,64 +486,77 @@ export function AppIntroAnimation({
       stencil: false,
       alpha: false,
     });
-    // 4K resolution support via devicePixelRatio capped at 2.5 for silky 60fps
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.5));
-    renderer.setSize(width, height);
+    renderer.setSize(initialW, initialH);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
+    renderer.toneMappingExposure = 1.35;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+
+    // Pin canvas firmly inside container
+    renderer.domElement.style.position = "absolute";
+    renderer.domElement.style.top = "0";
+    renderer.domElement.style.left = "0";
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+    renderer.domElement.style.zIndex = "0";
+    renderer.domElement.style.display = "block";
 
     container.appendChild(renderer.domElement);
 
     // 2. Lighting Setup
-    // Main key spot light (casts dynamic shadows on brushed floor)
-    const keySpot = new THREE.SpotLight(0xffffff, 4.5);
-    keySpot.position.set(0, 14, 8);
-    keySpot.angle = Math.PI / 4.2;
-    keySpot.penumbra = 0.8;
-    keySpot.decay = 1.5;
+    const keySpot = new THREE.SpotLight(0xffffff, 6.0);
+    keySpot.position.set(0, 14, 9);
+    keySpot.angle = Math.PI / 3.6;
+    keySpot.penumbra = 0.6;
+    keySpot.decay = 1.2;
     keySpot.castShadow = true;
-    keySpot.shadow.mapSize.width = 2048;
-    keySpot.shadow.mapSize.height = 2048;
+    keySpot.shadow.mapSize.width = 1024;
+    keySpot.shadow.mapSize.height = 1024;
     keySpot.shadow.bias = -0.0001;
     scene.add(keySpot);
 
-    // Neon lime-green rim and floor reflector lights
-    const neonRimLight = new THREE.PointLight(0xadff00, 3.5, 20);
-    neonRimLight.position.set(-6, -1.5, 4);
+    const frontFillLight = new THREE.DirectionalLight(0xe8f0ea, 2.6);
+    frontFillLight.position.set(0, 4, 10);
+    scene.add(frontFillLight);
+
+    const neonUpLight = new THREE.DirectionalLight(0xadff00, 2.4);
+    neonUpLight.position.set(0, -6, 6);
+    scene.add(neonUpLight);
+
+    const neonRimLight = new THREE.PointLight(0xadff00, 4.5, 24);
+    neonRimLight.position.set(-6, -0.5, 4);
     scene.add(neonRimLight);
 
-    const neonRightLight = new THREE.PointLight(0x39ff14, 3.5, 20);
-    neonRightLight.position.set(6, -1.5, 4);
+    const neonRightLight = new THREE.PointLight(0x39ff14, 4.5, 24);
+    neonRightLight.position.set(6, -0.5, 4);
     scene.add(neonRightLight);
 
-    // Dynamic impact flash light (detonates upon slam)
-    const impactFlash = new THREE.PointLight(0xadff00, 0, 22);
-    impactFlash.position.set(0, 0.5, 2);
+    const impactFlash = new THREE.PointLight(0xadff00, 0, 28);
+    impactFlash.position.set(0, 0.5, 3);
     scene.add(impactFlash);
 
-    // Sleek light sweep point light (tracks along the letter G)
-    const sweepPointLight = new THREE.PointLight(0xffffff, 0, 8);
+    const sweepPointLight = new THREE.PointLight(0xffffff, 0, 10);
     sweepPointLight.position.set(0, 0, 2);
     scene.add(sweepPointLight);
 
-    const ambientLight = new THREE.AmbientLight(0x0e1810, 1.8);
+    const ambientLight = new THREE.AmbientLight(0x202e24, 2.8);
     scene.add(ambientLight);
 
     // 3. Dark Brushed-Metal Background Floor & Backplate
     const brushedTexture = createBrushedMetalTexture();
     const floorGeo = new THREE.PlaneGeometry(36, 36, 16, 16);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x18201a,
-      roughness: 0.32,
-      metalness: 0.88,
+      color: 0x36433a,
+      roughness: 0.36,
+      metalness: 0.82,
       map: brushedTexture,
       bumpMap: brushedTexture,
-      bumpScale: 0.05,
+      bumpScale: 0.06,
     });
     const floorMesh = new THREE.Mesh(floorGeo, floorMat);
-    floorMesh.position.set(0, 0, -1.8);
+    floorMesh.position.set(0, 0, -1.3);
     floorMesh.receiveShadow = true;
     scene.add(floorMesh);
 
@@ -562,14 +571,14 @@ export function AppIntroAnimation({
     const barMat = new THREE.MeshStandardMaterial({
       color: 0xdde4ec,
       metalness: 0.96,
-      roughness: 0.16,
+      roughness: 0.15,
     });
     const barMesh = new THREE.Mesh(barGeo, barMat);
     barMesh.rotation.z = Math.PI / 2;
     barMesh.castShadow = true;
     barbellGroup.add(barMesh);
 
-    // Knurling grip sleeves along the bar
+    // Knurling grip sleeves
     const createKnurlSleeve = (xPos: number, length: number) => {
       const geo = new THREE.CylinderGeometry(0.165, 0.165, length, 32);
       const mat = new THREE.MeshStandardMaterial({
@@ -595,8 +604,8 @@ export function AppIntroAnimation({
       const ringMat = new THREE.MeshStandardMaterial({
         color: 0xadff00,
         emissive: 0xadff00,
-        emissiveIntensity: 2.8,
-        metalness: 0.4,
+        emissiveIntensity: 3.2,
+        metalness: 0.3,
         roughness: 0.1,
       });
       const ringMesh = new THREE.Mesh(ringGeo, ringMat);
@@ -646,11 +655,9 @@ export function AppIntroAnimation({
     barbellGroup.add(rightSleeve);
 
     // 5. Weight Plates (Sliding Apart on Impact)
-    // Left Plates Stack
     const leftPlatesGroup = new THREE.Group();
     barbellGroup.add(leftPlatesGroup);
 
-    // Right Plates Stack
     const rightPlatesGroup = new THREE.Group();
     barbellGroup.add(rightPlatesGroup);
 
@@ -667,13 +674,12 @@ export function AppIntroAnimation({
     ) => {
       const plateMeshGroup = new THREE.Group();
 
-      // Outer rim bumper tire
-      const rimGeo = new THREE.CylinderGeometry(radius, radius, thickness, 40);
+      const rimGeo = new THREE.CylinderGeometry(radius, radius, thickness, 36);
       const rimMat = new THREE.MeshStandardMaterial({
         color: rimColor,
         emissive: rimColor,
         emissiveIntensity: emissiveIntensity,
-        roughness: 0.28,
+        roughness: 0.25,
         metalness: 0.6,
       });
       const rim = new THREE.Mesh(rimGeo, rimMat);
@@ -681,11 +687,10 @@ export function AppIntroAnimation({
       rim.castShadow = true;
       plateMeshGroup.add(rim);
 
-      // Inner branded hub face (left and right)
       const hubGeo = new THREE.CircleGeometry(radius * 0.88, 32);
       const hubMat = new THREE.MeshStandardMaterial({
         map: hubTexture,
-        roughness: 0.35,
+        roughness: 0.3,
         metalness: 0.85,
       });
 
@@ -702,7 +707,6 @@ export function AppIntroAnimation({
       return plateMeshGroup;
     };
 
-    // Quick release competition collar clamp
     const createLockCollar = () => {
       const collarGroup = new THREE.Group();
       const bodyGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.18, 32);
@@ -716,12 +720,11 @@ export function AppIntroAnimation({
       body.castShadow = true;
       collarGroup.add(body);
 
-      // Neon lime latch lever
       const leverGeo = new THREE.BoxGeometry(0.12, 0.24, 0.08);
       const leverMat = new THREE.MeshStandardMaterial({
         color: 0xadff00,
         emissive: 0xadff00,
-        emissiveIntensity: 1.8,
+        emissiveIntensity: 2.0,
       });
       const lever = new THREE.Mesh(leverGeo, leverMat);
       lever.position.set(0, 0.42, 0);
@@ -730,16 +733,16 @@ export function AppIntroAnimation({
       return collarGroup;
     };
 
-    // Build Left Stack
-    const leftPlate1 = createBumperPlate(1.9, 0.28, plate25Texture, 0xadff00, 0.85);
+    // Left stack
+    const leftPlate1 = createBumperPlate(1.9, 0.28, plate25Texture, 0xadff00, 0.9);
     leftPlate1.position.x = 0;
     leftPlatesGroup.add(leftPlate1);
 
-    const leftPlate2 = createBumperPlate(1.68, 0.24, plate20Texture, 0xffffff, 0.3);
+    const leftPlate2 = createBumperPlate(1.68, 0.24, plate20Texture, 0xffffff, 0.4);
     leftPlate2.position.x = -0.32;
     leftPlatesGroup.add(leftPlate2);
 
-    const leftPlate3 = createBumperPlate(1.48, 0.2, plate15Texture, 0xadff00, 0.75);
+    const leftPlate3 = createBumperPlate(1.48, 0.2, plate15Texture, 0xadff00, 0.8);
     leftPlate3.position.x = -0.6;
     leftPlatesGroup.add(leftPlate3);
 
@@ -747,16 +750,16 @@ export function AppIntroAnimation({
     leftLock.position.x = -0.82;
     leftPlatesGroup.add(leftLock);
 
-    // Build Right Stack
-    const rightPlate1 = createBumperPlate(1.9, 0.28, plate25Texture, 0xadff00, 0.85);
+    // Right stack
+    const rightPlate1 = createBumperPlate(1.9, 0.28, plate25Texture, 0xadff00, 0.9);
     rightPlate1.position.x = 0;
     rightPlatesGroup.add(rightPlate1);
 
-    const rightPlate2 = createBumperPlate(1.68, 0.24, plate20Texture, 0xffffff, 0.3);
+    const rightPlate2 = createBumperPlate(1.68, 0.24, plate20Texture, 0xffffff, 0.4);
     rightPlate2.position.x = 0.32;
     rightPlatesGroup.add(rightPlate2);
 
-    const rightPlate3 = createBumperPlate(1.48, 0.2, plate15Texture, 0xadff00, 0.75);
+    const rightPlate3 = createBumperPlate(1.48, 0.2, plate15Texture, 0xadff00, 0.8);
     rightPlate3.position.x = 0.6;
     rightPlatesGroup.add(rightPlate3);
 
@@ -764,7 +767,6 @@ export function AppIntroAnimation({
     rightLock.position.x = 0.82;
     rightPlatesGroup.add(rightLock);
 
-    // Initial plate offsets along sleeves
     const LEFT_REST_X = -3.05;
     const LEFT_LOCKED_X = -4.35;
     const RIGHT_REST_X = 3.05;
@@ -775,7 +777,6 @@ export function AppIntroAnimation({
 
     // 6. Monolithic 3D Metallic Letter "G"
     const gShape = new THREE.Shape();
-    // Precision athletic chiseled monogram G
     gShape.moveTo(1.5, 2.35);
     gShape.lineTo(-1.8, 2.35);
     gShape.lineTo(-2.65, 1.55);
@@ -805,12 +806,14 @@ export function AppIntroAnimation({
     };
 
     const gGeometry = new THREE.ExtrudeGeometry(gShape, gExtrudeSettings);
-    gGeometry.center(); // center centroid directly at (0, 0, 0)
+    gGeometry.center();
 
     const gMaterial = new THREE.MeshStandardMaterial({
-      color: 0x1f2722,
-      metalness: 0.94,
-      roughness: 0.18,
+      color: 0x7a8e83,
+      metalness: 0.95,
+      roughness: 0.16,
+      transparent: true,
+      opacity: 1,
     });
 
     const gMesh = new THREE.Mesh(gGeometry, gMaterial);
@@ -818,18 +821,18 @@ export function AppIntroAnimation({
     gMesh.receiveShadow = true;
     scene.add(gMesh);
 
-    // Glowing neon lime chamfer edge trim on the "G"
-    const edgesGeo = new THREE.EdgesGeometry(gGeometry, 26);
+    // Glowing neon lime chamfer edge trim
+    const edgesGeo = new THREE.EdgesGeometry(gGeometry, 30);
     const edgesMat = new THREE.LineBasicMaterial({
       color: 0xadff00,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.35,
     });
     const gEdges = new THREE.LineSegments(edgesGeo, edgesMat);
     gMesh.add(gEdges);
 
     // 7. Sleek Light Sweep Flare & Glow Orb
-    const sweepFlareGeo = new THREE.SphereGeometry(0.18, 16, 16);
+    const sweepFlareGeo = new THREE.SphereGeometry(0.2, 16, 16);
     const sweepFlareMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
@@ -838,7 +841,6 @@ export function AppIntroAnimation({
     const sweepFlare = new THREE.Mesh(sweepFlareGeo, sweepFlareMat);
     scene.add(sweepFlare);
 
-    // Halo ring around sweep flare
     const flareRingGeo = new THREE.RingGeometry(0.15, 0.55, 32);
     const flareRingMat = new THREE.MeshBasicMaterial({
       color: 0xadff00,
@@ -849,7 +851,6 @@ export function AppIntroAnimation({
     const flareRing = new THREE.Mesh(flareRingGeo, flareRingMat);
     scene.add(flareRing);
 
-    // Spline path for light sweep around the "G"
     const sweepPoints = [
       new THREE.Vector3(-1.8, -2.4, 0.45),
       new THREE.Vector3(-2.65, -1.55, 0.45),
@@ -874,7 +875,7 @@ export function AppIntroAnimation({
     ];
     const sweepCurve = new THREE.CatmullRomCurve3(sweepPoints, false, "centripetal", 0.5);
 
-    // 8. Dynamic Shockwave Rings (Detonating on floor at slam)
+    // 8. Dynamic Shockwave Rings
     const shockwaveGeo = new THREE.RingGeometry(0.2, 0.6, 64);
     const shockwaveMat1 = new THREE.MeshBasicMaterial({
       color: 0xadff00,
@@ -896,7 +897,7 @@ export function AppIntroAnimation({
     shockwave2.position.set(0, 0, -1.62);
     scene.add(shockwave2);
 
-    // 9. Radial Spark Embers Particle System
+    // 9. Radial Spark Embers
     const PARTICLE_COUNT = 180;
     const particlePositions = new Float32Array(PARTICLE_COUNT * 3);
     const particleVelocities: { x: number; y: number; z: number }[] = [];
@@ -907,7 +908,6 @@ export function AppIntroAnimation({
       particlePositions[i * 3 + 1] = 0;
       particlePositions[i * 3 + 2] = 0;
 
-      // Random 3D burst velocity outward
       const angle = Math.random() * Math.PI * 2;
       const speed = 2.5 + Math.random() * 6.5;
       particleVelocities.push({
@@ -916,12 +916,11 @@ export function AppIntroAnimation({
         z: (Math.random() - 0.2) * 4.5,
       });
 
-      // Neon lime or bright white colors
       const isLime = Math.random() > 0.35;
       if (isLime) {
-        particleColors[i * 3] = 0.68; // R
-        particleColors[i * 3 + 1] = 1.0; // G
-        particleColors[i * 3 + 2] = 0.0; // B
+        particleColors[i * 3] = 0.68;
+        particleColors[i * 3 + 1] = 1.0;
+        particleColors[i * 3 + 2] = 0.0;
       } else {
         particleColors[i * 3] = 1.0;
         particleColors[i * 3 + 1] = 1.0;
@@ -934,7 +933,7 @@ export function AppIntroAnimation({
     particlesGeo.setAttribute("color", new THREE.BufferAttribute(particleColors, 3));
 
     const particlesMat = new THREE.PointsMaterial({
-      size: 0.16,
+      size: 0.18,
       vertexColors: true,
       transparent: true,
       opacity: 0,
@@ -944,33 +943,28 @@ export function AppIntroAnimation({
     const particleSystem = new THREE.Points(particlesGeo, particlesMat);
     scene.add(particleSystem);
 
-    // Camera trauma shake state
     let cameraTrauma = 0;
-
-    // Interactive mouse / gyro tilt
     let mouseX = 0;
     let mouseY = 0;
+
     const handleMouseMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+      const x = ((e.clientX - rect.left) / (rect.width || 1)) * 2 - 1;
+      const y = -(((e.clientY - rect.top) / (rect.height || 1)) * 2 - 1);
       mouseX = x;
       mouseY = y;
     };
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Resize handler
     const handleResize = () => {
       if (!container) return;
-      const w = container.clientWidth || window.innerWidth;
-      const h = container.clientHeight || window.innerHeight;
+      const { w, h } = getDimensions();
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
     window.addEventListener("resize", handleResize);
 
-    // Initial audio whoosh if enabled
     if (audioRef.current && !isMuted) {
       audioRef.current.playWhoosh();
     }
@@ -995,40 +989,40 @@ export function AppIntroAnimation({
 
       const t = timeRef.current;
       const TOTAL_DURATION = 3.6;
-      setAnimProgress(Math.min(t / TOTAL_DURATION, 1));
+      const progress = Math.min(t / TOTAL_DURATION, 1);
+
+      // Direct DOM update for zero React render overhead at 60-120fps
+      if (progressBarRef.current) {
+        progressBarRef.current.style.width = `${progress * 100}%`;
+      }
 
       // ───────────────────────────────────────────────────────────────────────
-      // PHASE 0 & 1: Barbell Slam Down (t = 0.0s -> 0.48s)
+      // PHASE 0 & 1: Barbell Slam Down (t = 0.0s -> 0.46s)
       // ───────────────────────────────────────────────────────────────────────
       const IMPACT_TIME = 0.46;
 
       if (t < IMPACT_TIME) {
         const fallProgress = Math.min(t / IMPACT_TIME, 1);
-        // Aggressive physics gravity acceleration (power 3.2)
-        const fallEase = Math.pow(fallProgress, 3.2);
+        const fallEase = Math.pow(fallProgress, 3.0);
 
-        barbellGroup.position.y = 15.0 * (1 - fallEase);
-        barbellGroup.position.z = -2.0 * (1 - fallEase);
-        barbellGroup.rotation.z = -0.25 * (1 - fallEase);
-        barbellGroup.rotation.x = 0.35 * (1 - fallEase);
+        // Immediate dynamic entry from y = 8.5 inside camera view
+        barbellGroup.position.y = 8.5 * (1 - fallEase);
+        barbellGroup.position.z = -1.2 * (1 - fallEase);
+        barbellGroup.rotation.z = -0.2 * (1 - fallEase);
+        barbellGroup.rotation.x = 0.28 * (1 - fallEase);
 
-        // Letter G emerging simultaneously in background
-        gMesh.scale.setScalar(0.4 + 0.5 * fallProgress);
-        gMesh.position.z = -3.5 * (1 - fallProgress);
-        gMesh.rotation.z = -0.3 * (1 - fallProgress);
-        gMesh.visible = true;
-        (gMesh.material as THREE.MeshStandardMaterial).opacity = 0.3 + 0.7 * fallProgress;
+        gMesh.scale.setScalar(0.45 + 0.55 * fallProgress);
+        gMesh.position.z = -2.8 * (1 - fallProgress);
+        gMesh.rotation.z = -0.22 * (1 - fallProgress);
+        gMaterial.opacity = 0.4 + 0.6 * fallProgress;
 
-        // Plates tight near inner collars
         leftPlatesGroup.position.x = LEFT_REST_X;
         rightPlatesGroup.position.x = RIGHT_REST_X;
       } else {
-        // IMPACT HAS OCCURRED!
         const postImpact = t - IMPACT_TIME;
 
         if (!hasPlayedSlamAudio) {
           hasPlayedSlamAudio = true;
-          setImpactFired(true);
           cameraTrauma = 1.0;
           if (audioRef.current && !isMuted) {
             audioRef.current.playSlam();
@@ -1041,26 +1035,23 @@ export function AppIntroAnimation({
         const bounceY = Math.sin(postImpact * bounceFreq) * 0.45 * bounceDamp;
         barbellGroup.position.y = bounceY;
         barbellGroup.position.z = 0;
-        barbellGroup.rotation.z = Math.sin(postImpact * 30) * 0.05 * bounceDamp;
+        barbellGroup.rotation.z = Math.sin(postImpact * 30) * 0.04 * bounceDamp;
         barbellGroup.rotation.x = 0;
 
-        // Impact flash light pulse
-        impactFlash.intensity = Math.max(0, 16.0 * Math.exp(-postImpact * 9.0));
+        impactFlash.intensity = Math.max(0, 18.0 * Math.exp(-postImpact * 9.0));
 
         // ─────────────────────────────────────────────────────────────────────
-        // PHASE 2: Plates Slide Apart & Lock (postImpact 0.05s -> 0.65s)
+        // PHASE 2: Plates Slide Apart & Lock (postImpact 0.04s -> 0.60s)
         // ─────────────────────────────────────────────────────────────────────
         const slideDuration = 0.52;
         const slideProgress = Math.min(Math.max((postImpact - 0.04) / slideDuration, 0), 1);
 
-        // Outward centrifugal slide easing with elastic mechanical snap
         let slideEase = 0;
         if (slideProgress < 0.75) {
-          slideEase = (slideProgress / 0.75) * 1.05; // slight overshoot
+          slideEase = (slideProgress / 0.75) * 1.04;
         } else {
-          // snap back into exact locked collar stop
           const settleT = (slideProgress - 0.75) / 0.25;
-          slideEase = 1.05 - 0.05 * Math.sin(settleT * Math.PI * 0.5);
+          slideEase = 1.04 - 0.04 * Math.sin(settleT * Math.PI * 0.5);
         }
 
         leftPlatesGroup.position.x = LEFT_REST_X + (LEFT_LOCKED_X - LEFT_REST_X) * Math.min(slideEase, 1);
@@ -1075,10 +1066,11 @@ export function AppIntroAnimation({
 
         // Letter G locks into perfect center around the barbell
         const gLockProgress = Math.min(postImpact / 0.45, 1);
-        const gScale = 0.9 + 0.1 * Math.sin(gLockProgress * Math.PI * 0.5);
+        const gScale = 0.92 + 0.08 * Math.sin(gLockProgress * Math.PI * 0.5);
         gMesh.scale.setScalar(gScale);
         gMesh.position.z = 0;
         gMesh.rotation.z = 0;
+        gMaterial.opacity = 1.0;
 
         // ─────────────────────────────────────────────────────────────────────
         // Shockwave expansion
@@ -1102,7 +1094,7 @@ export function AppIntroAnimation({
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // Particle sparks physics simulation
+        // Particle sparks physics
         // ─────────────────────────────────────────────────────────────────────
         const pArray = particlesGeo.attributes.position.array as Float32Array;
         const particleLifespan = 0.95;
@@ -1113,7 +1105,7 @@ export function AppIntroAnimation({
           for (let i = 0; i < PARTICLE_COUNT; i++) {
             const vel = particleVelocities[i];
             pArray[i * 3] += vel.x * delta;
-            pArray[i * 3 + 1] += vel.y * delta - 4.5 * delta * delta; // gravity
+            pArray[i * 3 + 1] += vel.y * delta - 4.5 * delta * delta;
             pArray[i * 3 + 2] += vel.z * delta;
           }
           particlesGeo.attributes.position.needsUpdate = true;
@@ -1137,32 +1129,29 @@ export function AppIntroAnimation({
             }
           }
 
-          // Sample curve along letter G
           const pointOnCurve = sweepCurve.getPointAt(sweepProgress);
           sweepFlare.position.copy(pointOnCurve);
           flareRing.position.copy(pointOnCurve);
           sweepPointLight.position.set(pointOnCurve.x, pointOnCurve.y, pointOnCurve.z + 0.35);
 
-          // Pulsing intense light sweep
-          const intensity = Math.sin(sweepProgress * Math.PI) * 14.0;
+          const intensity = Math.sin(sweepProgress * Math.PI) * 15.0;
           sweepPointLight.intensity = intensity;
           sweepFlareMat.opacity = Math.min(intensity / 4.0, 1.0);
           flareRingMat.opacity = Math.min(intensity / 5.0, 0.85);
           flareRing.scale.setScalar(1 + Math.sin(sweepProgress * Math.PI * 4) * 0.2);
 
-          // Edge lines glow brighter as light sweep traverses
-          edgesMat.opacity = 0.45 + 0.5 * Math.sin(sweepProgress * Math.PI);
+          edgesMat.opacity = 0.5 + 0.5 * Math.sin(sweepProgress * Math.PI);
         } else {
           sweepPointLight.intensity = 0;
           sweepFlareMat.opacity = 0;
           flareRingMat.opacity = 0;
-          edgesMat.opacity = 0.45;
+          edgesMat.opacity = 0.5;
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // PHASE 4: Emblem Lock & Brand Typography Reveal (t >= 2.1s)
+        // PHASE 4: Emblem Lock & Brand Typography Reveal (t >= 2.05s)
         // ─────────────────────────────────────────────────────────────────────
-        if (t >= 2.05) {
+        if (t >= 2.05 && !showBrandText) {
           setShowBrandText(true);
         }
       }
@@ -1173,12 +1162,11 @@ export function AppIntroAnimation({
         const shakeX = (Math.random() * 2 - 1) * cameraTrauma * 0.28;
         const shakeY = (Math.random() * 2 - 1) * cameraTrauma * 0.28;
         camera.position.x = shakeX + mouseX * 0.45;
-        camera.position.y = 1.2 + shakeY + mouseY * 0.35;
+        camera.position.y = 1.4 + shakeY + mouseY * 0.35;
       } else {
-        // Idle gentle breathing camera + parallax tilt
         const idleFloat = Math.sin(t * 1.5) * 0.08;
         camera.position.x = mouseX * 0.45;
-        camera.position.y = 1.2 + idleFloat + mouseY * 0.35;
+        camera.position.y = 1.4 + idleFloat + mouseY * 0.35;
       }
       camera.lookAt(0, 0, 0);
 
@@ -1187,7 +1175,6 @@ export function AppIntroAnimation({
 
     animFrameId.current = requestAnimationFrame(animate);
 
-    // Cleanup on unmount
     return () => {
       if (animFrameId.current) {
         cancelAnimationFrame(animFrameId.current);
@@ -1195,7 +1182,6 @@ export function AppIntroAnimation({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", handleResize);
 
-      // Dispose three.js resources
       scene.clear();
       renderer.dispose();
       brushedTexture.dispose();
@@ -1207,18 +1193,17 @@ export function AppIntroAnimation({
         container.removeChild(renderer.domElement);
       }
     };
-  }, [isPlaying, playbackSpeed, isMuted]);
+  }, [isPlaying, playbackSpeed, isMuted, showBrandText]);
 
   return (
     <div
       ref={mountRef}
-      className="relative w-full h-full min-h-[100dvh] bg-[#060907] text-white flex flex-col justify-between overflow-hidden select-none"
+      className="fixed inset-0 z-50 w-screen h-screen min-h-[100dvh] bg-[#060907] text-white flex flex-col justify-between overflow-hidden select-none"
     >
       {/* ────────────────────────────────────────────────────────────────────── */}
       {/* Top Header Overlay */}
       {/* ────────────────────────────────────────────────────────────────────── */}
       <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-5 py-4 sm:px-8 sm:py-6 pointer-events-none">
-        {/* Brand Monogram Badge */}
         <div className="flex items-center gap-3 pointer-events-auto">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#ADFF00] via-[#85e600] to-[#559900] text-black flex items-center justify-center font-black text-xl shadow-[0_0_25px_rgba(173,255,0,0.45)] border border-[#c6ff33]">
             G
@@ -1236,9 +1221,7 @@ export function AppIntroAnimation({
           </div>
         </div>
 
-        {/* Quick Action Badges */}
         <div className="flex items-center gap-2 sm:gap-3 pointer-events-auto">
-          {/* Sound Toggle */}
           <button
             type="button"
             onClick={toggleMute}
@@ -1253,7 +1236,6 @@ export function AppIntroAnimation({
             <span className="hidden sm:inline">{isMuted ? "Sound: Off" : "Sound: FX Active"}</span>
           </button>
 
-          {/* Speed Toggle */}
           <button
             type="button"
             onClick={() => setPlaybackSpeed((s) => (s === 1 ? 0.5 : 1))}
@@ -1264,7 +1246,6 @@ export function AppIntroAnimation({
             <span>{playbackSpeed === 1 ? "1.0x" : "0.5x Slow-Mo"}</span>
           </button>
 
-          {/* Fullscreen Button */}
           <button
             type="button"
             onClick={toggleFullscreen}
@@ -1304,7 +1285,6 @@ export function AppIntroAnimation({
           The Intelligent Fitness Operating System
         </p>
 
-        {/* Feature Pills */}
         <div className="flex items-center gap-2 sm:gap-4 mt-3 text-[10px] sm:text-xs text-gray-300 font-bold uppercase tracking-wider">
           <span className="flex items-center gap-1 text-[#ADFF00]">
             <CheckCircle2 size={12} /> Hyper-Personalized
@@ -1324,21 +1304,18 @@ export function AppIntroAnimation({
       {/* Bottom Control Bar & CTA */}
       {/* ────────────────────────────────────────────────────────────────────── */}
       <footer className="absolute bottom-0 inset-x-0 z-30 p-4 sm:p-6 flex flex-col gap-3 pointer-events-none">
-        {/* Scrub / Progress Bar */}
         <div className="w-full max-w-xl mx-auto flex items-center gap-3">
           <span className="text-[9px] font-mono text-gray-400">00:00</span>
           <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden relative">
             <div
-              className="h-full bg-gradient-to-r from-[#ADFF00] to-[#c6ff33] shadow-[0_0_10px_#ADFF00] transition-[width] duration-75"
-              style={{ width: `${animProgress * 100}%` }}
+              ref={progressBarRef}
+              className="h-full bg-gradient-to-r from-[#ADFF00] to-[#c6ff33] shadow-[0_0_10px_#ADFF00] w-0"
             />
           </div>
           <span className="text-[9px] font-mono text-gray-400">03:60</span>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center justify-center gap-3 sm:gap-4 pointer-events-auto">
-          {/* Replay Button */}
           <button
             type="button"
             onClick={restartAnimation}
@@ -1348,7 +1325,6 @@ export function AppIntroAnimation({
             <span>Replay Motion</span>
           </button>
 
-          {/* Play/Pause Button */}
           <button
             type="button"
             onClick={() => setIsPlaying((p) => !p)}
@@ -1358,7 +1334,6 @@ export function AppIntroAnimation({
             {isPlaying ? <Pause size={15} /> : <Play size={15} className="text-[#ADFF00]" />}
           </button>
 
-          {/* Enter App / Proceed Button */}
           {showDismissButton && (
             <button
               type="button"
