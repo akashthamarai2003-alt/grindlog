@@ -1074,22 +1074,22 @@ export function V2NutritionView({
 
       {/* 2. Compact Daily Fuel Hero Card (Calorie Ring + 3 Macro Bars) */}
       <section
-        className="relative overflow-hidden rounded-[24px] border border-[#ADFF00]/25 bg-gradient-to-br from-[#182814] via-[#101B0F] to-[#0A1208] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.35)] sm:p-6"
+        className="nutrition-fuel-hero-card relative overflow-hidden rounded-[24px] border border-[#ADFF00]/25 bg-gradient-to-br from-[#182814] via-[#101B0F] to-[#0A1208] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.35)] sm:p-6"
         aria-label="Nutrition fuel summary"
       >
-        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[#ADFF00]/10 blur-3xl" />
+        <div className="fuel-hero-ambient-glow pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[#ADFF00]/10 blur-3xl" />
 
         {/* Micro-Header Strip */}
         <div className="relative mb-3.5 flex items-center justify-between border-b border-white/5 pb-2.5">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#ADFF00] animate-pulse" />
-            <span className="text-[11px] font-black uppercase tracking-[0.16em] text-white/70">
+            <span className="fuel-hero-title text-[11px] font-black uppercase tracking-[0.16em] text-white/70">
               {isToday ? "Today's Fuel Target" : "Day's Fuel Target"}
             </span>
           </div>
           <div className="flex items-center gap-2 text-[11px] font-bold text-white/60">
             <span>Meals Logged:</span>
-            <span className="rounded-md bg-white/10 px-2 py-0.5 font-black text-white">
+            <span className="fuel-logged-badge rounded-md bg-white/10 px-2 py-0.5 font-black text-white">
               {loggedCount} / {totalMealSlotsCount}
             </span>
           </div>
@@ -1099,31 +1099,31 @@ export function V2NutritionView({
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-2">
             <div className="flex items-center gap-1.5">
-              <Flame className="h-4 w-4 text-[#ADFF00]" />
-              <span className="text-xs font-black uppercase tracking-wider text-white">
+              <Flame className="fuel-flame-icon h-4 w-4 text-[#ADFF00]" />
+              <span className="fuel-calories-label text-xs font-black uppercase tracking-wider text-white">
                 Calories
               </span>
             </div>
             <div className="text-right">
-              <span className="text-base font-black text-white sm:text-lg">
+              <span className="fuel-calories-val text-base font-black text-white sm:text-lg">
                 {number(consumedCals)}
               </span>
-              <span className="text-xs font-semibold text-white/45">
+              <span className="fuel-calories-sub text-xs font-semibold text-white/45">
                 {" "}/ {number(targetCals)} kcal
               </span>
             </div>
           </div>
 
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/50 border border-white/5 p-[1px]">
+          <div className="fuel-progress-track h-2.5 w-full overflow-hidden rounded-full bg-black/50 border border-white/5 p-[1px]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#ADFF00] via-[#c4ff4d] to-emerald-400 shadow-[0_0_12px_rgba(173,255,0,0.35)] transition-all duration-500"
+              className="fuel-progress-fill h-full rounded-full bg-gradient-to-r from-[#ADFF00] via-[#c4ff4d] to-emerald-400 shadow-[0_0_12px_rgba(173,255,0,0.35)] transition-all duration-500"
               style={{ width: `${Math.min(100, Math.max(0, caloriePercent))}%` }}
             />
           </div>
 
           <div className="flex items-center justify-between text-[11px] font-semibold text-white/50 px-0.5">
-            <span>{caloriePercent}% target hit</span>
-            <span className="font-bold text-[#ADFF00]">
+            <span className="fuel-percent-text">{caloriePercent}% target hit</span>
+            <span className="fuel-remaining-text font-bold text-[#ADFF00]">
               {number(calorieRemaining)} kcal remaining
             </span>
           </div>
@@ -1132,7 +1132,7 @@ export function V2NutritionView({
         {/* 3 Secondary Macro Pillars (Protein, Carbs, Fat) */}
         <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
           {/* Protein */}
-          <div className="rounded-xl border border-white/5 bg-black/30 p-2.5 sm:p-3 flex flex-col justify-between gap-1.5">
+          <div className="fuel-macro-pillar rounded-xl border border-white/5 bg-black/30 p-2.5 sm:p-3 flex flex-col justify-between gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-wider text-sky-400">
                 Protein
@@ -1145,16 +1145,16 @@ export function V2NutritionView({
               {number(consumedPro)}
               <span className="text-[10px] font-normal text-white/40">/{number(targetPro)}g</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="fuel-macro-track h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-300 transition-all duration-500"
+                className="fuel-pro-fill h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-300 transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(0, proPercent))}%` }}
               />
             </div>
           </div>
 
           {/* Carbs */}
-          <div className="rounded-xl border border-white/5 bg-black/30 p-2.5 sm:p-3 flex flex-col justify-between gap-1.5">
+          <div className="fuel-macro-pillar rounded-xl border border-white/5 bg-black/30 p-2.5 sm:p-3 flex flex-col justify-between gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">
                 Carbs
@@ -1167,16 +1167,16 @@ export function V2NutritionView({
               {number(consumedCarbs)}
               <span className="text-[10px] font-normal text-white/40">/{number(targetCarbs)}g</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="fuel-macro-track h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-500"
+                className="fuel-carbs-fill h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(0, carbsPercent))}%` }}
               />
             </div>
           </div>
 
           {/* Fat */}
-          <div className="rounded-xl border border-white/5 bg-black/30 p-2.5 sm:p-3 flex flex-col justify-between gap-1.5">
+          <div className="fuel-macro-pillar rounded-xl border border-white/5 bg-black/30 p-2.5 sm:p-3 flex flex-col justify-between gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-wider text-rose-400">
                 Fat
@@ -1189,9 +1189,9 @@ export function V2NutritionView({
               {number(consumedFat)}
               <span className="text-[10px] font-normal text-white/40">/{number(targetFat)}g</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="fuel-macro-track h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-rose-400 to-pink-400 transition-all duration-500"
+                className="fuel-fat-fill h-full rounded-full bg-gradient-to-r from-rose-400 to-pink-400 transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(0, fatPercent))}%` }}
               />
             </div>

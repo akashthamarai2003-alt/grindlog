@@ -548,7 +548,9 @@ html.theme-white .bg-\[\#111A10\],
 html.theme-white .bg-\[\#0E160E\],
 html.theme-white [class*="from-\[\#121E12\]"],
 html.theme-white [class*="from-\[\#111A10\]"],
-html.theme-white [class*="from-\[\#1A2619\]"] {
+html.theme-white [class*="from-\[\#1A2619\]"],
+html.theme-white [class*="from-\[\#182814\]"],
+html.theme-white .nutrition-fuel-hero-card {
   background-image: none !important;
   background-color: var(--fitness-card) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 2px 8px -2px rgba(0, 0, 0, 0.02) !important;
@@ -1061,6 +1063,77 @@ html.theme-white .nutrition-hero-badge span {
 }
 html.theme-white .nutrition-hero-badge .text-\[\#ADFF00\] {
   color: var(--fitness-primary) !important;
+}
+
+/* Daily Fuel Target Hero Card in White Theme */
+html.theme-white .nutrition-fuel-hero-card {
+  background-image: none !important;
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-border) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 2px 10px -2px rgba(0, 0, 0, 0.03) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-hero-ambient-glow,
+html.theme-white .nutrition-fuel-hero-card .blur-3xl {
+  display: none !important;
+  opacity: 0 !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-hero-title {
+  color: var(--fitness-text) !important;
+  font-weight: 800 !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-logged-badge {
+  background-color: var(--fitness-soft-bg) !important;
+  border: 1px solid var(--fitness-border) !important;
+  color: var(--fitness-text) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-flame-icon,
+html.theme-white .nutrition-fuel-hero-card svg.text-\[\#ADFF00\] {
+  color: #EA580C !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-calories-label,
+html.theme-white .nutrition-fuel-hero-card .fuel-calories-val {
+  color: var(--fitness-text) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-calories-sub {
+  color: var(--fitness-secondary) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-progress-track {
+  background-color: var(--fitness-track) !important;
+  border-color: var(--fitness-border) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-progress-fill {
+  background-image: linear-gradient(to right, #16A34A, #22C55E) !important;
+  box-shadow: 0 1px 4px rgba(22, 163, 74, 0.25) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-percent-text {
+  color: var(--fitness-secondary) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-remaining-text {
+  color: var(--fitness-primary-dark) !important;
+  font-weight: 800 !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-macro-pillar {
+  background-color: var(--fitness-soft-bg) !important;
+  border-color: var(--fitness-border) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-macro-pillar .text-white {
+  color: var(--fitness-text) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-macro-pillar .text-white\/40 {
+  color: var(--fitness-secondary) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-macro-track {
+  background-color: var(--fitness-track) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-pro-fill {
+  background-image: linear-gradient(to right, #0284C7, #38BDF8) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-carbs-fill {
+  background-image: linear-gradient(to right, #D97706, #F59E0B) !important;
+}
+html.theme-white .nutrition-fuel-hero-card .fuel-fat-fill {
+  background-image: linear-gradient(to right, #E11D48, #FB7185) !important;
 }
 
 /* Disabled button states in white theme: clean soft background & readable secondary text */
