@@ -1211,26 +1211,15 @@ export function V2NutritionView({
         {/* Micro-Header Strip */}
         <div className="relative mb-3.5 flex items-center justify-between border-b border-white/5 pb-2.5">
           <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${isDayFinished ? "bg-emerald-400" : "bg-[#ADFF00]"} animate-pulse`} />
+            <span className="h-2 w-2 rounded-full bg-[#ADFF00] animate-pulse" />
             <span className="fuel-hero-title text-[11px] font-black uppercase tracking-[0.16em] text-white/70">
               {isToday ? "Today's Fuel Target" : "Day's Fuel Target"}
             </span>
-            {isDayFinished && (
-              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1 shadow-[0_0_8px_rgba(52,211,153,0.2)]">
-                <Check size={9} strokeWidth={3.5} /> Day Done
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-2 text-[11px] font-bold text-white/60">
             <span>Meals Logged:</span>
-            <span className={`fuel-logged-badge rounded-md px-2 py-0.5 font-black flex items-center gap-1.5 transition-colors ${
-              isDayFinished
-                ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-[0_0_10px_rgba(52,211,153,0.2)]"
-                : "bg-white/10 text-white"
-            }`}>
-              {isDayFinished && <Check size={11} strokeWidth={3} className="text-emerald-400" />}
-              <span>{loggedCount} / {totalMealSlotsCount}</span>
-              {isDayFinished && <span className="text-[10px] text-emerald-400 font-bold">• All Done!</span>}
+            <span className="fuel-logged-badge rounded-md bg-white/10 px-2 py-0.5 font-black text-white">
+              {loggedCount} / {totalMealSlotsCount}
             </span>
           </div>
         </div>
@@ -1436,7 +1425,7 @@ export function V2NutritionView({
                 type="button"
                 onClick={() => chooseDay(date)}
                 aria-pressed={isSelected}
-                className={`relative min-w-0 rounded-2xl border px-1 py-2 text-center transition active:scale-95 ${
+                className={`min-w-0 rounded-2xl border px-1 py-2 text-center transition active:scale-95 ${
                   isSelected
                     ? "border-[#ADFF00] bg-[#ADFF00] text-[#0A1108] shadow-[0_4px_16px_rgba(173,255,0,0.3)] font-black"
                     : isCompleted
@@ -1444,20 +1433,6 @@ export function V2NutritionView({
                     : "border-white/10 bg-[#111A10] text-white/55 hover:border-white/25 hover:text-white"
                 }`}
               >
-                {/* Completed food indicator badge */}
-                {isCompleted && (
-                  <span
-                    title="All meals finished for this day"
-                    className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black shadow-md ${
-                      isSelected
-                        ? "bg-[#0A1108] text-[#ADFF00] ring-2 ring-[#ADFF00]"
-                        : "bg-emerald-500 text-black ring-2 ring-[#0A1108]"
-                    }`}
-                  >
-                    <Check size={10} strokeWidth={3.5} />
-                  </span>
-                )}
-
                 <span className="block text-[9px] font-bold uppercase tracking-wider sm:text-[10px]">
                   {displayDate(date, { weekday: "short" })}
                 </span>
@@ -1466,7 +1441,7 @@ export function V2NutritionView({
                 {/* Day status indicator: Completed check / Today dot / spacer */}
                 {isCompleted ? (
                   <span
-                    className={`mx-auto mt-0.5 flex h-2 items-center justify-center text-[9px] font-black ${
+                    className={`mx-auto mt-0.5 flex h-2 items-center justify-center text-[10px] font-black ${
                       isSelected ? "text-[#0A1108]" : "text-emerald-400"
                     }`}
                   >
@@ -1491,57 +1466,24 @@ export function V2NutritionView({
       <section aria-label="Meal timeline">
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ADFF00]">Fuel Timeline</p>
-              {isDayFinished && (
-                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black text-emerald-400 flex items-center gap-1 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
-                  <Check size={11} strokeWidth={3} /> Day Complete
-                </span>
-              )}
-            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ADFF00]">Fuel Timeline</p>
             <h2 className="mt-0.5 text-xl font-black text-white sm:text-2xl">
               Meals for {displayDate(selectedDate, { weekday: "long" })}
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            {isDayFinished ? (
-              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-1 text-xs font-black text-emerald-400 flex items-center gap-1.5 shadow-[0_0_12px_rgba(52,211,153,0.25)]">
-                <Check size={13} strokeWidth={3} /> {loggedCount}/{totalMealSlotsCount} Finished
-              </span>
-            ) : current?.planId ? (
+            {current?.planId && (
               <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white/50">
                 {current.meals.length} planned
               </span>
-            ) : null}
-            {extraMeals.length > 0 && !isDayFinished && (
+            )}
+            {extraMeals.length > 0 && (
               <span className="rounded-full border border-[#ADFF00]/20 bg-[#ADFF00]/10 px-2.5 py-1 text-xs font-bold text-[#ADFF00]">
                 +{extraMeals.length} extra logged
               </span>
             )}
           </div>
         </div>
-
-        {/* Day Finished Celebratory Banner */}
-        {isDayFinished && (
-          <div className="mb-3.5 flex items-center gap-3 rounded-2xl border border-emerald-500/35 bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-transparent p-3 sm:p-3.5 shadow-[0_4px_20px_rgba(16,185,129,0.12)]">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_12px_rgba(52,211,153,0.25)]">
-              <Check size={18} strokeWidth={3} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 sm:text-sm">
-                  Day&apos;s Food Finished!
-                </h4>
-                <span className="rounded-md bg-emerald-500/25 px-1.5 py-0.5 text-[10px] font-black text-emerald-300">
-                  {loggedCount}/{totalMealSlotsCount} Logged
-                </span>
-              </div>
-              <p className="mt-0.5 text-xs text-emerald-200/80">
-                All planned meals for {displayDate(selectedDate, { weekday: "long" })} have been logged. Outstanding consistency staying on track with your fuel target!
-              </p>
-            </div>
-          </div>
-        )}
 
         {loading && !current && (
           <div className="space-y-2.5" aria-label="Loading meals">
