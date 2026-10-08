@@ -4,10 +4,8 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Immediately allow static public media assets and public intro animation
+  // Immediately allow static public media assets (images, videos, fonts, etc.)
   if (
-    pathname === "/intro" ||
-    pathname.startsWith("/intro/") ||
     pathname.startsWith("/images/") ||
     pathname.startsWith("/videos/") ||
     pathname.startsWith("/assets/") ||
@@ -72,7 +70,6 @@ export async function updateSession(request: NextRequest) {
 
   const publicPaths = [
     "/",
-    "/intro",
     "/auth/signup",
     "/auth/signin",
     "/auth/callback",

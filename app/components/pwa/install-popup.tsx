@@ -1,17 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Download, X } from "lucide-react";
 
 export function InstallPopup() {
-  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
   const [isStandalone, setIsStandalone] = useState(true);
 
   useEffect(() => {
-    if (pathname === "/intro" || pathname?.startsWith("/intro")) return;
     // Only show if NOT standalone PWA
     const isPwa = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
     setIsStandalone(!!isPwa);

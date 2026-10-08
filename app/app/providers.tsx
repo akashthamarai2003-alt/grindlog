@@ -11,8 +11,6 @@ import { FitnessThemeProvider } from "@/components/fitness/fitness-theme-provide
 export function Providers({ children, initialTheme = "default" }: { children: React.ReactNode, initialTheme?: string }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
-  const isIntro = pathname === "/intro" || pathname?.startsWith("/intro");
-  const isFullWidth = isAdmin || isIntro;
   
   // Hydrate auth globally
   useAuth();
@@ -29,7 +27,7 @@ export function Providers({ children, initialTheme = "default" }: { children: Re
       <div
         className={cn(
           "mx-auto min-h-dvh",
-          !isFullWidth && "max-w-[430px]",
+          !isAdmin && "max-w-[430px]",
           "bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]",
           "relative overflow-x-hidden"
         )}
