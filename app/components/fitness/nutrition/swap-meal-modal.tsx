@@ -5,6 +5,7 @@ import { X, Loader2, Check, RefreshCw, ChevronRight } from "lucide-react";
 import { nutritionApi } from "@/lib/api/nutrition";
 import { FoodAvatar } from "./food-avatar";
 import { toast } from "sonner";
+import { cleanFoodName, cleanServing } from "@/lib/fitness/nutrition/portion-parser";
 
 interface SwapMealModalProps {
   isOpen: boolean;
@@ -165,9 +166,9 @@ export function SwapMealModal({
                       {(opt.items || []).map((item: any, idx: number) => (
                         <li key={idx} className="flex justify-between items-center text-white/80">
                           <span className="flex items-center gap-2">
-                            <FoodAvatar name={item.name} className="w-6 h-6 rounded-md object-cover border border-white/10" />
-                            <span className="font-semibold text-white/90">{item.name}</span>
-                            <span className="text-[11px] text-white/40">({item.serving_size})</span>
+                            <FoodAvatar name={cleanFoodName(item.name)} className="w-6 h-6 rounded-md object-cover border border-white/10" />
+                            <span className="font-semibold text-white/90">{cleanFoodName(item.name)}</span>
+                            <span className="text-[11px] text-white/40">({cleanServing(item.serving_size)})</span>
                           </span>
                           <span className="text-[11px] font-bold text-[#ADFF00]/80">
                             {item.calories} kcal

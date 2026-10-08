@@ -28,6 +28,7 @@ import { WaterBottleCard } from "./water-bottle-card";
 import { WaterHistoryCard } from "./water-history-card";
 import { nutritionApi } from "@/lib/api/nutrition";
 import type { V2NutritionDay, V2NutritionLog, V2NutritionMeal } from "@/lib/services/nutrition/v2-ui-data";
+import { cleanFoodName, cleanServing } from "@/lib/fitness/nutrition/portion-parser";
 
 type SwapOption = {
   id: string;
@@ -543,8 +544,8 @@ export function V2NutritionView({
           id: item.id || `optimistic-log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           mealSlot: slot,
           plannedMealId: item.planned_meal_id || item.plannedMealId || null,
-          name: item.foods?.name || item.custom_food?.name || item.recipe_name_snapshot || item.name || "Logged Food",
-          serving: item.serving_snapshot || item.foods?.serving_size || item.serving || null,
+          name: cleanFoodName(item.foods?.name || item.custom_food?.name || item.recipe_name_snapshot || item.name, "Logged Food"),
+          serving: cleanServing(item.serving_snapshot || item.foods?.serving_size || item.serving) || null,
           calories: Number(item.calories) || 0,
           protein: Number(item.protein) || 0,
           carbs: Number(item.carbs) || 0,
@@ -626,7 +627,7 @@ export function V2NutritionView({
       };
     });
 
-    toast.success(`Removed ${foodName || "food"}`);
+    toast.success(`Removed ${cleanFoodName(foodName, "food")}`);
 
     // 2. Background Server API Call
     try {
@@ -1387,8 +1388,8 @@ export function V2NutritionView({
               const actual = actualTotals(meal);
               const differentFood = !isExtra && logged && meal.logs.some((log) => !log.plannedMealId);
               const actualTitle = (isExtra || differentFood) && meal.logs.length > 0
-                ? meal.logs.map((log) => log.name).join(" · ")
-                : meal.name;
+                ? meal.logs.map((log) => cleanFoodName(log.name)).join(" · ")
+                : cleanFoodName(meal.name);
               const shownCalories = logged && meal.logs.length > 0 ? actual.calories : meal.calories;
               const shownProtein = logged && meal.logs.length > 0 ? actual.protein : meal.protein;
               const shownCarbs = logged && meal.logs.length > 0 ? actual.carbs : meal.carbs;
@@ -1409,7 +1410,7 @@ export function V2NutritionView({
                     {/* Food Avatar / Image */}
                     <div className="relative shrink-0">
                       <FoodAvatar
-                        name={(isExtra || differentFood) && meal.logs.length > 0 ? meal.logs[0].name : meal.name}
+                        name={(isExtra || differentFood) && meal.logs.length > 0 ? cleanFoodName(meal.logs[0].name) : cleanFoodName(meal.name)}
                         imageUrl={isExtra || differentFood ? undefined : meal.imageUrl}
                         className="h-16 w-16 shrink-0 rounded-xl object-cover border border-white/10 sm:h-20 sm:w-20"
                       />
@@ -1548,13 +1549,13 @@ export function V2NutritionView({
                             {meal.logs.map((log) => (
                               <li
                                 key={log.id}
-                                className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-2.5 min-w-0"
+                                className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-2.5 min-w-0 overflow-hidden"
                               >
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <span className="font-bold text-white text-xs truncate">{log.name}</span>
+                                    <span className="font-bold text-white text-xs truncate min-w-0">{cleanFoodName(log.name)}</span>
                                     {log.serving && (
-                                      <span className="text-[10px] text-white/40 shrink-0">({log.serving})</span>
+                                      <span className="text-[10px] text-white/40 shrink-0 max-w-[120px] truncate">({cleanServing(log.serving)})</span>
                                     )}
                                   </div>
                                   <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[10px] text-white/50">
@@ -1573,7 +1574,7 @@ export function V2NutritionView({
                                     disabled={deletingLogId === log.id}
                                     onClick={() => void handleDeleteFood(log.id, log.name)}
                                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-rose-400 hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-300 transition"
-                                    title={`Remove ${log.name}`}
+                                    title={`Remove ${cleanFoodName(log.name)}`}
                                   >
                                     {deletingLogId === log.id ? (
                                       <Loader2 size={12} className="animate-spin" />
@@ -1606,13 +1607,13 @@ export function V2NutritionView({
                             <ul className="space-y-1.5 w-full min-w-0">
                               {meal.ingredients.map((item) => (
                                 <li key={item.id} className="flex items-center justify-between gap-3 text-white/75 min-w-0">
-                                  <span className="min-w-0 truncate text-white/85">
-                                    {item.name}
+                                  <span className="min-w-0 flex-1 truncate text-white/85">
+                                    {cleanFoodName(item.name)}
                                     {item.isProvided && (
-                                      <span className="ml-1.5 text-[9px] font-bold text-[#ADFF00] shrink-0">Provided</span>
+                                      <span className="ml-1.5 text-[9px] font-bold text-[#ADFF00] shrink-0 inline-block">Provided</span>
                                     )}
                                   </span>
-                                  <span className="whitespace-nowrap font-bold text-white shrink-0 text-right">{item.quantity}</span>
+                                  <span className="whitespace-nowrap font-bold text-white shrink-0 text-right text-xs">{cleanServing(item.quantity)}</span>
                                 </li>
                               ))}
                             </ul>
@@ -1649,16 +1650,16 @@ export function V2NutritionView({
                                   {meal.logs.map((log) => (
                                     <li
                                       key={log.id}
-                                      className="flex items-center justify-between gap-2.5 rounded-xl border border-white/5 bg-black/30 p-2.5 min-w-0"
+                                      className="flex items-center justify-between gap-2.5 rounded-xl border border-white/5 bg-black/30 p-2.5 min-w-0 overflow-hidden"
                                     >
                                       <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-1.5 min-w-0">
-                                          <span className="text-xs font-bold text-white truncate">
-                                            {log.name}
+                                          <span className="text-xs font-bold text-white truncate min-w-0">
+                                            {cleanFoodName(log.name)}
                                           </span>
                                           {log.serving && (
-                                            <span className="text-[10px] text-white/50 shrink-0">
-                                              ({log.serving})
+                                            <span className="text-[10px] text-white/50 shrink-0 max-w-[120px] truncate">
+                                              ({cleanServing(log.serving)})
                                             </span>
                                           )}
                                         </div>
@@ -1694,7 +1695,7 @@ export function V2NutritionView({
                                           disabled={deletingLogId === log.id}
                                           onClick={() => void handleDeleteFood(log.id, log.name)}
                                           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-rose-400 hover:border-rose-400/40 hover:bg-rose-400/10 hover:text-rose-300 active:scale-95 transition cursor-pointer"
-                                          title={`Remove ${log.name}`}
+                                          title={`Remove ${cleanFoodName(log.name)}`}
                                         >
                                           {deletingLogId === log.id ? (
                                             <Loader2 size={12} className="animate-spin" />

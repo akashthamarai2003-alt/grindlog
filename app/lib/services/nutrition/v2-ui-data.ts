@@ -2,6 +2,7 @@ import { createServerSupabase } from "@/lib/services/supabase/server";
 import { NutritionService } from "@/lib/services/nutrition/nutrition-service";
 import { resolveV2ImageSnapshot } from "@/lib/services/nutrition/v2-plan-service";
 import { approvedImageForReference, type RecipeImageRow } from "@/lib/fitness/nutrition/image-policy";
+import { cleanFoodName, cleanServing, parseCompositeServing } from "@/lib/fitness/nutrition/portion-parser";
 
 export interface V2NutritionLog {
   id: string;
@@ -153,15 +154,27 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
   if (waterRes.error) throw waterRes.error;
   const plan = planRes.data as PlanRow | null;
   const logRows = (logsRes.data || []) as LogRow[];
-  const logs: V2NutritionLog[] = logRows.map((log) => ({
-    id: log.id,
-    mealSlot: log.meal_type || "other",
-    plannedMealId: log.planned_meal_id,
-    name: relatedFood(log.foods)?.name || log.recipe_name_snapshot || "Actual food",
-    serving: log.serving_snapshot || relatedFood(log.foods)?.serving_size || null,
-    calories: numeric(log.calories), protein: numeric(log.protein),
-    carbs: numeric(log.carbs), fat: numeric(log.fat), loggedAt: log.logged_at,
-  }));
+  const logs: V2NutritionLog[] = logRows.map((log) => {
+    const rawFoodName = relatedFood(log.foods)?.name;
+    const rawServing = log.serving_snapshot || relatedFood(log.foods)?.serving_size;
+    const parsedServing = parseCompositeServing(rawServing);
+
+    const name = cleanFoodName(rawFoodName || log.recipe_name_snapshot || parsedServing.title, "Actual food");
+    const serving = rawServing ? cleanServing(rawServing) : null;
+
+    return {
+      id: log.id,
+      mealSlot: log.meal_type || "other",
+      plannedMealId: log.planned_meal_id,
+      name,
+      serving,
+      calories: numeric(log.calories),
+      protein: numeric(log.protein),
+      carbs: numeric(log.carbs),
+      fat: numeric(log.fat),
+      loggedAt: log.logged_at,
+    };
+  });
   const consumed = logs.reduce((sum, log) => ({
     ...sum, calories: sum.calories + log.calories, protein: sum.protein + log.protein,
     carbs: sum.carbs + log.carbs, fat: sum.fat + log.fat,
@@ -212,14 +225,35 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
   const meals: V2NutritionMeal[] = rows.map((row) => {
     const version = row.recipe_version_id ? versions.get(row.recipe_version_id) : undefined;
     const template = row.meal_template_id ? templates.get(row.meal_template_id) : undefined;
-    const name = version?.name || template?.name || row.meal_slot.replaceAll("_", " ");
+    const rawMealName = version?.name || template?.name || row.meal_slot.replaceAll("_", " ");
+    const name = cleanFoodName(rawMealName, row.meal_slot.replaceAll("_", " "));
     const image = approvedImageForReference({ imageAssetId: row.image_asset_id,
       recipeVersionId: row.recipe_version_id, storagePath: row.image_storage_path_snapshot,
       url: row.image_url_snapshot }, images);
-    const ingredients = items.filter((item) => item.planned_meal_id === row.id).map((item) => ({
-      id: item.id, name: relatedFood(item.foods)?.name || "Food", quantity: item.serving_size ||
-        `${numeric(item.quantity)} ${item.unit || "servings"}`, isProvided: item.is_provided === true,
-    }));
+    const ingredients = items.filter((item) => item.planned_meal_id === row.id).map((item) => {
+      const rawFoodName = relatedFood(item.foods)?.name;
+      const parsedServing = parseCompositeServing(item.serving_size);
+
+      const ingName = cleanFoodName(rawFoodName || parsedServing.title, "Food");
+
+      let quantity = parsedServing.portion;
+      if (!quantity || quantity === "1 serving") {
+        if (numeric(item.quantity) > 0 && item.unit) {
+          quantity = `${numeric(item.quantity)} ${item.unit}`;
+        } else if (item.serving_size) {
+          quantity = cleanServing(item.serving_size);
+        } else {
+          quantity = `${numeric(item.quantity)} ${item.unit || "servings"}`;
+        }
+      }
+
+      return {
+        id: item.id,
+        name: ingName,
+        quantity,
+        isProvided: item.is_provided === true,
+      };
+    });
     return {
       id: row.id, slot: row.meal_slot, sequence: row.meal_sequence,
       scheduledTime: row.scheduled_time, status: row.status, sourceType: row.source_type,
