@@ -217,8 +217,12 @@ export class V2PlanService {
       }
     }
 
-    // 6. Mess meals resolution (explicit opt-in only)
-    const messAvailable = profile?.mess_available === true;
+    // 6. Mess meals resolution:
+    // If explicitly true -> true.
+    // If explicitly false -> false.
+    // If null/undefined -> auto-detect if user lives in Hostel/PG and does not have cooking equipment (no stove)
+    const messAvailable = profile?.mess_available === true ||
+      (profile?.mess_available == null && (foodEnvironment === "Hostel" || foodEnvironment === "PG") && !availableEquipment.includes("stove"));
     const defaultMessMeals: MealSlotType[] = mealsPerDay === 2
       ? ["lunch", "dinner"]
       : ["breakfast", "lunch", "dinner"];
@@ -248,6 +252,8 @@ export class V2PlanService {
       activityLevel = "sedentary";
     }
 
+    const goal = profile?.goal || profile?.fitness_goal || profile?.primary_goal || "Maintain";
+
     return {
       userId: profile?.user_id || profile?.id || "user-v2",
       gender: profile?.gender || "Male",
@@ -255,7 +261,7 @@ export class V2PlanService {
       heightCm: Number(profile?.height) || 172,
       weightKg: Number(profile?.weight) || 70,
       targetWeightKg: profile?.target_weight ? Number(profile.target_weight) : null,
-      goal: profile?.goal || "Maintain",
+      goal,
       fitnessLevel: profile?.fitness_level || "Intermediate",
       activityLevel,
       dietPreference,
@@ -336,12 +342,10 @@ export class V2PlanService {
 
       if (
         !Number.isFinite(Number(profile.height)) ||
-        !Number.isFinite(Number(profile.weight)) ||
-        !profile.nutrition_budget ||
-        !profile.meals_per_day
+        !Number.isFinite(Number(profile.weight))
       ) {
         throw new Error(
-          "PROFILE_INCOMPLETE: Complete your height, weight, diet, meal count, and budget before generating a plan."
+          "PROFILE_INCOMPLETE: Complete your height and weight before generating a plan."
         );
       }
 

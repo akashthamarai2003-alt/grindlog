@@ -82,7 +82,8 @@ function isSlotAppropriate(
     name.includes("lassi") ||
     name.includes("sprouts") ||
     name.includes("toast") ||
-    name.includes("chana") ||
+    name.includes("roasted chana") ||
+    name.includes("chana chaat") ||
     tags.includes("snack") ||
     tags.includes("pre-workout") ||
     tags.includes("post-workout");
@@ -126,7 +127,10 @@ function isSlotAppropriate(
         (isBreakfastItem || name.includes("egg") || (isSnackItem && !name.includes("makhana") && !isCoffeeDrink && !isTeaDrink && !name.includes("fitness snack"))) &&
         !name.includes("biryani") &&
         !name.includes("mutton") &&
-        !name.includes("fish curry")
+        !name.includes("fish curry") &&
+        !name.includes("curry") &&
+        !name.includes("sabzi") &&
+        !name.includes("bharta")
       );
 
     case "snack":
@@ -386,13 +390,17 @@ export function generateMealCandidates(
       const paidMealsPerDay = profile.messAvailable && profile.messMeals
         ? Math.max(1, profile.mealsPerDay - profile.messMeals.length)
         : (profile.mealsPerDay || 3);
-      const dailyBoosterCost = (profile.messAvailable && profile.messMeals) ? profile.messMeals.length * 20 : 0;
+      const isVegan = profile.dietPreference === "vegan";
+      const boosterUnitEst = isVegan ? 8 : (profile.weeklyBudgetTargetInr <= 500 ? 10 : 15);
+      const dailyBoosterCost = (profile.messAvailable && profile.messMeals) ? profile.messMeals.length * boosterUnitEst : 0;
       const dailyBudgetTotal = profile.weeklyBudgetTargetInr / 7;
       const availableDailyBudget = Math.max(30, dailyBudgetTotal - dailyBoosterCost);
       const perMealBudget = availableDailyBudget / paidMealsPerDay;
 
       if (profile.budgetPolicy === "STRICT") {
-        const strictMealLimit = Math.max(85, perMealBudget * 1.8);
+        const strictMealLimit = paidMealsPerDay <= 1
+          ? Math.max(120, perMealBudget * 2.5)
+          : Math.max(85, perMealBudget * 1.8);
         if (profile.weeklyBudgetTargetInr <= 1500 && projectedCost > strictMealLimit) {
           continue;
         }
@@ -453,6 +461,45 @@ export function generateMealCandidates(
       proteinDelta: pDelta,
       estimatedCost: projectedCost
     });
+  }
+
+  // Fallback pass if tight filters resulted in 0 candidates:
+  // Strictly preserve dietCategory and allergens, but relax equipment and per-meal budget cap
+  if (candidates.length === 0) {
+    for (const item of catalog) {
+      const rv = item.recipeVersion;
+      if (profile.dietPreference) {
+        const cat = rv.dietCategory;
+        const comp = rv.compatibleDiets || [];
+        if (profile.dietPreference === "vegan" && cat !== "vegan" && !comp.includes("vegan")) continue;
+        if (profile.dietPreference === "vegetarian" && cat !== "vegetarian" && cat !== "vegan" && !comp.includes("vegetarian") && !comp.includes("vegan")) continue;
+        if (profile.dietPreference === "eggetarian" && cat === "non-veg" && !comp.includes("eggetarian") && !comp.includes("vegetarian") && !comp.includes("vegan")) continue;
+      }
+      if (profile.allergies && profile.allergies.length > 0) {
+        let containsAllergen = false;
+        for (const ing of item.variantIngredients) {
+          const ingAllergens = foodAllergensLookup(ing.foodId);
+          if (ingAllergens.some(a => profile.allergies!.includes(a as any))) {
+            containsAllergen = true;
+            break;
+          }
+        }
+        if (containsAllergen) continue;
+      }
+      if (!isSlotAppropriate(slot, rv, profile)) continue;
+
+      const bestVariant = item.variants[0];
+      const variantIngs = item.variantIngredients.filter(vi => vi.recipeVariantId === bestVariant.id);
+      candidates.push({
+        catalogItem: item,
+        selectedVariant: bestVariant,
+        variantIngredients: variantIngs,
+        score: 40,
+        calorieDelta: Math.abs(bestVariant.targetCalories - slotTargetCalories),
+        proteinDelta: Math.abs(bestVariant.targetProtein - slotTargetProtein),
+        estimatedCost: 45
+      });
+    }
   }
 
   // Sort descending by score

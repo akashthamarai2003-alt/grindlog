@@ -7,9 +7,9 @@
     "targetProtein": 126,
     "targetCarbs": 361,
     "targetFat": 72,
-    "weeklySpendInr": 2289,
+    "weeklySpendInr": 2290,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 83,
+    "compositeScore": 82,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -23,7 +23,7 @@
           -1.8,
           -1.5,
           -1.5,
-          -1.8
+          0
         ]
       },
       "GateB_Protein": {
@@ -35,7 +35,7 @@
           1.5,
           0.4,
           0.4,
-          1.7
+          6.1
         ]
       },
       "GateC_Fat": {
@@ -61,8 +61,198 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2289,
+        "spent": 2290,
         "budget": 1125,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 82
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
+    "personaId": "P02",
+    "category": "Vegetarian",
+    "name": "Veg Fat Loss Female Cutter",
+    "targetCalories": 1391,
+    "targetProtein": 130,
+    "targetCarbs": 130,
+    "targetFat": 39,
+    "weeklySpendInr": 2544,
+    "weeklyBudgetInr": 1125,
+    "compositeScore": 84,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          0.6,
+          0.6,
+          1.9,
+          1.9,
+          -0.4,
+          -0.4,
+          1.5
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          3.6,
+          3.6,
+          1.4,
+          1.4,
+          1.2,
+          1.2,
+          1
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 3
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "vegetarian"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": []
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 2544,
+        "budget": 1125,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 84
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
+    "personaId": "P03",
+    "category": "Vegetarian",
+    "name": "Veg Muscle Gain Bulker",
+    "targetCalories": 2966,
+    "targetProtein": 122,
+    "targetCarbs": 435,
+    "targetFat": 82,
+    "weeklySpendInr": 2548,
+    "weeklyBudgetInr": 1875,
+    "compositeScore": 83,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          -2.3,
+          -2.3,
+          0.8,
+          0.8,
+          -2.7,
+          -2.7,
+          -2.3
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          1.7,
+          1.7,
+          5.7,
+          5.7,
+          1.9,
+          1.9,
+          4
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 4
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "vegetarian"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": []
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 2548,
+        "budget": 1875,
         "policy": "FLEXIBLE"
       },
       "GateJ_DiscreteRealism": {
@@ -95,196 +285,6 @@
     "notes": ""
   },
   {
-    "personaId": "P02",
-    "category": "Vegetarian",
-    "name": "Veg Fat Loss Female Cutter",
-    "targetCalories": 1391,
-    "targetProtein": 130,
-    "targetCarbs": 130,
-    "targetFat": 39,
-    "weeklySpendInr": 2086,
-    "weeklyBudgetInr": 1125,
-    "compositeScore": 87,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          2.4,
-          2.4,
-          -0.4,
-          -0.4,
-          0,
-          0,
-          1.5
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          2.1,
-          2.1,
-          -2,
-          -2,
-          1.3,
-          1.3,
-          1
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 3
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "vegetarian"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": []
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 2086,
-        "budget": 1125,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 87
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
-    "personaId": "P03",
-    "category": "Vegetarian",
-    "name": "Veg Muscle Gain Bulker",
-    "targetCalories": 2966,
-    "targetProtein": 122,
-    "targetCarbs": 435,
-    "targetFat": 82,
-    "weeklySpendInr": 2372,
-    "weeklyBudgetInr": 1875,
-    "compositeScore": 86,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          -2.1,
-          -2.1,
-          -0.2,
-          -0.2,
-          -0.8,
-          -0.8,
-          -1.3
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          2.8,
-          2.8,
-          6.1,
-          6.1,
-          2.3,
-          2.3,
-          3.2
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 4
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "vegetarian"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": []
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 2372,
-        "budget": 1875,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 86
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
     "personaId": "P04",
     "category": "Vegetarian",
     "name": "Veg Sedentary Desk Worker",
@@ -308,7 +308,7 @@
           0.6,
           2.8,
           2.8,
-          2.6
+          1.4
         ]
       },
       "GateB_Protein": {
@@ -320,7 +320,7 @@
           0.6,
           3.1,
           3.1,
-          2.8
+          2.6
         ]
       },
       "GateC_Fat": {
@@ -387,9 +387,9 @@
     "targetProtein": 148,
     "targetCarbs": 520,
     "targetFat": 99,
-    "weeklySpendInr": 3006,
+    "weeklySpendInr": 3157,
     "weeklyBudgetInr": 1875,
-    "compositeScore": 86,
+    "compositeScore": 84,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -397,25 +397,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -1.5,
-          -1.5,
-          -1.4,
-          -1.4,
-          -1.5,
-          -1.5,
-          -1.1
+          -0.9,
+          -0.9,
+          -2.4,
+          -2.4,
+          -0.5,
+          -0.5,
+          0.9
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          0.1,
-          0.1,
-          1.6,
-          1.6,
-          4.7,
-          4.7,
-          4.8
+          -0.4,
+          -0.4,
+          3.9,
+          3.9,
+          4.4,
+          4.4,
+          6
         ]
       },
       "GateC_Fat": {
@@ -441,8 +441,388 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 3006,
+        "spent": 3157,
         "budget": 1875,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 84
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
+    "personaId": "P06",
+    "category": "Vegetarian",
+    "name": "Veg Senior Light Active",
+    "targetCalories": 2080,
+    "targetProtein": 130,
+    "targetCarbs": 260,
+    "targetFat": 58,
+    "weeklySpendInr": 2161,
+    "weeklyBudgetInr": 1125,
+    "compositeScore": 85,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          2.2,
+          2.2,
+          1.3,
+          1.3,
+          0,
+          1.9,
+          -0.4
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          4.9,
+          4.9,
+          0.1,
+          0.1,
+          0.1,
+          2.8,
+          -0.2
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 3
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "vegetarian"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": []
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 2161,
+        "budget": 1125,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 85
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
+    "personaId": "P07",
+    "category": "Vegan",
+    "name": "Vegan Active Bulker (Zero Dairy)",
+    "targetCalories": 3403,
+    "targetProtein": 137,
+    "targetCarbs": 500,
+    "targetFat": 95,
+    "weeklySpendInr": 2661,
+    "weeklyBudgetInr": 1875,
+    "compositeScore": 81,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          -2.8,
+          -2.8,
+          -1.1,
+          -1.1,
+          -1,
+          -1,
+          -1.8
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          2.8,
+          2.8,
+          5.5,
+          5.5,
+          5.1,
+          5.1,
+          6.2
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 4
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "vegan"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": []
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 2661,
+        "budget": 1875,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 81
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
+    "personaId": "P08",
+    "category": "Vegan",
+    "name": "Vegan Moderate Fat Loss",
+    "targetCalories": 1612,
+    "targetProtein": 120,
+    "targetCarbs": 182,
+    "targetFat": 45,
+    "weeklySpendInr": 2004,
+    "weeklyBudgetInr": 1125,
+    "compositeScore": 87,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          2.3,
+          2.3,
+          1,
+          1,
+          2.6,
+          2.6,
+          2.5
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          1,
+          1,
+          0.3,
+          0.3,
+          0.2,
+          0.2,
+          -1.8
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 3
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "vegan"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": []
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 2004,
+        "budget": 1125,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 87
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
+    "personaId": "P09",
+    "category": "Vegan",
+    "name": "Vegan Maintenance PG Student",
+    "targetCalories": 2519,
+    "targetProtein": 117,
+    "targetCarbs": 355,
+    "targetFat": 70,
+    "weeklySpendInr": 1803,
+    "weeklyBudgetInr": 1125,
+    "compositeScore": 86,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          -1.9,
+          -1.9,
+          -2,
+          -2,
+          -1.2,
+          1.7,
+          0
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          2.7,
+          2.7,
+          3.4,
+          3.4,
+          -0.2,
+          -0.9,
+          2.6
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 3
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "vegan"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": []
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 1803,
+        "budget": 1125,
         "policy": "FLEXIBLE"
       },
       "GateJ_DiscreteRealism": {
@@ -475,386 +855,6 @@
     "notes": ""
   },
   {
-    "personaId": "P06",
-    "category": "Vegetarian",
-    "name": "Veg Senior Light Active",
-    "targetCalories": 2080,
-    "targetProtein": 130,
-    "targetCarbs": 260,
-    "targetFat": 58,
-    "weeklySpendInr": 2063,
-    "weeklyBudgetInr": 1125,
-    "compositeScore": 90,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          0.5,
-          0.5,
-          0,
-          0,
-          -1,
-          -1,
-          2.2
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          0.2,
-          0.2,
-          1.5,
-          1.5,
-          -1.5,
-          -1.5,
-          -1.8
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 3
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "vegetarian"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": []
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 2063,
-        "budget": 1125,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 90
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
-    "personaId": "P07",
-    "category": "Vegan",
-    "name": "Vegan Active Bulker (Zero Dairy)",
-    "targetCalories": 3403,
-    "targetProtein": 137,
-    "targetCarbs": 500,
-    "targetFat": 95,
-    "weeklySpendInr": 2400,
-    "weeklyBudgetInr": 1875,
-    "compositeScore": 82,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          -0.2,
-          -0.2,
-          -0.9,
-          -0.9,
-          0.7,
-          0.7,
-          -2.4
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          5.3,
-          5.3,
-          6,
-          6,
-          6.1,
-          6.1,
-          3.9
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 4
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "vegan"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": []
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 2400,
-        "budget": 1875,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 82
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
-    "personaId": "P08",
-    "category": "Vegan",
-    "name": "Vegan Moderate Fat Loss",
-    "targetCalories": 1612,
-    "targetProtein": 120,
-    "targetCarbs": 182,
-    "targetFat": 45,
-    "weeklySpendInr": 1991,
-    "weeklyBudgetInr": 1125,
-    "compositeScore": 88,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          2.3,
-          2.3,
-          0.9,
-          0.9,
-          2.3,
-          -0.3,
-          0.5
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          1,
-          1,
-          1,
-          1,
-          -0.4,
-          0.9,
-          1.7
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 3
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "vegan"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": []
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 1991,
-        "budget": 1125,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 88
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
-    "personaId": "P09",
-    "category": "Vegan",
-    "name": "Vegan Maintenance PG Student",
-    "targetCalories": 2519,
-    "targetProtein": 117,
-    "targetCarbs": 355,
-    "targetFat": 70,
-    "weeklySpendInr": 1770,
-    "weeklyBudgetInr": 1125,
-    "compositeScore": 82,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          -2.2,
-          -2.2,
-          -1.2,
-          -1.2,
-          -2.3,
-          -2.3,
-          0
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          6.2,
-          6.2,
-          1.4,
-          1.4,
-          5.6,
-          4.4,
-          1.8
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 3
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "vegan"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": []
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 1770,
-        "budget": 1125,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 82
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
     "personaId": "P10",
     "category": "Vegan",
     "name": "Vegan High Protein Cutter",
@@ -862,7 +862,7 @@
     "targetProtein": 150,
     "targetCarbs": 264,
     "targetFat": 61,
-    "weeklySpendInr": 2654,
+    "weeklySpendInr": 2775,
     "weeklyBudgetInr": 1125,
     "compositeScore": 81,
     "hardConstraintPass": true,
@@ -874,11 +874,11 @@
         "deviationsPct": [
           1.7,
           1.7,
+          1.2,
+          1.2,
           1.9,
           1.9,
-          1.5,
-          1.5,
-          0
+          2
         ]
       },
       "GateB_Protein": {
@@ -886,11 +886,11 @@
         "deviationsPct": [
           5.4,
           5.4,
-          -2.2,
-          -2.2,
-          -2.2,
-          -2.2,
-          0.4
+          -1.9,
+          -1.9,
+          0.1,
+          0.1,
+          1.1
         ]
       },
       "GateC_Fat": {
@@ -916,7 +916,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2654,
+        "spent": 2775,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -967,13 +967,13 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          2,
-          2,
+          2.1,
+          2.1,
           -1,
           -1,
-          3,
-          3,
-          1.1
+          1.6,
+          1.6,
+          2.7
         ]
       },
       "GateB_Protein": {
@@ -983,9 +983,9 @@
           0.3,
           -2.2,
           -2.2,
-          -1.4,
-          -1.4,
-          1.6
+          -2.4,
+          -2.4,
+          2.2
         ]
       },
       "GateC_Fat": {
@@ -1052,9 +1052,9 @@
     "targetProtein": 130,
     "targetCarbs": 434,
     "targetFat": 83,
-    "weeklySpendInr": 2490,
+    "weeklySpendInr": 2412,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 83,
+    "compositeScore": 85,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -1066,9 +1066,9 @@
           -1.9,
           -1.2,
           -0.3,
-          0.5,
-          -1.7,
-          -0.8
+          -1.2,
+          -0.8,
+          0.4
         ]
       },
       "GateB_Protein": {
@@ -1076,11 +1076,11 @@
         "deviationsPct": [
           0.2,
           0.2,
-          -0.5,
-          1.9,
-          5.8,
-          3.2,
-          4.9
+          -0.1,
+          2.4,
+          2.7,
+          4.9,
+          2.8
         ]
       },
       "GateC_Fat": {
@@ -1106,102 +1106,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2490,
-        "budget": 1125,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 83
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
-    "personaId": "P13",
-    "category": "Eggetarian",
-    "name": "Eggetarian Fat Loss Cutter",
-    "targetCalories": 2375,
-    "targetProtein": 170,
-    "targetCarbs": 275,
-    "targetFat": 66,
-    "weeklySpendInr": 2556,
-    "weeklyBudgetInr": 1125,
-    "compositeScore": 85,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          -0.3,
-          -0.3,
-          -2.6,
-          -2.6,
-          -2.6,
-          -2.6,
-          0.4
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          -0.2,
-          -0.2,
-          -1.2,
-          -1.2,
-          -0.3,
-          -0.3,
-          -2
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 3
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "eggetarian"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": []
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 2556,
+        "spent": 2412,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -1227,6 +1132,101 @@
       "GateP_QualityScore": {
         "pass": true,
         "score": 85
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
+    "personaId": "P13",
+    "category": "Eggetarian",
+    "name": "Eggetarian Fat Loss Cutter",
+    "targetCalories": 2375,
+    "targetProtein": 170,
+    "targetCarbs": 275,
+    "targetFat": 66,
+    "weeklySpendInr": 2548,
+    "weeklyBudgetInr": 1125,
+    "compositeScore": 88,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          0.5,
+          0.5,
+          -1.4,
+          -1.4,
+          0,
+          0,
+          0.9
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          0.2,
+          0.2,
+          -1,
+          -1,
+          1.5,
+          1.5,
+          -0.9
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 3
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "eggetarian"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": []
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 2548,
+        "budget": 1125,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 88
       },
       "GateQ_Success": {
         "pass": true
@@ -1337,9 +1337,9 @@
     "targetProtein": 122,
     "targetCarbs": 360,
     "targetFat": 72,
-    "weeklySpendInr": 1863,
+    "weeklySpendInr": 1888,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 88,
+    "compositeScore": 87,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -1349,11 +1349,11 @@
         "deviationsPct": [
           -1.9,
           -1.9,
-          -2.1,
-          -2.1,
-          -2.6,
-          -2.6,
-          0.5
+          -2.3,
+          -2.3,
+          -1,
+          -1,
+          -2.1
         ]
       },
       "GateB_Protein": {
@@ -1361,11 +1361,11 @@
         "deviationsPct": [
           0.7,
           0.7,
-          -0.3,
-          -0.3,
-          0.1,
-          0.1,
-          3
+          2.3,
+          2.3,
+          1.6,
+          1.6,
+          -0.7
         ]
       },
       "GateC_Fat": {
@@ -1391,7 +1391,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 1863,
+        "spent": 1888,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -1416,7 +1416,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 88
+        "score": 87
       },
       "GateQ_Success": {
         "pass": true
@@ -1432,9 +1432,9 @@
     "targetProtein": 144,
     "targetCarbs": 509,
     "targetFat": 97,
-    "weeklySpendInr": 2875,
+    "weeklySpendInr": 2849,
     "weeklyBudgetInr": 1875,
-    "compositeScore": 82,
+    "compositeScore": 83,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -1446,9 +1446,9 @@
           -0.3,
           -0.5,
           -0.5,
-          -2.7,
-          -2.7,
-          2.1
+          -2.6,
+          -2.6,
+          -0.8
         ]
       },
       "GateB_Protein": {
@@ -1458,9 +1458,9 @@
           3.2,
           3,
           3,
-          6,
-          6,
-          5.3
+          6.3,
+          6.3,
+          4.1
         ]
       },
       "GateC_Fat": {
@@ -1486,7 +1486,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2875,
+        "spent": 2849,
         "budget": 1875,
         "policy": "FLEXIBLE"
       },
@@ -1511,7 +1511,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 82
+        "score": 83
       },
       "GateQ_Success": {
         "pass": true
@@ -1527,9 +1527,9 @@
     "targetProtein": 144,
     "targetCarbs": 506,
     "targetFat": 96,
-    "weeklySpendInr": 2522,
+    "weeklySpendInr": 2495,
     "weeklyBudgetInr": 1875,
-    "compositeScore": 86,
+    "compositeScore": 87,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -1541,9 +1541,9 @@
           -1,
           -2.6,
           -2.1,
-          1.2,
-          0.8,
-          -2.1
+          -0.5,
+          0,
+          1
         ]
       },
       "GateB_Protein": {
@@ -1553,9 +1553,9 @@
           3.6,
           2.2,
           3.4,
-          2.4,
-          1.3,
-          2.7
+          1.5,
+          0.4,
+          5
         ]
       },
       "GateC_Fat": {
@@ -1581,7 +1581,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2522,
+        "spent": 2495,
         "budget": 1875,
         "policy": "FLEXIBLE"
       },
@@ -1606,7 +1606,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 86
+        "score": 87
       },
       "GateQ_Success": {
         "pass": true
@@ -1622,9 +1622,9 @@
     "targetProtein": 184,
     "targetCarbs": 280,
     "targetFat": 69,
-    "weeklySpendInr": 2360,
+    "weeklySpendInr": 2361,
     "weeklyBudgetInr": 1875,
-    "compositeScore": 88,
+    "compositeScore": 89,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -1638,7 +1638,7 @@
           0,
           -2.1,
           -2.1,
-          2.5
+          -0.2
         ]
       },
       "GateB_Protein": {
@@ -1648,9 +1648,9 @@
           5,
           4.1,
           4.1,
-          2,
-          2,
-          0.4
+          1.3,
+          1.3,
+          0.5
         ]
       },
       "GateC_Fat": {
@@ -1676,7 +1676,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2360,
+        "spent": 2361,
         "budget": 1875,
         "policy": "FLEXIBLE"
       },
@@ -1701,7 +1701,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 88
+        "score": 89
       },
       "GateQ_Success": {
         "pass": true
@@ -1717,9 +1717,9 @@
     "targetProtein": 101,
     "targetCarbs": 232,
     "targetFat": 49,
-    "weeklySpendInr": 1548,
+    "weeklySpendInr": 1510,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 90,
+    "compositeScore": 89,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -1729,11 +1729,11 @@
         "deviationsPct": [
           1.4,
           1.4,
-          1.9,
+          0,
           -2.3,
-          -0.1,
-          -0.6,
-          0.1
+          0.1,
+          1.6,
+          -1.2
         ]
       },
       "GateB_Protein": {
@@ -1741,11 +1741,11 @@
         "deviationsPct": [
           1.9,
           1.9,
-          1.2,
+          5.4,
           -0.4,
           -2.2,
-          -1.4,
-          2.4
+          -2.4,
+          -0.8
         ]
       },
       "GateC_Fat": {
@@ -1771,7 +1771,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 1548,
+        "spent": 1510,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -1796,7 +1796,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 90
+        "score": 89
       },
       "GateQ_Success": {
         "pass": true
@@ -1812,7 +1812,7 @@
     "targetProtein": 153,
     "targetCarbs": 525,
     "targetFat": 100,
-    "weeklySpendInr": 2886,
+    "weeklySpendInr": 2937,
     "weeklyBudgetInr": 1875,
     "compositeScore": 85,
     "hardConstraintPass": true,
@@ -1822,25 +1822,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          0.7,
-          0.7,
-          -0.6,
-          -0.6,
-          -2.5,
-          -1.9,
-          -2
+          -2.2,
+          -2.2,
+          0.6,
+          0.6,
+          -2.4,
+          -2.8,
+          -2.1
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          3.8,
-          3.8,
-          3.7,
-          3.7,
-          0.9,
-          3.6,
-          3.9
+          2.4,
+          2.4,
+          2.5,
+          2.5,
+          0.3,
+          2.4,
+          2.7
         ]
       },
       "GateC_Fat": {
@@ -1866,7 +1866,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2886,
+        "spent": 2937,
         "budget": 1875,
         "policy": "FLEXIBLE"
       },
@@ -2002,9 +2002,9 @@
     "targetProtein": 112,
     "targetCarbs": 355,
     "targetFat": 69,
-    "weeklySpendInr": 2179,
+    "weeklySpendInr": 2204,
     "weeklyBudgetInr": 1875,
-    "compositeScore": 94,
+    "compositeScore": 93,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -2016,9 +2016,9 @@
           0.6,
           1,
           1,
-          -1.4,
-          -2.5,
-          -0.3
+          2.2,
+          2.2,
+          -2.8
         ]
       },
       "GateB_Protein": {
@@ -2028,9 +2028,9 @@
           0.3,
           0.9,
           0.9,
-          -0.1,
-          0,
-          0.5
+          0.4,
+          0.4,
+          0.9
         ]
       },
       "GateC_Fat": {
@@ -2056,7 +2056,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2179,
+        "spent": 2204,
         "budget": 1875,
         "policy": "FLEXIBLE"
       },
@@ -2081,7 +2081,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 94
+        "score": 93
       },
       "GateQ_Success": {
         "pass": true
@@ -2287,7 +2287,7 @@
     "targetProtein": 126,
     "targetCarbs": 424,
     "targetFat": 82,
-    "weeklySpendInr": 2412,
+    "weeklySpendInr": 2377,
     "weeklyBudgetInr": 1125,
     "compositeScore": 84,
     "hardConstraintPass": true,
@@ -2303,7 +2303,7 @@
           0.9,
           -0.2,
           -0.2,
-          1
+          -0.5
         ]
       },
       "GateB_Protein": {
@@ -2315,7 +2315,7 @@
           3.9,
           2.7,
           2.7,
-          0
+          -1.8
         ]
       },
       "GateC_Fat": {
@@ -2341,7 +2341,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2412,
+        "spent": 2377,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -2382,7 +2382,7 @@
     "targetProtein": 140,
     "targetCarbs": 504,
     "targetFat": 96,
-    "weeklySpendInr": 3160,
+    "weeklySpendInr": 3198,
     "weeklyBudgetInr": 1875,
     "compositeScore": 82,
     "hardConstraintPass": true,
@@ -2392,24 +2392,24 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -2.8,
-          -2.8,
-          -1.5,
-          -1.5,
-          1.1,
-          1.1,
-          0.4
+          -1.7,
+          -1.7,
+          2.6,
+          2.6,
+          0.2,
+          0.2,
+          0.9
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          5.9,
-          5.9,
-          0.4,
-          0.4,
-          5.3,
-          5.3,
+          5.6,
+          5.6,
+          -1.4,
+          -1.4,
+          5.1,
+          5.1,
           1.6
         ]
       },
@@ -2436,7 +2436,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 3160,
+        "spent": 3198,
         "budget": 1875,
         "policy": "FLEXIBLE"
       },
@@ -2477,7 +2477,7 @@
     "targetProtein": 122,
     "targetCarbs": 352,
     "targetFat": 70,
-    "weeklySpendInr": 2055,
+    "weeklySpendInr": 2315,
     "weeklyBudgetInr": 1125,
     "compositeScore": 80,
     "hardConstraintPass": true,
@@ -2487,25 +2487,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -2.2,
-          -2.2,
-          0.9,
-          0.9,
-          -1.1,
-          -0.9,
-          -1.2
+          -1.7,
+          -1.7,
+          -1.4,
+          -1.4,
+          -2.7,
+          -2.7,
+          -1
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          6.1,
-          6.1,
-          3.5,
-          3.5,
-          6.6,
-          -0.1,
-          5.7
+          3.6,
+          3.6,
+          0.7,
+          0.7,
+          4,
+          4,
+          4.1
         ]
       },
       "GateC_Fat": {
@@ -2533,7 +2533,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2055,
+        "spent": 2315,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -2574,9 +2574,9 @@
     "targetProtein": 104,
     "targetCarbs": 224,
     "targetFat": 49,
-    "weeklySpendInr": 1986,
+    "weeklySpendInr": 1990,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 88,
+    "compositeScore": 90,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -2584,25 +2584,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -0.8,
-          -0.8,
+          0,
+          0,
           1,
           1,
-          1.8,
-          1.8,
-          2.8
+          -0.7,
+          -0.7,
+          0.6
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          -1.9,
-          -1.9,
+          -1.6,
+          -1.6,
           -0.4,
           -0.4,
-          -0.3,
-          -0.3,
-          -0.7
+          -1.9,
+          -1.9,
+          -2.2
         ]
       },
       "GateC_Fat": {
@@ -2630,7 +2630,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 1986,
+        "spent": 1990,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -2655,7 +2655,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 88
+        "score": 90
       },
       "GateQ_Success": {
         "pass": true
@@ -2671,7 +2671,7 @@
     "targetProtein": 133,
     "targetCarbs": 372,
     "targetFat": 75,
-    "weeklySpendInr": 2060,
+    "weeklySpendInr": 2089,
     "weeklyBudgetInr": 1125,
     "compositeScore": 85,
     "hardConstraintPass": true,
@@ -2685,9 +2685,9 @@
           1.3,
           0.5,
           0.5,
-          0.7,
-          0.7,
-          -0.7
+          -0.3,
+          -0.3,
+          -0.5
         ]
       },
       "GateB_Protein": {
@@ -2697,9 +2697,9 @@
           0.2,
           5,
           5,
-          2.8,
-          2.8,
-          5.6
+          2.5,
+          2.5,
+          6.5
         ]
       },
       "GateC_Fat": {
@@ -2727,7 +2727,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2060,
+        "spent": 2089,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -2768,9 +2768,9 @@
     "targetProtein": 94,
     "targetCarbs": 219,
     "targetFat": 46,
-    "weeklySpendInr": 1633,
+    "weeklySpendInr": 1651,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 89,
+    "compositeScore": 88,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -2780,11 +2780,11 @@
         "deviationsPct": [
           1.3,
           1.3,
-          1.1,
-          1.1,
-          -0.8,
           2.5,
-          2.5
+          2.5,
+          -0.8,
+          1.8,
+          2
         ]
       },
       "GateB_Protein": {
@@ -2795,8 +2795,8 @@
           -1.4,
           -1.4,
           -2.1,
-          -1.8,
-          -2.4
+          -2.1,
+          0.7
         ]
       },
       "GateC_Fat": {
@@ -2824,104 +2824,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 1633,
-        "budget": 1125,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 89
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
-    "personaId": "P31",
-    "category": "Allergies",
-    "name": "Soy Allergy (Vegan No-Soy)",
-    "targetCalories": 2468,
-    "targetProtein": 117,
-    "targetCarbs": 345,
-    "targetFat": 69,
-    "weeklySpendInr": 2002,
-    "weeklyBudgetInr": 1125,
-    "compositeScore": 88,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          -1.3,
-          -1.3,
-          -0.5,
-          -0.5,
-          -0.2,
-          0,
-          1.5
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          -0.9,
-          -0.9,
-          -1.5,
-          -2.5,
-          5.2,
-          2.1,
-          -0.1
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 3
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "vegan"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": [
-          "soy"
-        ]
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 2002,
+        "spent": 1651,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -2955,6 +2858,103 @@
     "notes": ""
   },
   {
+    "personaId": "P31",
+    "category": "Allergies",
+    "name": "Soy Allergy (Vegan No-Soy)",
+    "targetCalories": 2468,
+    "targetProtein": 117,
+    "targetCarbs": 345,
+    "targetFat": 69,
+    "weeklySpendInr": 2113,
+    "weeklyBudgetInr": 1125,
+    "compositeScore": 87,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          -2.1,
+          -2.1,
+          0.5,
+          0,
+          0.6,
+          -0.8,
+          0
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          1.8,
+          1.8,
+          1,
+          -2.3,
+          3,
+          3,
+          2.1
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 3
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "vegan"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": [
+          "soy"
+        ]
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 2113,
+        "budget": 1125,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 87
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
     "personaId": "P32",
     "category": "Allergies",
     "name": "Egg Allergy (Non-Veg No-Eggs)",
@@ -2962,9 +2962,9 @@
     "targetProtein": 126,
     "targetCarbs": 357,
     "targetFat": 71,
-    "weeklySpendInr": 2319,
+    "weeklySpendInr": 2485,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 81,
+    "compositeScore": 80,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -2974,11 +2974,11 @@
         "deviationsPct": [
           -0.3,
           -0.3,
-          0.9,
-          0.9,
-          -1.2,
-          -1.2,
-          -1.2
+          -2.8,
+          -2.8,
+          0.4,
+          0.4,
+          0.3
         ]
       },
       "GateB_Protein": {
@@ -2986,11 +2986,11 @@
         "deviationsPct": [
           5.8,
           5.8,
-          -1.8,
-          -1.8,
-          5.6,
-          5.6,
-          1.8
+          -2.1,
+          -2.1,
+          3,
+          3,
+          4.7
         ]
       },
       "GateC_Fat": {
@@ -3018,7 +3018,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2319,
+        "spent": 2485,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -3043,7 +3043,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 81
+        "score": 80
       },
       "GateQ_Success": {
         "pass": true
@@ -3059,7 +3059,7 @@
     "targetProtein": 99,
     "targetCarbs": 223,
     "targetFat": 48,
-    "weeklySpendInr": 2030,
+    "weeklySpendInr": 2024,
     "weeklyBudgetInr": 1125,
     "compositeScore": 88,
     "hardConstraintPass": true,
@@ -3071,10 +3071,10 @@
         "deviationsPct": [
           1.9,
           1.9,
-          -1.2,
-          -1.2,
-          0.6,
-          0.6,
+          0.2,
+          0.2,
+          0.1,
+          0.1,
           1.3
         ]
       },
@@ -3083,10 +3083,10 @@
         "deviationsPct": [
           1.1,
           1.1,
-          -1,
-          -1,
-          0.8,
-          0.8,
+          2.2,
+          2.2,
+          1.9,
+          1.9,
           -1.5
         ]
       },
@@ -3116,7 +3116,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2030,
+        "spent": 2024,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -3157,9 +3157,9 @@
     "targetProtein": 130,
     "targetCarbs": 369,
     "targetFat": 74,
-    "weeklySpendInr": 2405,
+    "weeklySpendInr": 2403,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 82,
+    "compositeScore": 83,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -3169,11 +3169,11 @@
         "deviationsPct": [
           -2.5,
           -2.5,
-          -1.5,
-          -1.5,
-          -2.3,
-          -2.3,
-          -1.4
+          0.3,
+          0.3,
+          -2.9,
+          -2.9,
+          -1.8
         ]
       },
       "GateB_Protein": {
@@ -3181,11 +3181,11 @@
         "deviationsPct": [
           2.6,
           2.6,
-          2.7,
-          2.7,
-          -0.3,
-          -0.3,
-          2.2
+          -0.4,
+          -0.4,
+          -0.1,
+          -0.1,
+          3.4
         ]
       },
       "GateC_Fat": {
@@ -3214,7 +3214,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2405,
+        "spent": 2403,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -3239,7 +3239,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 82
+        "score": 83
       },
       "GateQ_Success": {
         "pass": true
@@ -3267,8 +3267,8 @@
         "deviationsPct": [
           0,
           0,
-          -2,
-          -2,
+          -2.1,
+          -2.1,
           0.8,
           -1.1,
           -2.5
@@ -3451,9 +3451,9 @@
     "targetProtein": 122,
     "targetCarbs": 354,
     "targetFat": 70,
-    "weeklySpendInr": 2107,
+    "weeklySpendInr": 2328,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 83,
+    "compositeScore": 81,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -3461,25 +3461,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -0.4,
-          -0.4,
-          1.4,
-          1.4,
-          -2.2,
-          -2.2,
-          -2.9
+          1.7,
+          1.7,
+          0.6,
+          0.6,
+          0.9,
+          0.9,
+          1.3
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          5.7,
-          5.7,
-          -0.1,
-          -0.1,
-          2.9,
-          2.9,
-          0.3
+          6.2,
+          6.2,
+          5.5,
+          5.5,
+          -1.5,
+          -1.5,
+          0.8
         ]
       },
       "GateC_Fat": {
@@ -3505,7 +3505,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2107,
+        "spent": 2328,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -3530,7 +3530,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 83
+        "score": 81
       },
       "GateQ_Success": {
         "pass": true
@@ -3563,9 +3563,9 @@
     "targetProtein": 135,
     "targetCarbs": 363,
     "targetFat": 74,
-    "weeklySpendInr": 2860,
+    "weeklySpendInr": 2861,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 82,
+    "compositeScore": 81,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -3577,9 +3577,9 @@
           1.6,
           -1.6,
           -1.6,
-          0.7,
-          0.7,
-          0
+          0.9,
+          0.9,
+          0.4
         ]
       },
       "GateB_Protein": {
@@ -3589,9 +3589,9 @@
           -0.8,
           1.2,
           1.2,
-          5,
-          5,
-          5.3
+          5.9,
+          5.9,
+          6
         ]
       },
       "GateC_Fat": {
@@ -3617,7 +3617,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2860,
+        "spent": 2861,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -3642,7 +3642,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 82
+        "score": 81
       },
       "GateQ_Success": {
         "pass": true
@@ -3660,7 +3660,7 @@
     "targetFat": 46,
     "weeklySpendInr": 2249,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 84,
+    "compositeScore": 83,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -3672,8 +3672,8 @@
           2.7,
           2.9,
           2.9,
-          2.9,
-          -0.5,
+          2.3,
+          2.4,
           -1.1
         ]
       },
@@ -3684,8 +3684,8 @@
           -0.9,
           -0.2,
           -0.2,
-          -1.7,
-          2.6,
+          -2,
+          -2,
           0.9
         ]
       },
@@ -3737,7 +3737,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 84
+        "score": 83
       },
       "GateQ_Success": {
         "pass": true
@@ -3753,7 +3753,7 @@
     "targetProtein": 137,
     "targetCarbs": 426,
     "targetFat": 84,
-    "weeklySpendInr": 2403,
+    "weeklySpendInr": 2408,
     "weeklyBudgetInr": 1875,
     "compositeScore": 86,
     "hardConstraintPass": true,
@@ -3769,7 +3769,7 @@
           -0.4,
           -2.3,
           -2.1,
-          -2.7
+          0
         ]
       },
       "GateB_Protein": {
@@ -3781,7 +3781,7 @@
           3.7,
           -0.1,
           -2,
-          0.3
+          4
         ]
       },
       "GateC_Fat": {
@@ -3807,7 +3807,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2403,
+        "spent": 2408,
         "budget": 1875,
         "policy": "FLEXIBLE"
       },
@@ -3943,7 +3943,7 @@
     "targetProtein": 122,
     "targetCarbs": 360,
     "targetFat": 72,
-    "weeklySpendInr": 499,
+    "weeklySpendInr": 498,
     "weeklyBudgetInr": 500,
     "compositeScore": 90,
     "hardConstraintPass": true,
@@ -3953,25 +3953,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -1.3,
+          0.6,
+          0.9,
+          0.3,
           0.5,
-          -1.3,
-          0.4,
-          -0.7,
-          2.8,
-          -0.7
+          0.3,
+          2.9,
+          -0.5
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          4.5,
-          4.9,
-          4.5,
-          -2.1,
-          -0.9,
-          2,
-          -0.9
+          2.8,
+          1.1,
+          -0.3,
+          3.9,
+          3.9,
+          2.3,
+          6.1
         ]
       },
       "GateC_Fat": {
@@ -3997,7 +3997,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 499,
+        "spent": 498,
         "budget": 500,
         "policy": "STRICT"
       },
@@ -4038,7 +4038,7 @@
     "targetProtein": 137,
     "targetCarbs": 299,
     "targetFat": 65,
-    "weeklySpendInr": 1540,
+    "weeklySpendInr": 1510,
     "weeklyBudgetInr": 1125,
     "compositeScore": 91,
     "hardConstraintPass": true,
@@ -4049,10 +4049,10 @@
         "pass": true,
         "deviationsPct": [
           1.2,
-          2.3,
+          2.1,
           -0.6,
-          -0.2,
-          1.3,
+          0,
+          2.7,
           1.6,
           0
         ]
@@ -4061,10 +4061,10 @@
         "pass": true,
         "deviationsPct": [
           2.3,
-          0.1,
+          -0.5,
           2.5,
-          -2,
-          -1.2,
+          -1.9,
+          -0.4,
           0.3,
           0.2
         ]
@@ -4092,7 +4092,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 1540,
+        "spent": 1510,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -4133,9 +4133,9 @@
     "targetProtein": 94,
     "targetCarbs": 229,
     "targetFat": 48,
-    "weeklySpendInr": 498,
+    "weeklySpendInr": 500,
     "weeklyBudgetInr": 500,
-    "compositeScore": 90,
+    "compositeScore": 87,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -4143,24 +4143,24 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          2.6,
-          2.6,
-          2,
-          2,
-          2.5,
-          0.3,
-          0.3
+          2.4,
+          2.4,
+          2.2,
+          2.2,
+          1.6,
+          1.6,
+          2.2
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          1.5,
-          1.5,
-          -1.7,
-          -1.7,
-          0.3,
+          1.9,
+          1.9,
           -2.3,
+          -2.3,
+          -2.4,
+          -2.4,
           -2.3
         ]
       },
@@ -4187,7 +4187,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 498,
+        "spent": 500,
         "budget": 500,
         "policy": "STRICT"
       },
@@ -4212,7 +4212,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 90
+        "score": 87
       },
       "GateQ_Success": {
         "pass": true
@@ -4323,7 +4323,7 @@
     "targetProtein": 119,
     "targetCarbs": 357,
     "targetFat": 71,
-    "weeklySpendInr": 500,
+    "weeklySpendInr": 499,
     "weeklyBudgetInr": 500,
     "compositeScore": 94,
     "hardConstraintPass": true,
@@ -4333,25 +4333,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -0.4,
-          -0.4,
-          -0.7,
-          -0.4,
-          -0.7,
-          -2.1,
-          0.3
+          1.8,
+          1.9,
+          -0.9,
+          -0.5,
+          -0.5,
+          -0.5,
+          -0.7
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          -2.5,
-          -2.5,
-          1.4,
-          -2.5,
-          1.4,
-          0.8,
-          -0.4
+          -1.7,
+          -1.7,
+          1.6,
+          -0.7,
+          -0.7,
+          -0.7,
+          -1.3
         ]
       },
       "GateC_Fat": {
@@ -4377,7 +4377,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 500,
+        "spent": 499,
         "budget": 500,
         "policy": "STRICT"
       },
@@ -4547,7 +4547,7 @@
     "targetProtein": 144,
     "targetCarbs": 442,
     "targetFat": 87,
-    "weeklySpendInr": 2483,
+    "weeklySpendInr": 2518,
     "weeklyBudgetInr": 1875,
     "compositeScore": 85,
     "hardConstraintPass": true,
@@ -4563,7 +4563,7 @@
           -0.3,
           -1.9,
           -2.5,
-          -2.1
+          -2
         ]
       },
       "GateB_Protein": {
@@ -4575,7 +4575,7 @@
           2.8,
           1.8,
           3.5,
-          1.9
+          -0.3
         ]
       },
       "GateC_Fat": {
@@ -4601,7 +4601,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2483,
+        "spent": 2518,
         "budget": 1875,
         "policy": "FLEXIBLE"
       },
@@ -4642,9 +4642,9 @@
     "targetProtein": 126,
     "targetCarbs": 359,
     "targetFat": 72,
-    "weeklySpendInr": 2289,
+    "weeklySpendInr": 2290,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 84,
+    "compositeScore": 83,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -4658,7 +4658,7 @@
           -1.5,
           -1.2,
           -1.2,
-          -1.5
+          0
         ]
       },
       "GateB_Protein": {
@@ -4670,7 +4670,7 @@
           1.5,
           0.4,
           0.4,
-          1.7
+          6
         ]
       },
       "GateC_Fat": {
@@ -4696,7 +4696,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2289,
+        "spent": 2290,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -4721,7 +4721,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 84
+        "score": 83
       },
       "GateQ_Success": {
         "pass": true
@@ -4737,9 +4737,9 @@
     "targetProtein": 135,
     "targetCarbs": 361,
     "targetFat": 74,
-    "weeklySpendInr": 2195,
+    "weeklySpendInr": 2171,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 81,
+    "compositeScore": 82,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -4747,25 +4747,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -0.9,
-          -0.9,
-          1.6,
-          1.6,
-          -1.3,
-          -1.3,
-          -2.1
+          -1.4,
+          -1.4,
+          2.9,
+          2.9,
+          0.8,
+          0.8,
+          -2.8
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          5.3,
-          5.3,
-          -0.5,
-          -0.5,
-          5.4,
-          5.4,
-          3.9
+          3.3,
+          3.3,
+          -0.1,
+          -0.1,
+          3.6,
+          3.6,
+          4.4
         ]
       },
       "GateC_Fat": {
@@ -4791,7 +4791,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2195,
+        "spent": 2171,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -4816,7 +4816,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 81
+        "score": 82
       },
       "GateQ_Success": {
         "pass": true
@@ -4927,9 +4927,9 @@
     "targetProtein": 130,
     "targetCarbs": 366,
     "targetFat": 73,
-    "weeklySpendInr": 2220,
+    "weeklySpendInr": 2223,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 87,
+    "compositeScore": 81,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -4937,25 +4937,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -2.2,
-          -2.2,
-          -0.9,
-          -0.9,
-          0.2,
-          0.2,
-          -0.1
+          -0.3,
+          -0.3,
+          -1.2,
+          -1.2,
+          2.9,
+          2.9,
+          -1.5
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          3.8,
-          3.8,
-          1.6,
-          1.6,
-          0.2,
-          0.2,
-          0.8
+          2.8,
+          2.8,
+          0.5,
+          0.5,
+          5.8,
+          5.8,
+          4.8
         ]
       },
       "GateC_Fat": {
@@ -4981,7 +4981,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2220,
+        "spent": 2223,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -5006,7 +5006,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 87
+        "score": 81
       },
       "GateQ_Success": {
         "pass": true
@@ -5022,9 +5022,9 @@
     "targetProtein": 122,
     "targetCarbs": 354,
     "targetFat": 70,
-    "weeklySpendInr": 2029,
+    "weeklySpendInr": 2286,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 86,
+    "compositeScore": 80,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -5032,25 +5032,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -0.4,
-          -0.4,
-          1,
-          1,
+          1.7,
+          1.7,
+          -2.8,
+          -2.8,
           0,
-          0,
-          -0.8
+          -0.6,
+          -1.6
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          5.7,
-          5.7,
-          -2.1,
-          -2.1,
-          -0.1,
-          -0.1,
-          5.5
+          6.2,
+          6.2,
+          3.4,
+          3.4,
+          0.6,
+          4.3,
+          -0.1
         ]
       },
       "GateC_Fat": {
@@ -5076,7 +5076,197 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2029,
+        "spent": 2286,
+        "budget": 1125,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 80
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
+    "personaId": "P57",
+    "category": "Pantry Stocks",
+    "name": "High-Protein Pantry Stocked",
+    "targetCalories": 2554,
+    "targetProtein": 126,
+    "targetCarbs": 353,
+    "targetFat": 71,
+    "weeklySpendInr": 2366,
+    "weeklyBudgetInr": 1125,
+    "compositeScore": 82,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          -2.5,
+          -2.5,
+          1.1,
+          1.1,
+          -0.7,
+          -0.7,
+          0.7
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          2.7,
+          2.7,
+          0.6,
+          0.6,
+          4.1,
+          4.1,
+          4.8
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 3
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "vegan"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": []
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 2366,
+        "budget": 1125,
+        "policy": "FLEXIBLE"
+      },
+      "GateJ_DiscreteRealism": {
+        "pass": true
+      },
+      "GateK_ContinuousRealism": {
+        "pass": true
+      },
+      "GateL_Variety": {
+        "pass": true
+      },
+      "GateM_ProteinRotation": {
+        "pass": true
+      },
+      "GateN_MessCompliance": {
+        "pass": true
+      },
+      "GateO_AvoidedFoods": {
+        "pass": true,
+        "avoidedFoods": []
+      },
+      "GateP_QualityScore": {
+        "pass": true,
+        "score": 82
+      },
+      "GateQ_Success": {
+        "pass": true
+      }
+    },
+    "notes": ""
+  },
+  {
+    "personaId": "P58",
+    "category": "Pantry Stocks",
+    "name": "Empty Pantry (No Available Foods)",
+    "targetCalories": 1748,
+    "targetProtein": 101,
+    "targetCarbs": 226,
+    "targetFat": 49,
+    "weeklySpendInr": 1536,
+    "weeklyBudgetInr": 1125,
+    "compositeScore": 86,
+    "hardConstraintPass": true,
+    "passedAllGates": true,
+    "failedGates": [],
+    "gateDetails": {
+      "GateA_Calories": {
+        "pass": true,
+        "deviationsPct": [
+          -3.2,
+          -3.2,
+          0,
+          1.8,
+          0.7,
+          2.6,
+          1.9
+        ]
+      },
+      "GateB_Protein": {
+        "pass": true,
+        "deviationsPct": [
+          -1.3,
+          -1.3,
+          5,
+          4.2,
+          -0.7,
+          2.7,
+          1.7
+        ]
+      },
+      "GateC_Fat": {
+        "pass": true
+      },
+      "GateD_Carbs": {
+        "pass": true
+      },
+      "GateE_MealCount": {
+        "pass": true,
+        "expected": 3
+      },
+      "GateF_DietCompliance": {
+        "pass": true,
+        "diet": "non-veg"
+      },
+      "GateG_Allergens": {
+        "pass": true,
+        "userAllergies": []
+      },
+      "GateH_Equipment": {
+        "pass": true
+      },
+      "GateI_Budget": {
+        "pass": true,
+        "spent": 1536,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -5110,196 +5300,6 @@
     "notes": ""
   },
   {
-    "personaId": "P57",
-    "category": "Pantry Stocks",
-    "name": "High-Protein Pantry Stocked",
-    "targetCalories": 2554,
-    "targetProtein": 126,
-    "targetCarbs": 353,
-    "targetFat": 71,
-    "weeklySpendInr": 2137,
-    "weeklyBudgetInr": 1125,
-    "compositeScore": 79,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          0.4,
-          0.4,
-          -0.9,
-          -0.9,
-          -3,
-          -1.4,
-          -0.7
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          5.4,
-          5.4,
-          5.7,
-          5.7,
-          6.3,
-          5.1,
-          0.4
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 3
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "vegan"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": []
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 2137,
-        "budget": 1125,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 79
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
-    "personaId": "P58",
-    "category": "Pantry Stocks",
-    "name": "Empty Pantry (No Available Foods)",
-    "targetCalories": 1748,
-    "targetProtein": 101,
-    "targetCarbs": 226,
-    "targetFat": 49,
-    "weeklySpendInr": 1532,
-    "weeklyBudgetInr": 1125,
-    "compositeScore": 90,
-    "hardConstraintPass": true,
-    "passedAllGates": true,
-    "failedGates": [],
-    "gateDetails": {
-      "GateA_Calories": {
-        "pass": true,
-        "deviationsPct": [
-          -3.2,
-          -3.2,
-          0,
-          0,
-          0.7,
-          0.7,
-          1.9
-        ]
-      },
-      "GateB_Protein": {
-        "pass": true,
-        "deviationsPct": [
-          -1.3,
-          -1.3,
-          1.1,
-          1.1,
-          -0.7,
-          -0.7,
-          1.7
-        ]
-      },
-      "GateC_Fat": {
-        "pass": true
-      },
-      "GateD_Carbs": {
-        "pass": true
-      },
-      "GateE_MealCount": {
-        "pass": true,
-        "expected": 3
-      },
-      "GateF_DietCompliance": {
-        "pass": true,
-        "diet": "non-veg"
-      },
-      "GateG_Allergens": {
-        "pass": true,
-        "userAllergies": []
-      },
-      "GateH_Equipment": {
-        "pass": true
-      },
-      "GateI_Budget": {
-        "pass": true,
-        "spent": 1532,
-        "budget": 1125,
-        "policy": "FLEXIBLE"
-      },
-      "GateJ_DiscreteRealism": {
-        "pass": true
-      },
-      "GateK_ContinuousRealism": {
-        "pass": true
-      },
-      "GateL_Variety": {
-        "pass": true
-      },
-      "GateM_ProteinRotation": {
-        "pass": true
-      },
-      "GateN_MessCompliance": {
-        "pass": true
-      },
-      "GateO_AvoidedFoods": {
-        "pass": true,
-        "avoidedFoods": []
-      },
-      "GateP_QualityScore": {
-        "pass": true,
-        "score": 90
-      },
-      "GateQ_Success": {
-        "pass": true
-      }
-    },
-    "notes": ""
-  },
-  {
     "personaId": "P59",
     "category": "Avoid / Dislike",
     "name": "Dislikes Bittergourd / Karela & Baingan",
@@ -5307,9 +5307,9 @@
     "targetProtein": 122,
     "targetCarbs": 357,
     "targetFat": 71,
-    "weeklySpendInr": 2237,
+    "weeklySpendInr": 2286,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 79,
+    "compositeScore": 80,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -5317,25 +5317,25 @@
       "GateA_Calories": {
         "pass": true,
         "deviationsPct": [
-          -0.2,
-          -0.2,
-          -3,
-          -3,
-          -2,
-          -2,
-          -2.9
+          -2.1,
+          -2.1,
+          -2.7,
+          -2.7,
+          -0.5,
+          -0.5,
+          0
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          6.4,
-          6.4,
-          2,
-          2,
-          3.1,
-          3.1,
-          1.6
+          5.8,
+          5.8,
+          1.1,
+          1.1,
+          5.2,
+          5.2,
+          2.3
         ]
       },
       "GateC_Fat": {
@@ -5361,7 +5361,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2237,
+        "spent": 2286,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -5386,7 +5386,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 79
+        "score": 80
       },
       "GateQ_Success": {
         "pass": true
@@ -5402,9 +5402,9 @@
     "targetProtein": 133,
     "targetCarbs": 368,
     "targetFat": 74,
-    "weeklySpendInr": 1997,
+    "weeklySpendInr": 2035,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 81,
+    "compositeScore": 80,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -5418,7 +5418,7 @@
           1.4,
           2.1,
           2.1,
-          -2.3
+          -0.4
         ]
       },
       "GateB_Protein": {
@@ -5430,7 +5430,7 @@
           5,
           3.3,
           3.3,
-          0.4
+          5.3
         ]
       },
       "GateC_Fat": {
@@ -5456,7 +5456,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 1997,
+        "spent": 2035,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -5485,7 +5485,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 81
+        "score": 80
       },
       "GateQ_Success": {
         "pass": true
@@ -5501,9 +5501,9 @@
     "targetProtein": 108,
     "targetCarbs": 227,
     "targetFat": 49,
-    "weeklySpendInr": 2008,
+    "weeklySpendInr": 1936,
     "weeklyBudgetInr": 1125,
-    "compositeScore": 82,
+    "compositeScore": 86,
     "hardConstraintPass": true,
     "passedAllGates": true,
     "failedGates": [],
@@ -5515,21 +5515,21 @@
           2.4,
           3.3,
           3.3,
-          2.1,
-          2.1,
-          2.3
+          1.2,
+          1.2,
+          0
         ]
       },
       "GateB_Protein": {
         "pass": true,
         "deviationsPct": [
-          -2.8,
-          -2.8,
           -1.5,
           -1.5,
-          2.4,
-          2.4,
-          -0.2
+          -1.5,
+          -1.5,
+          1.2,
+          1.4,
+          0
         ]
       },
       "GateC_Fat": {
@@ -5555,7 +5555,7 @@
       },
       "GateI_Budget": {
         "pass": true,
-        "spent": 2008,
+        "spent": 1936,
         "budget": 1125,
         "policy": "FLEXIBLE"
       },
@@ -5584,7 +5584,7 @@
       },
       "GateP_QualityScore": {
         "pass": true,
-        "score": 82
+        "score": 86
       },
       "GateQ_Success": {
         "pass": true

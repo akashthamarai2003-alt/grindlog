@@ -2094,20 +2094,20 @@ export function generateUnified7DayPlan(
       overshootAttempts++;
       const excessCal = Math.abs(dailyTargets.calories - dayCal);
 
-      // Try continuous staple carbs first (e.g. Steamed White Rice, Brown Rice, Oats, Sweet Corn)
+      // Try continuous staple carbs first (e.g. Steamed White Rice, Brown Rice, Oats, Sweet Corn, Quinoa)
       const continuousCarbItem = dayMeals
         .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
-        .find(({ item }) => (item.ingredientRole === "STAPLE_CARB" || item.foodName.toLowerCase().includes("sweet corn") || item.foodName.toLowerCase().includes("sabzi")) && item.portionType === "CONTINUOUS" && item.quantity >= 50);
+        .find(({ item }) => (item.ingredientRole === "STAPLE_CARB" || item.foodName.toLowerCase().includes("sweet corn") || item.foodName.toLowerCase().includes("sabzi")) && item.portionType === "CONTINUOUS" && item.quantity >= 30);
 
       if (continuousCarbItem) {
         const { item, meal } = continuousCarbItem;
         const calPerG = item.caloriesSnapshot / item.quantity;
         const pPerG = item.proteinSnapshot / item.quantity;
         const cPerG = item.carbsSnapshot / item.quantity;
-        const maxSub = Math.max(0, Math.floor((item.quantity - 25) / 25) * 25);
-        const rawSub = Math.min(150, Math.max(25, Math.round((excessCal / (calPerG || 1.3)) / 25) * 25));
+        const maxSub = Math.max(0, item.quantity - 20);
+        const rawSub = Math.min(150, Math.max(10, Math.round(excessCal / (calPerG || 1.3))));
         const subG = Math.min(maxSub, rawSub);
-        if (subG >= 25 && item.quantity - subG >= 25) {
+        if (subG >= 10 && item.quantity - subG >= 15) {
           item.quantity -= subG;
           const subCal = Math.round(subG * calPerG);
           const subP = Math.round(subG * pPerG * 10) / 10;
@@ -2178,6 +2178,40 @@ export function generateUnified7DayPlan(
         continue;
       }
 
+      // Try continuous side/salad items exceeding 30g (e.g. Sprouts Salad > 50g, Roasted Chana > 25g)
+      const continuousSideItem = dayMeals
+        .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
+        .find(({ item }) => (item.ingredientRole === "OPTIONAL_SIDE" || item.foodName.toLowerCase().includes("sprouts") || item.foodName.toLowerCase().includes("salad") || item.foodName.toLowerCase().includes("chana")) && item.portionType === "CONTINUOUS" && item.quantity >= 30 && item.caloriesSnapshot >= 50);
+
+      if (continuousSideItem) {
+        const { item, meal } = continuousSideItem;
+        const calPerG = item.caloriesSnapshot / item.quantity;
+        const pPerG = item.proteinSnapshot / item.quantity;
+        const cPerG = (item.carbsSnapshot || 0) / item.quantity;
+        const maxSub = Math.max(0, item.quantity - 25);
+        const subG = Math.min(maxSub, Math.min(60, Math.max(10, Math.round(excessCal / (calPerG || 1.0)))));
+        if (subG >= 10 && item.quantity - subG >= 20) {
+          const subP = Math.round(subG * pPerG * 10) / 10;
+          if (pPerG >= 0.03 && dayP - subP < dailyTargets.protein * 0.965) {
+            // Protect protein-rich sides (sprouts, chana) from dropping the day into protein deficit
+          } else {
+            item.quantity -= subG;
+            const subCal = Math.round(subG * calPerG);
+            const subC = Math.round(subG * cPerG * 10) / 10;
+            item.caloriesSnapshot -= subCal;
+            item.proteinSnapshot = Math.round((item.proteinSnapshot - subP) * 10) / 10;
+            if (item.carbsSnapshot) item.carbsSnapshot = Math.round((item.carbsSnapshot - subC) * 10) / 10;
+
+            meal.caloriesSnapshot -= subCal;
+            meal.proteinSnapshot = Math.round((meal.proteinSnapshot - subP) * 10) / 10;
+            if (meal.carbsSnapshot) meal.carbsSnapshot = Math.round((meal.carbsSnapshot - subC) * 10) / 10;
+            dayCal -= subCal;
+            dayP = Math.round((dayP - subP) * 10) / 10;
+            continue;
+          }
+        }
+      }
+
       // Try reducing discrete cheese slices if excess calories remain (Cheese Slice > 1)
       const cheeseItem = dayMeals
         .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
@@ -2198,20 +2232,23 @@ export function generateUnified7DayPlan(
         continue;
       }
 
-      // Try reducing excess primary protein if protein target is already satisfied or within -5% gate
-      if (dayP >= dailyTargets.protein * 0.96) {
-        const excessProteinItem = dayMeals
-          .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
-          .find(({ item }) => (item.ingredientRole === "PRIMARY_PROTEIN" || item.foodName.toLowerCase().includes("soya") || item.foodName.toLowerCase().includes("sprouts") || item.foodName.toLowerCase().includes("chana") || item.foodName.toLowerCase().includes("paneer")) && item.portionType === "CONTINUOUS" && item.quantity >= 75);
-        if (excessProteinItem) {
-          const { item, meal } = excessProteinItem;
-          const calPerG = item.caloriesSnapshot / item.quantity;
-          const pPerG = item.proteinSnapshot / item.quantity;
-          const subG = 25;
-          if (item.quantity - subG >= 40 && (dayP - Math.round(subG * pPerG * 10) / 10) >= dailyTargets.protein * 0.95) {
+      // Try reducing excess primary protein or bulky pulse curries (quantity >= 75)
+      const excessProteinItem = dayMeals
+        .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
+        .find(({ item }) => (item.ingredientRole === "PRIMARY_PROTEIN" || item.foodName.toLowerCase().includes("soya") || item.foodName.toLowerCase().includes("chole") || item.foodName.toLowerCase().includes("curry") || item.foodName.toLowerCase().includes("sprouts") || item.foodName.toLowerCase().includes("chana") || item.foodName.toLowerCase().includes("paneer")) && item.portionType === "CONTINUOUS" && item.quantity >= 75);
+      if (excessProteinItem) {
+        const { item, meal } = excessProteinItem;
+        const calPerG = item.caloriesSnapshot / item.quantity;
+        const pPerG = item.proteinSnapshot / item.quantity;
+        const maxSub = Math.max(0, item.quantity - 50);
+        const subG = Math.min(maxSub, Math.min(50, Math.max(15, Math.round(excessCal / (calPerG || 1.3)))));
+        if (subG >= 15 && item.quantity - subG >= 40) {
+          const subP = Math.round(subG * pPerG * 10) / 10;
+          if (dayP - subP < dailyTargets.protein * 0.965) {
+            // Protect protein: do not trim primary protein or pulse curry if it drops day below protein target
+          } else {
             item.quantity -= subG;
             const subCal = Math.round(subG * calPerG);
-            const subP = Math.round(subG * pPerG * 10) / 10;
             item.caloriesSnapshot -= subCal;
             item.proteinSnapshot = Math.round((item.proteinSnapshot - subP) * 10) / 10;
             meal.caloriesSnapshot -= subCal;
@@ -2583,7 +2620,7 @@ export function generateUnified7DayPlan(
     let dayP = Math.round(dayMeals.reduce((s, m) => s + m.proteinSnapshot, 0) * 10) / 10;
     let dayF = Math.round(dayMeals.reduce((s, m) => s + (m.fatSnapshot || 0), 0) * 10) / 10;
 
-    for (let calibPass = 0; calibPass < 8; calibPass++) {
+    for (let calibPass = 0; calibPass < 12; calibPass++) {
       const calDev = (dayCal - dailyTargets.calories) / dailyTargets.calories;
       const pDev = (dayP - dailyTargets.protein) / dailyTargets.protein;
       const fatCalRatio = (dayF * 9) / Math.max(1, dayCal);
@@ -2621,38 +2658,43 @@ export function generateUnified7DayPlan(
             (item.ingredientRole === "PRIMARY_PROTEIN" || item.foodName.toLowerCase().includes("paneer") || item.foodName.toLowerCase().includes("soya") || item.foodName.toLowerCase().includes("chicken") || item.foodName.toLowerCase().includes("sprouts") || item.foodName.toLowerCase().includes("tofu") || item.foodName.toLowerCase().includes("chana")));
         if (contProtein) {
           const { item, meal } = contProtein;
-          const subG = 25;
           const calPerG = item.caloriesSnapshot / item.quantity;
           const pPerG = item.proteinSnapshot / item.quantity;
           const fPerG = (item.fatSnapshot || 0) / item.quantity;
-          const subCal = Math.round(subG * calPerG);
-          const subP = Math.round(subG * pPerG * 10) / 10;
-          const subF = Math.round(subG * fPerG * 10) / 10;
-          item.quantity -= subG;
-          item.caloriesSnapshot -= subCal;
-          item.proteinSnapshot = Math.round((item.proteinSnapshot - subP) * 10) / 10;
-          item.fatSnapshot = Math.round(((item.fatSnapshot || 0) - subF) * 10) / 10;
-          meal.caloriesSnapshot -= subCal;
-          meal.proteinSnapshot = Math.round((meal.proteinSnapshot - subP) * 10) / 10;
-          meal.fatSnapshot = Math.round(((meal.fatSnapshot || 0) - subF) * 10) / 10;
-          dayCal -= subCal;
-          dayP = Math.round((dayP - subP) * 10) / 10;
-          dayF = Math.round((dayF - subF) * 10) / 10;
-          continue;
+          // Calculate proportional grams to bring protein to ~103% of target, without over-trimming
+          const excessP = Math.max(1, dayP - dailyTargets.protein * 1.03);
+          const gramsNeeded = pPerG > 0 ? Math.ceil(excessP / pPerG) : 25;
+          const subG = Math.min(25, Math.max(5, gramsNeeded));
+          if (dayP - (subG * pPerG) >= dailyTargets.protein * 0.97 && item.quantity - subG >= 15) {
+            const subCal = Math.round(subG * calPerG);
+            const subP = Math.round(subG * pPerG * 10) / 10;
+            const subF = Math.round(subG * fPerG * 10) / 10;
+            item.quantity -= subG;
+            item.caloriesSnapshot -= subCal;
+            item.proteinSnapshot = Math.round((item.proteinSnapshot - subP) * 10) / 10;
+            item.fatSnapshot = Math.round(((item.fatSnapshot || 0) - subF) * 10) / 10;
+            meal.caloriesSnapshot -= subCal;
+            meal.proteinSnapshot = Math.round((meal.proteinSnapshot - subP) * 10) / 10;
+            meal.fatSnapshot = Math.round(((meal.fatSnapshot || 0) - subF) * 10) / 10;
+            dayCal -= subCal;
+            dayP = Math.round((dayP - subP) * 10) / 10;
+            dayF = Math.round((dayF - subF) * 10) / 10;
+            continue;
+          }
         }
       }
 
       // 2. Calorie Overshoot (> +3.0%): Trim carbs, discrete extras, or heavy continuous items
       if (calDev > 0.030) {
-        // Priority A: continuous carbs (rice, oats, khichdi, corn, poha, upma)
+        // Priority A: continuous carbs (rice, oats, khichdi, corn, poha, upma, quinoa)
         const contCarb = dayMeals
           .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
-          .find(({ item }) => item.portionType === "CONTINUOUS" && item.quantity >= 50 &&
-            (item.ingredientRole === "STAPLE_CARB" || item.foodName.toLowerCase().includes("rice") || item.foodName.toLowerCase().includes("oats") || item.foodName.toLowerCase().includes("khichdi") || item.foodName.toLowerCase().includes("corn") || item.foodName.toLowerCase().includes("poha") || item.foodName.toLowerCase().includes("upma")));
+          .find(({ item }) => item.portionType === "CONTINUOUS" && item.quantity >= 25 &&
+            (item.ingredientRole === "STAPLE_CARB" || item.foodName.toLowerCase().includes("rice") || item.foodName.toLowerCase().includes("oats") || item.foodName.toLowerCase().includes("khichdi") || item.foodName.toLowerCase().includes("corn") || item.foodName.toLowerCase().includes("poha") || item.foodName.toLowerCase().includes("upma") || item.foodName.toLowerCase().includes("quinoa")));
         if (contCarb) {
           const { item, meal } = contCarb;
-          const subG = Math.min(25, item.quantity - 35);
-          if (subG >= 15) {
+          const subG = Math.min(25, Math.max(10, item.quantity - 15));
+          if (subG >= 10 && item.quantity - subG >= 15) {
             const calPerG = item.caloriesSnapshot / item.quantity;
             const pPerG = item.proteinSnapshot / item.quantity;
             const subCal = Math.round(subG * calPerG);
@@ -2687,14 +2729,14 @@ export function generateUnified7DayPlan(
           continue;
         }
 
-        // Priority C: Heavy continuous items (Sabzi > 50g, Curd > 80g, or any large legume/curry/salad/protein > 100g)
+        // Priority C: Heavy continuous items (Sabzi > 50g, Curd > 80g, or any large legume/curry/salad/protein > 80g)
         const heavyContCandidates = dayMeals
           .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
           .filter(({ item }) => item.portionType === "CONTINUOUS" &&
             ((item.foodName.toLowerCase().includes("sabzi") && item.quantity > 50) ||
              (item.foodName.toLowerCase().includes("curd") && item.quantity > 80) ||
              (item.foodName.toLowerCase().includes("salad") && item.quantity > 50) ||
-             (item.quantity > 100 && (
+             (item.quantity > 80 && (
                item.foodName.toLowerCase().includes("dal") ||
                item.foodName.toLowerCase().includes("chana") ||
                item.foodName.toLowerCase().includes("lobia") ||
@@ -2707,7 +2749,7 @@ export function generateUnified7DayPlan(
         const heavyCont = heavyContCandidates.find(({ item }) => {
           const pPerG = item.proteinSnapshot / item.quantity;
           const subP = Math.round(25 * pPerG * 10) / 10;
-          return (dayP - subP) >= dailyTargets.protein * 0.96;
+          return (dayP - subP) >= dailyTargets.protein * 0.965;
         });
         if (heavyCont) {
           const { item, meal } = heavyCont;
@@ -2741,7 +2783,7 @@ export function generateUnified7DayPlan(
           const calPerG = item.caloriesSnapshot / item.quantity;
           const pPerG = item.proteinSnapshot / item.quantity;
           const fPerG = (item.fatSnapshot || 0) / item.quantity;
-          const maxGByProt = pPerG > 0 ? Math.floor(Math.max(0, dayP - dailyTargets.protein * 0.96) / pPerG) : 15;
+          const maxGByProt = pPerG > 0 ? Math.floor(Math.max(0, dayP - dailyTargets.protein * 0.965) / pPerG) : 15;
           const subG = Math.min(15, Math.max(0, Math.min(item.quantity - 15, maxGByProt)));
           if (subG >= 5) {
             const subCal = Math.round(subG * calPerG);
@@ -2764,68 +2806,75 @@ export function generateUnified7DayPlan(
 
       // 3. Protein Deficit (< -2.5%): Add protein (rebalance against excess carbs/sabzi if needed)
       if (pDev < -0.025) {
-        // If calories are above target (> 0.02), trim filler carbs or sabzi first to make room for protein
+        // If calories are above target (> 0.015), trim filler carbs, large sides, or bulky legumes first to make room for protein
         if (calDev > 0.015) {
           const trimFiller = dayMeals
             .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
             .find(({ item }) => {
               const n = item.foodName.toLowerCase();
-              if (item.portionType === "CONTINUOUS" && item.quantity > 15 && (n.includes("peanut") || n.includes("almond") || n.includes("walnut") || n.includes("chia"))) {
+              const isNut = n.includes("peanut") || n.includes("almond") || n.includes("walnut") || n.includes("chia") || n.includes("roasted chana");
+              if (item.portionType === "CONTINUOUS" && isNut) {
+                return item.quantity >= 25;
+              }
+              if (item.portionType !== "CONTINUOUS") return false;
+              // Allow trimming large pulse curries (> 120g) only if not sprouts or soya to rebalance with high-protein sources
+              if (item.quantity > 120 && (n.includes("curry") || n.includes("chole") || n.includes("dal")) && !n.includes("sprouts") && !n.includes("soya")) {
                 return true;
               }
-              if (item.portionType !== "CONTINUOUS" || item.quantity <= 50) return false;
+              if (item.quantity <= 30) return false;
               if (
                 item.ingredientRole === "PRIMARY_PROTEIN" ||
-                n.includes("sprouts") ||
                 n.includes("soya") ||
                 n.includes("paneer") ||
                 n.includes("tofu") ||
-                n.includes("chana") ||
-                n.includes("dal") ||
                 n.includes("egg") ||
                 n.includes("chicken") ||
                 n.includes("fish") ||
-                n.includes("lobia") ||
-                n.includes("rajma")
+                n.includes("sprouts")
               ) {
                 return false;
               }
               return (
                 item.ingredientRole === "VEGGIE" ||
-                n.includes("sabzi") ||
                 item.ingredientRole === "STAPLE_CARB" ||
+                item.ingredientRole === "OPTIONAL_SIDE" ||
+                n.includes("sabzi") ||
                 n.includes("rice") ||
                 n.includes("oats") ||
                 n.includes("khichdi") ||
-                (n.includes("salad") && !n.includes("sprouts"))
+                n.includes("quinoa") ||
+                n.includes("salad")
               );
             });
           if (trimFiller) {
             const { item, meal } = trimFiller;
-            const isNut = item.foodName.toLowerCase().includes("peanut") || item.foodName.toLowerCase().includes("almond") || item.foodName.toLowerCase().includes("walnut") || item.foodName.toLowerCase().includes("chia");
-            const subG = isNut ? Math.min(10, item.quantity - 10) : 25;
-            if (subG >= 5) {
+            const isNut = item.foodName.toLowerCase().includes("peanut") || item.foodName.toLowerCase().includes("almond") || item.foodName.toLowerCase().includes("walnut") || item.foodName.toLowerCase().includes("chia") || item.foodName.toLowerCase().includes("roasted chana");
+            const subG = isNut ? Math.min(10, item.quantity - 15) : Math.min(35, Math.max(15, item.quantity - 25));
+            if (subG >= 10 && item.quantity - subG >= 15) {
               const calPerG = item.caloriesSnapshot / item.quantity;
               const pPerG = item.proteinSnapshot / item.quantity;
               const fPerG = (item.fatSnapshot || 0) / item.quantity;
               const subCal = Math.round(subG * calPerG);
               const subP = Math.round(subG * pPerG * 10) / 10;
               const subF = Math.round(subG * fPerG * 10) / 10;
-              item.quantity -= subG;
-              item.caloriesSnapshot -= subCal;
-              item.proteinSnapshot = Math.round((item.proteinSnapshot - subP) * 10) / 10;
-              item.fatSnapshot = Math.round(((item.fatSnapshot || 0) - subF) * 10) / 10;
-              meal.caloriesSnapshot -= subCal;
-              meal.proteinSnapshot = Math.round((meal.proteinSnapshot - subP) * 10) / 10;
-              meal.fatSnapshot = Math.round(((meal.fatSnapshot || 0) - subF) * 10) / 10;
-              dayCal -= subCal;
-              dayP = Math.round((dayP - subP) * 10) / 10;
-              dayF = Math.round((dayF - subF) * 10) / 10;
+              const pEff = item.proteinSnapshot / Math.max(1, item.caloriesSnapshot);
+              if (pEff < 0.06 || isNut || dayP - subP >= dailyTargets.protein * 0.965) {
+                item.quantity -= subG;
+                item.caloriesSnapshot -= subCal;
+                item.proteinSnapshot = Math.round((item.proteinSnapshot - subP) * 10) / 10;
+                item.fatSnapshot = Math.round(((item.fatSnapshot || 0) - subF) * 10) / 10;
+                meal.caloriesSnapshot -= subCal;
+                meal.proteinSnapshot = Math.round((meal.proteinSnapshot - subP) * 10) / 10;
+                meal.fatSnapshot = Math.round(((meal.fatSnapshot || 0) - subF) * 10) / 10;
+                dayCal -= subCal;
+                dayP = Math.round((dayP - subP) * 10) / 10;
+                dayF = Math.round((dayF - subF) * 10) / 10;
+              }
             }
           }
         }
 
-        if (calDev <= 0.032) {
+        if (calDev <= 0.034) {
           // Priority A: Discrete eggs / egg booster < 5 pieces
           const eggItem = dayMeals
             .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
@@ -2848,20 +2897,20 @@ export function generateUnified7DayPlan(
             continue;
           }
 
-          // Priority B: Continuous protein items sorted by protein density descending
+          // Priority B: Continuous protein items sorted by protein efficiency descending
           const contPCandidates = dayMeals
             .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
-            .filter(({ item }) => item.portionType === "CONTINUOUS" && item.quantity < 350 &&
-              (item.foodName.toLowerCase().includes("paneer") || item.foodName.toLowerCase().includes("soya") || item.foodName.toLowerCase().includes("sprouts") || (item.foodName.toLowerCase().includes("chana") && !item.foodName.toLowerCase().includes("roasted")) || item.foodName.toLowerCase().includes("dal") || item.foodName.toLowerCase().includes("curd") || item.foodName.toLowerCase().includes("chicken") || item.foodName.toLowerCase().includes("fish") || item.foodName.toLowerCase().includes("tofu") || item.foodName.toLowerCase().includes("lobia") || item.foodName.toLowerCase().includes("rajma")))
+            .filter(({ item }) => item.portionType === "CONTINUOUS" && item.quantity < 400 &&
+              (item.ingredientRole === "PRIMARY_PROTEIN" || item.foodName.toLowerCase().includes("paneer") || item.foodName.toLowerCase().includes("soya") || item.foodName.toLowerCase().includes("sprouts") || (item.foodName.toLowerCase().includes("chana") && !item.foodName.toLowerCase().includes("roasted")) || item.foodName.toLowerCase().includes("dal") || item.foodName.toLowerCase().includes("curd") || item.foodName.toLowerCase().includes("chicken") || item.foodName.toLowerCase().includes("fish") || item.foodName.toLowerCase().includes("tofu") || item.foodName.toLowerCase().includes("tempeh") || item.foodName.toLowerCase().includes("lobia") || item.foodName.toLowerCase().includes("rajma")))
             .sort((a, b) => {
               if (fatCalRatio > 0.30) {
                 const pToFA = (a.item.proteinSnapshot / Math.max(0.5, a.item.fatSnapshot || 0));
                 const pToFB = (b.item.proteinSnapshot / Math.max(0.5, b.item.fatSnapshot || 0));
                 return pToFB - pToFA;
               }
-              const densA = (a.item.proteinSnapshot / a.item.quantity) || 0;
-              const densB = (b.item.proteinSnapshot / b.item.quantity) || 0;
-              return densB - densA;
+              const effA = a.item.proteinSnapshot / Math.max(1, a.item.caloriesSnapshot);
+              const effB = b.item.proteinSnapshot / Math.max(1, b.item.caloriesSnapshot);
+              return effB - effA;
             });
           const contP = contPCandidates[0];
           if (contP) {
@@ -2888,8 +2937,8 @@ export function generateUnified7DayPlan(
         }
       }
 
-      // 4. Calorie Deficit (< -3.0%): Add staple carbs
-      if (calDev < -0.030) {
+      // 4. Calorie Deficit (< -2.0%): Add staple carbs
+      if (calDev < -0.020) {
         const contCarb = dayMeals
           .flatMap(m => (m.items || []).map(item => ({ item, meal: m })))
           .find(({ item }) => item.portionType === "CONTINUOUS" && item.quantity < 350 &&
