@@ -275,6 +275,11 @@ function SwapDialog({
   );
 }
 
+function isDayFoodFinished(day: V2NutritionDay | null | undefined): boolean {
+  if (!day || !day.meals || day.meals.length === 0) return false;
+  return day.meals.every((meal) => meal.logs.length > 0 || meal.status === "LOGGED");
+}
+
 export function V2NutritionView({
   initialData,
   isPro,
@@ -308,6 +313,53 @@ export function V2NutritionView({
   const waterDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const currentWaterRef = useRef<number>(Number(initialData?.consumed?.water_ml) || 0);
 
+  // Fast client cache for instant 0ms date switching
+  const daysCacheRef = useRef<Map<string, V2NutritionDay>>(
+    new Map(initialData ? [[initialData.date, initialData]] : [])
+  );
+  const [completedDays, setCompletedDays] = useState<Set<string>>(() => {
+    const set = new Set<string>();
+    if (initialData && isDayFoodFinished(initialData)) {
+      set.add(initialData.date);
+    }
+    return set;
+  });
+
+  useEffect(() => {
+    if (initialData?.date) {
+      daysCacheRef.current.set(initialData.date, initialData);
+      if (isDayFoodFinished(initialData)) {
+        setCompletedDays((prev) => {
+          if (prev.has(initialData.date)) return prev;
+          const next = new Set(prev);
+          next.add(initialData.date);
+          return next;
+        });
+      }
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    if (data?.date) {
+      daysCacheRef.current.set(data.date, data);
+      if (isDayFoodFinished(data)) {
+        setCompletedDays((prev) => {
+          if (prev.has(data.date)) return prev;
+          const next = new Set(prev);
+          next.add(data.date);
+          return next;
+        });
+      } else {
+        setCompletedDays((prev) => {
+          if (!prev.has(data.date)) return prev;
+          const next = new Set(prev);
+          next.delete(data.date);
+          return next;
+        });
+      }
+    }
+  }, [data]);
+
   useEffect(() => {
     if (data?.consumed?.water_ml !== undefined) {
       currentWaterRef.current = Number(data.consumed.water_ml) || 0;
@@ -319,20 +371,38 @@ export function V2NutritionView({
   }, []);
 
   const weekDates = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart]);
-  const current = data?.date === selectedDate ? data : null;
+  const current = useMemo(() => {
+    if (data?.date === selectedDate) return data;
+    return daysCacheRef.current.get(selectedDate) || null;
+  }, [data, selectedDate]);
   const today = data?.today || initialData?.today || selectedDate;
   const isToday = selectedDate === today;
   const isPast = selectedDate < today;
   const reload = useCallback(() => {
+    daysCacheRef.current.clear();
     setRefreshKey((key) => key + 1);
   }, []);
 
   useEffect(() => {
-    if (refreshKey === 0 && initialData && selectedDate === initialData.date) return;
+    // 0ms instant display from cache if available and not a forced reload
+    const cached = daysCacheRef.current.get(selectedDate);
+    if (cached && refreshKey === 0) {
+      if (data?.date !== selectedDate) {
+        setData(cached);
+      }
+      setLoading(false);
+      return;
+    }
+
     const requestId = ++dayRequest.current;
     const controller = new AbortController();
-    setLoading(true);
+
+    // If cached data is present, do not show a blocking skeleton loader
+    if (!cached) {
+      setLoading(true);
+    }
     setError(null);
+
     fetch(`/api/nutrition/v2-day?date=${selectedDate}`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json();
@@ -347,13 +417,15 @@ export function V2NutritionView({
             ? currentWaterRef.current
             : fresh.consumed.water_ml;
           currentWaterRef.current = effectiveWater;
-          setData({
+          const resolvedDay: V2NutritionDay = {
             ...fresh,
             consumed: {
               ...fresh.consumed,
               water_ml: effectiveWater,
             },
-          });
+          };
+          daysCacheRef.current.set(fresh.date, resolvedDay);
+          setData(resolvedDay);
           setWaterGoal(fresh.targets.water_ml || 2500);
         }
       })
@@ -364,25 +436,77 @@ export function V2NutritionView({
         if (requestId === dayRequest.current) setLoading(false);
       });
     return () => controller.abort();
-  }, [selectedDate, refreshKey, initialData, today]);
+  }, [selectedDate, refreshKey, today]);
+
+  // Background prefetch: pre-fetches all 7 days of the current week strip quietly
+  useEffect(() => {
+    if (fixtureMode) return;
+    let isCancelled = false;
+    const timer = setTimeout(async () => {
+      for (const d of weekDates) {
+        if (isCancelled) break;
+        if (daysCacheRef.current.has(d)) continue;
+        try {
+          const res = await fetch(`/api/nutrition/v2-day?date=${d}`, { cache: "no-store" });
+          if (!res.ok) continue;
+          const payload = await res.json();
+          if (payload?.data && !isCancelled) {
+            const fresh = payload.data as V2NutritionDay;
+            daysCacheRef.current.set(d, fresh);
+            if (isDayFoodFinished(fresh)) {
+              setCompletedDays((prev) => {
+                if (prev.has(d)) return prev;
+                const next = new Set(prev);
+                next.add(d);
+                return next;
+              });
+            }
+          }
+        } catch {
+          // Quietly ignore background prefetch errors
+        }
+      }
+    }, 300);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [weekDates]);
 
   const navigateWeek = (days: number) => {
     const next = addDays(weekStart, days);
     setWeekStart(next);
     setSelectedDate(next);
     setExpandedId(null);
+    const cached = daysCacheRef.current.get(next);
+    if (cached) {
+      setData(cached);
+      setLoading(false);
+    }
   };
 
   const jumpToToday = () => {
     setWeekStart(mondayOf(today));
     setSelectedDate(today);
     setExpandedId(null);
+    const cached = daysCacheRef.current.get(today);
+    if (cached) {
+      setData(cached);
+      setLoading(false);
+    }
   };
 
   const chooseDay = (date: string) => {
+    if (date === selectedDate) return;
     setSelectedDate(date);
     setExpandedId(null);
     setPlanOpen(false);
+    const cached = daysCacheRef.current.get(date);
+    if (cached) {
+      setData(cached);
+      setLoading(false);
+    }
   };
 
   // Smart & Time-Aware Next Meal Selector:
@@ -530,6 +654,10 @@ export function V2NutritionView({
 
   const loggedCount = (current?.meals.filter((meal) => meal.logs.length > 0 || meal.status === "LOGGED").length || 0) + extraMeals.length;
   const totalMealSlotsCount = (current?.meals.length || 0) + extraMeals.length;
+  const isDayFinished = useMemo(() => {
+    if (totalMealSlotsCount > 0 && loggedCount >= totalMealSlotsCount) return true;
+    return isDayFoodFinished(current);
+  }, [totalMealSlotsCount, loggedCount, current]);
 
   const handleOptimisticLog = useCallback((loggedItems: any, defaultSlot?: string) => {
     if (!loggedItems) return;
@@ -1083,15 +1211,26 @@ export function V2NutritionView({
         {/* Micro-Header Strip */}
         <div className="relative mb-3.5 flex items-center justify-between border-b border-white/5 pb-2.5">
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#ADFF00] animate-pulse" />
+            <span className={`h-2 w-2 rounded-full ${isDayFinished ? "bg-emerald-400" : "bg-[#ADFF00]"} animate-pulse`} />
             <span className="fuel-hero-title text-[11px] font-black uppercase tracking-[0.16em] text-white/70">
               {isToday ? "Today's Fuel Target" : "Day's Fuel Target"}
             </span>
+            {isDayFinished && (
+              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1 shadow-[0_0_8px_rgba(52,211,153,0.2)]">
+                <Check size={9} strokeWidth={3.5} /> Day Done
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 text-[11px] font-bold text-white/60">
             <span>Meals Logged:</span>
-            <span className="fuel-logged-badge rounded-md bg-white/10 px-2 py-0.5 font-black text-white">
-              {loggedCount} / {totalMealSlotsCount}
+            <span className={`fuel-logged-badge rounded-md px-2 py-0.5 font-black flex items-center gap-1.5 transition-colors ${
+              isDayFinished
+                ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-[0_0_10px_rgba(52,211,153,0.2)]"
+                : "bg-white/10 text-white"
+            }`}>
+              {isDayFinished && <Check size={11} strokeWidth={3} className="text-emerald-400" />}
+              <span>{loggedCount} / {totalMealSlotsCount}</span>
+              {isDayFinished && <span className="text-[10px] text-emerald-400 font-bold">• All Done!</span>}
             </span>
           </div>
         </div>
@@ -1290,28 +1429,57 @@ export function V2NutritionView({
           {weekDates.map((date) => {
             const isSelected = date === selectedDate;
             const isCurrentToday = date === today;
+            const isCompleted = completedDays.has(date) || (isSelected && isDayFinished);
             return (
               <button
                 key={date}
                 type="button"
                 onClick={() => chooseDay(date)}
                 aria-pressed={isSelected}
-                className={`min-w-0 rounded-2xl border px-1 py-2 text-center transition active:scale-95 ${
+                className={`relative min-w-0 rounded-2xl border px-1 py-2 text-center transition active:scale-95 ${
                   isSelected
                     ? "border-[#ADFF00] bg-[#ADFF00] text-[#0A1108] shadow-[0_4px_16px_rgba(173,255,0,0.3)] font-black"
+                    : isCompleted
+                    ? "border-emerald-500/40 bg-[#0E1B10] text-emerald-300 hover:border-emerald-400/60 hover:text-white"
                     : "border-white/10 bg-[#111A10] text-white/55 hover:border-white/25 hover:text-white"
                 }`}
               >
+                {/* Completed food indicator badge */}
+                {isCompleted && (
+                  <span
+                    title="All meals finished for this day"
+                    className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black shadow-md ${
+                      isSelected
+                        ? "bg-[#0A1108] text-[#ADFF00] ring-2 ring-[#ADFF00]"
+                        : "bg-emerald-500 text-black ring-2 ring-[#0A1108]"
+                    }`}
+                  >
+                    <Check size={10} strokeWidth={3.5} />
+                  </span>
+                )}
+
                 <span className="block text-[9px] font-bold uppercase tracking-wider sm:text-[10px]">
                   {displayDate(date, { weekday: "short" })}
                 </span>
                 <span className="mt-0.5 block text-base font-black sm:text-lg">{date.slice(-2)}</span>
-                {isCurrentToday && (
+
+                {/* Day status indicator: Completed check / Today dot / spacer */}
+                {isCompleted ? (
                   <span
-                    className={`mx-auto mt-0.5 block h-1 w-1 rounded-full ${
+                    className={`mx-auto mt-0.5 flex h-2 items-center justify-center text-[9px] font-black ${
+                      isSelected ? "text-[#0A1108]" : "text-emerald-400"
+                    }`}
+                  >
+                    <Check size={11} strokeWidth={3.5} />
+                  </span>
+                ) : isCurrentToday ? (
+                  <span
+                    className={`mx-auto mt-1 block h-1.5 w-1.5 rounded-full ${
                       isSelected ? "bg-[#0A1108]" : "bg-[#ADFF00]"
                     }`}
                   />
+                ) : (
+                  <span className="mx-auto mt-1 block h-1.5 w-1.5 opacity-0" />
                 )}
               </button>
             );
@@ -1323,18 +1491,29 @@ export function V2NutritionView({
       <section aria-label="Meal timeline">
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ADFF00]">Fuel Timeline</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#ADFF00]">Fuel Timeline</p>
+              {isDayFinished && (
+                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black text-emerald-400 flex items-center gap-1 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
+                  <Check size={11} strokeWidth={3} /> Day Complete
+                </span>
+              )}
+            </div>
             <h2 className="mt-0.5 text-xl font-black text-white sm:text-2xl">
               Meals for {displayDate(selectedDate, { weekday: "long" })}
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            {current?.planId && (
+            {isDayFinished ? (
+              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-1 text-xs font-black text-emerald-400 flex items-center gap-1.5 shadow-[0_0_12px_rgba(52,211,153,0.25)]">
+                <Check size={13} strokeWidth={3} /> {loggedCount}/{totalMealSlotsCount} Finished
+              </span>
+            ) : current?.planId ? (
               <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white/50">
                 {current.meals.length} planned
               </span>
-            )}
-            {extraMeals.length > 0 && (
+            ) : null}
+            {extraMeals.length > 0 && !isDayFinished && (
               <span className="rounded-full border border-[#ADFF00]/20 bg-[#ADFF00]/10 px-2.5 py-1 text-xs font-bold text-[#ADFF00]">
                 +{extraMeals.length} extra logged
               </span>
@@ -1342,10 +1521,41 @@ export function V2NutritionView({
           </div>
         </div>
 
+        {/* Day Finished Celebratory Banner */}
+        {isDayFinished && (
+          <div className="mb-3.5 flex items-center gap-3 rounded-2xl border border-emerald-500/35 bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-transparent p-3 sm:p-3.5 shadow-[0_4px_20px_rgba(16,185,129,0.12)]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_12px_rgba(52,211,153,0.25)]">
+              <Check size={18} strokeWidth={3} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 sm:text-sm">
+                  Day&apos;s Food Finished!
+                </h4>
+                <span className="rounded-md bg-emerald-500/25 px-1.5 py-0.5 text-[10px] font-black text-emerald-300">
+                  {loggedCount}/{totalMealSlotsCount} Logged
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-emerald-200/80">
+                All planned meals for {displayDate(selectedDate, { weekday: "long" })} have been logged. Outstanding consistency staying on track with your fuel target!
+              </p>
+            </div>
+          </div>
+        )}
+
         {loading && !current && (
           <div className="space-y-2.5" aria-label="Loading meals">
             {[0, 1, 2].map((index) => (
-              <div key={index} className="h-24 animate-pulse rounded-2xl border border-white/5 bg-white/5" />
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 p-3.5 sm:p-4 animate-pulse"
+              >
+                <div className="h-12 w-12 rounded-xl bg-white/10 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 w-1/3 rounded bg-white/10" />
+                  <div className="h-2.5 w-1/2 rounded bg-white/5" />
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -1432,10 +1642,21 @@ export function V2NutritionView({
                         <span className="flex items-center gap-1 text-white/45">
                           <Clock3 size={11} /> {displayTime(meal.scheduledTime)}
                         </span>
-                        {state === "NEXT" && (
-                          <span className="rounded bg-[#ADFF00] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#0A1108]">
-                            Next Up
-                          </span>
+                        {fixtureMode ? (
+                          <span className="text-[9px] font-bold uppercase text-white/50">{state}</span>
+                        ) : (
+                          <>
+                            {state === "NEXT" && (
+                              <span className="rounded bg-[#ADFF00] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#0A1108]">
+                                Next Up
+                              </span>
+                            )}
+                            {state === "SKIPPED" && (
+                              <span className="rounded bg-rose-500/20 border border-rose-500/30 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-rose-300">
+                                SKIPPED
+                              </span>
+                            )}
+                          </>
                         )}
                         {isExtra && (
                           <span className="rounded bg-[#ADFF00]/15 border border-[#ADFF00]/25 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#ADFF00]">

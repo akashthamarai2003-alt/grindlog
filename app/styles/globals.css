@@ -559,6 +559,21 @@ html.theme-white .reminder-time-sheet-dialog {
   border-color: var(--fitness-border) !important;
 }
 
+/* Completed day celebration card & finished week badge in light theme */
+html.theme-white .bg-\[\#0E1B10\] {
+  background-color: #F0FDF4 !important;
+  border-color: #BBF7D0 !important;
+  color: #15803D !important;
+}
+html.theme-white [class*="from-emerald-950"] {
+  background-image: none !important;
+  background-color: #F0FDF4 !important;
+  border-color: #BBF7D0 !important;
+}
+html.theme-white [class*="from-emerald-950"] p {
+  color: #166534 !important;
+}
+
 /* Secondary containers, chips, item insets, water stepper tray, metric boxes */
 html.theme-white .bg-\[\#1A2619\],
 html.theme-white .bg-\[\#1E2C1D\],
