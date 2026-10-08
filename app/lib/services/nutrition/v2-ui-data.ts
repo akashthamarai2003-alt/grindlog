@@ -57,9 +57,9 @@ export interface V2NutritionDay {
   targets: { calories: number; protein: number; carbs: number; fat: number; water_ml: number };
 }
 
-interface PlanRow { id: string }
+interface PlanRow { id: string; status?: string }
 interface PlannedRow {
-  id: string; meal_slot: string; meal_sequence: number; scheduled_time: string | null;
+  id: string; meal_plan_id: string | null; meal_slot: string; meal_sequence: number; scheduled_time: string | null;
   status: V2NutritionMeal["status"]; source_type: V2NutritionMeal["sourceType"];
   recipe_version_id: string | null; meal_template_id: string | null;
   image_asset_id: string | null; image_storage_path_snapshot: string | null;
@@ -139,9 +139,23 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
   const today = await NutritionService.getLocalDateString(userId, timezone);
   const localDate = date || today;
   const { start, end } = await NutritionService.getLocalDateBoundaries(userId, timezone, localDate);
-  const [planRes, logsRes, waterRes, targets] = await Promise.all([
-    supabase.from("meal_plans").select("id").eq("user_id", userId)
-      .eq("date", localDate).eq("status", "READY").maybeSingle(),
+  const [plansRes, plannedMealsRes, logsRes, waterRes, targets] = await Promise.all([
+    supabase
+      .from("meal_plans")
+      .select("id, status")
+      .eq("user_id", userId)
+      .eq("date", localDate)
+      .neq("status", "SUPERSEDED")
+      .neq("status", "CANCELLED")
+      .order("created_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("planned_meals")
+      .select("id,meal_plan_id,meal_slot,meal_sequence,scheduled_time,status,source_type,recipe_version_id,meal_template_id,image_asset_id,image_storage_path_snapshot,image_url_snapshot,calories_snapshot,protein_snapshot,carbs_snapshot,fat_snapshot,cost_snapshot")
+      .eq("user_id", userId)
+      .eq("local_date", localDate)
+      .neq("status", "CANCELLED")
+      .order("meal_sequence"),
     supabase.from("food_logs")
       .select("id,meal_type,planned_meal_id,recipe_name_snapshot,serving_snapshot,calories,protein,carbs,fat,logged_at,foods(name,serving_size)")
       .eq("user_id", userId).gte("logged_at", start).lte("logged_at", end).order("logged_at"),
@@ -149,10 +163,11 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
       .eq("user_id", userId).gte("logged_at", start).lte("logged_at", end),
     NutritionService.getEffectiveTargets(userId, localDate, timezone),
   ]);
-  if (planRes.error) throw planRes.error;
   if (logsRes.error) throw logsRes.error;
   if (waterRes.error) throw waterRes.error;
-  const plan = planRes.data as PlanRow | null;
+  if (plannedMealsRes.error) throw plannedMealsRes.error;
+
+  const plan = (plansRes.data?.[0] as PlanRow | undefined) || null;
   const logRows = (logsRes.data || []) as LogRow[];
   const logs: V2NutritionLog[] = logRows.map((log) => {
     const rawFoodName = relatedFood(log.foods)?.name;
@@ -185,18 +200,74 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
     carbs: numeric(targets?.carbs), fat: numeric(targets?.fat),
     water_ml: numeric(targets?.water_ml),
   };
-  if (!plan) return { date: localDate, today, timezone, planId: null,
-    meals: [], logs, consumed, targets: targetValues };
 
-  const mealsRes = await supabase.from("planned_meals")
-    .select("id,meal_slot,meal_sequence,scheduled_time,status,source_type,recipe_version_id,meal_template_id,image_asset_id,image_storage_path_snapshot,image_url_snapshot,calories_snapshot,protein_snapshot,carbs_snapshot,fat_snapshot,cost_snapshot")
-    .eq("user_id", userId).eq("meal_plan_id", plan.id).eq("local_date", localDate)
-    .order("meal_sequence");
-  if (mealsRes.error) throw mealsRes.error;
-  const rows = (mealsRes.data || []) as PlannedRow[];
-  if (rows.length === 0) return { date: localDate, today, timezone, planId: plan.id,
-    meals: [], logs, consumed, targets: targetValues };
+  const rows = (plannedMealsRes.data || []) as PlannedRow[];
+  if (rows.length === 0) {
+    try {
+      const fallback = await NutritionService.getTodaySummaryAndDetails(userId, localDate);
+      if (fallback?.meals && fallback.meals.length > 0) {
+        const fallbackMeals: V2NutritionMeal[] = fallback.meals.map((m: any, idx: number) => {
+          const slot = (m.meal_type || "").toLowerCase() || (idx === 0 ? "breakfast" : idx === 1 ? "lunch" : idx === 2 ? "snack" : "dinner");
+          const rawMealName = m.name || m.meal_name || slot.replaceAll("_", " ");
+          const name = cleanFoodName(rawMealName, slot.replaceAll("_", " "));
+          const ingredients = (m.meal_plan_items || []).map((it: any) => ({
+            id: String(it.id || `fallback-item-${idx}-${Math.random().toString(36).slice(2, 7)}`),
+            name: cleanFoodName(it.foods?.name || it.name || "Food", "Food"),
+            quantity: it.serving_size || (it.quantity ? `${it.quantity} ${it.unit || "serving"}` : "1 serving"),
+            isProvided: it.is_provided === true,
+          }));
+          return {
+            id: String(m.id || `fallback-${localDate}-${slot}`),
+            slot,
+            sequence: idx + 1,
+            scheduledTime: m.time_of_day === "Morning" ? "08:30" : m.time_of_day === "Midday" ? "13:00" : m.time_of_day === "Evening" ? "17:30" : "20:30",
+            status: (m.status || "PLANNED") as V2NutritionMeal["status"],
+            sourceType: "TEMPLATE" as const,
+            name,
+            description: m.description || null,
+            whyThisMeal: null,
+            prepInstructions: resolvePrepInstructions(m.prep_instructions, name),
+            prepTimeMin: m.cooking_time_min ?? 15,
+            imageUrl: resolveV2ImageSnapshot(null, name),
+            calories: numeric(m.calories || m.total_calories),
+            protein: numeric(m.protein || m.protein_grams),
+            carbs: numeric(m.carbs || m.carbs_grams),
+            fat: numeric(m.fat || m.fat_grams),
+            cost: numeric(m.estimated_cost),
+            ingredients,
+            logs: logs.filter((log) => log.mealSlot === slot),
+          };
+        });
+        if (fallbackMeals.length > 0) {
+          return {
+            date: localDate,
+            today,
+            timezone,
+            planId: plan?.id || null,
+            meals: fallbackMeals,
+            logs,
+            consumed,
+            targets: targetValues,
+          };
+        }
+      }
+    } catch (fallbackErr) {
+      console.warn("[getV2NutritionDay] Fallback meal check failed non-fatally:", fallbackErr);
+    }
 
+    return {
+      date: localDate,
+      today,
+      timezone,
+      planId: plan?.id || null,
+      meals: [],
+      logs,
+      consumed,
+      targets: targetValues,
+    };
+  }
+
+  const resolvedPlanId = rows[0]?.meal_plan_id || plan?.id || null;
   const versionIds = [...new Set(rows.map((row) => row.recipe_version_id).filter((id): id is string => Boolean(id)))];
   const templateIds = [...new Set(rows.map((row) => row.meal_template_id).filter((id): id is string => Boolean(id)))];
   const imageIds = [...new Set(rows.map((row) => row.image_asset_id).filter((id): id is string => Boolean(id)))];
@@ -217,7 +288,17 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
   if (itemsRes.error) throw itemsRes.error;
   if (versionsRes.error) throw versionsRes.error;
   if (templatesRes.error) throw templatesRes.error;
-  const items = (itemsRes.data || []) as ItemRow[];
+  let items = (itemsRes.data || []) as ItemRow[];
+  if (items.length === 0 && resolvedPlanId) {
+    const fallbackItemsRes = await supabase
+      .from("meal_plan_items")
+      .select("id,planned_meal_id,serving_size,quantity,unit,is_provided,foods(name)")
+      .eq("meal_plan_id", resolvedPlanId);
+    if (!fallbackItemsRes.error && fallbackItemsRes.data?.length) {
+      items = fallbackItemsRes.data as ItemRow[];
+    }
+  }
+
   const versions = new Map(((versionsRes.data || []) as RecipeRow[]).map((row) => [row.id, row]));
   const templates = new Map(((templatesRes.data || []) as TemplateRow[]).map((row) => [row.id, row]));
   // An unavailable approval lookup uses the fallback; it must not block meals.
@@ -270,6 +351,6 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
           rows.find((candidate) => candidate.meal_slot === row.meal_slot)?.id === row.id)),
     };
   });
-  return { date: localDate, today, timezone, planId: plan.id,
+  return { date: localDate, today, timezone, planId: resolvedPlanId,
     meals, logs, consumed, targets: targetValues };
 }

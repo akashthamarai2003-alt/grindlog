@@ -1241,8 +1241,9 @@ export class V2PlanService {
       .eq("id", plannedMeal.meal_plan_id)
       .eq("user_id", userId)
       .maybeSingle();
-    if (planError) throw planError;
-    if (plan?.status !== "READY") throw new Error("PLAN_NOT_READY");
+    if (plan && plan.status !== "READY" && plan.status !== "active" && plan.status !== "ACTIVE" && plan.status !== "COMPLETED") {
+      throw new Error("PLAN_NOT_READY");
+    }
 
     const { data: slotItems, error: itemError } = await supabase
       .from("meal_plan_items")

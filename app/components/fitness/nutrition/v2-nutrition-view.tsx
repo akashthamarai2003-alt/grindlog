@@ -384,9 +384,9 @@ export function V2NutritionView({
   }, []);
 
   useEffect(() => {
-    // 0ms instant display from cache if available and not a forced reload
+    // 0ms instant display from cache if available, has planned meals, and not a forced reload
     const cached = daysCacheRef.current.get(selectedDate);
-    if (cached && refreshKey === 0) {
+    if (cached && cached.meals.length > 0 && refreshKey === 0) {
       if (data?.date !== selectedDate) {
         setData(cached);
       }
@@ -397,8 +397,8 @@ export function V2NutritionView({
     const requestId = ++dayRequest.current;
     const controller = new AbortController();
 
-    // If cached data is present, do not show a blocking skeleton loader
-    if (!cached) {
+    // If cached data is present with meals, do not show a blocking skeleton loader
+    if (!cached || cached.meals.length === 0) {
       setLoading(true);
     }
     setError(null);
@@ -445,14 +445,18 @@ export function V2NutritionView({
     const timer = setTimeout(async () => {
       for (const d of weekDates) {
         if (isCancelled) break;
-        if (daysCacheRef.current.has(d)) continue;
+        const existing = daysCacheRef.current.get(d);
+        if (existing && existing.meals.length > 0) continue;
         try {
           const res = await fetch(`/api/nutrition/v2-day?date=${d}`, { cache: "no-store" });
           if (!res.ok) continue;
           const payload = await res.json();
           if (payload?.data && !isCancelled) {
             const fresh = payload.data as V2NutritionDay;
-            daysCacheRef.current.set(d, fresh);
+            // Only cache in background if it actually contains planned meals
+            if (fresh.meals && fresh.meals.length > 0) {
+              daysCacheRef.current.set(d, fresh);
+            }
             if (isDayFoodFinished(fresh)) {
               setCompletedDays((prev) => {
                 if (prev.has(d)) return prev;
@@ -1486,7 +1490,7 @@ export function V2NutritionView({
           </div>
         </div>
 
-        {loading && !current && (
+        {loading && (!current || allTimelineMeals.length === 0) && (
           <div className="space-y-2.5" aria-label="Loading meals">
             {[0, 1, 2].map((index) => (
               <div
