@@ -546,11 +546,13 @@ html.theme-white .bg-\[\#121E12\]\/90 {
 html.theme-white .bg-\[\#121E12\],
 html.theme-white .bg-\[\#111A10\],
 html.theme-white .bg-\[\#0E160E\],
+html.theme-white .bg-\[\#0E160D\],
 html.theme-white [class*="from-\[\#121E12\]"],
 html.theme-white [class*="from-\[\#111A10\]"],
 html.theme-white [class*="from-\[\#1A2619\]"],
 html.theme-white [class*="from-\[\#182814\]"],
-html.theme-white .nutrition-fuel-hero-card {
+html.theme-white .nutrition-fuel-hero-card,
+html.theme-white .reminder-time-sheet-dialog {
   background-image: none !important;
   background-color: var(--fitness-card) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 2px 8px -2px rgba(0, 0, 0, 0.02) !important;
@@ -1134,6 +1136,88 @@ html.theme-white .nutrition-fuel-hero-card .fuel-carbs-fill {
 }
 html.theme-white .nutrition-fuel-hero-card .fuel-fat-fill {
   background-image: linear-gradient(to right, #E11D48, #FB7185) !important;
+}
+
+/* Reminder Time Selection Bottom Sheet in White Theme */
+html.theme-white .reminder-time-sheet-dialog,
+html.theme-white .bg-\[\#0E160D\] {
+  background-color: var(--fitness-card) !important;
+  border-color: var(--fitness-border) !important;
+  color: var(--fitness-text) !important;
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .border-b {
+  border-color: var(--fitness-border) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog h3,
+html.theme-white .reminder-time-sheet-dialog h3 span,
+html.theme-white .reminder-time-sheet-dialog .text-white {
+  color: var(--fitness-text) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .text-white\/70,
+html.theme-white .reminder-time-sheet-dialog .text-white\/60,
+html.theme-white .reminder-time-sheet-dialog .text-white\/50,
+html.theme-white .reminder-time-sheet-dialog .text-white\/40 {
+  color: var(--fitness-secondary) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .time-preview-card,
+html.theme-white .reminder-time-sheet-dialog .bg-\[\#142013\] {
+  background-color: var(--fitness-soft-bg) !important;
+  border-color: var(--fitness-border) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .time-digit-input {
+  background-color: #FFFFFF !important;
+  border-color: var(--fitness-border) !important;
+  color: var(--fitness-text) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .time-digit-input:focus {
+  border-color: var(--fitness-primary) !important;
+  outline: none !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .time-chip-btn {
+  background-color: #FFFFFF !important;
+  border-color: var(--fitness-border) !important;
+  color: var(--fitness-text) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .time-chip-btn.time-chip-selected {
+  background-color: var(--fitness-primary) !important;
+  color: #FFFFFF !important;
+  border-color: var(--fitness-primary) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .time-nudge-btn {
+  background-color: #FFFFFF !important;
+  border-color: var(--fitness-border) !important;
+  color: var(--fitness-text) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .time-preset-card {
+  background-color: #FFFFFF !important;
+  border-color: var(--fitness-border) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .time-preset-card:hover {
+  background-color: var(--fitness-soft-bg) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .period-btn-inactive {
+  background-color: #FFFFFF !important;
+  border-color: var(--fitness-border) !important;
+  color: var(--fitness-secondary) !important;
+}
+
+html.theme-white .reminder-time-sheet-dialog .period-btn-active {
+  background-color: var(--fitness-primary) !important;
+  color: #FFFFFF !important;
 }
 
 /* Disabled button states in white theme: clean soft background & readable secondary text */
