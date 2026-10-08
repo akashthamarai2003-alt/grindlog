@@ -770,13 +770,14 @@ export function V2NutritionView({
     }
   }, [deletingLogId, data, reload]);
 
-  const generatePlan = async () => {
+  const generatePlan = async (startDate?: string) => {
     setGenerating(true);
     try {
-      await nutritionApi.generatePlan({ v2: true, start_date: today });
+      const targetStart = startDate || (selectedDate > today ? selectedDate : today);
+      await nutritionApi.generatePlan({ v2: true, start_date: targetStart });
       toast.success("Your 7-day plan is ready.");
-      setSelectedDate(today);
-      setWeekStart(mondayOf(today));
+      setSelectedDate(targetStart);
+      setWeekStart(mondayOf(targetStart));
       reload();
     } catch (cause) {
       toast.error(messageOf(cause));
@@ -1518,7 +1519,7 @@ export function V2NutritionView({
             <p className="mx-auto mt-1 max-w-sm text-xs text-white/50">
               Choose another day or generate your personal 7-day plan.
             </p>
-            {isPro && isToday && (
+            {isPro && (isToday || selectedDate >= today) && (
               <button
                 type="button"
                 disabled={generating}
