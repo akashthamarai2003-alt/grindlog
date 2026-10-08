@@ -1,129 +1,110 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Maximize2, X, Sparkles, Target, Dumbbell, Play, Pause, ChevronLeft, ChevronRight, Image as ImageIcon, Zap } from "lucide-react";
+import { Maximize2, X, Sparkles, Target, Dumbbell } from "lucide-react";
 import { getExerciseAnimation, ExerciseAnimationInfo } from "@/lib/fitness/exercises/exercise-animations";
 import { motion, AnimatePresence } from "framer-motion";
 
-const SAFE_FALLBACK_GIF = "https://fastly.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0/pectorals/lever-chest-press.gif";
-
-export interface ExerciseAnimationPlayerProps {
+interface ExerciseAnimationPlayerProps {
   name: string;
   targetMuscle?: string;
-  imageUrls?: string[];
-  primaryImageUrl?: string;
   compact?: boolean;
   className?: string;
   showControls?: boolean;
   showBadges?: boolean;
   aspectRatio?: "square" | "video" | "auto";
+  fallbackImage?: string;
+  imageUrls?: string[];
 }
 
 export function ExerciseAnimationPlayer({
   name,
   targetMuscle,
-  imageUrls,
-  primaryImageUrl,
   compact = false,
   className = "",
   showControls = true,
   showBadges = true,
   aspectRatio = "square",
+  fallbackImage,
+  imageUrls,
 }: ExerciseAnimationPlayerProps) {
-  // 1. Resolve GIF animation from dictionary
   const animation: ExerciseAnimationInfo = useMemo(() => {
     return getExerciseAnimation(name, targetMuscle);
   }, [name, targetMuscle]);
 
-  // Clean and filter valid step image URLs
-  const resolvedImages = useMemo(() => {
-    const list: string[] = [];
-    if (primaryImageUrl) list.push(primaryImageUrl);
-    if (imageUrls && Array.isArray(imageUrls)) {
-      for (const u of imageUrls) {
-        if (u && typeof u === "string" && !list.includes(u)) {
-          list.push(u);
+  // Robust candidate cascade:
+  // 1. Fastly CDN (global edge)
+  // 2. jsDelivr CDN
+  // 3. Same-origin Next.js server proxy (immune to ISP blocks, CORS, and adblockers)
+  // 4. Exercise image_urls (step photos from DB)
+  // 5. Fallback muscle group GIF proxy
+  const candidateUrls = useMemo(() => {
+    const list: string[] = [
+      animation.gifUrl,
+      animation.secondaryGifUrl,
+      animation.proxyGifUrl,
+    ];
+
+    if (fallbackImage && !list.includes(fallbackImage)) {
+      list.push(fallbackImage);
+    }
+
+    if (imageUrls && imageUrls.length > 0) {
+      for (const url of imageUrls) {
+        if (url && !list.includes(url)) {
+          list.push(url);
         }
       }
     }
+
+    const fallbackProxy = `/api/fitness/exercises/proxy-gif?path=${encodeURIComponent(
+      "pectorals/lever-chest-press.gif"
+    )}`;
+    if (!list.includes(fallbackProxy)) {
+      list.push(fallbackProxy);
+    }
+
     return list;
-  }, [imageUrls, primaryImageUrl]);
+  }, [animation, fallbackImage, imageUrls]);
 
-  const hasPhotos = resolvedImages.length > 0;
-
-  // Mode: "photos" (real step photos motion loop) or "gif" (3D animated model)
-  // Default to "photos" if real photos exist because they are 100% authentic and never block
-  const [activeMode, setActiveMode] = useState<"photos" | "gif">(
-    hasPhotos ? "photos" : "gif"
-  );
-
-  // Step photo loop state
-  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
-  const [isPlayingMotion, setIsPlayingMotion] = useState<boolean>(true);
-  const motionTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // GIF fallback state
-  const [currentGifSrc, setCurrentGifSrc] = useState<string>(animation.gifUrl);
-  const [gifAttemptIndex, setGifAttemptIndex] = useState<number>(0);
+  const [candidateIndex, setCandidateIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasError, setHasError] = useState<boolean>(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState<boolean>(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
-  // Auto-cycle step photos (start position -> peak contraction loop)
+  const currentSrc = candidateUrls[candidateIndex] || candidateUrls[0];
+
+  // Reset state whenever exercise changes
   useEffect(() => {
-    if (activeMode !== "photos" || resolvedImages.length < 2 || !isPlayingMotion) {
-      if (motionTimerRef.current) clearInterval(motionTimerRef.current);
-      return;
-    }
-
-    motionTimerRef.current = setInterval(() => {
-      setCurrentStepIndex((prev) => (prev + 1) % resolvedImages.length);
-    }, 1100);
-
-    return () => {
-      if (motionTimerRef.current) clearInterval(motionTimerRef.current);
-    };
-  }, [activeMode, resolvedImages.length, isPlayingMotion]);
-
-  // Synchronize state whenever the exercise changes
-  useEffect(() => {
-    setCurrentGifSrc(animation.gifUrl);
-    setGifAttemptIndex(0);
+    setCandidateIndex(0);
     setHasError(false);
     setIsLoading(true);
-    setCurrentStepIndex(0);
-    setActiveMode(hasPhotos ? "photos" : "gif");
-  }, [animation.gifUrl, hasPhotos]);
+  }, [name, targetMuscle]);
 
-  // GIF error cascading: Fastly -> Raw GitHub -> GCore -> Step Photos -> Placeholder
-  const handleGifError = () => {
-    if (gifAttemptIndex === 0 && animation.secondaryGifUrl) {
-      setGifAttemptIndex(1);
-      setCurrentGifSrc(animation.secondaryGifUrl);
-    } else if (gifAttemptIndex <= 1 && animation.tertiaryGifUrl) {
-      setGifAttemptIndex(2);
-      setCurrentGifSrc(animation.tertiaryGifUrl);
-    } else if (gifAttemptIndex <= 2 && currentGifSrc !== SAFE_FALLBACK_GIF) {
-      setGifAttemptIndex(3);
-      setCurrentGifSrc(SAFE_FALLBACK_GIF);
-    } else if (hasPhotos) {
-      // Gracefully fall back to real photos
-      setActiveMode("photos");
+  // Handle cached / fast-loaded images where React onLoad won't fire
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
       setIsLoading(false);
+    }
+  }, [currentSrc]);
+
+  const handleImageError = () => {
+    if (candidateIndex < candidateUrls.length - 1) {
+      setCandidateIndex((prev) => prev + 1);
     } else {
       setHasError(true);
       setIsLoading(false);
     }
   };
 
-  const handleMediaLoaded = () => {
+  const handleImageLoaded = () => {
     setIsLoading(false);
     setHasError(false);
   };
 
-  // Compact thumbnail mode (for lists/cards)
+  // Compact thumbnail mode (for exercise library list / workout cards)
   if (compact) {
-    const thumbSrc = hasPhotos ? resolvedImages[0] : currentGifSrc;
     return (
       <div
         className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-[#111A10] border border-white/10 shrink-0 flex items-center justify-center ${className}`}
@@ -131,14 +112,18 @@ export function ExerciseAnimationPlayer({
         {!hasError ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={thumbSrc}
+            ref={imgRef}
+            src={currentSrc}
             alt={name}
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover transition-opacity duration-200 ${
+              isLoading ? "opacity-50" : "opacity-100"
+            }`}
             loading="lazy"
-            onError={handleGifError}
+            onLoad={handleImageLoaded}
+            onError={handleImageError}
           />
         ) : (
-          <Dumbbell className="w-5 h-5 text-[#ADFF00]/50" />
+          <Dumbbell className="w-5 h-5 text-[#ADFF00]/60" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
       </div>
@@ -150,27 +135,22 @@ export function ExerciseAnimationPlayer({
       ? "aspect-video"
       : "aspect-square";
 
-  const currentDisplaySrc =
-    activeMode === "photos" && hasPhotos
-      ? resolvedImages[currentStepIndex]
-      : currentGifSrc;
-
   return (
     <>
       <div
-        className={`relative w-full rounded-3xl overflow-hidden bg-[#0D160C] border border-[#1F301D] shadow-2xl flex flex-col items-center justify-center group select-none ${className}`}
+        className={`relative w-full rounded-3xl overflow-hidden bg-[#0A1108] border border-white/10 shadow-2xl flex flex-col items-center justify-center group select-none ${className}`}
       >
         {/* Top Badges Bar */}
         {showBadges && (
-          <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
-            <div className="flex items-center gap-1.5 bg-black/85 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 shadow-lg">
+          <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 pointer-events-none">
+            <div className="exercise-badge-pill flex items-center gap-1.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 shadow-lg">
               <span className="w-2 h-2 rounded-full bg-[#ADFF00] animate-pulse" />
               <span className="text-[10px] font-black tracking-widest text-[#ADFF00] uppercase">
-                {activeMode === "photos" ? "Real Form Demo" : "Form Demo"}
+                Form Demo
               </span>
             </div>
 
-            <div className="flex items-center gap-1 bg-black/85 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 shadow-lg">
+            <div className="exercise-badge-pill flex items-center gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 shadow-lg">
               <Target className="w-3 h-3 text-[#ADFF00]" />
               <span className="text-[10px] font-bold tracking-wider text-white uppercase">
                 {animation.targetMuscle}
@@ -179,155 +159,74 @@ export function ExerciseAnimationPlayer({
           </div>
         )}
 
-        {/* Loading Skeleton */}
-        {isLoading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0D160C] z-10 animate-pulse">
-            <Sparkles className="w-7 h-7 text-[#ADFF00] animate-spin mb-2" />
-            <span className="text-[11px] font-bold text-white/60 uppercase tracking-widest">
-              Loading Demonstration...
+        {/* Loading Spinner / Skeleton Overlay */}
+        {isLoading && !hasError && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#0A1108]/90 backdrop-blur-sm pointer-events-none transition-opacity duration-300">
+            <div className="w-10 h-10 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/30 flex items-center justify-center mb-2.5 animate-pulse">
+              <Sparkles className="w-5 h-5 text-[#ADFF00] animate-spin" />
+            </div>
+            <span className="text-[11px] font-black tracking-wider text-white uppercase">
+              Loading Exercise Animation
+            </span>
+            <span className="text-[9px] font-bold text-white/40 mt-0.5">
+              Optimizing form demonstration...
             </span>
           </div>
         )}
 
-        {/* Media Container with Cyberpunk Dark Frame */}
-        <div className={`w-full ${aspectClass} relative flex items-center justify-center overflow-hidden bg-[#081007]`}>
+        {/* Media Container */}
+        <div className={`w-full ${aspectClass} relative flex items-center justify-center overflow-hidden bg-[#0E170C]`}>
           {!hasError ? (
-            <div className="w-full h-full flex items-center justify-center relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                key={`${name}-${activeMode}-${currentDisplaySrc}`}
-                src={currentDisplaySrc}
-                alt={`${name} exercise form demonstration`}
-                className={`w-full h-full ${
-                  activeMode === "photos" ? "object-cover" : "object-contain bg-white/95 rounded-2xl p-2 max-w-[95%] max-h-[95%] shadow-md"
-                } transition-opacity duration-300 ${
-                  isLoading ? "opacity-0" : "opacity-100"
-                }`}
-                loading="eager"
-                onLoad={handleMediaLoaded}
-                onError={activeMode === "gif" ? handleGifError : undefined}
-              />
-
-              {/* Bottom Subtle Gradient for Text Contrast */}
-              {activeMode === "photos" && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
-              )}
-            </div>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              ref={imgRef}
+              key={`${name}-${currentSrc}`}
+              src={currentSrc}
+              alt={`${name} form demonstration animation`}
+              className={`w-full h-full object-contain transition-opacity duration-300 ${
+                isLoading ? "opacity-30" : "opacity-100"
+              }`}
+              loading="eager"
+              onLoad={handleImageLoaded}
+              onError={handleImageError}
+            />
           ) : (
-            <div className="flex flex-col items-center justify-center p-6 text-center text-white/70 bg-[#0A1108] w-full h-full">
-              <div className="w-14 h-14 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/25 flex items-center justify-center mb-3">
+            <div className="flex flex-col items-center justify-center p-6 text-center text-white/50 bg-[#0A1108] w-full h-full">
+              <div className="w-14 h-14 rounded-2xl bg-[#ADFF00]/10 border border-[#ADFF00]/30 flex items-center justify-center mb-3">
                 <Dumbbell className="w-7 h-7 text-[#ADFF00]" />
               </div>
               <p className="text-sm font-black uppercase tracking-wider text-white">
                 {name}
               </p>
               <p className="text-xs text-white/50 mt-1 max-w-xs">
-                {animation.targetMuscle} · {animation.equipment}
+                Target: {animation.targetMuscle} • {animation.equipment}
               </p>
-              <span className="mt-2 text-[10px] font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                Exercise Ready
-              </span>
             </div>
           )}
         </div>
 
-        {/* Interactive Step Motion Controls (when in Real Photos mode with 2+ photos) */}
-        {activeMode === "photos" && resolvedImages.length >= 2 && !isLoading && (
-          <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-auto">
-            {/* Step Pills & Play/Pause */}
-            <div className="flex items-center gap-1.5 bg-black/85 backdrop-blur-md px-2 py-1 rounded-xl border border-white/10 shadow-lg">
-              <button
-                type="button"
-                onClick={() => setIsPlayingMotion((prev) => !prev)}
-                className="p-1 rounded-lg hover:bg-white/10 text-[#ADFF00] transition-colors cursor-pointer"
-                title={isPlayingMotion ? "Pause motion" : "Play motion"}
-              >
-                {isPlayingMotion ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              </button>
-
-              <div className="flex items-center gap-1 pl-1">
-                {resolvedImages.map((_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setCurrentStepIndex(idx);
-                      setIsPlayingMotion(false);
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase transition-all cursor-pointer ${
-                      currentStepIndex === idx
-                        ? "bg-[#ADFF00] text-black shadow-sm"
-                        : "bg-white/5 text-white/60 hover:text-white"
-                    }`}
-                  >
-                    Step {idx + 1}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Toggle to 3D Demo GIF if available */}
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveMode("gif");
-                  setIsLoading(true);
-                }}
-                className="flex items-center gap-1 bg-black/85 hover:bg-black text-white hover:text-[#ADFF00] text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-white/10 backdrop-blur-md transition-all active:scale-95 shadow-lg cursor-pointer"
-                title="Switch to 3D Demonstration"
-              >
-                <Zap className="w-3 h-3 text-[#ADFF00]" />
-                <span className="hidden sm:inline">3D Demo</span>
-              </button>
-
-              {showControls && (
-                <button
-                  type="button"
-                  onClick={() => setIsZoomModalOpen(true)}
-                  className="p-1.5 rounded-xl bg-black/85 hover:bg-black text-white hover:text-[#ADFF00] border border-white/10 backdrop-blur-md transition-all active:scale-95 shadow-lg cursor-pointer"
-                  title="Full View"
-                >
-                  <Maximize2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+        {/* Interactive Overlay Controls */}
+        {showControls && !hasError && !isLoading && (
+          <div className="absolute bottom-3 right-3 z-30 opacity-90 group-hover:opacity-100 transition-opacity">
+            {/* Expand / Fullscreen Zoom Modal */}
+            <button
+              type="button"
+              onClick={() => setIsZoomModalOpen(true)}
+              aria-label="Expand exercise demonstration"
+              className="exercise-overlay-btn p-2 rounded-full bg-black/80 hover:bg-black text-white hover:text-[#ADFF00] border border-black/20 backdrop-blur-md transition-all active:scale-95 shadow-lg cursor-pointer"
+              title="Full View"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
-        {/* Interactive Controls when in GIF mode */}
-        {activeMode === "gif" && !isLoading && !hasError && (
-          <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-auto">
-            {/* If real photos exist, button to toggle back to photos */}
-            {hasPhotos ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveMode("photos");
-                  setIsLoading(false);
-                }}
-                className="flex items-center gap-1 bg-black/85 hover:bg-black text-white hover:text-[#ADFF00] text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-white/10 backdrop-blur-md transition-all active:scale-95 shadow-lg cursor-pointer"
-                title="Switch to Real Photos"
-              >
-                <ImageIcon className="w-3 h-3 text-[#ADFF00]" />
-                <span>Real Photos ({resolvedImages.length})</span>
-              </button>
-            ) : (
-              <span className="text-[9px] font-black tracking-wider text-white/70 bg-black/85 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 uppercase shadow-lg">
-                {animation.equipment}
-              </span>
-            )}
-
-            {showControls && (
-              <button
-                type="button"
-                onClick={() => setIsZoomModalOpen(true)}
-                className="p-1.5 rounded-xl bg-black/85 hover:bg-black text-white hover:text-[#ADFF00] border border-white/10 backdrop-blur-md transition-all active:scale-95 shadow-lg cursor-pointer ml-auto"
-                title="Full View"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-            )}
+        {/* Equipment Chip (Bottom Left) */}
+        {animation.equipment && showBadges && (
+          <div className="absolute bottom-3 left-3 z-30 pointer-events-none">
+            <span className="exercise-badge-pill text-[9px] font-black tracking-wider text-white bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-black/20 uppercase shadow-lg">
+              {animation.equipment}
+            </span>
           </div>
         )}
       </div>
@@ -360,7 +259,6 @@ export function ExerciseAnimationPlayer({
                   </h3>
                 </div>
                 <button
-                  type="button"
                   onClick={() => setIsZoomModalOpen(false)}
                   className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
                 >
@@ -369,14 +267,12 @@ export function ExerciseAnimationPlayer({
               </div>
 
               {/* Large Animation View */}
-              <div className="w-full aspect-square bg-[#081007] rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center relative">
+              <div className="w-full aspect-square bg-[#0A1108] rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={currentDisplaySrc}
+                  src={currentSrc}
                   alt={`${name} form`}
-                  className={`w-full h-full ${
-                    activeMode === "photos" ? "object-contain" : "object-contain bg-white/95 rounded-xl p-2 max-w-[95%] max-h-[95%]"
-                  }`}
+                  className="w-full h-full object-contain"
                 />
               </div>
 

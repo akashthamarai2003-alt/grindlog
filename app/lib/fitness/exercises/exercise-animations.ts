@@ -6,17 +6,18 @@
 
 export interface ExerciseAnimationInfo {
   name: string;
+  file: string;
   gifUrl: string;
   secondaryGifUrl: string;
-  tertiaryGifUrl: string;
+  proxyGifUrl: string;
   targetMuscle: string;
   equipment: string;
   isFallback?: boolean;
 }
 
-const CDN_BASE = "https://fastly.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0";
-const RAW_BASE = "https://raw.githubusercontent.com/JahelCuadrado/ExerciseGymGifsDB/main";
-const MIRROR_BASE = "https://gcore.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0";
+const FASTLY_CDN_BASE = "https://fastly.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0";
+const JSDELIVR_CDN_BASE = "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@v1.1.0";
+const PROXY_BASE = "/api/fitness/exercises/proxy-gif?path=";
 
 // Core Muscle Group Fallback Animations (Guaranteed 100% visual demonstration)
 export const MUSCLE_FALLBACKS: Record<string, { file: string; target: string; equipment: string }> = {
@@ -388,42 +389,39 @@ function cleanName(raw: string): string {
     .trim();
 }
 
-/**
- * Resolves any exercise name to an animated demonstration GIF with 100% reliability
- */
-function makeAnimationInfo(
+function formatAnimation(
   name: string,
-  file: string,
-  target: string,
-  equipment: string,
+  item: { file: string; target: string; equipment: string },
   isFallback: boolean
 ): ExerciseAnimationInfo {
   return {
     name,
-    gifUrl: `${CDN_BASE}/${file}`,
-    secondaryGifUrl: `${RAW_BASE}/${file}`,
-    tertiaryGifUrl: `${MIRROR_BASE}/${file}`,
-    targetMuscle: target,
-    equipment,
+    file: item.file,
+    gifUrl: `${FASTLY_CDN_BASE}/${item.file}`,
+    secondaryGifUrl: `${JSDELIVR_CDN_BASE}/${item.file}`,
+    proxyGifUrl: `${PROXY_BASE}${encodeURIComponent(item.file)}`,
+    targetMuscle: item.target,
+    equipment: item.equipment,
     isFallback,
   };
 }
 
+/**
+ * Resolves any exercise name to an animated demonstration GIF with 100% reliability
+ */
 export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: string): ExerciseAnimationInfo {
   const cleaned = cleanName(exerciseName);
 
   // 1. Direct O(1) match in canonical dictionary
   if (CANONICAL_EXERCISES[cleaned]) {
-    const item = CANONICAL_EXERCISES[cleaned];
-    return makeAnimationInfo(exerciseName, item.file, item.target, item.equipment, false);
+    return formatAnimation(exerciseName, CANONICAL_EXERCISES[cleaned], false);
   }
 
   // 1b. If prefixed with "bodyweight ", test stripped version
   if (cleaned.startsWith("bodyweight ")) {
     const stripped = cleaned.replace(/^bodyweight\s+/, "");
     if (CANONICAL_EXERCISES[stripped]) {
-      const item = CANONICAL_EXERCISES[stripped];
-      return makeAnimationInfo(exerciseName, item.file, item.target, item.equipment, false);
+      return formatAnimation(exerciseName, CANONICAL_EXERCISES[stripped], false);
     }
   }
 
@@ -431,8 +429,7 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
   // Iterates from longest specific key to shortest (e.g. 'feet elevated push up' before 'push up')
   for (const key of SORTED_CANONICAL_KEYS) {
     if (cleaned.includes(key)) {
-      const item = CANONICAL_EXERCISES[key];
-      return makeAnimationInfo(exerciseName, item.file, item.target, item.equipment, false);
+      return formatAnimation(exerciseName, CANONICAL_EXERCISES[key], false);
     }
   }
 
@@ -441,8 +438,7 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
     const stripped = cleaned.replace(/^bodyweight\s+/, "");
     for (const key of SORTED_CANONICAL_KEYS) {
       if (stripped.includes(key)) {
-        const item = CANONICAL_EXERCISES[key];
-        return makeAnimationInfo(exerciseName, item.file, item.target, item.equipment, false);
+        return formatAnimation(exerciseName, CANONICAL_EXERCISES[key], false);
       }
     }
   }
@@ -465,7 +461,7 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
   }
 
   if (bestMatch && highestScore >= 2) {
-    return makeAnimationInfo(exerciseName, bestMatch.file, bestMatch.target, bestMatch.equipment, false);
+    return formatAnimation(exerciseName, bestMatch, false);
   }
 
   // 4. Targeted Muscle Hint Fallback (if hint is specific and not generic 'Muscle')
@@ -473,13 +469,12 @@ export function getExerciseAnimation(exerciseName: string, targetMuscleHint?: st
   if (hintLower && hintLower !== "muscle") {
     for (const [muscleKey, fallback] of Object.entries(MUSCLE_FALLBACKS)) {
       if (hintLower.includes(muscleKey) || cleaned.includes(muscleKey)) {
-        return makeAnimationInfo(exerciseName, fallback.file, fallback.target, fallback.equipment, true);
+        return formatAnimation(exerciseName, fallback, true);
       }
     }
   }
 
   // 5. Default General Compound Fallback (Chest & Core)
-  const defaultFallback = MUSCLE_FALLBACKS.chest;
-  return makeAnimationInfo(exerciseName, defaultFallback.file, defaultFallback.target, defaultFallback.equipment, true);
+  return formatAnimation(exerciseName, MUSCLE_FALLBACKS.chest, true);
 }
 
