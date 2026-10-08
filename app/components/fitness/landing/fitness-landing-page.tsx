@@ -39,7 +39,8 @@ import {
   Smartphone,
   Sparkle,
   Sparkles as SparklesIcon,
-  HelpCircle
+  HelpCircle,
+  Play
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -295,6 +296,10 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
 
           {/* Desktop Nav Links */}
           <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-gray-300">
+            <Link href="/intro" className="flex items-center gap-1.5 text-[#ADFF00] hover:text-white transition-colors">
+              <Play className="w-3.5 h-3.5 fill-[#ADFF00] text-[#ADFF00]" />
+              <span>3D Intro</span>
+            </Link>
             <a href="#showcase" className="hover:text-[#ADFF00] transition-colors">Live App</a>
             <a href="#features" className="hover:text-[#ADFF00] transition-colors">All Features</a>
             <a href="#comparison" className="hover:text-[#ADFF00] transition-colors">Why GrindLog</a>
@@ -391,11 +396,19 @@ ${checkedGrocery["item-3"] ? "✅" : "▫️"} Brown Rice — ${groceryMode === 
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
 
+          <Link
+            href="/intro"
+            className="w-full sm:w-auto px-7 py-4 rounded-full text-base font-bold text-[#ADFF00] bg-[#122013] border border-[#ADFF00]/40 hover:bg-[#18301a] hover:border-[#ADFF00]/70 transition-all flex items-center justify-center gap-2 group shadow-[0_0_20px_rgba(173,255,0,0.15)] active:scale-95"
+          >
+            <Play className="w-4 h-4 fill-[#ADFF00] text-[#ADFF00] group-hover:scale-110 transition-transform" />
+            <span>Experience 3D Intro</span>
+          </Link>
+
           <a
             href="#showcase"
-            className="w-full sm:w-auto px-8 py-4 rounded-full text-base font-bold text-gray-200 bg-[#121A12] border border-[#233522] hover:bg-[#1A261A] hover:border-[#ADFF00]/40 transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-7 py-4 rounded-full text-base font-bold text-gray-200 bg-[#121A12] border border-[#233522] hover:bg-[#1A261A] hover:border-[#ADFF00]/40 transition-all flex items-center justify-center gap-2"
           >
-            <span>Explore Live Showcase</span>
+            <span>Explore Showcase</span>
             <ChevronDown className="w-4 h-4" />
           </a>
         </motion.div>
