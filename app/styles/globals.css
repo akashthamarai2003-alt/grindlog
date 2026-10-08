@@ -1476,3 +1476,201 @@ html.theme-white .fitness-payment-reward {
   background-color: var(--fitness-active-background) !important;
   border-color: var(--fitness-primary-light) !important;
 }
+
+/* =========================================================================
+   Smart Grocery - White Theme High Contrast & Polish
+   ========================================================================= */
+
+/* Main canvas */
+html.theme-white .grocery-view-container {
+  background-color: var(--fitness-canvas) !important;
+  color: var(--fitness-text) !important;
+}
+
+/* Header buttons (back, share, reset) */
+html.theme-white .grocery-header-btn {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  color: #334155 !important;
+}
+html.theme-white .grocery-header-btn:hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+/* Unpurchased cards in White Theme */
+html.theme-white .grocery-card-unpurchased {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+html.theme-white .grocery-card-unpurchased:hover {
+  border-color: rgba(22, 163, 74, 0.5) !important;
+  background-color: #F8FAFC !important;
+}
+html.theme-white .grocery-card-unpurchased .grocery-item-title {
+  color: #0F172A !important;
+}
+html.theme-white .grocery-card-unpurchased .grocery-price-active {
+  color: #0F172A !important;
+}
+
+/* Purchased / Checked cards in White Theme */
+html.theme-white .grocery-card-purchased {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+/* Purchased text: crisp muted slate with line-through */
+html.theme-white .grocery-card-purchased .grocery-item-title-purchased,
+html.theme-white .grocery-card-purchased h4.line-through {
+  color: #64748B !important;
+  text-decoration: line-through !important;
+}
+html.theme-white .grocery-card-purchased .grocery-price-purchased,
+html.theme-white .grocery-card-purchased span.line-through {
+  color: #94A3B8 !important;
+  text-decoration: line-through !important;
+}
+html.theme-white .grocery-card-purchased .text-white\/30,
+html.theme-white .grocery-card-purchased .text-white\/40,
+html.theme-white .grocery-card-purchased .text-white\/50,
+html.theme-white .grocery-card-purchased .text-white\/60 {
+  color: #94A3B8 !important;
+}
+
+/* Purchased quantity badge */
+html.theme-white .grocery-card-purchased .grocery-qty-purchased,
+html.theme-white .grocery-card-purchased span.text-\[\#ADFF00\]\/60 {
+  background-color: #F1F5F9 !important;
+  border-color: #CBD5E1 !important;
+  color: #64748B !important;
+}
+
+/* Unpurchased quantity badge */
+html.theme-white .grocery-card-unpurchased .grocery-qty-active,
+html.theme-white .grocery-card-unpurchased span.text-\[\#ADFF00\] {
+  background-color: #DCFCE7 !important;
+  border-color: #86EFAC !important;
+  color: #15803D !important;
+}
+
+/* Tactile Checkbox */
+html.theme-white .grocery-checkbox-checked {
+  background-color: var(--fitness-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 10px rgba(22, 163, 74, 0.3) !important;
+}
+html.theme-white .grocery-checkbox-unchecked {
+  border-color: #CBD5E1 !important;
+  background-color: #F8FAFC !important;
+}
+html.theme-white .grocery-checkbox-unchecked:hover {
+  border-color: var(--fitness-primary) !important;
+}
+
+/* Period Switcher (Weekly vs Monthly) */
+html.theme-white .grocery-period-switcher {
+  background-color: #F1F5F9 !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: none !important;
+}
+
+/* Active period button */
+html.theme-white .grocery-period-btn-active {
+  background-color: var(--fitness-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important;
+}
+html.theme-white .grocery-period-btn-active * {
+  color: #FFFFFF !important;
+}
+/* Pill badge inside active period button (fixes the invisible 7-Day / 30-Day text) */
+html.theme-white .grocery-period-btn-active .period-pill-badge {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #FFFFFF !important;
+}
+
+/* Inactive period button */
+html.theme-white .grocery-period-btn-inactive {
+  background-color: transparent !important;
+  color: #64748B !important;
+}
+html.theme-white .grocery-period-btn-inactive:hover {
+  background-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+html.theme-white .grocery-period-btn-inactive .period-pill-badge {
+  background-color: #E2E8F0 !important;
+  color: #475569 !important;
+}
+
+/* Category Filter Chips */
+html.theme-white .grocery-category-pill-active {
+  background-color: var(--fitness-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.2) !important;
+}
+html.theme-white .grocery-category-pill-inactive {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  color: #475569 !important;
+}
+html.theme-white .grocery-category-pill-inactive:hover {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+
+/* Search Input */
+html.theme-white .grocery-search-input {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+html.theme-white .grocery-search-input::placeholder {
+  color: #94A3B8 !important;
+}
+html.theme-white .grocery-search-input:focus {
+  border-color: var(--fitness-primary) !important;
+}
+
+/* Filter / Remaining Toggle Button */
+html.theme-white .grocery-filter-btn {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  color: #64748B !important;
+}
+
+/* Empty State Card */
+html.theme-white .grocery-empty-card {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+html.theme-white .grocery-empty-card h3 {
+  color: #0F172A !important;
+}
+html.theme-white .grocery-empty-card p {
+  color: #64748B !important;
+}
+
+/* Bottom Floating Bar Gradient */
+html.theme-white .grocery-bottom-bar {
+  background-image: linear-gradient(to top, #F8F8F8 75%, rgba(248, 248, 248, 0.95) 90%, transparent) !important;
+}
+
+/* Mess Info Banner */
+html.theme-white .grocery-mess-banner {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+html.theme-white .grocery-mess-item {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+}
+html.theme-white .grocery-mess-item span:first-child {
+  color: #1E293B !important;
+}
+

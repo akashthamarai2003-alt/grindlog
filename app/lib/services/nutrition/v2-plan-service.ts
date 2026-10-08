@@ -943,9 +943,24 @@ export class V2PlanService {
       .select("*, meal_plan_items(*, foods(*), planned_meals(meal_slot))")
       .eq("user_id", userId)
       .in("date", dateRange)
-      .eq("status", "READY");
+      .neq("status", "SUPERSEDED")
+      .neq("status", "CANCELLED");
     if (plansError) throw plansError;
-    if (!plans?.length) throw new Error("V2_PLAN_NOT_FOUND: No ready meal plan in this date range.");
+
+    let activePlans = plans || [];
+    if (!activePlans.length) {
+      const { data: latestPlans } = await supabase
+        .from("meal_plans")
+        .select("*, meal_plan_items(*, foods(*), planned_meals(meal_slot))")
+        .eq("user_id", userId)
+        .neq("status", "SUPERSEDED")
+        .neq("status", "CANCELLED")
+        .order("date", { ascending: false })
+        .limit(numDays);
+      activePlans = latestPlans || [];
+    }
+
+    if (!activePlans.length) throw new Error("V2_PLAN_NOT_FOUND: No active meal plan found for grocery generation.");
 
     const pantryFoods = new Set<string>(
       (Array.isArray(profile?.available_foods) ? profile.available_foods : [])
@@ -979,7 +994,7 @@ export class V2PlanService {
       }
     >();
 
-    for (const plan of plans || []) {
+    for (const plan of activePlans) {
       const groceryItems = selectGroceryPlanItems(plan.meal_plan_items || []);
       for (const item of groceryItems) {
         const food = item.foods;
@@ -1148,6 +1163,8 @@ export class V2PlanService {
         .limit(1)
         .maybeSingle();
 
+      const targetPlanId = activePlan?.id || "v2-nutrition-plan";
+
       if (activePlan?.id) {
         const updatedPlanData = {
           ...(activePlan.plan_data || {}),
@@ -1164,31 +1181,31 @@ export class V2PlanService {
           .update({ plan_data: updatedPlanData })
           .eq("id", activePlan.id);
         if (workoutSyncError) throw workoutSyncError;
+      }
 
-        const { error: groceryDeleteError } = await supabase
-          .from("fitness_grocery_items")
-          .delete()
-          .eq("user_id", userId)
-          .eq("plan_id", activePlan.id);
-        if (groceryDeleteError) throw groceryDeleteError;
+      const { error: groceryDeleteError } = await supabase
+        .from("fitness_grocery_items")
+        .delete()
+        .eq("user_id", userId)
+        .eq("plan_id", targetPlanId);
+      if (groceryDeleteError) throw groceryDeleteError;
 
-        if (legacyDbGroceryRows.length > 0) {
-          const { error: groceryInsertError } = await supabase.from("fitness_grocery_items").insert(
-            legacyDbGroceryRows.map((it) => ({
-              user_id: userId,
-              plan_id: activePlan.id,
-              name: it.name,
-              monthly_quantity: it.monthly_quantity,
-              unit: it.unit,
-              estimated_price: it.estimated_price,
-              category: it.category,
-              is_optional: it.is_optional,
-              reason: it.reason,
-              purchased: false,
-            }))
-          );
-          if (groceryInsertError) throw groceryInsertError;
-        }
+      if (legacyDbGroceryRows.length > 0) {
+        const { error: groceryInsertError } = await supabase.from("fitness_grocery_items").insert(
+          legacyDbGroceryRows.map((it) => ({
+            user_id: userId,
+            plan_id: targetPlanId,
+            name: it.name,
+            monthly_quantity: it.monthly_quantity,
+            unit: it.unit,
+            estimated_price: it.estimated_price,
+            category: it.category,
+            is_optional: it.is_optional,
+            reason: it.reason,
+            purchased: false,
+          }))
+        );
+        if (groceryInsertError) throw groceryInsertError;
       }
     } catch (syncErr: any) {
       throw new Error(`GROCERY_SYNC_FAILED: ${syncErr?.message || "Unknown persistence error"}`);

@@ -291,7 +291,7 @@ export function GroceryView({
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1108] text-white">
+    <div className="grocery-view-container min-h-screen bg-[#0A1108] text-white">
       <div className="w-full max-w-md mx-auto px-3.5 sm:px-5 pt-6 sm:pt-8 pb-36">
         
         {/* Navigation & Header */}
@@ -299,7 +299,7 @@ export function GroceryView({
           <Link
             href="/nutrition"
             prefetch={true}
-            className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95"
+            className="grocery-header-btn w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95"
             title="Back to Meals"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -326,7 +326,7 @@ export function GroceryView({
             <button
               type="button"
               onClick={handleShareList}
-              className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95"
+              className="grocery-header-btn w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95"
               title="Share / Copy List"
             >
               {isCopied ? <Check className="w-4 h-4 text-[#ADFF00]" /> : <Share2 className="w-4 h-4" />}
@@ -334,7 +334,7 @@ export function GroceryView({
             <button
               type="button"
               onClick={handleReset}
-              className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95"
+              className="grocery-header-btn w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95"
               title="Reset Checklist"
             >
               <RotateCcw className="w-4 h-4" />
@@ -343,18 +343,18 @@ export function GroceryView({
         </div>
 
         {/* Weekly vs Monthly Period Toggle */}
-        <div className="bg-[#121E12] border border-[#1A2619] p-1 rounded-2xl flex items-center gap-1 mb-4 shadow-lg">
+        <div className="grocery-period-switcher bg-[#121E12] border border-[#1A2619] p-1 rounded-2xl flex items-center gap-1 mb-4 shadow-lg">
           <button
             type="button"
             onClick={() => setPeriod("weekly")}
             className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-150 flex items-center justify-center gap-1.5 ${
               period === "weekly"
-                ? "bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]"
-                : "text-white/60 hover:text-white hover:bg-white/5"
+                ? "grocery-period-btn-active bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]"
+                : "grocery-period-btn-inactive text-white/60 hover:text-white hover:bg-white/5"
             }`}
           >
             <span>Weekly Run</span>
-            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+            <span className={`period-pill-badge text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
               period === "weekly" ? "bg-black/20 text-black" : "bg-white/10 text-white/60"
             }`}>
               7-Day
@@ -366,12 +366,12 @@ export function GroceryView({
             onClick={() => setPeriod("monthly")}
             className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-150 flex items-center justify-center gap-1.5 ${
               period === "monthly"
-                ? "bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]"
-                : "text-white/60 hover:text-white hover:bg-white/5"
+                ? "grocery-period-btn-active bg-[#ADFF00] text-black shadow-[0_0_15px_rgba(173,255,0,0.3)]"
+                : "grocery-period-btn-inactive text-white/60 hover:text-white hover:bg-white/5"
             }`}
           >
             <span>Monthly Stock</span>
-            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+            <span className={`period-pill-badge text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
               period === "monthly" ? "bg-black/20 text-black" : "bg-white/10 text-white/60"
             }`}>
               30-Day
@@ -438,7 +438,7 @@ export function GroceryView({
 
         {/* Living / Food Environment Context Banner */}
         {envInfo.isMess && (
-          <div className="bg-[#121E12] border border-[#1A2619] rounded-2xl p-3.5 mb-4 shadow-sm">
+          <div className="grocery-mess-banner bg-[#121E12] border border-[#1A2619] rounded-2xl p-3.5 mb-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-2.5">
                 <span className="text-base flex-shrink-0 mt-0.5">ℹ️</span>
@@ -471,7 +471,7 @@ export function GroceryView({
                   {providedItems.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-black/20 border border-white/5 text-xs"
+                      className="grocery-mess-item flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-black/20 border border-white/5 text-xs"
                     >
                       <span className="text-white/80 font-medium truncate">{item.name}</span>
                       <span className="text-[10px] font-bold text-emerald-400 flex-shrink-0 ml-2">₹0 Included</span>
@@ -494,7 +494,7 @@ export function GroceryView({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search paneer, eggs, oats..."
-                className="w-full bg-[#121E12] border border-[#1A2619] rounded-xl pl-10 pr-9 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-[#ADFF00]/50 transition-colors"
+                className="grocery-search-input w-full bg-[#121E12] border border-[#1A2619] rounded-xl pl-10 pr-9 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-[#ADFF00]/50 transition-colors"
               />
               {searchQuery && (
                 <button
@@ -511,7 +511,7 @@ export function GroceryView({
             <button
               type="button"
               onClick={() => setHidePurchased(!hidePurchased)}
-              className={`h-[38px] px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all ${
+              className={`grocery-filter-btn h-[38px] px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all ${
                 hidePurchased
                   ? "bg-[#ADFF00]/20 border-[#ADFF00]/40 text-[#ADFF00]"
                   : "bg-[#121E12] border-[#1A2619] text-white/50 hover:text-white hover:bg-white/5"
@@ -532,10 +532,10 @@ export function GroceryView({
                   key={cat}
                   type="button"
                   onClick={() => setSelectedCategory(cat)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  className={`grocery-category-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
                     isSelected
-                      ? "bg-[#ADFF00] text-black shadow-[0_0_10px_rgba(173,255,0,0.3)]"
-                      : "bg-[#121E12] border border-[#1A2619] text-white/60 hover:text-white hover:bg-white/5"
+                      ? "grocery-category-pill-active bg-[#ADFF00] text-black shadow-[0_0_10px_rgba(173,255,0,0.3)]"
+                      : "grocery-category-pill-inactive bg-[#121E12] border border-[#1A2619] text-white/60 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   {cat}
@@ -577,7 +577,7 @@ export function GroceryView({
           </div>
         ) : (
           /* Empty Search / Filter State */
-          <div className="p-8 text-center bg-[#121E12]/50 border border-[#1A2619] rounded-2xl">
+          <div className="grocery-empty-card p-8 text-center bg-[#121E12]/50 border border-[#1A2619] rounded-2xl">
             <ShoppingCart className="w-10 h-10 text-white/20 mx-auto mb-2" />
             <h3 className="text-sm font-bold text-white mb-1">No items found</h3>
             <p className="text-xs text-white/40 mb-4 max-w-xs mx-auto">
@@ -602,12 +602,12 @@ export function GroceryView({
         )}
 
         {/* Quick Action Bottom Bar */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-6 pt-3 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pointer-events-none">
+        <div className="grocery-bottom-bar fixed bottom-0 left-0 right-0 z-40 px-4 pb-6 pt-3 bg-gradient-to-t from-[#0A1108] via-[#0A1108]/95 to-transparent pointer-events-none">
           <div className="max-w-md mx-auto flex items-center gap-2.5 pointer-events-auto">
             <button
               type="button"
               onClick={handleCopyList}
-              className="flex-1 py-3 px-4 rounded-xl bg-[#ADFF00] hover:bg-[#b8ff1f] active:scale-[0.98] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(173,255,0,0.3)] transition-all"
+              className="grocery-copy-btn flex-1 py-3 px-4 rounded-xl bg-[#ADFF00] hover:bg-[#b8ff1f] active:scale-[0.98] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(173,255,0,0.3)] transition-all"
             >
               {isCopied ? (
                 <>

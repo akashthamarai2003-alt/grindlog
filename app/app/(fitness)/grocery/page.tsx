@@ -70,18 +70,33 @@ export default async function GroceryPage() {
     if (activePlanError) throw activePlanError;
     if (groceryItemsError) throw groceryItemsError;
     const today = await NutritionService.getLocalDateString(user.id);
-    const { data: readyPlans, error: readyPlanError } = await supabase.from("meal_plans")
-      .select("id").eq("user_id", user.id).eq("status", "READY")
+    let { data: readyPlans, error: readyPlanError } = await supabase.from("meal_plans")
+      .select("id").eq("user_id", user.id)
+      .neq("status", "SUPERSEDED")
+      .neq("status", "CANCELLED")
       .gte("date", today).order("date").limit(7);
     if (readyPlanError) throw readyPlanError;
+
+    // Fallback: If no future meal plans, fetch most recent 7 active meal plans
+    if (!readyPlans || readyPlans.length === 0) {
+      const { data: latestPlans } = await supabase.from("meal_plans")
+        .select("id").eq("user_id", user.id)
+        .neq("status", "SUPERSEDED")
+        .neq("status", "CANCELLED")
+        .order("date", { ascending: false }).limit(7);
+      readyPlans = latestPlans || [];
+    }
+
     const readyIds = (readyPlans || []).map((row) => row.id);
     const { data: v2Meals, error: v2MealError } = readyIds.length
       ? await supabase.from("planned_meals").select("id").eq("user_id", user.id)
           .in("meal_plan_id", readyIds).like("planner_version", "v2%").limit(1)
       : { data: [], error: null };
     if (v2MealError) throw v2MealError;
-    let v2Rows = v2Meals?.length && activePlan?.id
-      ? (dbGroceryItems || []).filter((row) => row.plan_id === activePlan.id)
+
+    const targetPlanId = activePlan?.id || "v2-nutrition-plan";
+    let v2Rows = v2Meals?.length
+      ? (dbGroceryItems || []).filter((row) => !row.plan_id || row.plan_id === targetPlanId || (activePlan?.id && row.plan_id === activePlan.id))
       : [];
 
     // Automatically synchronize canonical retail items if existing rows contain legacy cooked dish names
@@ -90,14 +105,19 @@ export default async function GroceryPage() {
       return n.includes("curry") || n.includes("bhurji") || n.includes("phulka") || (n.includes("dal") && !n.includes("raw"));
     });
 
-    if (v2Meals?.length && activePlan?.id && (v2Rows.length === 0 || needsCanonicalSync)) {
+    let providedItems = activePlan?.plan_data?.nutrition?.provided_by_mess || [];
+
+    if (v2Meals?.length && (v2Rows.length === 0 || needsCanonicalSync)) {
       try {
-        await V2PlanService.generateV2GroceryList(user.id);
+        const genResult = await V2PlanService.generateV2GroceryList(user.id);
+        if (genResult?.providedByMess?.length) {
+          providedItems = genResult.providedByMess;
+        }
         const { data: refreshedRows } = await supabase
           .from("fitness_grocery_items")
           .select("*")
           .eq("user_id", user.id)
-          .eq("plan_id", activePlan.id)
+          .or(`plan_id.eq.${targetPlanId}${activePlan?.id ? `,plan_id.eq.${activePlan.id}` : ""}`)
           .order("category", { ascending: true });
         if (refreshedRows?.length) {
           v2Rows = refreshedRows;
@@ -108,8 +128,8 @@ export default async function GroceryPage() {
     }
 
     if (v2Rows.length === 0) {
-      return <div className="min-h-screen bg-[#0A1108] px-4 pb-28 pt-16 text-center text-white">
-        <div className="mx-auto max-w-md rounded-[28px] border border-white/10 bg-[#111A10] p-8">
+      return <div className="grocery-view-container min-h-screen bg-[#0A1108] px-4 pb-28 pt-16 text-center text-white">
+        <div className="grocery-empty-card mx-auto max-w-md rounded-[28px] border border-white/10 bg-[#111A10] p-8">
           <ShoppingCart className="mx-auto mb-4 text-[#ADFF00]" size={32} />
           <h1 className="text-2xl font-black uppercase">Your Grocery List</h1>
           <p className="mt-3 text-sm leading-relaxed text-white/55">{v2Meals?.length
@@ -119,7 +139,7 @@ export default async function GroceryPage() {
         </div>
       </div>;
     }
-    const providedItems = activePlan?.plan_data?.nutrition?.provided_by_mess || [];
+
     const v2Items: GroceryItemData[] = v2Rows.map((row) => ({
       id: row.id, name: row.name, monthlyQuantity: Number(row.monthly_quantity),
       unit: row.unit || "unit", estimatedPrice: Number(row.estimated_price),
@@ -127,11 +147,11 @@ export default async function GroceryPage() {
       reason: row.reason || "", purchased: Boolean(row.purchased),
     }));
     return <GroceryView initialItems={v2Items} budget={budgetSummary} authoritativePurchases
-      planName="V2 7-Day Nutrition Plan" planGoal={activePlan?.goal || "Nutrition"}
+      planName="V2 7-Day Nutrition Plan" planGoal={activePlan?.goal || profile.fitness_goal || "Nutrition"}
       dietType={profile.diet_preference || profile.food_type || undefined}
       foodEnvironment={profile.food_environment || "Home"}
       providedItems={providedItems}
-      userId={user.id} planId={activePlan?.id || ""} />;
+      userId={user.id} planId={targetPlanId} />;
   }
 
   const planNutrition = activePlan?.plan_data?.nutrition;

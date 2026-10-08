@@ -1168,14 +1168,19 @@ export async function resetGroceryItemsAction(planId: string) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const { error } = await supabase
+  let query = supabase
     .from("fitness_grocery_items")
     .update({
       purchased: false,
       updated_at: new Date().toISOString(),
     })
-    .eq("plan_id", planId)
     .eq("user_id", user.id);
+
+  if (planId) {
+    query = query.or(`plan_id.eq.${planId},plan_id.is.null`);
+  }
+
+  const { error } = await query;
 
   if (error) {
     console.error("Error resetting grocery items:", error);

@@ -32,8 +32,8 @@ export const GroceryItemCard = React.memo(function GroceryItemCard({
       onClick={() => onToggle(item.id)}
       className={`group relative flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border transition-all duration-150 cursor-pointer select-none ${
         item.purchased
-          ? "bg-[#0E170E]/50 border-white/5 opacity-60"
-          : "bg-[#121E12] border-[#1A2619] hover:border-[#ADFF00]/40 hover:bg-[#152315] active:scale-[0.99]"
+          ? "grocery-card-purchased bg-[#0E170E]/50 border-white/5 opacity-60"
+          : "grocery-card-unpurchased bg-[#121E12] border-[#1A2619] hover:border-[#ADFF00]/40 hover:bg-[#152315] active:scale-[0.99]"
       }`}
     >
       {/* Tactile Checkbox */}
@@ -45,10 +45,10 @@ export const GroceryItemCard = React.memo(function GroceryItemCard({
           e.stopPropagation();
           onToggle(item.id);
         }}
-        className={`mt-0.5 flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-150 ${
+        className={`grocery-checkbox mt-0.5 flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-150 ${
           item.purchased
-            ? "bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.35)]"
-            : "border-2 border-white/20 hover:border-[#ADFF00] bg-white/5 text-transparent"
+            ? "grocery-checkbox-checked bg-[#ADFF00] text-black shadow-[0_0_12px_rgba(173,255,0,0.35)]"
+            : "grocery-checkbox-unchecked border-2 border-white/20 hover:border-[#ADFF00] bg-white/5 text-transparent"
         }`}
       >
         <Check className={`w-3.5 h-3.5 stroke-[3] transition-transform ${item.purchased ? "scale-100" : "scale-0"}`} />
@@ -61,7 +61,7 @@ export const GroceryItemCard = React.memo(function GroceryItemCard({
           <div>
             <h4
               className={`text-sm sm:text-base font-bold transition-colors line-clamp-1 ${
-                item.purchased ? "line-through text-white/40" : "text-white"
+                item.purchased ? "grocery-item-title-purchased line-through text-white/40" : "grocery-item-title text-white"
               }`}
             >
               {item.name}
@@ -69,7 +69,11 @@ export const GroceryItemCard = React.memo(function GroceryItemCard({
             
             {/* Quantity Badge */}
             <div className="flex items-center gap-2 mt-1">
-              <span className="inline-flex items-center text-xs font-black text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20 px-2 py-0.5 rounded-md">
+              <span className={`inline-flex items-center text-xs font-black px-2 py-0.5 rounded-md ${
+                item.purchased
+                  ? "grocery-qty-purchased text-[#ADFF00]/60 bg-[#ADFF00]/5 border border-[#ADFF00]/10"
+                  : "grocery-qty-active text-[#ADFF00] bg-[#ADFF00]/10 border border-[#ADFF00]/20"
+              }`}>
                 {displayQuantity} {unit}
               </span>
               {item.isOptional && (
@@ -84,7 +88,7 @@ export const GroceryItemCard = React.memo(function GroceryItemCard({
           <div className="text-right flex-shrink-0">
             <span
               className={`text-sm sm:text-base font-black tracking-tight ${
-                item.purchased ? "line-through text-white/30" : "text-white"
+                item.purchased ? "grocery-price-purchased line-through text-white/30" : "grocery-price-active text-white"
               }`}
             >
               ₹{price}
