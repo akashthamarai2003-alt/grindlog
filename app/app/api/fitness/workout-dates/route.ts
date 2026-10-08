@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/services/supabase/server";
+import {
+  buildStreakDateSets,
+  computeWorkoutStreak,
+  todayInTimeZone,
+  toLocalYMD,
+} from "@/lib/fitness/streak";
 
 /**
  * GET /api/fitness/workout-dates
@@ -19,25 +25,36 @@ export async function GET(req: NextRequest) {
     cutoff.setDate(cutoff.getDate() - 365);
     const cutoffStr = cutoff.toISOString().split("T")[0];
 
-    const { data: workouts, error } = await supabase
-      .from("fitness_os_workouts")
-      .select("completed_at, workout_date, status")
-      .eq("user_id", user.id)
-      .gte("workout_date", cutoffStr)
-      .order("workout_date", { ascending: true });
+    const [workoutsRes, profileRes, fitProfileRes] = await Promise.all([
+      supabase
+        .from("fitness_os_workouts")
+        .select("completed_at, workout_date, status")
+        .eq("user_id", user.id)
+        .gte("workout_date", cutoffStr)
+        .order("workout_date", { ascending: true }),
+      supabase.from("profiles").select("timezone").eq("id", user.id).maybeSingle(),
+      supabase.from("fitness_os_profiles").select("timezone, created_at").eq("user_id", user.id).maybeSingle(),
+    ]);
 
-    if (error) throw error;
+    if (workoutsRes.error) throw workoutsRes.error;
 
-    // Separate completed vs scheduled/in_progress workouts
-    const completedWorkouts = (workouts || []).filter(w => w.status === "completed");
-    const dates = completedWorkouts.map(w =>
-      (w.completed_at || w.workout_date || "").split("T")[0]
-    ).filter(Boolean);
+    const timeZone = fitProfileRes.data?.timezone || profileRes.data?.timezone || "UTC";
+    const todayYMD = todayInTimeZone(timeZone);
+    const workouts = workoutsRes.data || [];
 
-    const scheduledWorkouts = (workouts || []).filter(w => w.status === "scheduled" || w.status === "in_progress");
-    const scheduledDates = scheduledWorkouts.map(w =>
-      (w.workout_date || "").split("T")[0]
-    ).filter(Boolean);
+    // Separate completed vs scheduled/in_progress workouts using local timezone
+    const { completedDates, missedDates } = buildStreakDateSets(workouts, timeZone, todayYMD);
+    const streakResult = computeWorkoutStreak({ completedDates, missedDates, todayYMD });
+    const dates = Array.from(completedDates).sort();
+
+    const scheduledWorkouts = workouts.filter(w => w.status === "scheduled" || w.status === "in_progress");
+    const scheduledDates = Array.from(
+      new Set(
+        scheduledWorkouts
+          .map(w => toLocalYMD(w.workout_date, timeZone))
+          .filter(Boolean)
+      )
+    ).sort();
 
     // Fetch recent exercises for the muscle map
     const cutoff30 = new Date();
@@ -93,7 +110,11 @@ export async function GET(req: NextRequest) {
       completedDates: dates, 
       scheduledDates, 
       exerciseNames,
-      joinedDate
+      joinedDate,
+      currentStreak: streakResult.current,
+      longestStreak: streakResult.longest,
+      trainedToday: streakResult.trainedToday,
+      timeZone,
     }, { 
       status: 200,
       headers: {

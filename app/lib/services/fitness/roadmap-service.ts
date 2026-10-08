@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, addDays, format } from "date-fns";
 import { createAdminClient } from "@/lib/services/supabase/admin";
+import { computeStreakFromWorkouts } from "@/lib/fitness/streak";
 import type {
   TransformationRoadmapData,
   MonthMilestone,
@@ -271,7 +272,7 @@ export async function getRoadmapData(
   // ── Aggregate stats ──
   const totalCompleted = allWorkouts.filter((w: any) => w.status === "completed").length;
   const totalScheduled = allWorkouts.length;
-  const streak = computeStreak(allWorkouts, now);
+  const streak = computeStreakFromWorkouts(allWorkouts, profile?.timezone || "UTC", now).current;
   // On Day 1 with 0 scheduled workouts yet, show 100% baseline consistency
   const consistencyScore =
     totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 100;
@@ -567,33 +568,8 @@ function generateMonthMilestone(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Streak & helpers
+// Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-function computeStreak(allWorkouts: any[], now: Date): number {
-  const completedDates = new Set(
-    allWorkouts
-      .filter((w: any) => w.status === "completed")
-      .map((w: any) => w.workout_date)
-  );
-  let streak = 0;
-  let iterations = 0;
-  const checkDate = new Date(now);
-  const todayStr = format(checkDate, "yyyy-MM-dd");
-  while (iterations < 365) {
-    iterations++;
-    const ymd = format(checkDate, "yyyy-MM-dd");
-    if (completedDates.has(ymd)) {
-      streak++;
-      checkDate.setDate(checkDate.getDate() - 1);
-    } else if (ymd === todayStr) {
-      checkDate.setDate(checkDate.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-  return streak;
-}
 
 function formatDateRange(start: Date, end: Date): string {
   return `${format(start, "MMM d")} – ${format(end, "MMM d")}`;

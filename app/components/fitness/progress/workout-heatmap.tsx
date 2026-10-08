@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { Calendar, Flame, Trophy, ArrowRight, RotateCcw } from "lucide-react";
 import Link from "next/link";
+import { computeWorkoutStreak } from "@/lib/fitness/streak";
 
 interface HeatmapProps {
   /** Array of ISO date strings for completed workout sessions */
@@ -11,6 +12,10 @@ interface HeatmapProps {
   scheduledDates?: string[];
   /** Optional date string when the user joined or started their plan */
   joinedDate?: string;
+  /** Authoritative current streak passed from server/parent (fallback computed) */
+  currentStreak?: number;
+  /** Authoritative longest streak passed from server/parent (fallback computed) */
+  longestStreak?: number;
 }
 
 interface CellData {
@@ -104,7 +109,13 @@ const HeatmapCell = React.memo(function HeatmapCell({
   );
 });
 
-export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joinedDate }: HeatmapProps) {
+export function WorkoutHeatmap({
+  completedDates = [],
+  scheduledDates = [],
+  joinedDate,
+  currentStreak: propCurrentStreak,
+  longestStreak: propLongestStreak,
+}: HeatmapProps) {
   const [timeRange, setTimeRange] = useState<"3M" | "6M" | "1Y">("3M");
   const [selectedCell, setSelectedCell] = useState<CellData | null>(null);
 
@@ -224,39 +235,18 @@ export function WorkoutHeatmap({ completedDates = [], scheduledDates = [], joine
     // Unique completed workout days
     const totalWorkouts = Object.values(freqMap).reduce((a, b) => a + Math.min(b, 1), 0);
 
-    // Streaks calculation
-    let streak = 0;
-    let longestStreak = 0;
-    const sorted = Object.keys(freqMap).filter(k => k <= todayStr).sort();
-    for (let i = 0; i < sorted.length; i++) {
-      if (i === 0) {
-        streak = 1;
-      } else {
-        const prev = new Date(sorted[i - 1]);
-        const curr = new Date(sorted[i]);
-        const diff = Math.round((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
-        streak = diff === 1 ? streak + 1 : 1;
-      }
-      longestStreak = Math.max(longestStreak, streak);
-    }
+    // Compute streaks using shared rest-day-aware engine if not passed as authoritative props
+    const streakResult = computeWorkoutStreak({
+      completedDates,
+      missedDates: scheduledDates,
+      todayYMD: todayStr,
+    });
 
-    // Current streak
-    let currentStreak = 0;
-    let checkDate = new Date(todayYear, todayMonth, todayDate);
-    while (true) {
-      const dStr = formatDate(checkDate);
-      if (freqMap[dStr]) {
-        currentStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else if (dStr === todayStr) {
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
+    const currentStreak = typeof propCurrentStreak === "number" ? propCurrentStreak : streakResult.current;
+    const longestStreak = typeof propLongestStreak === "number" ? propLongestStreak : streakResult.longest;
 
     return { grid, monthPositions, totalWorkouts, longestStreak, currentStreak, currentWeekCol };
-  }, [completedDates, scheduledDates, joinedDate, numWeeks]);
+  }, [completedDates, scheduledDates, joinedDate, numWeeks, propCurrentStreak, propLongestStreak]);
 
   // Auto-scroll to current week column on mount and range switch
   useEffect(() => {

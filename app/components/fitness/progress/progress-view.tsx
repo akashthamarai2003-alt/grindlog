@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { AnalyticsPeriod, AggregatedProgressPayload } from "@/types/fitness/analytics";
 import { ProgressHeader } from "./progress-header";
 import { TransformationOverview } from "./transformation-overview";
@@ -92,7 +92,7 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
   }, [initialData.period]);
 
   // Fetch workout dates for the heatmap (last 365 days)
-  useEffect(() => {
+  const fetchWorkoutDates = useCallback(() => {
     fetch("/api/fitness/workout-dates")
       .then(r => r.ok ? r.json() : null)
       .then(json => {
@@ -113,6 +113,10 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    fetchWorkoutDates();
+  }, [fetchWorkoutDates]);
 
   // Keep local state in sync whenever server component provides fresh initialData
   useEffect(() => {
@@ -140,14 +144,15 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
     }
   };
 
-  // Listen for local mutations (weight logged, measurement saved)
+  // Listen for local mutations (weight logged, measurement saved, workout completed)
   useEffect(() => {
     const handleProgressUpdated = () => {
       refreshData();
+      fetchWorkoutDates();
     };
     window.addEventListener("grindlog_progress_updated", handleProgressUpdated);
     return () => window.removeEventListener("grindlog_progress_updated", handleProgressUpdated);
-  }, [period]);
+  }, [period, fetchWorkoutDates]);
 
   const handlePeriodChange = async (newPeriod: AnalyticsPeriod) => {
     if (newPeriod === period) return;
@@ -255,7 +260,13 @@ export function ProgressView({ initialData, isPro = true }: { initialData: Aggre
             {/* Workout Heatmap Calendar */}
             <SmoothSection minHeight="240px">
               <div className="w-full bg-[#111A10] border border-white/5 rounded-2xl p-4 sm:p-5">
-                <WorkoutHeatmap completedDates={workoutDates} scheduledDates={scheduledDates} joinedDate={joinedDate} />
+                <WorkoutHeatmap 
+                  completedDates={workoutDates} 
+                  scheduledDates={scheduledDates} 
+                  joinedDate={joinedDate}
+                  currentStreak={data.transformation.streak}
+                  longestStreak={data.transformation.longestStreak}
+                />
               </div>
             </SmoothSection>
 

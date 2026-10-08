@@ -14,6 +14,7 @@ import {
   AIProgressReview,
   Achievement
 } from "@/types/fitness/analytics";
+import { buildStreakDateSets, computeWorkoutStreak, todayInTimeZone } from "@/lib/fitness/streak";
 
 interface ProgressServerCacheEntry {
   data: AggregatedProgressPayload;
@@ -90,7 +91,8 @@ export class ProgressAnalyticsService {
       { data: userAchievementsData },
       { data: bodyMetricsData },
       { data: activePlanData },
-      { data: streakWorkoutsData }
+      { data: streakWorkoutsData },
+      { data: userTzRow }
     ] = await Promise.all([
       supabase.from('fitness_os_profiles').select('created_at, target_weight, weight, weight_trend_baseline, baseline_calories, initial_protein_target, goal_physique_image, target_physique').eq('user_id', userId).maybeSingle(),
       supabase.from('fitness_os_body_scans').select('*').eq('user_id', userId).order('scan_date', { ascending: true }).order('created_at', { ascending: true }),
@@ -128,8 +130,10 @@ export class ProgressAnalyticsService {
       supabase.from('fitness_os_user_achievements').select('*, achievement:achievement_id(title, description, icon)').eq('user_id', userId),
       supabase.from('fitness_os_body_metrics').select('weight, recorded_at').eq('user_id', userId).not('weight', 'is', null).gte('recorded_at', startDateStr).order('recorded_at', { ascending: true }),
       supabase.from('fitness_os_workout_plans').select('plan_data').eq('user_id', userId).eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle(),
-      supabase.from('fitness_os_workouts').select('workout_date, completed_at').eq('user_id', userId).eq('status', 'completed').order('workout_date', { ascending: false }).limit(60)
+      supabase.from('fitness_os_workouts').select('workout_date, completed_at, status').eq('user_id', userId).gte('workout_date', new Date(now.getTime() - 366 * 86400000).toISOString().split('T')[0]).order('workout_date', { ascending: false }),
+      supabase.from('profiles').select('timezone').eq('id', userId).maybeSingle()
     ]);
+    const userTz: string = (userTzRow as any)?.timezone || 'UTC';
 
     const workouts = workoutsData || [];
     const dailySummaries = dailySummariesData || [];
@@ -473,26 +477,26 @@ export class ProgressAnalyticsService {
       weeklyChart: weeklyChartData
     };
 
-    // Calculate current workout streak (merge period-scoped workouts and 60-day historical workouts)
-    const completedWorkoutDates = new Set<string>([
-      ...completedWorkouts.map((w: any) => (w.completed_at || w.workout_date || '').split('T')[0]),
-      ...streakWorkouts.map((w: any) => (w.completed_at || w.workout_date || '').split('T')[0])
-    ].filter(Boolean));
-    let calcStreak = 0;
-    const checkD = new Date(now.getTime());
-    const todayYMD = `${checkD.getFullYear()}-${String(checkD.getMonth() + 1).padStart(2, '0')}-${String(checkD.getDate()).padStart(2, '0')}`;
-    while (true) {
-      const ymd = `${checkD.getFullYear()}-${String(checkD.getMonth() + 1).padStart(2, '0')}-${String(checkD.getDate()).padStart(2, '0')}`;
-      if (completedWorkoutDates.has(ymd)) {
-        calcStreak++;
-        checkD.setDate(checkD.getDate() - 1);
-      } else if (ymd === todayYMD) {
-        checkD.setDate(checkD.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-    transformation.streak = calcStreak;
+    // Calculate current workout streak via the shared, timezone-aware, rest-day-aware engine.
+    // (Previously used the server's UTC calendar + raw completed_at UTC dates, and treated
+    // every planned rest day as a streak break.)
+    const todayYMD = todayInTimeZone(userTz, now);
+    const { completedDates: streakCompleted, missedDates: streakMissed } = buildStreakDateSets(
+      [
+        ...streakWorkouts,
+        ...completedWorkouts.map((w: any) => ({ status: 'completed', workout_date: w.workout_date, completed_at: w.completed_at })),
+      ],
+      userTz,
+      todayYMD
+    );
+    const streakResult = computeWorkoutStreak({
+      completedDates: streakCompleted,
+      missedDates: streakMissed,
+      todayYMD,
+    });
+    transformation.streak = streakResult.current;
+    transformation.longestStreak = streakResult.longest;
+    transformation.trainedToday = streakResult.trainedToday;
 
     // 5. Nutrition & Water Logs
     const targetCalories = nutritionTarget?.calories || fitProfile?.baseline_calories || 2000;
@@ -694,7 +698,7 @@ export class ProgressAnalyticsService {
       const d = new Date(now.getTime());
       d.setDate(d.getDate() - i);
       const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      if (completedWorkoutDates.has(ymd)) {
+      if (streakCompleted.has(ymd)) {
         workoutsInRollingWeek++;
       }
     }

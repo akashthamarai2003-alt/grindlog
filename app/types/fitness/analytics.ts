@@ -9,6 +9,10 @@ export interface TransformationMetrics {
   completionPercentage: number;
   transformationDay: number;
   streak: number;
+  /** Longest workout streak in the last 365 days */
+  longestStreak?: number;
+  /** True when a workout was completed today (user's local day) */
+  trainedToday?: boolean;
 }
 
 export interface ConsistencyMetrics {

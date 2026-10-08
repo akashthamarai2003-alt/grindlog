@@ -9,6 +9,8 @@ import { WorkoutExecution } from "./workout-execution";
 import { FitnessWorkout, FitnessExercise, FitnessSet } from "@/types/fitness/workout";
 import { completeExerciseSetsAction, resetWorkoutTimerAction } from "@/app/actions/fitness";
 import { clearWorkoutTimer } from "@/hooks/fitness/useWorkoutTimer";
+import { workoutClientCache } from "@/lib/api/workout-cache";
+import { progressClientCache } from "@/lib/api/progress-cache";
 
 interface WorkoutSessionManagerProps {
   workout: FitnessWorkout & {
@@ -147,6 +149,11 @@ export function WorkoutSessionManager({
         const data = await res.json();
         throw new Error(data.error || "Failed to finish workout");
       }
+      clearWorkoutTimer(workout.id);
+      workoutClientCache.clear();
+      workoutClientCache.notifyUpdated();
+      progressClientCache.clear();
+      progressClientCache.notifyUpdated();
       router.push(`/workout/${workout.id}/summary`);
     } catch (e: any) {
       toast.error(e.message || "Failed to finish workout");
