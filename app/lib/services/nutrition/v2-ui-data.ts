@@ -311,6 +311,13 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
     const image = approvedImageForReference({ imageAssetId: row.image_asset_id,
       recipeVersionId: row.recipe_version_id, storagePath: row.image_storage_path_snapshot,
       url: row.image_url_snapshot }, images);
+    const validSnapshotUrl = row.image_url_snapshot &&
+      row.image_url_snapshot.startsWith("https://") &&
+      !row.image_url_snapshot.startsWith("data:") &&
+      !row.image_url_snapshot.startsWith("https://images.grindlog.in/")
+        ? row.image_url_snapshot
+        : null;
+    const resolvedImageUrl = image?.url || validSnapshotUrl;
     const ingredients = items.filter((item) => item.planned_meal_id === row.id).map((item) => {
       const rawFoodName = relatedFood(item.foods)?.name;
       const parsedServing = parseCompositeServing(item.serving_size);
@@ -342,7 +349,7 @@ export async function getV2NutritionDay(userId: string, date?: string): Promise<
       whyThisMeal: template?.description || null,
       prepInstructions: resolvePrepInstructions(version?.prep_instructions, name),
       prepTimeMin: version?.cooking_time_min ?? null,
-      imageUrl: resolveV2ImageSnapshot(image?.url, name),
+      imageUrl: resolveV2ImageSnapshot(resolvedImageUrl, name),
       calories: numeric(row.calories_snapshot), protein: numeric(row.protein_snapshot),
       carbs: numeric(row.carbs_snapshot), fat: numeric(row.fat_snapshot),
       cost: numeric(row.cost_snapshot), ingredients,
