@@ -7,9 +7,9 @@ const dir = 'C:\\Users\\DELL\\.gemini\\antigravity\\brain\\d3977cfc-ae06-48f3-82
 
 async function run() {
   const files = fs.readdirSync(dir);
-  // Items 2 through 20 (indices 1 to 19)
-  const remaining = BATCH_6_RECIPES.slice(1);
-  console.log(`Processing remaining ${remaining.length} items of Batch 6...`);
+  // Items 13 through 20 (indices 12 to 19)
+  const remaining = BATCH_6_RECIPES.slice(12);
+  console.log(`Processing remaining ${remaining.length} items (13-20) of Batch 6...`);
 
   for (const r of remaining) {
     const base = r.slug.replace(/-/g, '_');
